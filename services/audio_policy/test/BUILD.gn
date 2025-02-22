@@ -26,6 +26,7 @@ group("audio_policy_unittest_packages") {
     ":audio_affinity_parser_test",
     ":audio_client_tracker_callback_stub_unit_test",
     ":audio_device_common_unit_test",
+    ":audio_ec_manager_unit_test",
     ":audio_effect_config_parser_test",
     ":audio_effect_config_parser_unit_test",
     ":audio_effect_service_test",
@@ -2627,4 +2628,42 @@ ohos_unittest("device_status_listener_unit_test") {
   if (audio_framework_feature_wired_audio) {
     defines = [ "AUDIO_WIRED_DETECT" ]
   }
+}
+
+ohos_unittest("audio_ec_manager_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
+    "../../audio_policy/server/include/service/service",
+    "./unittest/audio_ec_manager_unit_test/include",
+    "../../audio_policy/server/src/service/service",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+  ]
+
+  sources = [
+    "./unittest/audio_ec_manager_unit_test/src/audio_ec_manager_unit_test.cpp",
+  ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
 }

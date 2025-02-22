@@ -504,6 +504,19 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_017, TestSize.Level1)
     srcData.streamInfo.channels = AudioChannel::MONO;
 
     audioEndpointInner->HandleRendererDataParams(srcData, dstData);
+
+    clientConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    clientConfig.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    clientConfig.streamInfo.format = SAMPLE_F32LE;
+    clientConfig.streamInfo.channels = STEREO;
+    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(clientConfig);
+    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
+
+    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
+
+    srcData.streamInfo.channels = AudioChannel::STEREO;
+
+    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
 }
 
 /*
@@ -754,6 +767,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_028, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
+    int32_t ret = 0;
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
@@ -765,7 +779,20 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_028, TestSize.Level1)
     audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
 
-    audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    EXPECT_NE(ret, 0);
+
+    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
+    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
+
+    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    EXPECT_NE(ret, 0);
+
+    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
+    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::MONO;
+
+    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    EXPECT_NE(ret, 0);
 }
 
 /*
@@ -778,6 +805,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_029, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
+    int32_t ret = 0;
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
@@ -789,7 +817,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_029, TestSize.Level1)
     audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::CHANNEL_3;
 
-    audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    EXPECT_NE(ret, 0);
 }
 
 /*
@@ -802,6 +831,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_030, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
+    int32_t ret = 0;
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
@@ -813,7 +843,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_030, TestSize.Level1)
     audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::CHANNEL_3;
 
-    audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    EXPECT_NE(ret, 0);
 }
 
 /*
@@ -826,6 +857,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_031, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
+    int32_t ret = 0;
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
 
@@ -837,7 +869,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_031, TestSize.Level1)
     audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
 
-    audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
+    EXPECT_NE(ret, 0);
 }
 
 /*

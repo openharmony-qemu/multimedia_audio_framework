@@ -751,3 +751,23 @@ ohos_unittest("audio_dump_pcm_unit_test") {
     "pulseaudio:pulse",
   ]
 }
+
+ohos_unittest("format_converter_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  include_dirs = [ "../../../../services/audio_service/common/include" ]
+
+  sources = [ "format_converter_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+
+  deps = [ "../../../audio_service:audio_common" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "pulseaudio:pulse",
+  ]
+}
