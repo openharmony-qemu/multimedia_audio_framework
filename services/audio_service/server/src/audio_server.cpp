@@ -314,6 +314,7 @@ void AudioServer::InitMaxRendererStreamCntPerUid()
 void AudioServer::OnStart()
 {
     AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
+    DlopenUtils::Init();
     InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
     bool res = Publish(this);
@@ -355,6 +356,7 @@ void AudioServer::OnStart()
     if (audioParamParser->LoadConfiguration(audioParameterKeys)) {
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
+    DlopenUtils::DeInit();
 }
 
 void AudioServer::WriteServiceStartupError()

@@ -165,7 +165,7 @@ void AudioPolicyServer::OnDump()
 void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("Audio policy server on start");
-
+    DlopenUtils::Init();
     interruptService_ = std::make_shared<AudioInterruptService>();
     interruptService_->Init(this);
 
@@ -208,6 +208,7 @@ void AudioPolicyServer::OnStart()
     // Restart to reload the volume.
     InitKVStore();
     isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
+    DlopenUtils::DeInit();
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
