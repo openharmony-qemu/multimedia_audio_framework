@@ -1823,12 +1823,13 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
     };
     if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, config.capturerInfo.sourceType) &&
         !PermissionUtil::VerifyBackgroundCapture(info.appTokenId, config.appInfo.appFullTokenId)) {
-        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
+        if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
             AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
                 config.callerUid);
+            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
             return true;
         }
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
+
         return false;
     }
     return true;
