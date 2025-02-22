@@ -87,6 +87,7 @@ ohos_shared_library("module-hdi-sink") {
     "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
     "hilog:libhilog",
+    "init:libbegetutil",
     "pulseaudio:pulse",
     "pulseaudio:pulsecommon",
     "pulseaudio:pulsecore",
