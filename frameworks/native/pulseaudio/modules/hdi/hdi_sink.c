@@ -3578,7 +3578,7 @@ static void SetThreadPriority()
     if (g_isFirstStarted) {
         char paraValue[30] = {0}; // 30 for system parameter
         int32_t ret = GetParameter(BOOT_ANIMATION_FINISHED_EVENT, "false", paraValue, sizeof(paraValue));
-        if (ret == 0 && !strcmp(paraValue, "false")) {
+        if (ret > 0 && !strcmp(paraValue, "false")) {
             // boot up case
             ScheduleThreadInServer(getpid(), gettid());
             SetThreadQosLevelAsync();
