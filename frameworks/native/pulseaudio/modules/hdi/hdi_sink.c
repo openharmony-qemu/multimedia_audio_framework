@@ -3575,13 +3575,20 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
 
 static void SetThreadPriority()
 {
-    char paraValue[30] = {0}; // 30 for system parameter
-    int32_t ret = GetParameter(BOOT_ANIMATION_FINISHED_EVENT, "false", paraValue, sizeof(paraValue));
-    if (g_isFirstStarted && ret == 0 && !strcmp(paraValue, "false")) {
-        ScheduleThreadInServer(getpid(), gettid());
-        SetThreadQosLevelAsync();
+    if (g_isFirstStarted) {
+        char paraValue[30] = {0}; // 30 for system parameter
+        int32_t ret = GetParameter(BOOT_ANIMATION_FINISHED_EVENT, "false", paraValue, sizeof(paraValue));
+        if (ret == 0 && !strcmp(paraValue, "false")) {
+            // boot up case
+            ScheduleThreadInServer(getpid(), gettid());
+            SetThreadQosLevelAsync();
+        } else {
+            // audio server recover case
+            SetThreadQosLevel();
+        }
         g_isFirstStarted = false;
     } else {
+        // normal thread creating case
         SetThreadQosLevel();
     }
 }
