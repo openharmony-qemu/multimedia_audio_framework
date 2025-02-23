@@ -81,7 +81,7 @@ private:
     static napi_value GetPreferredInputDeviceByFilter(napi_env env, napi_callback_info info);
     static napi_value GetAvailableMicrophones(napi_env env, napi_callback_info info);
     static napi_value GetAvailableDevices(napi_env env, napi_callback_info info);
-    static napi_value GetExcludedOutputDevices(napi_env env, napi_callback_info info);
+    static napi_value GetExcludedDevices(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
     static void RegisterDeviceChangeCallback(napi_env env, size_t argc, napi_value *args, const std::string &cbName,

@@ -664,7 +664,7 @@ int32_t AudioPolicyProxy::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     return reply.ReadInt32();
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetExcludedOutputDevices(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetExcludedDevices(
     AudioDeviceUsage audioDevUsage)
 {
     MessageParcel data;

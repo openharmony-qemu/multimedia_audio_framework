@@ -179,7 +179,7 @@ public:
     virtual int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) = 0;
 
-    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
         AudioDeviceUsage audioDevUsage) = 0;
 
     virtual int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) = 0;

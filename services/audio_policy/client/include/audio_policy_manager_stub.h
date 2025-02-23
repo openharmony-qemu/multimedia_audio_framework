@@ -70,7 +70,7 @@ private:
     void SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void ExcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void UnexcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
-    void GetExcludedOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
+    void GetExcludedDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);

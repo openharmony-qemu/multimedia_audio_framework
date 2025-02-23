@@ -187,10 +187,10 @@ void AudioPolicyManagerStub::UnexcludeOutputDevicesInternal(MessageParcel &data,
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::GetExcludedOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetExcludedDevicesInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetExcludedOutputDevices(audioDevUsage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetExcludedDevices(audioDevUsage);
     int32_t size = static_cast<int32_t>(devices.size());
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {

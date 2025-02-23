@@ -159,7 +159,7 @@ void AudioStateManager::UpdatePreferredRecordCaptureDeviceConnectState(ConnectSt
     preferredRecordCaptureDevice_->connectState_ = state;
 }
 
-vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedOutputDevices(AudioDeviceUsage usage)
+vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(AudioDeviceUsage usage)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> devices;
     if (usage == MEDIA_OUTPUT_DEVICES) {

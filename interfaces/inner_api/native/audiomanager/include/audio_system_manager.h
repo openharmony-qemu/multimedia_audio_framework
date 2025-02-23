@@ -550,7 +550,7 @@ public:
      * @return Returns the device list is obtained.
      * @since 16
      */
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
         AudioDeviceUsage audioDevUsage) const;
 
     /**
