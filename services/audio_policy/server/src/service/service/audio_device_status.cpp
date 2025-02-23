@@ -124,7 +124,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
         AudioPolicyUtils::GetInstance().GetDeviceRole(devType) : role);
     updatedDesc.hasPair_ = hasPair;
     updatedDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
-        IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
+        IsSpatializationSupportedForDevice(updatedDesc.macAddress_);
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
 
     if (isConnected) {
@@ -753,7 +753,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
     deviceDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
-        IsSpatializationSupportedForDevice(deviceDesc.macAddress_)
+        IsSpatializationSupportedForDevice(deviceDesc.macAddress_);
     if (statusInfo.isConnected) {
         if (audioConnectedDevice_.GetConnectedDeviceByType(networkId, devType) != nullptr) {
             return ERROR;
@@ -952,7 +952,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     updatedDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
-        IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
+        IsSpatializationSupportedForDevice(updatedDesc.macAddress_);
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
