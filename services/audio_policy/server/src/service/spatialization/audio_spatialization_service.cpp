@@ -757,7 +757,7 @@ void AudioSpatializationService::HandleHeadTrackingDeviceChange(
     }
 }
 
-static void UpdateSpatializationSupported(encryptedAddress)
+void AudioSpatializationService::UpdateSpatializationSupported(const std::string encryptedAddress)
 {
     if (!addressToSpatialDeviceStateMap_.count(encryptedAddress)) {
         AUDIO_INFO_LOG("specified address for spatialization is not in memory");

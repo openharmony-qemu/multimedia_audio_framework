@@ -82,6 +82,7 @@ public:
     void UpdateRendererInfo(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
     void InitSpatializationState();
     std::string GetCurrentDeviceAddress() const;
+    void UpdateSpatializationSupported(const std::string encryptedAddress);
 private:
     AudioSpatializationService()
         :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
