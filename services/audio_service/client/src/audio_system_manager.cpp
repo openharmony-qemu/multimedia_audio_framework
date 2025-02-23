@@ -70,7 +70,7 @@ AudioSystemManager *AudioSystemManager::GetInstance()
     return &audioManager;
 }
 
-int32_t AudioSystemManager::GetCallingPid()
+int32_t AudioSystemManager::GetCallingPid() const
 {
     return getpid();
 }

@@ -128,7 +128,8 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
     std::lock_guard<std::mutex> lock(mutex_);
     if (ownerPid_ == 0) {
         if (!forcedDeviceMapList_.empty()) {
-            AUDIO_INFO_LOG("deviceType: %{public}d ownerPid_:0", forcedDeviceMapList_.rbegin()->begin()->second->deviceType_);
+            AUDIO_INFO_LOG("deviceType: %{public}d ownerPid_:0",
+                forcedDeviceMapList_.rbegin()->begin()->second->deviceType_);
             return make_shared<AudioDeviceDescriptor>(std::move(forcedDeviceMapList_.rbegin()->begin()->second));
         }
     } else {
