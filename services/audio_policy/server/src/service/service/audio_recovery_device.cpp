@@ -269,7 +269,11 @@ int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage,
     // set preferred device
     std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>(**itr);
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
-    AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor);
+    if (preferredType == AUDIO_CALL_RENDER) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor, -1);
+    } else {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor);
+    }
     return SUCCESS;
 }
 
