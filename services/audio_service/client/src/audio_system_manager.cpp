@@ -451,7 +451,8 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, true);
 }
 
-int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, DeviceType deviceType, int32_t volumeLevel) const
+int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
+    DeviceType deviceType) const
 {
     AUDIO_INFO_LOG("SetSystemVolumeWithDevice: volumeType[%{public}d], volumeLevel[%{public}d], deviceType[%{public}d]",
         volumeType, volumeLevel, deviceType);

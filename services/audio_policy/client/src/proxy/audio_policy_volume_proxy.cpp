@@ -88,7 +88,8 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType, int32_t volumeFlag)
+int32_t AudioPolicyProxy::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
+    DeviceType deviceType, int32_t volumeFlag)
 {
     MessageParcel data;
     MessageParcel reply;

@@ -337,7 +337,8 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
     return result;
 }
 
-int32_t AudioVolumeManager::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType)
+int32_t AudioVolumeManager::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel,
+    DeviceType deviceType)
 {
     int32_t result;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();

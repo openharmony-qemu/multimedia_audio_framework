@@ -42,7 +42,8 @@ public:
 
     virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
-    virtual int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType, int32_t volumeFlag = 0) = 0;
+    virtual int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
+        DeviceType deviceType, int32_t volumeFlag = 0) = 0;
 
     virtual AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) = 0;
 

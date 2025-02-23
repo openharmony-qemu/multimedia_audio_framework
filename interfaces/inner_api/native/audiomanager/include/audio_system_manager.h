@@ -353,7 +353,7 @@ public:
      *
      * @param volumeType Enumerates the audio volume type.
      * @param volume The volume to be set for the current stream.
-     * @param volume The volume to be set for the device.
+     * @param deviceType The volume to be set for the device.
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 8

@@ -303,7 +303,8 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     return audioVolumeManager_.SetSystemVolumeLevel(streamType, volumeLevel);
 }
 
-int32_t AudioPolicyService::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType)
+int32_t AudioPolicyService::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel,
+    DeviceType deviceType)
 {
     return audioVolumeManager_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
 }

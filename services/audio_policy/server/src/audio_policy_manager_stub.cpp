@@ -241,8 +241,8 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelWithDeviceInternal(MessageParce
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     int32_t volumeLevel = data.ReadInt32();
-    int32_t volumeFlag = data.ReadInt32();
     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    int32_t volumeFlag = data.ReadInt32();
     int result = SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
     reply.WriteInt32(result);
 }
@@ -1720,7 +1720,7 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 SetSystemVolumeLevelInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE):
-                SetSystemVolumeLevelInternal(data, reply);
+                SetSystemVolumeLevelWithDeviceInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):
                 GetSystemActiveVolumeTypeInternal(data, reply);
