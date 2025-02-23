@@ -113,6 +113,26 @@ bool AudioRouterCenter::HasScoDevice()
     return false;
 }
 
+bool AudioRouterCenter::NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    if (AudioPolicyService::GetAudioPolicyService().GetRingerMode() == RINGER_MODE_NORMAL) {
+        return false;
+    }
+    if (!Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+        return false;
+    }
+    if (descs.size() != 1) {
+        return false;
+    }
+    CHECK_AND_RETURN_RET(descs.front() != nullptr, false);
+    if (descs.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        return false;
+    }
+    AUDIO_INFO_LOG("Don't add ring ext device when ringer mode is not normal and sco added");
+    return true;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(StreamUsage streamUsage,
     int32_t clientUID, const RouterType &bypassType)
 {
@@ -151,7 +171,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
-    if (audioDeviceRefinerCb_ != nullptr) {
+    if (audioDeviceRefinerCb_ != nullptr &&
+        !NeedSkipSelectAudioOutputDeviceRefined(streamUsage, descs)) {
         audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType,
             streamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
     }
@@ -284,6 +305,14 @@ int32_t AudioRouterCenter::UnsetAudioDeviceRefinerCallback()
 bool AudioRouterCenter::isCallRenderRouter(StreamUsage streamUsage)
 {
     return renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS;
+}
+
+void AudioRouterCenter::SetAlarmFollowRingRouter(const bool flag)
+{
+    for (auto &router : ringRenderRouters_) {
+        CHECK_AND_CONTINUE_LOG(router != nullptr, "Invalid router.");
+        router->SetAlarmFollowRingRouter(flag);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

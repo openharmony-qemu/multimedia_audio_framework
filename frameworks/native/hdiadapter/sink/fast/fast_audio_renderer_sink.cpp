@@ -345,6 +345,8 @@ int32_t FastAudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "FastAudioRendererSink::SetVolume failed audioRender_ null");
 
     if (mute) {
         muteCount_++;
@@ -354,8 +356,7 @@ int32_t FastAudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
         }
         switchDeviceMute_ = true;
         if (halName_ == MMAP_VOIP_HAL_NAME) {
-            float vlolumeSt = 0.0f;
-            SetVolume(vlolumeSt, vlolumeSt);
+            audioRender_->SetVolume(audioRender_, 0.0f);
         }
     } else {
         muteCount_--;
@@ -774,6 +775,10 @@ int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "FastAudioRendererSink::SetVolume failed audioRender_ null");
+    if (halName_ == MMAP_VOIP_HAL_NAME && switchDeviceMute_ && (left != 0 || right != 0)) {
+        AUDIO_ERR_LOG("Mmap voip scene. No need set to volume when switch device and volume is 0");
+        return ERR_INVALID_HANDLE;
+    }
 
     leftVolume_ = left;
     rightVolume_ = right;

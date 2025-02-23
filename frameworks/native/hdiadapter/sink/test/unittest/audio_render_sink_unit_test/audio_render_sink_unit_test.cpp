@@ -123,7 +123,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_002, TestSize.Level1)
     EXPECT_NE(ret, SUCCESS);
 
     ret = renderer->GetAudioScene();
-    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
@@ -241,7 +241,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_004, TestSize.Level1)
     EXPECT_NE(ret, SUCCESS);
 
     ret = renderer->GetAudioScene();
-    EXPECT_NE(ret, AUDIO_SCENE_INVALID);
+    EXPECT_EQ(ret, AUDIO_SCENE_INVALID);
 
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
@@ -362,7 +362,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_006, TestSize.Level1)
     EXPECT_NE(ret, SUCCESS);
 
     ret = renderer->GetAudioScene();
-    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
@@ -483,7 +483,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_008, TestSize.Level1)
     EXPECT_NE(ret, SUCCESS);
 
     ret = renderer->GetAudioScene();
-    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
@@ -604,7 +604,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_010, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     ret = renderer->GetAudioScene();
-    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
     std::vector<DeviceType> activeDevices;
     ret = renderer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);
@@ -663,7 +663,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_011, TestSize.Level1)
     ASSERT_NE(renderer, nullptr);
 
     auto ret = renderer->GetAudioScene();
-    EXPECT_NE(ret, AUDIO_SCENE_INVALID);
+    EXPECT_EQ(ret, AUDIO_SCENE_INVALID);
 }
 
 /**
@@ -677,7 +677,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_012, TestSize.Level1)
     ASSERT_NE(renderer, nullptr);
 
     auto ret = renderer->GetAudioScene();
-    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -691,7 +691,7 @@ HWTEST(AudioRenderSinkUnitTest, AudioRenderSinkUnitTest_013, TestSize.Level1)
     ASSERT_NE(renderer, nullptr);
 
     auto ret = renderer->GetAudioScene();
-    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -603,8 +603,8 @@ int32_t AudioPolicyUtils::UnexcludeOutputDevices(std::vector<std::shared_ptr<Aud
         return SUCCESS;
     }
 
-    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevices(MEDIA_OUTPUT_DEVICES, descs);
-    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevices(CALL_OUTPUT_DEVICES, descs);
+    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descs);
+    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descs);
 
     return SUCCESS;
 }

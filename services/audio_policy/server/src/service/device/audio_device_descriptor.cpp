@@ -109,6 +109,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     a2dpOffloadFlag_ = deviceDescriptor.a2dpOffloadFlag_;
     // Other
     descriptorType_ = deviceDescriptor.descriptorType_;
+    hasPair_ = deviceDescriptor.hasPair_;
     spatializationSupported_ = deviceDescriptor.spatializationSupported_;
 }
 
@@ -142,6 +143,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     a2dpOffloadFlag_ = deviceDescriptor->a2dpOffloadFlag_;
     // Other
     descriptorType_ = deviceDescriptor->descriptorType_;
+    hasPair_ = deviceDescriptor->hasPair_;
     spatializationSupported_ = deviceDescriptor->spatializationSupported_;
 }
 
@@ -370,7 +372,7 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType() const
     switch (deviceType_) {
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-            if (!pairDeviceDescriptor_) {
+            if (!hasPair_) {
 #ifdef DETECT_SOUNDBOX
                 return DEVICE_TYPE_USB_DEVICE;
 #else

@@ -94,6 +94,8 @@ private:
     FILE *dumpS2C_ = nullptr; // server to client dump file
     std::string dumpFileName_ = "";
     std::atomic<bool> muteFlag_ = false;
+    std::string traceTag_ = "";
+    mutable int64_t volumeDataCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

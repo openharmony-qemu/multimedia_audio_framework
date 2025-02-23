@@ -37,6 +37,9 @@ ohos_shared_library("module-inner-capturer-sink") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   sources = [ "module_inner_capturer_sink.c" ]
 

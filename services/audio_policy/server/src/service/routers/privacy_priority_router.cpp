@@ -74,6 +74,19 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(So
     return desc;
 }
 
+bool PrivacyPriorityRouter::NeedLatestConnectWithDefaultDevices(DeviceType type)
+{
+    if (type == DEVICE_TYPE_WIRED_HEADSET ||
+        type == DEVICE_TYPE_WIRED_HEADPHONES ||
+        type == DEVICE_TYPE_BLUETOOTH_SCO ||
+        type == DEVICE_TYPE_USB_HEADSET ||
+        type == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        type == DEVICE_TYPE_USB_ARM_HEADSET) {
+        return true;
+    }
+    return false;
+}
+
 vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
@@ -81,7 +94,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs;
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
+        (streamUsage == STREAM_USAGE_ALARM && isAlarmFollowRingRouter_)) {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
@@ -100,16 +114,15 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
         return descs;
     }
 
-    if (latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADSET ||
-        latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADPHONES ||
-        latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_SCO ||
-        latestConnDesc->getType() == DEVICE_TYPE_USB_HEADSET ||
-        latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        latestConnDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+    if (NeedLatestConnectWithDefaultDevices(latestConnDesc->getType())) {
         // Add the latest connected device.
         descs.push_back(move(latestConnDesc));
         switch (streamUsage) {
             case STREAM_USAGE_ALARM:
+                if (isAlarmFollowRingRouter_ && curRingerMode != RINGER_MODE_NORMAL) {
+                    AUDIO_INFO_LOG("Don't add alarm default device when follow ring and not normal mode.");
+                    break;
+                }
                 // Add default device at same time for alarm.
                 descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
                 break;

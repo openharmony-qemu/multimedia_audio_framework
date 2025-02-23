@@ -1911,5 +1911,150 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_087, TestSize.Level1)
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
     EXPECT_EQ(true, audioDeviceCommon.audioVolumeManager_.IsRingerModeMute());
 }
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_088
+* @tc.desc  : Test UpdateRoute interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_088, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    rendererChangeInfo->sessionId = 1;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
+    outputDevices.push_back(std::make_shared<AudioDeviceDescriptor>());
+
+    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
+    EXPECT_EQ(-1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+
+    outputDevices.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
+    EXPECT_EQ(-1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+
+    audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = true;
+    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
+    EXPECT_EQ(1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+
+    outputDevices.front()->deviceType_ = DEVICE_TYPE_INVALID;
+    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
+    EXPECT_EQ(1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_089
+* @tc.desc  : Test IsBlueToothOnPrimarySpeaker interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_089, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    EXPECT_TRUE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
+
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    EXPECT_FALSE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
+
+    audioDeviceCommon.audioA2dpOffloadFlag_.SetA2dpOffloadFlag(A2DP_OFFLOAD);
+    EXPECT_TRUE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
+
+    desc->deviceType_ = DEVICE_TYPE_INVALID;
+    EXPECT_FALSE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_090
+* @tc.desc  : Test IsRingDualToneOnPrimarySpeaker interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_090, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    EXPECT_FALSE(audioDeviceCommon.IsRingDualToneOnPrimarySpeaker(descs, 1));
+
+    descs.push_back(std::make_shared<AudioDeviceDescriptor>());
+    descs.push_back(std::make_shared<AudioDeviceDescriptor>());
+    EXPECT_FALSE(audioDeviceCommon.IsRingDualToneOnPrimarySpeaker(descs, 1));
+
+    descs.front()->deviceType_ = DEVICE_TYPE_EARPIECE;
+    EXPECT_FALSE(audioDeviceCommon.IsRingDualToneOnPrimarySpeaker(descs, 1));
+
+    descs.back()->deviceType_ = DEVICE_TYPE_EARPIECE;
+    EXPECT_FALSE(audioDeviceCommon.IsRingDualToneOnPrimarySpeaker(descs, 1));
+
+    descs.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    EXPECT_FALSE(audioDeviceCommon.IsRingDualToneOnPrimarySpeaker(descs, 1));
+
+    descs.back()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_TRUE(audioDeviceCommon.IsRingDualToneOnPrimarySpeaker(descs, 1));
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_091
+* @tc.desc  : Test IsStopOrReleasePlayback interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_091, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioMode mode = AUDIO_MODE_RECORD;
+    RendererState state  = RENDERER_RUNNING;
+    EXPECT_FALSE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
+
+    mode = AUDIO_MODE_PLAYBACK;
+    EXPECT_FALSE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
+
+    state = RENDERER_STOPPED;
+    EXPECT_TRUE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
+
+    state = RENDERER_RELEASED;
+    EXPECT_TRUE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_092
+* @tc.desc  : Test UpdateTracker interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_092, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioMode mode = AUDIO_MODE_RECORD;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_INVALID;
+    RendererState state  = RENDERER_STOPPED;
+    audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = false;
+    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
+    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
+
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
+    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
+
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
+    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
+
+    mode = AUDIO_MODE_PLAYBACK;
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_INVALID;
+    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
+    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
+
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
+    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
+
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
+    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
+
+    audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = true;
+    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
+    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

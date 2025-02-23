@@ -170,10 +170,20 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
 
     CHECK_AND_RETURN_RET_LOG((selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE) &&
         (selectedDesc.size() == 1), ERR_INVALID_OPERATION, "DeviceCheck no success");
+
+    int32_t res = SUCCESS;
+    StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
+    auto audioDevUsage = AudioPolicyUtils::GetInstance().GetAudioDeviceUsageByStreamUsage(strUsage);
+    if (audioStateManager_.IsExcludedDevice(audioDevUsage, selectedDesc[0])) {
+        res = UnexcludeOutputDevicesInner(audioDevUsage, selectedDesc);
+        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "UnexcludeOutputDevicesInner fail");
+    }
+
     if (audioRendererFilter->uid != -1) { return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc); }
     if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     }
+
     bool isVirtualDevice = false;
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -187,8 +197,7 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
     }
-    StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
-    int32_t res = SetRenderDeviceForUsage(strUsage, selectedDesc[0]);
+    SetRenderDeviceForUsage(strUsage, selectedDesc[0]);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "SetRenderDeviceForUsage fail");
 
     // If the selected device is virtual device, connect it.
@@ -197,12 +206,6 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Connect device [%{public}s] failed",
             GetEncryptStr(selectedDesc[0]->macAddress_).c_str());
         return SUCCESS;
-    }
-
-    auto audioDevUsage = AudioPolicyUtils::GetInstance().GetAudioDeviceUsageByStreamUsage(strUsage);
-    if (audioStateManager_.IsExcludedDevice(audioDevUsage, selectedDesc[0])) {
-        res = UnexcludeOutputDevicesInner(audioDevUsage, selectedDesc);
-        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "UnexcludeOutputDevicesInner fail");
     }
 
     audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0]);
@@ -442,7 +445,7 @@ int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsa
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(
-        currentInputDevice, currentOutputDevice, "ExcludeOutputDevices");
+        currentInputDevice, currentOutputDevice, "UnexcludeOutputDevices");
     if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {
         audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
