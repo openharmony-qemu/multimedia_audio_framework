@@ -97,11 +97,11 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetDevices(
     return audioConnectedDevice_.GetDevicesInner(deviceFlag);
 }
 
-int32_t AudioDeviceLock::SetDeviceActive(InternalDeviceType deviceType, bool active)
+int32_t AudioDeviceLock::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
-    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active);
+    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active, pid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
@@ -173,7 +173,8 @@ void AudioDeviceLock::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const Dev
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
 }
 
-int32_t AudioDeviceLock::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+int32_t AudioDeviceLock::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+    const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
@@ -181,7 +182,7 @@ int32_t AudioDeviceLock::SetCallDeviceActive(InternalDeviceType deviceType, bool
         deviceType, active, GetEncryptAddr(address).c_str());
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
-    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address);
+    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address, pid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetCallDeviceActive failed");
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     audioDeviceCommon_.FetchDevice(false);

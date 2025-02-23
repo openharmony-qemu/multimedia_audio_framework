@@ -152,12 +152,13 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetInput
     return gsp->GetInputDevice(audioCapturerFilter);
 }
 
-int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool active)
+int32_t AudioPolicyManager::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
 {
-    AUDIO_INFO_LOG("SetDeviceActive deviceType: %{public}d, active: %{public}d", deviceType, active);
+    AUDIO_INFO_LOG("SetDeviceActive deviceType: %{public}d, active: %{public}d pid: %{public}d",
+        deviceType, active, pid);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetDeviceActive(deviceType, active);
+    return gsp->SetDeviceActive(deviceType, active, pid);
 }
 
 bool AudioPolicyManager::IsDeviceActive(InternalDeviceType deviceType)
@@ -413,14 +414,17 @@ int32_t AudioPolicyManager::UnsetAvailableDeviceChangeCallback(const int32_t cli
     return gsp->UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
 
-int32_t AudioPolicyManager::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+int32_t AudioPolicyManager::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+    const int32_t pid)
 {
+    AUDIO_INFO_LOG("SetCallDeviceActive deviceType: %{public}d, active: %{public}d pid: %{public}d",
+        deviceType, active, pid);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->SetCallDeviceActive(deviceType, active, address);
+    return gsp->SetCallDeviceActive(deviceType, active, address, pid);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioPolicyManager::GetActiveBluetoothDevice()

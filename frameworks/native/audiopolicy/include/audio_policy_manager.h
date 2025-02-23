@@ -104,7 +104,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter);
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
@@ -389,7 +389,7 @@ public:
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID);
 
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address, const int32_t pid);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 

@@ -62,13 +62,13 @@ public:
     void DeInit();
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-    int32_t SetDeviceActive(DeviceType deviceType, bool active);
+    int32_t SetDeviceActive(DeviceType deviceType, bool active, const int32_t pid);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
-    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address);
+    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address, const int32_t pid);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,

@@ -249,6 +249,11 @@ private:
     bool IsHandleIter(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         AudioFocuState oldState, std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterNew);
 
+    bool AudioFocusInfoListRemovalCondition(const AudioInterrupt &audioInterrupt,
+        const std::pair<AudioInterrupt, AudioFocuState> &audioFocus);
+    void RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
+        AudioScene highestPriorityAudioScene);
+
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;
@@ -264,6 +269,7 @@ private:
     int32_t clientOnFocus_ = 0;
 
     std::mutex mutex_;
+    mutable int32_t ownerPid_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

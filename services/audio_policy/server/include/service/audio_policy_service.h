@@ -166,7 +166,7 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
@@ -394,7 +394,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByUsageInner(AudioDeviceUsage usage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address, const int32_t pid);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 

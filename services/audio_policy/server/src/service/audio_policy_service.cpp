@@ -605,9 +605,9 @@ std::string AudioPolicyService::GetSystemSoundUri(const std::string &key)
     return audioPolicyManager_.GetSystemSoundUri(key);
 }
 
-int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active)
+int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
 {
-    return audioDeviceLock_.SetDeviceActive(deviceType, active);
+    return audioDeviceLock_.SetDeviceActive(deviceType, active, pid);
 }
 
 bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType)
@@ -1684,9 +1684,10 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     audioDeviceLock_.OnDeviceInfoUpdated(desc, command);
 }
 
-int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+    const int32_t pid)
 {
-    return audioDeviceLock_.SetCallDeviceActive(deviceType, active, address);
+    return audioDeviceLock_.SetCallDeviceActive(deviceType, active, address, pid);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDevice()

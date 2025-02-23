@@ -76,7 +76,8 @@ void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, Messag
 {
     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
     bool active = data.ReadBool();
-    int32_t result = SetDeviceActive(deviceType, active);
+    int32_t pid = data.ReadInt32();
+    int32_t result = SetDeviceActive(deviceType, active, pid);
     if (result == SUCCESS)
         reply.WriteInt32(AUDIO_OK);
     else
@@ -232,7 +233,8 @@ void AudioPolicyManagerStub::SetCallDeviceActiveInternal(MessageParcel &data, Me
     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
     bool active = data.ReadBool();
     std::string address = data.ReadString();
-    int32_t result = SetCallDeviceActive(deviceType, active, address);
+    int32_t pid = data.ReadInt32();
+    int32_t result = SetCallDeviceActive(deviceType, active, address, pid);
     reply.WriteInt32(result);
 }
 

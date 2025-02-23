@@ -27,10 +27,33 @@ void AudioStateManager::SetPreferredMediaRenderDevice(const std::shared_ptr<Audi
     preferredMediaRenderDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+    const int32_t pid)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    preferredCallRenderDevice_ = deviceDescriptor;
+    AUDIO_INFO_LOG("deviceType: %{public}d, pid: %{public}d", deviceDescriptor->deviceType_, pid);
+    if (deviceDescriptor->deviceType_ == DEVICE_TYPE_NONE) {
+        if (pid == 0) {
+            // clear all
+            forcedDeviceMapList_.clear();
+        } else if (pid == -1) {
+            // clear equal ownerPid_
+            RemoveForcedDeviceMapData(ownerPid_);
+        } else {
+            // clear equal pid
+            RemoveForcedDeviceMapData(pid);
+        }
+    } else {
+        std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> currentDeviceMap;
+        if (pid == -1) {
+            RemoveForcedDeviceMapData(ownerPid_);
+            currentDeviceMap = {{ownerPid_, deviceDescriptor}};
+        } else {
+            RemoveForcedDeviceMapData(pid);
+            currentDeviceMap = {{pid, deviceDescriptor}};
+        }
+        forcedDeviceMapList_.push_back(currentDeviceMap);
+    }
 }
 
 void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -103,8 +126,21 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevi
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredCallRenderDevice_);
-    return devDesc;
+    if (ownerPid_ == 0) {
+        if (!forcedDeviceMapList_.empty()) {
+            AUDIO_INFO_LOG("deviceType: %{public}d ownerPid_:0", forcedDeviceMapList_.rbegin()->begin()->second->deviceType_);
+            return make_shared<AudioDeviceDescriptor>(std::move(forcedDeviceMapList_.rbegin()->begin()->second));
+        }
+    } else {
+        for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+            if (ownerPid_ == it->begin()->first) {
+                AUDIO_INFO_LOG("deviceType: %{public}d, ownerPid_: %{public}d", it->begin()->second->deviceType_,
+                    ownerPid_);
+                return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
+            }
+        }
+    }
+    return std::make_shared<AudioDeviceDescriptor>();
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevice()
@@ -192,6 +228,30 @@ bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
     }
 
     return false;
+}
+
+int32_t AudioStateManager::GetAudioSceneOwnerPid()
+{
+    return ownerPid_;
+}
+
+void AudioStateManager::SetAudioSceneOwnerPid(const int32_t pid)
+{
+    AUDIO_INFO_LOG("ownerPid_: %{public}d, pid: %{public}d", ownerPid_, pid);
+    ownerPid_ = pid;
+}
+
+void AudioStateManager::RemoveForcedDeviceMapData(int32_t pid)
+{
+    if (forcedDeviceMapList_.empty()) {
+        return;
+    }
+    
+    for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+        if (pid == it->begin()->first) {
+            it = forcedDeviceMapList_.erase(it);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
