@@ -507,7 +507,7 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
     std::vector<int32_t> encoding;
     encoding.push_back(deviceInfo.audioStreamInfo_.encoding);
     SetValueInt32Element(env, "encodingTypes", encoding, result);
-
+    SetValueBoolean(env, "spatializationSupported", deviceInfo.spatializationSupported_, result);
     return napi_ok;
 }
 

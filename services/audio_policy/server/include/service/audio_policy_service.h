@@ -469,7 +469,7 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
-    void SetSpatializationSupported(const std::string macAddress, const bool support);
+    void UpdateSpatializationSupported(const std::string macAddress, const bool support);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

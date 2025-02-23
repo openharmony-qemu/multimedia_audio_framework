@@ -23,6 +23,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <shared_mutex>
+#include <openssl/sha.h>
 #include "audio_group_handle.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_factory.h"

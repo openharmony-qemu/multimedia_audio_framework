@@ -25,6 +25,7 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
+#include "audio_spatialization_service.h"
 
 
 #include "audio_policy_utils.h"
@@ -367,10 +368,23 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetUsbDeviceDescrip
     return nullptr;
 }
 
-void AudioConnectedDevice::SetSpatializationSupported(const std::string macAddress, const bool support)
+static std::string GetSha256EncryptAddress(const std::string& address)
+{
+    const int32_t HexWidth = 2;
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256(reinterpret_cast<const unsigned char *>(address.c_str()), address.size(), hash);
+    std::stringstream ss;
+    for (int32_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        ss << std::hex << std::setw(HexWidth) << std::setfill('0') << (int32_t)hash[i];
+    }
+    return ss.str();
+}
+
+void AudioConnectedDevice::UpdateSpatializationSupported(const std::string macAddress, const bool support)
 {
     for (auto device : connectedDevices_) {
-        if (device->macAddress_ == macAddress && device->spatializationSupported_ != support) {
+        std::string encryAddress = GetSha256EncryptAddress(device->macAddress_);
+        if (encryAddress == macAddress && device->spatializationSupported_ != support) {
             device->spatializationSupported_ = support;
             AUDIO_INFO_LOG("spatializationSupported is set to %{public}d", support);
         }
