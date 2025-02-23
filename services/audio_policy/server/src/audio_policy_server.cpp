@@ -840,17 +840,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(AudioStreamType stream
     }
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-<<<<<<< HEAD
-<<<<<<< HEAD
     return SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel,
         volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType);
-=======
-    return SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType);
->>>>>>> c45e5cbe8d57d883054949b25c82fc5892f31d2a
-=======
-    return SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel,
-        volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, deviceType);
->>>>>>> 754417c3c53b45842790930a692151f2262de366
 }
 
 AudioStreamType AudioPolicyServer::GetSystemActiveVolumeType(const int32_t clientUid)
