@@ -61,7 +61,7 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid) override;
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
 
@@ -287,7 +287,7 @@ public:
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID) override;
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid) override;
+        const int32_t pid = -1) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
 
