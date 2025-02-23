@@ -261,8 +261,8 @@ int32_t FastAudioRenderSink::SetVolume(float left, float right)
 
     leftVolume_ = left;
     rightVolume_ = right;
-    CHECK_AND_RETURN_RET_LOG(halName_ == "voip" && switchDeviceMute_ && (abs(left) > FLOAT_EPS ||
-        abs(right) > FLOAT_EPS), ERR_ILLEGAL_STATE, "mute for switch device at voip scene, not support set volume");
+    CHECK_AND_RETURN_RET_LOG(!(halName_ == "voip" && switchDeviceMute_ && (abs(left) > FLOAT_EPS ||
+        abs(right) > FLOAT_EPS)), ERR_ILLEGAL_STATE, "mute for switch device at voip scene, not support set volume");
     float volume;
     if ((abs(leftVolume_) < FLOAT_EPS) && (abs(rightVolume_) > FLOAT_EPS)) {
         volume = rightVolume_;
