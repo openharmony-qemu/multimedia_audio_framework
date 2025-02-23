@@ -69,7 +69,8 @@ private:
     napi_threadsafe_function amSpatEnableTsfn_ = nullptr;
 };
 
-class NapiAudioCurrentSpatializationEnabledChangeCallback : public NapiAudioCurrentSpatializationEnabledChangeCallback {
+class NapiAudioCurrentSpatializationEnabledChangeCallback :
+public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
 public:
     explicit NapiAudioCurrentSpatializationEnabledChangeCallback(napi_env env);
     virtual ~NapiAudioCurrentSpatializationEnabledChangeCallback();
