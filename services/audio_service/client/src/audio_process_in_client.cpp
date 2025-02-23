@@ -170,7 +170,8 @@ private:
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
-    static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
+    static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms
+    static constexpr int64_t VOIP_MILLISECOND_DURATION = 20000000; // 20ms
     static constexpr int64_t MAX_WRITE_COST_DURATION_NANO = 5000000; // 5ms
     static constexpr int64_t MAX_READ_COST_DURATION_NANO = 5000000; // 5ms
     static constexpr int64_t WRITE_BEFORE_DURATION_NANO = 2000000; // 2ms
@@ -1132,7 +1133,6 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
     cb->OnHandleData(clientSpanSizeInByte_);
     stamp = ClockTime::GetCurNano() - stamp;
     if (stamp > MAX_WRITE_COST_DURATION_NANO) {
-        AUDIO_PRERELEASE_LOGW("Client write cost too long...");
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
             underflowCount_++;
         } else {
@@ -1141,9 +1141,10 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
         // todo
         // handle write time out: send underrun msg to client, reset time model with latest server handle time.
     }
-    if (stamp > THREE_MILLISECOND_DURATION) {
-        AUDIO_WARNING_LOG("Client handle callback too slow, cost %{public}" PRId64"us", stamp / AUDIO_MS_PER_SECOND);
-        return;
+
+    int64_t limit = isVoipMmap_ ? VOIP_MILLISECOND_DURATION : MAX_WRITE_COST_DURATION_NANO;
+    if (stamp + ONE_MILLISECOND_DURATION > limit) {
+        AUDIO_WARNING_LOG("Client handle cb too slow, cost %{public}" PRId64"us", stamp / AUDIO_MS_PER_SECOND);
     }
 }
 
@@ -1501,7 +1502,7 @@ int32_t AudioProcessInClientInner::RecordFinishHandleCurrent(uint64_t &curReadPo
 
     clientReadCost = curReadSpan->readDoneTime - curReadSpan->readStartTime;
     if (clientReadCost > MAX_READ_COST_DURATION_NANO) {
-        AUDIO_WARNING_LOG("Client write cost too long...");
+        AUDIO_WARNING_LOG("Client read cost too long...");
     }
 
     uint64_t nextWritePos = curReadPos + spanSizeInFrame_;
@@ -1762,7 +1763,9 @@ void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &
     curTime = ClockTime::GetCurNano();
     int64_t wakeupCost = curTime - wakeUpTime;
     if (wakeupCost > ONE_MILLISECOND_DURATION) {
-        AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
+        if (wakeupCost > TWO_MILLISECOND_DURATION) {
+            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
+        }
         wakeUpTime = curTime;
     }
 }

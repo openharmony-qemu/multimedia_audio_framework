@@ -62,7 +62,7 @@ public:
 
     virtual std::vector<SinkInfo> GetAllSinks() = 0;
 
-    virtual std::vector<SinkInput> GetAllSinkInputs() = 0;
+    virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
     virtual std::vector<SourceOutput> GetAllSourceOutputs() = 0;
 

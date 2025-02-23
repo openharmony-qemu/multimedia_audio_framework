@@ -40,6 +40,7 @@ public:
     int32_t AddUnprocessStream(int32_t appUid) override;
 
     uint64_t GetLatency() noexcept override;
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 
 private:
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig);

@@ -165,7 +165,7 @@ void AudioPolicyServer::OnDump()
 void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("Audio policy server on start");
-
+    DlopenUtils::Init();
     interruptService_ = std::make_shared<AudioInterruptService>();
     interruptService_->Init(this);
 
@@ -208,6 +208,7 @@ void AudioPolicyServer::OnStart()
     // Restart to reload the volume.
     InitKVStore();
     isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
+    DlopenUtils::DeInit();
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -714,7 +715,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
             return;
         }
         powerStateListener_->ControlAudioFocus(false);
-    } else if (action == "usual.event.SCREEN_OFF" || action == "usual.event.SCREEN_LOCKED") {
+    } else if (action == "usual.event.SCREEN_LOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
         isScreenOffOrLock_ = true;
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
@@ -1264,7 +1265,7 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
 {
     if (desc.deviceType_ == DEVICE_TYPE_USB_HEADSET || desc.deviceType_ == DEVICE_TYPE_USB_DEVICE) {
         auto item = audioDeviceManager_.FindConnectedDeviceById(desc.deviceId_);
-        if (item) {
+        if (item && IsUsb(item->deviceType_)) {
             desc.deviceType_ = item->deviceType_;
         }
     } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && desc.deviceRole_ == INPUT_DEVICE) {

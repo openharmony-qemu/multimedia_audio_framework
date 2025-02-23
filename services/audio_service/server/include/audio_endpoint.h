@@ -20,14 +20,19 @@
 #include <memory>
 #include <thread>
 
-#include "i_audio_renderer_sink.h"
+#include "common/hdi_adapter_info.h"
+#include "sink/i_audio_render_sink.h"
+#include "source/i_audio_capture_source.h"
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
 #include "audio_device_descriptor.h"
+#include "i_stream_manager.h"
+#include "i_renderer_stream.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
-enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format);
+AudioSampleFormat ConvertToHdiAdapterFormat(AudioSampleFormat format);
 // When AudioEndpoint is offline, notify the owner.
 class IAudioEndpointStatusListener {
 public:
@@ -78,11 +83,12 @@ public:
 
     virtual void Release() = 0;
 
-    virtual bool ShouldInnerCap() = 0;
-    virtual int32_t EnableFastInnerCap() = 0;
+    virtual bool ShouldInnerCap(int32_t innerCapId) = 0;
+    virtual int32_t EnableFastInnerCap(int32_t innerCapId) = 0;
     virtual int32_t DisableFastInnerCap() = 0;
+    virtual int32_t DisableFastInnerCap(int32_t innerCapId) = 0;
 
-    virtual int32_t LinkProcessStream(IAudioProcessStream *processStream) = 0;
+    virtual int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) = 0;
     virtual int32_t UnlinkProcessStream(IAudioProcessStream *processStream) = 0;
 
     virtual int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) = 0;
@@ -116,7 +122,7 @@ public:
     int32_t OnPause(IAudioProcessStream *processStream) override;
     // when audio process request update handle info.
     int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
-    int32_t LinkProcessStream(IAudioProcessStream *processStream) override;
+    int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) override;
     int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
     int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
 
@@ -130,9 +136,10 @@ public:
     }
 
     // for inner-cap
-    bool ShouldInnerCap() override;
-    int32_t EnableFastInnerCap() override;
+    bool ShouldInnerCap(int32_t innerCapId) override;
+    int32_t EnableFastInnerCap(int32_t innerCapId) override;
     int32_t DisableFastInnerCap() override;
+    int32_t DisableFastInnerCap(int32_t innerCapId) override;
 
     int32_t SetVolume(AudioStreamType streamType, float volume) override;
 
@@ -177,6 +184,8 @@ private:
     int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBuffer> &procBuf, const BufferDesc &readBuf);
     void WriteToProcessBuffers(const BufferDesc &readBuf);
 
+    void InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo);
+
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     // SamplingRate EncodingType SampleFormat Channel
@@ -190,7 +199,7 @@ private:
     std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
 
     std::atomic<bool> isInited_ = false;
-    std::shared_ptr<IMmapAudioRendererSink> fastSink_ = nullptr;
+    uint32_t fastRenderId_ = HDI_INVALID_ID;
     int64_t spanDuration_ = 0; // nano second
     int64_t serverAheadReadTime_ = 0;
     int dstBufferFd_ = -1; // -1: invalid fd.
@@ -206,7 +215,6 @@ private:
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needResyncPosition_ = true;
 };
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_ENDPOINT_H

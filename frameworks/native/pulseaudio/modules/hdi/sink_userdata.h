@@ -32,7 +32,7 @@
 #include <pulsecore/protocol-native.h>
 #include <pulsecore/memblockq.h>
 
-#include "renderer_sink_adapter.h"
+#include "intf_def.h"
 
 struct Userdata {
     const char *adapterName;
@@ -41,6 +41,7 @@ struct Userdata {
     uint32_t sink_latency;
     uint32_t render_in_idle_state;
     uint32_t open_mic_speaker;
+    bool render_full_enable;
     bool offload_enable;
     bool multichannel_enable;
     const char *deviceNetworkId;
@@ -90,7 +91,7 @@ struct Userdata {
         pa_usec_t prewrite;
         pa_thread *threadHdi;
         bool isHDISinkStarted;
-        struct RendererSinkAdapter *sinkAdapter;
+        struct SinkAdapter *sinkAdapter;
         pa_asyncmsgq *dq;
         pa_atomic_t dflag;
         pa_atomic_t hdistate; // 0:need_data 1:wait_consume 2:flushing
@@ -105,7 +106,7 @@ struct Userdata {
         pa_usec_t lastProcessDataTime; // The timestamp from the last time the data was prepared to HDI
         pa_thread *threadHdi;
         pa_atomic_t isHDISinkStarted;
-        struct RendererSinkAdapter *sinkAdapter;
+        struct SinkAdapter *sinkAdapter;
         pa_asyncmsgq *dq;
         pa_atomic_t dflag;
         pa_usec_t writeTime;
@@ -127,13 +128,13 @@ struct Userdata {
         pa_thread *threadHdi;
         bool isHDISinkStarted;
         bool isHDISinkInited;
-        struct RendererSinkAdapter *sinkAdapter;
+        struct SinkAdapter *sinkAdapter;
         pa_asyncmsgq *dq;
         pa_atomic_t dflag;
         pa_usec_t writeTime;
         pa_usec_t prewrite;
         pa_memchunk chunk;
-        SinkAttr sample_attrs;
+        struct SinkAdapterAttr sample_attrs;
         pa_atomic_t fadingFlagForMultiChannel; // 1：do fade in, 0: no need
         int32_t multiChannelFadingInDone;
         int32_t multiChannelSinkInIndex;

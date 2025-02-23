@@ -25,6 +25,7 @@
 #include "audio_policy_log.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
+#include "common/hdi_adapter_info.h"
 
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
@@ -225,7 +226,8 @@ void AudioDeviceStatus::WriteDeviceChangeSysEvents(const std::shared_ptr<AudioDe
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     if (desc->deviceRole_ == OUTPUT_DEVICE) {
-        vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+        std::vector<SinkInput> sinkInputs;
+        audioPolicyManager_.GetAllSinkInputs(sinkInputs);
         for (SinkInput sinkInput : sinkInputs) {
             WriteOutputDeviceChangedSysEvents(desc, sinkInput);
         }
@@ -364,6 +366,9 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
         }
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load dp failed.");
         audioDeviceCommon_.SetHasDpFlag(true);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
+        updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
     }
     return SUCCESS;
 }
@@ -398,6 +403,12 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
     }
 
     AudioServerProxy::GetInstance().ResetRouteForDisconnectProxy(updatedDesc.deviceType_);
+    if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
+        AudioServerProxy::GetInstance().UnloadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "dp", false);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
+        updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        AudioServerProxy::GetInstance().UnloadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb", false);
+    }
     return SUCCESS;
 }
 
@@ -434,6 +445,7 @@ int32_t AudioDeviceStatus::LoadDpModule(std::string deviceInfo)
         CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED,
             "dp module is not exist in the configuration file");
     }
+    AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "dp");
     for (auto &moduleInfo : moduleInfoList) {
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
         if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
@@ -855,6 +867,9 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
     for (const auto &device : deviceClassInfo) {
         if (device.first != ClassType::TYPE_PRIMARY && device.first != ClassType::TYPE_FILE_IO) {
             continue;
+        }
+        if (device.first == ClassType::TYPE_PRIMARY) {
+            AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary");
         }
         auto moduleInfoList = device.second;
         for (auto &moduleInfo : moduleInfoList) {

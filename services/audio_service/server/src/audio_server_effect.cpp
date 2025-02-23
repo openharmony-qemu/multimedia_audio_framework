@@ -20,6 +20,8 @@
 
 #include "audio_effect_chain_manager.h"
 #include "audio_enhance_chain_manager.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -282,9 +284,10 @@ void AudioServer::SetRotationToEffect(const uint32_t rotate)
     audioEffectChainManager->EffectRotationUpdate(rotate);
 
     std::string value = "rotation=" + std::to_string(rotate);
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_LOG(audioRendererSinkInstance != nullptr, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(AudioParamKey::NONE, "", value);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
 }
 
 int32_t AudioServer::SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType)

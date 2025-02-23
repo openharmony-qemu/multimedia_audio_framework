@@ -96,6 +96,7 @@ private:
     std::atomic<bool> muteFlag_ = false;
     std::string traceTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
+    int32_t innerCapId_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

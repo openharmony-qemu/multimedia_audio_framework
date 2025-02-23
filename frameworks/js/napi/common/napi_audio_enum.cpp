@@ -484,7 +484,9 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
     {"BYPASS", static_cast<int32_t>(AsrAecMode::BYPASS)},
-    {"STANDARD", static_cast<int32_t>(AsrAecMode::STANDARD)}
+    {"STANDARD", static_cast<int32_t>(AsrAecMode::STANDARD)},
+    {"EXPAND", static_cast<int32_t>(AsrAecMode::EXPAND)},
+    {"FOLDED", static_cast<int32_t>(AsrAecMode::FOLDED)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrWhisperDetectionModeMap = {
@@ -1199,6 +1201,7 @@ bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_DEVICE:
         case DeviceType::DEVICE_TYPE_FILE_SINK:
         case DeviceType::DEVICE_TYPE_FILE_SOURCE:
             result = true;
@@ -1416,6 +1419,7 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+        case DeviceType::DEVICE_TYPE_USB_DEVICE:
             result = true;
             break;
         default:
