@@ -40,6 +40,7 @@ const int32_t MEDIA_SERVICE_UID = 1013;
 #endif
 constexpr int32_t ERROR_62980101 = -62980101;
 
+
 class AudioServiceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -334,10 +335,10 @@ HWTEST(AudioServiceUnitTest, AudioServiceShouldBeInnerCap_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
-    bool ret = AudioService::GetInstance()->ShouldBeInnerCap(config);
+    bool ret = AudioService::GetInstance()->ShouldBeInnerCap(config, 0);
     EXPECT_FALSE(ret);
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
-    ret = AudioService::GetInstance()->ShouldBeInnerCap(config);
+    ret = AudioService::GetInstance()->ShouldBeInnerCap(config, 0);
     EXPECT_FALSE(ret);
 }
 
@@ -369,7 +370,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
 {
     int32_t floatRet = 0;
 
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -377,20 +378,20 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     AudioService::GetInstance()->GetAudioProcess(config);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
 
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
-    AudioService::GetInstance()->OnInitInnerCapList();
-    AudioService::GetInstance()->OnUpdateInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->OnUpdateInnerCapList(1);
     EXPECT_EQ(0, floatRet);
     config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
     config.audioMode = AUDIO_MODE_RECORD;
     AudioService::GetInstance()->GetAudioProcess(config);
 
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(false);
@@ -483,7 +484,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceFilterAllFastProcess_001, TestSize.Leve
 {
     int32_t floatRet = 0;
     AudioService::GetInstance()->FilterAllFastProcess();
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -491,13 +492,13 @@ HWTEST(AudioServiceUnitTest, AudioServiceFilterAllFastProcess_001, TestSize.Leve
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     AudioService::GetInstance()->GetAudioProcess(config);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
 
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
-    AudioService::GetInstance()->OnInitInnerCapList();
-    AudioService::GetInstance()->OnUpdateInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->OnUpdateInnerCapList(1);
     EXPECT_EQ(0, floatRet);
     AudioService::GetInstance()->FilterAllFastProcess();
 }
@@ -530,7 +531,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
 {
     int32_t floatRet = 0;
     AudioService::GetInstance()->FilterAllFastProcess();
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -538,13 +539,13 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     AudioService::GetInstance()->GetAudioProcess(config);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
 
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
-    AudioService::GetInstance()->OnInitInnerCapList();
-    AudioService::GetInstance()->OnUpdateInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->OnUpdateInnerCapList(1);
     EXPECT_EQ(0, floatRet);
     std::string dumpString = "This is Dump string";
     AudioService::GetInstance()->Dump(dumpString);
@@ -563,7 +564,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
     uint32_t sessionId = 0;
 
     AudioService::GetInstance()->FilterAllFastProcess();
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
@@ -572,13 +573,13 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     AudioService::GetInstance()->GetAudioProcess(config);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
 
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
-    AudioService::GetInstance()->OnInitInnerCapList();
-    AudioService::GetInstance()->OnUpdateInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->OnUpdateInnerCapList(1);
     AudioService::GetInstance()->SetNonInterruptMute(MAX_STREAMID - 1, muteFlag);
     EXPECT_EQ(0, floatRet);
 }
@@ -597,7 +598,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
     uint32_t sessionId = 0;
 
     AudioService::GetInstance()->FilterAllFastProcess();
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
@@ -610,13 +611,13 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
     EXPECT_NE(audioprocess, nullptr);
     audioprocess->Start();
     AudioService::GetInstance()->GetAudioProcess(config);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
-    AudioService::GetInstance()->OnInitInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
 
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
-    AudioService::GetInstance()->OnInitInnerCapList();
-    AudioService::GetInstance()->OnUpdateInnerCapList();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->OnUpdateInnerCapList(1);
 
     int32_t ret = 0;
     ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
@@ -677,7 +678,7 @@ HWTEST(AudioServiceUnitTest, Dump_001, TestSize.Level1)
     std::shared_ptr<RendererInServer> renderer = rendererInServer;
 
     audioService->InsertRenderer(1, renderer);
-    audioService->workingInnerCapId_ = 1;
+    audioService->workingConfigs_[1];
     audioService->Dump(dumpString);
     audioService->RemoveRenderer(1);
 }
@@ -894,15 +895,13 @@ HWTEST(AudioServiceUnitTest, CheckInnerCapForRenderer_001, TestSize.Level1)
         std::make_shared<RendererInServer>(processConfig, streamListener);
 
     std::shared_ptr<RendererInServer> renderer = rendererInServer;
-    audioService->workingInnerCapId_ = 0;
     audioService->CheckInnerCapForRenderer(1, renderer);
-    audioService->workingInnerCapId_ = 1;
+    audioService->workingConfigs_[1];
     audioService->CheckInnerCapForRenderer(1, renderer);
-    audioService->workingInnerCapId_ = 2;
-    int32_t ret = audioService->OnCapturerFilterRemove(1);
+    int32_t ret = audioService->OnCapturerFilterRemove(1, 1);
     EXPECT_EQ(SUCCESS, ret);
-    audioService->workingInnerCapId_ = 1;
-    ret = audioService->OnCapturerFilterRemove(1);
+    audioService->workingConfigs_.clear();
+    ret = audioService->OnCapturerFilterRemove(1, 1);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -916,15 +915,12 @@ HWTEST(AudioServiceUnitTest, OnCapturerFilterChange_001, TestSize.Level1)
 {
     AudioService *audioService = AudioService::GetInstance();
     AudioPlaybackCaptureConfig newConfig;
-    audioService->workingInnerCapId_ = 0;
-    int32_t ret = audioService->OnCapturerFilterChange(1, newConfig);
+    int32_t ret = audioService->OnCapturerFilterChange(1, newConfig, 1);
     EXPECT_EQ(ret, 0);
-    audioService->workingInnerCapId_ = 1;
-    ret = audioService->OnCapturerFilterChange(1, newConfig);
+    audioService->workingConfigs_[1];
+    ret = audioService->OnCapturerFilterChange(1, newConfig, 1);
     EXPECT_EQ(ret, 0);
-    audioService->workingInnerCapId_ = 2;
-    ret = audioService->OnCapturerFilterChange(1, newConfig);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    audioService->workingConfigs_.clear();
 }
 
 /**
@@ -938,13 +934,13 @@ HWTEST(AudioServiceUnitTest, ShouldBeInnerCap_001, TestSize.Level1)
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     AudioService *audioService = AudioService::GetInstance();
-    int32_t ret = audioService->ShouldBeInnerCap(config);
+    int32_t ret = audioService->ShouldBeInnerCap(config, 0);
     EXPECT_FALSE(ret);
     audioService->workingConfig_.filterOptions.usages.push_back(STREAM_USAGE_MUSIC);
-    ret = audioService->ShouldBeInnerCap(config);
+    ret = audioService->ShouldBeInnerCap(config, 0);
     EXPECT_FALSE(ret);
     audioService->workingConfig_.filterOptions.pids.push_back(1);
-    ret = audioService->ShouldBeInnerCap(config);
+    ret = audioService->ShouldBeInnerCap(config, 0);
     EXPECT_FALSE(ret);
 }
 #endif

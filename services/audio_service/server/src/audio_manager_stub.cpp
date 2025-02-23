@@ -105,11 +105,16 @@ const char *g_audioServerCodeStrs[] = {
     "UPDATE_SESSION_CONNECTION_STATE",
     "SET_SINGLE_STREAM_MUTE",
     "RESTORE_SESSION",
+    "GET_ALL_SINK_INPUTS",
     "CREATE_IPC_OFFLINE_STREAM",
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
     "GET_STANDBY_STATUS",
     "GENERATE_SESSION_ID",
     "NOTIFY_ACCOUNTS_CHANGED",
+    "NOTIFY_AUDIO_POLICY_READY",
+    "SET_CAPTURE_LIMIT",
+    "LOAD_HDI_ADAPTER",
+    "UNLOAD_HDI_ADAPTER",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -451,7 +456,9 @@ int AudioManagerStub::HandleCreateAudioProcess(MessageParcel &data, MessageParce
     AudioProcessConfig config;
     ProcessConfig::ReadConfigFromParcel(config, data);
     int32_t errorCode = 0;
-    sptr<IRemoteObject> process = CreateAudioProcess(config, errorCode);
+    AudioPlaybackCaptureConfig filterConfig;
+    ProcessConfig::ReadInnerCapConfigFromParcel(filterConfig, data);
+    sptr<IRemoteObject> process = CreateAudioProcess(config, errorCode, filterConfig);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
         "CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
     reply.WriteRemoteObject(process);
@@ -790,6 +797,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleUpdateEffectBtOffloadSupported(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED):
             return HandleNotifyAccountsChanged(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_AUDIO_POLICY_READY):
+            return HandleNotifyAudioPolicyReady(data, reply);
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }
@@ -817,6 +826,14 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleGetStandbyStatus(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID):
             return HandleGenerateSessionId(data, reply);
+#ifdef HAS_FEATURE_INNERCAPTURER
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT):
+            return HandleSetInnerCapLimit(data, reply);
+#endif
+        case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER):
+            return HandleLoadHdiAdapter(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER):
+            return HandleUnloadHdiAdapter(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -946,6 +963,8 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 return HandleSetRemoteAudioParameter(data, reply);
             case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO):
                 return HandleNotifyDeviceInfo(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS):
+                return HandleGetAllSinkInputs(data, reply);
             default:
                 return HandleSecondPartCode(code, data, reply, option);
         }
@@ -1112,6 +1131,51 @@ int AudioManagerStub::HandleGenerateSessionId(MessageParcel &data, MessageParcel
 int AudioManagerStub::HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply)
 {
     NotifyAccountsChanged();
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<SinkInput> sinkInputs;
+    GetAllSinkInputs(sinkInputs);
+    size_t size = sinkInputs.size();
+    reply.WriteUint64(size);
+    for (auto &sinkInput : sinkInputs) {
+        sinkInput.Marshalling(reply);
+    }
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply)
+{
+    NotifyAudioPolicyReady();
+    return AUDIO_OK;
+}
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int AudioManagerStub::HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t innerCapId = data.ReadUint32();
+    reply.WriteInt32(SetInnerCapLimit(innerCapId));
+    return AUDIO_OK;
+}
+#endif
+
+int AudioManagerStub::HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t devMgrType = data.ReadUint32();
+    const std::string adapterName = data.ReadString();
+    int32_t result = LoadHdiAdapter(devMgrType, adapterName);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t devMgrType = data.ReadUint32();
+    const std::string adapterName = data.ReadString();
+    bool force = data.ReadBool();
+    UnloadHdiAdapter(devMgrType, adapterName, force);
     return AUDIO_OK;
 }
 

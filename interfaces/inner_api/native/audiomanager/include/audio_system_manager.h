@@ -216,6 +216,18 @@ public:
     virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
 };
 
+class AudioManagerAudioSceneChangedCallback {
+public:
+    virtual ~AudioManagerAudioSceneChangedCallback() = default;
+    /**
+     * Called when AudioScene changed.
+     *
+     * @param AudioScene audio scene
+     * @since 16
+     */
+    virtual void OnAudioSceneChange(const AudioScene audioScene) = 0;
+};
+
 class AudioParameterCallback {
 public:
     virtual ~AudioParameterCallback() = default;
@@ -1182,6 +1194,24 @@ public:
 
     int32_t SetMicrophoneBlockedCallback(const std::shared_ptr<AudioManagerMicrophoneBlockedCallback>& callback);
     int32_t UnsetMicrophoneBlockedCallback(std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = nullptr);
+    
+    /**
+     * @brief Registers the audioScene change callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t SetAudioSceneChangeCallback(const std::shared_ptr<AudioManagerAudioSceneChangedCallback>& callback);
+
+    /**
+     * @brief Registers the audioScene change callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t UnsetAudioSceneChangeCallback(std::shared_ptr<AudioManagerAudioSceneChangedCallback> callback = nullptr);
 
     std::string GetSelfBundleName(int32_t uid);
 

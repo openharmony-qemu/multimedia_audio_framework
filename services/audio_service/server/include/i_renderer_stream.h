@@ -59,6 +59,11 @@ public:
     virtual int32_t SetClientVolume(float clientVolume) = 0;
     virtual void BlockStream() noexcept = 0;
 };
+
+struct CaptureInfo {
+    std::atomic<bool> isInnerCapEnabled = false;
+    std::shared_ptr<IRendererStream> dupStream = nullptr;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // I_RENDERER_STREAM_H

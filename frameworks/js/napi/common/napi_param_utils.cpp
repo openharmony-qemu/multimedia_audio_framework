@@ -1153,7 +1153,7 @@ napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env,
         status = napi_get_named_property(env, element, "name", &propValue);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get name failed");
         prop.name = GetStringArgument(env, propValue);
-		
+
         status = napi_get_named_property(env, element, "category", &propValue);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get category failed");
         prop.category = GetStringArgument(env, propValue);

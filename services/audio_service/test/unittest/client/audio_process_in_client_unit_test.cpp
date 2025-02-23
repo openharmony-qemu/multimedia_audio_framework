@@ -1328,6 +1328,13 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_067, TestSize.Lev
     srcData.streamInfo.format = INVALID_WIDTH;
     ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
     EXPECT_EQ(false, ret);
+    srcData.streamInfo.format = SAMPLE_F32LE;
+    srcData.streamInfo.channels = MONO;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+    srcData.streamInfo.channels = STEREO;
+    ret = ptrAudioProcessInClientInner->ChannelFormatConvert(srcData, dstData);
+    EXPECT_EQ(false, ret);
 }
 
 /**

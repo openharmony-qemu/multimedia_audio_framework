@@ -207,7 +207,8 @@ void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
 }
 
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
-    const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj,
+    const AudioPlaybackCaptureConfig &config)
 {
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"

@@ -43,6 +43,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_policy_global_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -119,6 +120,7 @@ bool AudioPolicyService::Init(void)
 #ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.init();
 #endif
+    audioGlobalConfigManager_.ParseGlobalConfigXml();
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
 
@@ -155,6 +157,9 @@ bool AudioPolicyService::Init(void)
     int32_t micRefEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
 
     audioEcManager_.Init(ecEnableState, micRefEnableState);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    AudioServerProxy::GetInstance().SetInnerCapLimitProxy(audioGlobalConfigManager_.GetCapLimit());
+#endif
     return true;
 }
 
@@ -793,6 +798,11 @@ int32_t AudioPolicyService::SetVirtualCall(const bool isVirtual)
     return audioDeviceCommon_.SetVirtualCall(isVirtual);
 }
 
+void AudioPolicyService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    AudioServerProxy::GetInstance().GetAllSinkInputsProxy(sinkInputs);
+}
+
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper
@@ -875,13 +885,10 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 #endif
         audioEffectService_.SetMasterSinkAvailable();
     }
-#ifdef HAS_FEATURE_INNERCAPTURER
-    // load inner-cap-sink
-    LoadModernInnerCapSink();
-#endif
     // RegisterBluetoothListener() will be called when bluetooth_host is online
     // load hdi-effect-model
     LoadHdiEffectModel();
+    AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
 }
 
 void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
@@ -905,23 +912,6 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
     AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
-
-#ifdef HAS_FEATURE_INNERCAPTURER
-void AudioPolicyService::LoadModernInnerCapSink()
-{
-    AUDIO_INFO_LOG("Start");
-    AudioModuleInfo moduleInfo = {};
-    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
-    moduleInfo.name = INNER_CAPTURER_SINK;
-
-    moduleInfo.format = "s16le";
-    moduleInfo.channels = "2"; // 2 channel
-    moduleInfo.rate = "48000";
-    moduleInfo.bufferSize = "3840"; // 20ms
-
-    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-}
-#endif
 
 void AudioPolicyService::LoadEffectLibrary()
 {
@@ -2108,5 +2098,33 @@ void AudioPolicyService::UpdateSpatializationSupported(const std::string macAddr
 {
     audioConnectedDevice_.UpdateSpatializationSupported(macAddress, support);
 }
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t AudioPolicyService::LoadModernInnerCapSink(int32_t innerCapId)
+{
+    AUDIO_INFO_LOG("Start");
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
+    std::string name = INNER_CAPTURER_SINK;
+    moduleInfo.name = name + std::to_string(innerCapId);
+
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = "2"; // 2 channel
+    moduleInfo.rate = "48000";
+    moduleInfo.bufferSize = "3840"; // 20ms
+
+    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
+{
+    AUDIO_INFO_LOG("Start");
+    std::string name = INNER_CAPTURER_SINK;
+    name += std::to_string(innerCapId);
+
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(name);
+    return SUCCESS;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

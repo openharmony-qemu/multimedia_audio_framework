@@ -72,7 +72,8 @@ int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
 
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
-
+    audioDeviceCommon_.OnAudioSceneChange(audioScene);
+    
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
@@ -529,11 +530,19 @@ void AudioDeviceLock::NotifyRemoteRenderState(std::string networkId, std::string
     AUDIO_INFO_LOG("device<%{public}s> condition:%{public}s value:%{public}s",
         GetEncryptStr(networkId).c_str(), condition.c_str(), value.c_str());
 
-    vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
-    vector<SinkInput> targetSinkInputs = {};
-    for (auto sinkInput : sinkInputs) {
-        if (sinkInput.sinkName == networkId) {
-            targetSinkInputs.push_back(sinkInput);
+    std::vector<SinkInput> sinkInputs;
+    audioPolicyManager_.GetAllSinkInputs(sinkInputs);
+    std::vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
+    std::vector<SinkInput> targetSinkInputs = {};
+    for (auto &changeInfo : rendererChangeInfos) {
+        if (changeInfo->outputDeviceInfo.networkId_ != networkId) {
+            continue;
+        }
+        for (auto &sinkInput : sinkInputs) {
+            if (changeInfo->sessionId == sinkInput.streamId) {
+                targetSinkInputs.push_back(sinkInput);
+            }
         }
     }
     AUDIO_DEBUG_LOG("move [%{public}zu] of all [%{public}zu]sink-inputs to local.",

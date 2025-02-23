@@ -21,7 +21,7 @@ ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
 
   include_dirs = [
     "../../../frameworks/native/audioinnercall/include",
-    "../../../frameworks/native/hdiadapter/sink/common",
+    "../../../frameworks/native/hdiadapter_new/include",
     "../../../services/audio_service/server/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_policy/client/include",
@@ -42,6 +42,7 @@ ohos_fuzztest("AudioServiceServerSrcFuzzTest") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
+    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
     "../../../services/audio_service:audio_common",

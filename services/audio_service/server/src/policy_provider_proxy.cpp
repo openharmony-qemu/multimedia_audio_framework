@@ -217,5 +217,33 @@ int32_t PolicyProviderProxy::SetDefaultOutputDevice(const DeviceType defaultOutp
     CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t PolicyProviderProxy::LoadModernInnerCapSink(int32_t innerCapId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(innerCapId);
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::LOAD_MODERN_INNER_CAPTURE_SINK, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "LoadModernInnerCapSink failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
+int32_t PolicyProviderProxy::UnloadModernInnerCapSink(int32_t innerCapId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(innerCapId);
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::UNLOAD_MODERN_INNER_CAPTURE_SINK, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "UnloadModernInnerCapSink failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

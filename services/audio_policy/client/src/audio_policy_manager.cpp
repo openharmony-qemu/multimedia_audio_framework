@@ -615,6 +615,45 @@ int32_t AudioPolicyManager::UnsetMicrophoneBlockedCallback(const int32_t clientI
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::SetAudioSceneChangeCallback(const int32_t clientId,
+    const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "AudioManagerAudioSceneChangedCallback: callback is nullptr");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_AUDIO_SCENE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddAudioSceneChangedCallback(clientId, callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetAudioSceneChangedCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_AUDIO_SCENE_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_AUDIO_SCENE_CHANGE, true);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetAudioSceneChangeCallback(
+    const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_AUDIO_SCENE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveAudioSceneChangedCallback(callback);
+        if (audioPolicyClientStubCB_->GetAudioSceneChangedCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_AUDIO_SCENE_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_AUDIO_SCENE_CHANGE, false);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
     const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback)
 {

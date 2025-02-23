@@ -48,6 +48,7 @@ ohos_unittest("audio_manager_stub_unit_test") {
     "../../../../../frameworks/native/audioutils/include",
     "../../../../../frameworks/native/hdiadapter/common/include",
     "../../../../../frameworks/native/hdiadapter/sink/common",
+    "../../../../../frameworks/native/hdiadapter_new/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../frameworks/native/audioinnercall/include",
     "../../../../../frameworks/native/hdiadapter/sink/common",

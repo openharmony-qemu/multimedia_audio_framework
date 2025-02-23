@@ -29,7 +29,9 @@
 #include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
-#include "i_audio_renderer_sink.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
+#include "sink/i_audio_render_sink.h"
 #include "policy_handler.h"
 #include "audio_volume.h"
 #include "audio_limiter_manager.h"
@@ -49,6 +51,8 @@ const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_NS_PER_S = 1000000000;
 const uint64_t AUDIO_CYCLE_TIME_US = 20000;
+const uint64_t BUF_LENGTH_IN_MS = 20;
+const uint64_t CAST_BUF_LENGTH_IN_MS = 10;
 
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
@@ -747,6 +751,23 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
     // get stream informations.
     uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
     uint32_t streamIndex = pa_stream_get_index(stream); // get pa_stream index
+    const char *deviceName = pa_stream_get_device_name(stream);
+
+    std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
+    if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
+        AUDIO_ERR_LOG("streamImpl is nullptr");
+        return;
+    }
+    auto streamImpl = paRendererStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamMovedCb: userdata is null");
+
+    if (deviceName != nullptr && !strcmp(deviceName, REMOTE_CAST_INNER_CAPTURER_SINK_NAME)) {
+        streamImpl->remoteCastMovedFlag_ = true;
+        streamImpl->UpdateBufferSize(CAST_BUF_LENGTH_IN_MS);
+    } else if (streamImpl->remoteCastMovedFlag_) {
+        streamImpl->remoteCastMovedFlag_ = false;
+        streamImpl->UpdateBufferSize(BUF_LENGTH_IN_MS);
+    }
 
     // Return 1 if the sink or source this stream is connected to has been suspended.
     // This will return 0 if not, and a negative value on error.
@@ -962,13 +983,10 @@ int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
-
-    if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERR_LOG("Renderer is null.");
-        return ERROR;
-    }
-    return audioRendererSinkInstance->SetVolume(volume, volume);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
+    return sink->SetVolume(volume, volume);
 }
 
 int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -997,20 +1015,18 @@ int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabl
 
 int32_t PaRendererStreamImpl::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
-    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
-        "offload", ""));
-
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "Renderer is null.");
-    return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
+    return sink->GetPresentationPosition(frames, timeSec, timeNanoSec);
 }
 
 int32_t PaRendererStreamImpl::OffloadSetBufferSize(uint32_t sizeMs)
 {
-    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
-        "offload", ""));
-
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "Renderer is null.");
-    return audioRendererSinkInstance->SetBufferSize(sizeMs);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
+    return sink->SetBufferSize(sizeMs);
 }
 
 int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
@@ -1217,6 +1233,27 @@ int32_t PaRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
     bufferAttr.maxlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * maxlength, sampleSpec); // 20 buf len in ms
     bufferAttr.tlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * tlength, sampleSpec); // 20 buf len in ms
     bufferAttr.minreq = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, sampleSpec); // 20 buf len in ms
+
+    pa_operation *operation = pa_stream_set_buffer_attr(paStream_, &bufferAttr, nullptr, nullptr);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
+    }
+    return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::UpdateBufferSize(uint32_t bufferLength)
+{
+    uint32_t tlength = 4; // 4 is tlength of dup playback
+    uint32_t prebuf = 1; // 1 is prebuf of dup playback
+    uint32_t maxlength = 4; // 4 is maxlength of dup playback
+
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    pa_buffer_attr bufferAttr;
+    bufferAttr.fragsize = static_cast<uint32_t>(-1);
+    bufferAttr.prebuf = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * prebuf, sampleSpec); // 20 buf len in ms
+    bufferAttr.maxlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * maxlength, sampleSpec); // 20 buf len in ms
+    bufferAttr.tlength = pa_usec_to_bytes(bufferLength * PA_USEC_PER_MSEC * tlength, sampleSpec); // 20 buf len in ms
+    bufferAttr.minreq = pa_usec_to_bytes(bufferLength * PA_USEC_PER_MSEC, sampleSpec); // 20 buf len in ms
 
     pa_operation *operation = pa_stream_set_buffer_attr(paStream_, &bufferAttr, nullptr, nullptr);
     if (operation != nullptr) {

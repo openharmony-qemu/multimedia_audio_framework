@@ -637,7 +637,7 @@ struct AudioStreamData {
     BufferDesc bufferDesc;
     int32_t volumeStart;
     int32_t volumeEnd;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCapeds;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -52,6 +52,7 @@ enum class AudioPolicyClientCode {
     ON_NN_STATE_CHANGE,
     ON_AUDIO_SESSION_DEACTIVE,
     ON_MICRO_PHONE_BLOCKED,
+    ON_AUDIO_SCENE_CHANGED,
     ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     AUDIO_POLICY_CLIENT_CODE_MAX = ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
 };
@@ -89,7 +90,8 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
     virtual void OnNnStateChange(const int32_t &nnState) = 0;
     virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
-
+    virtual void OnAudioSceneChange(const AudioScene &audioScene) = 0;
+    
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
     int32_t apiVersion_ = API_VERSION_MAX;
