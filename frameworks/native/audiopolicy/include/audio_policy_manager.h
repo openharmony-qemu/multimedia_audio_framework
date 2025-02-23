@@ -330,6 +330,8 @@ public:
 
     bool IsSpatializationEnabled(const std::string address);
 
+    bool IsSpatializationEnabledForCurrentDevice();
+
     int32_t SetSpatializationEnabled(const bool enable);
 
     int32_t SetSpatializationEnabled(
@@ -347,12 +349,17 @@ public:
     int32_t RegisterSpatializationEnabledEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
 
+    int32_t RegisterSpatializationEnabledForCurrentDeviceEventListener(
+        const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &callback);
+
     int32_t RegisterHeadTrackingEnabledEventListener(
         const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
 
     int32_t RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback);
 
     int32_t UnregisterSpatializationEnabledEventListener();
+
+    int32_t UnregisterSpatializationEnabledForCurrentDeviceEventListener();
 
     int32_t UnregisterHeadTrackingEnabledEventListener();
 

@@ -187,6 +187,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "EXCLUDE_OUTPUT_DEVICES",
     "UNEXCLUDE_OUTPUT_DEVICES",
     "GET_EXCLUDED_OUTPUT_DEVICES",
+    "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -921,6 +922,12 @@ void AudioPolicyManagerStub::IsSpatializationEnabledForDeviceInternal(MessagePar
     reply.WriteBool(result);
 }
 
+void AudioPolicyManagerStub::IsSpatializationEnabledForCurrentDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = IsSpatializationEnabledForCurrentDevice();
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply)
 {
     bool enable = data.ReadBool();
@@ -1186,6 +1193,9 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HEAD_TRACKING_ENABLED_FOR_DEVICE):
             SetHeadTrackingEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE):
+            IsSpatializationEnabledForCurrentDeviceInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_CLIENT_TYPE_CALLBACK):
             SetQueryClientTypeCallbackInternal(data, reply);

@@ -53,7 +53,8 @@ enum class AudioPolicyClientCode {
     ON_AUDIO_SESSION_DEACTIVE,
     ON_MICRO_PHONE_BLOCKED,
     ON_AUDIO_SCENE_CHANGED,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_AUDIO_SCENE_CHANGED,
+    ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -83,6 +84,7 @@ public:
     virtual void OnSpatializationEnabledChange(const bool &enabled) = 0;
     virtual void OnSpatializationEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
+    virtual void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) = 0;
     virtual void OnHeadTrackingEnabledChange(const bool &enabled) = 0;
     virtual void OnHeadTrackingEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;

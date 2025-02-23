@@ -52,6 +52,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     isLowLatencyDevice_ = false;
     a2dpOffloadFlag_ = 0;
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
+    spatializationSupported_ = false;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId,
@@ -76,6 +77,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     isLowLatencyDevice_ = false;
     a2dpOffloadFlag_ = 0;
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
+    spatializationSupported_ = false;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -108,6 +110,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     // Other
     descriptorType_ = deviceDescriptor.descriptorType_;
     hasPair_ = deviceDescriptor.hasPair_;
+    spatializationSupported_ = deviceDescriptor.spatializationSupported_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -141,6 +144,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     // Other
     descriptorType_ = deviceDescriptor->descriptorType_;
     hasPair_ = deviceDescriptor->hasPair_;
+    spatializationSupported_ = deviceDescriptor->spatializationSupported_;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -188,6 +192,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel) const
     parcel.WriteString(displayName_);
     parcel.WriteInt32(deviceCategory_);
     parcel.WriteInt32(connectState_);
+    parcel.WriteBool(spatializationSupported_);
     return true;
 }
 
@@ -207,7 +212,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel) const
         parcel.WriteInt32(volumeGroupId_) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
         parcel.WriteInt32(a2dpOffloadFlag_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_));
+        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
+        parcel.WriteBool(spatializationSupported_);
 }
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
@@ -260,7 +266,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteInt32(hasSystemPermission ? volumeGroupId_ : INVALID_GROUP_ID) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
         parcel.WriteInt32(a2dpOffloadFlag_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_));
+        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
+        parcel.WriteBool(spatializationSupported_);
 }
 
 void AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -295,6 +302,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
     displayName_ = parcel.ReadString();
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
     connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
+    spatializationSupported_ = parcel.ReadBool();
 }
 
 void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
@@ -314,6 +322,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
     isLowLatencyDevice_ = parcel.ReadBool();
     a2dpOffloadFlag_ = parcel.ReadInt32();
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
+    spatializationSupported_ = parcel.ReadBool();
 }
 
 void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string macAddress)

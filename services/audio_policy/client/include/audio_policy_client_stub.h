@@ -48,6 +48,7 @@ private:
     void HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply);
     void HandleSpatializationEnabledChange(MessageParcel &data, MessageParcel &reply);
     void HandleSpatializationEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply);
+    void HandleSpatializationEnabledChangeForCurrentDevice(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply);
     void HandleNnStateChange(MessageParcel &data, MessageParcel &reply);

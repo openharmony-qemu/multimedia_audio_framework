@@ -76,6 +76,7 @@ public:
         MICROPHONE_BLOCKED,
         NN_STATE_CHANGE,
         AUDIO_SCENE_CHANGE,
+        SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     };
     /* event data */
     class EventContextObj {
@@ -180,6 +181,7 @@ public:
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
     bool SendSpatializatonEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
+    bool SendSpatializatonEnabledChangeForCurrentDeviceEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
@@ -223,6 +225,7 @@ private:
     void HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializatonEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleSpatializatonEnabledChangeForCurrentDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event);
