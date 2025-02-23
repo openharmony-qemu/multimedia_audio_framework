@@ -70,7 +70,7 @@ private:
 };
 
 class NapiAudioCurrentSpatializationEnabledChangeCallback :
-public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
+    public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
 public:
     explicit NapiAudioCurrentSpatializationEnabledChangeCallback(napi_env env);
     virtual ~NapiAudioCurrentSpatializationEnabledChangeCallback();
