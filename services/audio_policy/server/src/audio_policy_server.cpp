@@ -1314,12 +1314,12 @@ int32_t AudioPolicyServer::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage
     return audioPolicyService_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
-vector<shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetExcludedOutputDevices(AudioDeviceUsage audioDevUsage)
+vector<shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetExcludedDevices(AudioDeviceUsage audioDevUsage)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), vector<shared_ptr<AudioDeviceDescriptor>>(),
         "No system permission");
 
-    return audioPolicyService_.GetExcludedOutputDevices(audioDevUsage);
+    return audioPolicyService_.GetExcludedDevices(audioDevUsage);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)

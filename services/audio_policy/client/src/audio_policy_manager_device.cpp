@@ -69,16 +69,16 @@ int32_t AudioPolicyManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     return gsp->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetExcludedOutputDevices(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetExcludedDevices(
     AudioDeviceUsage audioDevUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("GetExcludedOutputDevices: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("GetExcludedDevices: audio policy manager proxy is NULL.");
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetExcludedOutputDevices(audioDevUsage);
+    return gsp->GetExcludedDevices(audioDevUsage);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFlag deviceFlag)

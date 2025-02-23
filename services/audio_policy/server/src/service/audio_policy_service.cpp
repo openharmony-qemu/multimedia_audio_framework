@@ -440,10 +440,10 @@ int32_t AudioPolicyService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     return audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetExcludedOutputDevices(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetExcludedDevices(
     AudioDeviceUsage audioDevUsage)
 {
-    return audioDeviceLock_.GetExcludedOutputDevices(audioDevUsage);
+    return audioDeviceLock_.GetExcludedDevices(audioDevUsage);
 }
 
 bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const

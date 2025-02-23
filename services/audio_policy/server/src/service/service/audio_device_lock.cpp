@@ -486,11 +486,11 @@ int32_t AudioDeviceLock::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     return audioRecoveryDevice_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetExcludedOutputDevices(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetExcludedDevices(
     AudioDeviceUsage audioDevUsage)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-    return audioStateManager_.GetExcludedOutputDevices(audioDevUsage);
+    return audioStateManager_.GetExcludedDevices(audioDevUsage);
 }
 
 void AudioDeviceLock::UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)

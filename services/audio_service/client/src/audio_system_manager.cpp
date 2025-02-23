@@ -817,7 +817,7 @@ int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
 {
     CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
         ERR_INVALID_PARAM, "invalid parameter: only support output device");
-    auto unexcludeOutputDevices = GetExcludedOutputDevices(audioDevUsage);
+    auto unexcludeOutputDevices = GetExcludedDevices(audioDevUsage);
     for (const auto &devDesc : unexcludeOutputDevices) {
         CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter: mull pointer in list");
         CHECK_AND_RETURN_RET_LOG(!(devDesc->deviceType_ == DEVICE_TYPE_SPEAKER &&
@@ -832,10 +832,10 @@ int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     return AudioPolicyManager::GetInstance().UnexcludeOutputDevices(audioDevUsage, unexcludeOutputDevices);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetExcludedOutputDevices(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetExcludedDevices(
     AudioDeviceUsage audioDevUsage) const
 {
-    return AudioPolicyManager::GetInstance().GetExcludedOutputDevices(audioDevUsage);
+    return AudioPolicyManager::GetInstance().GetExcludedDevices(audioDevUsage);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetDevices(DeviceFlag deviceFlag)
