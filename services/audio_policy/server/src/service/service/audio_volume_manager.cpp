@@ -354,8 +354,6 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithDevice(AudioStreamType strea
             AUDIO_INFO_LOG("UNKNOWN RESULT set abs safe volume");
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice,
                 audioPolicyManager_.GetSafeVolumeLevel());
-        } else {
-            AUDIO_ERR_LOG("AudioVolumeManager::SetSystemVolumeLevel set abs volume failed");
         }
 #else
     (void)result;
@@ -370,7 +368,6 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithDevice(AudioStreamType strea
     if (result == SUCCESS && (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION)) {
         SetVoiceCallVolume(volumeLevel);
     }
-    // todo
     Volume vol = {false, 1.0f, 0};
     vol.volumeFloat = audioPolicyManager_.GetSystemVolumeInDb(streamType, volumeLevel, curOutputDeviceType);
     SetSharedVolume(streamType, curOutputDeviceType, vol);
