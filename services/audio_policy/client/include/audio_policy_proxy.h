@@ -61,7 +61,7 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
 
@@ -83,7 +83,7 @@ public:
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
         AudioDeviceUsage audioDevUsage) override;
 
     int32_t SetRingerModeLegacy(AudioRingerMode ringMode) override;
@@ -245,6 +245,8 @@ public:
 
     bool IsSpatializationEnabled(const std::string address) override;
 
+    bool IsSpatializationEnabledForCurrentDevice() override;
+
     int32_t SetSpatializationEnabled(const bool enable) override;
 
     int32_t SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
@@ -286,7 +288,8 @@ public:
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID) override;
 
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) override;
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+        const int32_t pid = -1) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
 

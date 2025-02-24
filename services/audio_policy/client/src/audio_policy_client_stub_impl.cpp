@@ -245,6 +245,45 @@ size_t AudioPolicyClientStubImpl::GetMicrophoneBlockedCallbackSize() const
     return microphoneBlockedCallbackList_.size();
 }
 
+int32_t AudioPolicyClientStubImpl::AddAudioSceneChangedCallback(const int32_t clientId,
+    const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSceneChangedMutex_);
+    audioSceneChangedCallbackList_.push_back(cb);
+    AUDIO_INFO_LOG("add audio scene change clientId:%{public}d", clientId);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAudioSceneChangedCallback(
+    const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSceneChangedMutex_);
+    auto iter = audioSceneChangedCallbackList_.begin();
+    while (iter != audioSceneChangedCallbackList_.end()) {
+        if (*iter == cb) {
+            iter = audioSceneChangedCallbackList_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetAudioSceneChangedCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSceneChangedMutex_);
+    return audioSceneChangedCallbackList_.size();
+}
+
+void AudioPolicyClientStubImpl::OnAudioSceneChange(const AudioScene &audioScene)
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSceneChangedMutex_);
+    for (const auto &callback : audioSceneChangedCallbackList_) {
+        callback->OnAudioSceneChange(audioScene);
+    }
+}
+
+
 int32_t AudioPolicyClientStubImpl::AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);
@@ -721,6 +760,35 @@ void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
         callback->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    }
+}
+
+int32_t AudioPolicyClientStubImpl::AddSpatializationEnabledChangeForCurrentDeviceCallback(
+    const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
+    spatializationEnabledChangeForCurrentDeviceCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveSpatializationEnabledChangeForCurrentDeviceCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
+    spatializationEnabledChangeForCurrentDeviceCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetSpatializationEnabledChangeForCurrentDeviceCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
+    return spatializationEnabledChangeForCurrentDeviceCallbackList_.size();
+}
+
+void AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
+    for (const auto &callback : spatializationEnabledChangeForCurrentDeviceCallbackList_) {
+        callback->OnSpatializationEnabledChangeForCurrentDevice(enabled);
     }
 }
 

@@ -952,7 +952,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetPreferredDevice_001, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr2 = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceDescriptorSptr2->deviceType_ = DEVICE_TYPE_NONE;
     result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
-        AUDIO_CALL_RENDER, audioDeviceDescriptorSptr2);
+        AUDIO_CALL_RENDER, audioDeviceDescriptorSptr2, -1);
     EXPECT_EQ(SUCCESS, result);
 
     result = AudioPolicyUtils::GetInstance().SetPreferredDevice(

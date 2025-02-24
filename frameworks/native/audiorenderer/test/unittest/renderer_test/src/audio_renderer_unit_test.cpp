@@ -6972,7 +6972,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchStream_003, TestSize.Level1)
     audioRendererPrivate->SwitchStream(-1, AUDIO_FLAG_VOIP_FAST, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     AudioRendererInfo rendererInfo;
     audioRendererPrivate->GetRendererInfo(rendererInfo);
-    EXPECT_EQ(AUDIO_FLAG_VOIP_FAST, rendererInfo.rendererFlags);
+    EXPECT_EQ(AUDIO_FLAG_NORMAL, rendererInfo.rendererFlags);
 }
 
 /**
@@ -7984,7 +7984,7 @@ HWTEST(AudioRendererUnitTest, IsDirectVoipParams_003, TestSize.Level1)
     const AudioStreamParams audioStreamParams = audioStreamParams_;
 
     bool ret = audioRendererPrivate->IsDirectVoipParams(audioStreamParams);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**

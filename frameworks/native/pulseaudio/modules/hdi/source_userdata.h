@@ -25,9 +25,8 @@
 #include <pulsecore/thread.h>
 #include <pulsecore/hashmap.h>
 
-#include "audio_hdiadapter_info.h"
-#include "hdi_adapter_manager_api.h"
-#include "capturer_source_adapter.h"
+#include "common/hdi_adapter_info.h"
+#include "intf_def.h"
 
 #define DEFAULT_SCENE_BYPASS "scene.bypass"
 #define MAX_SCENE_NAME_LEN 100
@@ -52,7 +51,7 @@ struct Userdata {
     uint32_t openMicSpeaker;
     pa_usec_t blockUsec;
     pa_usec_t timestamp;
-    SourceAttr attrs;
+    struct SourceAdapterAttr attrs;
     bool isCapturerStarted;
     pa_atomic_t captureFlag;
     pa_atomic_t quitCaptureFlag;
@@ -67,13 +66,13 @@ struct Userdata {
     int32_t micRefFormat;
     uint32_t micRefChannels;
     pa_sample_spec micRefSpec;
-    struct CapturerSourceAdapter *sourceAdapter;
+    struct SourceAdapter *sourceAdapter;
     pa_hashmap *sceneToCountMap;
     pa_hashmap *sceneToPreResamplerMap;
     pa_hashmap *sceneToEcResamplerMap;
     pa_hashmap *sceneToMicRefResamplerMap;
-    HdiCaptureHandle *captureHandleEc;
-    HdiCaptureHandle *captureHandleMicRef;
+    struct SourceAdapter *sourceAdapterEc;
+    struct SourceAdapter *sourceAdapterMicRef;
     uint64_t requestBytesEc;
     uint64_t requestBytesMicRef;
     void *bufferEc;

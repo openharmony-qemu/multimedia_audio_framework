@@ -25,6 +25,7 @@ group("audio_policy_packages") {
     ":audio_converter_config",
     ":audio_device_config",
     ":audio_interrupt_policy_config",
+    ":audio_policy_global_config",
     ":audio_policy_service",
     ":audio_strategy_router",
     ":audio_usage_strategy",
@@ -67,6 +68,7 @@ config("audio_policy_public_config") {
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/bluetoothclient",
+    "../../frameworks/native/hdiadapter_new/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
@@ -168,6 +170,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/audio_stream_collector.cpp",
     "server/src/service/audio_affinity_manager.cpp",
     "server/src/service/audio_device_manager.cpp",
+    "server/src/service/audio_global_config_manager.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/audio_state_manager.cpp",
     "server/src/service/concurrency/audio_concurrency_service.cpp",
@@ -177,6 +180,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/config/audio_converter_parser.cpp",
     "server/src/service/config/audio_device_parser.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
+    "server/src/service/config/audio_policy_global_parser.cpp",
     "server/src/service/config/audio_policy_parser.cpp",
     "server/src/service/config/audio_strategy_router_parser.cpp",
     "server/src/service/config/audio_usage_strategy_parser.cpp",
@@ -428,6 +432,14 @@ ohos_prebuilt_etc("audio_affinity_config") {
   part_name = "audio_framework"
 }
 
+ohos_prebuilt_etc("audio_policy_global_config") {
+  source = "server/config/audio_policy_global_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
 if (audio_framework_feature_dtmf_tone) {
   ohos_prebuilt_etc("audio_tone_dtmf_config") {
     source = "server/config/audio_tone_dtmf_config.xml"
@@ -508,6 +520,7 @@ audio_ohos_library("audio_policy_client") {
     "client/src/audio_policy_manager_device.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
+    "client/src/audio_service_load.cpp",
     "client/src/audio_spatialization_state_change_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
     "client/src/proxy/audio_policy_callback_proxy.cpp",

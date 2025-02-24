@@ -49,6 +49,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE):
             HandleSpatializationEnabledChangeForAnyDevice(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE):
+            HandleSpatializationEnabledChangeForCurrentDevice(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE):
             HandleHeadTrackingEnabledChange(data, reply);
             break;
@@ -60,6 +63,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
             break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE):
             HandleAudioSessionCallback(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SCENE_CHANGED):
+            HandleAudioSceneChange(data, reply);
             break;
         default:
             break;
@@ -345,12 +351,27 @@ void AudioPolicyClientStub::HandleSpatializationEnabledChange(MessageParcel &dat
     OnSpatializationEnabledChange(enabled);
 }
 
+void AudioPolicyClientStub::HandleAudioSceneChange(MessageParcel &data, MessageParcel &reply)
+{
+    AudioScene audioScene = static_cast<AudioScene>(data.ReadInt32());
+    CHECK_AND_RETURN_LOG(audioScene < AUDIO_SCENE_MAX && audioScene > AUDIO_SCENE_INVALID, \
+        "get invalid audioScene : %{public}d", audioScene);
+
+    OnAudioSceneChange(audioScene);
+}
+
 void AudioPolicyClientStub::HandleSpatializationEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnSpatializationEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
+}
+
+void AudioPolicyClientStub::HandleSpatializationEnabledChangeForCurrentDevice(MessageParcel &data, MessageParcel &reply)
+{
+    bool enabled = data.ReadBool();
+    OnSpatializationEnabledChangeForCurrentDevice(enabled);
 }
 
 void AudioPolicyClientStub::HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply)

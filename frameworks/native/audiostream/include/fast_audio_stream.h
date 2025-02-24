@@ -69,7 +69,8 @@ public:
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj) override;
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;

@@ -50,10 +50,10 @@
 #include "audio_pulseaudio_log.h"
 #include "audio_schedule.h"
 #include "audio_utils_c.h"
-#include "audio_hdiadapter_info.h"
 #include "volume_tools_c.h"
 #include "audio_volume_c.h"
-#include "renderer_sink_adapter.h"
+#include "intf_def.h"
+#include "sink/sink_intf.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_DEVICE_CLASS "primary"
@@ -93,7 +93,7 @@ PA_MODULE_USAGE(
         "buffer_size=<custom buffer size>"
         "formats=<semi-colon separated sink formats>");
 
-static ssize_t SplitRenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk *pchunk, char *streamType);
+static ssize_t SplitRenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pchunk, char *streamType);
 
 struct userdata {
     pa_core *core;
@@ -108,7 +108,7 @@ struct userdata {
     pa_idxset *formats;
     pa_thread *thread_split_hdi;
     bool isHDISinkStarted;
-    struct RendererSinkAdapter *sinkAdapter;
+    struct SinkAdapter *sinkAdapter;
     pa_asyncmsgq *dq;
     pa_atomic_t dflag;
     pa_usec_t writeTime;
@@ -167,9 +167,9 @@ enum {
     HDI_RENDER_COMMUNICATION
 };
 
-static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
+static enum AudioSampleFormatIntf ConvertPaToHdiAdapterFormat(pa_sample_format_t format)
 {
-    enum HdiAdapterFormat adapterFormat;
+    enum AudioSampleFormatIntf adapterFormat;
     switch (format) {
         case PA_SAMPLE_U8:
             adapterFormat = SAMPLE_U8;
@@ -342,9 +342,9 @@ static void StartSplitStreamHdiIfRunning(struct userdata *u)
         return;
     }
 
-    if (u->sinkAdapter->RendererSinkStart(u->sinkAdapter)) {
+    if (u->sinkAdapter->SinkAdapterStart(u->sinkAdapter)) {
         AUDIO_ERR_LOG("split_stream_sink,audiorenderer control start failed!");
-        u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter);
+        u->sinkAdapter->SinkAdapterDeInit(u->sinkAdapter);
     } else {
         u->isHDISinkStarted = true;
         u->writeCount = 0;
@@ -437,7 +437,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     pa_assert_se(u = si->userdata);
     const char *streamType = SafeProplistGets(sinkIn->proplist, "stream.type", "NULL");
     const char *sessionIDStr = SafeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
-    const char *deviceClass = GetDeviceClass(u->sinkAdapter->deviceClass);
+    const char *deviceClass = u->sinkAdapter->deviceClass;
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
     float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
     float volumeBeg = GetPreVolume(sessionID);
@@ -784,6 +784,23 @@ static unsigned SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_memchunk *re
     return nSink;
 }
 
+static void SendStreamData(struct userdata *u, int num, pa_memchunk chunk)
+{
+    if (num < 0 || num >= g_splitNums) {
+        return;
+    }
+    // start hdi
+    StartSplitStreamHdiIfRunning(u);
+    // send msg post data
+    if (!strcmp(g_splitArr[num], STREAM_TYPE_NAVIGATION)) {
+        pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_NAVIGATION, NULL, 0, &chunk, NULL);
+    } else if (!strcmp(g_splitArr[num], STREAM_TYPE_COMMUNICATION)) {
+        pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_COMMUNICATION, NULL, 0, &chunk, NULL);
+    } else {
+        pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_MEDIA, NULL, 0, &chunk, NULL);
+    }
+}
+
 static void ProcessRender(struct userdata *u, pa_usec_t now)
 {
     AUTO_CTRACE("module_split_stream_sink: ProcessRender");
@@ -791,6 +808,7 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     /* Fill the buffer up the latency size */
+    int count = 0;
     for (int i = 0; i < g_splitNums; i++) {
         AUTO_CTRACE("module_split_stream_sink::ProcessRender:streamType:%s", g_splitArr[i]);
         AUDIO_DEBUG_LOG("module_split_stream_sink: ProcessRender:streamType:%{public}s", g_splitArr[i]);
@@ -799,23 +817,27 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
         unsigned chunkIsNull = 0;
         chunkIsNull = SplitPaSinkRenderFull(u->sink, u->sink->thread_info.max_request, &chunk, g_splitArr[i]);
         if (chunkIsNull == 0) {
-            continue;
+            count++;
+            if (count != g_splitNums) {
+                continue;
+            }
+            for (int j = 0; j < g_splitNums; j++) {
+                SendStreamData(u, j, chunk);
+            }
+            break;
         }
-
-        // start hdi
-        StartSplitStreamHdiIfRunning(u);
-
-        AUDIO_DEBUG_LOG("module_split_stream_sink: ProcessRender send msg, chunk length = %{public}zu", chunk.length);
-        // send msg post data
-        if (!strcmp(g_splitArr[i], STREAM_TYPE_NAVIGATION)) {
-            pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_NAVIGATION, NULL, 0, &chunk, NULL);
-        } else if (!strcmp(g_splitArr[i], STREAM_TYPE_COMMUNICATION)) {
-            pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_COMMUNICATION, NULL, 0, &chunk, NULL);
-        } else {
-            pa_asyncmsgq_post(u->dq, NULL, HDI_RENDER_MEDIA, NULL, 0, &chunk, NULL);
-        }
+        SendStreamData(u, i, chunk);
     }
     u->timestamp += pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+}
+
+static bool MonitorLinkedState(pa_sink *si, bool isRunning)
+{
+    if (isRunning) {
+        return si->monitor_source && PA_SOURCE_IS_RUNNING(si->monitor_source->thread_info.state);
+    } else {
+        return si->monitor_source && PA_SOURCE_IS_LINKED(si->monitor_source->thread_info.state);
+    }
 }
 
 static void ThreadFunc(void *userdata)
@@ -836,11 +858,22 @@ static void ThreadFunc(void *userdata)
         if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
             now = pa_rtclock_now();
         }
+        
+        bool flag = (((u->renderInIdleState && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
+            (!u->renderInIdleState && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
+            !(u->sink->thread_info.state == PA_SINK_IDLE && u->previousState == PA_SINK_SUSPENDED) &&
+            !(u->sink->thread_info.state == PA_SINK_IDLE && u->previousState == PA_SINK_INIT)) ||
+            (u->sink->thread_info.state == PA_SINK_IDLE && MonitorLinkedState(u->sink, true));
+        if (flag) {
+            now = pa_rtclock_now();
+        }
+
         if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
             ProcessRewind(u, now);
         }
+
         /* Render some data and drop it immediately */
-        if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
+        if (flag) {
             if (u->timestamp <= now) {
                 ProcessRender(u, now);
             }
@@ -873,7 +906,7 @@ static void ProcessSplitHdiRender(struct userdata *u, pa_memchunk *chunk, char *
     pa_usec_t now = pa_rtclock_now();
     if (!u->isHDISinkStarted && now - u->timestampLastLog > USEC_PER_SEC) {
         u->timestampLastLog = now;
-        const char *deviceClass = GetDeviceClass(u->sinkAdapter->deviceClass);
+        const char *deviceClass = u->sinkAdapter->deviceClass;
         AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite, wait sink[%s] suspend", deviceClass);
         pa_memblock_unref(chunk->memblock);
     } else if (!u->isHDISinkStarted) {
@@ -927,7 +960,7 @@ static void ThreadFuncWriteHDI(void *userdata)
     } while (!quit);
 }
 
-static ssize_t SplitRenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk *pchunk, char *streamType)
+static ssize_t SplitRenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pchunk, char *streamType)
 {
     size_t index;
     size_t length;
@@ -944,7 +977,7 @@ static ssize_t SplitRenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memc
     while (true) {
         uint64_t writeLen = 0;
 
-        int32_t ret = sinkAdapter->RendererSplitRenderFrame(sinkAdapter, ((char*)p + index),
+        int32_t ret = sinkAdapter->SinkAdapterSplitRenderFrame(sinkAdapter, ((char*)p + index),
             (uint64_t)length, &writeLen, streamType);
         if (writeLen > length) {
             AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
@@ -1030,7 +1063,7 @@ static int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
 
 static int32_t InitRemoteSink(struct userdata *u, const char *filePath)
 {
-    SinkAttr sample_attrs;
+    struct SinkAdapterAttr sample_attrs;
     int32_t ret;
 
     sample_attrs.format = ConvertPaToHdiAdapterFormat(u->ss.format);
@@ -1044,7 +1077,7 @@ static int32_t InitRemoteSink(struct userdata *u, const char *filePath)
     sample_attrs.deviceType =  u->deviceType;
     sample_attrs.aux =  SPLIT_MODE;
     
-    ret = u->sinkAdapter->RendererSinkInit(u->sinkAdapter, &sample_attrs);
+    ret = u->sinkAdapter->SinkAdapterInit(u->sinkAdapter, &sample_attrs);
     if (ret != 0) {
         AUDIO_ERR_LOG("audiorenderer Init failed!");
         return -1;
@@ -1065,9 +1098,10 @@ static void UserdataFree(struct userdata *u)
     }
 
     if (u->sinkAdapter) {
-        u->sinkAdapter->RendererSinkStop(u->sinkAdapter);
-        u->sinkAdapter->RendererSinkDeInit(u->sinkAdapter);
-        UnLoadSinkAdapter(u->sinkAdapter);
+        u->sinkAdapter->SinkAdapterStop(u->sinkAdapter);
+        u->sinkAdapter->SinkAdapterDeInit(u->sinkAdapter);
+        ReleaseSinkAdapter(u->sinkAdapter);
+        u->sinkAdapter = NULL;
     }
 
     pa_thread_mq_done(&u->thread_mq);
@@ -1133,9 +1167,9 @@ static int32_t PaHdiSinkNewInit(pa_module *m, pa_modargs *ma, struct userdata *u
         pa_sink_set_latency_range(u->sink, 0, u->block_usec);
     }
 
-    int32_t ret = LoadSinkAdapter(pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS),
-        pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID), &u->sinkAdapter);
-    if (ret) {
+    const char *deviceClass = pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS);
+    u->sinkAdapter = GetSinkAdapter(deviceClass, pa_modargs_get_value(ma, "network_id", DEFAULT_DEVICE_NETWORKID));
+    if (u->sinkAdapter == NULL) {
         AUDIO_ERR_LOG("Load adapter failed");
         return -1;
     }

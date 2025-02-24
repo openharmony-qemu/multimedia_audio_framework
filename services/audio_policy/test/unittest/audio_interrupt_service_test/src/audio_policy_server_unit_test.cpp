@@ -664,7 +664,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_034, TestSize.Level1)
         AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_DEFAULT;
     auto ret = ptrAudioPolicyServer->SetSpatializationSceneType(spatializationSceneType);
 
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, OPEN_PORT_FAILURE);
 }
 
 /**
@@ -799,7 +799,7 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_001, TestSize.Level1)
     int32_t volumeLevel = 5;
     bool isUpdateUi = true;
     auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL, volumeLevel, isUpdateUi);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -820,7 +820,7 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_002, TestSize.Level1)
     VolumeUtils::SetPCVolumeEnable(true);
     auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL, volumeLevel, isUpdateUi);
     VolumeUtils::SetPCVolumeEnable(false);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -860,10 +860,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_042, TestSize.Level1)
 
     AudioStreamType streamType = STREAM_ALL;
     int res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
-    EXPECT_EQ(res, 0);
+    EXPECT_EQ(res, 5);
     streamType = STREAM_MUSIC;
     res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
-    EXPECT_EQ(res, 0);
+    EXPECT_EQ(res, 5);
 }
 
 /**

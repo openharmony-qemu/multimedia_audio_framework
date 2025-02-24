@@ -23,6 +23,7 @@
 #include "media_monitor_manager.h"
 #include "audio_spatialization_manager.h"
 #include "audio_spatialization_service.h"
+#include "common/hdi_adapter_info.h"
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
@@ -123,6 +124,15 @@ void AudioDeviceCommon::OnPreferredOutputDeviceUpdated(const AudioDeviceDescript
     }
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
+}
+
+void AudioDeviceCommon::OnAudioSceneChange(const AudioScene& audioScene)
+{
+    Trace trace("AudioDeviceCommon::OnAudioSceneChange:" + std::to_string(audioScene));
+    AUDIO_INFO_LOG("Start");
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
+    }
 }
 
 void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)
@@ -413,7 +423,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         if (audioStateManager_.GetPreferredCallRenderDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallRenderDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>());
+                std::make_shared<AudioDeviceDescriptor>(), 0);
         }
         if (audioStateManager_.GetPreferredCallCaptureDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallCaptureDevice())) {
@@ -487,7 +497,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
         ROUTER_TYPE_USER_SELECT).front()) && (usage & VOICE) == VOICE) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
+            std::make_shared<AudioDeviceDescriptor>(), 0);
     }
     AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
 }
@@ -604,7 +614,8 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
     bool hasDirectChangeDevice = false;
-    std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+    std::vector<SinkInput> sinkInputs;
+    audioPolicyManager_.GetAllSinkInputs(sinkInputs);
     for (auto &rendererChangeInfo : rendererChangeInfos) {
         if (!IsRendererStreamRunning(rendererChangeInfo) ||
             (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_DEFAULT &&
@@ -1078,7 +1089,8 @@ void AudioDeviceCommon::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRendere
             streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_NORMAL_OUT);
         }
         audioOffloadStream_.ResetOffloadMode(rendererChangeInfo->sessionId);
-        std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+        std::vector<SinkInput> sinkInputs;
+        audioPolicyManager_.GetAllSinkInputs(sinkInputs);
         MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs);
     }
 }
@@ -1649,6 +1661,11 @@ int32_t AudioDeviceCommon::OpenRemoteAudioDevice(std::string networkId, DeviceRo
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
     AudioModuleInfo remoteDeviceInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
         deviceRole, deviceType);
+    
+    auto ret = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_REMOTE, networkId);
+    if (ret) {
+        AUDIO_ERR_LOG("load adapter fail");
+    }
     audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, remoteDeviceInfo);
 
     // If device already in list, remove it else do not modify the list.
@@ -1899,6 +1916,11 @@ int32_t AudioDeviceCommon::LoadA2dpModule(DeviceType deviceType, const AudioStre
     CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED,
         "A2dp module is not exist in the configuration file");
 
+    // not load bt_a2dp_fast and bt_hdap, maybe need fix
+    int32_t loadRet = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH, "bt_a2dp");
+    if (loadRet) {
+        AUDIO_ERR_LOG("load adapter fail");
+    }
     for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "source" ? INPUT_DEVICE : OUTPUT_DEVICE;
         DeviceRole deviceRole = deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ? OUTPUT_DEVICE : INPUT_DEVICE;
