@@ -155,9 +155,11 @@ private:
 
     void CallExitStandBy();
 
-    void ProcessCallbackFuc();
+    bool ProcessCallbackFuc(uint64_t &curWritePos, int64_t &curTime, int64_t &wakeUpTime, int64_t &clientWriteCost);
     void ProcessCallbackFucIndependent();
-    void RecordProcessCallbackFuc();
+    bool RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t &wakeUpTime, int64_t clientReadCost);
+    void InitPlaybackThread();
+    void InitRecordThread();
     void CopyWithVolume(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void ProcessVolume(const AudioStreamData &targetData) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
@@ -166,6 +168,7 @@ private:
 
     void DoFadeInOut(uint64_t &curWritePos);
     void WatchingRecordProcessCallbackFuc();
+    void ProcessRemoveWatchdog(const std::string &message, const std::int32_t sessionId);
 
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
@@ -599,6 +602,80 @@ static size_t GetFormatSize(const AudioStreamInfo &info)
     return result;
 }
 
+void AudioProcessInClientInner::InitPlaybackThread()
+{
+    logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
+    auto weakRef = weak_from_this();
+    callbackLoop_ = std::thread([weakRef] {
+        bool keepRunning = true;
+        uint64_t curWritePos = 0;
+        int64_t curTime = 0;
+        int64_t wakeUpTime = ClockTime::GetCurNano();
+        int64_t clientWriteCost = 0;
+        std::shared_ptr<AudioProcessInClientInner> strongRef = weakRef.lock();
+        if (strongRef != nullptr) {
+            AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongRef->sessionId_);
+            strongRef->processProxy_->RegisterThreadPriority(gettid(),
+                AudioSystemManager::GetInstance()->GetSelfBundleName(strongRef->processConfig_.appInfo.appUid));
+        } else {
+            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
+        }
+        strongRef = nullptr;
+        // Callback loop
+        while (keepRunning) {
+            strongRef = weakRef.lock();
+            if (strongRef == nullptr) {
+                AUDIO_INFO_LOG("AudioProcessInClientInner destroyed");
+                break;
+            }
+            // Main operation in callback loop
+            keepRunning = strongRef->ProcessCallbackFuc(curWritePos, curTime, wakeUpTime, clientWriteCost);
+        }
+        if (strongRef != nullptr) {
+            AUDIO_INFO_LOG("Callback loop of session %{public}u end", strongRef->sessionId_);
+        }
+    });
+    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
+}
+
+void AudioProcessInClientInner::InitRecordThread()
+{
+    logUtilsTag_ = "ProcessRec::" + std::to_string(sessionId_);
+    auto weakRef = weak_from_this();
+    callbackLoop_ = std::thread([weakRef] {
+        bool keepRunning = true;
+        uint64_t curReadPos = 0;
+        int64_t wakeUpTime = ClockTime::GetCurNano();
+        int64_t clientReadCost = 0;
+        std::shared_ptr<AudioProcessInClientInner> strongRef = weakRef.lock();
+        if (strongRef != nullptr) {
+            AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongRef->sessionId_);
+            strongRef->processProxy_->RegisterThreadPriority(gettid(),
+                AudioSystemManager::GetInstance()->GetSelfBundleName(strongRef->processConfig_.appInfo.appUid));
+            strongRef->WatchingRecordProcessCallbackFuc(); // add watchdog
+        } else {
+            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
+        }
+        strongRef = nullptr;
+        // Callback loop
+        while (keepRunning) {
+            strongRef = weakRef.lock();
+            if (strongRef == nullptr) {
+                AUDIO_INFO_LOG("AudioProcessInClientInner destroyed");
+                break;
+            }
+            // Main operation in callback loop
+            keepRunning = strongRef->RecordProcessCallbackFuc(curReadPos, wakeUpTime, clientReadCost);
+        }
+        if (strongRef != nullptr) {
+            strongRef->ProcessRemoveWatchdog("WatchingRecordProcessCallbackFuc",
+                strongRef->sessionId_); // Remove watchdog
+            AUDIO_INFO_LOG("Callback loop of session %{public}u end", strongRef->sessionId_);
+        }
+    });
+    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
+}
+
 bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
 {
     AUDIO_INFO_LOG("Call Init.");
@@ -625,17 +702,13 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
     AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
     bool isIndependent = bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
     if (config.audioMode == AUDIO_MODE_RECORD) {
-        logUtilsTag_ = "ProcessRec::" + std::to_string(sessionId_);
-        callbackLoop_ = std::thread([this] { this->RecordProcessCallbackFuc(); });
-        pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
+        InitRecordThread();
     } else if (isIndependent) {
         logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
         callbackLoop_ = std::thread([this] { this->ProcessCallbackFucIndependent(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     } else {
-        logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
-        callbackLoop_ = std::thread([this] { this->ProcessCallbackFuc(); });
-        pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
+        InitPlaybackThread();
     }
 
     int waitThreadStartTime = 5; // wait for thread start.
@@ -1342,7 +1415,7 @@ bool AudioProcessInClientInner::KeepLoopRunning()
     return false;
 }
 
-void ProcessRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+void AudioProcessInClientInner::ProcessRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
 {
     std::string watchDogMessage = message;
     watchDogMessage += std::to_string(sessionId);
@@ -1368,61 +1441,53 @@ void AudioProcessInClientInner::WatchingRecordProcessCallbackFuc()
         WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
 }
 
-void AudioProcessInClientInner::RecordProcessCallbackFuc()
+bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t &wakeUpTime,
+    int64_t clientReadCost)
 {
-    AUDIO_INFO_LOG("%{public}s enter.", __func__);
-    processProxy_->RegisterThreadPriority(gettid(),
-        AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid));
-    uint64_t curReadPos = 0;
-    int64_t wakeUpTime = ClockTime::GetCurNano();
-    int64_t clientReadCost = 0;
-
-    // add watchdog
-    WatchingRecordProcessCallbackFuc();
-    while (!isCallbackLoopEnd_ && audioBuffer_ != nullptr) {
-        if (!KeepLoopRunning()) {
-            recordProcessCallbackFucThreadStatus_ = true;
-            continue;
-        }
-        threadStatus_ = INRUNNING;
-        Trace traceLoop("AudioProcessInClient Record InRunning");
-        if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
-            wakeUpTime = ClockTime::GetCurNano();
-            needReSyncPosition_ = false;
-            recordProcessCallbackFucThreadStatus_ = true;
-            continue;
-        }
-        int64_t curTime = ClockTime::GetCurNano();
-        int64_t wakeupCost = curTime - wakeUpTime;
-        if (wakeupCost > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
-            wakeUpTime = curTime;
-        }
-
-        curReadPos = audioBuffer_->GetCurReadFrame();
-        int32_t recordPrepare = RecordPrepareCurrent(curReadPos);
-        CHECK_AND_CONTINUE_LOG(recordPrepare == SUCCESS, "prepare current fail.");
-        CallClientHandleCurrent();
-        int32_t recordFinish = RecordFinishHandleCurrent(curReadPos, clientReadCost);
-        CHECK_AND_CONTINUE_LOG(recordFinish == SUCCESS, "finish handle current fail.");
-
-        bool ret = PrepareNext(curReadPos, wakeUpTime);
-        CHECK_AND_BREAK_LOG(ret, "prepare next loop in process fail.");
-
-        threadStatus_ = SLEEPING;
-        curTime = ClockTime::GetCurNano();
-        if (wakeUpTime > curTime && wakeUpTime - curTime < static_cast<int64_t>(spanSizeInMs_) *
-            ONE_MILLISECOND_DURATION + clientReadCost) {
-            ClockTime::AbsoluteSleep(wakeUpTime);
-        } else {
-            Trace trace("RecordBigWakeUpTime");
-            AUDIO_WARNING_LOG("%{public}s wakeUpTime is too late...", __func__);
-            ClockTime::RelativeSleep(spanSizeInMs_ * ONE_MILLISECOND_DURATION);
-        }
-        recordProcessCallbackFucThreadStatus_ = true;
+    if (isCallbackLoopEnd_ || audioBuffer_ == nullptr) {
+        return false;
     }
-    // stop watchdog
-    ProcessRemoveWatchdog("WatchingRecordProcessCallbackFuc", sessionId_);
+    if (!KeepLoopRunning()) {
+        recordProcessCallbackFucThreadStatus_ = true;
+        return true;
+    }
+    threadStatus_ = INRUNNING;
+    Trace traceLoop("AudioProcessInClient Record InRunning");
+    if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
+        wakeUpTime = ClockTime::GetCurNano();
+        needReSyncPosition_ = false;
+        recordProcessCallbackFucThreadStatus_ = true;
+        return true;
+    }
+    int64_t curTime = ClockTime::GetCurNano();
+    int64_t wakeupCost = curTime - wakeUpTime;
+    if (wakeupCost > ONE_MILLISECOND_DURATION) {
+        AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
+        wakeUpTime = curTime;
+    }
+
+    curReadPos = audioBuffer_->GetCurReadFrame();
+    int32_t recordPrepare = RecordPrepareCurrent(curReadPos);
+    CHECK_AND_RETURN_RET_LOG(recordPrepare == SUCCESS, true, "prepare current fail.");
+    CallClientHandleCurrent();
+    int32_t recordFinish = RecordFinishHandleCurrent(curReadPos, clientReadCost);
+    CHECK_AND_RETURN_RET_LOG(recordFinish == SUCCESS, true, "finish handle current fail.");
+
+    bool ret = PrepareNext(curReadPos, wakeUpTime);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "prepare next loop in process fail.");
+
+    threadStatus_ = SLEEPING;
+    curTime = ClockTime::GetCurNano();
+    if (wakeUpTime > curTime && wakeUpTime - curTime < static_cast<int64_t>(spanSizeInMs_) *
+        ONE_MILLISECOND_DURATION + clientReadCost) {
+        ClockTime::AbsoluteSleep(wakeUpTime);
+    } else {
+        Trace trace("RecordBigWakeUpTime");
+        AUDIO_WARNING_LOG("%{public}s wakeUpTime is too late...", __func__);
+        ClockTime::RelativeSleep(spanSizeInMs_ * ONE_MILLISECOND_DURATION);
+    }
+    recordProcessCallbackFucThreadStatus_ = true;
+    return true;
 }
 
 int32_t AudioProcessInClientInner::RecordReSyncServicePos()
@@ -1619,46 +1684,40 @@ void AudioProcessInClientInner::DoFadeInOut(uint64_t &curWritePos)
     }
 }
 
-void AudioProcessInClientInner::ProcessCallbackFuc()
+bool AudioProcessInClientInner::ProcessCallbackFuc(uint64_t &curWritePos, int64_t &curTime,
+    int64_t &wakeUpTime, int64_t &clientWriteCost)
 {
-    AUDIO_INFO_LOG("Callback loop start.");
-    processProxy_->RegisterThreadPriority(gettid(),
-        AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid));
-
-    uint64_t curWritePos = 0;
-    int64_t curTime = 0;
-    int64_t wakeUpTime = ClockTime::GetCurNano();
-    int64_t clientWriteCost = 0;
-
-    while (!isCallbackLoopEnd_ || startFadeout_.load()) {
-        if (!KeepLoopRunning()) {
-            continue;
-        }
-        threadStatus_ = INRUNNING;
-        Trace traceLoop("AudioProcessInClient::InRunning");
-        CheckIfWakeUpTooLate(curTime, wakeUpTime);
-        curWritePos = audioBuffer_->GetCurWriteFrame();
-        if (!PrepareCurrentLoop(curWritePos)) {
-            continue;
-        }
-        // call client write
-        CallClientHandleCurrent();
-        // client write done, check if time out
-
-        DoFadeInOut(curWritePos);
-
-        if (!FinishHandleCurrentLoop(curWritePos, clientWriteCost)) {
-            continue;
-        }
-        if (!ClientPrepareNextLoop(curWritePos, wakeUpTime)) {
-            break;
-        }
-        traceLoop.End();
-        // start safe sleep
-        threadStatus_ = SLEEPING;
-        CheckIfWakeUpTooLate(curTime, wakeUpTime, clientWriteCost);
-        ClockTime::AbsoluteSleep(wakeUpTime);
+    if (isCallbackLoopEnd_ && !startFadeout_.load()) {
+        return false;
     }
+    if (!KeepLoopRunning()) {
+        return true;
+    }
+    threadStatus_ = INRUNNING;
+    Trace traceLoop("AudioProcessInClient::InRunning");
+    CheckIfWakeUpTooLate(curTime, wakeUpTime);
+    curWritePos = audioBuffer_->GetCurWriteFrame();
+    if (!PrepareCurrentLoop(curWritePos)) {
+        return true;
+    }
+    // call client write
+    CallClientHandleCurrent();
+    // client write done, check if time out
+
+    DoFadeInOut(curWritePos);
+
+    if (!FinishHandleCurrentLoop(curWritePos, clientWriteCost)) {
+        return true;
+    }
+    if (!ClientPrepareNextLoop(curWritePos, wakeUpTime)) {
+        return false;
+    }
+    traceLoop.End();
+    // start safe sleep
+    threadStatus_ = SLEEPING;
+    CheckIfWakeUpTooLate(curTime, wakeUpTime, clientWriteCost);
+    ClockTime::AbsoluteSleep(wakeUpTime);
+    return true;
 }
 
 void AudioProcessInClientInner::ProcessCallbackFucIndependent()
