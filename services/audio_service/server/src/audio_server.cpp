@@ -1915,7 +1915,7 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
 {
     IdHandler &idHandler = IdHandler::GetInstance();
     std::function<bool(uint32_t)> limitFunc = [&idHandler] (uint32_t id) -> bool {
-        return idHandler.ParseType(id) == HDI_ID_TYPE_WAKEUP && idHandler.ParseInfo(id) == HDI_ID_INFO_DEFAULT;
+        return idHandler.ParseType(id) == HDI_ID_TYPE_WAKEUP && idHandler.ParseInfo(id) == "Built_in_wakeup";
     };
     HdiAdapterManager::GetInstance().RegistSourceCallback(HDI_CB_CAPTURE_WAKEUP, this, limitFunc);
 

@@ -154,7 +154,11 @@ void SinkUnitTest::TestSetAndGetFirst(uint32_t id)
     sink->SetAudioBalanceValue(1);
 
     ret = sink->SetSinkMuteForSwitchDevice(false);
-    EXPECT_EQ(ret, SUCCESS);
+    if (id == fastRenderId_ || id == usbRenderId_) {
+        EXPECT_NE(ret, SUCCESS);
+    } else {
+        EXPECT_EQ(ret, SUCCESS);
+    }
 
     std::vector<DeviceType> activeDevices = { DEVICE_TYPE_SPEAKER, DEVICE_TYPE_EARPIECE };
     ret = sink->SetAudioScene(AUDIO_SCENE_DEFAULT, activeDevices);

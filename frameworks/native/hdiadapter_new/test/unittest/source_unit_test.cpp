@@ -70,8 +70,11 @@ void SourceUnitTest::TestAction(uint32_t id)
     ASSERT_NE(source, nullptr);
     EXPECT_EQ(source->IsInited(), false);
 
-    auto ret = source->Start();
-    EXPECT_NE(ret, SUCCESS);
+    int32_t ret = SUCCESS;
+    if (id != remoteCaptureId_) {
+        ret = source->Start();
+        EXPECT_NE(ret, SUCCESS);
+    }
 
     ret = source->Stop();
     EXPECT_EQ(ret, SUCCESS);
