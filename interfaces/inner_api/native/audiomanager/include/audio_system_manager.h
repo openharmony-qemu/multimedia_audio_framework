@@ -356,7 +356,7 @@ public:
      * @param deviceType The volume to be set for the device.
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
-     * @since 8
+     * @since 16
      */
     int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType) const;
 
