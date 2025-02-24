@@ -43,47 +43,57 @@ void TimeoutToRelativeTime(int64_t timeout, struct timespec &realtime)
     realtime.tv_sec = timeoutSec;
 }
 
-FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout)
+FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout, const std::function<bool(void)> &pred)
 {
     CHECK_AND_RETURN_RET_LOG(futexPtr != nullptr, FUTEX_INVALID_PARAMS, "futexPtr is null");
+    CHECK_AND_RETURN_RET_LOG(pred, FUTEX_INVALID_PARAMS, "pred err");
     Trace trace("FutexTool::FutexWait");
     uint32_t current = futexPtr->load();
     if (current != IS_READY && current != IS_NOT_READY && current != IS_PRE_EXIT) {
         AUDIO_ERR_LOG("failed: invalid param:%{public}u", current);
         return FUTEX_INVALID_PARAMS;
     }
+
+    int64_t timeIn = ClockTime::GetCurNano();
+    int64_t cost = 0;
     struct timespec waitTime;
     if (timeout > 0) {
         TimeoutToRelativeTime(timeout, waitTime);
     }
 
-    uint32_t expect = IS_READY;
-    if (!futexPtr->compare_exchange_strong(expect, IS_NOT_READY)) {
-        if (expect == IS_PRE_EXIT) {
-            AUDIO_ERR_LOG("failed with invalid status:%{public}u", expect);
-            return FUTEX_OPERATION_FAILED;
-        }
-        AUDIO_WARNING_LOG("recall while futex value is IS_NOT_READY");
-    }
     long res = 0;
     int32_t tryCount = 0;
     while (tryCount < WAIT_TRY_COUNT) {
-        if (futexPtr->load() == IS_PRE_EXIT) {
-            AUDIO_INFO_LOG("pre_exit is called!");
-            return FUTEX_PRE_EXIT;
+        uint32_t expect = IS_READY;
+        if (!futexPtr->compare_exchange_strong(expect, IS_NOT_READY)) {
+            if (expect == IS_PRE_EXIT) {
+                AUDIO_ERR_LOG("failed with invalid status:%{public}u", expect);
+                return FUTEX_OPERATION_FAILED;
+            }
         }
+
+        if (pred()) { return FUTEX_SUCCESS; }
+
+        cost = ClockTime::GetCurNano() - timeIn;
+        if (cost >= timeout && timeout > 0) {
+            return FUTEX_TIMEOUT;
+        }
+        if (cost < timeout && timeout > 0) {
+            TimeoutToRelativeTime(timeout - cost, waitTime);
+        }
+
+        Trace traceSyscall(std::string("syscall expect: ") + std::to_string(expect) + "cost: " + std::to_string(cost));
         res = syscall(__NR_futex, futexPtr, FUTEX_WAIT, IS_NOT_READY, (timeout <= 0 ? NULL : &waitTime), NULL, 0);
-        if (res == 0 && futexPtr->load() == IS_READY) {
-            return FUTEX_SUCCESS; // return success here
-        }
+        if (pred()) { return FUTEX_SUCCESS; }
+
         if (errno == ETIMEDOUT) {
             AUDIO_WARNING_LOG("wait:%{public}" PRId64"ns timeout, result:%{public}ld errno[%{public}d]:%{public}s",
                 timeout, res, errno, strerror(errno));
             return FUTEX_TIMEOUT;
         }
+
         if (errno != EAGAIN) {
             AUDIO_WARNING_LOG("result:%{public}ld, errno[%{public}d]:%{public}s", res, errno, strerror(errno));
-            return FUTEX_OPERATION_FAILED;
         }
         tryCount++;
     }
