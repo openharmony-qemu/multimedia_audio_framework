@@ -60,7 +60,10 @@ ohos_unittest("audio_oh_routing_manager_unit_test") {
 
   sources = [ "src/oh_audio_routing_manager_unit_test.cpp" ]
 
-  deps = [ "../../../../ohaudio:ohaudio" ]
+  deps = [
+    "../../../../../../services/audio_policy:audio_policy_service_static",
+    "../../../../ohaudio:ohaudio",
+  ]
 
   external_deps = [ "hilog:libhilog" ]
 }
