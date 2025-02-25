@@ -278,6 +278,15 @@ int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int
     return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
 }
 
+int32_t AudioPolicyManager::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
+    DeviceType deviceType, int32_t volumeFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    return gsp->SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
+}
+
 int32_t AudioPolicyManager::SetRingerModeLegacy(AudioRingerMode ringMode)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

@@ -361,6 +361,18 @@ public:
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
 
     /**
+     * @brief Set the stream volume.
+     *
+     * @param volumeType Enumerates the audio volume type.
+     * @param volume The volume to be set for the current stream.
+     * @param deviceType The volume to be set for the device.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType) const;
+
+    /**
      * @brief Obtains the current stream volume.
      *
      * @param volumeType Enumerates the audio volume type.

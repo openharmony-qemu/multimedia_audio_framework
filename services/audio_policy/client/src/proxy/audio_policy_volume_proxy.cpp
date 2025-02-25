@@ -88,6 +88,25 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
+    DeviceType deviceType, int32_t volumeFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(static_cast<int32_t>(volumeType));
+    data.WriteInt32(volumeLevel);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    data.WriteInt32(volumeFlag);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set volume failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
 AudioStreamType AudioPolicyProxy::GetSystemActiveVolumeType(const int32_t clientUid)
 {
     MessageParcel data;
