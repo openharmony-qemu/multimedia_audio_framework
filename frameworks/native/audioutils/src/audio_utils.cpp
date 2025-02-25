@@ -1199,6 +1199,13 @@ static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
     }
 }
 
+static void MemcpyToI32FromF32(float *src, int32_t *dst, size_t count)
+{
+    for (size_t i = 0; i < count; i++) {
+        *(dst + i) = static_cast<int32_t>(*(src + i));
+    }
+}
+
 bool NearZero(int16_t number)
 {
     return number >= -DETECTED_ZERO_THRESHOLD && number <= DETECTED_ZERO_THRESHOLD;
@@ -1270,6 +1277,9 @@ bool SignalDetectAgent::CheckAudioData(uint8_t *buffer, size_t bufferLen)
         int32_t ret = memcpy_s(cache, sizeof(int32_t) * cacheAudioData_.capacity(), buffer, bufferLen);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "LatencyMeas checkAudioData failed, dstSize "
             "%{public}zu, srcSize %{public}zu", sizeof(int32_t) * cacheAudioData_.capacity(), bufferLen);
+    } else if (sampleFormat_ == SAMPLE_F32LE) {
+        float *cp = reinterpret_cast<float*>(buffer);
+        MemcpyToI32FromF32(cp, cache, frameCountIgnoreChannel_);
     } else if (sampleFormat_ == SAMPLE_S24LE) {
         MemcpyToI32FromI24(buffer, cache, frameCountIgnoreChannel_);
     } else {
