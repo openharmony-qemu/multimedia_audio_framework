@@ -120,8 +120,8 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
         }
         monitorVolume_[sessionId] = {volumeFloat, volumeLevel};
     }
-    Trace traceVol("AudioVolume::GetVolume sessionId:" + std::to_string(sessionId) + " streamVol:" +
-        std::to_string(volumeStream) + " systemVol:" + std::to_string(volumeSystem));
+    Trace traceVolume("Volume, sessionId:" + std::to_string(sessionId) + ", volume:" + std::to_string(volumeFloat) +
+        ", stream volume:" + std::to_string(volumeStream) + ", system volume:" + std::to_string(volumeSystem));
     return volumeFloat;
 }
 
@@ -148,6 +148,8 @@ float AudioVolume::GetStreamVolume(uint32_t sessionId)
         }
         monitorVolume_[sessionId] = {volumeStream, 15}; // 15 level only stream volume
     }
+    Trace traceVolume("Volume, sessionId:" + std::to_string(sessionId) +
+        ", stream volume:" + std::to_string(volumeStream));
     return volumeStream;
 }
 

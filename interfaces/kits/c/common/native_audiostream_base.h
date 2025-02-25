@@ -132,6 +132,12 @@ typedef enum {
      * @since 10
      */
     AUDIOSTREAM_SAMPLE_S32LE = 3,
+    /**
+     * 32 bit IEEE floating point, little endian.
+     *
+     * @since 16
+     */
+    AUDIOSTREAM_SAMPLE_F32LE = 4,
 } OH_AudioStream_SampleFormat;
 
 /**

@@ -176,6 +176,7 @@ size_t GetFormatSize(const AudioStreamParams& info)
             bitWidthSize = 3; // size is 3
             break;
         case SAMPLE_S32LE:
+        case SAMPLE_F32LE:
             bitWidthSize = 4; // size is 4
             break;
         default:

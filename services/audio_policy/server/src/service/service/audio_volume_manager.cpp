@@ -978,6 +978,7 @@ bool AudioVolumeManager::IsRingerModeMute()
 
 void AudioVolumeManager::SetRingerModeMute(bool flag)
 {
+    AUDIO_INFO_LOG("Set RingerModeMute_: %{public}d", flag);
     ringerModeMute_.store(flag);
 }
 

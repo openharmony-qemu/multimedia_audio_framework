@@ -1185,7 +1185,7 @@ void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType strea
 
 void AudioPolicyServer::ProcUpdateRingerMode()
 {
-    int32_t curRingVolumeLevel = GetSystemVolumeLevelInternal(STREAM_RING);
+    int32_t curRingVolumeLevel = GetSystemVolumeLevelNoMuteState(STREAM_RING);
     AudioRingerMode ringerMode = (curRingVolumeLevel > 0) ? RINGER_MODE_NORMAL :
         (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT);
     if (!supportVibrator_) {

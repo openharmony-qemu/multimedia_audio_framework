@@ -251,8 +251,8 @@ private:
 
     bool AudioFocusInfoListRemovalCondition(const AudioInterrupt &audioInterrupt,
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocus);
-    void RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
-        AudioScene highestPriorityAudioScene);
+    AudioScene RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
+        AudioScene &highestPriorityAudioScene);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

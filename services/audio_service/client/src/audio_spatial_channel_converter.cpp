@@ -40,7 +40,8 @@ static std::map<uint8_t, int8_t> format2bps = {
     {SAMPLE_U8, sizeof(uint8_t)},
     {SAMPLE_S16LE, sizeof(int16_t)},
     {SAMPLE_S24LE, sizeof(int16_t) + sizeof(int8_t)},
-    {SAMPLE_S32LE, sizeof(int32_t)}};
+    {SAMPLE_S32LE, sizeof(int32_t)},
+    {SAMPLE_F32LE, sizeof(float)}};
 
 static int8_t GetBps(uint8_t format)
 {
