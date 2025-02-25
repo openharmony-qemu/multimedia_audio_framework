@@ -669,7 +669,7 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     handleTimeModel_.ConfigSampleRate(currentRate_);
     bufferInfo_.channelCount = streamInfo.channels;
     bufferInfo_.format = streamInfo.format;
-    bufferInfo_.samplePerFrame = GetSamplePerFrame(streamInfo.format);
+    bufferInfo_.samplePerFrame = Util::GetSamplePerFrame(streamInfo.format);
     bufferInfo_.frameSize = spanSizeInFrame_;
 }
 

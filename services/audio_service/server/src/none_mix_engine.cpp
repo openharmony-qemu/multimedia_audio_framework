@@ -45,7 +45,6 @@ static const int32_t XCOLLIE_FLAG_DEFAULT = (1 | 2); // dump stack and kill self
 NoneMixEngine::NoneMixEngine()
     : isVoip_(false),
       isStart_(false),
-      isPause_(false),
       isInit_(false),
       failedCount_(0),
       writeCount_(0),
@@ -118,10 +117,6 @@ int32_t NoneMixEngine::Start()
         startFadein_ = true;
         ret = renderSink_->Start();
         isStart_ = true;
-    } else if (isPause_) {
-        startFadeout_ = false;
-        startFadein_ = true;
-        isPause_ = false;
     }
     if (!playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->Start();
@@ -137,7 +132,7 @@ int32_t NoneMixEngine::Stop()
         AUDIO_INFO_LOG("already stopped");
         return ret;
     }
-    int32_t xCollieFlagDefault = (1 | 2);
+    int32_t xCollieFlagDefault = XCOLLIE_FLAG_DEFAULT;
     AudioXCollie audioXCollie(
         "NoneMixEngine::Stop", DIRECT_STOP_TIMEOUT_IN_SEC,
         [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr, xCollieFlagDefault);
@@ -187,6 +182,14 @@ int32_t NoneMixEngine::StopAudioSink()
 int32_t NoneMixEngine::Pause()
 {
     AUDIO_INFO_LOG("Enter");
+    if (!isStart_) {
+        AUDIO_INFO_LOG("already stopped");
+        return SUCCESS;
+    }
+    AudioXCollie audioXCollie(
+        "NoneMixEngine::Pause", DIRECT_STOP_TIMEOUT_IN_SEC,
+        [this](void *) { AUDIO_ERR_LOG("%{public}d stop timeout", isVoip_); }, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     writeCount_ = 0;
     failedCount_ = 0;
     if (playbackThread_) {
@@ -324,7 +327,7 @@ void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &strea
 
 bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
 {
-    return isStart_ && !isPause_;
+    return isStart_;
 }
 
 void NoneMixEngine::StandbySleep()

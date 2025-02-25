@@ -57,7 +57,6 @@ private:
 private:
     bool isVoip_;
     bool isStart_;
-    bool isPause_;
     bool isInit_;
     AudioDeviceDescriptor device_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     std::atomic<uint32_t> failedCount_;
