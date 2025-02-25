@@ -77,7 +77,7 @@ AudioVolume::~AudioVolume()
 
 float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass)
 {
-    Trace trace("AudioVolume::GetVolume sessionId:" + std::to_string(sessionId));
+    Trace trace("AudioVolume::GetVolume");
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     float volumeStream = 1.0f;
     auto it = streamVolume_.find(sessionId);
@@ -120,6 +120,8 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
         }
         monitorVolume_[sessionId] = {volumeFloat, volumeLevel};
     }
+    Trace traceVol("AudioVolume::GetVolume sessionId:" + std::to_string(sessionId) + " streamVol:" +
+        std::to_string(volumeStream) + " systemVol:" + std::to_string(volumeSystem));
     return volumeFloat;
 }
 

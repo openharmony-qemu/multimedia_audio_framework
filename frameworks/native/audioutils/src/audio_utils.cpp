@@ -70,6 +70,7 @@ constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
 constexpr int32_t TIME_OUT_SECONDS = 10;
+constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
 const uint32_t UNIQUE_ID_INTERVAL = 8;
 
@@ -208,6 +209,11 @@ void WatchTimeout::CheckCurrTimeout()
 
 bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid)
 {
+    if (uid == BOOTUP_MUSIC_UID) {
+        // boot animation must be system app, no need query from BMS, to redeuce boot latency.
+        AUDIO_INFO_LOG("boot animation must be system app, no need query from BMS.");
+        return true;
+    }
     bool isSystemApp = false;
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():CheckoutSystemApp");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
