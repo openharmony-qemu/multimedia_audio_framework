@@ -799,6 +799,31 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_007, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetParams API via legal input.
+ * @tc.number: Audio_Renderer_SetParams_008
+ * @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.
+ *             rendererParams.sampleFormat = SAMPLE_F32LE;
+ *             rendererParams.sampleRate = SAMPLE_RATE_44100;
+ *             rendererParams.channelCount = STEREO;
+ *             rendererParams.encodingType = ENCODING_PCM;
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_008, TestSize.Level1)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererParams rendererParams;
+    rendererParams.sampleFormat = SAMPLE_F32LE;
+    rendererParams.sampleRate = SAMPLE_RATE_44100;
+    rendererParams.channelCount = STEREO;
+    rendererParams.encodingType = ENCODING_PCM;
+
+    int32_t ret = audioRenderer->SetParams(rendererParams);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
  * @tc.name  : Test SetParams API stability.
  * @tc.number: Audio_Renderer_SetParams_Stability_001
  * @tc.desc  : Test SetParams interface stability.
@@ -7893,6 +7918,11 @@ HWTEST(AudioRendererUnitTest, GetFormatSize_001, TestSize.Level1)
     const AudioStreamParams info_5 = params;
     ret = GetFormatSize(info_5);
     EXPECT_EQ(ret, 2);
+
+    params.format = SAMPLE_F32LE;
+    const AudioStreamParams info_6 = params;
+    ret = GetFormatSize(info_6);
+    EXPECT_EQ(ret, 4);
 }
 
 /**
