@@ -184,6 +184,7 @@ public:
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
+    void SetSwitchingStatus(bool isSwitching) override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
@@ -217,6 +218,9 @@ private:
 
     std::mutex setPreferredFrameSizeMutex_;
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
+
+    std::mutex switchingMutex_;
+    StreamSwitchingInfo switchingInfo_ {false, INVALID};
 };
 } // namespace AudioStandard
 } // namespace OHOS

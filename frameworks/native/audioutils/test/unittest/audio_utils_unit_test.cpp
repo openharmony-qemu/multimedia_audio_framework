@@ -15,9 +15,13 @@
 
 #include <thread>
 #include <gtest/gtest.h>
+#include "gmock/gmock.h"
 #include "audio_utils.h"
+#include "audio_scope_exit.h"
+#include "audio_safe_block_queue.h"
 
 using namespace testing::ext;
+using namespace testing;
 using namespace std;
 namespace OHOS {
 namespace AudioStandard {
@@ -25,6 +29,12 @@ namespace AudioStandard {
 constexpr int32_t SUCCESS = 0;
 constexpr unsigned int QUEUE_SLOTS = 10;
 constexpr unsigned int THREAD_NUM = QUEUE_SLOTS + 1;
+
+class MockExe {
+public:
+    MOCK_METHOD(void, Exe, ());
+};
+
 class AudioUtilsUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -800,6 +810,40 @@ HWTEST(AudioUtilsUnitTest, testMutilthreadConcurrentGetAndPopInfullqueue001, Tes
     while (!DemoThreadData::shareQueue.IsEmpty()) {
         demoDatas[0].Get();
     }
+}
+
+
+/**
+* @tc.name  : Test AudioScopeExit  API
+* @tc.type  : FUNC
+* @tc.number: AudioScopeExit_001
+* @tc.desc  : Test AudioScopeExit API
+*/
+HWTEST(AudioUtilsUnitTest, AudioScopeExit_001, TestSize.Level1)
+{
+    MockExe mock;
+    InSequence seq;
+    EXPECT_CALL(mock, Exe()).Times(1);
+    AudioScopeExit scopeExit([&mock] () {
+        mock.Exe();
+    });
+}
+
+/**
+* @tc.name  : Test AudioScopeExit  API
+* @tc.type  : FUNC
+* @tc.number: AudioScopeExit_002
+* @tc.desc  : Test AudioScopeExit API
+*/
+HWTEST(AudioUtilsUnitTest, AudioScopeExit_002, TestSize.Level1)
+{
+    MockExe mock;
+    InSequence seq;
+    EXPECT_CALL(mock, Exe()).Times(0);
+    AudioScopeExit scopeExit([&mock] () {
+        mock.Exe();
+    });
+    scopeExit.Relase();
 }
 } // namespace AudioStandard
 } // namespace OHOS

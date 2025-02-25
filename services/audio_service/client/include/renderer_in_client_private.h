@@ -53,6 +53,7 @@
 
 #include "media_monitor_manager.h"
 #include "event_bean.h"
+#include "audio_safe_block_queue.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -218,6 +219,7 @@ public:
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
+    void SetSwitchingStatus(bool isSwitching) override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -435,6 +437,9 @@ private:
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
 
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
+
+    std::mutex switchingMutex_;
+    StreamSwitchingInfo switchingInfo_ {false, INVALID};
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {
