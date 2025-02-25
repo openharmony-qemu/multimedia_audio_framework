@@ -47,6 +47,7 @@
 #include "audio_config_manager.h"
 #include "audio_router_map.h"
 #include "audio_a2dp_offload_manager.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

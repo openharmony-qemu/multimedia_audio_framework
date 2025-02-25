@@ -337,6 +337,43 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
     return result;
 }
 
+int32_t AudioVolumeManager::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel,
+    DeviceType deviceType)
+{
+    int32_t result;
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType !=STREAM_VOICE_CALL &&
+        curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
+        result = SetA2dpDeviceVolume(btDevice, volumeLevel, true);
+#ifdef BLUETOOTH_ENABLE
+        if (result == SUCCESS) {
+            // set to avrcp device
+            return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice, volumeLevel);
+        } else if (result == ERR_UNKNOWN) {
+            AUDIO_INFO_LOG("UNKNOWN RESULT set abs safe volume");
+            return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(btDevice,
+                audioPolicyManager_.GetSafeVolumeLevel());
+        }
+#else
+    (void)result;
+#endif
+    }
+    int32_t sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel);
+    CheckToCloseNotification(streamType, volumeLevel);
+    CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_SET_VOL_FAILED_BY_SAFE_VOL,
+        "safevolume did not deal");
+    result = audioPolicyManager_.SetSystemVolumeLevelWithDevice(VolumeUtils::GetVolumeTypeFromStreamType(streamType),
+        volumeLevel, deviceType);
+    if (result == SUCCESS && (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION)) {
+        SetVoiceCallVolume(volumeLevel);
+    }
+    Volume vol = {false, 1.0f, 0};
+    vol.volumeFloat = audioPolicyManager_.GetSystemVolumeInDb(streamType, volumeLevel, curOutputDeviceType);
+    SetSharedVolume(streamType, curOutputDeviceType, vol);
+    return result;
+}
+
 int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel)
 {
     int32_t sVolumeLevel = volumeLevel;
@@ -978,6 +1015,7 @@ bool AudioVolumeManager::IsRingerModeMute()
 
 void AudioVolumeManager::SetRingerModeMute(bool flag)
 {
+    AUDIO_INFO_LOG("Set RingerModeMute_: %{public}d", flag);
     ringerModeMute_.store(flag);
 }
 

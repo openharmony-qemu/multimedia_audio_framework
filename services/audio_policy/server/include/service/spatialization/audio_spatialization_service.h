@@ -23,6 +23,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <shared_mutex>
+#include <openssl/sha.h>
 #include "audio_group_handle.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_factory.h"
@@ -48,6 +49,7 @@ public:
     const sptr<IStandardAudioService> GetAudioServerProxy();
     bool IsSpatializationEnabled();
     bool IsSpatializationEnabled(const std::string address);
+    bool IsSpatializationEnabledForCurrentDevice();
     int32_t SetSpatializationEnabled(const bool enable);
     int32_t SetSpatializationEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
@@ -59,6 +61,7 @@ public:
     void HandleSpatializationEnabledChange(const bool &enabled);
     void HandleSpatializationEnabledChange(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
+    void HandleSpatializationEnabledChangeForCurrentDevice(const bool &enabled);
     void HandleHeadTrackingEnabledChange(const bool &enabled);
     void HandleHeadTrackingEnabledChange(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
@@ -79,6 +82,7 @@ public:
     void UpdateRendererInfo(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
     void InitSpatializationState();
     std::string GetCurrentDeviceAddress() const;
+    void UpdateSpatializationSupported(const std::string encryptedAddress);
 private:
     AudioSpatializationService()
         :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())

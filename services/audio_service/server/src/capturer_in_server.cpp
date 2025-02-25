@@ -28,6 +28,7 @@
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
 #endif
+#include "policy_handler.h"
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
@@ -45,6 +46,7 @@ CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_p
 {
     processConfig_ = processConfig;
     streamListener_ = streamListener;
+    innerCapId_ = processConfig.innerCapId;
 }
 
 CapturerInServer::~CapturerInServer()
@@ -464,12 +466,17 @@ int32_t CapturerInServer::Release()
     status_ = I_STATUS_RELEASED;
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        AUDIO_INFO_LOG("Disable inner capturer for %{public}u", streamIndex_);
+        AUDIO_INFO_LOG("Disable inner capturer for %{public}u， innerCapId :%{public}d, innerCapMode:%{public}d",
+            streamIndex_, innerCapId_, processConfig_.innerCapMode);
         if (processConfig_.innerCapMode == MODERN_INNER_CAP) {
-            PlaybackCapturerManager::GetInstance()->RemovePlaybackCapturerFilterInfo(streamIndex_);
+            PlaybackCapturerManager::GetInstance()->RemovePlaybackCapturerFilterInfo(streamIndex_, innerCapId_);
         } else {
             PlaybackCapturerManager::GetInstance()->SetInnerCapturerState(false);
         }
+        if (PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId_)) {
+            AudioService::GetInstance()->UnloadModernInnerCapSink(innerCapId_);
+        }
+        innerCapId_ = 0;
     }
 #endif
     if (needCheckBackground_) {
@@ -522,7 +529,6 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
             return ERR_PERMISSION_DENIED;
         }
     }
-
     filterConfig_ = config;
 
     if (filterConfig_.filterOptions.usages.size() == 0) {
@@ -538,7 +544,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     }
 
     // in plan: add more check and print config
-    PlaybackCapturerManager::GetInstance()->SetPlaybackCapturerFilterInfo(streamIndex_, filterConfig_);
+    PlaybackCapturerManager::GetInstance()->SetPlaybackCapturerFilterInfo(streamIndex_, filterConfig_, innerCapId_);
     return SUCCESS;
 }
 #endif

@@ -17,6 +17,7 @@
 #define ST_AUDIO_SERVER_H
 
 #include <mutex>
+#include <condition_variable>
 #include <pthread.h>
 #include <unordered_map>
 
@@ -30,8 +31,9 @@
 #include "audio_server_dump.h"
 #include "audio_system_manager.h"
 #include "audio_inner_call.h"
-#include "i_audio_renderer_sink.h"
-#include "i_audio_capturer_source.h"
+#include "common/hdi_adapter_info.h"
+#include "sink/i_audio_render_sink.h"
+#include "source/i_audio_capture_source.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
 #include "policy_handler.h"
@@ -110,15 +112,16 @@ public:
 
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
 
-    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
+    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
+        const AudioPlaybackCaptureConfig &filterConfig = AudioPlaybackCaptureConfig()) override;
 
     // ISinkParameterCallback
-    void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
+    void OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
 
     // IAudioSourceCallback
     void OnWakeupClose() override;
-    void OnAudioSourceParamChange(const std::string &netWorkId, const AudioParamKey key,
+    void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
@@ -174,7 +177,7 @@ public:
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
 
-    void OnAudioSinkStateChange(uint32_t sinkId, bool started) override;
+    void OnRenderSinkStateChange(uint32_t sinkId, bool started) override;
 
     void CheckHibernateState(bool hibernate) override;
 
@@ -187,10 +190,25 @@ public:
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     
     void NotifyAccountsChanged() override;
+
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
+
+    void NotifyAudioPolicyReady() override;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
+#endif
+
+    int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
+    void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
 private:
+#ifdef HAS_FEATURE_INNERCAPTURER
+    bool HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
+        const AudioPlaybackCaptureConfig &filterConfig);
+#endif
     int32_t GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &propertyArray,
         const DeviceType& deviceType);
     int32_t GetAudioEffectPropertyArray(AudioEffectPropertyArrayV3 &propertyArray);
@@ -280,6 +298,10 @@ private:
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem
     std::map<std::string, std::string> usbInfoMap_;
+
+    std::atomic<bool> isAudioPolicyReady_ = false;
+    std::mutex isAudioPolicyReadyMutex_;
+    std::condition_variable isAudioPolicyReadyCv_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

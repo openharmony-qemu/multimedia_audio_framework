@@ -32,6 +32,7 @@ private:
     void GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSystemVolumeLevelWithDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply);
     void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteLegacyInternal(MessageParcel &data, MessageParcel &reply);
@@ -70,7 +71,7 @@ private:
     void SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void ExcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void UnexcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
-    void GetExcludedOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
+    void GetExcludedDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
@@ -120,6 +121,7 @@ private:
     void UnsetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationEnabledForCurrentDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);

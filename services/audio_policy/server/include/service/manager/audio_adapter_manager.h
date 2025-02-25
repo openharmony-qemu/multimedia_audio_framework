@@ -71,6 +71,8 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
+    int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
@@ -86,7 +88,7 @@ public:
 
     std::vector<SinkInfo> GetAllSinks();
 
-    std::vector<SinkInput> GetAllSinkInputs();
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 
     std::vector<SourceOutput> GetAllSourceOutputs();
 

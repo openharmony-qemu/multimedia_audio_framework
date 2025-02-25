@@ -207,7 +207,8 @@ void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
 }
 
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
-    const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj,
+    const AudioPlaybackCaptureConfig &config)
 {
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
@@ -567,6 +568,39 @@ int32_t RendererInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, 
     return audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, outBuffer, outBufferSize);
 }
 
+void RendererInClientInner::InitCallbackLoop()
+{
+    cbThreadReleased_ = false;
+    auto weakRef = weak_from_this();
+    // OS_AudioWriteCB
+    callbackLoop_ = std::thread([weakRef] {
+        bool keepRunning = true;
+        std::shared_ptr<RendererInClientInner> strongRef = weakRef.lock();
+        if (strongRef != nullptr) {
+            strongRef->cbThreadCv_.notify_one();
+            strongRef->WatchingWriteCallbackFunc(); // add watchdog
+            AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
+        } else {
+            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
+        }
+        strongRef = nullptr;
+        // start loop
+        while (keepRunning) {
+            strongRef = weakRef.lock();
+            if (strongRef == nullptr) {
+                AUDIO_INFO_LOG("RendererInClientInner destroyed");
+                break;
+            }
+            keepRunning = strongRef->WriteCallbackFunc(); // Main operation in callback loop
+        }
+        if (strongRef != nullptr) {
+            AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", strongRef->sessionId_);
+            strongRef->RendererRemoveWatchdog("WatchingWriteCallbackFunc", strongRef->sessionId_); // Remove watchdog
+        }
+    });
+    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioWriteCB");
+}
+
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
 {
     AUDIO_INFO_LOG("SetRenderMode to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
@@ -589,8 +623,7 @@ int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
     renderMode_ = renderMode;
 
     // init callbackLoop_
-    callbackLoop_ = std::thread([this] { this->WriteCallbackFunc(); });
-    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioWriteCB");
+    InitCallbackLoop();
 
     std::unique_lock<std::mutex> threadStartlock(statusMutex_);
     bool stopWaiting = cbThreadCv_.wait_for(threadStartlock, std::chrono::milliseconds(SHORT_TIMEOUT_IN_MS), [this] {
@@ -998,9 +1031,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         cbThreadReleased_ = true; // stop loop
         cbThreadCv_.notify_all();
         FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
-        if (callbackLoop_.joinable()) {
-            callbackLoop_.join();
-        }
+        callbackLoop_.detach();
     }
     paramsIsSet_ = false;
 

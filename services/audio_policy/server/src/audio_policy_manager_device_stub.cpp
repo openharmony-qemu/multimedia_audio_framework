@@ -76,7 +76,8 @@ void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, Messag
 {
     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
     bool active = data.ReadBool();
-    int32_t result = SetDeviceActive(deviceType, active);
+    int32_t pid = data.ReadInt32();
+    int32_t result = SetDeviceActive(deviceType, active, pid);
     if (result == SUCCESS)
         reply.WriteInt32(AUDIO_OK);
     else
@@ -187,10 +188,10 @@ void AudioPolicyManagerStub::UnexcludeOutputDevicesInternal(MessageParcel &data,
     reply.WriteInt32(ret);
 }
 
-void AudioPolicyManagerStub::GetExcludedOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::GetExcludedDevicesInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetExcludedOutputDevices(audioDevUsage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetExcludedDevices(audioDevUsage);
     int32_t size = static_cast<int32_t>(devices.size());
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
@@ -232,7 +233,8 @@ void AudioPolicyManagerStub::SetCallDeviceActiveInternal(MessageParcel &data, Me
     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
     bool active = data.ReadBool();
     std::string address = data.ReadString();
-    int32_t result = SetCallDeviceActive(deviceType, active, address);
+    int32_t pid = data.ReadInt32();
+    int32_t result = SetCallDeviceActive(deviceType, active, address, pid);
     reply.WriteInt32(result);
 }
 

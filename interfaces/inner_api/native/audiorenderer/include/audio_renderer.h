@@ -932,6 +932,14 @@ public:
      */
     virtual float GetSpeed() = 0;
 
+    /**
+    * @brief Get offload status.
+    *
+    * @return Returns <b>true</b> if offload is enabled.
+    * @since 15
+    */
+    virtual bool IsOffloadEnable() { return false; }
+
     virtual bool IsFastRenderer() = 0;
 
     virtual ~AudioRenderer();

@@ -29,9 +29,9 @@
 
 #include "securec.h"
 #include "audio_hdi_log.h"
-#include "audio_hdiadapter_info.h"
 #include "audio_enhance_chain_adapter.h"
 #include "source_userdata.h"
+#include "common/hdi_adapter_info.h"
 
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSourceFree(pa_source *s);
@@ -123,9 +123,9 @@ static bool DecreaseScenekeyCount(pa_hashmap *sceneMap, const char *key)
     return false;
 }
 
-static enum HdiAdapterFormat ConvertPaFormat(pa_sample_format_t paFormat)
+static enum AudioSampleFormatIntf ConvertPaFormat(pa_sample_format_t paFormat)
 {
-    enum HdiAdapterFormat format;
+    enum AudioSampleFormatIntf format;
     switch (paFormat) {
         case PA_SAMPLE_U8:
             format = SAMPLE_U8;
@@ -228,7 +228,7 @@ static void SetDefaultResampler(pa_source_output *so, const pa_sample_spec *algo
     }
 }
 
-static uint32_t GetByteSizeByFormat(enum HdiAdapterFormat format)
+static uint32_t GetByteSizeByFormat(enum AudioSampleFormatIntf format)
 {
     uint32_t byteSize = 0;
     switch (format) {

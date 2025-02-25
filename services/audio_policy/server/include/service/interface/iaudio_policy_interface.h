@@ -47,6 +47,9 @@ public:
 
     virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
 
+    virtual int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel,
+        DeviceType deviceType) = 0;
+
     virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
 
     virtual int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType) = 0;
@@ -62,7 +65,7 @@ public:
 
     virtual std::vector<SinkInfo> GetAllSinks() = 0;
 
-    virtual std::vector<SinkInput> GetAllSinkInputs() = 0;
+    virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
     virtual std::vector<SourceOutput> GetAllSourceOutputs() = 0;
 

@@ -60,6 +60,9 @@ public:
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0);
 
+    int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
+        int32_t volumeFlag = 0);
+
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
@@ -91,7 +94,7 @@ public:
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
         AudioDeviceUsage audioDevUsage);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
@@ -104,7 +107,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter);
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
@@ -330,6 +333,8 @@ public:
 
     bool IsSpatializationEnabled(const std::string address);
 
+    bool IsSpatializationEnabledForCurrentDevice();
+
     int32_t SetSpatializationEnabled(const bool enable);
 
     int32_t SetSpatializationEnabled(
@@ -347,12 +352,17 @@ public:
     int32_t RegisterSpatializationEnabledEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
 
+    int32_t RegisterSpatializationEnabledForCurrentDeviceEventListener(
+        const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &callback);
+
     int32_t RegisterHeadTrackingEnabledEventListener(
         const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
 
     int32_t RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback);
 
     int32_t UnregisterSpatializationEnabledEventListener();
+
+    int32_t UnregisterSpatializationEnabledForCurrentDeviceEventListener();
 
     int32_t UnregisterHeadTrackingEnabledEventListener();
 
@@ -389,7 +399,8 @@ public:
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID);
 
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+        const int32_t pid = -1);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -454,6 +465,12 @@ public:
 
     int32_t UnsetMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
+
+    int32_t SetAudioSceneChangeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+
+    int32_t UnsetAudioSceneChangeCallback(
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 

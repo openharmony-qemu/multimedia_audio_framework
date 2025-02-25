@@ -94,6 +94,9 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
+    int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
+        int32_t volumeFlag = 0) override;
+
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) override;
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
@@ -140,14 +143,14 @@ public:
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
         AudioDeviceUsage audioDevUsage) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
 
@@ -333,6 +336,8 @@ public:
 
     bool IsSpatializationEnabled(const std::string address) override;
 
+    bool IsSpatializationEnabledForCurrentDevice() override;
+
     int32_t SetSpatializationEnabled(const bool enable) override;
 
     int32_t SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
@@ -381,7 +386,8 @@ public:
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId) override;
 
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) override;
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+        const int32_t pid = -1) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
 
@@ -551,7 +557,11 @@ private:
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
+        bool isUpdateUi, DeviceType deviceType);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute);
+    int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
+        bool mute, DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);

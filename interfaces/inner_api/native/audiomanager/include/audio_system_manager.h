@@ -216,6 +216,18 @@ public:
     virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
 };
 
+class AudioManagerAudioSceneChangedCallback {
+public:
+    virtual ~AudioManagerAudioSceneChangedCallback() = default;
+    /**
+     * Called when AudioScene changed.
+     *
+     * @param AudioScene audio scene
+     * @since 16
+     */
+    virtual void OnAudioSceneChange(const AudioScene audioScene) = 0;
+};
+
 class AudioParameterCallback {
 public:
     virtual ~AudioParameterCallback() = default;
@@ -347,6 +359,18 @@ public:
      * @since 8
      */
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
+
+    /**
+     * @brief Set the stream volume.
+     *
+     * @param volumeType Enumerates the audio volume type.
+     * @param volume The volume to be set for the current stream.
+     * @param deviceType The volume to be set for the device.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType) const;
 
     /**
      * @brief Obtains the current stream volume.
@@ -538,7 +562,7 @@ public:
      * @return Returns the device list is obtained.
      * @since 16
      */
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
         AudioDeviceUsage audioDevUsage) const;
 
     /**
@@ -1182,6 +1206,24 @@ public:
 
     int32_t SetMicrophoneBlockedCallback(const std::shared_ptr<AudioManagerMicrophoneBlockedCallback>& callback);
     int32_t UnsetMicrophoneBlockedCallback(std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = nullptr);
+    
+    /**
+     * @brief Registers the audioScene change callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t SetAudioSceneChangeCallback(const std::shared_ptr<AudioManagerAudioSceneChangedCallback>& callback);
+
+    /**
+     * @brief Registers the audioScene change callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t UnsetAudioSceneChangeCallback(std::shared_ptr<AudioManagerAudioSceneChangedCallback> callback = nullptr);
 
     std::string GetSelfBundleName(int32_t uid);
 
@@ -1274,7 +1316,7 @@ private:
 
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
-    int32_t GetCallingPid();
+    int32_t GetCallingPid() const;
     std::string GetSelfBundleName();
 
     int32_t RegisterWakeupSourceCallback();

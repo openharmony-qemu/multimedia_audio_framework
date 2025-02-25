@@ -27,10 +27,11 @@ public:
     virtual ~ICapturerFilterListener() = default;
 
     // This will be called when a filter is first enabled or changed.
-    virtual int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig) = 0;
+    virtual int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig,
+        int32_t innerCapId) = 0;
 
     // This will be called when a filter released.
-    virtual int32_t OnCapturerFilterRemove(uint32_t sessionId) = 0;
+    virtual int32_t OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId) = 0;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

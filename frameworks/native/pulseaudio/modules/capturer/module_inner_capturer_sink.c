@@ -46,6 +46,7 @@
 #include "audio_common_log.h"
 #include "audio_utils_c.h"
 #include "audio_volume_c.h"
+#include "audio_schedule.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Inner Capturer Sink"));
@@ -289,6 +290,7 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
 
 static void ThreadFunc(void *userdata)
 {
+    ScheduleReportData(getpid(), gettid(), "audio_server");
     struct userdata *u = userdata;
 
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
@@ -344,6 +346,7 @@ fail:
 
 finish:
     AUDIO_DEBUG_LOG("Thread shutting down");
+    UnscheduleReportData(getpid(), gettid(), "audio_server");
 }
 
 int InitFailed(pa_module *m, pa_modargs *ma)
@@ -380,7 +383,6 @@ int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
     pa_sink_new_data_set_sample_spec(&data, &ss);
     pa_sink_new_data_set_channel_map(&data, &map);
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_DESCRIPTION, _("Null Output"));
-    pa_proplist_sets(data.proplist, PA_PROP_DEVICE_CLASS, "capturer");
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING, "innercapturer");
 
     u->formats = pa_idxset_new(NULL, NULL);

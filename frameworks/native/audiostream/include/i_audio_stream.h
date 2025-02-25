@@ -129,7 +129,8 @@ public:
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
     virtual void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;
     virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj) = 0;
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) = 0;
     virtual int32_t GetAudioStreamInfo(AudioStreamParams &info) = 0;
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
     virtual void GetAudioPipeType(AudioPipeType &pipeType) = 0;

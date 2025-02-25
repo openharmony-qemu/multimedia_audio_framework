@@ -61,7 +61,8 @@ public:
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj) override;
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
@@ -89,6 +90,7 @@ public:
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
+    void InitCallbackLoop();
     AudioRenderMode GetRenderMode() override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
@@ -219,7 +221,8 @@ private:
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WatchingWriteCallbackFunc();
-    void WriteCallbackFunc();
+    void RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId);
+    bool WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);

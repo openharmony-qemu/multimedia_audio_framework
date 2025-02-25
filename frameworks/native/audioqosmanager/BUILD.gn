@@ -28,6 +28,7 @@ ohos_shared_library("audio_qosmanager") {
 
   include_dirs = [
     "include",
+    "../audioschedule/include",
     "../audioutils/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -39,10 +40,13 @@ ohos_shared_library("audio_qosmanager") {
   external_deps = []
 
   if (ressche_enable == true) {
+    deps += [ "../audioschedule:audio_schedule" ]
     external_deps += [ "qos_manager:concurrent_task_client" ]
     external_deps += [ "qos_manager:qos" ]
     external_deps += [
       "c_utils:utils",
+      "hilog:libhilog",
+      "init:libbegetutil",
       "ipc:ipc_single",
     ]
     cflags += [ "-DQOSMANAGER_ENABLE" ]

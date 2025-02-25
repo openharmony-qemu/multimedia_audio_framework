@@ -106,7 +106,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
 }
 
 int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
-    const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj,
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     AUDIO_INFO_LOG("FastAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
         " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);
@@ -839,27 +840,18 @@ bool FastAudioStream::RestoreAudioStream(bool needStoreState)
         processClient_->Release();
         processClient_ = nullptr;
     }
-    int32_t ret = SetAudioStreamInfo(streamInfo_, proxyObj_);
-    if (ret != SUCCESS) {
+    if (SetAudioStreamInfo(streamInfo_, proxyObj_) != SUCCESS || SetCallbacksWhenRestore() != SUCCESS) {
         goto error;
     }
     switch (oldState) {
         case RUNNING:
-            CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
-            if (eMode_ == AUDIO_MODE_PLAYBACK) {
-                ret = processClient_->SaveDataCallback(spkProcClientCb_);
-            } else if (eMode_ == AUDIO_MODE_RECORD) {
-                ret = processClient_->SaveDataCallback(micProcClientCb_);
-            }
-            if (ret != SUCCESS) {
-                goto error;
-            }
             result = StartAudioStream();
             break;
         case PAUSED:
             result = StartAudioStream() && PauseAudioStream();
             break;
         case STOPPED:
+            [[fallthrough]];
         case STOPPING:
             result = StartAudioStream() && StopAudioStream();
             break;
@@ -919,6 +911,18 @@ void FastAudioStream::SetSwitchingStatus(bool isSwitching)
     } else {
         switchingInfo_ = {false, INVALID};
     }
+}
+
+int32_t FastAudioStream::SetCallbacksWhenRestore()
+{
+    int32_t ret = SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERROR_INVALID_PARAM, "processClient_ is null");
+    if (eMode_ == AUDIO_MODE_PLAYBACK) {
+        ret = processClient_->SaveDataCallback(spkProcClientCb_);
+    } else if (eMode_ == AUDIO_MODE_RECORD) {
+        ret = processClient_->SaveDataCallback(micProcClientCb_);
+    }
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS
