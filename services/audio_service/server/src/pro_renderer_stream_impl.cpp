@@ -627,7 +627,7 @@ void ProRendererStreamImpl::ConvertSrcToFloat(const BufferDesc &bufferDesc)
     }
 
     AUDIO_DEBUG_LOG("ConvertSrcToFloat resample buffer,samplePerFrame:%{public}d,size:%{public}zu",
-                    bufferInfo_.samplePerFrame, resampleSrcBuffer.size());
+        bufferInfo_.samplePerFrame, resampleSrcBuffer.size());
     AudioCommonConverter::ConvertBufferToFloat(bufferInfo_, resampleSrcBuffer);
 }
 
