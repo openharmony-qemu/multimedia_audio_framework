@@ -700,6 +700,9 @@ void AudioPolicyParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> curNode
             } else if (configInfo.name_ == "anahsShowType") {
                 AUDIO_INFO_LOG("anahs pc support: %{public}s", configInfo.value_.c_str());
                 HandleUpdateAnahsSupportParsed(configInfo.value_);
+            } else if (configInfo.name_ == "smartTVSupport") {
+                AUDIO_INFO_LOG("smart tv support: %{public}s", configInfo.value_.c_str());
+                HandleUpdateTvSupportParsed(configInfo.value_);
             }
         }
         curNode->MoveToNext();
@@ -724,6 +727,17 @@ void AudioPolicyParser::HandleUpdateAnahsSupportParsed(std::string &value)
     anahsShowType = value;
     AUDIO_INFO_LOG("HandleUpdateAnahsSupportParsed show type: %{public}s", anahsShowType.c_str());
     portObserver_.OnUpdateAnahsSupport(anahsShowType);
+}
+
+void AudioPolicyParser::HandleUpdateTvSupportParsed(std::string &value)
+{
+    if (value == "true") {
+        portObserver_.OnUpdateRouteSupport(true);
+        shouldOpenMicSpeaker_ = true;
+    } else {
+        portObserver_.OnUpdateRouteSupport(false);
+        shouldOpenMicSpeaker_ = false;
+    }
 }
 
 XmlNodeType AudioPolicyParser::GetXmlNodeTypeAsInt(std::shared_ptr<AudioXmlNode> curNode)

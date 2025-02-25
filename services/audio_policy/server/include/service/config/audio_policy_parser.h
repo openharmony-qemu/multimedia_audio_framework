@@ -77,6 +77,7 @@ private:
 
     void HandleUpdateRouteSupportParsed(std::string &value);
     void HandleUpdateAnahsSupportParsed(std::string &value);
+    void HandleUpdateTvSupportParsed(std::string &value);
     PAConfigType GetPaConfigType(std::string &name);
 
     void SplitStringToList(std::string &str, std::list<std::string> &result);
