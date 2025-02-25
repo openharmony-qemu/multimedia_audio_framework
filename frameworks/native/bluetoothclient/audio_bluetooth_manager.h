@@ -149,6 +149,9 @@ public:
     static bool IsVirtualCall();
 
 private:
+    static int32_t ConnectScoUponDefaultScene(int8_t category);
+
+private:
     static HandsFreeAudioGateway *hfpInstance_;
     static std::shared_ptr<AudioHfpListener> hfpListener_;
     static AudioStandard::AudioScene scene_;

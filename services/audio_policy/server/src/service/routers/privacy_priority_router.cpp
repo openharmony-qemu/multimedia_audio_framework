@@ -163,6 +163,17 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
+
+    // bluetooth sco device, need skip
+    if (desc == nullptr) {
+        AUDIO_ERR_LOG("nullptr desc");
+        return make_shared<AudioDeviceDescriptor>();
+    }
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        AUDIO_INFO_LOG("record scene, skip bluetooth sco router");
+        return make_shared<AudioDeviceDescriptor>();
+    }
+
     return desc;
 }
 
