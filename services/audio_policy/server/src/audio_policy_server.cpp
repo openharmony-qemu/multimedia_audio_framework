@@ -660,6 +660,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
 #ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().Init(&audioPolicyService_);
     AudioUsbManager::GetInstance().SubscribeEvent();
 #endif
     SubscribeSafeVolumeEvent();
