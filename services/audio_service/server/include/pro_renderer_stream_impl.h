@@ -23,6 +23,7 @@
 #include "audio_resample.h"
 #include "linear_pos_time_model.h"
 #include "audio_down_mix_stereo.h"
+#include "audio_common_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -73,14 +74,15 @@ public:
     int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) override;
     int32_t ReturnIndex(int32_t index) override;
     int32_t SetClientVolume(float clientVolume) override;
+    void BlockStream() noexcept override;
 
 private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept;
     AudioSampleFormat GetDirectFormat(AudioSampleFormat format) const noexcept;
-    void ConvertSrcToFloat(uint8_t *buffer, size_t bufLength, float volume);
+    void ConvertSrcToFloat(const BufferDesc &bufferDesc);
     void ConvertFloatToDes(int32_t writeIndex);
-    float GetStreamVolume();
+    void GetStreamVolume();
     void PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index);
     int32_t PopWriteBufferIndex();
     void SetOffloadDisable();
@@ -117,7 +119,8 @@ private:
     LinearPosTimeModel handleTimeModel_;
     AudioProcessConfig processConfig_;
     std::unique_ptr<AudioDownMixStereo> downMixer_;
-    
+    BufferBaseInfo bufferInfo_;
+
     std::mutex firstFrameMutex;
     std::mutex enqueueMutex;
     std::mutex peekMutex;

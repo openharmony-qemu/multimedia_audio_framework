@@ -1234,6 +1234,11 @@ int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
 }
 // offload end
 
+void PaRendererStreamImpl::BlockStream() noexcept
+{
+    return;
+}
+
 int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
 {
     if (clientVolume < MIN_FLOAT_VOLUME || clientVolume > MAX_FLOAT_VOLUME) {
