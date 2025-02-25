@@ -84,16 +84,18 @@ FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout,
 
         Trace traceSyscall(std::string("syscall expect: ") + std::to_string(expect) + "cost: " + std::to_string(cost));
         res = syscall(__NR_futex, futexPtr, FUTEX_WAIT, IS_NOT_READY, (timeout <= 0 ? NULL : &waitTime), NULL, 0);
+        auto sysErr = errno;
+
         if (pred()) { return FUTEX_SUCCESS; }
 
-        if (errno == ETIMEDOUT) {
-            AUDIO_WARNING_LOG("wait:%{public}" PRId64"ns timeout, result:%{public}ld errno[%{public}d]:%{public}s",
-                timeout, res, errno, strerror(errno));
+        if ((res != 0) && (sysErr == ETIMEDOUT)) {
+            AUDIO_WARNING_LOG("wait:%{public}" PRId64"ns timeout, result:%{public}ld sysErr[%{public}d]:%{public}s",
+                timeout, res, sysErr, strerror(sysErr));
             return FUTEX_TIMEOUT;
         }
 
-        if (errno != EAGAIN) {
-            AUDIO_WARNING_LOG("result:%{public}ld, errno[%{public}d]:%{public}s", res, errno, strerror(errno));
+        if ((res != 0) && (sysErr != EAGAIN)) {
+            AUDIO_WARNING_LOG("result:%{public}ld, sysErr[%{public}d]:%{public}s", res, sysErr, strerror(sysErr));
         }
         tryCount++;
     }
