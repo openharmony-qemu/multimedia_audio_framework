@@ -1799,7 +1799,8 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
             AUDIO_INFO_LOG("Remove focus info from focus list, streamId: %{public}d", interruptToRemove.streamId);
             SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, interruptToRemove);
         } else {
-            RefreshAudioSceneFromAudioInterrupt(iterActive->first, highestPriorityAudioScene);
+            highestPriorityAudioScene =
+                RefreshAudioSceneFromAudioInterrupt(iterActive->first, highestPriorityAudioScene);
             ++iterActive;
             ++iterNew;
         }
@@ -1813,14 +1814,15 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
     AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(highestPriorityAudioScene == 0 ? 0 : ownerPid_);
 }
 
-void AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
-    AudioScene highestPriorityAudioScene)
+AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
+    AudioScene &highestPriorityAudioScene)
 {
     AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioInterrupt);
     if (GetAudioScenePriority(targetAudioScene) >= GetAudioScenePriority(highestPriorityAudioScene)) {
         highestPriorityAudioScene = targetAudioScene;
         ownerPid_ = audioInterrupt.pid;
     }
+    return highestPriorityAudioScene;
 }
 
 void AudioInterruptService::SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
