@@ -1015,7 +1015,9 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
                 audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
                     audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
             }
-            audioRouterCenter_.SetAlarmFollowRingRouter(true);
+            if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+                audioRouterCenter_.SetAlarmFollowRingRouter(true);
+            }
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
         }
