@@ -173,6 +173,7 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     int32_t currentDevicesSize_ = 0;
+    bool forceSetRouteFlag_ = false;
     int32_t paStatus_ = 0;
     std::string address_ = "";
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
