@@ -1022,7 +1022,8 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
         shouldUpdateDeviceDueToDualTone_ = true;
     } else {
         audioVolumeManager_.SetRingerModeMute(true);
-        if (isRingDualToneOnPrimarySpeaker_ && IsBlueToothOnPrimarySpeaker(outputDevices.front())) {
+        if (isRingDualToneOnPrimarySpeaker_ && IsBlueToothOnPrimarySpeaker(outputDevices.front()) &&
+            streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
             std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
             activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
             activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
