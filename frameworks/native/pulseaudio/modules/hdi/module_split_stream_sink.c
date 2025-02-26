@@ -1028,7 +1028,6 @@ static int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
     pa_sink_new_data_set_sample_spec(&data, &ss);
     pa_sink_new_data_set_channel_map(&data, &map);
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_DESCRIPTION, _("Split Stream Output"));
-    pa_proplist_sets(data.proplist, PA_PROP_DEVICE_CLASS, "renderer");
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING, "splitStream");
 
     u->formats = pa_idxset_new(NULL, NULL);
