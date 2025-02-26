@@ -50,19 +50,19 @@ void SetThreadQosLevel(void)
     AUDIO_INFO_LOG("set thread qos success");
 }
 
-static void SetThreadQosLevelWithTid(uint32_t pid, uint32_t tid)
+static void SetThreadQosLevelWithTid(int32_t pid, int32_t tid)
 {
     int32_t ret = WaitParameter(BOOT_ANIMATION_FINISHED_EVENT.c_str(), "true", WAIT_FOR_BOOT_ANIMATION_S);
     if (ret != 0) {
         AUDIO_ERR_LOG("wait for boot animation failed or timeout, ret = %{public}d", ret);
     }
-    UnscheduleThreadInServer(pid, tid);
+    UnscheduleThreadInServer(static_cast<uint32_t>(pid), static_cast<uint32_t>(tid));
     std::unordered_map<std::string, std::string> payload;
     payload["pid"] = std::to_string(pid);
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
     int32_t retryCount = 0;
     while (retryCount < WAIT_COUNT_FOR_UNSCHEDULE) {
-        ret = OHOS::QOS::SetQosForOtherThread(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, static_cast<int32_t>(tid));
+        ret = OHOS::QOS::SetQosForOtherThread(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, tid);
         if (ret != 0) {
             AUDIO_WARNING_LOG("set qos for thread %{public}d failed, current retry count %{public}d, ret = %{public}d",
                 tid, retryCount, ret);
@@ -78,8 +78,8 @@ static void SetThreadQosLevelWithTid(uint32_t pid, uint32_t tid)
 
 void SetThreadQosLevelAsync(void)
 {
-    uint32_t tid = gettid();
-    uint32_t pid = getpid();
+    int32_t tid = gettid();
+    int32_t pid = getpid();
     std::thread setThreadQosLevelThread = std::thread([=] { SetThreadQosLevelWithTid(pid, tid); });
     setThreadQosLevelThread.detach();
 }
