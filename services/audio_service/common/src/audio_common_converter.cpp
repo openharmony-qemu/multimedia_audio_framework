@@ -220,12 +220,12 @@ void AudioCommonConverter::ConvertBufferTo16Bit(const BufferBaseInfo &srcBuffer,
     float volumeStep = GetVolumeStep(srcBuffer);
     switch (srcBuffer.format) {
         case AUDIO_SAMPLE_FORMAT_8BIT:
-        CopyFromU8ToS16(buffer, dst, volumeStep, srcBuffer);
-        break;
+            CopyFromU8ToS16(buffer, dst, volumeStep, srcBuffer);
+            break;
         case AUDIO_SAMPLE_FORMAT_16BIT: {
-        const int16_t *src = reinterpret_cast<const int16_t *>(buffer);
-        CopyFromS16ToS16(src, dst, volumeStep, srcBuffer);
-        break;
+            const int16_t *src = reinterpret_cast<const int16_t *>(buffer);
+            CopyFromS16ToS16(src, dst, volumeStep, srcBuffer);
+            break;
         }
         case AUDIO_SAMPLE_FORMAT_24BIT:
             CopyFrom24ToS16(buffer, dst, volumeStep, srcBuffer);
