@@ -52,7 +52,6 @@ private:
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> rendererWriteDataCallback_ = nullptr;
     NapiAudioRenderer *napiRenderer_;
-    napi_ref callback_ = nullptr;
     bool regArWriteDataTsfn_ = false;
     napi_threadsafe_function arWriteDataTsfn_ = nullptr;
 
