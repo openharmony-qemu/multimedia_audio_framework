@@ -22,20 +22,20 @@
             <device name="Usb Arm Headset" type="DEVICE_TYPE_USB_ARM_HEADSET" role="output,input" Category="" usage="media,voice"/>
             <device name="Bt A2dp In" type="DEVICE_TYPE_BLUETOOTH_A2DP_IN" role="input" Category="HEADPHONE,GLASSES" usage="media"/>
             <device name="Bt A2dp" type="DEVICE_TYPE_BLUETOOTH_A2DP" role="output" Category="HEADPHONE,GLASSES" usage="media"/>
-            <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="HEADPHONE,GLASSES," usage="voice,recongnition"/>
+            <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="HEADPHONE,GLASSES," usage="media,voice,recongnition"/>
         </devices>
     </adapter>
     <adapter name="public">
         <devices>
             <device name="Bt A2dp" type="DEVICE_TYPE_BLUETOOTH_A2DP" role="output" Category="SOUNDBOX,CAR" usage="media"/>
-            <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="SOUNDBOX,CAR" usage="voice"/>
+            <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="SOUNDBOX,CAR" usage="media,voice"/>
             <device name="DP" type="DEVICE_TYPE_DP" role="output" Category="" usage="media"/>
         </devices>
     </adapter>
     <adapter name="negative">
         <devices>
             <device name="Bt A2dp" type="DEVICE_TYPE_BLUETOOTH_A2DP" role="output" Category="HEADPHONE_UNWEAR" usage="media"/>
-            <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="WATCH,HEADPHONE_UNWEAR" usage="voice"/>
+            <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="WATCH,HEADPHONE_UNWEAR" usage="media,voice"/>
         </devices>
     </adapter>
 </audiodeviceprivacy>
