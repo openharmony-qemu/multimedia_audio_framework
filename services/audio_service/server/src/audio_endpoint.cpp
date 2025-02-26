@@ -171,6 +171,7 @@ public:
 
     float GetMaxAmplitude() override;
     uint32_t GetLinkedProcessCount() override;
+    void BindCore();
 
 private:
     AudioProcessConfig GetInnerCapConfig();
@@ -247,6 +248,7 @@ private:
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
     static constexpr int32_t UPDATE_THREAD_TIMEOUT = 1000; // 1000ms
+    static constexpr int32_t CPU_INDEX = 2;
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -344,6 +346,7 @@ private:
 
     bool zeroVolumeStopDevice_ = false;
     bool isVolumeAlreadyZero_ = false;
+    bool coreBinded_ = false;
 };
 
 std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag)
@@ -2058,19 +2061,39 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
     }
 }
 
+void AudioEndpointInner::BindCore()
+{
+    if (coreBinded_) {
+        return;
+    }
+    // bind cpu cores 2-7 for fast mixer
+    cpu_set_t targetCpus;
+    CPU_ZERO(&targetCpus);
+    int32_t cpuNum = sysconf(_SC_NPROCESSORS_CONF);
+    for (int32_t i = CPU_INDEX; i < cpuNum; i++) {
+        CPU_SET(i, &targetCpus);
+    }
+
+    int32_t ret = sched_setaffinity(gettid(), sizeof(cpu_set_t), &targetCpus);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("set target cpu failed, set ret: %{public}d", ret);
+    }
+    AUDIO_INFO_LOG("set pid: %{public}d, tid: %{public}d cpus", getpid(), gettid());
+    coreBinded_ = true;
+}
+
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
+    BindCore();
     ScheduleReportData(getpid(), gettid(), "audio_server");
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Endpoint work loop fuc start");
-    int32_t ret = 0;
     while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
             continue;
         }
-        ret = 0;
         threadStatus_ = INRUNNING;
         curTime = ClockTime::GetCurNano();
         Trace loopTrace("AudioEndpoint::loop_trace");
@@ -2112,7 +2135,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
-    AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
+    AUDIO_DEBUG_LOG("Endpoint work loop fuc end");
 }
 
 void AudioEndpointInner::InitLatencyMeasurement()
