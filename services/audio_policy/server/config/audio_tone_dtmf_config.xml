@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 <DTMF>
- <Tones>
+ <Default>
 	<ToneInfo name="TONE_TYPE_DIAL_0" toneType="0" >
 	  <RepeatCount value="INF"/>
 	  <RepeatSegment value="0"/>
@@ -252,5 +252,8 @@
 	  <Segment duration="0" freq="0" loopCount ="0"  loopIndex="0" />
 	</ToneInfo>
 
- </Tones>
+ </Default>
+
+ <Custom>
+ </Custom>
 </DTMF>
