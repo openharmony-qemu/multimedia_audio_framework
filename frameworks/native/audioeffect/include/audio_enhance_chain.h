@@ -116,7 +116,6 @@ private:
     std::vector<std::string> enhanceNames_;
     std::vector<AudioEffectLibrary*> enhanceLibHandles_;
     mutable int64_t volumeDataCount_ = 0;
-
 };
 
 }  // namespace AudioStandard
