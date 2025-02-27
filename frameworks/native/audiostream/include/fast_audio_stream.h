@@ -188,6 +188,7 @@ public:
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
+    int32_t SetCallbacksWhenRestore();
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;
