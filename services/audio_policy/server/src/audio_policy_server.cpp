@@ -806,6 +806,29 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(AudioStreamType streamType
     return SetSystemVolumeLevelInternal(streamType, volumeLevel, false);
 }
 
+int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("SetAppVolumeLevel: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return SetAppVolumeMutedInternal(appUid, muted, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
+}
+
+int32_t AudioPolicyServer::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("SetAppVolumeLevel: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    if (!IsVolumeLevelValid(STREAM_APP, volumeLevel)) {
+        return ERR_NOT_SUPPORTED;
+    }
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return SetAppVolumeLevelInternal(appUid, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
+}
+
 int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t volumeFlag)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
@@ -864,6 +887,23 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32
     return streamInFocus;
 }
 
+int32_t AudioPolicyServer::GetAppVolumeLevel(int32_t appUid)
+{
+    AUDIO_INFO_LOG("GetAppVolumeLevel appUid : %{public}d", appUid);
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("only for system app");
+        return ERR_PERMISSION_DENIED;
+    }
+    return GetAppVolumeLevelInternal(appUid);
+}
+
+int32_t AudioPolicyServer::GetSelfAppVolumeLevel()
+{
+    AUDIO_INFO_LOG("GetSelfAppVolumeLevel enter");
+    int32_t appUid = IPCSkeleton::GetCallingUid();
+    return GetAppVolumeLevelInternal(appUid);
+}
+
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
@@ -887,6 +927,13 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamTy
     }
     int32_t volumeLevel = audioPolicyService_.GetSystemVolumeLevel(streamType);
     AUDIO_DEBUG_LOG("GetVolume streamType[%{public}d],volumeLevel[%{public}d]", streamType, volumeLevel);
+    return volumeLevel;
+}
+
+int32_t AudioPolicyServer::GetAppVolumeLevelInternal(int32_t appUid)
+{
+    int32_t volumeLevel = audioPolicyService_.GetAppVolumeLevel(appUid);
+    AUDIO_DEBUG_LOG("GetAppVolume appUid[%{public}d],volumeLevel[%{public}d]", appUid, volumeLevel);
     return volumeLevel;
 }
 
@@ -1147,6 +1194,45 @@ float AudioPolicyServer::GetSystemVolumeDb(AudioStreamType streamType)
     return audioPolicyService_.GetSystemVolumeDb(streamType);
 }
 
+int32_t AudioPolicyServer::SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag)
+{
+    AUDIO_INFO_LOG("SetSelfAppVolumeLevel volumeLevel: %{public}d, volumeFlag: %{public}d",
+        volumeLevel, volumeFlag);
+    if (!IsVolumeLevelValid(STREAM_APP, volumeLevel)) {
+        return ERR_NOT_SUPPORTED;
+    }
+    int32_t appUid = IPCSkeleton::GetCallingUid();
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    return SetAppVolumeLevelInternal(appUid, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
+}
+
+int32_t AudioPolicyServer::SetAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
+{
+    AUDIO_INFO_LOG("SetAppVolumeLevelInternal appUid: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
+        appUid, volumeLevel, isUpdateUi);
+    return SetAppSingleStreamVolume(appUid, volumeLevel, isUpdateUi);
+}
+
+int32_t AudioPolicyServer::SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi)
+{
+    AUDIO_INFO_LOG("SetAppVolumeLevelInternal appUid: %{public}d, muted: %{public}d, updateUi: %{public}d",
+        appUid, muted, isUpdateUi);
+    int32_t ret = audioPolicyService_.SetAppVolumeMuted(appUid, muted);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume mute");
+    return ret;
+}
+
+bool AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned)
+{
+    AUDIO_INFO_LOG("IsAppVolumeMute appUid: %{public}d, owned: %{public}d", appUid, owned);
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("only for system app");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool ret = audioPolicyService_.IsAppVolumeMute(appUid, owned);
+    return ret;
+}
+
 int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
     bool isUpdateUi)
 {
@@ -1227,6 +1313,24 @@ void AudioPolicyServer::ProcUpdateRingerMode()
     AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
     // Update ringer mode but no need to update volume again.
     SetRingerModeInternal(ringerMode, true);
+}
+
+int32_t AudioPolicyServer::SetAppSingleStreamVolume(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
+{
+    int32_t ret = audioPolicyService_.SetAppVolumeLevel(appUid, volumeLevel);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume level");
+    
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = STREAM_APP;
+    volumeEvent.volume = volumeLevel;
+    volumeEvent.updateUi = isUpdateUi;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = LOCAL_NETWORK_ID;
+    volumeEvent.volumeMode = APP_INDIVIDUAL;
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendAppVolumeChangeCallback(appUid, volumeEvent);
+    }
+    return ret;
 }
 
 int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
@@ -2117,6 +2221,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
     auto callerUid = IPCSkeleton::GetCallingUid();
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
     streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
+    int appVolume = GetAppVolumeLevel(callerUid);
+    streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     AUDIO_DEBUG_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
         if (mode == AUDIO_MODE_PLAYBACK) {
@@ -2146,6 +2252,8 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
     auto callerUid = IPCSkeleton::GetCallingUid();
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
     streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
+    int appVolume = GetAppVolumeLevel(callerUid);
+    streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     AUDIO_DEBUG_LOG("UpdateTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
         if (mode == AUDIO_MODE_PLAYBACK) {

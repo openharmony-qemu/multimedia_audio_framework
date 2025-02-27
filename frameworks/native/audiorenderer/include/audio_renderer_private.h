@@ -62,6 +62,7 @@ public:
     int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) override;
     int32_t SetStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) const override;
+    int32_t SetVolumeMode(int32_t mode) override;
     float GetVolume() const override;
     int32_t SetRenderRate(AudioRendererRate renderRate) const override;
     AudioRendererRate GetRenderRate() const override;

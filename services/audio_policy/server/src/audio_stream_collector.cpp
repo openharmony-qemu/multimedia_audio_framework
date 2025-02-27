@@ -140,6 +140,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     rendererChangeInfo->channelCount = streamChangeInfo.audioRendererChangeInfo.channelCount;
+    rendererChangeInfo->appVolume = streamChangeInfo.audioRendererChangeInfo.appVolume;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
@@ -327,6 +328,7 @@ void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamC
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     rendererChangeInfo->prerunningState = streamChangeInfo.audioRendererChangeInfo.prerunningState;
+    rendererChangeInfo->appVolume = streamChangeInfo.audioRendererChangeInfo.appVolume;
 }
 
 void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,

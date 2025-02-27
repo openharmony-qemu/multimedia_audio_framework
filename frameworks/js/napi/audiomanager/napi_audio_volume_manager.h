@@ -45,6 +45,9 @@ private:
         int32_t ringMode;
         bool isMute;
         bool isTrue;
+        int32_t volLevel;
+        int32_t appUid;
+        bool isOwned;
         std::string networkId;
         std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos;
     };
@@ -55,12 +58,24 @@ private:
     static NapiAudioVolumeManager* GetParamWithSync(const napi_env &env, napi_callback_info info,
         size_t &argc, napi_value *args);
     static napi_value GetVolumeGroupInfos(napi_env env, napi_callback_info info);
+    static napi_value SetAppVolumePercentage(napi_env env, napi_callback_info info);
+    static napi_value GetAppVolumePercentage(napi_env env, napi_callback_info info);
     static napi_value GetVolumeGroupInfosSync(napi_env env, napi_callback_info info);
     static napi_value GetVolumeGroupManager(napi_env env, napi_callback_info info);
     static napi_value GetVolumeGroupManagerSync(napi_env env, napi_callback_info info);
+    static napi_value SetAppVolumeMuted(napi_env env, napi_callback_info info);
+    static napi_value IsAppVolumeMuted(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
+    static napi_value RegisterSelfAppVolumeChangeCallback(napi_env env, napi_value *args,
+        const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static void UnregisterSelfAppVolumeChangeCallback(napi_env env, napi_value callback, size_t argc,
+        NapiAudioVolumeManager *napiAudioVolumeManager);
+    static napi_value RegisterAppVolumeChangeForUidCallback(napi_env env, napi_value *args,
+        const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static void UnregisterAppVolumeChangeForUidCallback(napi_env env, napi_value callback, napi_value *args,
+        size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager);
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc,
         napi_value *args, const std::string &cbName);
@@ -73,6 +88,8 @@ private:
 
     int32_t cachedClientId_ = -1;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> selfAppVolumeChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> appVolumeChangeCallbackForUidNapi_ = nullptr;
     std::list<std::shared_ptr<NapiAudioVolumeKeyEvent>> volumeKeyEventCallbackNapiList_;
 
     napi_env env_;
