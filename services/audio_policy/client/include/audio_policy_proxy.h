@@ -40,6 +40,18 @@ public:
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0) override;
 
+    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0) override;
+
+    int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) override;
+
+    bool IsAppVolumeMute(int32_t appUid, bool owned) override;
+
+    int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0) override;
+
+    int32_t GetAppVolumeLevel(int32_t appUid) override;
+
+    int32_t GetSelfAppVolumeLevel() override;
+
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) override;
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;

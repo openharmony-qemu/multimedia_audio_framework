@@ -177,6 +177,11 @@ void AudioVolumeManager::SetSharedAbsVolumeScene(const bool support)
     *sharedAbsVolumeScene_ = support;
 }
 
+int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid)
+{
+    return audioPolicyManager_.GetAppVolumeLevel(appUid);
+}
+
 int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     if (streamType == STREAM_RING && !IsRingerModeMute()) {
@@ -296,6 +301,28 @@ bool AudioVolumeManager::DeviceIsSupportSafeVolume()
             AUDIO_INFO_LOG("current device unsupport safe volume:%{public}d", curOutputDeviceType);
             return false;
     }
+}
+
+int32_t AudioVolumeManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppVolumeLevel");
+    // audioPolicyManager_ : AudioAdapterManager
+    int32_t result = audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel);
+    return result;
+}
+
+int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppVolumeMuted");
+    int32_t result = audioPolicyManager_.SetAppVolumeMuted(appUid, muted);
+    return result;
+}
+
+bool AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppVolumeMute");
+    bool result = audioPolicyManager_.IsAppVolumeMute(appUid, owned);
+    return result;
 }
 
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)

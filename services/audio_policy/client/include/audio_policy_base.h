@@ -45,6 +45,18 @@ public:
     virtual int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
         DeviceType deviceType, int32_t volumeFlag = 0) = 0;
 
+    virtual int32_t GetAppVolumeLevel(int32_t appUid) = 0;
+
+    virtual int32_t GetSelfAppVolumeLevel() = 0;
+
+    virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
+
+    virtual bool IsAppVolumeMute(int32_t appUid, bool muted) = 0;
+
+    virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) = 0;
+
+    virtual int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
+
     virtual AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) = 0;
 
     virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;

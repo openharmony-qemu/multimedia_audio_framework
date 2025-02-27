@@ -44,6 +44,7 @@
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1387,7 +1388,9 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             !(deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && volumeType == STREAM_MUSIC &&
                 PolicyHandler::GetInstance().IsAbsVolumeSupported()) &&
             PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol)) {
-            streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat);
+            streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat *
+                AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
+                clientConfig_.rendererInfo.volumeMode));
         } else {
             streamData.volumeStart = curReadSpan->volumeStart;
         }

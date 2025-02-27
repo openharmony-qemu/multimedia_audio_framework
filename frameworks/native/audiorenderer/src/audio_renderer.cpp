@@ -274,6 +274,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
         = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
     audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
+    audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
@@ -1021,6 +1022,15 @@ int32_t AudioRendererPrivate::SetStreamType(AudioStreamType audioStreamType)
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetAudioStreamType(audioStreamType);
+}
+
+int32_t AudioRendererPrivate::SetVolumeMode(int32_t mode)
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    AUDIO_INFO_LOG("SetVolumeMode mode = %{public}d", mode);
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    rendererInfo_.volumeMode = static_cast<AudioVolumeMode>(mode);
+    return SUCCESS;
 }
 
 int32_t AudioRendererPrivate::SetVolume(float volume) const

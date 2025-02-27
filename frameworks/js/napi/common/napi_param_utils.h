@@ -34,6 +34,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const int ARGS_ZERO = 0;
 const int ARGS_ONE = 1;
 const int ARGS_TWO = 2;
 const int ARGS_THREE = 3;

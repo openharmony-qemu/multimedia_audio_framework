@@ -91,6 +91,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.contentType = rendererInfo_.contentType;
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+        config.rendererInfo.volumeMode = rendererInfo_.volumeMode;
         config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
         config.rendererInfo.playerType = rendererInfo_.playerType;
         config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;

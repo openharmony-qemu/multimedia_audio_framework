@@ -283,6 +283,8 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
+    CALLBACK_APP_VOLUME_CHANGE,
+    CALLBACK_SELF_APP_VOLUME_CHANGE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
@@ -306,6 +308,8 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE,
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
+    CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
@@ -327,6 +331,25 @@ struct VolumeEvent {
     bool updateUi;
     int32_t volumeGroupId;
     std::string networkId;
+    AudioVolumeMode volumeMode;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(volumeType))
+            && parcel.WriteInt32(volume)
+            && parcel.WriteBool(updateUi)
+            && parcel.WriteInt32(volumeGroupId)
+            && parcel.WriteString(networkId)
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+        volume = parcel.ReadInt32();
+        updateUi = parcel.ReadInt32();
+        volumeGroupId = parcel.ReadInt32();
+        networkId = parcel.ReadString();
+        volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+    }
 };
 
 struct AudioParameters {
@@ -366,6 +389,7 @@ struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
+    AudioVolumeMode volumeMode = SYSTEM_GLOBAL;
     std::string sceneType = "";
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
@@ -401,7 +425,8 @@ struct AudioRendererInfo {
             && parcel.WriteBool(isOffloadAllowed)
             && parcel.WriteInt32(playerType)
             && parcel.WriteUint64(expectedPlaybackDurationBytes)
-            && parcel.WriteInt32(effectMode);
+            && parcel.WriteInt32(effectMode)
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -421,6 +446,7 @@ struct AudioRendererInfo {
         playerType = static_cast<PlayerType>(parcel.ReadInt32());
         expectedPlaybackDurationBytes = parcel.ReadUint64();
         effectMode = parcel.ReadInt32();
+        volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
     }
 };
 

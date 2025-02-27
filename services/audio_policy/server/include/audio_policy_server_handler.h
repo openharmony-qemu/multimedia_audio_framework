@@ -49,6 +49,7 @@ public:
         ABANDON_CATEGORY_EVENT,
         FOCUS_INFOCHANGE,
         RINGER_MODEUPDATE_EVENT,
+        APP_VOLUME_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
         INTERRUPT_EVENT,
@@ -100,6 +101,7 @@ public:
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
         int32_t streamFlag;
+        int32_t appUid;
         std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
         std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
@@ -152,6 +154,7 @@ public:
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
+    bool SendAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent);
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
     bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
@@ -233,6 +236,7 @@ private:
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
