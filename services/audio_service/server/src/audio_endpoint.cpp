@@ -2217,29 +2217,33 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
         std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isInSilentState_) {
-            isInSilentState_ = true;
+        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !tempProcess->GetSilentState()) {
+            tempProcess->SetSilentState(true);
             AUDIO_WARNING_LOG("write invalid data for some time in server");
 
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
             payload["sessionId"] = std::to_string(streamIndex_);
             payload["isSilent"] = std::to_string(true);
+#ifdef RESSCHE_ENABLE
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
+#endif
         }
     } else {
         if (startMuteTime_ != 0) {
             startMuteTime_ = 0;
         }
-        if (isInSilentState_) {
+        if (tempProcess->GetSilentState()) {
             AUDIO_WARNING_LOG("begin write valid data in server");
-            isInSilentState_ = false;
+            tempProcess->SetSilentState(false);
 
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
             payload["sessionId"] = std::to_string(streamIndex_);
             payload["isSilent"] = std::to_string(false);
+#ifdef RESSCHE_ENABLE
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
+#endif
         }
     }
 }
