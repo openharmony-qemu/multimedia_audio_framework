@@ -606,6 +606,7 @@ void AudioProcessInServer::ReportDataToResSched(std::unordered_map<std::string, 
     AUDIO_INFO_LOG("report event to ResSched ,event type : %{public}d", type);
     ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
 #endif
+}
 
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
