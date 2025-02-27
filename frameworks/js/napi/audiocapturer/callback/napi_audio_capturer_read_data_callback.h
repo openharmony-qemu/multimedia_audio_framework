@@ -52,7 +52,6 @@ private:
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> capturerReadDataCallback_ = nullptr;
     NapiAudioCapturer *napiCapturer_;
-    napi_ref callback_ = nullptr;
     bool isCallbackInited_ = false;
     bool regAcReadDataTsfn_ = false;
     napi_threadsafe_function acReadDataTsfn_ = nullptr;
