@@ -463,7 +463,7 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
             isInSilentState_ = false;
  
             std::unordered_map<std::string, std::string> payload;
-            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);[[[[[[[[[]]]]]]]]]
+            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
             payload["sessionId"] = std::to_string(streamIndex_);
             payload["isSilent"] = std::to_string(false);
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
