@@ -461,7 +461,7 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if (isInSilentState_) {
             AUDIO_WARNING_LOG("begin write valid data in server");
             isInSilentState_ = false;
- 
+
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
             payload["sessionId"] = std::to_string(streamIndex_);
