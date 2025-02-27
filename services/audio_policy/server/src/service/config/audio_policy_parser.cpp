@@ -733,10 +733,10 @@ void AudioPolicyParser::HandleUpdateAnahsSupportParsed(std::string &value)
 void AudioPolicyParser::HandleUpdateTvSupportParsed(std::string &value)
 {
     if (value == "true") {
-        portObserver_.OnUpdateRouteSupport(true);
+        portObserver_.OnUpdateTvSupport(true);
         shouldSupportTv_ = true;
     } else {
-        portObserver_.OnUpdateRouteSupport(false);
+        portObserver_.OnUpdateTvSupport(false);
         shouldSupportTv_ = false;
     }
 }
