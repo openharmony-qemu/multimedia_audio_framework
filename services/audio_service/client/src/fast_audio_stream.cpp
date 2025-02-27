@@ -864,6 +864,7 @@ bool FastAudioStream::RestoreAudioStream(bool needStoreState)
             result = StartAudioStream() && PauseAudioStream();
             break;
         case STOPPED:
+            [[fallthrough]];
         case STOPPING:
             result = StartAudioStream() && StopAudioStream();
             break;
