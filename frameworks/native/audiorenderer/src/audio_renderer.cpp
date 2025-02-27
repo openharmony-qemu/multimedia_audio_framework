@@ -380,7 +380,7 @@ int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
         CHECK_AND_RETURN_RET_LOG(outputDeviceChangeCallback_ != nullptr, ERROR, "Memory allocation failed");
     }
 
-    outputDeviceChangeCallback_->SetAudioRendererObj(this);
+    outputDeviceChangeCallback_->SetAudioRendererObj(weak_from_this());
 
     uint32_t sessionId;
     int32_t ret = GetAudioStreamIdInner(sessionId);
@@ -399,8 +399,7 @@ int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
 int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParams)
 {
     Trace trace("AudioRenderer::InitAudioStream");
-    AudioRenderer *renderer = this;
-    rendererProxyObj_->SaveRendererObj(renderer);
+    rendererProxyObj_->SaveRendererObj(weak_from_this());
     audioStream_->SetRendererInfo(rendererInfo_);
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
 
@@ -1893,13 +1892,16 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
         sessionId, static_cast<int>(deviceInfo.deviceType_), static_cast<int>(reason), callbacks.size());
 }
 
+// NOTIFY: Possible audioRendererPrivate destruction here.
 void OutputDeviceChangeWithInfoCallbackImpl::OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
+    std::unique_lock<std::mutex> lock(audioRendererObjMutex_);
     AUDIO_INFO_LOG("Enter, session id: %{public}d, stream flag: %{public}d", sessionId, streamFlag);
-    CHECK_AND_RETURN_LOG(renderer_ != nullptr, "renderer_ is nullptr");
-    renderer_->SwitchStream(sessionId, streamFlag, reason);
+    auto sharedptrRenderer = renderer_.lock();
+    CHECK_AND_RETURN_LOG(sharedptrRenderer != nullptr, "renderer_ is nullptr");
+    lock.unlock();
+    sharedptrRenderer->SwitchStream(sessionId, streamFlag, reason);
 }
 
 AudioEffectMode AudioRendererPrivate::GetAudioEffectMode() const
@@ -1984,7 +1986,7 @@ int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
             return ERROR;
         }
         AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(audioPolicyServiceDiedCallback_);
-        audioPolicyServiceDiedCallback_->SetAudioRendererObj(this);
+        audioPolicyServiceDiedCallback_->SetAudioRendererObj(weak_from_this());
         audioPolicyServiceDiedCallback_->SetAudioInterrupt(audioInterrupt_);
     }
     return SUCCESS;
@@ -2015,14 +2017,9 @@ RendererPolicyServiceDiedCallback::RendererPolicyServiceDiedCallback()
 RendererPolicyServiceDiedCallback::~RendererPolicyServiceDiedCallback()
 {
     AUDIO_DEBUG_LOG("RendererPolicyServiceDiedCallback destroy");
-    if (restoreThread_ != nullptr && restoreThread_->joinable()) {
-        restoreThread_->join();
-        restoreThread_.reset();
-        restoreThread_ = nullptr;
-    }
 }
 
-void RendererPolicyServiceDiedCallback::SetAudioRendererObj(AudioRendererPrivate *rendererObj)
+void RendererPolicyServiceDiedCallback::SetAudioRendererObj(std::weak_ptr<AudioRendererPrivate> rendererObj)
 {
     renderer_ = rendererObj;
 }
@@ -2035,11 +2032,23 @@ void RendererPolicyServiceDiedCallback::SetAudioInterrupt(AudioInterrupt &audioI
 void RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
 {
     AUDIO_INFO_LOG("RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied");
-    if (restoreThread_ != nullptr) {
-        restoreThread_->detach();
+
+    if (taskCount_.fetch_add(1) > 0) {
+        AUDIO_INFO_LOG("direct ret");
+        return;
     }
-    restoreThread_ = std::make_unique<std::thread>([this] { this->RestoreTheadLoop(); });
-    pthread_setname_np(restoreThread_->native_handle(), "OS_ARPSRestore");
+
+    std::weak_ptr<RendererPolicyServiceDiedCallback> weakRefCb = weak_from_this();
+
+    std::thread restoreThread ([weakRefCb] {
+        std::shared_ptr<RendererPolicyServiceDiedCallback> strongRefCb = weakRefCb.lock();
+        CHECK_AND_RETURN_LOG(strongRefCb != nullptr, "strongRef is nullptr");
+        do {
+            strongRefCb->RestoreTheadLoop();
+        } while (strongRefCb->taskCount_.fetch_sub(1) > 1);
+    });
+    pthread_setname_np(restoreThread.native_handle(), "OS_ARPSRestore");
+    restoreThread.detach();
 }
 
 void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
@@ -2050,11 +2059,13 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
     while (!restoreResult && tryCounter > 0) {
         tryCounter--;
         usleep(sleepTime);
-        if (renderer_ == nullptr || renderer_->audioStream_ == nullptr || renderer_->abortRestore_) {
+        std::shared_ptr<AudioRendererPrivate> sharedRenderer = renderer_.lock();
+        CHECK_AND_RETURN_LOG(sharedRenderer != nullptr, "sharedRenderer is nullptr");
+        if (sharedRenderer->audioStream_ == nullptr || sharedRenderer->abortRestore_) {
             AUDIO_INFO_LOG("abort restore");
             break;
         }
-        renderer_->RestoreAudioInLoop(restoreResult, tryCounter);
+        sharedRenderer->RestoreAudioInLoop(restoreResult, tryCounter);
     }
 }
 

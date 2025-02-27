@@ -444,6 +444,10 @@ public:
 
     ~SharedAudioRendererWrapper() override = default;
 
+    SharedAudioRendererWrapper(const SharedAudioRendererWrapper &) = delete;
+    SharedAudioRendererWrapper &operator=(const SharedAudioRendererWrapper &) = delete;
+    SharedAudioRendererWrapper(SharedAudioRendererWrapper &&) = delete;
+    SharedAudioRendererWrapper &operator=(SharedAudioRendererWrapper &&) = delete;
 private:
     std::shared_ptr<AudioRenderer> sharedAudioRenderer_ = nullptr;
 };
