@@ -1146,5 +1146,41 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_041, TestSize.Level1)
     auto result = audioEndpointInner->ProcessToEndpointDataHandle(curWritePos);
     EXPECT_EQ(result, false);
 }
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_042
+ * @tc.desc  : Test AudioEndpointInner::WriteMuteDataSysEvent()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_042, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    ASSERT_NE(audioEndpointInner, nullptr);
+ 
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t spanSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+ 
+    std::shared_ptr<OHAudioBuffer> processBuffer1 = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+    sptr<AudioProcessInServer> audioProcess1 = AudioProcessInServer::Create(clientConfig, AudioService::GetInstance());
+    size_t len = 10;
+    std::unique_ptr<int8_t[]> buffer1 = std::make_unique<int8_t[]>(len);
+    for (size_t i = 0; i < len; ++i) {
+        buffer1[i] = static_cast<int8_t>(i);
+    }
+    BufferDesc bufferDesc1 = {reinterpret_cast<uint8_t *>(buffer1.get()), len, len};
+    bufferDesc1.buffer[0] = 1;
+    bufferDesc1.buffer[1] = 1;
+    audioEndpointInner->processList_.push_back(audioProcess1);
+    audioEndpointInner->processBufferList_.push_back(processBuffer1);
+    audioEndpointInner->WriteMuteDataSysEvent(bufferDesc1.buffer, bufferDesc1.bufLength, 0);
+    EXPECT_EQ(false, audioEndpointInner->processList_[0]->GetSilentState());
+}
 } // namespace AudioStandard
 } // namespace OHOS
