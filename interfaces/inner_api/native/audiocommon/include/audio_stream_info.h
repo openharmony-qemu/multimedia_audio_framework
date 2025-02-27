@@ -160,15 +160,26 @@ enum AudioStreamType {
      * Indicates audio streams for camcorder.
      */
     STREAM_CAMCORDER = 27,
+
+    /**
+     * Indicates audio streams type is APP.
+     */
+    STREAM_APP = 28,
+
     /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_CAMCORDER,
+    STREAM_TYPE_MAX = STREAM_APP,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.
      */
-    STREAM_ALL = 100
+    STREAM_ALL = 100,
+};
+
+enum AudioVolumeMode {
+    SYSTEM_GLOBAL,
+    APP_INDIVIDUAL
 };
 
 /**

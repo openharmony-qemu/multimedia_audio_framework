@@ -94,6 +94,15 @@ public:
 
     int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
+    int32_t GetPreferredInputDeviceForCapturerInfo(
+        AudioCapturerInfo captureInfo, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+
+    int32_t SetPreferredInputDeviceChangeCallback(
+        AudioCapturerInfo &capturerInfo, const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
+
+    int32_t GetCurrentCapturerChangeInfos(
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+
 private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     int32_t volumeChangeClientPid_ = -1;

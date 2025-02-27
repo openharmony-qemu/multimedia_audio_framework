@@ -62,10 +62,21 @@ public:
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0);
+    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0);
+
+    int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
+
+    bool IsAppVolumeMute(int32_t appUid, bool muted);
+
+    int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0);
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
+
+    int32_t GetAppVolumeLevel(int32_t appUid);
+    
+    int32_t GetSelfAppVolumeLevel();
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
 
@@ -151,6 +162,16 @@ public:
 
     int32_t SetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback, API_VERSION api_v = API_9);
+
+    int32_t SetAppVolumeChangeCallbackForUid(const int32_t appUid,
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
+
+    int32_t UnsetAppVolumeCallbackForUid(
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
+    
+    int32_t SetSelfAppVolumeChangeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
+
+    int32_t UnsetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
 
     int32_t UnsetRingerModeCallback(const int32_t clientId);
 

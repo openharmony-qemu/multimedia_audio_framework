@@ -140,6 +140,9 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
                 case static_cast<uint32_t>(AudioPolicyClientCode::ON_MICRO_PHONE_BLOCKED):
                     HandleMicrophoneBlocked(data, reply);
                     break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_APP_VOLUME_CHANGE):
+                    HandleAppVolumeChange(data, reply);
+                    break;
                 default:
                     OnMaxRemoteRequest(updateCode, data, reply);
                     break;
@@ -152,6 +155,15 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
         }
     }
     return SUCCESS;
+}
+
+void AudioPolicyClientStub::HandleAppVolumeChange(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("Handle AppVolume Change");
+    int32_t appUid = data.ReadInt32();
+    VolumeEvent volumeEvent;
+    volumeEvent.Unmarshalling(data);
+    OnAppVolumeChanged(appUid, volumeEvent);
 }
 
 void AudioPolicyClientStub::HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply)

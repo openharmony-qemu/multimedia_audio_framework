@@ -50,6 +50,23 @@ public:
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
 };
 
+class AudioManagerAppVolumeChangeCallback {
+public:
+    virtual ~AudioManagerAppVolumeChangeCallback() = default;
+    /**
+     * Called when the App volume changes
+     *
+     * @param event volume change Information.
+     */
+    virtual void OnAppVolumeChangedForUid(int32_t appUid, const VolumeEvent &event) = 0;
+    /**
+     * Called when self App volume changes
+     *
+     * @param event volume change Information.
+     */
+    virtual void OnSelfAppVolumeChanged(const VolumeEvent &event) = 0;
+};
+
 class AudioGroupManager {
 public:
     AudioGroupManager(int32_t groupId);

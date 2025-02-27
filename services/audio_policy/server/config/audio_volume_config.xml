@@ -154,4 +154,24 @@
             <point idx="100" decibel="-0"/>
         </volumecurve>
     </volume_type>
+    <volume_type type="APP" minidx="0" maxidx="100" defaultidx="100">
+        <volumecurve deviceClass="earpiece">
+            <point idx="0"   decibel="-2700"/>
+            <point idx="33"  decibel="-1800"/>
+            <point idx="66"  decibel="-900"/>
+            <point idx="100" decibel="-0"/>
+        </volumecurve>
+        <volumecurve deviceClass="speaker">    
+            <point idx="0"   decibel="-2700"/>
+            <point idx="33"  decibel="-1800"/>
+            <point idx="66"  decibel="-900"/>
+            <point idx="100" decibel="-0"/>
+        </volumecurve>
+        <volumecurve deviceClass="headset">
+            <point idx="0"   decibel="-2700"/>
+            <point idx="33"  decibel="-1800"/>
+            <point idx="66"  decibel="-900"/>
+            <point idx="100" decibel="-0"/>
+        </volumecurve>
+    </volume_type>
 </audio_volume_config>

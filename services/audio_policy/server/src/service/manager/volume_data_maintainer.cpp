@@ -160,6 +160,47 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     return true;
 }
 
+void VolumeDataMaintainer::SetAppVolume(int32_t appUid, int32_t volumeLevel)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    appVolumeLevelMap_[appUid] = volumeLevel;
+}
+
+void VolumeDataMaintainer::SetAppVolumeMuted(int32_t appUid, bool muted)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    int ownedAppUid = IPCSkeleton::GetCallingUid();
+    appMuteStatusMap_[appUid][ownedAppUid] = muted;
+}
+
+bool VolumeDataMaintainer::GetAppMute(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    auto iter = appMuteStatusMap_.find(appUid);
+    if (iter == appMuteStatusMap_.end()) {
+        return false;
+    } else {
+        for (auto subIter : iter->second) {
+            if (subIter.second) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool VolumeDataMaintainer::GetAppMuteOwned(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    int ownedAppUid = IPCSkeleton::GetCallingUid();
+    auto iter = appMuteStatusMap_.find(appUid);
+    if (iter == appMuteStatusMap_.end()) {
+        return false;
+    } else {
+        return iter->second[ownedAppUid];
+    }
+}
+
 void VolumeDataMaintainer::SetStreamVolume(AudioStreamType streamType, int32_t volumeLevel)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
@@ -201,6 +242,19 @@ int32_t VolumeDataMaintainer::GetDeviceVolume(DeviceType deviceType, AudioStream
 
     return volumeValue;
 }
+
+bool VolumeDataMaintainer::IsSetAppVolume(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    return appVolumeLevelMap_.find(appUid) != appVolumeLevelMap_.end();
+}
+
+int32_t VolumeDataMaintainer::GetAppVolume(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    return appVolumeLevelMap_[appUid];
+}
+
 
 int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType)
 {

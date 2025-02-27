@@ -372,6 +372,99 @@ public:
      */
     int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType) const;
 
+   /**
+     * @brief Set the app volume.
+     *
+     * @param appUid app uid.
+     * @param volume The volume to be set for the current uid app.
+     * @param flag Is need update ui
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAppVolume(const int32_t appUid, const int32_t volume, const int32_t flag = 0);
+
+    /**
+     * @brief Set self app volume.
+     *
+     * @param volume The volume to be set for the current app.
+     * @param flag Is need update ui
+     * @return self app volume level
+     */
+    int32_t SetSelfAppVolume(const int32_t volume, const int32_t flag = 0);
+
+    /**
+     * @brief Get uid app volume.
+     *
+     * @param appUid App uid.
+     * @return uid app volume level
+     */
+    int32_t GetAppVolume(int32_t appUid) const;
+
+    /**
+     * @brief Get the uid app volume.
+     *
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t GetSelfAppVolume() const;
+
+    /**
+     * @brief Set self app volume change callback.
+     *
+     * @param callback callback when app volume change.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
+
+    /**
+     * @brief Unset self app volume change callback.
+     *
+     * @param callback Unset the callback.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t UnsetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
+    
+    /**
+     * @brief Set app volume change callback.
+     *
+     * @param appUid app uid.
+     * @param callback callback when app volume changed
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAppVolumeCallbackForUid(const int32_t appUid,
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
+
+    /**
+     * @brief Unset app volume change callback.
+     *
+     * @param callback Unset the callback.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t UnsetAppVolumeCallbackForUid(
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
+    
+    /**
+     * @brief Set the uid app volume muted.
+     * @param appUid app uid
+     * @param muted muted or unmuted.
+     * @param flag Is need update ui
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
+
+    /**
+     * @brief Check the uid app volume is muted.
+     * @param appUid app uid
+     * @param owned If true is passed, the result will be indicated your owned muted statesettings to
+     * this app. Otherwise if false is passed, the result will be indicated the real muted state.
+     * @return the app uid muted status
+     */
+    bool IsAppVolumeMute(const int32_t appUid, const bool owned);
     /**
      * @brief Obtains the current stream volume.
      *

@@ -23,8 +23,8 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t STREAM_MUSIC = 1;
-const int32_t STREAM_USAGE_MEDIA = 1;
+const int32_t STREAM_MUSIC_TEST = 1;
+const int32_t STREAM_USAGE_MEDIA_TEST = 1;
 
 class AudioVolumeUnitTest : public testing::Test {
 public:
@@ -45,11 +45,12 @@ void AudioVolumeUnitTest::TearDownTestCase(void)
 void AudioVolumeUnitTest::SetUp(void)
 {
     uint32_t sessionId = 1;
-    int32_t streamType = STREAM_MUSIC;
-    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t streamType = STREAM_MUSIC_TEST;
+    int32_t streamUsage = STREAM_USAGE_MEDIA_TEST;
     int32_t uid = 1000;
     int32_t pid = 1000;
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false);
+    int32_t mode = 1;
+    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode);
 }
 
 void AudioVolumeUnitTest::TearDown(void)
@@ -67,7 +68,7 @@ void AudioVolumeUnitTest::TearDown(void)
 HWTEST_F(AudioVolumeUnitTest, GetVolume_001, TestSize.Level1)
 {
     uint32_t sessionId = 1;
-    int32_t volumeType = STREAM_MUSIC;
+    int32_t volumeType = STREAM_MUSIC_TEST;
     std::string deviceClass = "speaker";
     float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
     EXPECT_EQ(volume, 1.0f);
@@ -184,7 +185,7 @@ HWTEST_F(AudioVolumeUnitTest, SetStreamVolumeMute_001, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_001, TestSize.Level1)
 {
-    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, false);
+    SystemVolume systemVolume(STREAM_MUSIC_TEST, "speaker", 0.5f, 5, false);
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
     auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
     EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
@@ -198,9 +199,9 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_001, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_002, TestSize.Level1)
 {
-    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, false);
+    SystemVolume systemVolume(STREAM_MUSIC_TEST, "speaker", 0.5f, 5, false);
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
-    SystemVolume systemVolume2(STREAM_MUSIC, "speaker", 1.0f, 5, false);
+    SystemVolume systemVolume2(STREAM_MUSIC_TEST, "speaker", 1.0f, 5, false);
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume2);
     auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
     EXPECT_EQ(it->second.volume_, 1.0f);
@@ -214,7 +215,7 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_002, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_003, TestSize.Level1)
 {
-    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC, "speaker", 0.5f, 5);
+    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC_TEST, "speaker", 0.5f, 5);
     auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
     EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
 }
@@ -227,8 +228,8 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_003, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_004, TestSize.Level1)
 {
-    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC, "speaker", 0.5f, 5);
-    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC, "speaker", 1.0f, 5);
+    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC_TEST, "speaker", 0.5f, 5);
+    AudioVolume::GetInstance()->SetSystemVolume(STREAM_MUSIC_TEST, "speaker", 1.0f, 5);
     auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
     EXPECT_EQ(it->second.volume_, 1.0f);
 }
@@ -240,7 +241,7 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_004, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_001, TestSize.Level1)
 {
-    int32_t volumeType = STREAM_MUSIC;
+    int32_t volumeType = STREAM_MUSIC_TEST;
     std::string deviceClass = "speaker";
     bool isMuted = true;
     AudioVolume::GetInstance()->SetSystemVolumeMute(volumeType, deviceClass, isMuted);
@@ -256,7 +257,7 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_001, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_002, TestSize.Level1)
 {
-    int32_t volumeType = STREAM_MUSIC;
+    int32_t volumeType = STREAM_MUSIC_TEST;
     std::string deviceClass = "test";
     bool isMuted = true;
     AudioVolume::GetInstance()->SetSystemVolumeMute(volumeType, deviceClass, isMuted);
@@ -350,11 +351,12 @@ HWTEST_F(AudioVolumeUnitTest, AddStreamVolume_001, TestSize.Level1)
 {
     uint32_t sessionId = 1;
     int32_t sample = AudioVolume::GetInstance()->streamVolume_.size();
-    int32_t streamType = STREAM_MUSIC;
-    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t streamType = STREAM_MUSIC_TEST;
+    int32_t streamUsage = STREAM_USAGE_MEDIA_TEST;
     int32_t uid = 1000;
     int32_t pid = 1000;
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false);
+    int32_t mode = 1;
+    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode);
     int32_t ret = AudioVolume::GetInstance()->streamVolume_.size();
     EXPECT_EQ(ret, sample);
 }

@@ -61,8 +61,14 @@ public:
     bool SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
     bool GetVolume(DeviceType deviceType, AudioStreamType streamType);
     void SetStreamVolume(AudioStreamType streamType, int32_t volumeLevel);
+    void SetAppVolume(int32_t appUid, int32_t volumeLevel);
+    bool GetAppMute(int32_t appUid);
+    bool GetAppMuteOwned(int32_t appUid);
+    void SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t GetStreamVolume(AudioStreamType streamType);
     int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType);
+    int32_t GetAppVolume(int32_t appUid);
+    bool IsSetAppVolume(int32_t appUid);
     std::unordered_map<AudioStreamType, int32_t> GetVolumeMap();
 
     bool SaveMuteStatus(DeviceType deviceType, AudioStreamType streamType,
@@ -105,8 +111,10 @@ private:
 
     ffrt::mutex volumeMutex_;
     ffrt::mutex volumeForDbMutex_;
-    std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save volume Mutestatus map
-    std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save volume map
+    std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save System volume Mutestatus map
+    std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save system volume map
+    std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
+    std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
     bool isSettingsCloneHaveStarted_ = false;
 };
 } // namespace AudioStandard

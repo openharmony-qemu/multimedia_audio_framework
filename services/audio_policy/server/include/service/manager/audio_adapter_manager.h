@@ -73,7 +73,17 @@ public:
 
     int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
 
+    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
+
+    int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
+
+    int32_t SetAppVolumeMutedDB(int32_t appUid, bool muted);
+
+    bool IsAppVolumeMute(int32_t appUid, bool owned);
+
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+
+    int32_t GetAppVolumeLevel(int32_t appUid);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
@@ -85,6 +95,8 @@ public:
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
 
     bool GetStreamMute(AudioStreamType streamType);
+
+    bool GetAppMute(int32_t appUid);
 
     std::vector<SinkInfo> GetAllSinks();
 
@@ -257,7 +269,9 @@ private:
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
+    int32_t SetAppVolumeDb(int32_t appUid);
     void SetAudioVolume(AudioStreamType streamType, float volumeDb);
+    void SetAppAudioVolume(int32_t appUid, float volumeDb);
     void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);

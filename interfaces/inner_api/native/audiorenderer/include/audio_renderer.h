@@ -527,6 +527,8 @@ public:
      */
     virtual int32_t SetVolume(float volume) const = 0;
 
+    virtual int32_t SetVolumeMode(int32_t mode) {return 0;};
+
     /**
      * @brief Obtains the current track volume
      *

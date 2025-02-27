@@ -57,7 +57,6 @@ private:
         bool inputBArgTransFlag;
         bool outputBArgTransFlag;
         int32_t policyType;
-
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();;
         std::shared_ptr<AudioDeviceDescriptor> outputDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();;
     };

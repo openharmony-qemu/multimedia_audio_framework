@@ -309,6 +309,21 @@ int32_t AudioPolicyService::SetSystemVolumeLevelWithDevice(AudioStreamType strea
     return audioVolumeManager_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
 }
 
+int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
+{
+    return audioVolumeManager_.SetAppVolumeLevel(appUid, volumeLevel);
+}
+
+int32_t AudioPolicyService::SetAppVolumeMuted(int32_t appUid, bool muted)
+{
+    return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
+}
+
+bool AudioPolicyService::IsAppVolumeMute(int32_t appUid, bool owned)
+{
+    return audioVolumeManager_.IsAppVolumeMute(appUid, owned);
+}
+
 int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
 {
     return audioVolumeManager_.SetVoiceRingtoneMute(isMute);
@@ -317,6 +332,11 @@ int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     return audioVolumeManager_.GetSystemVolumeLevel(streamType);
+}
+
+int32_t AudioPolicyService::GetAppVolumeLevel(int32_t appUid)
+{
+    return audioVolumeManager_.GetAppVolumeLevel(appUid);
 }
 
 int32_t AudioPolicyService::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
