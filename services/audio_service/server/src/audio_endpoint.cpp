@@ -2188,12 +2188,12 @@ uint32_t AudioEndpointInner::GetLinkedProcessCount()
     return processList_.size();
 }
 
-bool RendererInServer::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
+bool AudioEndpointInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, int32_t index)
 {
     bool isInvalid = false;
     uint8_t ui8Data = 0;
     int16_t i16Data = 0;
-    switch (processConfig_.streamInfo.format) {
+    switch (processList_[index]->GetStreamInfo().format) {
         case SAMPLE_U8:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
             ui8Data = *buffer;
@@ -2209,37 +2209,38 @@ bool RendererInServer::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
     }
     return isInvalid;
 }
-
-void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
+ 
+void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize, int32_t index)
 {
-    if (IsInvalidBuffer(buffer, bufferSize)) {
-        if (startMuteTime_ == 0) {
-            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    auto tempProcess = processList_[index];
+    if (IsInvalidBuffer(buffer, bufferSize, index)) {
+        if (tempProcess->GetStartMuteTime() == 0) {
+            tempProcess->SetStartMuteTime(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
         }
         std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !tempProcess->GetSilentState()) {
+        if ((currentTime - tempProcess->GetStartMuteTime() >= ONE_MINUTE) && !tempProcess->GetSilentState()) {
             tempProcess->SetSilentState(true);
             AUDIO_WARNING_LOG("write invalid data for some time in server");
-
+ 
             std::unordered_map<std::string, std::string> payload;
-            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
-            payload["sessionId"] = std::to_string(streamIndex_);
+            payload["uid"] = std::to_string(tempProcess->GetAppInfo().appUid);
+            payload["sessionId"] = std::to_string(tempProcess->GetAudioSessionId());
             payload["isSilent"] = std::to_string(true);
 #ifdef RESSCHE_ENABLE
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
 #endif
         }
     } else {
-        if (startMuteTime_ != 0) {
-            startMuteTime_ = 0;
+        if (tempProcess->GetStartMuteTime() != 0) {
+            tempProcess->SetStartMuteTime(0);
         }
         if (tempProcess->GetSilentState()) {
             AUDIO_WARNING_LOG("begin write valid data in server");
             tempProcess->SetSilentState(false);
-
+ 
             std::unordered_map<std::string, std::string> payload;
-            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
-            payload["sessionId"] = std::to_string(streamIndex_);
+            payload["uid"] = std::to_string(tempProcess->GetAppInfo().appUid);
+            payload["sessionId"] = std::to_string(tempProcess->GetAudioSessionId());
             payload["isSilent"] = std::to_string(false);
 #ifdef RESSCHE_ENABLE
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
@@ -2247,8 +2248,8 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         }
     }
 }
-
-void RendererInServer::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
+ 
+void AudioEndpointInner::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
 {
 #ifdef RESSCHE_ENABLE
     AUDIO_INFO_LOG("report event to ResSched ,event type : %{public}d", type);
