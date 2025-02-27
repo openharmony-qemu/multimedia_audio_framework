@@ -2217,7 +2217,6 @@ void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSiz
 {
     auto tempProcess = processList_[index];
     CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
-    CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
     if (IsInvalidBuffer(buffer, bufferSize, index)) {
         if (tempProcess->GetStartMuteTime() == 0) {
             tempProcess->SetStartMuteTime(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
