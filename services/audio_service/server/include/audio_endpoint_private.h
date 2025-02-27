@@ -195,8 +195,11 @@ private:
     void ProcessUpdateAppsUidForPlayback();
     void ProcessUpdateAppsUidForRecord();
 
-    void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     int32_t HandleDisableFastCap(CaptureInfo &captureInfo);
+
+    void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize, int32_t index);
+    bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, int32_t index);
+    void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
