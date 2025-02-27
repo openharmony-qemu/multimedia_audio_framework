@@ -40,6 +40,9 @@ int32_t OffloadAudioRenderSink::Init(const IAudioSinkAttr &attr)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("OffloadAudioRenderSink::Init");
     attr_ = attr;
+    if (attr_.tvSupported) {
+        attr_.adapterName = "dp";
+    }
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
 

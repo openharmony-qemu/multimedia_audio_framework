@@ -499,6 +499,8 @@ public:
 
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
+    virtual void SetTvSupported(bool isSupported) = 0;
+
     virtual void NotifyAudioPolicyReady() = 0;
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -617,6 +619,7 @@ private:
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
     int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
+    int HandleSetTvSupported(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply);

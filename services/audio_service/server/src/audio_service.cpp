@@ -1235,6 +1235,16 @@ void AudioService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     IStreamManager::GetPlaybackManager(PLAYBACK).GetAllSinkInputs(sinkInputs);
 }
 
+void AudioService::SetTvSupported(bool isSupported)
+{
+    isTvSupported_ = isSupported;
+}
+
+bool AudioService::GetTvSupported()
+{
+    return isTvSupported_;
+}
+
 // need call with streamLifeCycleMutex_ lock
 bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid,
     int32_t maxStreamCntPerUid)

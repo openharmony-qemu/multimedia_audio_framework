@@ -44,6 +44,7 @@
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
+#include "audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -596,7 +597,12 @@ std::shared_ptr<IAudioRenderSink> AudioEndpointInner::GetFastSink(const AudioDev
 
 void AudioEndpointInner::InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo)
 {
-    attr.adapterName = deviceInfo.networkId_ == LOCAL_NETWORK_ID ? "primary" : "remote";
+    bool isTvSupported = AudioService::GetInstance().GetTvSupported();
+    if (isTvSupported) {
+        attr.adapterName = "dp";
+    } else {
+        attr.adapterName = deviceInfo.networkId_ == LOCAL_NETWORK_ID ? "primary" : "remote";
+    }
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
     attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1

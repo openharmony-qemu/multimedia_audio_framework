@@ -46,6 +46,9 @@ int32_t MultichannelAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     attr_ = attr;
+    if (attr_.tvSupported) {
+        attr_.adapterName = "dp";
+    }
     adapterNameCase_ = attr_.adapterName;
     openSpeaker_ = attr_.openMicSpeaker;
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);

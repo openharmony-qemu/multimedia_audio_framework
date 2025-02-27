@@ -85,6 +85,7 @@ int32_t SinkAdapterInit(struct SinkAdapter *adapter, const struct SinkAdapterAtt
     IAudioSinkAttr sinkAttr = {
         .adapterName = attr->adapterName,
         .openMicSpeaker = attr->openMicSpeaker,
+        .tvSupported = attr->tvSupported,
         .format = static_cast<AudioSampleFormat>(attr->format),
         .sampleRate = attr->sampleRate,
         .channel = attr->channel,

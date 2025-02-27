@@ -259,6 +259,7 @@ void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo()
             audioModuleInfo.sinkLatency = globalConfigs_.globalPaConfigs_.sinkLatency_;
 
             shouldOpenMicSpeaker_ ? audioModuleInfo.OpenMicSpeaker = "1" : audioModuleInfo.OpenMicSpeaker = "0";
+            shouldSupportTv_ ? audioModuleInfo.tvSupported = "1" : audioModuleInfo.tvSupported = "0";
             if (adapterType == AdaptersType::TYPE_PRIMARY &&
                 shouldEnableOffload && pipeInfo.paPropRole_ == MODULE_TYPE_SINK) {
                 audioModuleInfo.offloadEnable = "1";
@@ -733,10 +734,10 @@ void AudioPolicyParser::HandleUpdateTvSupportParsed(std::string &value)
 {
     if (value == "true") {
         portObserver_.OnUpdateRouteSupport(true);
-        shouldOpenMicSpeaker_ = true;
+        shouldSupportTv_ = true;
     } else {
         portObserver_.OnUpdateRouteSupport(false);
-        shouldOpenMicSpeaker_ = false;
+        shouldSupportTv_ = false;
     }
 }
 

@@ -101,6 +101,7 @@ private:
     std::unordered_map<std::string, std::string> interruptGroupMap_;
     GlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_ = false;
+    bool shouldSupportTv_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

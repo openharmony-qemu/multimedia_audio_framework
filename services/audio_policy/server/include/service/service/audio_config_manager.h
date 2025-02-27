@@ -94,6 +94,8 @@ public:
 
     bool GetUpdateRouteSupport();
 
+    bool GetTvSupported();
+
     bool GetAdapterInfoFlag();
 
     bool GetAdapterInfoByType(AdaptersType type, AudioAdapterInfo &info);

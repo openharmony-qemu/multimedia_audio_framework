@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "sink_intf.h": "c",
+        "config.h": "c",
+        "audio_hdi_log.h": "c",
+        "audio_common_log.h": "c",
+        "audio_limiter_adapter.h": "c",
+        "hdi_adapter_info.h": "c"
+    }
+}
