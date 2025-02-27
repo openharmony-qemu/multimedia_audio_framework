@@ -433,7 +433,7 @@ bool RendererInServer::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
     }
     return isInvalid;
 }
- 
+
 void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
     if (silentModeAndMixWithOthers_) {
@@ -447,7 +447,7 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isInSilentState_) {
             isInSilentState_ = true;
             AUDIO_WARNING_LOG("write invalid data for some time in server");
- 
+
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
             payload["sessionId"] = std::to_string(streamIndex_);
