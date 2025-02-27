@@ -728,6 +728,9 @@ bool RendererInClientInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
             break;
         default:
             break;
+    }
+    return isInvalid;
+}
 
 int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,
     size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame)
