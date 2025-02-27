@@ -1152,8 +1152,7 @@ int AudioManagerStub::HandleGetAllSinkInputs(MessageParcel &data, MessageParcel 
 int AudioManagerStub::HandleSetTvSupported(MessageParcel &data, MessageParcel &reply)
 {
     bool isSupported = data.ReadBool();
-    int32_t result = SetTvSupported(isSupported);
-    reply.WriteInt32(result);
+    SetTvSupported(isSupported);
     return AUDIO_OK;
 }
 

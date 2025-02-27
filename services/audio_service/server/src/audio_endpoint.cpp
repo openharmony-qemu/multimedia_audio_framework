@@ -598,7 +598,7 @@ std::shared_ptr<IAudioRenderSink> AudioEndpointInner::GetFastSink(const AudioDev
 
 void AudioEndpointInner::InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo)
 {
-    bool isTvSupported = AudioService::GetInstance().GetTvSupported();
+    bool isTvSupported = AudioService::GetInstance()->GetTvSupported();
     if (isTvSupported) {
         attr.adapterName = "dp";
     } else {

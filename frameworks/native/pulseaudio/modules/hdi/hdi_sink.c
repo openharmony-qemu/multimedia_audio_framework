@@ -4544,7 +4544,7 @@ static int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Use
         return -1;
     }
 
-    if (pa_modargs_get_value_u32(ma, "tv_supported", &u->tv_supported) < 0) {
+    if (pa_modargs_get_value_boolean(ma, "tv_supported", &u->tv_supported) < 0) {
         AUDIO_ERR_LOG("Failed to parse tv_supported argument.");
         return -1;
     }

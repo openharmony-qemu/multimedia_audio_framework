@@ -176,7 +176,7 @@ void AudioEndpointSeparate::Dump(std::string &dumpString)
 
 void AudioEndpointSeparate::InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo)
 {
-    bool isTvSupported = AudioService::GetInstance().GetTvSupported();
+    bool isTvSupported = AudioService::GetInstance()->GetTvSupported();
     if (isTvSupported) {
         attr.adapterName = "dp";
     } else {

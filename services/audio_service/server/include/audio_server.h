@@ -193,6 +193,8 @@ public:
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 
+    void SetTvSupported(bool isSupported) override;
+
     void NotifyAudioPolicyReady() override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;

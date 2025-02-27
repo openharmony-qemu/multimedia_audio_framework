@@ -2255,6 +2255,13 @@ void AudioServer::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     AudioService::GetInstance()->GetAllSinkInputs(sinkInputs);
 }
 
+void AudioServer::SetTvSupported(bool isSupported)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetTvSupported(isSupported);
+}
+
 void AudioServer::NotifyAudioPolicyReady()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();

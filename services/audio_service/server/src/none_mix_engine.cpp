@@ -477,7 +477,7 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
         return ERR_INVALID_HANDLE;
     }
     IAudioSinkAttr attr = {};
-    bool isTvSupported = AudioService::GetInstance().GetTvSupported();
+    bool isTvSupported = AudioService::GetInstance()->GetTvSupported();
     if (isTvSupported) {
         attr.adapterName = "dp";
     } else {
