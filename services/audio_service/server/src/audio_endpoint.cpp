@@ -44,6 +44,10 @@
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
+#ifdef RESSCHE_ENABLE
+#include "res_type.h"
+#include "res_sched_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,6 +67,7 @@ namespace {
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
     constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
     constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
+    static const int32_t ONE_MINUTE = 60;
 }
 
 AudioSampleFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
@@ -1160,7 +1165,6 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 Trace trace("AudioEndpoint::MarkClientStandby:" + std::to_string(sessionId));
                 AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", sessionId);
                 processList_[i]->EnableStandby();
-                WriterRenderStreamStandbySysEvent(sessionId, 1);
                 needCheckStandby = true;
                 continue;
             }
@@ -1408,6 +1412,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             curReadSpan->readStartTime = ClockTime::GetCurNano();
             processList_[i]->WriteDumpFile(static_cast<void *>(streamData.bufferDesc.buffer),
                 streamData.bufferDesc.bufLength);
+            WriteMuteDataSysEvent(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength, i);
         }
     }
 }
@@ -2177,20 +2182,74 @@ void AudioEndpointInner::ProcessUpdateAppsUidForRecord()
     source->UpdateAppsUid(appsUid);
 }
 
-void AudioEndpointInner::WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby)
-{
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_STANDBY,
-        Media::MediaMonitor::BEHAVIOR_EVENT);
-    bean->Add("STREAMID", static_cast<int32_t>(sessionId));
-    bean->Add("STANDBY", standby);
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-}
-
 uint32_t AudioEndpointInner::GetLinkedProcessCount()
 {
     std::lock_guard<std::mutex> lock(listLock_);
     return processList_.size();
+}
+
+bool RendererInServer::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
+{
+    bool isInvalid = false;
+    uint8_t ui8Data = 0;
+    int16_t i16Data = 0;
+    switch (processConfig_.streamInfo.format) {
+        case SAMPLE_U8:
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
+            ui8Data = *buffer;
+            isInvalid = ui8Data == 0;
+            break;
+        case SAMPLE_S16LE:
+            CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small");
+            i16Data = *(reinterpret_cast<const int16_t*>(buffer));
+            isInvalid = i16Data == 0;
+            break;
+        default:
+            break;
+    }
+    return isInvalid;
+}
+
+void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
+{
+    if (IsInvalidBuffer(buffer, bufferSize)) {
+        if (startMuteTime_ == 0) {
+            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        }
+        std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isInSilentState_) {
+            isInSilentState_ = true;
+            AUDIO_WARNING_LOG("write invalid data for some time in server");
+
+            std::unordered_map<std::string, std::string> payload;
+            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+            payload["sessionId"] = std::to_string(streamIndex_);
+            payload["isSilent"] = std::to_string(true);
+            ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
+        }
+    } else {
+        if (startMuteTime_ != 0) {
+            startMuteTime_ = 0;
+        }
+        if (isInSilentState_) {
+            AUDIO_WARNING_LOG("begin write valid data in server");
+            isInSilentState_ = false;
+
+            std::unordered_map<std::string, std::string> payload;
+            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+            payload["sessionId"] = std::to_string(streamIndex_);
+            payload["isSilent"] = std::to_string(false);
+            ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
+        }
+    }
+}
+
+void RendererInServer::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
+{
+#ifdef RESSCHE_ENABLE
+    AUDIO_INFO_LOG("report event to ResSched ,event type : %{public}d", type);
+    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS
