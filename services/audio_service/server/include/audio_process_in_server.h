@@ -111,7 +111,6 @@ public:
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
-
 public:
     const AudioProcessConfig processConfig_;
 
