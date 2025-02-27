@@ -29,6 +29,10 @@
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
+#ifdef RESSCHE_ENABLE
+#include "res_type.h"
+#include "res_sched_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -132,6 +136,8 @@ void AudioProcessInServer::EnableStandby()
     CHECK_AND_RETURN_LOG(processBuffer_ != nullptr && processBuffer_->GetStreamStatus() != nullptr, "failed: nullptr");
     processBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     enterStandbyTime_ = ClockTime::GetCurNano();
+
+    WriterRenderStreamStandbySysEvent(sessionId_, 1);
 }
 
 int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
@@ -586,7 +592,20 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
     bean->Add("STREAMID", static_cast<int32_t>(sessionId));
     bean->Add("STANDBY", standby);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+ 
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+    payload["sessionId"] = std::to_string(sessionId);
+    payload["isStandby"] = std::to_string(standby);
+    ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_STANDBY);
 }
+ 
+void AudioProcessInServer::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
+{
+#ifdef RESSCHE_ENABLE
+    AUDIO_INFO_LOG("report event to ResSched ,event type : %{public}d", type);
+    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
+#endif
 
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 {
@@ -609,5 +628,24 @@ int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
     return SUCCESS;
 }
 
+std::time_t AudioProcessInServer::GetStartMuteTime()
+{
+    return startMuteTime_;
+}
+ 
+void AudioProcessInServer::SetStartMuteTime(std::time_t time)
+{
+    startMuteTime_ = time;
+}
+ 
+bool AudioProcessInServer::GetSilentState()
+{
+    return isInSilentState_;
+}
+ 
+void AudioProcessInServer::SetSilentState(bool state)
+{
+    isInSilentState_ = state;
+}
 } // namespace AudioStandard
 } // namespace OHOS
