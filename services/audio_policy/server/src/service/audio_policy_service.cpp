@@ -2082,7 +2082,7 @@ BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
 
 void AudioPolicyService::SetTvSupported(bool isSupported)
 {
-    return AudioServerProxy::GetInstance().SetTvSupportProxy(isSupported);
+    return AudioServerProxy::GetInstance().SetTvSupportedProxy(isSupported);
 }
 
 int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)

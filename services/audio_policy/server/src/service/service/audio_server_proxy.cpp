@@ -170,7 +170,7 @@ void AudioServerProxy::SetTvSupportedProxy(bool isSupported)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetTvSupport(isSupported);
+    gsp->SetTvSupported(isSupported);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

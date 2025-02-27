@@ -60,9 +60,6 @@ int32_t BluetoothAudioRenderSink::Init(const IAudioSinkAttr &attr)
     logUtilsTag_ = "A2dpSink";
 
     attr_ = attr;
-    if (attr_.tvSupported) {
-        attr_.adapterName = "dp";
-    }
     audioSampleFormat_ = attr_.format;
     int32_t ret = InitRender();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);

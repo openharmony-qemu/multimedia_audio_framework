@@ -55,7 +55,6 @@ enum AudioSampleFormatIntf {
 struct SinkAdapterAttr {
     const char *adapterName;
     uint32_t openMicSpeaker;
-    uint32_t tvSupported;
     int32_t format;
     uint32_t sampleRate;
     uint32_t channel;

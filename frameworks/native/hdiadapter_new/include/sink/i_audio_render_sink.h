@@ -31,7 +31,6 @@ namespace AudioStandard {
 typedef struct IAudioSinkAttr {
     const char *adapterName = nullptr;
     uint32_t openMicSpeaker = 0;
-    uint32_t tvSupported = 0;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRate = 0;
     uint32_t channel = 0;
