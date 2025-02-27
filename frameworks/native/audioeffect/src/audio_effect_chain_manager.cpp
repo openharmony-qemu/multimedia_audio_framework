@@ -23,6 +23,8 @@
 #include "securec.h"
 #include "system_ability_definition.h"
 #include "audio_setting_provider.h"
+#include "audio_device_type.h"
+#include "audio_effect_map.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -185,8 +187,9 @@ void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::str
 std::string AudioEffectChainManager::GetDeviceTypeName()
 {
     std::string name = "";
-    auto device = SUPPORTED_DEVICE_TYPE.find(deviceType_);
-    if (device != SUPPORTED_DEVICE_TYPE.end()) {
+    const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
+    auto device = supportDeviceType.find(deviceType_);
+    if (device != supportDeviceType.end()) {
         name = device->second;
     }
     return name;
@@ -321,10 +324,10 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
         "SceneType [%{public}s] does not exist, failed to set", sceneType.c_str());
 
     std::shared_ptr<AudioEffectChain> audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-
+    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
     std::string effectChain;
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
-    std::string effectNone = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_NONE)->second;
+    std::string effectNone = audioSupportedSceneModes.find(EFFECT_NONE)->second;
     if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
         AUDIO_ERR_LOG("EffectChain key [%{public}s] does not exist, auto set to %{public}s",
             effectChainKey.c_str(), effectNone.c_str());
@@ -1160,7 +1163,8 @@ bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneTy
 
 void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneType, const std::string &sceneType)
 {
-    currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
+    const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
+    currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(audioSupportedSceneTypes, sceneType));
 }
 
 void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType,
@@ -1502,6 +1506,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamicInner(const std::s
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
 
     if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         if (sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
@@ -1525,10 +1530,10 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamicInner(const std::s
 
     sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 1;
-    if (!AUDIO_SUPPORTED_SCENE_MODES.count(EFFECT_DEFAULT)) {
+    if (!audioSupportedSceneModes.count(EFFECT_DEFAULT)) {
         return ERROR;
     }
-    std::string effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
+    std::string effectMode = audioSupportedSceneModes.find(EFFECT_DEFAULT)->second;
     if (!isPriorScene && !sceneTypeToSpecialEffectSet_.count(sceneType) && defaultEffectChainCount_ > 1) {
         return SUCCESS;
     }

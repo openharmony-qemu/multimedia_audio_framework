@@ -642,6 +642,8 @@ ohos_shared_library("audio_foundation") {
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
     "server/src/service/device/audio_device_descriptor.cpp",
+    "util/src/audio_device_type.cpp",
+    "util/src/audio_effect_map.cpp",
   ]
 
   public_configs = [ ":audio_foundation_public_config" ]
