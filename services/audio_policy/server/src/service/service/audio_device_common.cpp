@@ -945,6 +945,16 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
     audioIOHandleMap_.NotifyUnmutePort();
 }
 
+void AudioDeviceCommon::MuteOldSinkForFixPop(const std::string &oldSinkname, int64_t muteTime)
+{
+    // fix pop when switching devices during multiple concurrent streams
+    if (oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, muteTime, true);
+    } else if (oldSinkname == PRIMARY_SPEAKER) {
+        audioIOHandleMap_.MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, muteTime, true);
+    }
+}
+
 void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
@@ -962,6 +972,7 @@ void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkname, const std::
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS;
         }
+        MuteOldSinkForFixPop(oldSinkname, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkname, muteTime, true);
     } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
