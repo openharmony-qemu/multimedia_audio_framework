@@ -416,7 +416,7 @@ bool RendererInServer::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
 {
     bool isInvalid = false;
     uint8_t ui8Data = 0;
-    uint16_t ui16Data = 0;
+    int16_t i16Data = 0;
     switch (processConfig_.streamInfo.format) {
         case SAMPLE_U8:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
@@ -425,29 +425,29 @@ bool RendererInServer::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
             break;
         case SAMPLE_S16LE:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small");
-            ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
-            isInvalid = ui16Data == 0;
+            i16Data = *(reinterpret_cast<const int16_t*>(buffer));
+            isInvalid = i16Data == 0;
             break;
         default:
             break;
     }
     return isInvalid;
 }
-
+ 
 void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (CheckBuffer(buffer, bufferSize)) {
+    if (IsInvalidBuffer(buffer, bufferSize)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
         std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && silentState_ == 1) { // 1 means unsilent
-            silentState_ = 0; // 0 means silent
+        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isInSilentState_) {
+            isInSilentState_ = true;
             AUDIO_WARNING_LOG("write invalid data for some time in server");
-
+ 
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
             payload["sessionId"] = std::to_string(streamIndex_);
@@ -458,12 +458,12 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if (startMuteTime_ != 0) {
             startMuteTime_ = 0;
         }
-        if (silentState_ == 0) { // 0 means silent
+        if (isInSilentState_) {
             AUDIO_WARNING_LOG("begin write valid data in server");
-            silentState_ = 1; // 1 means unsilent
-
+            isInSilentState_ = false;
+ 
             std::unordered_map<std::string, std::string> payload;
-            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+            payload["uid"] = std::to_string(processConfig_.appInfo.appUid);[[[[[[[[[]]]]]]]]]
             payload["sessionId"] = std::to_string(streamIndex_);
             payload["isSilent"] = std::to_string(false);
             ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK);
