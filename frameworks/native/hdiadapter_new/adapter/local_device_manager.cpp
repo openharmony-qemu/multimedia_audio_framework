@@ -87,6 +87,25 @@ void LocalDeviceManager::UnloadAdapter(const std::string &adapterName, bool forc
     AUDIO_INFO_LOG("unload adapter %{public}s success", adapterName.c_str());
 }
 
+void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
+{
+    AUDIO_INFO_LOG("isMute: %{public}s", isMute ? "true" : "false");
+
+    std::lock_guard<std::mutex> lock(adapterMtx_);
+    for (auto &item : adapters_) {
+        std::shared_ptr<LocalAdapterWrapper> wrapper = item.second;
+        if (wrapper == nullptr || wrapper->adapter_ == nullptr) {
+            continue;
+        }
+        int32_t ret = wrapper->adapter_->SetMicMute(wrapper->adapter_, isMute);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("set mute fail, adapterName: %{public}s", item.first.c_str());
+        } else {
+            AUDIO_INFO_LOG("set mute success, adapterName: %{public}s", item.first.c_str());
+        }
+    }
+}
+
 void LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {

@@ -49,6 +49,9 @@ public:
 
     int32_t LoadAdapter(const std::string &adapterName) override;
     void UnloadAdapter(const std::string &adapterName, bool force = false) override;
+
+    void AllAdapterSetMicMute(bool isMute) override;
+
     void SetAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
     std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,

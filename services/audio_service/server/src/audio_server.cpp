@@ -858,6 +858,11 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
         return SUCCESS;
     };
     (void)HdiAdapterManager::GetInstance().ProcessSource(processFunc);
+    std::shared_ptr<IDeviceManager> deviceManager = HdiAdapterManager::GetInstance().GetDeviceManager(
+        HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    if (deviceManager != nullptr) {
+        deviceManager->AllAdapterSetMicMute(isMute);
+    }
 
     int32_t ret = SetMicrophoneMuteForEnhanceChain(isMute);
     if (ret != SUCCESS) {
