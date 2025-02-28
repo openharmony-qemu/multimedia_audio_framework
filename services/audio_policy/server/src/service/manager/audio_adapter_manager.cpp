@@ -2109,7 +2109,7 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
 {
     auto streamVolInfo = streamVolumeInfos_.find(streamType);
     if (streamVolInfo == streamVolumeInfos_.end()) {
-        AUDIO_WARNING_LOG("Cannot find stream type %{public}d and try to use STREAM_MUSIC", streamType);
+        AUDIO_DEBUG_LOG("Cannot find stream type %{public}d and try to use STREAM_MUSIC", streamType);
         streamVolInfo = streamVolumeInfos_.find(STREAM_MUSIC);
         CHECK_AND_RETURN_LOG(streamVolInfo != streamVolumeInfos_.end(),
             "Cannot find stream type STREAM_MUSIC");
@@ -2243,6 +2243,17 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
     AppendFormat(dumpString, "  - SafeStatus: %s\n", status.c_str());
     AppendFormat(dumpString, "  - ActiveBtSafeTime: %lld\n", safeActiveBtTime_);
     AppendFormat(dumpString, "  - ActiveSafeTime: %lld\n", safeActiveTime_);
+}
+
+void AudioAdapterManager::SetVgsVolumeSupported(bool isVgsSupported)
+{
+    isVgsVolumeSupported_ = isVgsSupported;
+    AudioVolume::GetInstance()->SetVgsVolumeSupported(isVgsSupported);
+}
+
+bool AudioAdapterManager::IsVgsVolumeSupported() const
+{
+    return isVgsVolumeSupported_;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

@@ -564,7 +564,7 @@ private:
     bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
     // for audio volume and mute status
-    int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
+    int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
