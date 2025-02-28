@@ -203,6 +203,8 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
             portName = USB_SPEAKER;
             break;
         case DeviceType::DEVICE_TYPE_DP:
+        case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
             portName = DP_SINK;
             break;
         case DeviceType::DEVICE_TYPE_FILE_SINK:
