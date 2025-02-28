@@ -1033,6 +1033,10 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
 template <typename T>
 bool StringConverter(const std::string &str, T &result)
 {
+    if (str == "-0") {
+        result = 0;
+        return true;
+    }
     auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
     return ec == std::errc{} && ptr == str.data() + str.size();
 }
