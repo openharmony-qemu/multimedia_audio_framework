@@ -53,6 +53,7 @@
 #include "policy_handler.h"
 #include "volume_tools.h"
 #include "audio_manager_util.h"
+#include "audio_effect_map.h"
 
 #include "media_monitor_manager.h"
 
@@ -184,7 +185,9 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 
     rendererInfo_.sceneType = AudioManagerUtil::GetEffectSceneName(rendererInfo_.streamUsage);
 
-    if (rendererInfo_.sceneType == AUDIO_SUPPORTED_SCENE_TYPES.find(SCENE_OTHERS)->second) {
+    const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
+
+    if (rendererInfo_.sceneType == audioSupportedSceneTypes.find(SCENE_OTHERS)->second) {
         effectMode_ = EFFECT_NONE;
         rendererInfo_.effectMode = EFFECT_NONE;
     }

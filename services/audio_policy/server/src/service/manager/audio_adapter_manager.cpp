@@ -86,7 +86,7 @@ bool AudioAdapterManager::Init()
 
     // init volume before kvstore start by local prop for bootanimation
     InitBootAnimationVolume();
-
+    AudioVolume::GetInstance()->SetMaxAppVolume(GetMaxVolumeLevel(STREAM_APP));
     std::string defaultSafeVolume = std::to_string(GetMaxVolumeLevel(STREAM_MUSIC));
     AUDIO_INFO_LOG("defaultSafeVolume %{public}s", defaultSafeVolume.c_str());
     char currentSafeVolumeValue[3] = {0};
@@ -312,6 +312,35 @@ void AudioAdapterManager::UpdateSafeVolumeByS4()
     UpdateSafeVolume();
 }
 
+int32_t AudioAdapterManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
+{
+    AUDIO_INFO_LOG("SetSystemVolumeLevel: appUid: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
+        appUid, currentActiveDevice_, volumeLevel);
+    volumeDataMaintainer_.SetAppVolume(appUid, volumeLevel);
+    return SetAppVolumeDb(appUid);
+}
+
+int32_t AudioAdapterManager::SetAppVolumeMuted(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("SetSystemVolumeLevel: appUid: %{public}d, deviceType: %{public}d, muted:%{public}d",
+        appUid, currentActiveDevice_, muted);
+    volumeDataMaintainer_.SetAppVolumeMuted(appUid, muted);
+    return SetAppVolumeMutedDB(appUid, muted);
+}
+
+bool AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned)
+{
+    AUDIO_INFO_LOG("IsAppVolumeMute: appUid: %{public}d, deviceType: %{public}d, owned:%{public}d",
+        appUid, currentActiveDevice_, owned);
+    bool isMute = false;
+    if (owned) {
+        isMute = volumeDataMaintainer_.GetAppMuteOwned(appUid);
+    } else {
+        isMute = volumeDataMaintainer_.GetAppMute(appUid);
+    }
+    return isMute;
+}
+
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
@@ -449,6 +478,29 @@ void AudioAdapterManager::SetAudioServerProxy(sptr<IStandardAudioService> gsp)
     audioServerProxy_ = gsp;
 }
 
+int32_t AudioAdapterManager::SetAppVolumeDb(int32_t appUid)
+{
+    int32_t volumeLevel =
+        volumeDataMaintainer_.GetAppVolume(appUid) * (GetAppMute(appUid) ? 0 : 1);
+    float volumeDb = 1.0f;
+    volumeDb = CalculateVolumeDbNonlinear(STREAM_APP, currentActiveDevice_, volumeLevel);
+    AUDIO_INFO_LOG("volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
+        volumeDb, volumeLevel, currentActiveDevice_);
+    SetAppAudioVolume(appUid, volumeDb);
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
+{
+    std::lock_guard<std::mutex> lock(audioVolumeMutex_);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
+    AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d devicetype:%{public}d",
+        appUid, muted, currentActiveDevice_);
+    audioVolume->SetAppVolumeMute(appUid, muted);
+    return SUCCESS;
+}
+
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
     int32_t volumeLevel =
@@ -482,6 +534,17 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     SetAudioVolume(streamType, volumeDb);
 
     return SUCCESS;
+}
+
+void AudioAdapterManager::SetAppAudioVolume(int32_t appUid, float volumeDb)
+{
+    std::lock_guard<std::mutex> lock(audioVolumeMutex_);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
+    bool isMuted = GetAppMute(appUid);
+    int32_t appVolumeLevel = volumeDataMaintainer_.GetAppVolume(appUid) * (isMuted ? 0 : 1);
+    AppVolume appVolume(appUid, volumeDb, appVolumeLevel, isMuted);
+    audioVolume->SetAppVolume(appVolume);
 }
 
 void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volumeDb)
@@ -589,6 +652,16 @@ int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
     return volumeDataMaintainer_.GetStreamVolume(streamType);
 }
 
+int32_t AudioAdapterManager::GetAppVolumeLevel(int32_t appUid)
+{
+    if (volumeDataMaintainer_.IsSetAppVolume(appUid)) {
+        return volumeDataMaintainer_.GetAppVolume(appUid);
+    } else {
+        AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_APP);
+        return GetMaxVolumeLevel(streamAlias);
+    }
+}
+
 int32_t AudioAdapterManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
 {
     return volumeDataMaintainer_.GetStreamVolume(streamType);
@@ -662,6 +735,11 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 {
     return GetStreamMuteInternal(streamType);
+}
+
+bool AudioAdapterManager::GetAppMute(int32_t appUid)
+{
+    return volumeDataMaintainer_.GetAppMute(appUid);
 }
 
 int32_t AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)

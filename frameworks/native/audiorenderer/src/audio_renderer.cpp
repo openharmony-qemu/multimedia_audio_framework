@@ -24,6 +24,7 @@
 
 #include "audio_renderer.h"
 #include "audio_renderer_private.h"
+#include "shared_audio_renderer_wrapper.h"
 
 #include "audio_renderer_log.h"
 #include "audio_errors.h"
@@ -41,6 +42,12 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_ENFORCED_TONE,
     STREAM_USAGE_ULTRASONIC,
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
+};
+
+const std::vector<StreamUsage> BACKGROUND_NOSTART_STREAM_USAGE {
+    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_AUDIOBOOK
 };
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
@@ -198,7 +205,10 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
         audioStreamType = STREAM_MUSIC;
     }
 
-    return std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, true);
+    auto sharedRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, true);
+    CHECK_AND_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr, "renderer is null");
+
+    return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions)
@@ -220,16 +230,17 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return Create(cachePath, rendererOptions, appInfo);
 }
 
-std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
-    const AppInfo &appInfo)
-{
-    auto tempUniquePtr = Create("", rendererOptions, appInfo);
-    std::shared_ptr<AudioRenderer> sharedPtr(tempUniquePtr.release());
-    return sharedPtr;
-}
-
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath,
     const AudioRendererOptions &rendererOptions, const AppInfo &appInfo)
+{
+    auto sharedRenderer = CreateRenderer(rendererOptions, appInfo);
+    CHECK_AND_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr, "renderer is null");
+
+    return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
+}
+
+std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
 {
     Trace trace("AudioRenderer::Create");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
@@ -244,7 +255,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
         return nullptr;
     }
 
-    auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, false);
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, false);
     if (audioRenderer == nullptr) {
         AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
             ERR_OPERATION_FAILED);
@@ -263,6 +274,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
         = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
     audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
+    audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
@@ -1010,6 +1022,15 @@ int32_t AudioRendererPrivate::SetStreamType(AudioStreamType audioStreamType)
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetAudioStreamType(audioStreamType);
+}
+
+int32_t AudioRendererPrivate::SetVolumeMode(int32_t mode)
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    AUDIO_INFO_LOG("SetVolumeMode mode = %{public}d", mode);
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    rendererInfo_.volumeMode = static_cast<AudioVolumeMode>(mode);
+    return SUCCESS;
 }
 
 int32_t AudioRendererPrivate::SetVolume(float volume) const

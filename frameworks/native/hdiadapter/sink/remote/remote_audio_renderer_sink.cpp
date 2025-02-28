@@ -84,7 +84,29 @@ uint32_t MEDIA_RENDERID = 0;
 uint32_t NAVIGATION_RENDERID = 1;
 uint32_t COMMUNICATION_RENDERID = 2;
 const char* DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
+constexpr uint32_t MAX_NUM_OF_SPLIT_STREAM_CATEGORY = 3;
+const std::array<AudioCategory, MAX_NUM_OF_SPLIT_STREAM_CATEGORY> STREAM_SPLIT_CATEGORY = {
+    AudioCategory::AUDIO_IN_MEDIA,
+    AudioCategory::AUDIO_IN_NAVIGATION,
+    AudioCategory::AUDIO_IN_COMMUNICATION,
+};
+
+/**
+ * @brief whether the arg is valid
+ * @param type audio type, it should in split audio stream type set [media, communication, navigation]
+ * @return return true if type in [media, communication, navigation], false otherwise
+ */
+bool isValidStreamSplitAudioCategory(AudioCategory type)
+{
+    for (uint32_t i = 0; i < MAX_NUM_OF_SPLIT_STREAM_CATEGORY; ++i) {
+        if (type == STREAM_SPLIT_CATEGORY[i]) {
+            return true;
+        }
+    }
+    return false;
 }
+}
+
 class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
     explicit RemoteAudioRendererSinkInner(const std::string &deviceNetworkId);
@@ -228,6 +250,7 @@ void RemoteAudioRendererSinkInner::ClearRender()
 
     if (audioAdapter != nullptr) {
         for (auto &audioRender : audioRenderMap_) {
+            CHECK_AND_RETURN_LOG(renderId != renderIdVector_.end(), "renderId out range");
             audioAdapter->DestroyRender(audioRender.second, *renderId);
             audioRender.second = nullptr;
             renderId++;
@@ -364,6 +387,8 @@ void RemoteAudioRendererSinkInner::splitStreamInit(const char *splitStreamString
 int32_t RemoteAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort, AudioCategory type,
     uint32_t &renderId)
 {
+    CHECK_AND_RETURN_RET_LOG(isValidStreamSplitAudioCategory(type), ERR_INVALID_PARAM, "type: %{public}d is valid",
+        static_cast<int32_t>(type));
     int64_t start = ClockTime::GetCurNano();
     struct AudioSampleAttributes param;
     InitAttrs(param);
@@ -530,6 +555,7 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
     auto renderId = renderIdVector_.begin();
     if (!isRenderCreated_.load()) {
         for (const auto &audioPort : audioPortMap_) {
+            CHECK_AND_RETURN_RET(renderId != renderIdVector_.end(), ERR_OPERATION_FAILED);
             CHECK_AND_RETURN_RET_LOG(CreateRender(audioPort.second, audioPort.first, *renderId) == SUCCESS,
                 ERR_NOT_STARTED, "Create render fail, audio port %{public}d", audioPort.second.portId);
             renderId++;

@@ -177,8 +177,14 @@ void AudioVolumeManager::SetSharedAbsVolumeScene(const bool support)
     *sharedAbsVolumeScene_ = support;
 }
 
+int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid)
+{
+    return audioPolicyManager_.GetAppVolumeLevel(appUid);
+}
+
 int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
 {
+    Trace trace("AudioVolumeManager::GetSystemVolumeLevel");
     if (streamType == STREAM_RING && !IsRingerModeMute()) {
         AUDIO_PRERELEASE_LOGW("return 0 when dual tone ring");
         return DUAL_TONE_RING_VOLUME;
@@ -239,6 +245,7 @@ void AudioVolumeManager::SetVoiceCallVolume(int32_t volumeLevel)
 
 void AudioVolumeManager::UpdateVolumeForLowLatency()
 {
+    Trace trace("AudioVolumeManager::UpdateVolumeForLowLatency");
     // update volumes for low latency streams when loading volumes from the database.
     Volume vol = {false, 1.0f, 0};
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
@@ -296,6 +303,28 @@ bool AudioVolumeManager::DeviceIsSupportSafeVolume()
             AUDIO_INFO_LOG("current device unsupport safe volume:%{public}d", curOutputDeviceType);
             return false;
     }
+}
+
+int32_t AudioVolumeManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppVolumeLevel");
+    // audioPolicyManager_ : AudioAdapterManager
+    int32_t result = audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel);
+    return result;
+}
+
+int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppVolumeMuted");
+    int32_t result = audioPolicyManager_.SetAppVolumeMuted(appUid, muted);
+    return result;
+}
+
+bool AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppVolumeMute");
+    bool result = audioPolicyManager_.IsAppVolumeMute(appUid, owned);
+    return result;
 }
 
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)

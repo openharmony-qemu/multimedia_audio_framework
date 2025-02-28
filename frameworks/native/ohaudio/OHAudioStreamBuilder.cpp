@@ -31,6 +31,7 @@ using OHOS::AudioStandard::SourceType;
 using OHOS::AudioStandard::InterruptMode;
 using OHOS::AudioStandard::AudioChannelLayout;
 using OHOS::AudioStandard::AudioPrivacyType;
+using OHOS::AudioStandard::AudioVolumeMode;
 
 static const int32_t RENDERER_TYPE = 1;
 static const int32_t CAPTURER_TYPE = 2;
@@ -106,6 +107,14 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilde
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
     return audioStreamBuilder->SetRendererInfo(static_cast<StreamUsage>(usage));
+}
+
+OH_AudioStream_Result OH_AudioStreamBuilder_SetVolumeMode(OH_AudioStreamBuilder* builder,
+    OH_AudioStream_VolumeMode volumeMode)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    return audioStreamBuilder->SetAudioVolumeMode(static_cast<AudioVolumeMode>(volumeMode));
 }
 
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererCallback(OH_AudioStreamBuilder *builder,
@@ -314,6 +323,12 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage)
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OHAudioStreamBuilder::SetAudioVolumeMode(AudioVolumeMode volumeMode)
+{
+    volumeMode_ = volumeMode;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType encodingType)
 {
     encodingType_ = encodingType;
@@ -359,7 +374,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
     AudioRendererInfo rendererInfo = {
         CONTENT_TYPE_UNKNOWN,
         usage_,
-        latencyMode_
+        latencyMode_,
+        volumeMode_
     };
 
     AudioRendererOptions options = {

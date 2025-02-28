@@ -673,7 +673,8 @@ static void  SplitPaSinkRenderInto(pa_sink *s, pa_memchunk *target, char *stream
 {
     pa_mix_info info[MAX_MIX_CHANNELS];
     unsigned n;
-    size_t length, blockSizeMax;
+    size_t length;
+    size_t blockSizeMax;
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
@@ -708,7 +709,8 @@ static void  SplitPaSinkRenderInto(pa_sink *s, pa_memchunk *target, char *stream
 static void SplitPaSinkRenderIntoFull(pa_sink *s, pa_memchunk *target, char *streamType)
 {
     pa_memchunk chunk;
-    size_t l, d;
+    size_t l;
+    size_t d;
 
     CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     pa_sink_assert_io_context(s);

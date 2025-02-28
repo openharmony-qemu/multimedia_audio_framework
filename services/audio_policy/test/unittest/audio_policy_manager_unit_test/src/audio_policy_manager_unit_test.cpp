@@ -547,5 +547,39 @@ HWTEST(AudioPolicyManager, UnsetAudioSessionCallback_ptr_002, TestSize.Level1)
     int32_t ret = audioPolicyManager_->UnsetAudioSessionCallback(audioSessionCallback);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: SetAudioSceneChangeCallbackTest_001.
+* @tc.desc  : Test SetAudioSceneChangeCallback.
+*/
+HWTEST(AudioPolicyManager, SetAudioSceneChangeCallbackTest_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    int32_t clientId = getpid();
+    std::shared_ptr<AudioManagerAudioSceneChangedCallback> callback =
+        std::make_shared<ConcreteAudioManagerAudioSceneChangedCallback>();
+    audioPolicyManager_->SetAudioSceneChangeCallback(clientId, callback);
+    EXPECT_NE(audioPolicyManager_,  nullptr);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: UnsetAudioSceneChangeCallbackTest_001.
+* @tc.desc  : Test UnsetAudioSceneChangeCallback.
+*/
+HWTEST(AudioPolicyManager, UnsetAudioSceneChangeCallbackTest_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    std::shared_ptr<AudioManagerAudioSceneChangedCallback> callback =
+        std::make_shared<ConcreteAudioManagerAudioSceneChangedCallback>();
+    audioPolicyManager_->audioPolicyClientStubCB_ = nullptr;
+    int32_t result = audioPolicyManager_->UnsetAudioSceneChangeCallback(callback);
+    EXPECT_EQ(result,  SUCCESS);
+
+    audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    result = audioPolicyManager_->UnsetAudioSceneChangeCallback(callback);
+    EXPECT_EQ(result,  SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

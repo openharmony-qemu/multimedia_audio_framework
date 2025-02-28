@@ -96,6 +96,7 @@ private:
     int32_t GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &enhanceBuffer);
     int32_t DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t offset);
     int32_t SetPropertyToHandle(AudioEffectHandle handle, const std::string &property);
+    static AudioSampleFormat ConvertFormat(uint32_t format);
 
     bool setConfigFlag_;
     std::mutex chainMutex_;
@@ -114,6 +115,7 @@ private:
     std::vector<AudioEffectHandle> standByEnhanceHandles_;
     std::vector<std::string> enhanceNames_;
     std::vector<AudioEffectLibrary*> enhanceLibHandles_;
+    mutable int64_t volumeDataCount_ = 0;
 };
 
 }  // namespace AudioStandard

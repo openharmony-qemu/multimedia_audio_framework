@@ -24,6 +24,7 @@
 #include "audio_effect_log.h"
 #include "audio_errors.h"
 #include "audio_enhance_chain_manager.h"
+#include "audio_effect_map.h"
 
 using namespace OHOS::AudioStandard;
 
@@ -210,16 +211,18 @@ int32_t EnhanceChainManagerProcessDefault(const uint32_t captureId, uint32_t len
 int32_t GetSceneTypeCode(const char *sceneType, uint32_t *sceneTypeCode)
 {
     std::string sceneTypeString = "";
+    const std::unordered_map<AudioEnhanceScene, std::string> &audioEnhanceSupportedSceneTypes =
+        GetEnhanceSupportedSceneType();
     if (sceneType) {
         sceneTypeString = sceneType;
     } else {
         return ERROR;
     }
-    auto item = std::find_if(AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.begin(), AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.end(),
+    auto item = std::find_if(audioEnhanceSupportedSceneTypes.begin(), audioEnhanceSupportedSceneTypes.end(),
         [&sceneTypeString](const std::pair<AudioEnhanceScene, std::string>& element) -> bool {
             return element.second == sceneTypeString;
         });
-    if (item == AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES.end()) {
+    if (item == audioEnhanceSupportedSceneTypes.end()) {
         return ERROR;
     }
     *sceneTypeCode = static_cast<uint32_t>(item->first);

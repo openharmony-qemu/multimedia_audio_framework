@@ -4598,7 +4598,7 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
         return -1;
     }
     u->render_full_enable = false; // default to false.
-    if (u->ss.rate >= SAMPLE_RATE_96K_HZ && u->ss.channels >= CHANNEL_COUNT_8) {
+    if (u->ss.rate >= SAMPLE_RATE_96K_HZ || u->ss.channels >= CHANNEL_COUNT_8) {
         AUDIO_INFO_LOG("High sample rate and channel case, will call render_full for dp");
         u->render_full_enable = true;
     }
