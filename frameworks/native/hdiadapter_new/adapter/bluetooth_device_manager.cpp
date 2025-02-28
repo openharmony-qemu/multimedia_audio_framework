@@ -90,6 +90,11 @@ void BluetoothDeviceManager::UnloadAdapter(const std::string &adapterName, bool 
     AUDIO_INFO_LOG("unload adapter %{public}s success", adapterName.c_str());
 }
 
+void BluetoothDeviceManager::AllAdapterSetMicMute(bool isMute)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 void BluetoothDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {

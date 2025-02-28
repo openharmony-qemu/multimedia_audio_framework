@@ -115,6 +115,11 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
     AUDIO_INFO_LOG("unload adapter %{public}s success", adapterName.c_str());
 }
 
+void RemoteDeviceManager::AllAdapterSetMicMute(bool isMute)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 void RemoteDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
