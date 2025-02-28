@@ -184,6 +184,7 @@ int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid)
 
 int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
 {
+    Trace trace("AudioVolumeManager::GetSystemVolumeLevel");
     if (streamType == STREAM_RING && !IsRingerModeMute()) {
         AUDIO_PRERELEASE_LOGW("return 0 when dual tone ring");
         return DUAL_TONE_RING_VOLUME;
@@ -244,6 +245,7 @@ void AudioVolumeManager::SetVoiceCallVolume(int32_t volumeLevel)
 
 void AudioVolumeManager::UpdateVolumeForLowLatency()
 {
+    Trace trace("AudioVolumeManager::UpdateVolumeForLowLatency");
     // update volumes for low latency streams when loading volumes from the database.
     Volume vol = {false, 1.0f, 0};
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
