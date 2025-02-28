@@ -40,7 +40,7 @@ public:
 
     float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass); // all volume
     float GetStreamVolume(uint32_t sessionId); // only stream volume
-
+    float GetAppVolume(int32_t appUid, AudioVolumeMode mode);
     // history volume
     float GetHistoryVolume(uint32_t sessionId);
     void SetHistoryVolume(uint32_t sessionId, float volume);
@@ -76,14 +76,14 @@ public:
     void SetStopFadeoutState(uint32_t streamIndex, uint32_t fadeoutState);
     uint32_t GetStopFadeoutState(uint32_t streamIndex);
     void RemoveStopFadeoutState(uint32_t streamIndex);
-    float GetAppVolume(int32_t appUid, AudioVolumeMode mode);
-    float GetSystemVolume(int32_t volumeType, const std::string &deviceClass,
-        uint32_t sessionId, int32_t &volumeLevel);
+    
     void SetMaxAppVolume(int32_t level);
-
+    void SetVgsVolumeSupported(bool isVgsSupported);
+    bool IsVgsVolumeSupported() const;
 private:
     AudioVolume();
-
+    float GetStreamVolume(uint32_t sessionId, int32_t& volumeType, int32_t& appUid, AudioVolumeMode& volumeMode);
+    float GetSystemVolume(int32_t volumeType, const std::string &deviceClass, int32_t &volumeLevel);
 private:
     std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};
     std::unordered_map<std::string, SystemVolume> systemVolume_ {};
@@ -92,7 +92,8 @@ private:
     std::unordered_map<uint32_t, std::pair<float, int32_t>> monitorVolume_ {};
     std::shared_mutex volumeMutex_ {};
     std::shared_mutex systemMutex_ {};
-
+    std::shared_mutex appMutex_ {};
+    bool isVgsVolumeSupported_ = false;
     std::shared_mutex fadoutMutex_ {};
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
     std::unordered_map<uint32_t, uint32_t> stopFadeoutState_{};

@@ -102,6 +102,8 @@ private:
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
     static std::string GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
     static std::string GetDeviceTypeName(DeviceType deviceType);
+    bool SaveVolumeInternal(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
+    int32_t GetDeviceVolumeInternal(DeviceType deviceType, AudioStreamType streamType);
     bool GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType);
     void SetStreamVolumeInternal(AudioStreamType streamType, int32_t volumeLevel);
     bool SaveMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
