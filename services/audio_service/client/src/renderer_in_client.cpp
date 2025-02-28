@@ -763,10 +763,8 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
-    int32_t tryCount = 2; // try futex wait for 2 times.
     FutexCode futexRes = FUTEX_OPERATION_FAILED;
-    while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount > 0) {
-        tryCount--;
+    if (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_) {
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
         futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
             [this] () {
@@ -776,7 +774,6 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
         CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
             "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
-        if (futexRes == FUTEX_SUCCESS && sizeInFrame > 0) { break; }
     }
 
     if (sizeInFrame < 0 || static_cast<uint32_t>(clientBuffer_->GetAvailableDataFrames()) < spanSizeInFrame_) {
