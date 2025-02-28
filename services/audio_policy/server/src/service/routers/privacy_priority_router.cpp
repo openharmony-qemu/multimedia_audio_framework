@@ -74,19 +74,6 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(So
     return desc;
 }
 
-bool PrivacyPriorityRouter::NeedLatestConnectWithDefaultDevices(DeviceType type)
-{
-    if (type == DEVICE_TYPE_WIRED_HEADSET ||
-        type == DEVICE_TYPE_WIRED_HEADPHONES ||
-        type == DEVICE_TYPE_BLUETOOTH_SCO ||
-        type == DEVICE_TYPE_USB_HEADSET ||
-        type == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        type == DEVICE_TYPE_USB_ARM_HEADSET) {
-        return true;
-    }
-    return false;
-}
-
 vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
