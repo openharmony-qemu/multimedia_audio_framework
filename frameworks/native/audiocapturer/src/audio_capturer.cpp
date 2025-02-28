@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_capturer.h"
+#include "shared_audio_capturer_wrapper.h"
 
 #include <cinttypes>
 
@@ -77,36 +78,42 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStream
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-    return std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, true);
+    std::shared_ptr<AudioCapturer> sharedCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType,
+        appInfo, true);
+    CHECK_AND_RETURN_RET_LOG(sharedCapturer != nullptr, nullptr, "capturer is nullptr");
+
+    return std::make_unique<SharedCapturerWrapper>(sharedCapturer);
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options)
 {
     AppInfo appInfo = {};
-    return Create(options, "", appInfo);
-}
-
-std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options, const AppInfo &appInfo)
-{
-    return Create(options, "", appInfo);
+    return Create(options, appInfo);
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options, const std::string cachePath)
 {
     AppInfo appInfo = {};
-    return Create(options, cachePath, appInfo);
+    return Create(options, appInfo);
 }
 
-std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &options,
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options,
+    const std::string cachePath, const AppInfo &appInfo)
+{
+    return Create(options, appInfo);
+}
+
+std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options,
     const AppInfo &appInfo)
 {
-    auto tempUniquePtr = Create(options, "", appInfo);
-    std::shared_ptr<AudioCapturer> sharedPtr(tempUniquePtr.release());
-    return sharedPtr;
+    auto tempSharedPtr = CreateCapturer(options, appInfo);
+    CHECK_AND_RETURN_RET_LOG(tempSharedPtr != nullptr, nullptr, "capturer is nullptr");
+
+    return std::make_unique<SharedCapturerWrapper>(tempSharedPtr);
 }
 
-std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &capturerOptions,
-    const std::string cachePath, const AppInfo &appInfo)
+std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
+    const AppInfo &appInfo)
 {
     Trace trace("AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
@@ -133,7 +140,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     }
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
-    auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
     if (capturer == nullptr) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         AUDIO_ERR_LOG("Failed to create capturer object");
