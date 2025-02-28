@@ -1244,6 +1244,11 @@ ohos_unittest("audio_policy_server_unit_test") {
     defines = [ "FEATURE_DTMF_TONE" ]
   }
 
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+    external_deps += [ "input:libmmi-client" ]
+  }
+
   if (accessibility_enable == true) {
     external_deps += [
       "accessibility:accessibility_common",
@@ -1578,6 +1583,11 @@ ohos_unittest("stream_filter_router_unit_test") {
   if (audio_framework_feature_device_manager) {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
   }
 }
 

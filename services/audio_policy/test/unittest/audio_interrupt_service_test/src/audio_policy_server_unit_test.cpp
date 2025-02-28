@@ -19,6 +19,11 @@
 #include "audio_info.h"
 #include "securec.h"
 #include "audio_interrupt_service.h"
+#include "audio_device_descriptor.h"
+
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+#include "input_manager.h"
+#endif
 
 #include <thread>
 #include <memory>
@@ -1064,6 +1069,417 @@ HWTEST(AudioPolicyUnitTest, NotifyProcessStatus_002, TestSize.Level1)
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
     bool isStart = false;
     ptrAudioPolicyServer->NotifyProcessStatus(isStart);
+}
+
+/**
+* @tc.name  : Test ChangeVolumeOnVoiceAssistant.
+* @tc.number: ChangeVolumeOnVoiceAssistant_001
+* @tc.desc  : Test AudioPolicyServer::ChangeVolumeOnVoiceAssistant
+*/
+HWTEST(AudioPolicyUnitTest, ChangeVolumeOnVoiceAssistant_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
+    ptrAudioPolicyServer->ChangeVolumeOnVoiceAssistant(streamInFocus);
+}
+
+/**
+* @tc.name  : Test MaxOrMinVolumeOption.
+* @tc.number: MaxOrMinVolumeOption_001
+* @tc.desc  : Test AudioPolicyServer::MaxOrMinVolumeOption
+*/
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+HWTEST(AudioPolicyUnitTest, MaxOrMinVolumeOption_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    int32_t volLevel = 20;
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC;
+    bool result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test MaxOrMinVolumeOption.
+* @tc.number: MaxOrMinVolumeOption_002
+* @tc.desc  : Test AudioPolicyServer::MaxOrMinVolumeOption
+*/
+HWTEST(AudioPolicyUnitTest, MaxOrMinVolumeOption_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    int32_t volLevel = 0;
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC;
+    bool result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus);
+    EXPECT_FALSE(result);
+}
+#endif
+
+/**
+* @tc.name  : Test IsVolumeLevelValid.
+* @tc.number: IsVolumeLevelValid_001
+* @tc.desc  : Test AudioPolicyServer::IsVolumeLevelValid
+*/
+HWTEST(AudioPolicyUnitTest, IsVolumeLevelValid_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
+    int32_t volumeLevel = 20;
+    bool result = ptrAudioPolicyServer->IsVolumeLevelValid(streamType, volumeLevel);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test GetSystemVolumeInDb.
+* @tc.number: GetSystemVolumeInDb_001
+* @tc.desc  : Test AudioPolicyServer::GetSystemVolumeInDb
+*/
+HWTEST(AudioPolicyUnitTest, GetSystemVolumeInDb_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioVolumeType volumeType = AudioStreamType::STREAM_MUSIC;
+    int32_t volumeLevel = 20;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_DEFAULT;
+    float actual = ptrAudioPolicyServer->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+    float result = static_cast<float>(ERR_INVALID_PARAM);
+    EXPECT_EQ(actual, result);
+}
+
+/**
+* @tc.name  : Test IsArmUsbDevice.
+* @tc.number: IsArmUsbDevice_001
+* @tc.desc  : Test AudioPolicyServer::IsArmUsbDevice
+*/
+HWTEST(AudioPolicyUnitTest, IsArmUsbDevice_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    bool result = ptrAudioPolicyServer->IsArmUsbDevice(desc);
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test IsArmUsbDevice.
+* @tc.number: IsArmUsbDevice_002
+* @tc.desc  : Test AudioPolicyServer::IsArmUsbDevice
+*/
+HWTEST(AudioPolicyUnitTest, IsArmUsbDevice_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    bool result = ptrAudioPolicyServer->IsArmUsbDevice(desc);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test MapExternalToInternalDeviceType.
+* @tc.number: MapExternalToInternalDeviceType_001
+* @tc.desc  : Test AudioPolicyServer::MapExternalToInternalDeviceType
+*/
+HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    desc.deviceId_ = 0;
+    auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+    EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
+    ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
+    ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+}
+
+/**
+* @tc.name  : Test MapExternalToInternalDeviceType.
+* @tc.number: MapExternalToInternalDeviceType_002
+* @tc.desc  : Test AudioPolicyServer::MapExternalToInternalDeviceType
+*/
+HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.deviceRole_ == INPUT_DEVICE;
+    auto ptrAudioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+    EXPECT_NE(ptrAudioDeviceDescriptor, nullptr);
+    ptrAudioPolicyServer->audioDeviceManager_.connectedDevices_.push_back(ptrAudioDeviceDescriptor);
+    ptrAudioPolicyServer->MapExternalToInternalDeviceType(desc);
+}
+
+/**
+* @tc.name  : Test SetCallbackCapturerInfo.
+* @tc.number: SetCallbackCapturerInfo_001
+* @tc.desc  : Test AudioPolicyServer::SetCallbackCapturerInfo
+*/
+HWTEST(AudioPolicyUnitTest, SetCallbackCapturerInfo_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    int32_t capturerFlags = 0;
+    AudioCapturerInfo audioCapturerInfo(sourceType, capturerFlags);
+    int32_t result = ptrAudioPolicyServer->SetCallbackCapturerInfo(audioCapturerInfo);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetAudioScene.
+* @tc.number: SetAudioScene_001
+* @tc.desc  : Test AudioPolicyServer::SetAudioScene
+*/
+HWTEST(AudioPolicyUnitTest, SetAudioScene_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioScene audioScene = AUDIO_SCENE_CALL_START;
+    int32_t result = ptrAudioPolicyServer->SetAudioScene(audioScene);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test SetAudioInterruptCallback.
+* @tc.number: SetAudioInterruptCallback_001
+* @tc.desc  : Test AudioPolicyServer::SetAudioInterruptCallback
+*/
+HWTEST(AudioPolicyUnitTest, SetAudioInterruptCallback_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    uint32_t sessionID = 0;
+    sptr<IRemoteObject> object = nullptr;
+    uint32_t clientUid = 0;
+    int32_t zoneID = 0;
+    int32_t result = ptrAudioPolicyServer->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
+    EXPECT_EQ(result, ERR_UNKNOWN);
+}
+
+/**
+* @tc.name  : Test ProcessSessionRemoved.
+* @tc.number: ProcessSessionRemoved_001
+* @tc.desc  : Test AudioPolicyServer::ProcessSessionRemoved
+*/
+HWTEST(AudioPolicyUnitTest, ProcessSessionRemoved_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    uint64_t sessionID = 0;
+    int32_t zoneID = 0;
+    ptrAudioPolicyServer->ProcessSessionRemoved(sessionID, zoneID);
+}
+
+/**
+* @tc.name  : Test ProcessSessionAdded.
+* @tc.number: ProcessSessionAdded_001
+* @tc.desc  : Test AudioPolicyServer::ProcessSessionAdded
+*/
+HWTEST(AudioPolicyUnitTest, ProcessSessionAdded_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    SessionEvent sessionEvent = {SessionEvent::Type::ADD, 12345};
+    ptrAudioPolicyServer->ProcessSessionAdded(sessionEvent);
+}
+
+/**
+* @tc.name  : Test ProcessorCloseWakeupSource.
+* @tc.number: ProcessorCloseWakeupSource_001
+* @tc.desc  : Test AudioPolicyServer::ProcessorCloseWakeupSource
+*/
+HWTEST(AudioPolicyUnitTest, ProcessorCloseWakeupSource_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    uint64_t sessionID = 0;
+    ptrAudioPolicyServer->ProcessorCloseWakeupSource(sessionID);
+}
+
+/**
+* @tc.name  : Test GetStreamVolumeInfoMap.
+* @tc.number: GetStreamVolumeInfoMap_001
+* @tc.desc  : Test AudioPolicyServer::GetStreamVolumeInfoMap
+*/
+HWTEST(AudioPolicyUnitTest, GetStreamVolumeInfoMap_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    StreamVolumeInfoMap streamVolumeInfos;
+    ptrAudioPolicyServer->GetStreamVolumeInfoMap(streamVolumeInfos);
+}
+
+/**
+* @tc.name  : Test InitPolicyDumpMap.
+* @tc.number: InitPolicyDumpMap_001
+* @tc.desc  : Test AudioPolicyServer::InitPolicyDumpMap
+*/
+HWTEST(AudioPolicyUnitTest, InitPolicyDumpMap_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->InitPolicyDumpMap();
+}
+
+/**
+* @tc.name  : Test AudioDevicesDump.
+* @tc.number: AudioDevicesDump_001
+* @tc.desc  : Test AudioPolicyServer::AudioDevicesDump
+*/
+HWTEST(AudioPolicyUnitTest, AudioDevicesDump_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    std::string dumpString = "";
+    ptrAudioPolicyServer->AudioDevicesDump(dumpString);
+}
+
+/**
+* @tc.name  : Test AudioModeDump.
+* @tc.number: AudioModeDump_001
+* @tc.desc  : Test AudioPolicyServer::AudioModeDump
+*/
+HWTEST(AudioPolicyUnitTest, AudioModeDump_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    std::string dumpString = "";
+    ptrAudioPolicyServer->AudioModeDump(dumpString);
+}
+
+/**
+* @tc.name  : Test AudioVolumeDump.
+* @tc.number: AudioVolumeDump_001
+* @tc.desc  : Test AudioPolicyServer::AudioVolumeDump
+*/
+HWTEST(AudioPolicyUnitTest, AudioVolumeDump_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    std::string dumpString = "";
+    ptrAudioPolicyServer->AudioVolumeDump(dumpString);
+}
+
+/**
+* @tc.name  : Test AudioPolicyParserDump.
+* @tc.number: AudioPolicyParserDump_001
+* @tc.desc  : Test AudioPolicyServer::AudioPolicyParserDump
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyParserDump_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    std::string dumpString = "";
+    ptrAudioPolicyServer->AudioPolicyParserDump(dumpString);
+}
+
+/**
+* @tc.name  : Test AudioStreamDump.
+* @tc.number: AudioStreamDump_001
+* @tc.desc  : Test AudioPolicyServer::AudioStreamDump
+*/
+HWTEST(AudioPolicyUnitTest, AudioStreamDump_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    std::string dumpString = "";
+    ptrAudioPolicyServer->AudioStreamDump(dumpString);
+}
+
+/**
+* @tc.name  : Test XmlParsedDataMapDump.
+* @tc.number: XmlParsedDataMapDump_001
+* @tc.desc  : Test AudioPolicyServer::XmlParsedDataMapDump
+*/
+HWTEST(AudioPolicyUnitTest, XmlParsedDataMapDump_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    std::string dumpString = "";
+    ptrAudioPolicyServer->XmlParsedDataMapDump(dumpString);
+}
+
+/**
+* @tc.name  : Test EffectManagerInfoDump.
+* @tc.number: EffectManagerInfoDump_001
+* @tc.desc  : Test AudioPolicyServer::EffectManagerInfoDump
+*/
+HWTEST(AudioPolicyUnitTest, EffectManagerInfoDump_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    std::string dumpString = "";
+    ptrAudioPolicyServer->EffectManagerInfoDump(dumpString);
+}
+
+/**
+* @tc.name  : Test MicrophoneMuteInfoDump.
+* @tc.number: MicrophoneMuteInfoDump_001
+* @tc.desc  : Test AudioPolicyServer::MicrophoneMuteInfoDump
+*/
+HWTEST(AudioPolicyUnitTest, MicrophoneMuteInfoDump_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    std::string dumpString = "";
+    ptrAudioPolicyServer->MicrophoneMuteInfoDump(dumpString);
 }
 } // AudioStandard
 } // OHOS

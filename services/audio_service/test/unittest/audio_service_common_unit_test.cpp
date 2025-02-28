@@ -674,5 +674,123 @@ HWTEST(AudioServiceCommonUnitTest, AudioRingCache_008, TestSize.Level1)
         EXPECT_EQ(writeBuffer[index], readBuffer[index]);
     }
 }
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: DumpInnerCapConfig_001
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_001, TestSize.Level1)
+{
+    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::EXCLUDE, {0}, FilterMode::EXCLUDE}, false};
+    std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
+    EXPECT_NE(dumpStr, "");
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: DumpInnerCapConfig_002
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_002, TestSize.Level1)
+{
+    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC},
+        FilterMode::MAX_FILTER_MODE, {0}, FilterMode::MAX_FILTER_MODE}, false};
+    std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
+    EXPECT_NE(dumpStr, "");
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_001
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_001, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    for (int i = 0; i < 31; i++) {
+        config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_MEDIA);
+    }
+    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_002
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_002, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    for (int i = 0; i < 29; i++) {
+        config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT);
+    }
+    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_003
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_003, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ALARM);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_RINGTONE);
+
+    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_004
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_004, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ALARM);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ENFORCED_TONE);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_INVALID);
+
+    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_005
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_005, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ALARM);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_MEDIA);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_MEDIA);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_MEDIA);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ALARM);
+
+    int ret = 0;
+    ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
