@@ -33,7 +33,7 @@ class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
 class AudioRendererConcurrencyCallbackImpl;
 
-class AudioRendererPrivate : public AudioRenderer {
+class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
@@ -164,6 +164,10 @@ public:
 
     ~AudioRendererPrivate();
 
+    AudioRendererPrivate(const AudioRendererPrivate &) = delete;
+    AudioRendererPrivate &operator=(const AudioRendererPrivate &) = delete;
+    AudioRendererPrivate(AudioRendererPrivate &&) = delete;
+    AudioRendererPrivate &operator=(AudioRendererPrivate &&) = delete;
 protected:
     // Method for switching between normal and low latency paths
     void SwitchStream(bool isLowLatencyDevice, bool isHalNeedChange);
@@ -302,7 +306,7 @@ public:
         callbacks_.erase(std::remove(callbacks_.begin(), callbacks_.end(), callback), callbacks_.end());
     }
 
-    void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
+    void SetAudioRendererObj(std::weak_ptr<AudioRendererPrivate> rendererObj)
     {
         std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
         renderer_ = rendererObj;
@@ -311,28 +315,30 @@ public:
     void UnsetAudioRendererObj()
     {
         std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
-        renderer_ = nullptr;
+        renderer_.reset();
     }
 private:
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks_;
-    AudioRendererPrivate *renderer_ = nullptr;
+    std::weak_ptr<AudioRendererPrivate> renderer_;
     std::mutex audioRendererObjMutex_;
     std::mutex callbackMutex_;
 };
 
-class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback {
+class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback,
+    public std::enable_shared_from_this<RendererPolicyServiceDiedCallback> {
 public:
     RendererPolicyServiceDiedCallback();
     virtual ~RendererPolicyServiceDiedCallback();
-    void SetAudioRendererObj(AudioRendererPrivate *rendererObj);
+    void SetAudioRendererObj(std::weak_ptr<AudioRendererPrivate> rendererObj);
     void SetAudioInterrupt(AudioInterrupt &audioInterrupt);
     void OnAudioPolicyServiceDied() override;
 
 private:
-    AudioRendererPrivate *renderer_ = nullptr;
+    std::weak_ptr<AudioRendererPrivate> renderer_;
     AudioInterrupt audioInterrupt_;
     void RestoreTheadLoop();
-    std::unique_ptr<std::thread> restoreThread_ = nullptr;
+
+    std::atomic<int32_t> taskCount_ = 0;
 };
 
 class AudioRendererConcurrencyCallbackImpl : public AudioConcurrencyCallback {
