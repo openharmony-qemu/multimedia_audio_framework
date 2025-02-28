@@ -967,5 +967,312 @@ HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_002, TestSize.Level1)
     int32_t res = audioService->GetCurrentRendererStreamCnt();
     EXPECT_EQ(res, 0);
 }
+
+/**
+ * @tc.name  : Test CheckRenderSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRenderSessionMuteState_002
+ * @tc.desc  : Test CheckRenderSessionMuteState interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    uint32_t sessionId = 100001;
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->UpdateMuteControlSet(sessionId, true);
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+    audioService->CheckRenderSessionMuteState(sessionId, renderer);
+
+    audioService->RemoveIdFromMuteControlSet(sessionId);
+
+    bool ret = audioService->IsExceedingMaxStreamCntPerUid(MEDIA_SERVICE_UID, 1, 0);
+    EXPECT_EQ(ret, true);
+    ret = audioService->IsExceedingMaxStreamCntPerUid(1, 1, 3);
+    EXPECT_EQ(ret, false);
+    int32_t mostAppUid = 1;
+    int32_t mostAppNum = 1;
+    audioService->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
+}
+/**
+ * @tc.name  : Test CheckRenderSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: heckRenderSessionMuteState_003
+ * @tc.desc  : Test CheckRenderSessionMuteState interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    uint32_t sessionId = 100001;
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->UpdateMuteControlSet(sessionId, true);
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+
+    std::shared_ptr<CapturerInServer> capturerInServer =
+        std::make_shared<CapturerInServer>(processConfig, streamListener);
+    std::shared_ptr<CapturerInServer> capturer = capturerInServer;
+    audioService->CheckCaptureSessionMuteState(sessionId, capturer);
+
+    audioService->RemoveIdFromMuteControlSet(sessionId);
+
+    bool ret = audioService->IsExceedingMaxStreamCntPerUid(MEDIA_SERVICE_UID, 1, 0);
+    EXPECT_EQ(ret, true);
+    ret = audioService->IsExceedingMaxStreamCntPerUid(1, 1, 3);
+    EXPECT_EQ(ret, false);
+    int32_t mostAppUid = 1;
+    int32_t mostAppNum = 1;
+    audioService->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
+}
+/**
+ * @tc.name  : Test CheckRenderSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRenderSessionMuteState_004
+ * @tc.desc  : Test CheckRenderSessionMuteState interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_004, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    uint32_t sessionId = 100001;
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->UpdateMuteControlSet(sessionId, true);
+
+    sptr<AudioProcessInServer> audioprocess = AudioProcessInServer::Create(processConfig, AudioService::GetInstance());;
+    audioService->CheckFastSessionMuteState(sessionId, audioprocess);
+
+    audioService->RemoveIdFromMuteControlSet(sessionId);
+
+    bool ret = audioService->IsExceedingMaxStreamCntPerUid(MEDIA_SERVICE_UID, 1, 0);
+    EXPECT_EQ(ret, true);
+    ret = audioService->IsExceedingMaxStreamCntPerUid(1, 1, 3);
+    EXPECT_EQ(ret, true);
+    int32_t mostAppUid = 1;
+    int32_t mostAppNum = 1;
+    audioService->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
+}
+/**
+ * @tc.name  : Test GetStandbyStatus API
+ * @tc.type  : FUNC
+ * @tc.number: GetStandbyStatus_001
+ * @tc.desc  : Test GetStandbyStatus interface.
+ */
+HWTEST(AudioServiceUnitTest, GetStandbyStatus_001, TestSize.Level1)
+{
+    uint32_t sessionId = 100001;
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->UpdateMuteControlSet(sessionId, true);
+    bool isStandby = false;
+    int64_t enterStandbyTime = 100000;
+    int ret = audioService->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+/**
+ * @tc.name  : Test OnUpdateInnerCapList API
+ * @tc.type  : FUNC
+ * @tc.number: OnUpdateInnerCapList_001
+ * @tc.desc  : Test OnUpdateInnerCapList interface.
+ */
+HWTEST(AudioServiceUnitTest, OnUpdateInnerCapList_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    std::shared_ptr<RendererInServer> renderer = nullptr;
+    std::vector<std::weak_ptr<RendererInServer>> rendererVector;
+    rendererVector.push_back(renderer);
+    int32_t innerCapId = 1;
+    audioService->filteredRendererMap_.insert(std::make_pair(innerCapId, rendererVector));
+    int32_t ret = audioService->OnUpdateInnerCapList(innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+ * @tc.name  : Test DelayCallReleaseEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: DelayCallReleaseEndpoint_003
+ * @tc.desc  : Test DelayCallReleaseEndpoint interface.
+ */
+HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_003, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->DelayCallReleaseEndpoint("endponit", 0);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
+}
+/**
+ * @tc.name  : Test DelayCallReleaseEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: DelayCallReleaseEndpoint_004
+ * @tc.desc  : Test DelayCallReleaseEndpoint interface.
+ */
+HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_004, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->releasingEndpointSet_.insert("endponit");
+    audioService->DelayCallReleaseEndpoint("endponit", 1);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
+}
+/**
+ * @tc.name  : Test EnableDualToneList API
+ * @tc.type  : FUNC
+ * @tc.number: EnableDualToneList_001
+ * @tc.desc  : Test EnableDualToneList interface.
+ */
+HWTEST(AudioServiceUnitTest, EnableDualToneList_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    std::shared_ptr<RendererInServer> renderer = nullptr;
+    int32_t sessionId = 1;
+    audioService->allRendererMap_.insert(std::make_pair(sessionId, renderer));
+    int32_t ret = audioService->EnableDualToneList(sessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+ * @tc.name  : Test DisableDualToneList API
+ * @tc.type  : FUNC
+ * @tc.number: DisableDualToneList_001
+ * @tc.desc  : Test DisableDualToneList interface.
+ */
+HWTEST(AudioServiceUnitTest, DisableDualToneList_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    std::shared_ptr<RendererInServer> renderer = nullptr;
+    audioService->filteredDualToneRendererMap_.push_back(renderer);
+    int32_t sessionId = 1;
+    int32_t ret = audioService->DisableDualToneList(sessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+ * @tc.name  : Test UpdateAudioSinkState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAudioSinkState_001
+ * @tc.desc  : Test UpdateAudioSinkState interface.
+ */
+HWTEST(AudioServiceUnitTest, UpdateAudioSinkState_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->UpdateAudioSinkState(1, false);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
+}
+/**
+ * @tc.name  : Test UpdateAudioSinkState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAudioSinkState_002
+ * @tc.desc  : Test UpdateAudioSinkState interface.
+ */
+HWTEST(AudioServiceUnitTest, UpdateAudioSinkState_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->UpdateAudioSinkState(1, true);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
+}
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceShouldBeDualTone_003
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceShouldBeDualTone_003, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    bool ret;
+    ret = AudioService::GetInstance()->ShouldBeDualTone(config);
+    EXPECT_EQ(ret, false);
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    ret = AudioService::GetInstance()->ShouldBeDualTone(config);
+    EXPECT_FALSE(ret);
+}
+/**
+ * @tc.name  : Test CheckHibernateState API
+ * @tc.type  : FUNC
+ * @tc.number: CheckHibernateState_001
+ * @tc.desc  : Test CheckHibernateState interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckHibernateState_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->CheckHibernateState(true);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
+}
+/**
+ * @tc.name  : Test CheckHibernateState API
+ * @tc.type  : FUNC
+ * @tc.number: CheckHibernateState_002
+ * @tc.desc  : Test CheckHibernateState interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckHibernateState_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->CheckHibernateState(false);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
+}
+/**
+ * @tc.name  : Test CheckHibernateState API
+ * @tc.type  : FUNC
+ * @tc.number: CheckHibernateState_003
+ * @tc.desc  : Test CheckHibernateState interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckHibernateState_003, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->allRunningSinks_.insert(1);
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->CheckHibernateState(true);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
+}
+/**
+ * @tc.name  : Test UnsetOffloadMode API
+ * @tc.type  : FUNC
+ * @tc.number: UnsetOffloadMode_001
+ * @tc.desc  : Test UnsetOffloadMode interface.
+ */
+HWTEST(AudioServiceUnitTest, UnsetOffloadMode_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->allRunningSinks_.insert(1);
+    int ret = audioService->UnsetOffloadMode(1);
+    EXPECT_EQ(ret, ERROR);
+}
 } // namespace AudioStandard
 } // namespace OHOS

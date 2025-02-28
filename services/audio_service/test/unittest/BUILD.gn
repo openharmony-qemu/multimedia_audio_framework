@@ -781,3 +781,38 @@ ohos_unittest("futex_tool_unit_test") {
     "ipc:ipc_single",
   ]
 }
+
+ohos_unittest("policy_provider_stub_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../../../services/audio_service/client/include",
+    "../../../../frameworks/native/playbackcapturer/include",
+  ]
+
+  sources = [ "policy_provider_stub_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+
+  deps = [ "../../../audio_service:audio_client" ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
+  external_deps = [
+    "c_utils:utils",
+    "drivers_interface_audio:libeffect_proxy_1.0",
+    "eventhandler:libeventhandler",
+    "googletest:gmock",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "pulseaudio:pulse",
+  ]
+}
