@@ -853,23 +853,18 @@ bool FastAudioStream::RestoreAudioStream(bool needStoreState)
         processClient_->Release();
         processClient_ = nullptr;
     }
-    int32_t ret = SetAudioStreamInfo(streamInfo_, proxyObj_);
-    if (ret != SUCCESS) {
+    if (SetAudioStreamInfo(streamInfo_, proxyObj_) != SUCCESS || SetCallbacksWhenRestore() != SUCCESS) {
         goto error;
     }
     switch (oldState) {
         case RUNNING:
-            CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
-            ret = processClient_->SaveDataCallback(spkProcClientCb_);
-            if (ret != SUCCESS) {
-                goto error;
-            }
             result = StartAudioStream();
             break;
         case PAUSED:
             result = StartAudioStream() && PauseAudioStream();
             break;
         case STOPPED:
+            [[fallthrough]];
         case STOPPING:
             result = StartAudioStream() && StopAudioStream();
             break;
@@ -919,6 +914,18 @@ void FastAudioStream::SetSwitchingStatus(bool isSwitching)
     } else {
         switchingInfo_ = {false, INVALID};
     }
+}
+
+int32_t FastAudioStream::SetCallbacksWhenRestore()
+{
+    int32_t ret = SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERROR_INVALID_PARAM, "processClient_ is null");
+    if (eMode_ == AUDIO_MODE_PLAYBACK) {
+        ret = processClient_->SaveDataCallback(spkProcClientCb_);
+    } else if (eMode_ == AUDIO_MODE_RECORD) {
+        ret = processClient_->SaveDataCallback(micProcClientCb_);
+    }
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS
