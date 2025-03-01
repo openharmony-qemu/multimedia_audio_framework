@@ -98,6 +98,10 @@ private:
         const std::string &cbName);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
+    static void UnregisterRingerModeCallback(NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager,
+        size_t argc, napi_value *args);
+    static void UnregisterMicStateChangeCallback(NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager,
+        size_t argc, napi_value *args);
     static napi_value RegisterMicStateChangeCallback(napi_env env, napi_value *args, const std::string &cbName,
         NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager);
     static napi_value RegisterRingModeCallback(napi_env env, napi_value *args, const std::string &cbName,

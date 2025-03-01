@@ -56,6 +56,34 @@ void NapiAudioCapturerStateCallback::SaveCallbackReference(napi_value args)
     capturerStateCallback_ = cb;
 }
 
+void NapiAudioCapturerStateCallback::RemoveCallbackReference(const napi_value args)
+{
+    if (!IsSameCallback(args)) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    capturerStateCallback_->cb_ = nullptr;
+    capturerStateCallback_.reset();
+    AUDIO_DEBUG_LOG("Remove capturerStateCallback success");
+}
+
+bool NapiAudioCapturerStateCallback::IsSameCallback(const napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (capturerStateCallback_ == nullptr) {
+        return false;
+    }
+    if (args == nullptr) {
+        return true;
+    }
+    napi_value capturerStateCallback = nullptr;
+    napi_get_reference_value(env_, capturerStateCallback_->cb_, &capturerStateCallback);
+    bool isEquals = false;
+    CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, args, capturerStateCallback, &isEquals) == napi_ok, false,
+        "get napi_strict_equals failed");
+    return isEquals;
+}
+
 void NapiAudioCapturerStateCallback::CreateCaptureStateTsfn(napi_env env)
 {
     regAmacStateTsfn_ = true;

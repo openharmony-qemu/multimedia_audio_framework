@@ -43,19 +43,24 @@ NapiCapturerPeriodPositionCallback::~NapiCapturerPeriodPositionCallback()
 void NapiCapturerPeriodPositionCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    napi_ref callback = nullptr;
-    const int32_t refCount = 1;
-    napi_status status = napi_create_reference(env_, args, refCount, &callback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-        "NapiCapturerPeriodPositionCallback: creating reference for callback fail");
+    // create function that will operate while save callback reference success.
+    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
+        [this](std::shared_ptr<AutoRef> generatedCallback) {
+        capturerPeriodPositionCallback_ = generatedCallback;
+    };
+    SaveCallbackReferenceInner(callbackName, args, successed);
+}
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
-    if (callbackName == PERIOD_REACH_CALLBACK_NAME) {
-        capturerPeriodPositionCallback_ = cb;
-    } else {
-        AUDIO_ERR_LOG("NapiCapturerPeriodPositionCallback: Unknown callback type: %{public}s", callbackName.c_str());
-    }
+void NapiCapturerPeriodPositionCallback::RemoveCallbackReference(const std::string &callbackName, napi_env env,
+    napi_value callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    // create function that will operate while save callback reference success.
+    std::function<void()> successed =
+        [this]() {
+        capturerPeriodPositionCallback_ = nullptr;
+        };
+    RemoveCallbackReferenceInner(callbackName, env, callback, successed);
 }
 
 void NapiCapturerPeriodPositionCallback::CreatePeriodPositionTsfn(napi_env env)
@@ -140,6 +145,28 @@ void NapiCapturerPeriodPositionCallback::OnJsCapturerPeriodPositionCallback(
 
     napi_acquire_threadsafe_function(acPeriodPosTsfn_);
     napi_call_threadsafe_function(acPeriodPosTsfn_, event, napi_tsfn_blocking);
+}
+
+napi_env &NapiCapturerPeriodPositionCallback::GetEnv()
+{
+    return env_;
+}
+
+std::shared_ptr<AutoRef> &NapiCapturerPeriodPositionCallback::GetCallback(const std::string &callbackName)
+{
+    std::shared_ptr<AutoRef> cb = nullptr;
+    if (callbackName == PERIOD_REACH_CALLBACK_NAME) {
+        return capturerPeriodPositionCallback_;
+    }
+    return cb;
+}
+
+bool NapiCapturerPeriodPositionCallback::CheckIfTargetCallbackName(const std::string &callbackName)
+{
+    if (callbackName == PERIOD_REACH_CALLBACK_NAME) {
+        return true;
+    }
+    return false;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

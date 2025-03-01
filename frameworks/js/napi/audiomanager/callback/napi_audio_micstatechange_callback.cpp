@@ -81,11 +81,11 @@ void NapiAudioManagerMicStateChangeCallback::RemoveCallbackReference(const napi_
 bool NapiAudioManagerMicStateChangeCallback::IsSameCallback(const napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (args == nullptr) {
-        return true;
-    }
     if (micStateChangeCallback_ == nullptr) {
         return false;
+    }
+    if (args == nullptr) {
+        return true;
     }
     napi_value micStateChangeCallback = nullptr;
     napi_get_reference_value(env_, micStateChangeCallback_->cb_, &micStateChangeCallback);

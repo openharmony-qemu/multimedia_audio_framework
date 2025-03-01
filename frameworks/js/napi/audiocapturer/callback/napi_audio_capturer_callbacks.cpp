@@ -43,20 +43,19 @@ NapiAudioCapturerCallback::~NapiAudioCapturerCallback()
 void NapiAudioCapturerCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    napi_ref callback = nullptr;
-    const int32_t refCount = 1;
-    napi_status status = napi_create_reference(env_, args, refCount, &callback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-        "NapiAudioCapturerCallback: creating reference for callback fail");
-
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
-        interruptCallback_ = cb;
-    } else if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
-        stateChangeCallback_ = cb;
-    } else {
-        AUDIO_ERR_LOG("NapiAudioCapturerCallback: Unknown callback type: %{public}s", callbackName.c_str());
-    }
+    // create function that will operate while save callback reference success.
+    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
+        [this, callbackName](std::shared_ptr<AutoRef> generatedCallback) {
+        if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
+            interruptCallback_ = generatedCallback;
+            return;
+        }
+        if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
+            stateChangeCallback_ = generatedCallback;
+            return;
+        }
+    };
+    NapiAudioCapturerCallbackInner::SaveCallbackReferenceInner(callbackName, args, successed);
 }
 
 void NapiAudioCapturerCallback::CreateStateChangeTsfn(napi_env env)
@@ -89,17 +88,37 @@ bool NapiAudioCapturerCallback::GetInterruptTsfnFlag()
     return regAcInterruptTsfn_;
 }
 
-void NapiAudioCapturerCallback::RemoveCallbackReference(const std::string &callbackName)
+std::shared_ptr<AutoRef> &NapiAudioCapturerCallback::GetCallback(const std::string &callbackName)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_ptr<AutoRef> cb = nullptr;
 
     if (callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
-        interruptCallback_ = nullptr;
-    } else if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
-        stateChangeCallback_ = nullptr;
-    } else {
-        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
+        return interruptCallback_;
     }
+    if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
+        return stateChangeCallback_;
+    }
+    AUDIO_ERR_LOG("NapiAudioCapturerCallback->GetCallback Unknown callback type: %{public}s", callbackName.c_str());
+    return cb;
+}
+
+void NapiAudioCapturerCallback::RemoveCallbackReference(const std::string &callbackName, napi_env env,
+    napi_value callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    // create function that will operate while save callback reference success.
+    std::function<void()> successed =
+        [this, callbackName]() {
+            if (callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
+                interruptCallback_ = nullptr;
+                return;
+            }
+            if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
+                stateChangeCallback_ = nullptr;
+                return;
+            }
+        };
+    RemoveCallbackReferenceInner(callbackName, env, callback, successed);
 }
 
 void NapiAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
@@ -234,6 +253,20 @@ void NapiAudioCapturerCallback::OnJsCallbackStateChange(std::unique_ptr<AudioCap
 
     napi_acquire_threadsafe_function(acStateChgTsfn_);
     napi_call_threadsafe_function(acStateChgTsfn_, event, napi_tsfn_blocking);
+}
+
+napi_env &NapiAudioCapturerCallback::GetEnv()
+{
+    return env_;
+}
+
+bool NapiAudioCapturerCallback::CheckIfTargetCallbackName(const std::string &callbackName)
+{
+    if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME ||
+        callbackName == STATE_CHANGE_CALLBACK_NAME) {
+        return true;
+    }
+    return false;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

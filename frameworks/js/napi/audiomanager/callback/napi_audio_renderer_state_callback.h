@@ -30,7 +30,8 @@ public:
     explicit NapiAudioRendererStateCallback(napi_env env);
     virtual ~NapiAudioRendererStateCallback();
     void SaveCallbackReference(napi_value args);
-    void RemoveCallbackReference();
+    bool IsSameCallback(const napi_value args);
+    void RemoveCallbackReference(const napi_value args);
     void OnRendererStateChange(
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void CreateRendererStateTsfn(napi_env env);
