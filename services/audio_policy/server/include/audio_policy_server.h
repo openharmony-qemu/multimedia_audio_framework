@@ -686,6 +686,8 @@ private:
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
+    std::mutex onStartLock_;
+    bool isOnStart = false;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
