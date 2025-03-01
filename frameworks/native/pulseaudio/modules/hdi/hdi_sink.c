@@ -3449,8 +3449,8 @@ static void ProcessNormalData(struct Userdata *u)
 
     if (flag) {
         pa_usec_t frameUsec = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-        pa_usec_t blockTime = u->primary.timestamp + frameUsec - now;
-        if (blockTime > frameUsec) { blockTime = frameUsec; }
+        pa_usec_t blockTime = u->primary.timestamp + frameUsec > now ?
+            u->primary.timestamp + frameUsec - now : frameUsec;
         if (pa_atomic_load(&u->primary.dflag) == 1) {
             sleepForUsec = (int64_t)blockTime -
                 ((int64_t)pa_rtclock_now() - (int64_t)(u->primary.lastProcessDataTime));
