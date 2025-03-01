@@ -2247,12 +2247,17 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
 
 void AudioAdapterManager::SetVgsVolumeSupported(bool isVgsSupported)
 {
+    AUDIO_INFO_LOG("Set Vgs Supported: %{public}d", isVgsSupported);
     isVgsVolumeSupported_ = isVgsSupported;
     AudioVolume::GetInstance()->SetVgsVolumeSupported(isVgsSupported);
 }
 
 bool AudioAdapterManager::IsVgsVolumeSupported() const
 {
+    if (currentActiveDevice_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        AUDIO_INFO_LOG("Current Active Device isn't SCO, return false");
+        return false;
+    }
     return isVgsVolumeSupported_;
 }
 // LCOV_EXCL_STOP
