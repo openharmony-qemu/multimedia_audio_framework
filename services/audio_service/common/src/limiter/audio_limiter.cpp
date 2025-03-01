@@ -155,7 +155,6 @@ void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuff
         }
         bufHis_[algoFrameLen] = inBuffer[algoFrameLen - 1];
     }
-
 }
 
 uint32_t AudioLimiter::GetLatency()
