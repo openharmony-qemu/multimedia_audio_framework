@@ -86,6 +86,8 @@ public:
 
     DeviceRole getRole() const;
 
+    DeviceCategory GetDeviceCategory() const;
+
     bool IsAudioDeviceDescriptor() const;
 
     bool Marshalling(Parcel &parcel) const override;

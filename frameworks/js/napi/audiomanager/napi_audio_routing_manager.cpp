@@ -954,6 +954,9 @@ napi_value NapiAudioRoutingManager::GetExcludedDevices(napi_env env, napi_callba
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr, result, "napiAudioRoutingManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager->audioMngr_ != nullptr, result,
+        "audioMngr_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
         "mandatory parameters are left unspecified"), "argCount invalid");
 

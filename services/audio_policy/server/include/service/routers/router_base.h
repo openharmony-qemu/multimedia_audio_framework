@@ -96,6 +96,19 @@ public:
         AUDIO_INFO_LOG("Set alarm follow ring router: %{public}d", flag);
         isAlarmFollowRingRouter_ = flag;
     }
+
+    bool NeedLatestConnectWithDefaultDevices(DeviceType type)
+    {
+        if (type == DEVICE_TYPE_WIRED_HEADSET ||
+            type == DEVICE_TYPE_WIRED_HEADPHONES ||
+            type == DEVICE_TYPE_BLUETOOTH_SCO ||
+            type == DEVICE_TYPE_USB_HEADSET ||
+            type == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            type == DEVICE_TYPE_USB_ARM_HEADSET) {
+            return true;
+        }
+        return false;
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS
