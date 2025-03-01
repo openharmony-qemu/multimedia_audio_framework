@@ -113,7 +113,7 @@ void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuff
     // calculate envelope energy
     CHECK_AND_RETURN_LOG(algoFrameLen > 0, "algoFrameLen is invalid");
     float maxEnvelopeLevel = 0.0f;
-    for (int32_t i = 0; i < algoFrameLen; i += AUDIO_LMT_ALGO_CHANNEL) {
+    for (int32_t i = 0; i < algoFrameLen - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
         float tempBufInLeft = inBuffer[i];
         float tempBufInRight = inBuffer[i + 1];
         float tempLevel = std::max(std::abs(tempBufInLeft), std::abs(tempBufInRight));
@@ -135,13 +135,27 @@ void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuff
     float deltaGain = (gain_ - lastGain) * AUDIO_LMT_ALGO_CHANNEL / algoFrameLen;
 
     // apply gain
-    for (int32_t i = 0; i < algoFrameLen; i += AUDIO_LMT_ALGO_CHANNEL) {
-        lastGain += deltaGain;
-        outBuffer[i] = bufHis_[i] * lastGain;
-        outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
-        bufHis_[i] = inBuffer[i];
-        bufHis_[i + 1] = inBuffer[i + 1];
+    if (algoFrameLen % AUDIO_LMT_ALGO_CHANNEL == 0) {
+        for (int32_t i = 0; i < algoFrameLen; i += AUDIO_LMT_ALGO_CHANNEL) {
+            lastGain += deltaGain;
+            outBuffer[i] = bufHis_[i] * lastGain;
+            outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
+            bufHis_[i] = inBuffer[i];
+            bufHis_[i + 1] = inBuffer[i + 1];
+        }
+    } else {
+        outBuffer[0] = bufHis_[0];
+        bufHis_[0] = bufHis_[algoFrameLen];
+        for (int32_t i = 1; i < algoFrameLen - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
+            lastGain += deltaGain;
+            outBuffer[i] = bufHis_[i] * lastGain;
+            outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
+            bufHis_[i] = inBuffer[i - 1];
+            bufHis_[i + 1] = inBuffer[i];
+        }
+        bufHis_[algoFrameLen] = inBuffer[algoFrameLen - 1];
     }
+
 }
 
 uint32_t AudioLimiter::GetLatency()
