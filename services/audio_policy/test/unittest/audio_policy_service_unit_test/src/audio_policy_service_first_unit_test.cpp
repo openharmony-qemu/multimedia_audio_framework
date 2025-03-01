@@ -42,15 +42,6 @@ const int32_t G_UNKNOWN_PID = -1;
 const uint32_t CHANNELS = 2;
 const uint32_t RATE = 4;
 
-enum PerferredType {
-    MEDIA_RENDER = 0,
-    CALL_RENDER = 1,
-    CALL_CAPTURE = 2,
-    RING_RENDER = 3,
-    RECORD_CAPTURE = 4,
-    TONE_RENDER = 5,
-};
-
 void AudioPolicyServiceUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::SetUpTestCase start-end");
@@ -152,13 +143,13 @@ static const std::vector<AudioPipeType>pipeTypes = {
     PIPE_TYPE_OFFLOAD,
     PIPE_TYPE_MULTICHANNEL
 };
-static const std::vector<PerferredType>preferredTypes = {
-    MEDIA_RENDER,
-    CALL_RENDER,
-    RING_RENDER,
-    TONE_RENDER,
-    CALL_CAPTURE,
-    RECORD_CAPTURE
+static const std::vector<Media::MediaMonitor::PreferredType>preferredTypes = {
+    Media::MediaMonitor::MEDIA_RENDER,
+    Media::MediaMonitor::CALL_RENDER,
+    Media::MediaMonitor::RING_RENDER,
+    Media::MediaMonitor::TONE_RENDER,
+    Media::MediaMonitor::CALL_CAPTURE,
+    Media::MediaMonitor::RECORD_CAPTURE
 };
 static const std::vector<StreamUsage>streamUsages = {
     STREAM_USAGE_INVALID,

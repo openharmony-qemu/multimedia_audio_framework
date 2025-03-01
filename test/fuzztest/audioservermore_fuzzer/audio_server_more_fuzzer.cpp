@@ -18,7 +18,6 @@
 #include <cstdint>
 #include <string>
 
-#include "i_audio_renderer_sink.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
@@ -490,9 +489,9 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     renderer->WriteData();
     renderer->WriteEmptyData();
     renderer->DrainAudioBuffer();
-    renderer->EnableInnerCap();
-    renderer->DisableInnerCap();
-    renderer->InitDupStream();
+    renderer->EnableInnerCap(1);
+    renderer->DisableInnerCap(1);
+    renderer->InitDupStream(1);
     renderer->EnableDualTone();
     renderer->DisableDualTone();
     renderer->InitDualToneStream();

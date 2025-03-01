@@ -110,6 +110,24 @@ void AudioPolicyClientProxy::OnAudioFocusAbandoned(const AudioInterrupt &abandon
     }
 }
 
+void AudioPolicyClientProxy::OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_APP_VOLUME_CHANGE));
+    data.WriteInt32(appUid);
+    volumeEvent.Marshalling(data);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OnAudioFocusAbandoned failed, error: %{public}d", error);
+    }
+}
+
 void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     MessageParcel data;
@@ -455,6 +473,27 @@ void AudioPolicyClientProxy::OnSpatializationEnabledChangeForAnyDevice(const std
     reply.ReadInt32();
 }
 
+void AudioPolicyClientProxy::OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE));
+
+    data.WriteBool(enabled);
+
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending enabled info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
 void AudioPolicyClientProxy::OnHeadTrackingEnabledChange(const bool &enabled)
 {
     MessageParcel data;
@@ -472,6 +511,26 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChange(const bool &enabled)
     } else {
         data.WriteBool(false);
     }
+
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending enabled info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
+void AudioPolicyClientProxy::OnAudioSceneChange(const AudioScene &audioScene)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_AUDIO_SCENE_CHANGED));
+    data.WriteInt32(static_cast<int32_t>(audioScene));
 
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {

@@ -22,24 +22,13 @@ config("hdi_config") {
     ".",
     "../../../audioqosmanager/include",
     "../../../audioschedule/include",
-    "../../../hdiadapter/common/include",
-    "../../../hdiadapter/manager/include",
-    "../../../hdiadapter/sink/bluetooth",
-    "../../../hdiadapter/sink/common",
-    "../../../hdiadapter/sink/file",
-    "../../../hdiadapter/sink/primary",
-    "../../../hdiadapter/sink/remote",
-    "../../../hdiadapter/sink/offload",
-    "../../../hdiadapter/source/common",
-    "../../../hdiadapter/source/file",
-    "../../../hdiadapter/source/primary",
-    "../../../hdiadapter/source/remote",
-    "../../../hdiadapter/source/multichannel",
     "../../../audioeffect/include",
     "../../../playbackcapturer/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../services/audio_service/common/include",
     "../../../../../services/audio_service/common/include/limiter",
+    "hdi_adapter_intf/include",
+    "../../../hdiadapter_new/include",
   ]
 
   cflags = [
@@ -78,8 +67,9 @@ ohos_shared_library("module-hdi-sink") {
     "../../../audioqosmanager:audio_qosmanager",
     "../../../audioschedule:audio_schedule",
     "../../../audioutils:audio_utils",
-    "../../../hdiadapter/sink:renderer_sink_adapter",
+    "../../../hdiadapter_new:hdiadapter_new",
     "../../../playbackcapturer:playback_capturer",
+    "hdi_adapter_intf:sink_adapter",
   ]
 
   external_deps = [
@@ -87,6 +77,7 @@ ohos_shared_library("module-hdi-sink") {
     "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
     "hilog:libhilog",
+    "init:libbegetutil",
     "pulseaudio:pulse",
     "pulseaudio:pulsecommon",
     "pulseaudio:pulsecore",
@@ -111,6 +102,12 @@ ohos_shared_library("module-hdi-source") {
     "module_hdi_source.c",
   ]
 
+  defines = []
+
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
+  }
+
   configs = [ ":hdi_config" ]
 
   cflags = [ "-DPA_MODULE_NAME=libmodule_hdi_source_z_so" ]
@@ -119,8 +116,8 @@ ohos_shared_library("module-hdi-source") {
     "../../../audioeffect:audio_effect",
     "../../../audioschedule:audio_schedule",
     "../../../audioutils:audio_utils",
-    "../../../hdiadapter/manager:hdiadapter_manager",
-    "../../../hdiadapter/source:capturer_source_adapter",
+    "../../../hdiadapter_new:hdiadapter_new",
+    "hdi_adapter_intf:source_adapter",
   ]
 
   external_deps = [
@@ -159,7 +156,8 @@ ohos_shared_library("module-split-stream-sink") {
     "../../../../../services/audio_service:audio_common",
     "../../../audioschedule:audio_schedule",
     "../../../audioutils:audio_utils",
-    "../../../hdiadapter/sink:renderer_sink_adapter",
+    "../../../hdiadapter_new:hdiadapter_new",
+    "hdi_adapter_intf:sink_adapter",
   ]
 
   external_deps = [

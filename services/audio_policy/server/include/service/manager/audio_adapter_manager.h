@@ -71,7 +71,19 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
+    int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+
+    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
+
+    int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
+
+    int32_t SetAppVolumeMutedDB(int32_t appUid, bool muted);
+
+    bool IsAppVolumeMute(int32_t appUid, bool owned);
+
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+
+    int32_t GetAppVolumeLevel(int32_t appUid);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
@@ -84,9 +96,11 @@ public:
 
     bool GetStreamMute(AudioStreamType streamType);
 
+    bool GetAppMute(int32_t appUid);
+
     std::vector<SinkInfo> GetAllSinks();
 
-    std::vector<SinkInput> GetAllSinkInputs();
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 
     std::vector<SourceOutput> GetAllSourceOutputs();
 
@@ -204,6 +218,10 @@ public:
     void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
 
     void SetRestoreVolumeFlag(const bool safeVolumeCall);
+
+    void UpdateSafeVolumeByS4();
+    void SetVgsVolumeSupported(bool isVgsSupported);
+    bool IsVgsVolumeSupported() const;
 private:
     friend class PolicyCallbackImpl;
 
@@ -253,7 +271,9 @@ private:
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
+    int32_t SetAppVolumeDb(int32_t appUid);
     void SetAudioVolume(AudioStreamType streamType, float volumeDb);
+    void SetAppAudioVolume(int32_t appUid, float volumeDb);
     void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
@@ -311,7 +331,8 @@ private:
     bool isBtBoot_ = true;
     int32_t curActiveCount_ = 0;
     bool safeVolumeCall_ = false;
-
+    bool isSafeBoot_ = true;
+    bool isVgsVolumeSupported_ = false;
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
 
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;

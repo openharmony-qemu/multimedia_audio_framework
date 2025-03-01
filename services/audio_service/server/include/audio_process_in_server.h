@@ -92,8 +92,9 @@ public:
     int32_t GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime);
 
     // for inner-cap
-    void SetInnerCapState(bool isInnerCapped) override;
-    bool GetInnerCapState() override;
+    void SetInnerCapState(bool isInnerCapped, int32_t innerCapId) override;
+    bool GetInnerCapState(int32_t innerCapId) override;
+    std::unordered_map<int32_t, bool> GetInnerCapState() override;
 
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
@@ -116,8 +117,10 @@ private:
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
-    bool isInnerCapped_ = false;
+    std::unordered_map<int32_t, bool> innerCapStates_;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
+    sptr<IRemoteObject> object_ = nullptr;
+    sptr<ProcessDeathRecipient> deathRecipient_ = nullptr;
 
     bool needCheckBackground_ = false;
 

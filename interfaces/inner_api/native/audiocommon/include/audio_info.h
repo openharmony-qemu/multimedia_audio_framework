@@ -69,8 +69,7 @@ const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
-
-const char* INNER_CAPTURER_SINK = "InnerCapturerSink";
+const char* INNER_CAPTURER_SINK = "InnerCapturerSink_";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 }
@@ -284,6 +283,8 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
+    CALLBACK_APP_VOLUME_CHANGE,
+    CALLBACK_SELF_APP_VOLUME_CHANGE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
@@ -291,6 +292,8 @@ enum CallbackChange : int32_t {
     CALLBACK_DEVICE_CHANGE_WITH_INFO,
     CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE,
     CALLBACK_NN_STATE_CHANGE,
+    CALLBACK_SET_AUDIO_SCENE_CHANGE,
+    CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_MAX,
 };
 
@@ -305,6 +308,8 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE,
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
+    CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
@@ -313,6 +318,8 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_DEVICE_CHANGE_WITH_INFO,
     CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE,
     CALLBACK_NN_STATE_CHANGE,
+    CALLBACK_SET_AUDIO_SCENE_CHANGE,
+    CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -324,6 +331,25 @@ struct VolumeEvent {
     bool updateUi;
     int32_t volumeGroupId;
     std::string networkId;
+    AudioVolumeMode volumeMode;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(volumeType))
+            && parcel.WriteInt32(volume)
+            && parcel.WriteBool(updateUi)
+            && parcel.WriteInt32(volumeGroupId)
+            && parcel.WriteString(networkId)
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+        volume = parcel.ReadInt32();
+        updateUi = parcel.ReadInt32();
+        volumeGroupId = parcel.ReadInt32();
+        networkId = parcel.ReadString();
+        volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+    }
 };
 
 struct AudioParameters {
@@ -363,6 +389,7 @@ struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
+    AudioVolumeMode volumeMode = SYSTEM_GLOBAL;
     std::string sceneType = "";
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
@@ -379,6 +406,7 @@ struct AudioRendererInfo {
     // Currently only used for making decisions on fade-in and fade-out strategies.
     // 0 is the default value, it is considered that no
     uint64_t expectedPlaybackDurationBytes = 0;
+    int32_t effectMode = 1;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -396,7 +424,9 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(format)
             && parcel.WriteBool(isOffloadAllowed)
             && parcel.WriteInt32(playerType)
-            && parcel.WriteUint64(expectedPlaybackDurationBytes);
+            && parcel.WriteUint64(expectedPlaybackDurationBytes)
+            && parcel.WriteInt32(effectMode)
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -415,6 +445,8 @@ struct AudioRendererInfo {
         isOffloadAllowed = parcel.ReadBool();
         playerType = static_cast<PlayerType>(parcel.ReadInt32());
         expectedPlaybackDurationBytes = parcel.ReadUint64();
+        effectMode = parcel.ReadInt32();
+        volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
     }
 };
 
@@ -587,11 +619,26 @@ struct CaptureFilterOptions {
     FilterMode usageFilterMode {FilterMode::INCLUDE};
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
+
+    bool operator ==(CaptureFilterOptions& filter)
+    {
+        std::sort(filter.usages.begin(), filter.usages.end());
+        std::sort(filter.pids.begin(), filter.pids.end());
+        std::sort(usages.begin(), usages.end());
+        std::sort(pids.begin(), pids.end());
+        return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
+            && filter.pids == pids && filter.pidFilterMode == pidFilterMode);
+    }
 };
 
 struct AudioPlaybackCaptureConfig {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
+
+    bool operator ==(AudioPlaybackCaptureConfig& filter)
+    {
+        return (filter.filterOptions == filterOptions && filter.silentCapture == silentCapture);
+    }
 };
 
 struct AudioCapturerOptions {
@@ -641,6 +688,22 @@ struct SinkInput {
     std::string sinkName; // sink name
     int32_t statusMark; // mark the router status
     uint64_t startTime; // when this router is created
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(streamId) &&
+               parcel.WriteInt32(static_cast<int32_t>(streamType)) &&
+               parcel.WriteInt32(uid) &&
+               parcel.WriteInt32(pid) &&
+               parcel.WriteUint32(paStreamId);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        streamId = parcel.ReadInt32();
+        streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        uid = parcel.ReadInt32();
+        pid = parcel.ReadInt32();
+        paStreamId = parcel.ReadUint32();
+    }
 };
 
 struct SourceOutput {
@@ -727,6 +790,11 @@ enum State {
     STOPPING
 };
 
+struct StreamSwitchingInfo {
+    bool isSwitching_ = false;
+    State state_ = INVALID;
+};
+
 struct AudioRegisterTrackerInfo {
     uint32_t sessionId;
     int32_t clientPid;
@@ -783,6 +851,8 @@ struct AudioProcessConfig {
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
 
     InnerCapMode innerCapMode {InnerCapMode::INVALID_CAP_MODE};
+
+    int32_t innerCapId = 0;
 };
 
 struct Volume {

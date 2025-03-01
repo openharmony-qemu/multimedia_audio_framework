@@ -29,7 +29,9 @@
 #include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
-#include "i_audio_renderer_sink.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
+#include "sink/i_audio_render_sink.h"
 #include "policy_handler.h"
 #include "audio_volume.h"
 #include "audio_limiter_manager.h"
@@ -49,6 +51,8 @@ const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_NS_PER_S = 1000000000;
 const uint64_t AUDIO_CYCLE_TIME_US = 20000;
+const uint64_t BUF_LENGTH_IN_MS = 20;
+const uint64_t CAST_BUF_LENGTH_IN_MS = 10;
 
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
@@ -66,6 +70,7 @@ PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConf
     mainloop_ = mainloop;
     paStream_ = paStream;
     processConfig_ = processConfig;
+    effectMode_ = processConfig.rendererInfo.effectMode;
 }
 
 PaRendererStreamImpl::~PaRendererStreamImpl()
@@ -211,8 +216,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     palock.Unlock();
 
-    if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
@@ -229,16 +233,6 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
         audioEffectVolume->StreamVolumeDelete(sessionIDTemp);
     }
     return SUCCESS;
-}
-
-bool PaRendererStreamImpl::IsEffectNone(StreamUsage streamUsage)
-{
-    if (streamUsage == STREAM_USAGE_SYSTEM || streamUsage == STREAM_USAGE_DTMF ||
-        streamUsage == STREAM_USAGE_ENFORCED_TONE || streamUsage == STREAM_USAGE_ULTRASONIC ||
-        streamUsage == STREAM_USAGE_NAVIGATION || streamUsage == STREAM_USAGE_NOTIFICATION) {
-        return true;
-    }
-    return false;
 }
 
 int32_t PaRendererStreamImpl::Flush()
@@ -264,8 +258,7 @@ int32_t PaRendererStreamImpl::Flush()
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
 
-    if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
@@ -332,8 +325,7 @@ int32_t PaRendererStreamImpl::Stop()
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     pa_operation_unref(operation);
 
-    if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
@@ -373,8 +365,7 @@ int32_t PaRendererStreamImpl::Release()
     }
     state_ = RELEASED;
 
-    if (effectMode_ == EFFECT_DEFAULT && !IsEffectNone(processConfig_.rendererInfo.streamUsage) &&
-        initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
@@ -760,6 +751,23 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
     // get stream informations.
     uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
     uint32_t streamIndex = pa_stream_get_index(stream); // get pa_stream index
+    const char *deviceName = pa_stream_get_device_name(stream);
+
+    std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
+    if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
+        AUDIO_ERR_LOG("streamImpl is nullptr");
+        return;
+    }
+    auto streamImpl = paRendererStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamMovedCb: userdata is null");
+
+    if (deviceName != nullptr && !strcmp(deviceName, REMOTE_CAST_INNER_CAPTURER_SINK_NAME)) {
+        streamImpl->remoteCastMovedFlag_ = true;
+        streamImpl->UpdateBufferSize(CAST_BUF_LENGTH_IN_MS);
+    } else if (streamImpl->remoteCastMovedFlag_) {
+        streamImpl->remoteCastMovedFlag_ = false;
+        streamImpl->UpdateBufferSize(BUF_LENGTH_IN_MS);
+    }
 
     // Return 1 if the sink or source this stream is connected to has been suspended.
     // This will return 0 if not, and a negative value on error.
@@ -975,13 +983,10 @@ int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
-
-    if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERR_LOG("Renderer is null.");
-        return ERROR;
-    }
-    return audioRendererSinkInstance->SetVolume(volume, volume);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
+    return sink->SetVolume(volume, volume);
 }
 
 int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -1010,20 +1015,18 @@ int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabl
 
 int32_t PaRendererStreamImpl::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
-    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
-        "offload", ""));
-
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "Renderer is null.");
-    return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
+    return sink->GetPresentationPosition(frames, timeSec, timeNanoSec);
 }
 
 int32_t PaRendererStreamImpl::OffloadSetBufferSize(uint32_t sizeMs)
 {
-    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
-        "offload", ""));
-
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "Renderer is null.");
-    return audioRendererSinkInstance->SetBufferSize(sizeMs);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
+    return sink->SetBufferSize(sizeMs);
 }
 
 int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
@@ -1238,6 +1241,27 @@ int32_t PaRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
     return SUCCESS;
 }
 
+int32_t PaRendererStreamImpl::UpdateBufferSize(uint32_t bufferLength)
+{
+    uint32_t tlength = 4; // 4 is tlength of dup playback
+    uint32_t prebuf = 1; // 1 is prebuf of dup playback
+    uint32_t maxlength = 4; // 4 is maxlength of dup playback
+
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    pa_buffer_attr bufferAttr;
+    bufferAttr.fragsize = static_cast<uint32_t>(-1);
+    bufferAttr.prebuf = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * prebuf, sampleSpec); // 20 buf len in ms
+    bufferAttr.maxlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * maxlength, sampleSpec); // 20 buf len in ms
+    bufferAttr.tlength = pa_usec_to_bytes(bufferLength * PA_USEC_PER_MSEC * tlength, sampleSpec); // 20 buf len in ms
+    bufferAttr.minreq = pa_usec_to_bytes(bufferLength * PA_USEC_PER_MSEC, sampleSpec); // 20 buf len in ms
+
+    pa_operation *operation = pa_stream_set_buffer_attr(paStream_, &bufferAttr, nullptr, nullptr);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
+    }
+    return SUCCESS;
+}
+
 AudioProcessConfig PaRendererStreamImpl::GetAudioProcessConfig() const noexcept
 {
     return processConfig_;
@@ -1279,10 +1303,9 @@ void PaRendererStreamImpl::UpdatePaTimingInfo()
     if (operation != nullptr) {
         auto start_time = std::chrono::steady_clock::now();
         while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-            if ((std::chrono::steady_clock::now() - start_time) > std::chrono::seconds(PA_STREAM_IMPL_TIMEOUT + 1)) {
-                AUDIO_ERR_LOG("pa_stream_update_timing_info timeout");
-                break;
-            }
+            auto update_time = std::chrono::steady_clock::now() - start_time;
+            CHECK_AND_BREAK_LOG(update_time <= std::chrono::seconds(PA_STREAM_IMPL_TIMEOUT << 1),
+                "pa_stream_update_timing_info timeout");
             pa_threaded_mainloop_wait(mainloop_);
         }
         pa_operation_unref(operation);

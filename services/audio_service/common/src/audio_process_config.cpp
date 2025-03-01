@@ -213,6 +213,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.rendererInfo.contentType);
     parcel.WriteInt32(config.rendererInfo.streamUsage);
     parcel.WriteInt32(config.rendererInfo.rendererFlags);
+    parcel.WriteInt32(config.rendererInfo.volumeMode);
     parcel.WriteInt32(config.rendererInfo.originalFlag);
     parcel.WriteString(config.rendererInfo.sceneType);
     parcel.WriteBool(config.rendererInfo.spatializationEnabled);
@@ -221,6 +222,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.rendererInfo.pipeType);
     parcel.WriteInt32(config.rendererInfo.playerType);
     parcel.WriteUint64(config.rendererInfo.expectedPlaybackDurationBytes);
+    parcel.WriteInt32(config.rendererInfo.effectMode);
 
     //AudioPrivacyType
     parcel.WriteInt32(config.privacyType);
@@ -243,6 +245,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
 
     // Original session id for re-create stream
     parcel.WriteUint32(config.originalSessionId);
+    parcel.WriteInt32(config.innerCapId);
 
     return SUCCESS;
 }
@@ -269,6 +272,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
     config.rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
     config.rendererInfo.rendererFlags = parcel.ReadInt32();
+    config.rendererInfo.volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
     config.rendererInfo.originalFlag = parcel.ReadInt32();
     config.rendererInfo.sceneType = parcel.ReadString();
     config.rendererInfo.spatializationEnabled = parcel.ReadBool();
@@ -277,6 +281,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.rendererInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
     config.rendererInfo.playerType = static_cast<PlayerType>(parcel.ReadInt32());
     config.rendererInfo.expectedPlaybackDurationBytes = parcel.ReadUint64();
+    config.rendererInfo.effectMode = parcel.ReadInt32();
 
     //AudioPrivacyType
     config.privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
@@ -299,6 +304,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
 
     // Original session id for re-create stream
     config.originalSessionId = parcel.ReadUint32();
+    config.innerCapId = parcel.ReadInt32();
     return SUCCESS;
 }
 

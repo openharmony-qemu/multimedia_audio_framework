@@ -42,6 +42,21 @@ public:
 
     virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
+    virtual int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
+        DeviceType deviceType, int32_t volumeFlag = 0) = 0;
+
+    virtual int32_t GetAppVolumeLevel(int32_t appUid) = 0;
+
+    virtual int32_t GetSelfAppVolumeLevel() = 0;
+
+    virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
+
+    virtual bool IsAppVolumeMute(int32_t appUid, bool muted) = 0;
+
+    virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) = 0;
+
+    virtual int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
+
     virtual AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) = 0;
 
     virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
@@ -72,7 +87,7 @@ public:
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter) = 0;
 
-    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
+    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1) = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
@@ -173,6 +188,15 @@ public:
     virtual int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
 
+    virtual int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) = 0;
+
+    virtual int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) = 0;
+
+    virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
+        AudioDeviceUsage audioDevUsage) = 0;
+
     virtual int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) = 0;
 
     virtual int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) = 0;
@@ -246,6 +270,8 @@ public:
 
     virtual bool IsSpatializationEnabled(const std::string address) = 0;
 
+    virtual bool IsSpatializationEnabledForCurrentDevice() = 0;
+
     virtual int32_t SetSpatializationEnabled(const bool enable) = 0;
 
     virtual int32_t SetSpatializationEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
@@ -291,7 +317,8 @@ public:
 
     virtual int32_t ReleaseAudioInterruptZone(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) = 0;
+    virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+        const int32_t pid = -1) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() = 0;
 

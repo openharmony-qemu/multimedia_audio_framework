@@ -28,6 +28,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
+enum class AppendType {
+    APPEND_RENDER,
+    APPEND_CAPTURE
+};
+
 static std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap = {
     {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND},
     {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1},
@@ -73,6 +78,7 @@ public:
     int32_t AddUnprocessStream(int32_t appUid) override;
     uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
     uint64_t GetLatency() noexcept override;
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 
 private:
     // audio channel index
@@ -89,15 +95,14 @@ private:
     int32_t InitPaContext();
     int32_t HandleMainLoopStart();
     pa_stream *InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId, bool isRecording);
-    bool IsEffectNone(StreamUsage streamUsage);
     int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
         const std::string &streamName, uint32_t sessionId);
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream);
     std::shared_ptr<ICapturerStream> CreateCapturerStream(AudioProcessConfig processConfig, pa_stream *paStream);
     int32_t ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
-        SourceType source, const std::string &deviceName = "");
+        SourceType source, int32_t innerCapId, const std::string &deviceName = "");
     void ReleasePaStream(pa_stream *paStream);
-    int32_t ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec);
+    int32_t ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, int32_t innerCapId);
     int32_t ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
         SourceType source, const std::string &deviceName);
 
@@ -120,6 +125,7 @@ private:
     bool CheckHighResolution(const AudioProcessConfig &processConfig);
     void SetRecordProplist(pa_proplist *propList, AudioProcessConfig &processConfig);
     void SetPlaybackProplist(pa_proplist *propList, AudioProcessConfig &processConfig);
+    std::string AppendDeviceName(int32_t innerCapId, AppendType type);
 
     std::mutex paElementsMutex_;
     pa_threaded_mainloop *mainLoop_;
@@ -135,6 +141,8 @@ private:
     uint32_t highResolutionIndex_ = 0;
     bool isHighResolutionExist_ = false;
     std::set<int32_t> unprocessAppUidSet_;
+    std::mutex sinkInputsMutex_;
+    std::vector<SinkInput> sinkInputs_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

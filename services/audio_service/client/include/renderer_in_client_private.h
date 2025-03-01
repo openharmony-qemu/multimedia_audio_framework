@@ -36,6 +36,7 @@
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
+#include "audio_safe_block_queue.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -60,7 +61,8 @@ public:
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj) override;
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
@@ -88,6 +90,7 @@ public:
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
+    void InitCallbackLoop();
     AudioRenderMode GetRenderMode() override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
@@ -193,6 +196,9 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+
+    void SetSwitchingStatus(bool isSwitching) override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -215,7 +221,8 @@ private:
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WatchingWriteCallbackFunc();
-    void WriteCallbackFunc();
+    void RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId);
+    bool WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
@@ -244,6 +251,9 @@ private:
     void InitDirectPipeType();
 
     bool DrainAudioStreamInner(bool stopFlag = false);
+
+    bool ProcessVolume();
+
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -412,6 +422,9 @@ private:
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
     std::atomic_bool writeCallbackFuncThreadStatusFlag_ { false };
     DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
+
+    std::mutex switchingMutex_;
+    StreamSwitchingInfo switchingInfo_ {false, INVALID};
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

@@ -47,6 +47,7 @@
 #include "audio_config_manager.h"
 #include "audio_router_map.h"
 #include "audio_a2dp_offload_manager.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,7 +64,7 @@ public:
     void DeInit();
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE);
+        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false);
     void OnBlockedStatusUpdated(DeviceType devType, DeviceBlockStatus status);
     void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);

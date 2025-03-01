@@ -149,7 +149,6 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
             audioEvent->anahsName = UEVENT_REMOVE;
             return SUCCESS;
         } else {
-            AUDIO_ERR_LOG("set anahs event failed.");
             return ERROR;
         }
     }

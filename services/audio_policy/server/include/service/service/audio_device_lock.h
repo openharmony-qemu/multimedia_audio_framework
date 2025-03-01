@@ -62,13 +62,13 @@ public:
     void DeInit();
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-    int32_t SetDeviceActive(DeviceType deviceType, bool active);
+    int32_t SetDeviceActive(DeviceType deviceType, bool active, const int32_t pid = -1);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
-    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address);
+    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address, const int32_t pid = -1);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
@@ -89,6 +89,12 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
+        AudioDeviceUsage audioDevUsage);
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
     void OnCapturerSessionRemoved(uint64_t sessionID);
@@ -100,7 +106,7 @@ public:
     void OnBlockedStatusUpdated(DeviceType devType, DeviceBlockStatus status);
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE);
+        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
     void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
     void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);

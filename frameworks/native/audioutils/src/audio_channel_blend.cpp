@@ -58,6 +58,9 @@ void AudioBlend::Process(uint8_t *buffer, size_t bufferSize)
         case AudioSampleFormat::SAMPLE_S32LE:
             ProcessWithBlendMode<int32_t>(reinterpret_cast<int32_t*>(buffer), bufferSize);
             break;
+        case AudioSampleFormat::SAMPLE_F32LE:
+            ProcessWithBlendMode<float>(reinterpret_cast<float*>(buffer), bufferSize);
+            break;
         default:
             break;
     }

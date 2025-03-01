@@ -34,6 +34,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const int ARGS_ZERO = 0;
 const int ARGS_ONE = 1;
 const int ARGS_TWO = 2;
 const int ARGS_THREE = 3;
@@ -163,6 +164,7 @@ public:
     static napi_status GetAudioCapturerInfo(const napi_env &env, AudioCapturerInfo *capturerInfo, napi_value in);
     static napi_status GetAudioRendererFilter(const napi_env &env, sptr<AudioRendererFilter> &audioRendererFilter,
         bool &argTransFlag, napi_value in);
+    static napi_status GetAudioDeviceUsage(const napi_env &env, AudioDeviceUsage &audioDevUsage, napi_value in);
     static napi_status SetValueDeviceChangeAction(const napi_env& env, const DeviceChangeAction &action,
         napi_value &result);
     static napi_status SetValueBlockedDeviceAction(const napi_env& env, const MicrophoneBlockedInfo &action,

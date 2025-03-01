@@ -98,6 +98,7 @@ public:
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+    int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
@@ -158,6 +159,10 @@ private:
     uint32_t eachReadFrameSize_ = 0;
     std::mutex mutex_;
     IAudioSinkCallback *callback_ = nullptr;
+    // for device switch
+    std::mutex switchDeviceMutex_;
+    int32_t muteCount_ = 0;
+    std::atomic<bool> switchDeviceMute_ = false;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
@@ -336,6 +341,39 @@ int32_t FastAudioRendererSinkInner::GetMmapBufferInfo(int &fd, uint32_t &totalSi
     return SUCCESS;
 }
 
+int32_t FastAudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
+{
+    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
+    AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "SetSinkMuteForSwitchDevice fail, audioRender_ is null");
+
+    if (mute) {
+        muteCount_++;
+        if (switchDeviceMute_) {
+            AUDIO_INFO_LOG("%{public}s already muted", halName_.c_str());
+            return SUCCESS;
+        }
+        switchDeviceMute_ = true;
+        if (halName_ == MMAP_VOIP_HAL_NAME) {
+            audioRender_->SetVolume(audioRender_, 0.0f);
+        }
+    } else {
+        muteCount_--;
+        if (muteCount_ > 0) {
+            AUDIO_WARNING_LOG("%{public}s not all unmuted", halName_.c_str());
+            return SUCCESS;
+        }
+        switchDeviceMute_ = false;
+        muteCount_ = 0;
+        if (halName_ == MMAP_VOIP_HAL_NAME) {
+            SetVolume(leftVolume_, rightVolume_);
+        }
+    }
+
+    return SUCCESS;
+}
+
 int32_t FastAudioRendererSinkInner::GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Audio render is null!");
@@ -433,6 +471,9 @@ AudioFormat FastAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterFormat form
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
         case SAMPLE_S32:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            break;
+        case SAMPLE_F32:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
@@ -734,12 +775,18 @@ int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "FastAudioRendererSink::SetVolume failed audioRender_ null");
+    if (halName_ == MMAP_VOIP_HAL_NAME && switchDeviceMute_ && (abs(left) > FLOAT_EPS || abs(right) > FLOAT_EPS)) {
+        AUDIO_ERR_LOG("Mmap voip scene. No need set to volume when switch device and volume is 0");
+        leftVolume_ = left;
+        rightVolume_ = right;
+        return ERR_INVALID_HANDLE;
+    }
 
     leftVolume_ = left;
     rightVolume_ = right;
-    if ((leftVolume_ == 0) && (rightVolume_ != 0)) {
+    if ((abs(leftVolume_) < FLOAT_EPS) && (abs(rightVolume_) > FLOAT_EPS)) {
         volume = rightVolume_;
-    } else if ((leftVolume_ != 0) && (rightVolume_ == 0)) {
+    } else if ((abs(leftVolume_) > FLOAT_EPS) && (abs(rightVolume_) < FLOAT_EPS)) {
         volume = leftVolume_;
     } else {
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;

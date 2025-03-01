@@ -72,7 +72,8 @@ int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
 
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
-
+    audioDeviceCommon_.OnAudioSceneChange(audioScene);
+    
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
@@ -96,11 +97,11 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetDevices(
     return audioConnectedDevice_.GetDevicesInner(deviceFlag);
 }
 
-int32_t AudioDeviceLock::SetDeviceActive(InternalDeviceType deviceType, bool active)
+int32_t AudioDeviceLock::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
-    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active);
+    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active, pid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
@@ -172,7 +173,8 @@ void AudioDeviceLock::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const Dev
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
 }
 
-int32_t AudioDeviceLock::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+int32_t AudioDeviceLock::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+    const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
@@ -180,7 +182,7 @@ int32_t AudioDeviceLock::SetCallDeviceActive(InternalDeviceType deviceType, bool
         deviceType, active, GetEncryptAddr(address).c_str());
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
-    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address);
+    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address, pid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetCallDeviceActive failed");
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     audioDeviceCommon_.FetchDevice(false);
@@ -335,11 +337,11 @@ void AudioDeviceLock::RegisteredTrackerClientDied(pid_t uid)
 }
 
 void AudioDeviceLock::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
-    const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role)
+    const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role, bool hasPair)
 {
     // Pnp device status update
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    audioDeviceStatus_.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role);
+    audioDeviceStatus_.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
 }
 
 void AudioDeviceLock::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, bool isConnected)
@@ -471,6 +473,27 @@ int32_t AudioDeviceLock::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptur
     return audioRecoveryDevice_.SelectInputDevice(audioCapturerFilter, selectedDesc);
 }
 
+int32_t AudioDeviceLock::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    return audioRecoveryDevice_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+int32_t AudioDeviceLock::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    return audioRecoveryDevice_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetExcludedDevices(
+    AudioDeviceUsage audioDevUsage)
+{
+    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
+    return audioStateManager_.GetExcludedDevices(audioDevUsage);
+}
+
 void AudioDeviceLock::UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     AUDIO_INFO_LOG("Start");
@@ -508,11 +531,19 @@ void AudioDeviceLock::NotifyRemoteRenderState(std::string networkId, std::string
     AUDIO_INFO_LOG("device<%{public}s> condition:%{public}s value:%{public}s",
         GetEncryptStr(networkId).c_str(), condition.c_str(), value.c_str());
 
-    vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
-    vector<SinkInput> targetSinkInputs = {};
-    for (auto sinkInput : sinkInputs) {
-        if (sinkInput.sinkName == networkId) {
-            targetSinkInputs.push_back(sinkInput);
+    std::vector<SinkInput> sinkInputs;
+    audioPolicyManager_.GetAllSinkInputs(sinkInputs);
+    std::vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
+    std::vector<SinkInput> targetSinkInputs = {};
+    for (auto &changeInfo : rendererChangeInfos) {
+        if (changeInfo->outputDeviceInfo.networkId_ != networkId) {
+            continue;
+        }
+        for (auto &sinkInput : sinkInputs) {
+            if (changeInfo->sessionId == sinkInput.streamId) {
+                targetSinkInputs.push_back(sinkInput);
+            }
         }
     }
     AUDIO_DEBUG_LOG("move [%{public}zu] of all [%{public}zu]sink-inputs to local.",

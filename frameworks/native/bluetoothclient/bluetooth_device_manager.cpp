@@ -225,6 +225,8 @@ AudioDeviceDescriptor MediaBluetoothDeviceManager::HandleConnectDeviceInner(cons
     RemoveDeviceInConfigVector(device, virtualDevices_);
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
     AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = bluetoothCategory;
     switch (bluetoothCategory) {
         case BT_GLASSES:
@@ -792,6 +794,8 @@ AudioDeviceDescriptor HfpBluetoothDeviceManager::HandleConnectDeviceInner(const 
     RemoveDeviceInConfigVector(device, virtualDevices_);
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
     AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = bluetoothCategory;
     switch (bluetoothCategory) {
         case BT_GLASSES:
@@ -966,7 +970,9 @@ void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice 
 {
     std::string deviceAddr = device.GetDeviceAddr();
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
-    if (bluetoothCategory == BT_WATCH) {
+    AudioScene scene = AudioHfpManager::GetCurrentAudioScene();
+    AUDIO_INFO_LOG("HandleUserSelection current scene = %{public}d", scene);
+    if (bluetoothCategory == BT_WATCH && (scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING)) {
         std::lock_guard<std::mutex> wearStateMapLock(g_hfpWearStateMapLock);
         std::lock_guard<std::mutex> hfpDeviceLock(g_hfpDeviceLock);
         auto isPresent = [] (BluetoothRemoteDevice &bluetoothRemoteDevice) {

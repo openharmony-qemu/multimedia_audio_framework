@@ -60,6 +60,7 @@ public:
     int32_t OffloadSetVolume(float volume) override;
     size_t GetWritableSize() override;
     int32_t UpdateMaxLength(uint32_t maxLength) override;
+    int32_t UpdateBufferSize(uint32_t bufferLength);
     // offload end
 
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override;
@@ -68,7 +69,6 @@ public:
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
     int32_t SetClientVolume(float clientVolume) override;
     void BlockStream() noexcept override;
-    bool IsEffectNone(StreamUsage streamUsage);
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -153,6 +153,7 @@ private:
     pa_usec_t preTimeGetPaLatency_ = pa_rtclock_now();
     bool firstGetPaLatency_ = true;
     bool releasedFlag_ = false;
+    bool remoteCastMovedFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

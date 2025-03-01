@@ -35,6 +35,7 @@ public:
     AudioDeviceDescriptor outputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     bool prerunningState = false;
     bool backMute = false;
+    int32_t appVolume;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {

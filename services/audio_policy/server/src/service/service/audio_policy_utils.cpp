@@ -28,6 +28,7 @@
 #include "data_share_observer_callback.h"
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
+#include "audio_recovery_device.h"
 
 #include "audio_server_proxy.h"
 
@@ -100,7 +101,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailab
 }
 
 int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
 {
     if (desc == nullptr) {
         AUDIO_ERR_LOG("desc is null");
@@ -112,7 +113,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             audioStateManager_.SetPreferredMediaRenderDevice(desc);
             break;
         case AUDIO_CALL_RENDER:
-            audioStateManager_.SetPreferredCallRenderDevice(desc);
+            audioStateManager_.SetPreferredCallRenderDevice(desc, pid);
             break;
         case AUDIO_CALL_CAPTURE:
             audioStateManager_.SetPreferredCallCaptureDevice(desc);
@@ -144,7 +145,7 @@ int32_t AudioPolicyUtils::ErasePreferredDeviceByType(const PreferredType preferr
     if (isBTReconnecting_) {
         return SUCCESS;
     }
-    auto type = static_cast<Media::MediaMonitor::PerferredType>(preferredType);
+    auto type = static_cast<Media::MediaMonitor::PreferredType>(preferredType);
     int32_t ret = Media::MediaMonitor::MediaMonitorManager::GetInstance().ErasePreferredDeviceByType(type);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Erase preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
@@ -194,6 +195,29 @@ uint32_t AudioPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
     }
 }
 
+std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
+{
+    std::string portName = PORT_NONE;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            portName = USB_SPEAKER;
+            break;
+        case DeviceType::DEVICE_TYPE_DP:
+            portName = DP_SINK;
+            break;
+        case DeviceType::DEVICE_TYPE_FILE_SINK:
+            portName = FILE_SINK;
+            break;
+        case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+            portName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
+            break;
+        default:
+            portName = PORT_NONE;
+            break;
+    }
+    return portName;
+}
+
 std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType)
 {
     std::string portName = PORT_NONE;
@@ -222,24 +246,14 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
                 portName = OFFLOAD_PRIMARY_SPEAKER;
             } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
                 portName = MCH_PRIMARY_SPEAKER;
+            } else if (pipeType == PIPE_TYPE_CALL_OUT) {
+                portName = PRIMARY_DIRECT_VOIP;
             } else {
                 portName = PRIMARY_SPEAKER;
             }
             break;
-        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
-            portName = USB_SPEAKER;
-            break;
-        case DeviceType::DEVICE_TYPE_DP:
-            portName = DP_SINK;
-            break;
-        case DeviceType::DEVICE_TYPE_FILE_SINK:
-            portName = FILE_SINK;
-            break;
-        case DeviceType::DEVICE_TYPE_REMOTE_CAST:
-            portName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
-            break;
         default:
-            portName = PORT_NONE;
+            portName = GetNewSinkPortName(deviceType);
             break;
     }
 
@@ -539,5 +553,60 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     return devType;
 }
 
+std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    std::string devices;
+    devices.append("device type:id:(category:constate) ");
+    for (auto iter : descs) {
+        CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
+        devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
+        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
+        if (iter->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
+        } else if (IsUsb(iter->getType())) {
+            devices.append(":" + GetEncryptAddr(iter->macAddress_));
+        }
+        devices.append(" ");
+    }
+    return devices;
 }
+
+AudioDeviceUsage AudioPolicyUtils::GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage)
+{
+    switch (streamUsage) {
+        case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+            return CALL_OUTPUT_DEVICES;
+        default:
+            return MEDIA_OUTPUT_DEVICES;
+    }
 }
+
+PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage streamUsage)
+{
+    switch (streamUsage) {
+        case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+            return AUDIO_CALL_RENDER;
+        default:
+            return AUDIO_MEDIA_RENDER;
+    }
+}
+
+int32_t AudioPolicyUtils::UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    if (isBTReconnecting_) {
+        return SUCCESS;
+    }
+
+    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descs);
+    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descs);
+
+    return SUCCESS;
+}
+} // namespace AudioStandard
+} // namespace OHOS

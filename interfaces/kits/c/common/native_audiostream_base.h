@@ -132,6 +132,12 @@ typedef enum {
      * @since 10
      */
     AUDIOSTREAM_SAMPLE_S32LE = 3,
+    /**
+     * 32 bit IEEE floating point, little endian.
+     *
+     * @since 16
+     */
+    AUDIOSTREAM_SAMPLE_F32LE = 4,
 } OH_AudioStream_SampleFormat;
 
 /**
@@ -247,6 +253,11 @@ typedef enum {
      */
     AUDIOSTREAM_USAGE_VIDEO_COMMUNICATION = 17,
 } OH_AudioStream_Usage;
+
+typedef enum {
+    SYSTEM_GLOBAL,
+    APP_INDIVIDUAL
+} OH_AudioStream_VolumeMode;
 
 /**
  * @brief Define the audio latency mode.

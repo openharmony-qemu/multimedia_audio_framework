@@ -71,6 +71,72 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevelLegacy(AudioVolumeType volumeType,
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(volumeLevel);
+    data.WriteInt32(volumeFlag);
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(
+        AudioPolicyInterfaceCode::SET_SELF_APP_VOLUMELEVEL), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set app volume failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+bool AudioPolicyProxy::IsAppVolumeMute(int32_t appUid, bool owned)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    
+    data.WriteInt32(appUid);
+    data.WriteBool(owned);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_APP_MUTE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "is app muted failed, error: %d", error);
+    return reply.ReadBool();
+}
+
+int32_t AudioPolicyProxy::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(appUid);
+    data.WriteBool(muted);
+    data.WriteInt32(volumeFlag);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_APP_VOLUME_MUTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set app muted failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(appUid);
+    data.WriteInt32(volumeLevel);
+    data.WriteInt32(volumeFlag);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_APP_VOLUMELEVEL), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set app volume failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag)
 {
     MessageParcel data;
@@ -84,6 +150,25 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32
     data.WriteInt32(volumeFlag);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set volume failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
+    DeviceType deviceType, int32_t volumeFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(static_cast<int32_t>(volumeType));
+    data.WriteInt32(volumeLevel);
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    data.WriteInt32(volumeFlag);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set volume failed, error: %d", error);
     return reply.ReadInt32();
 }
@@ -116,6 +201,35 @@ int32_t AudioPolicyProxy::GetSystemVolumeLevel(AudioVolumeType volumeType)
     data.WriteInt32(static_cast<int32_t>(volumeType));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get volume failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetSelfAppVolumeLevel()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SELF_APP_VOLUME_LEVEL), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get volume failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetAppVolumeLevel(int32_t appUid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(appUid);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_APP_VOLUMELEVEL), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get volume failed, error: %d", error);
     return reply.ReadInt32();
 }

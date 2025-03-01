@@ -155,7 +155,7 @@ enum DeviceType {
      */
     DEVICE_TYPE_REMOTE_CAST = 24,
     /**
-     * Indicates a none headset usb device.
+     * Indicates a non-headset usb device.
      */
     DEVICE_TYPE_USB_DEVICE = 25,
     /**

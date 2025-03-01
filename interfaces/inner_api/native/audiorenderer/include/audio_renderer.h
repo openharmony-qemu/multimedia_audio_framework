@@ -527,6 +527,8 @@ public:
      */
     virtual int32_t SetVolume(float volume) const = 0;
 
+    virtual int32_t SetVolumeMode(int32_t mode) {return 0;};
+
     /**
      * @brief Obtains the current track volume
      *
@@ -931,6 +933,14 @@ public:
      * @since 11
      */
     virtual float GetSpeed() = 0;
+
+    /**
+    * @brief Get offload status.
+    *
+    * @return Returns <b>true</b> if offload is enabled.
+    * @since 15
+    */
+    virtual bool IsOffloadEnable() { return false; }
 
     virtual bool IsFastRenderer() = 0;
 

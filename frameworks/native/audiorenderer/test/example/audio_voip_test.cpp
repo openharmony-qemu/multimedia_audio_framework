@@ -107,7 +107,7 @@ public:
 
         return true;
     }
-	
+
     AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat) const
     {
         switch (wavSampleFormat) {

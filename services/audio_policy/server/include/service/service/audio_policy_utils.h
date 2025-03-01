@@ -51,9 +51,11 @@ public:
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
     void SetBtConnecting(bool flag);
-    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        const int32_t pid = INVALID_PID);
     void ClearScoDeviceSuspendState(std::string macAddress = "");
     int64_t GetCurrentTimeMS();
+    std::string GetNewSinkPortName(DeviceType deviceType);
     std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
     string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
     std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
@@ -70,6 +72,12 @@ public:
     DeviceRole GetDeviceRole(const std::string &role);
     DeviceRole GetDeviceRole(AudioPin pin) const;
     DeviceType GetDeviceType(const std::string &deviceName);
+    std::string GetDevicesStr(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
+    AudioDeviceUsage GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage);
+    PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);
+
+    int32_t UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

@@ -47,7 +47,17 @@ public:
 
     virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
 
+    virtual int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel,
+        DeviceType deviceType) = 0;
+    virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel) = 0;
+
+    virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted) = 0;
+
+    virtual bool IsAppVolumeMute(int32_t appUid, bool owned) = 0;
+
     virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
+
+    virtual int32_t GetAppVolumeLevel(int32_t appUid) = 0;
 
     virtual int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType) = 0;
 
@@ -62,7 +72,7 @@ public:
 
     virtual std::vector<SinkInfo> GetAllSinks() = 0;
 
-    virtual std::vector<SinkInput> GetAllSinkInputs() = 0;
+    virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
     virtual std::vector<SourceOutput> GetAllSourceOutputs() = 0;
 
@@ -175,6 +185,8 @@ public:
     virtual void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel) = 0;
 
     virtual void SetRestoreVolumeFlag(const bool safeVolumeCall) = 0;
+
+    virtual void UpdateSafeVolumeByS4() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

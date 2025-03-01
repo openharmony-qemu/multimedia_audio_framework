@@ -382,7 +382,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     return result;
 }
 
-void RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+void RendererInClientInner::RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
 {
     std::string watchDogMessage = message;
     watchDogMessage += std::to_string(sessionId);
@@ -407,65 +407,57 @@ void RendererInClientInner::WatchingWriteCallbackFunc()
         WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
 }
 
-void RendererInClientInner::WriteCallbackFunc()
+bool RendererInClientInner::WriteCallbackFunc()
 {
-    AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
-    cbThreadReleased_ = false;
-
-    // Modify thread priority is not need as first call write will do these work.
-    cbThreadCv_.notify_one();
-
-    // add watchdog
-    WatchingWriteCallbackFunc();
-    // start loop
-    while (!cbThreadReleased_) {
-        Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
-        if (!WaitForRunning()) {
-            writeCallbackFuncThreadStatusFlag_ = true;
-            continue;
-        }
-        if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
-            AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
-        }
-        BufferDesc temp;
-        while (cbBufferQueue_.PopNotWait(temp)) {
-            Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
-            if (state_ != RUNNING) {
-                cbBufferQueue_.Push(temp);
-                AUDIO_INFO_LOG("Repush left buffer in queue");
-                break;
-            }
-            traceQueuePop.End();
-            // call write here.
-            int32_t result = ProcessWriteInner(temp);
-            // only run in pause scene
-            if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
-                BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
-                    temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
-                cbBufferQueue_.Push(tmp);
-                AUDIO_INFO_LOG("Repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
-                break;
-            }
-        }
-        if (state_ != RUNNING) {
-            writeCallbackFuncThreadStatusFlag_ = true;
-            continue;
-        }
-        // call client write
-        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
-        if (writeCb_ != nullptr) {
-            Trace traceCb("RendererInClientInner::OnWriteData");
-            writeCb_->OnWriteData(cbBufferSize_);
-        }
-        lockCb.unlock();
-
-        Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
-        std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
-        cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
-        writeCallbackFuncThreadStatusFlag_ = true;
+    if (cbThreadReleased_) {
+        AUDIO_INFO_LOG("Callback thread released");
+        return false;
     }
-    AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
-    RendererRemoveWatchdog("WatchingWriteCallbackFunc", sessionId_);
+    Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
+    if (!WaitForRunning()) {
+        writeCallbackFuncThreadStatusFlag_ = true;
+        return true;
+    }
+    if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
+        AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
+    }
+    BufferDesc temp;
+    while (cbBufferQueue_.PopNotWait(temp)) {
+        Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
+        if (state_ != RUNNING) {
+            cbBufferQueue_.Push(temp);
+            AUDIO_INFO_LOG("Repush left buffer in queue");
+            break;
+        }
+        traceQueuePop.End();
+        // call write here.
+        int32_t result = ProcessWriteInner(temp);
+        // only run in pause scene
+        if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
+            BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
+                temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
+            cbBufferQueue_.Push(tmp);
+            AUDIO_INFO_LOG("Repush %{public}zu bytes in queue", temp.dataLength - static_cast<size_t>(result));
+            break;
+        }
+    }
+    if (state_ != RUNNING) {
+        writeCallbackFuncThreadStatusFlag_ = true;
+        return true;
+    }
+    // call client write
+    std::unique_lock<std::mutex> lockCb(writeCbMutex_);
+    if (writeCb_ != nullptr) {
+        Trace traceCb("RendererInClientInner::OnWriteData");
+        writeCb_->OnWriteData(cbBufferSize_);
+    }
+    lockCb.unlock();
+
+    Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
+    std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
+    cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
+    writeCallbackFuncThreadStatusFlag_ = true;
+    return true;
 }
 
 int32_t RendererInClientInner::FlushRingCache()
@@ -771,17 +763,17 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
-    int32_t tryCount = 2; // try futex wait for 2 times.
     FutexCode futexRes = FUTEX_OPERATION_FAILED;
-    while (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_ && tryCount > 0) {
-        tryCount--;
+    if (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_) {
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
-        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND);
+        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
+            [this] () {
+                return (state_ != RUNNING) || (clientBuffer_->GetAvailableDataFrames() >= spanSizeInFrame_);
+            });
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
         CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
             "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
-        if (futexRes == FUTEX_SUCCESS && sizeInFrame > 0) { break; }
     }
 
     if (sizeInFrame < 0 || static_cast<uint32_t>(clientBuffer_->GetAvailableDataFrames()) < spanSizeInFrame_) {
@@ -800,14 +792,13 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     }
     result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
-
-    // volume process in client
-    if (volumeRamp_.IsActive()) {
-        // do not call SetVolume here.
-        clientVolume_ = volumeRamp_.GetRampVolume();
-        AUDIO_INFO_LOG("clientVolume_:%{public}f", clientVolume_);
-        Trace traceVolume("RendererInClientInner::WriteCacheData:Ramp:clientVolume_:" + std::to_string(clientVolume_));
-        SetInnerVolume(clientVolume_);
+    if (isDrain && targetSize < clientSpanSizeInByte_ && clientConfig_.streamInfo.format == SAMPLE_U8) {
+        size_t leftSize = clientSpanSizeInByte_ - targetSize;
+        int32_t ret = memset_s(desc.buffer + targetSize, leftSize, 0X7F, leftSize);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "left buffer memset output failed");
+    }
+    if (!ProcessVolume()) {
+        return ERR_OPERATION_FAILED;
     }
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
@@ -818,6 +809,19 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;
+}
+
+bool RendererInClientInner::ProcessVolume()
+{
+    // volume process in client
+    if (volumeRamp_.IsActive()) {
+        // do not call SetVolume here.
+        clientVolume_ = volumeRamp_.GetRampVolume();
+        AUDIO_INFO_LOG("clientVolume_:%{public}f", clientVolume_);
+        Trace traceVolume("RendererInClientInner::WriteCacheData:Ramp:clientVolume_:" + std::to_string(clientVolume_));
+        SetInnerVolume(clientVolume_);
+    }
+    return true;
 }
 
 int32_t RendererInClientInner::RegisterSpatializationStateEventListener()

@@ -453,7 +453,8 @@ void AudioOffloadStream::RemoteOffloadStreamRelease(uint32_t sessionId)
 
 int32_t AudioOffloadStream::MoveToOutputDevice(uint32_t sessionId, std::string portName)
 {
-    std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+    std::vector<SinkInput> sinkInputs;
+    audioPolicyManager_.GetAllSinkInputs(sinkInputs);
     std::vector<SinkInput> sinkInputIds = FilterSinkInputs(sessionId, sinkInputs);
 
     if (portName == BLUETOOTH_SPEAKER) {

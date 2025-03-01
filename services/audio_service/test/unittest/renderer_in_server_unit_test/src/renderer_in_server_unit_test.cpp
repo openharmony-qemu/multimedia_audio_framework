@@ -691,7 +691,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_003, Te
     bufferDesc.buffer[0] = 0;
     rendererInServer->silentState_ = 0;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
-    EXPECT_EQ(0, rendererInServer->silentState_);
+    EXPECT_EQ(1, rendererInServer->silentState_);
 }
 
 
@@ -936,7 +936,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_005, TestSize.Level
     rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(4);
     rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
 
     ret = rendererInServer->WriteData();
@@ -963,9 +963,12 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_006, TestSize.Level
     rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(4);
     rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
-    rendererInServer->dupStream_ = nullptr;
+    if (rendererInServer->captureInfos_.count(1)) {
+        rendererInServer->captureInfos_[1].dupStream = nullptr;
+        rendererInServer->captureInfos_.erase(1);
+    }
     rendererInServer->dualToneStream_ = nullptr;
 
     ret = rendererInServer->WriteData();
@@ -1071,7 +1074,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_001, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
 
@@ -1162,9 +1165,12 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_005, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
-    rendererInServer->dupStream_ = nullptr;
+    if (rendererInServer->captureInfos_.count(1)) {
+        rendererInServer->captureInfos_[1].dupStream = nullptr;
+        rendererInServer->captureInfos_.erase(1);
+    }
     rendererInServer->dualToneStream_ = nullptr;
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
 
@@ -1320,7 +1326,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerPause_003, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
@@ -1344,9 +1350,12 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerPause_004, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
-    rendererInServer->dupStream_ = nullptr;
+    if (rendererInServer->captureInfos_.count(1)) {
+        rendererInServer->captureInfos_[1].dupStream = nullptr;
+        rendererInServer->captureInfos_.erase(1);
+    }
     rendererInServer->dualToneStream_ = nullptr;
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
@@ -1476,7 +1485,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_005, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
@@ -1500,9 +1509,12 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_006, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
-    rendererInServer->dupStream_ = nullptr;
+    if (rendererInServer->captureInfos_.count(1)) {
+        rendererInServer->captureInfos_[1].dupStream = nullptr;
+        rendererInServer->captureInfos_.erase(1);
+    }
     rendererInServer->dualToneStream_ = nullptr;
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
@@ -1635,7 +1647,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDrain_003, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
@@ -1660,9 +1672,12 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDrain_004, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->InitDupStream();
+    ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
-    rendererInServer->dupStream_ = nullptr;
+    if (rendererInServer->captureInfos_.count(1)) {
+        rendererInServer->captureInfos_[1].dupStream = nullptr;
+        rendererInServer->captureInfos_.erase(1);
+    }
     rendererInServer->dualToneStream_ = nullptr;
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
     bool stopFlag = true;
@@ -1720,7 +1735,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_002, TestSize.Level1)
     rendererInServer->status_ = I_STATUS_STARTED;
     rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
-    rendererInServer->isInnerCapEnabled_ = true;
+    auto &info = rendererInServer->captureInfos_[1];
+    info.isInnerCapEnabled = true;
     rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->Stop();
 
@@ -1740,7 +1756,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_003, TestSize.Level1)
     rendererInServer->status_ = I_STATUS_PAUSED;
     rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
-    rendererInServer->InitDupStream();
+    rendererInServer->InitDupStream(1);
     rendererInServer->InitDualToneStream();
     int32_t ret = rendererInServer->Stop();
 
@@ -1760,7 +1776,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_004, TestSize.Level1)
     rendererInServer->status_ = I_STATUS_DRAINING;
     rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
-    rendererInServer->isInnerCapEnabled_ = true;
+    auto &info = rendererInServer->captureInfos_[1];
+    info.isInnerCapEnabled = true;
     rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->Stop();
 
@@ -1780,7 +1797,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_005, TestSize.Level1)
     rendererInServer->status_ = I_STATUS_STARTING;
     rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
-    rendererInServer->isInnerCapEnabled_ = true;
+    auto &info = rendererInServer->captureInfos_[1];
+    info.isInnerCapEnabled = true;
     rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->Stop();
 
@@ -1800,7 +1818,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_006, TestSize.Level1)
     rendererInServer->status_ = I_STATUS_STARTING;
     rendererInServer->Init();
     rendererInServer->standByEnable_ = false;
-    rendererInServer->isInnerCapEnabled_ = false;
+    auto &info = rendererInServer->captureInfos_[1];
+    info.isInnerCapEnabled = false;
     rendererInServer->isDualToneEnabled_ = false;
     int32_t ret = rendererInServer->Stop();
 
@@ -1833,7 +1852,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerRelease_003, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->isInnerCapEnabled_ = true;
+    auto &info = rendererInServer->captureInfos_[1];
+    info.isInnerCapEnabled = true;
     rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->Release();
 
@@ -2163,7 +2183,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableInnerCap_001, TestSize.
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    int32_t ret = rendererInServer->EnableInnerCap();
+    int32_t ret = rendererInServer->EnableInnerCap(1);
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -2178,8 +2198,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableInnerCap_002, TestSize.
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->InitDupStream();
-    int32_t ret = rendererInServer->EnableInnerCap();
+    rendererInServer->InitDupStream(1);
+    int32_t ret = rendererInServer->EnableInnerCap(1);
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -2194,7 +2214,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableInnerCap_001, TestSize
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    int32_t ret = rendererInServer->DisableInnerCap();
+    int32_t ret = rendererInServer->DisableInnerCap(0);
 
     EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 }
@@ -2209,8 +2229,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableInnerCap_002, TestSize
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->InitDupStream();
-    int32_t ret = rendererInServer->DisableInnerCap();
+    rendererInServer->InitDupStream(1);
+    int32_t ret = rendererInServer->DisableInnerCap(1);
 
     EXPECT_EQ(ERROR, ret);
 }
@@ -2229,7 +2249,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDupStream_001, TestSize.L
     EXPECT_NE(nullptr, tempRendererInServer);
 
     tempRendererInServer->dualToneStream_ = nullptr;
-    int32_t ret = tempRendererInServer->InitDupStream();
+    int32_t ret = tempRendererInServer->InitDupStream(1);
 
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
@@ -2245,7 +2265,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDupStream_002, TestSize.L
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->status_ = I_STATUS_STARTED;
-    int32_t ret = rendererInServer->InitDupStream();
+    int32_t ret = rendererInServer->InitDupStream(1);
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -2412,7 +2432,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetOffloadMode_002, TestSize.
 
     tempRendererInServer->managerType_ = DIRECT_PLAYBACK;
     tempRendererInServer->Init();
-    tempRendererInServer->InitDupStream();
+    tempRendererInServer->InitDupStream(1);
     tempRendererInServer->InitDualToneStream();
     int32_t ret = tempRendererInServer->SetOffloadMode(TEST_STATE, TEST_ISAPPBACK);
 
@@ -2440,9 +2460,12 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetOffloadMode_003, TestSize.
 
     tempRendererInServer->managerType_ = DIRECT_PLAYBACK;
     tempRendererInServer->Init();
-    tempRendererInServer->InitDupStream();
+    tempRendererInServer->InitDupStream(1);
     tempRendererInServer->InitDualToneStream();
-    rendererInServer->dupStream_ = nullptr;
+    if (rendererInServer->captureInfos_.count(1)) {
+        rendererInServer->captureInfos_[1].dupStream = nullptr;
+        rendererInServer->captureInfos_.erase(1);
+    }
     rendererInServer->dualToneStream_ = nullptr;
     int32_t ret = tempRendererInServer->SetOffloadMode(TEST_STATE, TEST_ISAPPBACK);
 
@@ -2496,7 +2519,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerUnsetOffloadMode_002, TestSiz
 
     tempRendererInServer->managerType_ = DIRECT_PLAYBACK;
     tempRendererInServer->Init();
-    tempRendererInServer->InitDupStream();
+    tempRendererInServer->InitDupStream(1);
     tempRendererInServer->InitDualToneStream();
     int32_t ret = tempRendererInServer->UnsetOffloadMode();
 
@@ -2524,9 +2547,12 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerUnsetOffloadMode_003, TestSiz
 
     tempRendererInServer->managerType_ = DIRECT_PLAYBACK;
     tempRendererInServer->Init();
-    tempRendererInServer->InitDupStream();
+    tempRendererInServer->InitDupStream(1);
     tempRendererInServer->InitDualToneStream();
-    rendererInServer->dupStream_ = nullptr;
+    if (rendererInServer->captureInfos_.count(1)) {
+        rendererInServer->captureInfos_[1].dupStream = nullptr;
+        rendererInServer->captureInfos_.erase(1);
+    }
     rendererInServer->dualToneStream_ = nullptr;
     int32_t ret = tempRendererInServer->UnsetOffloadMode();
 

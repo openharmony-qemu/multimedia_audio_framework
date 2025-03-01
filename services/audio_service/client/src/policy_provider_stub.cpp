@@ -64,6 +64,12 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
             return HandleNotifyCapturerRemoved(data, reply);
         case SET_DEFAULT_OUTPUT_DEVICE:
             return HandleSetDefaultOutputDevice(data, reply);
+#ifdef HAS_FEATURE_INNERCAPTURER
+        case LOAD_MODERN_INNER_CAPTURE_SINK:
+            return HandleLoadModernInnerCapSink(data, reply);
+        case UNLOAD_MODERN_INNER_CAPTURE_SINK:
+            return HandleUnloadModernInnerCapSink(data, reply);
+#endif
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -189,6 +195,22 @@ int32_t PolicyProviderStub::HandleSetDefaultOutputDevice(MessageParcel &data, Me
         sessionID, static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage), isRunning));
     return AUDIO_OK;
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t PolicyProviderStub::HandleLoadModernInnerCapSink(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t innerCapId = data.ReadInt32();
+    reply.WriteInt32(LoadModernInnerCapSink(innerCapId));
+    return AUDIO_OK;
+}
+
+int32_t PolicyProviderStub::HandleUnloadModernInnerCapSink(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t innerCapId = data.ReadInt32();
+    reply.WriteInt32(UnloadModernInnerCapSink(innerCapId));
+    return AUDIO_OK;
+}
+#endif
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -272,5 +294,19 @@ int32_t PolicyProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOu
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t PolicyProviderWrapper::LoadModernInnerCapSink(int32_t innerCapId)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->LoadModernInnerCapSink(innerCapId);
+}
+
+int32_t PolicyProviderWrapper::UnloadModernInnerCapSink(int32_t innerCapId)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->UnloadModernInnerCapSink(innerCapId);
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

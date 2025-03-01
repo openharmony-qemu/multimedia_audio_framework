@@ -489,7 +489,7 @@ HWTEST(RemoteFastAudioRenderSinkUnitTest, RemoteFastAudioRenderSinkUnitTest_0015
     IMmapAudioRendererSink* instance = audioRendererInner->GetInstance(DEVICE_DEFAULT_ID);
     EXPECT_NE(instance, nullptr);
     auto ret = instance->GetAudioScene();
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

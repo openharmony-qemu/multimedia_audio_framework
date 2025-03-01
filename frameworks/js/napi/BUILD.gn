@@ -22,6 +22,9 @@ ohos_shared_library("audio") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   include_dirs = [
     "common",
@@ -44,6 +47,7 @@ ohos_shared_library("audio") {
       "audiocapturer/callback/napi_capturer_period_position_callback.cpp",
       "audiocapturer/callback/napi_capturer_position_callback.cpp",
       "audiocapturer/napi_audio_capturer.cpp",
+      "audiomanager/callback/napi_appvolume_change_callback.cpp",
       "audiomanager/callback/napi_audio_capturer_state_callback.cpp",
       "audiomanager/callback/napi_audio_manager_callbacks.cpp",
       "audiomanager/callback/napi_audio_manager_interrupt_callback.cpp",

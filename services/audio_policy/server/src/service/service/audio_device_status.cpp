@@ -25,6 +25,7 @@
 #include "audio_policy_log.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
+#include "common/hdi_adapter_info.h"
 
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
@@ -107,7 +108,7 @@ void AudioDeviceStatus::DeInit()
 }
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
-    const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role)
+    const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role, bool hasPair)
 {
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     // fill device change action for callback
@@ -121,6 +122,9 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
 
     AudioDeviceDescriptor updatedDesc(devType, role == DEVICE_ROLE_NONE ?
         AudioPolicyUtils::GetInstance().GetDeviceRole(devType) : role);
+    updatedDesc.hasPair_ = hasPair;
+    updatedDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
+        IsSpatializationSupportedForDevice(updatedDesc.macAddress_);
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
 
     if (isConnected) {
@@ -222,7 +226,8 @@ void AudioDeviceStatus::WriteDeviceChangeSysEvents(const std::shared_ptr<AudioDe
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     if (desc->deviceRole_ == OUTPUT_DEVICE) {
-        vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+        std::vector<SinkInput> sinkInputs;
+        audioPolicyManager_.GetAllSinkInputs(sinkInputs);
         for (SinkInput sinkInput : sinkInputs) {
             WriteOutputDeviceChangedSysEvents(desc, sinkInput);
         }
@@ -361,6 +366,9 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
         }
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load dp failed.");
         audioDeviceCommon_.SetHasDpFlag(true);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
+        updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
     }
     return SUCCESS;
 }
@@ -395,6 +403,12 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
     }
 
     AudioServerProxy::GetInstance().ResetRouteForDisconnectProxy(updatedDesc.deviceType_);
+    if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
+        AudioServerProxy::GetInstance().UnloadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "dp", false);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
+        updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        AudioServerProxy::GetInstance().UnloadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb", false);
+    }
     return SUCCESS;
 }
 
@@ -431,6 +445,7 @@ int32_t AudioDeviceStatus::LoadDpModule(std::string deviceInfo)
         CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED,
             "dp module is not exist in the configuration file");
     }
+    AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "dp");
     for (auto &moduleInfo : moduleInfoList) {
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
         if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
@@ -737,6 +752,8 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         statusInfo.isConnected, statusInfo.mappingVolumeId);
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
+    deviceDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
+        IsSpatializationSupportedForDevice(deviceDesc.macAddress_);
     if (statusInfo.isConnected) {
         if (audioConnectedDevice_.GetConnectedDeviceByType(networkId, devType) != nullptr) {
             return ERROR;
@@ -851,6 +868,9 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
         if (device.first != ClassType::TYPE_PRIMARY && device.first != ClassType::TYPE_FILE_IO) {
             continue;
         }
+        if (device.first == ClassType::TYPE_PRIMARY) {
+            AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary");
+        }
         auto moduleInfoList = device.second;
         for (auto &moduleInfo : moduleInfoList) {
             AUDIO_INFO_LOG("[module_load]::Load module[%{public}s]", moduleInfo.name.c_str());
@@ -910,7 +930,7 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     audioDeviceDescriptors[0]->isEnable_ = true;
     audioDeviceManager_.UpdateDevicesListInfo(audioDeviceDescriptors[0], ENABLE_UPDATE);
     if (devType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, audioDeviceDescriptors[0]);
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, audioDeviceDescriptors[0], -1);
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(audioDeviceDescriptors[0]->macAddress_);
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, audioDeviceDescriptors[0]);
@@ -931,6 +951,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     // fill device change action for callback
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    updatedDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
+        IsSpatializationSupportedForDevice(updatedDesc.macAddress_);
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
@@ -1079,7 +1101,7 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
                     std::make_shared<AudioDeviceDescriptor>());
             } else {
                 AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                    std::make_shared<AudioDeviceDescriptor>());
+                    std::make_shared<AudioDeviceDescriptor>(), 0);
                 AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
                     std::make_shared<AudioDeviceDescriptor>());
                 AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
@@ -1116,7 +1138,7 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
         userSelectDeviceMap[CALL_RENDER_ID]->macAddress_ == desc.macAddress_) {
         if (userSelectDeviceMap[CALL_RENDER_ID]->connectState_ != VIRTUAL_CONNECTED) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(selectDesc));
+                std::make_shared<AudioDeviceDescriptor>(selectDesc), 0);
         } else {
             audioStateManager_.UpdatePreferredCallRenderDeviceConnectState(desc.connectState_);
         }

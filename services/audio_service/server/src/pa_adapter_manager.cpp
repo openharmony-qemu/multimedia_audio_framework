@@ -114,6 +114,15 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     rendererStreamMap_[sessionId] = rendererStream;
     stream = rendererStream;
+
+    std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
+    SinkInput sinkInput;
+    sinkInput.streamId = sessionId;
+    sinkInput.streamType = processConfig.streamType;
+    sinkInput.uid = processConfig.appInfo.appUid;
+    sinkInput.pid = processConfig.appInfo.appPid;
+    sinkInput.paStreamId = pa_stream_get_index(paStream);
+    sinkInputs_.push_back(sinkInput);
     return SUCCESS;
 }
 
@@ -143,7 +152,18 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     if (rendererStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
     }
+    std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
+    sinkInputs_.erase(std::remove_if(sinkInputs_.begin(), sinkInputs_.end(), [&](const SinkInput &sinkInput) {
+        return static_cast<uint32_t>(sinkInput.streamId) == streamIndex;
+        }), sinkInputs_.end());
     return SUCCESS;
+}
+
+void PaAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    sinkInputs = sinkInputs_;
+    Trace trace("PaAdapterManager::GetAllSinkInputs size:" + std::to_string(sinkInputs.size()));
 }
 
 int32_t PaAdapterManager::StartRender(uint32_t streamIndex)
@@ -374,8 +394,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
         if (processConfig.isInnerCapturer) {
             if (processConfig.innerCapMode == MODERN_INNER_CAP) {
                 AUDIO_INFO_LOG("Create the modern inner-cap.");
-                const char* newInnerCapturerSource = "InnerCapturerSink.monitor";
-                deviceName = newInnerCapturerSource;
+                deviceName = AppendDeviceName(processConfig.innerCapId, AppendType::APPEND_CAPTURE);
             } else {
                 const char* innerCapturerSource = "Speaker.monitor";
                 deviceName = innerCapturerSource;
@@ -436,7 +455,8 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         return nullptr;
     }
 
-    int32_t ret = ConnectStreamToPA(paStream, sampleSpec, processConfig.capturerInfo.sourceType, deviceName);
+    int32_t ret = ConnectStreamToPA(paStream, sampleSpec, processConfig.capturerInfo.sourceType,
+        processConfig.innerCapId, deviceName);
     if (ret < 0) {
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         ReleasePaStream(paStream);
@@ -467,16 +487,6 @@ void PaAdapterManager::ReleasePaStream(pa_stream *paStream)
     }
     pa_stream_unref(paStream);
     AUDIO_INFO_LOG("Release paStream because of errs");
-}
-
-bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
-{
-    if (streamUsage == STREAM_USAGE_SYSTEM || streamUsage == STREAM_USAGE_DTMF ||
-        streamUsage == STREAM_USAGE_ENFORCED_TONE || streamUsage == STREAM_USAGE_ULTRASONIC ||
-        streamUsage == STREAM_USAGE_NAVIGATION || streamUsage == STREAM_USAGE_NOTIFICATION) {
-        return true;
-    }
-    return false;
 }
 
 bool PaAdapterManager::CheckHighResolution(const AudioProcessConfig &processConfig)
@@ -516,7 +526,7 @@ void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConf
 void PaAdapterManager::SetPlaybackProplist(pa_proplist *propList, AudioProcessConfig &processConfig)
 {
         pa_proplist_sets(propList, "scene.mode",
-            IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
+            processConfig.rendererInfo.effectMode == EFFECT_NONE ? "EFFECT_NONE" : "EFFECT_DEFAULT");
         // mark dup stream for dismissing volume handle
         std::string streamMode = managerType_ == DUP_PLAYBACK ? DUP_STREAM
             : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
@@ -621,7 +631,7 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
 }
 
 int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
-    SourceType source, const std::string &deviceName)
+    SourceType source, int32_t innerCapId, const std::string &deviceName)
 {
     AUDIO_DEBUG_LOG("Enter PaAdapterManager::ConnectStreamToPA");
     if (CheckReturnIfinvalid(mainLoop_ && context_ && paStream, ERROR) < 0) {
@@ -631,7 +641,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     PaLockGuard lock(mainLoop_);
     int32_t XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG;
     if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
-        int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
+        int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec, innerCapId);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
     if (managerType_ == RECORDER) {
@@ -660,7 +670,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
+int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, int32_t innerCapId)
 {
     uint32_t tlength = 4; // 4 is tlength of playback
     uint32_t maxlength = 4; // 4 is max buffer length of playback
@@ -679,7 +689,8 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
-    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK :
+    std::string dupSinkName = AppendDeviceName(innerCapId, AppendType::APPEND_RENDER);
+    const char *sinkName = managerType_ == DUP_PLAYBACK ? dupSinkName.c_str() :
         (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
     uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;
@@ -829,6 +840,9 @@ pa_sample_spec PaAdapterManager::ConvertToPAAudioParams(AudioProcessConfig proce
         case SAMPLE_S32LE:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_S32LE;
             break;
+        case SAMPLE_F32LE:
+            paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_FLOAT32LE;
+            break;
         default:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_INVALID;
             break;
@@ -903,6 +917,16 @@ const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
 uint64_t PaAdapterManager::GetLatency() noexcept
 {
     return 0;
+}
+// 连接时拼接上内录ID
+std::string PaAdapterManager::AppendDeviceName(int32_t innerCapId, AppendType type)
+{
+    if (type == AppendType::APPEND_CAPTURE) {
+        std::string tempDevName(INNER_CAPTURER_SINK);
+        return tempDevName + std::to_string(innerCapId) + ".monitor";
+    } else {
+        return std::string(INNER_CAPTURER_SINK) + std::to_string(innerCapId);
+    }
 }
 
 } // namespace AudioStandard

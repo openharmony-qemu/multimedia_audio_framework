@@ -68,8 +68,13 @@ public:
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    int32_t GetAppVolumeLevel(int32_t appUid);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+    int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
+    bool IsAppVolumeMute(int32_t appUid, bool owned);
+    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
     int32_t DisableSafeMediaVolume();
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
@@ -94,6 +99,7 @@ public:
     void SetDefaultDeviceLoadFlag(bool isLoad);
     void NotifyVolumeGroup();
     bool GetLoadFlag();
+    void UpdateSafeVolumeByS4();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),

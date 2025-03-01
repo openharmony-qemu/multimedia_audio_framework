@@ -16,11 +16,15 @@
 #ifndef ST_AUDIO_STATE_MANAGER_H
 #define ST_AUDIO_STATE_MANAGER_H
 
+#include <set>
+#include <shared_mutex>
 #include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+
+const int32_t INVALID_PID = -2;
 
 class AudioStateManager {
 public:
@@ -34,7 +38,8 @@ public:
     void SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Set call render device selected by the user
-    void SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+        const int32_t pid = INVALID_PID);
 
     // Set call capture device selected by the user
     void SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
@@ -47,6 +52,12 @@ public:
 
     // Set tone render device selected by the user
     void SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+
+    void ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
+    void UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
     // Get media render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredMediaRenderDevice();
@@ -71,6 +82,12 @@ public:
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
+    vector<shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
+    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage, shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
+
+    void SetAudioSceneOwnerPid(const int32_t pid);
+    int32_t GetAudioSceneOwnerPid();
+
 private:
     AudioStateManager() {};
     ~AudioStateManager() {};
@@ -80,7 +97,16 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRingRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
+
+    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorComparer> mediaExcludedDevices_;
+    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorComparer> callExcludedDevices_;
+
     std::mutex mutex_;
+    shared_mutex mediaExcludedDevicesMutex_;
+    shared_mutex callExcludedDevicesMutex_;
+    int32_t ownerPid_;
+    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedDeviceMapList_;
+    void RemoveForcedDeviceMapData(int32_t pid);
 };
 
 } // namespace AudioStandard

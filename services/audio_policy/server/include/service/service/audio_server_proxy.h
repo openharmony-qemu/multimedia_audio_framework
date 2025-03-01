@@ -95,6 +95,13 @@ public:
     int32_t SetSupportStreamUsageProxy(std::vector<int32_t> usage);
     int32_t SetCaptureSilentStateProxy(bool state);
     void NotifyAccountsChanged();
+    void GetAllSinkInputsProxy(std::vector<SinkInput> &sinkInputs);
+    void NotifyAudioPolicyReady();
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t SetInnerCapLimitProxy(uint32_t innerCapLimit);
+#endif
+    int32_t LoadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName);
+    void UnloadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName, bool force);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

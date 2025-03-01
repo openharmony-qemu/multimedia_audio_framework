@@ -26,8 +26,9 @@
 #include "audio_asr.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
-#include "i_audio_renderer_sink.h"
-#include "audio_renderer_sink.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
+#include "sink/i_audio_render_sink.h"
 
 using namespace std;
 
@@ -36,26 +37,34 @@ namespace AudioStandard {
 
 static const std::map<std::string, AsrAecMode> AEC_MODE_MAP = {
     {"BYPASS", AsrAecMode::BYPASS},
-    {"STANDARD", AsrAecMode::STANDARD}
+    {"STANDARD", AsrAecMode::STANDARD},
+    {"EXPAND", AsrAecMode::EXPAND},
+    {"FOLDED", AsrAecMode::FOLDED}
 };
 
 static const std::map<AsrAecMode, std::string> AEC_MODE_MAP_VERSE = {
     {AsrAecMode::BYPASS, "BYPASS"},
-    {AsrAecMode::STANDARD, "STANDARD"}
+    {AsrAecMode::STANDARD, "STANDARD"},
+    {AsrAecMode::EXPAND, "EXPAND"},
+    {AsrAecMode::FOLDED, "FOLDED"}
 };
 
 static const std::map<std::string, AsrNoiseSuppressionMode> NS_MODE_MAP = {
     {"BYPASS", AsrNoiseSuppressionMode::BYPASS},
     {"STANDARD", AsrNoiseSuppressionMode::STANDARD},
     {"NEAR_FIELD", AsrNoiseSuppressionMode::NEAR_FIELD},
-    {"FAR_FIELD", AsrNoiseSuppressionMode::FAR_FIELD}
+    {"FAR_FIELD", AsrNoiseSuppressionMode::FAR_FIELD},
+    {"FULL_DUPLEX_STANDARD", AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD},
+    {"FULL_DUPLEX_NEAR_FIELD", AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD},
 };
 
 static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = {
     {AsrNoiseSuppressionMode::BYPASS, "BYPASS"},
     {AsrNoiseSuppressionMode::STANDARD, "STANDARD"},
     {AsrNoiseSuppressionMode::NEAR_FIELD, "NEAR_FIELD"},
-    {AsrNoiseSuppressionMode::FAR_FIELD, "FAR_FIELD"}
+    {AsrNoiseSuppressionMode::FAR_FIELD, "FAR_FIELD"},
+    {AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD, "FULL_DUPLEX_STANDARD"},
+    {AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD, "FULL_DUPLEX_NEAR_FIELD"},
 };
 
 static const std::map<std::string, AsrWhisperDetectionMode> WHISPER_DETECTION_MODE_MAP = {
@@ -171,10 +180,11 @@ int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
     AudioServer::audioParameters[key] = value;
     AudioServer::audioParameters[keyAec] = valueAec;
     AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", valueAec);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", parmKey, "", value);
+    deviceManager->SetAudioParameter("primary", parmKey, "", valueAec);
     return 0;
 }
 
@@ -186,9 +196,10 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
     std::string key = "asr_aec_mode";
     std::string keyAec = "ASR_AEC";
     AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    std::string asrAecModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    std::string asrAecModeSink = deviceManager->GetAudioParameter("primary", parmKey, key);
     auto it = AudioServer::audioParameters.find(key);
     if (it != AudioServer::audioParameters.end()) {
         asrAecModeSink = it->second;
@@ -244,9 +255,10 @@ int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoise
     }
     AudioServer::audioParameters[key] = value;
     AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", parmKey, "", value);
     return 0;
 }
 
@@ -257,9 +269,10 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_ns_mode";
     AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    std::string asrNoiseSuppressionModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    std::string asrNoiseSuppressionModeSink = deviceManager->GetAudioParameter("primary", parmKey, key);
     auto it = AudioServer::audioParameters.find(key);
     if (it != AudioServer::audioParameters.end()) {
         asrNoiseSuppressionModeSink = it->second;
@@ -304,9 +317,10 @@ int32_t AudioServer::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisp
     }
     AudioServer::audioParameters[key] = value;
     AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", parmKey, "", value);
     return 0;
 }
 
@@ -317,9 +331,10 @@ int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhis
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_wd_mode";
     AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    std::string asrWhisperDetectionModeSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    std::string asrWhisperDetectionModeSink = deviceManager->GetAudioParameter("primary", parmKey, key);
     auto it = AudioServer::audioParameters.find(key);
     if (it != AudioServer::audioParameters.end()) {
         asrWhisperDetectionModeSink = it->second;
@@ -350,23 +365,21 @@ int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhis
 int32_t AudioServer::SetAsrVoiceSuppressionControlMode(
     const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode, bool on, int32_t modifyVolume)
 {
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     std::vector<std::string> modes = VOICE_CALL_ASSISTANT_SUPPRESSION.at(asrVoiceControlMode);
     std::set<std::string> needSuppression = VOICE_CALL_ASSISTANT_NEED_SUPPRESSION.at(asrVoiceControlMode);
     for (size_t i = 0; i < modes.size(); i++) {
         if (needSuppression.contains(modes[i]) && on) {
-            audioRendererSinkInstance->SetAudioParameter(paramKey, "",
-                modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
+            deviceManager->SetAudioParameter("primary", paramKey, "", modes[i] + "=" + VOICE_CALL_SUPPRESSION_VOLUME);
             continue;
         }
         if (modes[i] == TTS_2_MODEM_STRING || !on) {
-            audioRendererSinkInstance->SetAudioParameter(paramKey, "",
-                modes[i] + "=" + VOICE_CALL_FULL_VOLUME);
+            deviceManager->SetAudioParameter("primary", paramKey, "", modes[i] + "=" + VOICE_CALL_FULL_VOLUME);
             continue;
         }
-        audioRendererSinkInstance->SetAudioParameter(paramKey, "",
-            modes[i] + "=" + std::to_string(modifyVolume));
+        deviceManager->SetAudioParameter("primary", paramKey, "", modes[i] + "=" + std::to_string(modifyVolume));
     }
 
     return 0;
@@ -390,12 +403,13 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     }
 
     AudioParamKey paramKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     if ((itVerse != VC_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
         value = itVerse->second + "=" + res->second;
         AudioServer::audioParameters[key] = value;
-        audioRendererSinkInstance->SetAudioParameter(paramKey, "", value);
+        deviceManager->SetAudioParameter("primary", paramKey, "", value);
         return 0;
     }
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
@@ -430,9 +444,10 @@ int32_t AudioServer::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool
     }
     AudioServer::audioParameters[key] = value;
     AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(parmKey, "", value);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", parmKey, "", value);
     return 0;
 }
 
@@ -443,10 +458,10 @@ int32_t AudioServer::IsWhispering()
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_is_whisper";
     AudioParamKey parmKey = AudioParamKey::NONE;
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
-
-    std::string isWhisperSink = audioRendererSinkInstance->GetAudioParameter(parmKey, key);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    std::string isWhisperSink = deviceManager->GetAudioParameter("primary", parmKey, key);
     int32_t whisperRes = 0;
     if (isWhisperSink == "TRUE") {
         whisperRes = 1;

@@ -110,7 +110,7 @@ AudioSampleFormat ProRendererStreamImpl::GetDirectFormat(AudioSampleFormat forma
     }
 
     // Both SAMPLE_S16LE and SAMPLE_S32LE are supported for direct VoIP stream.
-    if (format == SAMPLE_S16LE || format == SAMPLE_S32LE) {
+    if (format == SAMPLE_S16LE || format == SAMPLE_S32LE || format == SAMPLE_F32LE) {
         return format;
     } else {
         AUDIO_WARNING_LOG("The format %{public}u is unsupported for direct VoIP. Use 32Bit.", format);
@@ -647,6 +647,11 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 
 void ProRendererStreamImpl::GetStreamVolume()
 {
+    if (processConfig_.streamType == STREAM_VOICE_COMMUNICATION) {
+        bufferInfo_.volumeBg = 1;
+        bufferInfo_.volumeEd = 1;
+        return;
+    }
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     bufferInfo_.volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
     bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME);

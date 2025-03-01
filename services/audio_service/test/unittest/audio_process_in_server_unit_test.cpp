@@ -27,6 +27,8 @@ namespace AudioStandard {
     const uint32_t SPAN_SIZE_IN_FRAME = 1000;
     const uint32_t TOTAL_SIZE_IN_FRAME = 1000;
     const int32_t INTELL_VOICE_SERVICR_UID = 1042;
+    constexpr uint32_t MIN_STREAMID_2 = UINT32_MAX - MIN_STREAMID + DEFAULT_STREAM_ID;
+    constexpr uint32_t MIN_STREAMID_3 = UINT32_MAX - MIN_STREAMID - DEFAULT_STREAM_ID;
 class AudioProcessInServerUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -732,6 +734,168 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_025, TestSize.Level1)
     ret = audioProcessInServerRet.RegisterThreadPriority(0, name);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_026
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_026, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
 
+    configRet.originalSessionId = DEFAULT_STREAM_ID;
+    auto audioProcessInServer = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_027
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_027, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+
+    configRet.originalSessionId = MIN_STREAMID_2;
+    auto audioProcessInServer = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_028
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_028, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+
+    configRet.originalSessionId = MIN_STREAMID_3;
+    auto audioProcessInServer = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_029
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_029, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+
+    auto audioProcessInServer = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+
+    bool isStandby = true;
+    int64_t enterStandbyTime = 0;
+
+    audioProcessInServer->processBuffer_ = nullptr;
+    auto ret = audioProcessInServer->GetStandbyStatus(isStandby, enterStandbyTime);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_030
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_030, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+
+    auto audioProcessInServer = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+
+    bool isStandby = true;
+    int64_t enterStandbyTime = 0;
+
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
+    uint32_t byteSizePerFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServer->processBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder,
+        TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, byteSizePerFrame);
+    EXPECT_NE(audioProcessInServer->processBuffer_, nullptr);
+
+    audioProcessInServer->processBuffer_->basicBufferInfo_ = nullptr;
+    auto ret = audioProcessInServer->GetStandbyStatus(isStandby, enterStandbyTime);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_031
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_031, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+
+    auto audioProcessInServer = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+
+    bool isStandby = true;
+    int64_t enterStandbyTime = INTELL_VOICE_SERVICR_UID;
+
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
+    uint32_t byteSizePerFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServer->processBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder,
+        TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, byteSizePerFrame);
+    EXPECT_NE(audioProcessInServer->processBuffer_, nullptr);
+
+    BasicBufferInfo basicBufferInfo;
+    audioProcessInServer->processBuffer_->basicBufferInfo_ = &basicBufferInfo;
+    EXPECT_NE(audioProcessInServer->processBuffer_->basicBufferInfo_, nullptr);
+    audioProcessInServer->processBuffer_->basicBufferInfo_->streamStatus = STREAM_STAND_BY;
+
+    audioProcessInServer->enterStandbyTime_ = DEFAULT_STREAM_ID;
+
+    auto ret = audioProcessInServer->GetStandbyStatus(isStandby, enterStandbyTime);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(enterStandbyTime, DEFAULT_STREAM_ID);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_032
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_032, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+
+    auto audioProcessInServer = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+
+    bool isStandby = true;
+    int64_t enterStandbyTime = INTELL_VOICE_SERVICR_UID;
+
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
+    uint32_t byteSizePerFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServer->processBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder,
+        TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, byteSizePerFrame);
+    EXPECT_NE(audioProcessInServer->processBuffer_, nullptr);
+
+    BasicBufferInfo basicBufferInfo;
+    audioProcessInServer->processBuffer_->basicBufferInfo_ = &basicBufferInfo;
+    EXPECT_NE(audioProcessInServer->processBuffer_->basicBufferInfo_, nullptr);
+    audioProcessInServer->processBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
+
+    audioProcessInServer->enterStandbyTime_ = DEFAULT_STREAM_ID;
+
+    auto ret = audioProcessInServer->GetStandbyStatus(isStandby, enterStandbyTime);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(enterStandbyTime, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

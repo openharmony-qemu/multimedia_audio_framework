@@ -69,7 +69,8 @@ public:
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj) override;
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
@@ -182,9 +183,12 @@ public:
     DeviceType GetDefaultOutputDevice() override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+
+    void SetSwitchingStatus(bool isSwitching) override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
+    int32_t SetCallbacksWhenRestore();
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;
@@ -214,6 +218,9 @@ private:
 
     std::mutex setPreferredFrameSizeMutex_;
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
+
+    std::mutex switchingMutex_;
+    StreamSwitchingInfo switchingInfo_ {false, INVALID};
 };
 } // namespace AudioStandard
 } // namespace OHOS

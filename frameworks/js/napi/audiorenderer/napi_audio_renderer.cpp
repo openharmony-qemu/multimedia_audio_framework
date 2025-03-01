@@ -175,6 +175,10 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
         return nullptr;
     }
 
+    if (rendererNapi->streamUsage_ == STREAM_USAGE_UNKNOWN) {
+        rendererNapi->audioRenderer_->SetOffloadAllowed(false);
+    }
+
     if (rendererNapi->audioRenderer_ != nullptr && rendererNapi->callbackNapi_ == nullptr) {
         rendererNapi->callbackNapi_ = std::make_shared<NapiAudioRendererCallback>(env);
         CHECK_AND_RETURN_RET_LOG(rendererNapi->callbackNapi_ != nullptr, nullptr, "No memory");

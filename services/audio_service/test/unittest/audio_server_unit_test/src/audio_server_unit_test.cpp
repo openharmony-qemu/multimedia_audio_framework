@@ -561,7 +561,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
     config.appInfo.appUid = INVALID_UID;
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     bool ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
     ret = audioServer->CheckRecorderPermission(config);
@@ -767,8 +767,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
     ret = audioServer->IsNormalIpcStream(config);
     EXPECT_EQ(false, ret);
     AudioParamKey key = NONE;
-    audioServer->OnAudioSinkParamChange("", key, "", "");
-    audioServer->OnAudioSourceParamChange("", key, "", "");
+    audioServer->OnRenderSinkParamChange("", key, "", "");
+    audioServer->OnCaptureSourceParamChange("", key, "", "");
     audioServer->OnWakeupClose();
     audioServer->OnCapturerState(true, 1);
     audioServer->OnCapturerState(false, 1);

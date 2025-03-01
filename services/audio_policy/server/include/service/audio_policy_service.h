@@ -76,6 +76,7 @@
 #include "audio_device_lock.h"
 #include "audio_capturer_session.h"
 #include "audio_device_status.h"
+#include "audio_global_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -103,7 +104,17 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
+    int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+
+    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
+
+    int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
+
+    bool IsAppVolumeMute(int32_t appUid, bool owned);
+
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+
+    int32_t GetAppVolumeLevel(int32_t appUid);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
@@ -139,6 +150,15 @@ public:
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
+    int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
+        AudioDeviceUsage audioDevUsage);
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
@@ -156,7 +176,7 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
@@ -213,6 +233,8 @@ public:
     int32_t ResumeStreamState();
 
     int32_t SetVirtualCall(const bool isVirtual);
+
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 
@@ -220,7 +242,7 @@ public:
 #endif
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
-        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE);
+        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
     void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
@@ -382,7 +404,8 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByUsageInner(AudioDeviceUsage usage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+        const int32_t pid = -1);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -404,6 +427,8 @@ public:
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
 
     void CheckHibernateState(bool onHibernate);
+
+    void UpdateSafeVolumeByS4();
 
     // for hidump
     int32_t GetCurActivateCount();
@@ -458,6 +483,11 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
+    void UpdateSpatializationSupported(const std::string macAddress, const bool support);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t LoadModernInnerCapSink(int32_t innerCapId);
+    int32_t UnloadModernInnerCapSink(int32_t innerCapId);
+#endif
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -471,6 +501,7 @@ private:
 #ifdef AUDIO_WIRED_DETECT
         audioPnpServer_(AudioPnpServer::GetAudioPnpServer()),
 #endif
+        audioGlobalConfigManager_(AudioGlobalConfigManager::GetAudioGlobalConfigManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
         audioConfigManager_(AudioConfigManager::GetInstance()),
@@ -488,6 +519,7 @@ private:
         audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
         audioDeviceStatus_(AudioDeviceStatus::GetInstance())
+        
     {
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
@@ -526,6 +558,7 @@ private:
 
     bool LoadAudioPolicyConfig();
     void CreateRecoveryThread();
+    void RecoverExcludedOutputDevices();
     void RecoveryPreferredDevices();
 
     void LoadHdiEffectModel();
@@ -539,9 +572,6 @@ private:
     bool GetAudioEffectOffloadFlag();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
-#ifdef HAS_FEATURE_INNERCAPTURER
-    void LoadModernInnerCapSink();
-#endif
     int32_t GetUid(int32_t sessionId);
 
     void UnregisterBluetoothListener();
@@ -553,6 +583,7 @@ private:
 private:
 
     static bool isBtListenerRegistered;
+    static bool isBtCrashed;
     bool isPnpDeviceConnected = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
@@ -601,7 +632,7 @@ private:
 #ifdef AUDIO_WIRED_DETECT
     AudioPnpServer &audioPnpServer_;
 #endif
-
+    AudioGlobalConfigManager &audioGlobalConfigManager_;
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL

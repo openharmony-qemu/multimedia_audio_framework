@@ -166,7 +166,7 @@ bool AudioSafeVolumeNotificationImpl::GetPixelMap()
     return true;
 }
 
-static void SetBasicOption(Notification::NotificationRequest &request)
+static void SetBasicOption(int32_t notificationId, Notification::NotificationRequest &request)
 {
     request.SetCreatorUid(SAVE_VOLUME_SYS_ABILITY_ID);
     Notification::NotificationBundleOption bundle(SAVE_VOLUME_SYS_ABILITY_NAME, SAVE_VOLUME_SYS_ABILITY_ID);
@@ -178,7 +178,11 @@ static void SetBasicOption(Notification::NotificationRequest &request)
     request.SetAutoDeletedTime(OHOS::Notification::NotificationConstant::INVALID_AUTO_DELETE_TIME);
     request.SetTapDismissed(false);
     request.SetSlotType(OHOS::Notification::NotificationConstant::SlotType::SOCIAL_COMMUNICATION);
-    request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG);
+    if (notificationId == RESTORE_VOLUME_NOTIFICATION_ID) {
+        request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG);
+    } else {
+        request.SetNotificationControlFlags(NOTIFICATION_BANNER_FLAG | NOTIFICATION_CLOSE_SOUND_FLAG);
+    }
 }
 
 void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t notificationId)
@@ -204,7 +208,7 @@ void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t noti
     }
 
     Notification::NotificationRequest request;
-    SetBasicOption(request);
+    SetBasicOption(notificationId, request);
     request.SetContent(content);
     request.SetNotificationId(notificationId);
     GetPixelMap();

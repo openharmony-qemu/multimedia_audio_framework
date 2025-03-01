@@ -246,7 +246,7 @@ HWTEST(AudioEffectConfigParserUnitTest, AudioEffectConfigParser_006, TestSize.Le
 
     ret = parser.LoadEffectConfig(result);
     EXPECT_NE(ret, 0);
-    EXPECT_NE(result.effects.size(), 2);
+    EXPECT_EQ(result.effects.size(), 2);
 }
 
 /**

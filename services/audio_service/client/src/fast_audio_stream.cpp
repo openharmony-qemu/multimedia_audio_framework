@@ -91,6 +91,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.contentType = rendererInfo_.contentType;
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+        config.rendererInfo.volumeMode = rendererInfo_.volumeMode;
         config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
         config.rendererInfo.playerType = rendererInfo_.playerType;
         config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
@@ -106,7 +107,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
 }
 
 int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
-    const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj,
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     AUDIO_INFO_LOG("FastAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
         " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);
@@ -163,6 +165,11 @@ void FastAudioStream::GetAudioPipeType(AudioPipeType &pipeType)
 
 State FastAudioStream::GetState()
 {
+    std::lock_guard lock(switchingMutex_);
+    if (switchingInfo_.isSwitching_) {
+        AUDIO_INFO_LOG("switching, return state in switchingInfo");
+        return switchingInfo_.state_;
+    }
     return state_;
 }
 
@@ -834,27 +841,18 @@ bool FastAudioStream::RestoreAudioStream(bool needStoreState)
         processClient_->Release();
         processClient_ = nullptr;
     }
-    int32_t ret = SetAudioStreamInfo(streamInfo_, proxyObj_);
-    if (ret != SUCCESS) {
+    if (SetAudioStreamInfo(streamInfo_, proxyObj_) != SUCCESS || SetCallbacksWhenRestore() != SUCCESS) {
         goto error;
     }
     switch (oldState) {
         case RUNNING:
-            CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
-            if (eMode_ == AUDIO_MODE_PLAYBACK) {
-                ret = processClient_->SaveDataCallback(spkProcClientCb_);
-            } else if (eMode_ == AUDIO_MODE_RECORD) {
-                ret = processClient_->SaveDataCallback(micProcClientCb_);
-            }
-            if (ret != SUCCESS) {
-                goto error;
-            }
             result = StartAudioStream();
             break;
         case PAUSED:
             result = StartAudioStream() && PauseAudioStream();
             break;
         case STOPPED:
+            [[fallthrough]];
         case STOPPING:
             result = StartAudioStream() && StopAudioStream();
             break;
@@ -904,6 +902,28 @@ DeviceType FastAudioStream::GetDefaultOutputDevice()
 int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     return GetAudioTime(timestamp, base);
+}
+
+void FastAudioStream::SetSwitchingStatus(bool isSwitching)
+{
+    std::lock_guard lock(switchingMutex_);
+    if (isSwitching) {
+        switchingInfo_ = {true, state_};
+    } else {
+        switchingInfo_ = {false, INVALID};
+    }
+}
+
+int32_t FastAudioStream::SetCallbacksWhenRestore()
+{
+    int32_t ret = SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERROR_INVALID_PARAM, "processClient_ is null");
+    if (eMode_ == AUDIO_MODE_PLAYBACK) {
+        ret = processClient_->SaveDataCallback(spkProcClientCb_);
+    } else if (eMode_ == AUDIO_MODE_RECORD) {
+        ret = processClient_->SaveDataCallback(micProcClientCb_);
+    }
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

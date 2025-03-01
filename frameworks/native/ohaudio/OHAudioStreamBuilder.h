@@ -41,6 +41,7 @@ public:
     OH_AudioStream_Result SetChannelLayout(AudioChannelLayout channelLayout);
 
     OH_AudioStream_Result SetRendererInfo(StreamUsage usage);
+    OH_AudioStream_Result SetAudioVolumeMode(AudioVolumeMode volumeMode);
     OH_AudioStream_Result SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void *userData);
     OH_AudioStream_Result SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
     void *userData);
@@ -69,7 +70,7 @@ private:
     // renderer params
     StreamUsage usage_ = STREAM_USAGE_UNKNOWN;
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
-
+    AudioVolumeMode volumeMode_ = SYSTEM_GLOBAL;
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;
 
