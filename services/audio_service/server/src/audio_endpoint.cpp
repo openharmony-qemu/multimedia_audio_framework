@@ -2191,12 +2191,12 @@ uint32_t AudioEndpointInner::GetLinkedProcessCount()
     return processList_.size();
 }
 
-bool AudioEndpointInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, int32_t index)
+bool AudioEndpointInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, AudioSampleFormat format)
 {
     bool isInvalid = false;
     uint8_t ui8Data = 0;
     int16_t i16Data = 0;
-    switch (processList_[index]->GetStreamInfo().format) {
+    switch (format) {
         case SAMPLE_U8:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
             ui8Data = *buffer;
@@ -2217,7 +2217,7 @@ void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSiz
 {
     auto tempProcess = processList_[index];
     CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
-    if (IsInvalidBuffer(buffer, bufferSize, index)) {
+    if (IsInvalidBuffer(buffer, bufferSize, processList_[index]->GetStreamInfo().format)) {
         if (tempProcess->GetStartMuteTime() == 0) {
             tempProcess->SetStartMuteTime(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
         }
