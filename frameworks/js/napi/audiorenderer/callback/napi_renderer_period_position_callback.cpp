@@ -41,18 +41,39 @@ NapiRendererPeriodPositionCallback::~NapiRendererPeriodPositionCallback()
 void NapiRendererPeriodPositionCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    napi_ref callback = nullptr;
-    const int32_t refCount = 1;
-    napi_status status = napi_create_reference(env_, args, refCount, &callback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-        "creating reference for callback fail");
+    //create function that will operate while save callback reference success.
+    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
+        [this](std::shared_ptr<AutoRef> generatedCallback) {
+        renderPeriodPositionCallback_ = generatedCallback;
+    };
+    NapiAudioRendererCallbackInner::SaveCallbackReferenceInner(callbackName, args, successed);
+    AUDIO_DEBUG_LOG("SaveAudioPeriodPositionCallback successful");
+}
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    if (callbackName == PERIOD_REACH_CALLBACK_NAME) {
-        renderPeriodPositionCallback_ = cb;
-    } else {
-        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
-    }
+std::shared_ptr<AutoRef> &NapiRendererPeriodPositionCallback::GetCallback(const std::string &callbackName)
+{
+    return renderPeriodPositionCallback_;
+}
+
+void NapiRendererPeriodPositionCallback::RemoveCallbackReference(
+    const std::string &callbackName, napi_env env, napi_value callback, napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    //create function that will operate while save callback reference success.
+    std::function<void()> successed = [this]() {
+        renderPeriodPositionCallback_ = nullptr;
+    };
+    RemoveCallbackReferenceInner(callbackName, env, callback, successed);
+}
+
+napi_env &NapiRendererPeriodPositionCallback::GetEnv()
+{
+    return env_;
+}
+
+bool NapiRendererPeriodPositionCallback::CheckIfTargetCallbackName(const std::string &callbackName)
+{
+    return (callbackName == PERIOD_REACH_CALLBACK_NAME);
 }
 
 void NapiRendererPeriodPositionCallback::CreatePeriodReachTsfn(napi_env env)

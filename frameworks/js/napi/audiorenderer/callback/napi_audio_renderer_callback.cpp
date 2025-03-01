@@ -72,20 +72,50 @@ void NapiAudioRendererCallback::OnStateChange(const RendererState state,
 void NapiAudioRendererCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    napi_ref callback = nullptr;
-    const int32_t refCount = 1;
-    napi_status status = napi_create_reference(env_, args, refCount, &callback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-        "creating reference for callback fail");
+    // create function that will operate while save callback reference success.
+    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
+        [this, callbackName](std::shared_ptr<AutoRef> generatedCallback) {
+        if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
+            interruptCallback_ = generatedCallback;
+            return;
+        }
+        if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
+            stateChangeCallback_ = generatedCallback;
+            return;
+        }
+    };
+    NapiAudioRendererCallbackInner::SaveCallbackReferenceInner(callbackName, args, successed);
+}
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+void NapiAudioRendererCallback::RemoveCallbackReference(const std::string &callbackName, napi_env env,
+    napi_value callback, napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    // create function that will operate while save callback reference success.
+    std::function<void()> successed = [this, callbackName]() {
+        if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
+            interruptCallback_ = nullptr;
+            return;
+        }
+        if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
+            stateChangeCallback_ = nullptr;
+            return;
+        }
+    };
+    RemoveCallbackReferenceInner(callbackName, env, callback, successed);
+}
+
+std::shared_ptr<AutoRef> &NapiAudioRendererCallback::GetCallback(const std::string &callbackName)
+{
+    std::shared_ptr<AutoRef> cb = nullptr;
     if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
-        interruptCallback_ = cb;
-    } else if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
-        stateChangeCallback_ = cb;
-    } else {
-        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
+        return interruptCallback_;
     }
+    if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
+        return stateChangeCallback_;
+    }
+    AUDIO_ERR_LOG("NapiAudioRendererCallback->GetCallback Unknown callback type: %{public}s", callbackName.c_str());
+    return cb;
 }
 
 void NapiAudioRendererCallback::CreateArInterrupt(napi_env env)
@@ -118,17 +148,18 @@ bool NapiAudioRendererCallback::GetArStateChangeTsfnFlag()
     return regArStateChgTsfn_;
 }
 
-void NapiAudioRendererCallback::RemoveCallbackReference(const std::string &callbackName)
+napi_env &NapiAudioRendererCallback::GetEnv()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    return env_;
+}
 
-    if (callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
-        interruptCallback_ = nullptr;
-    } else if (callbackName == STATE_CHANGE_CALLBACK_NAME) {
-        stateChangeCallback_ = nullptr;
-    } else {
-        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
+bool NapiAudioRendererCallback::CheckIfTargetCallbackName(const std::string &callbackName)
+{
+    if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME ||
+        callbackName == STATE_CHANGE_CALLBACK_NAME) {
+        return true;
     }
+    return false;
 }
 
 void NapiAudioRendererCallback::SafeJsCallbackInterruptWork(napi_env env, napi_value js_cb, void *context, void *data)
