@@ -332,9 +332,11 @@ void LocalDeviceManager::DestroyCapture(const std::string &adapterName, uint32_t
 
 void LocalDeviceManager::DumpInfo(std::string &dumpString)
 {
-    for (auto &item :adapters_) {
-        dumpString += "  - local/" + item.first + "\trenderNum: " + std::to_string(item.second->renderNum_) +
-            "\tcaptureNum: " + std::to_string(item.second->captureNum_) + "\n";
+    for (auto &item : adapters_) {
+        uint32_t renderNum = item.second == nullptr ? 0 : item.second->renderNum_;
+        uint32_t captureNum = item.second == nullptr ? 0 : item.second->captureNum_;
+        dumpString += "  - local/" + item.first + "\trenderNum: " + std::to_string(renderNum) + "\tcaptureNum: " +
+            std::to_string(captureNum) + "\n";
     }
 }
 
@@ -375,7 +377,7 @@ std::shared_ptr<LocalAdapterWrapper> LocalDeviceManager::GetAdapter(const std::s
     }
     LoadAdapter(adapterName);
     std::lock_guard<std::mutex> lock(adapterMtx_);
-    return adapters_[adapterName];
+    return adapters_.count(adapterName) == 0 ? nullptr : adapters_[adapterName];
 }
 
 int32_t LocalDeviceManager::SwitchAdapterDesc(struct AudioAdapterDescriptor *descs, const std::string &adapterName,
