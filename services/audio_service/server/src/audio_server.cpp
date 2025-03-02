@@ -1168,7 +1168,6 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
         }
         AUDIO_INFO_LOG("callerUid %{public}d, innerCapMode %{public}d", config.callerUid, config.innerCapMode);
     } else {
-        AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission denied");
         config.isInnerCapturer = false;
     }
 #ifdef AUDIO_BUILD_VARIANT_ROOT
