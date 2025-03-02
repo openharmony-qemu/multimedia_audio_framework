@@ -144,7 +144,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
         return descs;
     }
-    bool isCallScene = false;
+    StreamUsage callStreamUsage = streamUsage;
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
@@ -153,9 +153,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
             AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
             if (desc->deviceType_ == DEVICE_TYPE_NONE) {
-                isCallScene = true;
-                StreamUsage callStreamUsage =
-                    AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+                callStreamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
                 AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
                     callStreamUsage);
                 desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType);
@@ -175,17 +173,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     }
     if (audioDeviceRefinerCb_ != nullptr &&
         !NeedSkipSelectAudioOutputDeviceRefined(streamUsage, descs)) {
-        if (isCallScene) {
-            StreamUsage callStreamUsage =
-                AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
-            AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
-                callStreamUsage);
-            audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType,
+        audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType,
             callStreamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
-        } else {
-            audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType,
-            streamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
-        }
     }
     int32_t audioId_ = descs[0]->deviceId_;
     DeviceType type = descs[0]->deviceType_;
