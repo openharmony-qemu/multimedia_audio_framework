@@ -286,6 +286,7 @@ public:
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
 
     virtual void SetSwitchingStatus(bool isSwitching) = 0;
+    virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
 };
 } // namespace AudioStandard
 } // namespace OHOS

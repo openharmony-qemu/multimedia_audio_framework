@@ -32,7 +32,7 @@ class CapturerPolicyServiceDiedCallback;
 class InputDeviceChangeWithInfoCallbackImpl;
 class AudioCapturerConcurrencyCallbackImpl;
 
-class AudioCapturerPrivate : public AudioCapturer {
+class AudioCapturerPrivate : public AudioCapturer, public std::enable_shared_from_this<AudioCapturerPrivate> {
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t SetParams(const AudioCapturerParams params) override;
@@ -87,6 +87,7 @@ public:
     std::vector<sptr<MicrophoneDescriptor>> GetCurrentMicrophones() const override;
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
+    void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
     uint32_t GetOverflowCount() const override;
 
@@ -190,12 +191,14 @@ private:
 
 class AudioStreamCallbackCapturer : public AudioStreamCallback {
 public:
+    AudioStreamCallbackCapturer(std::weak_ptr<AudioCapturerPrivate> capturer);
     virtual ~AudioStreamCallbackCapturer() = default;
 
     void OnStateChange(const State state, const StateChangeCmdType __attribute__((unused)) cmdType) override;
     void SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback);
 private:
     std::weak_ptr<AudioCapturerCallback> callback_;
+    std::weak_ptr<AudioCapturerPrivate> capturer_;
 };
 
 class AudioCapturerStateChangeCallbackImpl : public AudioCapturerStateChangeCallback {

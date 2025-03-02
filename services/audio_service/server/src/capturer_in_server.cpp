@@ -157,6 +157,7 @@ int32_t CapturerInServer::Init()
         + "_capturer_server_out_" + std::to_string(tempInfo.samplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpS2C_);
+    recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, streamIndex_);
 
     return SUCCESS;
 }
@@ -170,7 +171,7 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         return;
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    CHECK_AND_RETURN_LOG((stateListener != nullptr && recorderDfx_ != nullptr), "IStreamListener is nullptr");
     switch (operation) {
         case OPERATION_UNDERFLOW:
             underflowCount += 1;
@@ -179,31 +180,43 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
+            lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
             stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
+            recorderDfx_->WriteDfxActionMsg(streamIndex_, CAPTURER_STAGE_PAUSE_OK);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
+            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+            recorderDfx_->WriteDfxStopMsg(streamIndex_, CAPTURER_STAGE_STOP_OK,
+                GetLastAudioDuration(), processConfig_);
             break;
         case OPERATION_FLUSHED:
-            if (status_ == I_STATUS_FLUSHING_WHEN_STARTED) {
-                status_ = I_STATUS_STARTED;
-            } else if (status_ == I_STATUS_FLUSHING_WHEN_PAUSED) {
-                status_ = I_STATUS_PAUSED;
-            } else if (status_ == I_STATUS_FLUSHING_WHEN_STOPPED) {
-                status_ = I_STATUS_STOPPED;
-            } else {
-                AUDIO_WARNING_LOG("Invalid status before flusing");
-            }
+            HandleOperationFlushed();
             stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
+    }
+}
+
+void CapturerInServer::HandleOperationFlushed()
+{
+    if (status_ == I_STATUS_FLUSHING_WHEN_STARTED) {
+        status_ = I_STATUS_STARTED;
+    } else if (status_ == I_STATUS_FLUSHING_WHEN_PAUSED) {
+        status_ = I_STATUS_PAUSED;
+    } else if (status_ == I_STATUS_FLUSHING_WHEN_STOPPED) {
+        status_ = I_STATUS_STOPPED;
+    } else {
+        AUDIO_WARNING_LOG("Invalid status before flusing");
     }
 }
 
@@ -311,6 +324,16 @@ int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
 }
 
 int32_t CapturerInServer::Start()
+{
+    bool ret = StartInner();
+    CapturerStage stage = ret ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
+    if (recorderDfx_) {
+        recorderDfx_->WriteDfxStartMsg(streamIndex_, stage, processConfig_);
+    }
+    return ret;
+}
+
+int32_t CapturerInServer::StartInner()
 {
     needStart = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
@@ -607,5 +630,12 @@ void CapturerInServer::RestoreSession()
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
     stateListener->OnOperationHandled(RESTORE_SESSION, 0);
 }
+
+int64_t CapturerInServer::GetLastAudioDuration()
+{
+    auto ret = lastStopTime_ - lastStartTime_;
+    return ret < 0 ? -1 : ret;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

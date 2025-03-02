@@ -470,7 +470,7 @@ int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCap
 
     // Save and Set reference for stream callback. Order is important here.
     if (audioStreamCallback_ == nullptr) {
-        audioStreamCallback_ = std::make_shared<AudioStreamCallbackCapturer>();
+        audioStreamCallback_ = std::make_shared<AudioStreamCallbackCapturer>(weak_from_this());
         CHECK_AND_RETURN_RET_LOG(audioStreamCallback_ != nullptr, ERROR,
             "Failed to allocate memory for audioStreamCallback_");
     }
@@ -813,6 +813,11 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     HandleAndNotifyForcedEvent(interruptEvent);
 }
 
+AudioStreamCallbackCapturer::AudioStreamCallbackCapturer(std::weak_ptr<AudioCapturerPrivate> capturer)
+    : capturer_(capturer)
+{
+}
+
 void AudioStreamCallbackCapturer::SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback)
 {
     callback_ = callback;
@@ -821,11 +826,18 @@ void AudioStreamCallbackCapturer::SaveCallback(const std::weak_ptr<AudioCapturer
 void AudioStreamCallbackCapturer::OnStateChange(const State state,
     const StateChangeCmdType __attribute__((unused)) cmdType)
 {
+    std::shared_ptr<AudioCapturerPrivate> capturerObj = capturer_.lock();
+    CHECK_AND_RETURN_LOG(capturerObj != nullptr, "capturerObj is nullptr");
     std::shared_ptr<AudioCapturerCallback> cb = callback_.lock();
-
     CHECK_AND_RETURN_LOG(cb != nullptr, "AudioStreamCallbackCapturer::OnStateChange cb == nullptr.");
 
-    cb->OnStateChange(static_cast<CapturerState>(state));
+    auto captureState = static_cast<CapturerState>(state);
+    cb->OnStateChange(captureState);
+
+    AudioInterrupt audioInterrupt;
+    capturerObj->GetAudioInterrupt(audioInterrupt);
+    audioInterrupt.state = state;
+    capturerObj->SetAudioInterrupt(audioInterrupt);
 }
 
 std::vector<AudioSampleFormat> AudioCapturer::GetSupportedFormats()
@@ -1035,6 +1047,11 @@ bool AudioCapturerPrivate::IsDeviceChanged(AudioDeviceDescriptor &newDeviceInfo)
 void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
 {
     audioInterrupt = audioInterrupt_;
+}
+
+void AudioCapturerPrivate::SetAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt_ = audioInterrupt;
 }
 
 void AudioCapturerPrivate::WriteOverflowEvent() const
