@@ -46,9 +46,6 @@ ohos_shared_library("module-hdi-sink") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   sources = [
     "hdi_sink.c",
@@ -99,9 +96,6 @@ ohos_shared_library("module-hdi-source") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   sources = [
     "hdi_source.c",
@@ -146,9 +140,6 @@ ohos_shared_library("module-split-stream-sink") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
   }
   sources = [ "module_split_stream_sink.c" ]
 
