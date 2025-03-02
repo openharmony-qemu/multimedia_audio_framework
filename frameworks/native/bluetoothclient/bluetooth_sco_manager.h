@@ -37,6 +37,7 @@ private:
     static AudioScoState currentScoState_;
     static AudioScoMode  currentScoMode_;
     static AudioScoMode  lastScoMode_;
+};
 }
 }
 #endif
