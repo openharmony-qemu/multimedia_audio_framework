@@ -607,7 +607,7 @@ int32_t AudioHfpManager::DisconnectSco()
     int8_t currentScoCategory = GetScoCategoryFromScene(scene_);
     if (currentScoCategory == ScoCategory::SCO_DEFAULT) {
         CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "nullptr hfpInstance_");
-        int32_t ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(ScoCategory::SCO_VIRTUAL));
+        int32_t ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_VIRTUAL);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
         return SUCCESS;
     }
