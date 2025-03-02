@@ -64,6 +64,21 @@ enum RecognitionStatus : int32_t {
     RECOGNITION_DISCONNECTING = 2,
     RECOGNITION_DISCONNECTED = 3,
 };
+enum AudioScoState : int32_t {
+    DEFAULT_STATE = 0,
+    CONNECTED = 1,
+    DISCONNECTED = 2,
+    CONNECT_AFTER_DISCONNECTED = 3,
+    DISCONNECT_AFTER_CONNECTED = 4,
+    CONNECTING = 5,
+    DISCONNECTING = 6,
+};
+enum AudioScoMode : int32_t {
+    DEFAULT_MODE = 0,
+    CALL_MODE = 1,
+    VOIP_MODE = 2,
+    REC_MODE = 3,
+};
 
 } // namespace Bluetooth
 } // namespace OHOS

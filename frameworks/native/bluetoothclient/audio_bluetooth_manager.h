@@ -22,6 +22,7 @@
 #include "bluetooth_hfp_ag.h"
 #include "audio_info.h"
 #include "bluetooth_device_utils.h"
+#include "bluetooth_sco_manager.h"
 
 namespace OHOS {
 namespace Bluetooth {
