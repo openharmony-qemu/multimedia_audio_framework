@@ -193,7 +193,7 @@ public:
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-        AudioRendererInfo &rendererInfo) override;
+        AudioRendererInfo &rendererInfo, bool forceNoBTPermission) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;

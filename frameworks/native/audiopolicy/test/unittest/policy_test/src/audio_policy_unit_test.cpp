@@ -347,6 +347,20 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_004
 }
 
 /**
+ * @tc.name  : Test Audio_Policy_GetPreferredOutputDeviceDescriptors_005 via legal state
+ * @tc.number: Audio_Policy_GetPreferredOutputDeviceDescriptors_005
+ * @tc.desc  : Test GetPreferredOutputDeviceDescriptors interface. Get preferred output devices and returns deviceInfo.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_005, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
+    deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo, true);
+    EXPECT_GT(deviceInfo.size(), 0);
+}
+
+/**
  * @tc.name  : Test Audio_Policy_GetPreferredInputDeviceDescriptors_001 via illegal state
  * @tc.number: Audio_Policy_GetPreferredInputDeviceDescriptors_001
  * @tc.desc  : Test GetPreferredInputDeviceDescriptors interface. Get preferred input devices and returns deviceInfo.

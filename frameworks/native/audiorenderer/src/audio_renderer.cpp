@@ -2173,14 +2173,13 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
         rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
     } else if (streamClass == IAudioStream::FAST_STREAM) {
         rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
-    } else {
+    } else if (streamType == STREAM_MUSIC && audioStreamParams.samplingRate >= SAMPLE_RATE_48000 &&
+        audioStreamParams.format >= SAMPLE_S24LE) {
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
-            AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo_);
+            AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo_, true);
         if (!deviceDescriptors.empty() && deviceDescriptors[0] != nullptr) {
             if ((deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_USB_HEADSET ||
-                deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) &&
-                streamType == STREAM_MUSIC && audioStreamParams.samplingRate >= SAMPLE_RATE_48000 &&
-                audioStreamParams.format >= SAMPLE_S24LE) {
+                deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_WIRED_HEADSET)) {
                 rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
             }
         }

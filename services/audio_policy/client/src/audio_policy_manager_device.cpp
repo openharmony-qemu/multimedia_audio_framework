@@ -104,7 +104,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevic
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo)
+    AudioRendererInfo &rendererInfo, bool forceNoBTPermission)
 {
     AudioXCollie audioXCollie("AudioPolicyManager::GetPreferredOutputDeviceDescriptors", TIME_OUT_SECONDS);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -113,7 +113,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPrefe
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceInfo;
         return deviceInfo;
     }
-    return gsp->GetPreferredOutputDeviceDescriptors(rendererInfo);
+    return gsp->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredInputDeviceDescriptors(

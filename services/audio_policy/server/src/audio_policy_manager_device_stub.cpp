@@ -52,7 +52,9 @@ void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(Message
 {
     AudioRendererInfo rendererInfo;
     rendererInfo.Unmarshalling(data);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetPreferredOutputDeviceDescriptors(rendererInfo);
+    bool forceNoBTPermission = data.ReadBool();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
+        GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission);
     int32_t size = static_cast<int32_t>(devices.size());
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {

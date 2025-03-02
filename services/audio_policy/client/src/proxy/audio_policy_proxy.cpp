@@ -305,7 +305,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo)
+    AudioRendererInfo &rendererInfo, bool forceNoBTPermission)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -317,6 +317,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferr
 
     bool res = rendererInfo.Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(res, deviceInfo, "AudioRendererInfo Marshalling() failed");
+
+    data.WriteBool(forceNoBTPermission);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS), data, reply, option);
