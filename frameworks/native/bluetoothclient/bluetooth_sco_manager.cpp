@@ -26,7 +26,7 @@ namespace OHOS {
 namespace Bluetooth {
 using namespace AudioStandard;
 
-AudioScoState BluetoothScoManager::currentScoState_ = AudioScoState::DEFAULT_STATE;
+AudioScoState BluetoothScoManager::currentScoState_ = AudioScoState::DISCONNECTED;
 AudioScoMode BluetoothScoManager::currentScoMode_ = AudioScoMode::DEFAULT_MODE;
 AudioScoMode BluetoothScoManager::lastScoMode_ = AudioScoMode::DEFAULT_MODE;
 HandsFreeAudioGateway *BluetoothScoManager::hfpInstance_ = HandsFreeAudioGateway::GetProfile();
@@ -66,7 +66,7 @@ int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory, Bluetooth
     lastScoMode_ = currentScoMode_;
     currentScoMode_ = BluetoothScoManager::GetScoModeFromCategery(scoCategory);
     int32_t ret = ERROR;
-    if (lastScoState == AudioScoState::DISCONNECTED || lastScoState == AudioScoMode::DEFAULT_STATE) {
+    if (lastScoState == AudioScoState::DISCONNECTED) {
         if (currentScoMode_ == AudioScoMode::REC_MODE) {
             ret = ((hfpInstance_->OpenVoiceRecognition(*device) == true) ? SUCCESS : ERROR);
         } else {
@@ -92,7 +92,7 @@ int32_t BluetoothScoManager::HandleScoDisconnect(ScoCategory scoCategory, Blueto
     lastScoMode_ = currentScoMode_;
     currentScoMode_ = BluetoothScoManager::GetScoModeFromCategery(scoCategory);
     int32_t ret = ERROR;
-    if (lastScoState == AudioScoState::CONNECTED || lastScoState == AudioScoMode::DEFAULT_STATE) {
+    if (lastScoState == AudioScoState::CONNECTED) {
         if (currentScoMode_ == AudioScoMode::REC_MODE) {
             ret = ((hfpInstance_->CloseVoiceRecognition(*device) == true) ? SUCCESS : ERROR);
         } else {
