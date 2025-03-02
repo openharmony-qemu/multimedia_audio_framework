@@ -24,7 +24,7 @@
 #include "bluetooth_device_utils.h"
  
 namespace OHOS {
-namespace BluetoothScoManager {
+namespace Bluetooth {
 class BluetoothScoManager {
 public:
     static void UpdateScoState(HfpScoConnectState scoState);
