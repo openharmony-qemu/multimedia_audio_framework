@@ -146,7 +146,7 @@ public:
 
     uint32_t GetEffectLatency(const std::string &sessionId) override;
 
-    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+    float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) override;
 
     void ResetAudioEndpoint() override;
 

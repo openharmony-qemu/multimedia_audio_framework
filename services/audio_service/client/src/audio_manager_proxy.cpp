@@ -967,7 +967,7 @@ uint32_t AudioManagerProxy::GetEffectLatency(const std::string &sessionId)
     return reply.ReadUint32();
 }
 
-float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
+float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType)
 {
     int32_t error;
     MessageParcel data;
@@ -977,7 +977,8 @@ float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteBool(isOutputDevice);
-    data.WriteInt32(deviceType);
+    data.WriteString(deviceClass);
+    data.WriteInt32(static_cast<int32_t>(sourceType));
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE), data, reply, option);

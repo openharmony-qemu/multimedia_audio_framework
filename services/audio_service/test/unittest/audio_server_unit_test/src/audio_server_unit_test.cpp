@@ -611,16 +611,16 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetMaxAmplitude_001, TestSize.Level1)
     std::string timestamp = "";
     audioServer->UpdateLatencyTimestamp(timestamp, true);
     audioServer->UpdateLatencyTimestamp(timestamp, false);
-    float ret = audioServer->GetMaxAmplitude(false, DEVICE_TYPE_USB_ARM_HEADSET);
+    float ret = audioServer->GetMaxAmplitude(false, "usb", SOURCE_TYPE_MIC);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetMaxAmplitude(false, DEVICE_TYPE_BLUETOOTH_A2DP);
+    ret = audioServer->GetMaxAmplitude(false, "a2dp", SOURCE_TYPE_MIC);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetMaxAmplitude(true, DEVICE_TYPE_USB_ARM_HEADSET);
+    ret = audioServer->GetMaxAmplitude(true, "usb", SOURCE_TYPE_INVALID);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetMaxAmplitude(true, DEVICE_TYPE_BLUETOOTH_A2DP);
+    ret = audioServer->GetMaxAmplitude(true, "a2dp", SOURCE_TYPE_INVALID);
     EXPECT_EQ(0, ret);
 }
 

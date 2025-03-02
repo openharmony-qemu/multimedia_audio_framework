@@ -78,6 +78,8 @@ public:
     PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);
 
     int32_t UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    std::string GetOutputDeviceClassBySinkPortName(std::string sinkPortName);
+    std::string GetInputDeviceClassBySourcePortName(std::string sourcePortName);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
