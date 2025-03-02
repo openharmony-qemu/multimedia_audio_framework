@@ -8285,6 +8285,40 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : InitSwitchInfo_ShouldSetRendererFlags_WhenRendererFlagsIsNormal
+ * @tc.number: InitSwitchInfoTest_002
+ * @tc.desc  : Test when rendererFlags is AUDIO_FLAG_NORMAL then rendererFlags is set to AUDIO_FLAG_NORMAL
+ */
+HWTEST(AudioRendererUnitTest, InitSwitchInfo_ShouldSetRendererFlags_WhenRendererFlagsIsNormal, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
+    IAudioStream::SwitchInfo info;
+    audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    EXPECT_EQ(info.rendererInfo.rendererFlags, AUDIO_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name  : InitSwitchInfo_ShouldSetRendererFlags_WhenRendererFlagsIsMMAP
+ * @tc.number: InitSwitchInfoTest_003
+ * @tc.desc  : Test when rendererFlags is AUDIO_FLAG_MMAP then rendererFlags is set to AUDIO_FLAG_MMAP
+ */
+HWTEST(AudioRendererUnitTest, InitSwitchInfo_ShouldSetRendererFlags_WhenRendererFlagsIsMMAP, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::StreamClass targetClass = IAudioStream::FAST_STREAM;
+    IAudioStream::SwitchInfo info;
+    audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    EXPECT_EQ(info.rendererInfo.rendererFlags, AUDIO_FLAG_MMAP);
+}
+
+/**
  * @tc.name  : Test RestoreTheadLoop
  * @tc.number: RestoreTheadLoop
  * @tc.desc  : Test RestoreTheadLoop
