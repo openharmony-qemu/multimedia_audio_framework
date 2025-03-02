@@ -32,7 +32,7 @@ AudioScoMode BluetoothScoManager::lastScoMode_ = AudioScoMode::DEFAULT_MODE;
 HandsFreeAudioGateway *BluetoothScoManager::hfpInstance_ = HandsFreeAudioGateway::GetProfile();
 std::mutex g_scoStateLock;
 
-void BluetoothScoManager::GetScoStateChange(HfpScoConnectState scoState)
+void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState)
 {
     std::unique_lock<std::mutex> stateLock(g_scoStateLock);
     AudioScoState lastScoState = currentScoState_;

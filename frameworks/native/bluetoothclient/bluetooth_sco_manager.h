@@ -25,8 +25,9 @@
  
 namespace OHOS {
 namespace BluetoothScoManager {
+class BluetoothScoManager {
 public:
-    static void GetScoStateChange(HfpScoConnectState scoState);
+    static void UpdateScoState(HfpScoConnectState scoState);
     static int32_t HandleScoConnect(ScoCategory scoCategory, BluetoothRemoteDevice *device = nullptr);
     static int32_t HandleScoDisconnect(ScoCategory scoCategory, BluetoothRemoteDevice *device = nullptr);
     static AudioScoMode GetScoModeFromCategery(ScoCategory scoCategory);

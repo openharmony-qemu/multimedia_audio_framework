@@ -748,7 +748,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             AudioHfpManager::UpdateCurrentActiveHfpDevice(device);
         }
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        BluetoothScoManager::GetScoStateChange(scoState);
+        BluetoothScoManager::UpdateScoState(scoState);
         HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
     }
 }
