@@ -120,6 +120,7 @@ public:
     int32_t RemoveRendererPolicyServiceDiedCallback();
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
+    void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
     bool IsOffloadEnable() override;
 
@@ -135,6 +136,9 @@ public:
 
     bool IsNoStreamRenderer() const override;
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
+
+    int64_t GetSourceDuration() const override;
+    void SetSourceDuration(int64_t duration) override;
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
@@ -240,6 +244,7 @@ private:
     std::mutex setParamsMutex_;
     std::mutex rendererPolicyServiceDiedCbMutex_;
     int64_t framesAlreadyWritten_ = 0;
+    int64_t sourceDuration_ = -1;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
@@ -269,12 +274,14 @@ private:
 
 class AudioStreamCallbackRenderer : public AudioStreamCallback {
 public:
+    AudioStreamCallbackRenderer(std::weak_ptr<AudioRendererPrivate> renderer);
     virtual ~AudioStreamCallbackRenderer() = default;
 
     void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
 private:
     std::weak_ptr<AudioRendererCallback> callback_;
+    std::weak_ptr<AudioRendererPrivate> renderer_;
 };
 
 class OutputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {

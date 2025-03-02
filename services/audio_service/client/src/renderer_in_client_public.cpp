@@ -143,25 +143,35 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     notifiedResult_ = result;
 
     if (notifiedResult_ == SUCCESS) {
-        switch (operation) {
-            case START_STREAM :
-                state_ = RUNNING;
-                break;
-            case PAUSE_STREAM :
-                state_ = PAUSED;
-                break;
-            case STOP_STREAM :
-                state_ = STOPPED;
-                break;
-            default :
-                break;
-        }
+        HandleStatusChangeOperation(operation);
     } else {
         AUDIO_ERR_LOG("operation %{public}d failed, result: %{public}" PRId64 "", operation, result);
     }
 
     callServerCV_.notify_all();
     return SUCCESS;
+}
+
+void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
+{
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    switch (operation) {
+        case START_STREAM :
+            state_ = RUNNING;
+            break;
+        case PAUSE_STREAM :
+            state_ = PAUSED;
+            break;
+        case STOP_STREAM :
+            state_ = STOPPED;
+            break;
+        default :
+            break;
+    }
+    if (streamCb != nullptr) {
+        streamCb->OnStateChange(state_, CMD_FROM_SYSTEM);
+    }
 }
 
 void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
@@ -1535,6 +1545,17 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
         return;
     }
     gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
+}
+
+int32_t RendererInClientInner::SetSourceDuration(int64_t duration)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetSourceDuration(duration);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Set Source Duration failed:%{public}d", ret);
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 bool RendererInClientInner::GetOffloadEnable()

@@ -66,6 +66,7 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_NEW;
+    rendererOptions.rendererInfo.playerType = PLAYER_TYPE_OPENSL_ES;
     shared_ptr<AudioRenderer> rendererHolder = AudioRenderer::CreateRenderer(rendererOptions);
     if (!rendererHolder) {
         AUDIO_ERR_LOG("AudioPlayerAdapter::CreateAudioPlayer fail, ID: %{public}lu", id);

@@ -43,6 +43,8 @@ ohos_shared_library("audio_utils") {
     "./src/audio_performance_monitor.cpp",
     "./src/audio_speed.cpp",
     "./src/audio_utils.cpp",
+    "./src/dfx_stat.cpp",
+    "./src/dfx_utils.cpp",
     "./src/volume_ramp.cpp",
   ]
 

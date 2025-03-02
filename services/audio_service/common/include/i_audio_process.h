@@ -50,6 +50,8 @@ public:
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 
+    virtual int32_t SetSourceDuration(int64_t duration) = 0;
+
     virtual ~AudioProcess() = default;
 };
 
@@ -88,6 +90,7 @@ public:
         ON_REGISTER_THREAD_PRIORITY,
         ON_SET_DEFAULT_OUTPUT_DEVICE,
         ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS,
+        ON_SET_SOURCE_DURATION,
         PROCESS_MAX_MSG
     };
 

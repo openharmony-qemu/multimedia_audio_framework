@@ -139,6 +139,88 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         UpdateRegisterTrackerInfo(registerTrackerInfo);
         audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
     }
+    InitCallbackHandler();
+    return SUCCESS;
+}
+
+void FastAudioStream::InitCallbackHandler()
+{
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    if (callbackHandler_ == nullptr) {
+        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(), "OS_AudioStateCB");
+    }
+}
+
+void FastAudioStream::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
+{
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}lld", eventCode, data);
+    CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false, "Runner is Released");
+    callbackHandler_->SendCallbackEvent(eventCode, data);
+}
+
+void FastAudioStream::OnHandle(uint32_t code, int64_t data)
+{
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}u, data: %{public}lld", code, data);
+    switch (code) {
+        case STATE_CHANGE_EVENT:
+            HandleStateChangeEvent(data);
+            break;
+        default:
+            break;
+    }
+}
+
+void FastAudioStream::HandleStateChangeEvent(int64_t data)
+{
+    State state = INVALID;
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    ParamsToStateCmdType(data, state, cmdType);
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        state = state != STOPPING ? state : STOPPED; // client only need STOPPED
+        streamCb->OnStateChange(state, cmdType);
+    }
+}
+
+int32_t FastAudioStream::ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType)
+{
+    cmdType = CMD_FROM_CLIENT;
+    switch (params) {
+        case HANDLER_PARAM_NEW:
+            state = NEW;
+            break;
+        case HANDLER_PARAM_PREPARED:
+            state = PREPARED;
+            break;
+        case HANDLER_PARAM_RUNNING:
+            state = RUNNING;
+            break;
+        case HANDLER_PARAM_STOPPED:
+            state = STOPPED;
+            break;
+        case HANDLER_PARAM_RELEASED:
+            state = RELEASED;
+            break;
+        case HANDLER_PARAM_PAUSED:
+            state = PAUSED;
+            break;
+        case HANDLER_PARAM_STOPPING:
+            state = STOPPING;
+            break;
+        case HANDLER_PARAM_RUNNING_FROM_SYSTEM:
+            state = RUNNING;
+            cmdType = CMD_FROM_SYSTEM;
+            break;
+        case HANDLER_PARAM_PAUSED_FROM_SYSTEM:
+            state = PAUSED;
+            cmdType = CMD_FROM_SYSTEM;
+            break;
+        default:
+            state = INVALID;
+            break;
+    }
     return SUCCESS;
 }
 
@@ -246,6 +328,14 @@ int32_t FastAudioStream::SetMute(bool mute)
     return ret;
 }
 
+int32_t FastAudioStream::SetSourceDuration(int64_t duration)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetMute failed: null process");
+    int32_t ret = processClient_->SetSourceDuration(duration);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSourceDuration error.");
+    return ret;
+}
+
 int32_t FastAudioStream::SetDuckVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetDuckVolume failed: null process");
@@ -282,7 +372,20 @@ AudioRendererRate FastAudioStream::GetRenderRate()
 int32_t FastAudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
 {
     AUDIO_INFO_LOG("SetStreamCallback enter.");
-    // note: need add support
+
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("SetStreamCallback failed. callback == nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    streamCallback_ = callback;
+    lock.unlock();
+
+    if (state_ != PREPARED) {
+        return SUCCESS;
+    }
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, PREPARED);
     return SUCCESS;
 }
 
@@ -499,6 +602,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
 
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
     return true;
 }
 
@@ -523,6 +627,8 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
     return true;
 }
 
@@ -578,6 +684,14 @@ bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        AUDIO_INFO_LOG("Notify client the state is released");
+        streamCb->OnStateChange(RELEASED, CMD_FROM_CLIENT);
+    }
+    lock.unlock();
     return true;
 }
 

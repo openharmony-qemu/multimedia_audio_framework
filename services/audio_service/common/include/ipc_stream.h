@@ -100,6 +100,8 @@ public:
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
 
+    virtual int32_t SetSourceDuration(int64_t duration) = 0;
+
     // IPC code.
     enum IpcStreamMsg : uint32_t {
         ON_REGISTER_STREAM_LISTENER = 0,
@@ -135,6 +137,7 @@ public:
         ON_SET_DUCK_FACTOR,
         ON_REGISTER_THREAD_PRIORITY,
         ON_SET_DEFAULT_OUTPUT_DEVICE,
+        ON_SET_SOURCE_DURATION,
         IPC_STREAM_MAX_MSG
     };
 

@@ -88,6 +88,8 @@ int AudioProcessStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return HandleSetDefaultOutputDevice(data, reply);
         case ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS:
             return HandleSetSlientModeAndMixWithOther(data, reply);
+        case ON_SET_SOURCE_DURATION:
+            return HandleSetSourceDuration(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -190,6 +192,13 @@ int32_t AudioProcessStub::HandleSetSlientModeAndMixWithOther(MessageParcel &data
 {
     bool on = data.ReadBool();
     reply.WriteInt32(SetSilentModeAndMixWithOthers(on));
+    return AUDIO_OK;
+}
+
+int32_t AudioProcessStub::HandleSetSourceDuration(MessageParcel &data, MessageParcel &reply)
+{
+    int64_t duration = data.ReadInt64();
+    reply.WriteInt32(SetSourceDuration(duration));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

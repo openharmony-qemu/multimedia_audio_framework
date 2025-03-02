@@ -22,6 +22,7 @@
 #include "audio_process_stub.h"
 #include "i_audio_process_stream.h"
 #include "i_process_status_listener.h"
+#include "player_dfx_writer.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,6 +107,10 @@ public:
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
+    int32_t SetSourceDuration(int64_t duration) override;
+
+    void SetStandbyState(RendererStage state) override;
+
 public:
     const AudioProcessConfig processConfig_;
 
@@ -144,6 +149,9 @@ private:
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
+    RendererStage standByState_ = RENDERER_STAGE_UNKNOWN;
+    int64_t sourceDuration_ = -1;
+    std::unique_ptr<PlayerDfxWriter> playerDfx_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

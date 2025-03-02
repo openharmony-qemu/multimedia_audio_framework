@@ -48,6 +48,7 @@
 #include "audio_interrupt_service.h"
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
+#include "app_state_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,7 +65,8 @@ const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
-                          public AudioStreamRemovedCallback {
+                          public AudioStreamRemovedCallback,
+                          public std::enable_shared_from_this<AudioPolicyServer> {
     DECLARE_SYSTEM_ABILITY(AudioPolicyServer);
 
 public:
@@ -499,6 +501,7 @@ public:
     int32_t SetHighResolutionExist(bool highResExist) override;
 
     void NotifyAccountsChanged(const int &id);
+    void NotifyAppStateChanged(int32_t pid, int32_t uid, int32_t state);
 
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
@@ -517,6 +520,7 @@ public:
     void CheckHibernateState(bool hibernate);
     // for S4 reboot update safevolume
     void UpdateSafeVolumeByS4();
+    AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -596,7 +600,6 @@ private:
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
 
-    AppExecFwk::BundleInfo GetBundleInfoFromUid();
     int32_t GetApiTargerVersion();
 
     // externel function call
@@ -624,6 +627,7 @@ private:
     void UnRegisterPowerStateListener();
     void RegisterSyncHibernateListener();
     void UnRegisterSyncHibernateListener();
+    void RegisterAppStateListener();
     void AddRemoteDevstatusCallback();
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeSafeVolumeEvent();
@@ -660,6 +664,8 @@ private:
     sptr<PowerStateListener> powerStateListener_;
     sptr<SyncHibernateListener> syncHibernateListener_;
     bool powerStateCallbackRegister_;
+    AppExecFwk::AppMgrClient appManager_;
+    sptr<AppStateListener> appStateListener_;
 
     std::mutex systemVolumeMutex_;
     std::mutex micStateChangeMutex_;
