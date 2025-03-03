@@ -1737,6 +1737,10 @@ void AudioRendererPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass,
     } else if (rendererInfo_.rendererFlags == AUDIO_FLAG_DIRECT) {
         info.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
         info.rendererFlags = AUDIO_FLAG_DIRECT;
+    } else if (rendererInfo_.rendererFlags == AUDIO_FLAG_NORMAL) {
+        info.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    } else if (rendererInfo_.rendererFlags == AUDIO_FLAG_MMAP) {
+        info.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     }
     info.params.originalSessionId = sessionID_;
     return;
