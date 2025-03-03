@@ -1661,6 +1661,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_ACCESSIBILITY, STREAM_ACCESSIBILITY},
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
     {STREAM_ALL, STREAM_ALL},
+    {STREAM_APP, STREAM_APP}
 };
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
@@ -1689,6 +1690,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_SYSTEM_ENFORCED, STREAM_SYSTEM},
 
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
+    {STREAM_APP, STREAM_APP}
 };
 
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()

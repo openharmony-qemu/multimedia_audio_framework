@@ -37,6 +37,12 @@ using namespace OHOS::DistributedKv;
 
 class AudioOsAccountInfo;
 
+struct AppConfigVolume {
+    int32_t defaultVolume;
+    int32_t maxVolume;
+    int32_t minVolume;
+};
+
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
     static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
@@ -356,6 +362,7 @@ private:
     std::optional<uint32_t> offloadSessionID_;
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
+    AppConfigVolume appConfigVolume_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

@@ -338,7 +338,7 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
     }
     if (!haveAppVolume) {
         std::unique_lock<std::shared_mutex> lock(appMutex_);
-        AppVolume appVolume(appUid, DEFAULT_APP_VOLUME, maxAppVolume_, isMuted);
+        AppVolume appVolume(appUid, DEFAULT_APP_VOLUME, defaultAppVolume_, isMuted);
         appVolume_.emplace(appUid, appVolume);
     }
     AUDIO_INFO_LOG("set volume mute, appUId:%{public}d, isMuted:%{public}d, systemVolumeSize:%{public}zu",
@@ -370,9 +370,9 @@ void AudioVolume::SetAppVolume(AppVolume &appVolume)
         appVolume_.size());
 }
 
-void AudioVolume::SetMaxAppVolume(int32_t level)
+void AudioVolume::SetDefaultAppVolume(int32_t level)
 {
-    maxAppVolume_ = level;
+    defaultAppVolume_ = level;
 }
 
 void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
