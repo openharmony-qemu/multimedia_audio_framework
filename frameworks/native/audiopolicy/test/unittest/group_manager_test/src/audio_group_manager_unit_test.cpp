@@ -509,6 +509,32 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_002, Te
 }
 
 /**
+* @tc.name  : Test AdjustVolumeByStep API
+* @tc.number: Audio_Group_Manager_AdjustVolumeByStep_003
+* @tc.desc  : Test adjust volume to up by step functionality
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_003, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    int32_t ret = -1;
+    bool mute = true;
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_MUSIC, 7);
+        EXPECT_EQ(SUCCESS, ret);
+        ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_MUSIC, mute);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_UP);
+        AUDIO_INFO_LOG("Adjust volume by step: %{public}d", ret);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
 * @tc.name  : Test AdjustSystemVolumeByStep API
 * @tc.number: Audio_Group_Manager_AdjustSystemVolumeByStep_001
 * @tc.desc  : Test adjust system volume by step to up of STREAM_RECORDING stream
