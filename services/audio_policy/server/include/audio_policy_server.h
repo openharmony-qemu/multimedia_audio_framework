@@ -456,6 +456,8 @@ public:
 
     int32_t SetVirtualCall(const bool isVirtual) override;
 
+    int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
+
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, bool isUpdateUi);

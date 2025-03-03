@@ -369,15 +369,6 @@ audio_ohos_library("audio_policy_service") {
     external_deps += [ "bluetooth:btframework" ]
   }
 
-  if (avsession_part_enable == true) {
-    external_deps += [
-      "ability_base:want",
-      "ability_runtime:wantagent_innerkits",
-      "av_session:avsession_client",
-      "input:libmmi-client",
-    ]
-  }
-
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
     external_deps += [ "input:libmmi-client" ]

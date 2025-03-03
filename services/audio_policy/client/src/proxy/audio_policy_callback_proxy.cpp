@@ -382,5 +382,21 @@ int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint3
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "SetQueryAllowedPlaybackCallback object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_ALLOWED_PLAYBACK_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set callback failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

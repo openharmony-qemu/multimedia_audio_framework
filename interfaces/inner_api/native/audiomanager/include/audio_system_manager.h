@@ -1321,6 +1321,7 @@ public:
     std::string GetSelfBundleName(int32_t uid);
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
+    int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
 
     /**
      * @brief inject interruption event.
