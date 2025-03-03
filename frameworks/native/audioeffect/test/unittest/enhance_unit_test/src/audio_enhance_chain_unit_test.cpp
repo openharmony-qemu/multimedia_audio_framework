@@ -490,7 +490,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_019, TestSize.Level1)
     uint8_t src[10] = {0};
     uint8_t dst[10] = {0};
     uint32_t channel = 2;
-    uint32_t offset = 10;
+    uint32_t offset = 0;
 
     int32_t result = audioEnhanceChain->DeinterleaverData(src, channel, dst, offset);
     EXPECT_EQ(ERROR, result);

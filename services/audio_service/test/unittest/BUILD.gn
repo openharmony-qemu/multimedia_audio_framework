@@ -90,7 +90,10 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../../services/audio_service/server/include",
     "../../../../frameworks/native/playbackcapturer/include",
   ]
-  sources = [ "audio_service_common_unit_test.cpp" ]
+  sources = [
+    "audio_group_manager_unit_test.cpp",
+    "audio_service_common_unit_test.cpp",
+  ]
 
   if (audio_framework_feature_low_latency) {
     sources += [
@@ -825,5 +828,41 @@ ohos_unittest("policy_provider_stub_unit_test") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
+  ]
+}
+
+ohos_unittest("audio_manager_listener_proxy_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "../../server/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../frameworks/native/audiopolicy/include",
+  ]
+
+  sources = [ "audio_manager_listener_proxy_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+
+  deps = [ "../../../../services/audio_service:audio_service_static" ]
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "drivers_interface_audio:libeffect_proxy_1.0",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "pulseaudio:pulse",
+    "pulseaudio:pulseaudio",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 }
