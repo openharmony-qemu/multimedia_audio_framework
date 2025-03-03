@@ -66,7 +66,6 @@ group("audio_unit_test") {
     "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_routing_manager_test:audio_oh_routing_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
-    "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
     "../frameworks/native/toneplayer/test/unittest:audio_toneplayer_unit_test",
     "../services/audio_policy/test:audio_policy_unittest_packages",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
