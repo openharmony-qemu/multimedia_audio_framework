@@ -1580,11 +1580,16 @@ int32_t AudioPolicyServer::VerifyVoiceCallPermission(
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo)
+    AudioRendererInfo &rendererInfo, bool forceNoBTPermission)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
         audioPolicyService_.GetPreferredOutputDeviceDescriptors(rendererInfo);
-    bool hasBTPermission = VerifyBluetoothPermission();
+
+    bool hasBTPermission = false;
+    if (!forceNoBTPermission) {
+        hasBTPermission = VerifyBluetoothPermission();
+    }
+
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }

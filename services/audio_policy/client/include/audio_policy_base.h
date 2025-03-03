@@ -202,7 +202,7 @@ public:
     virtual int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) = 0;
 
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-        AudioRendererInfo &rendererInfo) = 0;
+        AudioRendererInfo &rendererInfo, bool forceNoBTPermission) = 0;
 
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) = 0;

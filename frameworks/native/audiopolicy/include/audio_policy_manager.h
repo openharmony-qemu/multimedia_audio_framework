@@ -270,7 +270,7 @@ public:
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-        AudioRendererInfo &rendererInfo);
+        AudioRendererInfo &rendererInfo, bool forceNoBTPermission = false);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo);
