@@ -1173,5 +1173,31 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_002, TestSize.Level
     const int32_t pid = 0;
     EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
 }
+
+/**
+* @tc.name  : Test LoadModernInnerCapSink.
+* @tc.number: LoadModernInnerCapSink_001
+* @tc.desc  : Test LoadModernInnerCapSink interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadModernInnerCapSink_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    int32_t ret = server->audioPolicyService_.LoadModernInnerCapSink(1);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test UnloadModernInnerCapSink.
+* @tc.number: UnloadModernInnerCapSink_001
+* @tc.desc  : Test UnloadModernInnerCapSink interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UnloadModernInnerCapSink_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    int32_t ret = server->audioPolicyService_.UnloadModernInnerCapSink(1);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

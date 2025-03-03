@@ -1119,6 +1119,26 @@ int32_t AudioSystemManager::GetStandbyStatus(uint32_t sessionId, bool &isStandby
     return ret;
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t AudioSystemManager::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_ILLEGAL_STATE, "Audio service unavailable.");
+    int32_t ret = gasp->CheckCaptureLimit(config, innerCapId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "failed: %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioSystemManager::ReleaseCaptureLimit(int32_t innerCapId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_ILLEGAL_STATE, "Audio service unavailable.");
+    int32_t ret = gasp->ReleaseCaptureLimit(innerCapId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "failed: %{public}d", ret);
+    return ret;
+}
+#endif
+
 int32_t AudioSystemManager::GenerateSessionId(uint32_t &sessionId)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();

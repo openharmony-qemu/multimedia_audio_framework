@@ -17,6 +17,7 @@
 #include "playback_capturer_adapter.h"
 #include "playback_capturer_manager.h"
 #include "audio_info.h"
+#include "audio_errors.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -143,6 +144,43 @@ HWTEST(PlaybackPlaybackCapturerManagerUnitTest, SetInnerCapturerState_001, TestS
     SetInnerCapturerState(false);
     ret = GetInnerCapturerState();
     EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test RegisterCapturerFilterListener API via legal and illegal state
+ * @tc.type  : FUNC
+ * @tc.number: RegisterCapturerFilterListener_001
+ * @tc.desc  : Test RegisterCapturerFilterListener interface
+ */
+HWTEST(PlaybackPlaybackCapturerManagerUnitTest, RegisterCapturerFilterListener_001, TestSize.Level1)
+{
+    bool ret = playbackCapturerMgr_->RegisterCapturerFilterListener(nullptr);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckCaptureLimit API
+ * @tc.type  : FUNC
+ * @tc.number: CheckCaptureLimit_001
+ * @tc.desc  : Test CheckCaptureLimit interface
+ */
+HWTEST(PlaybackPlaybackCapturerManagerUnitTest, CheckCaptureLimit_001, TestSize.Level1)
+{
+    AudioPlaybackCaptureConfig config;
+    int32_t innerCapId = 0;
+    int32_t ret = playbackCapturerMgr_->CheckCaptureLimit(config, innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = playbackCapturerMgr_->SetInnerCapLimit(++innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = playbackCapturerMgr_->CheckCaptureLimit(config, innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+    config.filterOptions.usages.push_back(STREAM_USAGE_MUSIC);
+    ret = playbackCapturerMgr_->CheckCaptureLimit(config, innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+    playbackCapturerMgr_->CheckReleaseUnloadModernInnerCapSink(innerCapId--);
+    playbackCapturerMgr_->CheckReleaseUnloadModernInnerCapSink(innerCapId);
+    bool checkRet = playbackCapturerMgr_->CheckReleaseUnloadModernInnerCapSink(1);
+    EXPECT_TRUE(checkRet);
 }
 
 }

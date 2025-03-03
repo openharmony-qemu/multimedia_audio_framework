@@ -26,6 +26,7 @@
 #include "pa_adapter_manager.h"
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
+#include "audio_system_manager.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -49,6 +50,20 @@ void PaRendererStreamUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
+void LoadPaPort()
+{
+    AudioPlaybackCaptureConfig checkConfig;
+    int32_t checkInnerCapId = 0;
+    AudioSystemManager::GetInstance()->CheckCaptureLimit(checkConfig, checkInnerCapId);
+}
+
+void ReleasePaPort()
+{
+    AudioSystemManager::GetInstance()->ReleaseCaptureLimit(1);
+}
+#endif
+
 static AudioProcessConfig GetInnerCapConfig()
 {
     AudioProcessConfig config;
@@ -61,6 +76,7 @@ static AudioProcessConfig GetInnerCapConfig()
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    config.innerCapId = 1;
     return config;
 }
 
@@ -85,6 +101,9 @@ std::shared_ptr<PaRendererStreamImpl> PaRendererStreamUnitTest::CreatePaRenderer
  */
 HWTEST_F(PaRendererStreamUnitTest, GetCurrentTimeStamp_001, TestSize.Level1)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
+    LoadPaPort();
+#endif
     auto unit = CreatePaRendererStreamImpl();
     unit->paStream_ = nullptr;
     uint64_t timestamp = 0;
@@ -829,6 +848,9 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_051, TestSize.Level1)
     unit->paStream_ = nullptr;
     int32_t rate = RENDER_RATE_NORMAL;
     EXPECT_EQ(unit->SetRate(rate), ERR_ILLEGAL_STATE);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    ReleasePaPort();
+#endif
 }
 }
 }
