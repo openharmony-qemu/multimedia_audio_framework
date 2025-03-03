@@ -120,6 +120,8 @@ public:
 
     bool IsFastRenderer() override;
 
+    bool IsOffloadEnable() override;
+
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
 #ifdef SONIC_ENABLE

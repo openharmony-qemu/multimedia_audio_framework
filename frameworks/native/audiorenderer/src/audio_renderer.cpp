@@ -1777,6 +1777,14 @@ float AudioRendererPrivate::GetSpeed()
     return speed_;
 }
 
+bool AudioRendererPrivate::IsOffloadEnable()
+{
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audioStream_ is nullptr");
+    bool enable = audioStream_->GetOffloadEnable();
+    AUDIO_INFO_LOG("GetOffloadEnable is [%{public}s]", (enable ? "true" : "false"));
+    return enable;
+}
+
 bool AudioRendererPrivate::IsFastRenderer()
 {
     return isFastRenderer_;
