@@ -115,6 +115,8 @@ const char *g_audioServerCodeStrs[] = {
     "SET_CAPTURE_LIMIT",
     "LOAD_HDI_ADAPTER",
     "UNLOAD_HDI_ADAPTER",
+    "CHECK_CAPTURE_LIMIT",
+    "RELEASE_CAPTURE_LIMIT",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -829,6 +831,10 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
 #ifdef HAS_FEATURE_INNERCAPTURER
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT):
             return HandleSetInnerCapLimit(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_CAPTURE_LIMIT):
+            return HandleCheckCaptureLimit(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_CAPTURE_LIMIT):
+            return HandleReleaseCaptureLimit(data, reply);
 #endif
         case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER):
             return HandleLoadHdiAdapter(data, reply);
@@ -1157,6 +1163,22 @@ int AudioManagerStub::HandleSetInnerCapLimit(MessageParcel &data, MessageParcel 
 {
     uint32_t innerCapId = data.ReadUint32();
     reply.WriteInt32(SetInnerCapLimit(innerCapId));
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCheckCaptureLimit(MessageParcel &data, MessageParcel &reply)
+{
+    AudioPlaybackCaptureConfig filterConfig;
+    ProcessConfig::ReadInnerCapConfigFromParcel(filterConfig, data);
+    int32_t innerCapId = 0;
+    reply.WriteInt32(CheckCaptureLimit(filterConfig, innerCapId));
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleReleaseCaptureLimit(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t innerCapId = data.ReadInt32();
+    reply.WriteInt32(ReleaseCaptureLimit(innerCapId));
     return AUDIO_OK;
 }
 #endif

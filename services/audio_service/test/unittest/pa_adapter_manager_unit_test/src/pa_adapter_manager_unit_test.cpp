@@ -25,6 +25,7 @@
 #include "audio_errors.h"
 #include "pa_adapter_manager.h"
 #include "policy_handler.h"
+#include "audio_system_manager.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -57,8 +58,23 @@ static AudioProcessConfig GetInnerCapConfig()
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    config.innerCapId = 1;
     return config;
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+void LoadPaPort()
+{
+    AudioPlaybackCaptureConfig checkConfig;
+    int32_t checkInnerCapId = 0;
+    AudioSystemManager::GetInstance()->CheckCaptureLimit(checkConfig, checkInnerCapId);
+}
+
+void ReleasePaPort()
+{
+    AudioSystemManager::GetInstance()->ReleaseCaptureLimit(1);
+}
+#endif
 
 /**
 * @tc.name   : Test CreateRender API
@@ -67,6 +83,9 @@ static AudioProcessConfig GetInnerCapConfig()
 */
 HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_001, TestSize.Level1)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
+    LoadPaPort();
+#endif
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
@@ -92,16 +111,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_002, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     config.originalSessionId = MORE_SESSIONID;
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
@@ -123,16 +133,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_003, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     config.originalSessionId = MIDDLE_SESSIONID;
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
@@ -154,16 +155,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_004, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
@@ -188,16 +180,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_005, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
@@ -222,16 +205,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_006, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
@@ -257,16 +231,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_007, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
@@ -307,16 +272,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_009, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
@@ -356,16 +312,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_011, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
@@ -405,16 +352,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_013, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, stream);
@@ -490,16 +428,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_017, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     config.originalSessionId = MORE_SESSIONID;
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
@@ -522,16 +451,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_018, TestSize.Level1)
     ASSERT_TRUE(adapterManager != nullptr);
     adapterManager->InitPaContext();
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    AudioProcessConfig config = GetInnerCapConfig();
     config.originalSessionId = MIDDLE_SESSIONID;
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
@@ -623,16 +543,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_023, TestSize.Level1)
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     ASSERT_TRUE(adapterManager != nullptr);
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    AudioProcessConfig config = GetInnerCapConfig();
     config.audioMode = AudioMode::AUDIO_MODE_RECORD;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
     config.isWakeupCapturer = true;
     config.isInnerCapturer = true;
     config.innerCapMode = InnerCapMode::LEGACY_MUTE_CAP;
@@ -652,16 +564,8 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_024, TestSize.Level1)
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     ASSERT_TRUE(adapterManager != nullptr);
 
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    AudioProcessConfig config = GetInnerCapConfig();
     config.audioMode = AudioMode::AUDIO_MODE_RECORD;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
     config.isInnerCapturer = true;
     config.innerCapMode = InnerCapMode::LEGACY_MUTE_CAP;
     uint32_t sessionId = SESSIONID;
@@ -1109,6 +1013,9 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_052, TestSize.Level1)
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->GetEnhanceSceneName(SOURCE_TYPE_VOICE_MESSAGE);
     EXPECT_NE(nullptr, adapterManager);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    ReleasePaPort();
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS

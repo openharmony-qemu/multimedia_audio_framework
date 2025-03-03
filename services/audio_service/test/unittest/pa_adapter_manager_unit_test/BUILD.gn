@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
+import("../../../../../config.gni")
 
 module_output_path = "multimedia_audio_framework/pa_adapter_manager"
 
@@ -36,6 +37,7 @@ ohos_unittest("pa_adapter_manager_unit_test") {
     "../../../../../frameworks/native/audiocapturer/include",
     "../../../server/include",
     "include",
+    "../../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -70,4 +72,9 @@ ohos_unittest("pa_adapter_manager_unit_test") {
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 }

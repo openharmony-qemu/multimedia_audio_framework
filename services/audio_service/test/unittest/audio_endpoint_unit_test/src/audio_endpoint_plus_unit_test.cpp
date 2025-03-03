@@ -26,7 +26,8 @@
 #include "audio_stream_info.h"
 #include "policy_handler.h"
 #include "audio_endpoint.cpp"
-#include "iservice_registry.h"
+#include "audio_system_manager.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 
@@ -1049,18 +1050,15 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
     config.originalSessionId = MORE_SESSIONID;
     config.innerCapId = 1;
     uint32_t sessionId = SESSIONID;
-    
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    sptr<IStandardAudioService> g_adProxy = iface_cast<IStandardAudioService>(object);
-
+    setuid(AUDIO_ID);
     AudioPlaybackCaptureConfig checkConfig;
     int32_t checkInnerCapId = 0;
-    g_adProxy->CheckCaptureLimit(checkConfig, checkInnerCapId);
+    AudioSystemManager::GetInstance()->CheckCaptureLimit(checkConfig, checkInnerCapId);
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
     auto &info = audioEndpointInner->fastCaptureInfos_[1];
     info.dupStream = adapterManager->CreateRendererStream(config, stream);
     audioEndpointInner->ProcessToDupStream(audioDataList, dstStreamData, 1);
+    AudioSystemManager::GetInstance()->ReleaseCaptureLimit(1);
     EXPECT_EQ(dstStreamData.bufferDesc.bufLength, audioEndpointInner->dupBufferSize_);
 }
 #endif
