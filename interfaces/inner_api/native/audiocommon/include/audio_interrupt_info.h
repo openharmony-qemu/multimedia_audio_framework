@@ -52,6 +52,15 @@ enum InterruptRequestType {
 };
 
 /**
+ * Enumerates audio interrupt event.
+ */
+enum InterruptCallbackEvent {
+    NO_EVENT = 0,
+    FORCE_EVENT = 1,
+    FORCE_PAUSED_TO_RESUME_EVENT = 2
+};
+
+/**
  * Enumerates audio interrupt request result type.
  */
 enum InterruptRequestResultType {

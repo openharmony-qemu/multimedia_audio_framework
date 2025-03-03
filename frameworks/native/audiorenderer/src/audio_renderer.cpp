@@ -964,7 +964,8 @@ void AudioRendererInterruptCallbackImpl::NotifyForcePausedToResume(const Interru
     NotifyEvent(interruptEventResume);
 }
 
-void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
+InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(
+    const InterruptEventInternal &interruptEvent)
 {
     State currentState = audioStream_->GetState();
     audioStream_->GetAudioSessionID(sessionID_);
@@ -977,18 +978,17 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
             } else {
                 AUDIO_WARNING_LOG("sessionId: %{public}u, state: %{public}d. No need to pause",
                     sessionID_, static_cast<int32_t>(currentState));
-                return;
+                return NO_EVENT;
             }
             break;
         case INTERRUPT_HINT_RESUME:
             if ((currentState != PAUSED && currentState != PREPARED) || !isForcePaused_) {
                 AUDIO_WARNING_LOG("sessionId: %{public}u, State: %{public}d or not force pause before",
                     sessionID_, static_cast<int32_t>(currentState));
-                return;
+                return NO_EVENT;
             }
             isForcePaused_ = false;
-            NotifyForcePausedToResume(interruptEvent);
-            return; // return, sending callback is taken care in NotifyForcePausedToResume
+            return FORCE_PAUSED_TO_RESUME_EVENT;
         case INTERRUPT_HINT_STOP:
             (void)audioStream_->StopAudioStream();
             (void)audioStream_->SetDuckVolume(1.0f);
@@ -996,21 +996,20 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
         case INTERRUPT_HINT_DUCK:
             if (!HandleForceDucking(interruptEvent)) {
                 AUDIO_WARNING_LOG("Failed to duck forcely, don't notify app");
-                return;
+                return NO_EVENT;
             }
             isForceDucked_ = true;
             break;
         case INTERRUPT_HINT_UNDUCK:
-            CHECK_AND_RETURN_LOG(isForceDucked_, "It is not forced ducked, don't unduck or notify app");
+            CHECK_AND_RETURN_RET_LOG(isForceDucked_, NO_EVENT, "It is not forced ducked, don't unduck or notify app");
             (void)audioStream_->SetDuckVolume(1.0f);
             AUDIO_INFO_LOG("Unduck Volume successfully");
-            isForceDucked_ = false;
+            isForceDucked_ = NO_EVENT;
             break;
         default: // If the hintType is NONE, don't need to send callbacks
-            return;
+            return NO_EVENT;
     }
-    // Notify valid forced event callbacks to app
-    NotifyForcedEvent(interruptEvent);
+    return FORCE_EVENT;
 }
 
 void AudioRendererInterruptCallbackImpl::NotifyForcedEvent(const InterruptEventInternal &interruptEvent)
@@ -1022,7 +1021,7 @@ void AudioRendererInterruptCallbackImpl::NotifyForcedEvent(const InterruptEventI
 
 void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
 
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
@@ -1044,7 +1043,15 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     CHECK_AND_RETURN_LOG(audioStream_ != nullptr,
         "Stream is not alive. No need to take forced action");
 
-    HandleAndNotifyForcedEvent(interruptEvent);
+    auto ret = HandleAndNotifyForcedEvent(interruptEvent);
+    lock.unlock();
+    if (ret == FORCE_EVENT) {
+        // Notify valid forced event callbacks to app
+        NotifyForcedEvent(interruptEvent);
+    } else if (ret == FORCE_PAUSED_TO_RESUME_EVENT) {
+        // sending callback is taken care in NotifyForcePausedToResume
+        NotifyForcePausedToResume(interruptEvent);
+    }
 }
 
 AudioRendererConcurrencyCallbackImpl::AudioRendererConcurrencyCallbackImpl()

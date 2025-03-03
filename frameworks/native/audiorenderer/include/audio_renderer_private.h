@@ -249,7 +249,7 @@ public:
     void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
-    void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
+    InterruptCallbackEvent HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcedEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
     bool HandleForceDucking(const InterruptEventInternal &interruptEvent);
