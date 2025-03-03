@@ -41,16 +41,16 @@ void CjAudioManagerAvailableDeviceChangeCallback::OnAvailableDeviceChange(const 
         AUDIO_ERR_LOG("[OnAvailableDeviceChange] Registered func is not found.");
         return;
     }
-    CDeviceChangeAction cDeviceChangeAct;
+    CDeviceChangeAction cDeviceChangeAct{};
     cDeviceChangeAct.changeType = deviceChangeAction.type;
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptor(cDeviceChangeAct.deviceDescriptors, deviceChangeAction.deviceDescriptors, &errorCode);
     if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(cDeviceChangeAct.deviceDescriptors);
         return;
     }
     func(cDeviceChangeAct);
-    free(cDeviceChangeAct.deviceDescriptors.head);
-    cDeviceChangeAct.deviceDescriptors.head = nullptr;
+    FreeCArrDeviceDescriptor(cDeviceChangeAct.deviceDescriptors);
 }
 
 void CjAudioPreferredInputDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
@@ -65,15 +65,15 @@ void CjAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
     if (func_ == nullptr) {
         return;
     }
-    CArrDeviceDescriptor arr;
+    CArrDeviceDescriptor arr{};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptor(arr, desc, &errorCode);
     if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     func_(arr);
-    free(arr.head);
-    arr.head = nullptr;
+    FreeCArrDeviceDescriptor(arr);
 }
 
 void CjAudioPreferredOutputDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
@@ -85,7 +85,7 @@ void CjAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
-    CArrDeviceDescriptor arr;
+    CArrDeviceDescriptor arr{};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptor(arr, desc, &errorCode);
     if (errorCode != SUCCESS_CODE) {
@@ -107,14 +107,14 @@ void CjAudioManagerDeviceChangeCallback::OnDeviceChange(const DeviceChangeAction
     if (func_ == nullptr) {
         return;
     }
-    CArrDeviceDescriptor arr;
+    CArrDeviceDescriptor arr{};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptor(arr, deviceChangeAction.deviceDescriptors, &errorCode);
     if (errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(arr);
         return;
     }
-    CDeviceChangeAction action;
+    CDeviceChangeAction action{};
     action.deviceDescriptors = arr;
     action.changeType = deviceChangeAction.type;
     func_(action);
