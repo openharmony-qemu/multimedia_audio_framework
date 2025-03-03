@@ -77,7 +77,7 @@ public:
     uint32_t GetStopFadeoutState(uint32_t streamIndex);
     void RemoveStopFadeoutState(uint32_t streamIndex);
     
-    void SetMaxAppVolume(int32_t level);
+    void SetDefaultAppVolume(int32_t level);
     void SetVgsVolumeSupported(bool isVgsSupported);
     bool IsVgsVolumeSupported() const;
 private:
@@ -97,7 +97,7 @@ private:
     std::shared_mutex fadoutMutex_ {};
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
     std::unordered_map<uint32_t, uint32_t> stopFadeoutState_{};
-    int32_t maxAppVolume_ = 0;
+    int32_t defaultAppVolume_ = 0;
 };
 
 class StreamVolume {
