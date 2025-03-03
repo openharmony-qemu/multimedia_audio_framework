@@ -35,6 +35,9 @@ ohos_shared_library("audio_common") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
 
   install_enable = true
@@ -43,6 +46,7 @@ ohos_shared_library("audio_common") {
     "common/include",
     "common/include/limiter",
     "../audio_policy/server/include",
+    "common/include/dfx",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -58,6 +62,11 @@ ohos_shared_library("audio_common") {
     "common/src/audio_thread_task.cpp",
     "common/src/audio_volume.cpp",
     "common/src/callback_handler.cpp",
+    "common/src/dfx/audio_capturer_dfx_collector.cpp",
+    "common/src/dfx/audio_renderer_dfx_collector.cpp",
+    "common/src/dfx/dfx_msg_manager.cpp",
+    "common/src/dfx/player_dfx_writer.cpp",
+    "common/src/dfx/recorder_dfx_writer.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
     "common/src/limiter/audio_limiter.cpp",
@@ -290,6 +299,7 @@ config("audio_service_config") {
   include_dirs = [
     "common/include",
     "common/include/limiter",
+    "common/include/dfx",
     "client/include",
     "server/include",
     "server/include/config",

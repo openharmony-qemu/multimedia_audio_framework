@@ -39,6 +39,9 @@ public:
 
     virtual int32_t LoadAdapter(const std::string &adapterName) = 0;
     virtual void UnloadAdapter(const std::string &adapterName, bool force = false) = 0;
+
+    virtual void AllAdapterSetMicMute(bool isMute) = 0;
+
     virtual void SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition, const std::string &value) = 0;
     virtual std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,

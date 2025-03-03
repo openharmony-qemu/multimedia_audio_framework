@@ -52,6 +52,8 @@ public:
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
+    int32_t SetSourceDuration(int64_t duration) override;
+
 private:
     static inline BrokerDelegator<AudioProcessProxy> delegator_;
 };

@@ -1167,6 +1167,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", sessionId);
                 processList_[i]->EnableStandby();
                 needCheckStandby = true;
+                processList_[i]->SetStandbyState(RENDERER_STAGE_STANDBY_BEGIN);
                 continue;
             }
             uint64_t curRead = tempBuffer->GetCurReadFrame();
@@ -1396,7 +1397,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
                 AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
                 clientConfig_.rendererInfo.volumeMode));
         } else {
-            streamData.volumeStart = curReadSpan->volumeStart;
+            PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
+            streamData.volumeStart = vol.isMute ? 0 : curReadSpan->volumeStart;
         }
         Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
             " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()));

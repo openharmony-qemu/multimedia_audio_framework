@@ -109,6 +109,12 @@ void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
 bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    return SaveVolumeInternal(type, streamForVolumeMap, volumeLevel);
+}
+
+bool VolumeDataMaintainer::SaveVolumeInternal(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
+{
     std::string volumeKey = GetVolumeKeyForDataShare(type, streamType);
     if (!volumeKey.compare("")) {
         AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
@@ -128,7 +134,8 @@ bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamTyp
 bool VolumeDataMaintainer::GetVolume(DeviceType deviceType, AudioStreamType streamType)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
-    return GetVolumeInternal(deviceType, streamType);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    return GetVolumeInternal(deviceType, streamForVolumeMap);
 }
 
 bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType)
@@ -222,6 +229,12 @@ int32_t VolumeDataMaintainer::GetStreamVolume(AudioStreamType streamType)
 int32_t VolumeDataMaintainer::GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    return GetDeviceVolumeInternal(deviceType, streamForVolumeMap);
+}
+
+int32_t VolumeDataMaintainer::GetDeviceVolumeInternal(DeviceType deviceType, AudioStreamType streamType)
+{
     std::string volumeKey = GetVolumeKeyForDataShare(deviceType, streamType);
     int32_t volumeValue = 0;
     if (!volumeKey.compare("")) {
@@ -285,7 +298,8 @@ bool VolumeDataMaintainer::SaveMuteStatus(DeviceType deviceType, AudioStreamType
         }
         return saveMuteResult;
     }
-    return SaveMuteStatusInternal(deviceType, streamType, muteStatus);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    return SaveMuteStatusInternal(deviceType, streamForVolumeMap, muteStatus);
 }
 
 bool VolumeDataMaintainer::SaveMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType,
@@ -320,7 +334,8 @@ bool VolumeDataMaintainer::SetStreamMuteStatus(AudioStreamType streamType, bool 
 bool VolumeDataMaintainer::GetMuteStatus(DeviceType deviceType, AudioStreamType streamType)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
-    return GetMuteStatusInternal(deviceType, streamType);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    return GetMuteStatusInternal(deviceType, streamForVolumeMap);
 }
 
 bool VolumeDataMaintainer::GetMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType)

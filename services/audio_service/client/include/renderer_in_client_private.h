@@ -110,6 +110,7 @@ public:
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
     int64_t GetFramesWritten() override;
     int64_t GetFramesRead() override;
+    int32_t SetSourceDuration(int64_t duration) override;
 
     void SetInnerCapturerState(bool isInnerCapturer) override;
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
@@ -231,6 +232,7 @@ private:
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
+    void HandleStatusChangeOperation(Operation operation);
 
     int32_t RegisterSpatializationStateEventListener();
 

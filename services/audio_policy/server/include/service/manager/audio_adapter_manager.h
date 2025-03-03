@@ -220,6 +220,8 @@ public:
     void SetRestoreVolumeFlag(const bool safeVolumeCall);
 
     void UpdateSafeVolumeByS4();
+    void SetVgsVolumeSupported(bool isVgsSupported);
+    bool IsVgsVolumeSupported() const;
 private:
     friend class PolicyCallbackImpl;
 
@@ -330,7 +332,7 @@ private:
     int32_t curActiveCount_ = 0;
     bool safeVolumeCall_ = false;
     bool isSafeBoot_ = true;
-
+    bool isVgsVolumeSupported_ = false;
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
 
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;

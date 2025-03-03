@@ -90,6 +90,11 @@ void BluetoothDeviceManager::UnloadAdapter(const std::string &adapterName, bool 
     AUDIO_INFO_LOG("unload adapter %{public}s success", adapterName.c_str());
 }
 
+void BluetoothDeviceManager::AllAdapterSetMicMute(bool isMute)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 void BluetoothDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
@@ -223,9 +228,11 @@ void BluetoothDeviceManager::DestroyCapture(const std::string &adapterName, uint
 
 void BluetoothDeviceManager::DumpInfo(std::string &dumpString)
 {
-    for (auto &item :adapters_) {
-        dumpString += "  - bt/" + item.first + "\trenderNum: " + std::to_string(item.second->renders_.size()) +
-            "\tcaptureNum: " + std::to_string(item.second->captures_.size()) + "\n";
+    for (auto &item : adapters_) {
+        uint32_t renderNum = item.second == nullptr ? 0 : item.second->renders_.size();
+        uint32_t captureNum = item.second == nullptr ? 0 : item.second->captures_.size();
+        dumpString += "  - bt/" + item.first + "\trenderNum: " + std::to_string(renderNum) + "\tcaptureNum: " +
+            std::to_string(captureNum) + "\n";
     }
 }
 
@@ -263,7 +270,7 @@ std::shared_ptr<BluetoothAdapterWrapper> BluetoothDeviceManager::GetAdapter(cons
     }
     LoadAdapter(adapterName);
     std::lock_guard<std::mutex> lock(adapterMtx_);
-    return adapters_[adapterName];
+    return adapters_.count(adapterName) == 0 ? nullptr : adapters_[adapterName];
 }
 
 int32_t BluetoothDeviceManager::SwitchAdapterDesc(struct AudioAdapterDescriptor *descs, const std::string &adapterName,

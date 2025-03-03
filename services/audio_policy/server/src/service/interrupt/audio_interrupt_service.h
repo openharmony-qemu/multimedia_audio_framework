@@ -26,6 +26,7 @@
 #include "audio_policy_server.h"
 #include "audio_session_service.h"
 #include "client_type_manager.h"
+#include "audio_interrupt_dfx_collector.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -105,6 +106,7 @@ public:
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeByStreamId(int32_t streamId);
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
+    void HandleAppStateChange(int32_t pid, int32_t uid, int32_t state);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -183,11 +185,13 @@ private:
         &inprocessing, AudioFocusEntry &focusEntry, bool bConcurrency);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry(const int32_t zoneId);
     void SendActiveInterruptEvent(const uint32_t activeStreamId, const InterruptEventInternal &interruptEvent,
-        const AudioInterrupt &incomingInterrupt);
+        const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt);
     void DeactivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isSessionTimeout = false);
     void SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo);
+    void SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
+        const uint32_t &streamId, const AudioInterrupt &audioInterrupt);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     void UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
@@ -248,6 +252,10 @@ private:
     
     bool IsHandleIter(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         AudioFocuState oldState, std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterNew);
+    uint8_t GetAppState(int32_t appPid);
+    void WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, const AudioInterrupt &audioInterrupt);
+    void WriteStopDfxMsg(const AudioInterrupt &audioInterrupt);
+    void WriteSessionTimeoutDfxEvent(const int32_t pid);
 
     bool AudioFocusInfoListRemovalCondition(const AudioInterrupt &audioInterrupt,
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocus);
@@ -270,6 +278,7 @@ private:
 
     std::mutex mutex_;
     mutable int32_t ownerPid_;
+    std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

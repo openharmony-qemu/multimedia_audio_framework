@@ -42,18 +42,39 @@ NapiRendererPositionCallback::~NapiRendererPositionCallback()
 void NapiRendererPositionCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    napi_ref callback = nullptr;
-    const int32_t refCount = 1;
-    napi_status status = napi_create_reference(env_, args, refCount, &callback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-        "creating reference for callback fail");
+    // create function that will operate while save callback reference success.
+    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
+        [this](std::shared_ptr<AutoRef> generatedCallback) {
+        renderPositionCallback_ = generatedCallback;
+    };
+    NapiAudioRendererCallbackInner::SaveCallbackReferenceInner(callbackName, args, successed);
+    AUDIO_DEBUG_LOG("SaveAudioPositionCallback successful");
+}
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    if (callbackName == MARK_REACH_CALLBACK_NAME) {
-        renderPositionCallback_ = cb;
-    } else {
-        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
-    }
+std::shared_ptr<AutoRef> &NapiRendererPositionCallback::GetCallback(const std::string &callbackName)
+{
+    return renderPositionCallback_;
+}
+
+void NapiRendererPositionCallback::RemoveCallbackReference(
+    const std::string &callbackName, napi_env env, napi_value callback, napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    //create function that will operate while save callback reference success.
+    std::function<void()> successed = [this]() {
+        renderPositionCallback_ = nullptr;
+    };
+    RemoveCallbackReferenceInner(callbackName, env, callback, successed);
+}
+
+napi_env &NapiRendererPositionCallback::GetEnv()
+{
+    return env_;
+}
+
+bool NapiRendererPositionCallback::CheckIfTargetCallbackName(const std::string &callbackName)
+{
+    return (callbackName == MARK_REACH_CALLBACK_NAME);
 }
 
 void NapiRendererPositionCallback::CreateMarkReachedTsfn(napi_env env)

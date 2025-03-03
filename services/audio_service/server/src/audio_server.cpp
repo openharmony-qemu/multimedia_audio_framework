@@ -720,7 +720,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
 
 const std::string AudioServer::GetDPParameter(const std::string &condition)
 {
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DP);
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DP, true);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, "", "get dp sink fail");
 
     return sink->GetAudioParameter(AudioParamKey::GET_DP_DEVICE_INFO, condition);
@@ -858,6 +858,11 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
         return SUCCESS;
     };
     (void)HdiAdapterManager::GetInstance().ProcessSource(processFunc);
+    std::shared_ptr<IDeviceManager> deviceManager = HdiAdapterManager::GetInstance().GetDeviceManager(
+        HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    if (deviceManager != nullptr) {
+        deviceManager->AllAdapterSetMicMute(isMute);
+    }
 
     int32_t ret = SetMicrophoneMuteForEnhanceChain(isMute);
     if (ret != SUCCESS) {

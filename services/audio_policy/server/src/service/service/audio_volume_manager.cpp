@@ -139,11 +139,14 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     size_t index = 0;
     if (!IPolicyProvider::GetVolumeIndex(streamType, GetVolumeGroupForDevice(deviceType), index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
+        AUDIO_INFO_LOG("Don't find and Set Shared Volume failed");
         return false;
     }
     volumeVector_[index].isMute = vol.isMute;
     volumeVector_[index].volumeFloat = vol.volumeFloat;
     volumeVector_[index].volumeInt = vol.volumeInt;
+    AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d", streamType,
+        deviceType);
 
     AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, vol.volumeFloat);
     return true;
@@ -184,6 +187,7 @@ int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid)
 
 int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
 {
+    Trace trace("AudioVolumeManager::GetSystemVolumeLevel");
     if (streamType == STREAM_RING && !IsRingerModeMute()) {
         AUDIO_PRERELEASE_LOGW("return 0 when dual tone ring");
         return DUAL_TONE_RING_VOLUME;
@@ -244,6 +248,7 @@ void AudioVolumeManager::SetVoiceCallVolume(int32_t volumeLevel)
 
 void AudioVolumeManager::UpdateVolumeForLowLatency()
 {
+    Trace trace("AudioVolumeManager::UpdateVolumeForLowLatency");
     // update volumes for low latency streams when loading volumes from the database.
     Volume vol = {false, 1.0f, 0};
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();

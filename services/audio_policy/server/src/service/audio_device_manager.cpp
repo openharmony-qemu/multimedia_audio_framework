@@ -108,6 +108,13 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
         return false;
     }
 
+    if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        devUsage == MEDIA &&
+        devRole == OUTPUT_DEVICE) {
+        AUDIO_INFO_LOG("bluetooth sco not support in media output scene");
+        return false;
+    }
+
     for (auto &devInfo : deviceList) {
         if ((devInfo.deviceType == devDesc->deviceType_) &&
             (devRole == devDesc->deviceRole_) &&

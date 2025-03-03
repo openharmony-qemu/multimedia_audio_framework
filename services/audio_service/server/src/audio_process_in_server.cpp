@@ -63,6 +63,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
         ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, sessionId_);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -205,6 +206,7 @@ int32_t AudioProcessInServer::Start()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
         enterStandbyTime_ = 0;
+        standByState_ = RENDERER_STAGE_STANDBY_END;
     }
 
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
@@ -648,5 +650,16 @@ void AudioProcessInServer::SetSilentState(bool state)
 {
     isInSilentState_ = state;
 }
+int32_t AudioProcessInServer::SetSourceDuration(int64_t duration)
+{
+    sourceDuration_ = duration;
+    return SUCCESS;
+}
+
+void AudioProcessInServer::SetStandbyState(RendererStage state)
+{
+    standByState_ = state;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

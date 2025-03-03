@@ -25,6 +25,7 @@
 #include "audio_stream_tracker.h"
 #include "i_audio_stream.h"
 #include "audio_policy_manager.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,7 +59,8 @@ private:
     std::shared_ptr<AudioCapturerReadCallback> captureCallback_ = nullptr;
 };
 
-class FastAudioStream : public IAudioStream {
+class FastAudioStream : public IAudioStream,  public IHandler,
+    public std::enable_shared_from_this<FastAudioStream>{
 public:
     FastAudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid);
     virtual ~FastAudioStream();
@@ -83,11 +85,18 @@ public:
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
     int32_t SetMute(bool mute) override;
+    int32_t SetSourceDuration(int64_t duration) override;
     float GetVolume() override;
     int32_t SetDuckVolume(float volume) override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
+
+    void InitCallbackHandler();
+    void SafeSendCallbackEvent(uint32_t eventCode, int64_t data);
+    void OnHandle(uint32_t code, int64_t data) override;
+    void HandleStateChangeEvent(int64_t data);
+    int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
 
     // callback mode api
     int32_t SetRendererFirstFrameWritingCallback(
@@ -216,11 +225,34 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     bool silentModeAndMixWithOthers_ = false;
 
+    std::mutex streamCbMutex_;
+    std::weak_ptr<AudioStreamCallback> streamCallback_;
+
+    bool runnerReleased_ = false;
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
+
     std::mutex setPreferredFrameSizeMutex_;
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
 
     std::mutex switchingMutex_;
     StreamSwitchingInfo switchingInfo_ {false, INVALID};
+    enum {
+        STATE_CHANGE_EVENT = 0
+    };
+
+    enum : int64_t {
+        HANDLER_PARAM_INVALID = -1,
+        HANDLER_PARAM_NEW = 0,
+        HANDLER_PARAM_PREPARED,
+        HANDLER_PARAM_RUNNING,
+        HANDLER_PARAM_STOPPED,
+        HANDLER_PARAM_RELEASED,
+        HANDLER_PARAM_PAUSED,
+        HANDLER_PARAM_STOPPING,
+        HANDLER_PARAM_RUNNING_FROM_SYSTEM,
+        HANDLER_PARAM_PAUSED_FROM_SYSTEM,
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS

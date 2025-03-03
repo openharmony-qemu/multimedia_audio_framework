@@ -18,6 +18,7 @@
 #include <uv.h>
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "napi_audio_capturer_callback_inner.h"
 #include "napi_async_work.h"
 #include "audio_capturer.h"
 
@@ -32,18 +33,22 @@ const std::string INPUTDEVICE_CHANGE_CALLBACK_NAME = "inputDeviceChange";
 const std::string AUDIO_CAPTURER_CHANGE_CALLBACK_NAME = "audioCapturerChange";
 const std::string READ_DATA_CALLBACK_NAME = "readData";
 
-class NapiAudioCapturerCallback : public AudioCapturerCallback {
+class NapiAudioCapturerCallback : public AudioCapturerCallback, public NapiAudioCapturerCallbackInner {
 public:
     explicit NapiAudioCapturerCallback(napi_env env);
-    virtual ~NapiAudioCapturerCallback();
-    void SaveCallbackReference(const std::string &callbackName, napi_value args);
-    void RemoveCallbackReference(const std::string &callbackName);
+    ~NapiAudioCapturerCallback() override;
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const CapturerState state) override;
     void CreateStateChangeTsfn(napi_env env);
     void CreateInterruptTsfn(napi_env env);
     bool GetStateChangeTsfnFlag();
     bool GetInterruptTsfnFlag();
+    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
+    void RemoveCallbackReference(const std::string &callbackName, napi_env env, napi_value callback) override;
+    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
+protected:
+    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    napi_env &GetEnv() override;
 
 private:
     struct AudioCapturerJsCallback {

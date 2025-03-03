@@ -24,6 +24,7 @@
 #include "audio_effect_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,6 +37,10 @@ const uint32_t DEFAULT_FORMAT = 2;
 const uint32_t DEFAULT_MICNUM = 2;
 const uint32_t DEFAULT_ECNUM = 0;
 const uint32_t DEFAULT_MICREFNUM = 0;
+const uint32_t BYTE_SIZE_SAMPLE_U8 = 1;
+const uint32_t BYTE_SIZE_SAMPLE_S16 = 2;
+const uint32_t BYTE_SIZE_SAMPLE_S24 = 3;
+const uint32_t BYTE_SIZE_SAMPLE_S32 = 4;
 
 const std::vector<std::string> NEED_EC_SCENE = {
     "SCENE_VOIP_UP",
@@ -45,6 +50,13 @@ const std::vector<std::string> NEED_EC_SCENE = {
 const std::vector<std::string> NEED_MICREF_SCENE = {
     "SCENE_VOIP_UP",
     "SCENE_RECORD",
+};
+
+const std::map<uint32_t, AudioSampleFormat> FORMAT_CONVERT_MAP = {
+    {BYTE_SIZE_SAMPLE_U8, SAMPLE_U8},
+    {BYTE_SIZE_SAMPLE_S16, SAMPLE_S16LE},
+    {BYTE_SIZE_SAMPLE_S24, SAMPLE_S24LE},
+    {BYTE_SIZE_SAMPLE_S32, SAMPLE_S32LE},
 };
 
 AudioEnhanceChain::AudioEnhanceChain(const std::string &scene, const AudioEnhanceParamAdapter &algoParam,
@@ -397,10 +409,17 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enh
 
     uint32_t inputLen = algoAttr_.byteLenPerFrame * algoAttr_.batchLen;
     uint32_t outputLen = algoAttr_.byteLenPerFrame * algoSupportedConfig_.outNum;
+
+    BufferDesc bufferIn = {enhanceBuffer->micBufferIn.data(), length, length};
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(deviceAttr_.micRate),
+        AudioEncodingType::ENCODING_PCM, ConvertFormat(deviceAttr_.micFormat),
+        static_cast<AudioChannel>(deviceAttr_.micChannels));
+
     CHECK_AND_RETURN_RET_LOG(algoCache_.input.size() == inputLen, ERROR,
         "algo cache input size:%{public}zu != inputLen:%{public}u", algoCache_.input.size(), inputLen);
     CHECK_AND_RETURN_RET_LOG(algoCache_.output.size() == outputLen, ERROR,
         "algo cache output size:%{public}zu != outputLen:%{public}u", algoCache_.output.size(), outputLen);
+    VolumeTools::DfxOperation(bufferIn, streamInfo, sceneType_, volumeDataCount_);
     WriteDumpFile(enhanceBuffer, inputLen);
     if (standByEnhanceHandles_.size() == 0) {
         AUDIO_DEBUG_LOG("audioEnhanceChain->standByEnhanceHandles is empty");
@@ -484,6 +503,15 @@ int32_t AudioEnhanceChain::InitCommand()
             "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
     }
     return SUCCESS;
+}
+
+AudioSampleFormat AudioEnhanceChain::ConvertFormat(uint32_t format)
+{
+    auto item = FORMAT_CONVERT_MAP.find(format);
+    if (item != FORMAT_CONVERT_MAP.end()) {
+        return item->second;
+    }
+    return INVALID_WIDTH;
 }
 } // namespace AudioStandard
 } // namespace OHOS

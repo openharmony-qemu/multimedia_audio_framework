@@ -21,6 +21,7 @@
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
 #include "audio_ring_cache.h"
+#include "recorder_dfx_writer.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,6 +64,9 @@ private:
     int32_t InitCacheBuffer(size_t targetSize);
     bool IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
         std::shared_ptr<IStreamListener> stateListener);
+    int32_t StartInner();
+    int64_t GetLastAudioDuration();
+    void HandleOperationFlushed();
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -97,6 +101,10 @@ private:
     std::string traceTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
     int32_t innerCapId_ = 0;
+
+    int64_t lastStartTime_{};
+    int64_t lastStopTime_{};
+    std::unique_ptr<RecorderDfxWriter> recorderDfx_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

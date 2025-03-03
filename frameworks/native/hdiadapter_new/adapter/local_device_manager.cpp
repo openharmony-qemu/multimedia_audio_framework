@@ -87,6 +87,25 @@ void LocalDeviceManager::UnloadAdapter(const std::string &adapterName, bool forc
     AUDIO_INFO_LOG("unload adapter %{public}s success", adapterName.c_str());
 }
 
+void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
+{
+    AUDIO_INFO_LOG("isMute: %{public}s", isMute ? "true" : "false");
+
+    std::lock_guard<std::mutex> lock(adapterMtx_);
+    for (auto &item : adapters_) {
+        std::shared_ptr<LocalAdapterWrapper> wrapper = item.second;
+        if (wrapper == nullptr || wrapper->adapter_ == nullptr) {
+            continue;
+        }
+        int32_t ret = wrapper->adapter_->SetMicMute(wrapper->adapter_, isMute);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("set mute fail, adapterName: %{public}s", item.first.c_str());
+        } else {
+            AUDIO_INFO_LOG("set mute success, adapterName: %{public}s", item.first.c_str());
+        }
+    }
+}
+
 void LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
@@ -313,9 +332,11 @@ void LocalDeviceManager::DestroyCapture(const std::string &adapterName, uint32_t
 
 void LocalDeviceManager::DumpInfo(std::string &dumpString)
 {
-    for (auto &item :adapters_) {
-        dumpString += "  - local/" + item.first + "\trenderNum: " + std::to_string(item.second->renderNum_) +
-            "\tcaptureNum: " + std::to_string(item.second->captureNum_) + "\n";
+    for (auto &item : adapters_) {
+        uint32_t renderNum = item.second == nullptr ? 0 : item.second->renderNum_;
+        uint32_t captureNum = item.second == nullptr ? 0 : item.second->captureNum_;
+        dumpString += "  - local/" + item.first + "\trenderNum: " + std::to_string(renderNum) + "\tcaptureNum: " +
+            std::to_string(captureNum) + "\n";
     }
 }
 
@@ -356,7 +377,7 @@ std::shared_ptr<LocalAdapterWrapper> LocalDeviceManager::GetAdapter(const std::s
     }
     LoadAdapter(adapterName);
     std::lock_guard<std::mutex> lock(adapterMtx_);
-    return adapters_[adapterName];
+    return adapters_.count(adapterName) == 0 ? nullptr : adapters_[adapterName];
 }
 
 int32_t LocalDeviceManager::SwitchAdapterDesc(struct AudioAdapterDescriptor *descs, const std::string &adapterName,

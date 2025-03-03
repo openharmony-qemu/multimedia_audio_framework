@@ -115,6 +115,11 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
     AUDIO_INFO_LOG("unload adapter %{public}s success", adapterName.c_str());
 }
 
+void RemoteDeviceManager::AllAdapterSetMicMute(bool isMute)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 void RemoteDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
@@ -369,9 +374,11 @@ void RemoteDeviceManager::DestroyCapture(const std::string &adapterName, uint32_
 
 void RemoteDeviceManager::DumpInfo(std::string &dumpString)
 {
-    for (auto &item :adapters_) {
-        dumpString += "  - remote/" + item.first + "\trenderNum: " + std::to_string(item.second->renderNum_) +
-            "\tcaptureNum: " + std::to_string(item.second->captureNum_) + "\n";
+    for (auto &item : adapters_) {
+        uint32_t renderNum = item.second == nullptr ? 0 : item.second->renderNum_;
+        uint32_t captureNum = item.second == nullptr ? 0 : item.second->captureNum_;
+        dumpString += "  - remote/" + item.first + "\trenderNum: " + std::to_string(renderNum) + "\tcaptureNum: " +
+            std::to_string(captureNum) + "\n";
     }
 }
 
@@ -400,7 +407,7 @@ std::shared_ptr<RemoteAdapterWrapper> RemoteDeviceManager::GetAdapter(const std:
     }
     LoadAdapter(adapterName);
     std::lock_guard<std::mutex> lock(adapterMtx_);
-    return adapters_[adapterName];
+    return adapters_.count(adapterName) == 0 ? nullptr : adapters_[adapterName];
 }
 
 int32_t RemoteDeviceManager::SwitchAdapterDesc(const std::vector<AudioAdapterDescriptor> &descs,

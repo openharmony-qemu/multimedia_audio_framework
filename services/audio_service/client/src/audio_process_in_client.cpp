@@ -100,6 +100,8 @@ public:
 
     int32_t SetMute(bool mute) override;
 
+    int32_t SetSourceDuration(int64_t duration) override;
+
     uint32_t GetUnderflowCount() override;
 
     uint32_t GetOverflowCount() override;
@@ -442,6 +444,12 @@ int32_t AudioProcessInClientInner::SetMute(bool mute)
 {
     muteVolumeInFloat_ = mute ? 0.0f : 1.0f;
     return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::SetSourceDuration(int64_t duration)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
+    return processProxy_->SetSourceDuration(duration);
 }
 
 int32_t AudioProcessInClientInner::SetDuckVolume(float vol)

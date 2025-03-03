@@ -418,9 +418,11 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     int32_t *raw32 = reinterpret_cast<int32_t *>(buffer.buffer);
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            uint32_t sampleAbs = (*raw32 >= 0 ? static_cast<uint32_t>(*raw32) : static_cast<uint32_t>(-*raw32)) >>
-                SHIFT_SIXTEEN;
-            volSums[channelIdx] += static_cast<int32_t>(sampleAbs);
+            if (*raw32 >= 0) {
+                volSums[channelIdx] += *raw32;
+            } else {
+                volSums[channelIdx] -= *raw32;
+            }
             raw32++;
         }
         raw32 += (split - 1) * channel;
@@ -533,6 +535,7 @@ void VolumeTools::DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, s
             minVolume = std::min(minVolume, (vols.volStart[0] + vols.volStart[1]) / HALF_FACTOR);
         }
         AudioLogUtils::ProcessVolumeData(logTag, vols, volumeDataCount);
+        AUDIO_ERR_LOG("volumeDataCount=%{public}" PRId64, volumeDataCount);
     }
     Trace::Count(logTag, minVolume);
 }

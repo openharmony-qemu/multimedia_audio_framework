@@ -41,6 +41,7 @@ ohos_unittest("renderer_in_server_unit_test") {
   include_dirs = [
     "../../../server/include",
     "../../../../audio_service/common/include",
+    "../../../../audio_service/common/include/dfx",
     "../../../../audio_service/common",
     "./include",
     "../../../../../frameworks/native/hdiadapter/source/common",
