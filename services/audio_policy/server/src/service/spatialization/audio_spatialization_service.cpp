@@ -764,7 +764,7 @@ void AudioSpatializationService::UpdateSpatializationSupported(const std::string
         return;
     }
     AudioPolicyService::GetAudioPolicyService().UpdateSpatializationSupported(encryptedAddress,
-        addressToSpatialDeviceStateMap_[encryptedAddress].isSpatializationSupported);
+        addressToSpatialDeviceStateMap_[encryptedAddress].isSpatializationSupported && isSpatializationSupported_);
 }
 
 std::string AudioSpatializationService::GetCurrentDeviceAddress() const

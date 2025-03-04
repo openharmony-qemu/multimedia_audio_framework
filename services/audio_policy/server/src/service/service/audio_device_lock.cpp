@@ -625,6 +625,12 @@ void AudioDeviceLock::SetDisplayName(const std::string &deviceName, bool isLocal
     audioConnectedDevice_.SetDisplayName(deviceName, isLocalDevice);
 }
 
+void AudioDeviceLock::UpdateSpatializationSupported(const std::string macAddress, const bool support)
+{
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    audioConnectedDevice_.UpdateSpatializationSupported(macAddress, support);
+}
+
 int32_t AudioDeviceLock::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
