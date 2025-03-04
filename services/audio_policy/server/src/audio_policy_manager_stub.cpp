@@ -61,6 +61,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_CALLBACK",
     "UNSET_CALLBACK",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
+    "SET_CLIENT_INFO_MGR_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
     "SET_INTERRUPT_CALLBACK",
@@ -1194,10 +1195,21 @@ void AudioPolicyManagerStub::SetQueryClientTypeCallbackInternal(MessageParcel &d
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetAudioClientInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioClientInfoMgrCallback is null");
+    int32_t result = SetAudioClientInfoMgrCallback(object);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CLIENT_INFO_MGR_CALLBACK):
+            SetAudioClientInfoMgrCallbackInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_DEVICE_ANAHS_CALLBACK):
             SetAudioDeviceAnahsCallbackInternal(data, reply);
             break;

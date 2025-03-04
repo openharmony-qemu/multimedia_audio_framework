@@ -21,11 +21,18 @@
 #include "parameters.h"
 #include "audio_policy_log.h"
 
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
 namespace {
 constexpr int32_t RECOVERY_ATTEMPT_LIMIT = 5;
@@ -274,12 +281,45 @@ int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage,
     // set preferred device
     std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>(**itr);
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
+
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    std::string bundleName = GetBundleNameFromUid(callerUid);
+    AUDIO_INFO_LOG("uid: %{public}u, pid: %{public}d, bundle name: %{public}s",
+        callerUid, callerPid, bundleName.c_str());
+    if (audioClientInfoMgrCallback_ != nullptr) {
+        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid);
+    }
+    AUDIO_INFO_LOG("check result pid: %{public}d", callerPid);
     if (preferredType == AUDIO_CALL_RENDER) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor, -1);
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor, callerPid);
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor);
     }
     return SUCCESS;
+}
+
+const std::string AudioRecoveryDevice::GetBundleNameFromUid(int32_t uid)
+{
+    AudioXCollie audioXCollie("AudioRecoveryDevice::GetBundleNameFromUid",
+        GET_BUNDLE_TIME_OUT_SECONDS);
+    std::string bundleName {""};
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
+    guard.CheckCurrTimeout();
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
+
+    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
+    bundleMgrProxy->GetNameForUid(uid, bundleName);
+    reguard.CheckCurrTimeout();
+
+    return bundleName;
 }
 
 int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &selectedDesc)
@@ -564,6 +604,12 @@ void AudioRecoveryDevice::WriteUnexcludeOutputSysEvents(const AudioDeviceUsage a
     bean->Add("DEVICE_NAME", desc->deviceName_);
     bean->Add("BT_TYPE", desc->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+int32_t AudioRecoveryDevice::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
+{
+    audioClientInfoMgrCallback_ = callback;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

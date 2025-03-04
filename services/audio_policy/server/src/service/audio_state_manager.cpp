@@ -128,7 +128,7 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
     std::lock_guard<std::mutex> lock(mutex_);
     if (ownerPid_ == 0) {
         if (!forcedDeviceMapList_.empty()) {
-            AUDIO_INFO_LOG("deviceType: %{public}d ownerPid_:0",
+            AUDIO_INFO_LOG("deviceType: %{public}d",
                 forcedDeviceMapList_.rbegin()->begin()->second->deviceType_);
             return make_shared<AudioDeviceDescriptor>(std::move(forcedDeviceMapList_.rbegin()->begin()->second));
         }
@@ -137,6 +137,13 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
             if (ownerPid_ == it->begin()->first) {
                 AUDIO_INFO_LOG("deviceType: %{public}d, ownerPid_: %{public}d", it->begin()->second->deviceType_,
                     ownerPid_);
+                return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
+            }
+        }
+        for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+            if (1 == it->begin()->first) {
+                AUDIO_INFO_LOG("bluetooth already force selected, deviceType: %{public}d",
+                    it->begin()->second->deviceType_);
                 return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
             }
         }
@@ -247,10 +254,12 @@ void AudioStateManager::RemoveForcedDeviceMapData(int32_t pid)
     if (forcedDeviceMapList_.empty()) {
         return;
     }
-    
-    for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+    auto it = forcedDeviceMapList_.begin();
+    while (it != forcedDeviceMapList_.end()) {
         if (pid == it->begin()->first) {
             it = forcedDeviceMapList_.erase(it);
+        } else {
+            it++;
         }
     }
 }

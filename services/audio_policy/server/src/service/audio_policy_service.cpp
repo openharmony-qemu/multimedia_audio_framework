@@ -1015,6 +1015,18 @@ int32_t AudioPolicyService::SetQueryClientTypeCallback(const sptr<IRemoteObject>
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object)
+{
+    sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
+
+    if (callback != nullptr) {
+        return audioRecoveryDevice_.SetAudioClientInfoMgrCallback(callback);
+    } else {
+        AUDIO_ERR_LOG("Client info manager callback is null");
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage)
 {
     AUDIO_INFO_LOG("Start");

@@ -1918,6 +1918,15 @@ int32_t AudioPolicyServer::SetQueryClientTypeCallback(const sptr<IRemoteObject> 
     return audioPolicyService_.SetQueryClientTypeCallback(object);
 }
 
+int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object)
+{
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return ERR_OPERATION_FAILED;
+    }
+    return audioPolicyService_.SetAudioClientInfoMgrCallback(object);
+}
+
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     if (interruptService_ != nullptr) {
