@@ -384,7 +384,8 @@ void AudioConnectedDevice::UpdateSpatializationSupported(const std::string macAd
 {
     for (auto device : connectedDevices_) {
         std::string encryAddress = GetSha256EncryptAddress(device->macAddress_);
-        if (encryAddress == macAddress && device->spatializationSupported_ != support) {
+        if (encryAddress == macAddress && device->deviceType_ ==  DEVICE_TYPE_BLUETOOTH_A2DP &&
+            device->spatializationSupported_ != support) {
             device->spatializationSupported_ = support;
             AUDIO_INFO_LOG("spatializationSupported is set to %{public}d", support);
         }

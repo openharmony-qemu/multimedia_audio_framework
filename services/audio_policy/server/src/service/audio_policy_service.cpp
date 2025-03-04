@@ -2128,7 +2128,7 @@ void AudioPolicyService::UpdateSafeVolumeByS4()
 
 void AudioPolicyService::UpdateSpatializationSupported(const std::string macAddress, const bool support)
 {
-    audioConnectedDevice_.UpdateSpatializationSupported(macAddress, support);
+    audioDeviceLock_.UpdateSpatializationSupported(macAddress, support);
 }
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t AudioPolicyService::LoadModernInnerCapSink(int32_t innerCapId)
