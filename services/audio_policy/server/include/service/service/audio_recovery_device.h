@@ -62,6 +62,8 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     int32_t UnexcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
+    const std::string GetBundleNameFromUid(int32_t uid);
 private:
     AudioRecoveryDevice() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
@@ -115,6 +117,7 @@ private:
     AudioCapturerSession& audioCapturerSession_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
+    sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_;
 };
 }
 }

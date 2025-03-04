@@ -104,7 +104,7 @@ private:
     std::mutex mutex_;
     shared_mutex mediaExcludedDevicesMutex_;
     shared_mutex callExcludedDevicesMutex_;
-    int32_t ownerPid_;
+    int32_t ownerPid_ = 0;
     std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedDeviceMapList_;
     void RemoveForcedDeviceMapData(int32_t pid);
 };

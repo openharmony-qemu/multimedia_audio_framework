@@ -286,6 +286,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
 
+    int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object);
+
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object, const int32_t apiVersion);
 

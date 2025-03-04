@@ -2032,6 +2032,25 @@ int32_t AudioPolicyManager::UnsetAudioDeviceRefinerCallback()
     return gsp->UnsetAudioDeviceRefinerCallback();
 }
 
+int32_t AudioPolicyManager::SetAudioClientInfoMgrCallback(
+    const std::shared_ptr<AudioClientInfoMgrCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (callback == nullptr) {
+        return ERR_INVALID_PARAM;
+    };
+
+    sptr<AudioPolicyManagerListenerStub> listener = new (std::nothrow) AudioPolicyManagerListenerStub();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
+    listener->SetAudioClientInfoMgrCallback(callback);
+
+    sptr<IRemoteObject> object = listener->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
+
+    return gsp->SetAudioClientInfoMgrCallback(object);
+}
+
 int32_t AudioPolicyManager::SetAudioConcurrencyCallback(const uint32_t sessionID,
     const std::shared_ptr<AudioConcurrencyCallback> &callback)
 {

@@ -65,6 +65,12 @@ public:
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
 };
 
+class AudioClientInfoMgrCallback {
+public:
+    virtual ~AudioClientInfoMgrCallback() = default;
+    virtual bool OnCheckClientInfo(const std::string &bundleName, uint32_t uid, int32_t &pid) = 0;
+};
+
 class AudioPreferredOutputDeviceChangeCallback {
 public:
     virtual ~AudioPreferredOutputDeviceChangeCallback() = default;
