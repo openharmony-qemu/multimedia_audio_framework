@@ -181,7 +181,8 @@ int32_t AudioProcessStub::HandleRegisterThreadPriority(MessageParcel &data, Mess
 {
     uint32_t tid = data.ReadUint32();
     std::string bundleName = data.ReadString();
-    reply.WriteInt32(RegisterThreadPriority(tid, bundleName));
+    BoostTriggerMethod method = static_cast<BoostTriggerMethod>(data.ReadUint32());
+    reply.WriteInt32(RegisterThreadPriority(tid, bundleName, method));
     return AUDIO_OK;
 }
 

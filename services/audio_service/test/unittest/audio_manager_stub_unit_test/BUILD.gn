@@ -43,6 +43,7 @@ ohos_unittest("audio_manager_stub_unit_test") {
     "../../../../audio_service/common/include/dfx",
     "../../../../audio_service/common",
     "./include",
+    "../../../../../frameworks/native/audioschedule/include",
     "../../../../../frameworks/native/hdiadapter/source/common",
     "../../../../../frameworks/native/playbackcapturer/include",
     "../../../../../frameworks/native/hdiadapter/common",

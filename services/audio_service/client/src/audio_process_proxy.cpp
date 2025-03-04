@@ -199,7 +199,8 @@ int32_t AudioProcessProxy::RegisterProcessCb(sptr<IRemoteObject> object)
     return reply.ReadInt32();
 }
 
-int32_t AudioProcessProxy::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
+int32_t AudioProcessProxy::RegisterThreadPriority(uint32_t tid, const std::string &bundleName,
+    BoostTriggerMethod method)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -208,6 +209,7 @@ int32_t AudioProcessProxy::RegisterThreadPriority(uint32_t tid, const std::strin
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
     data.WriteUint32(tid);
     data.WriteString(bundleName);
+    data.WriteUint32(method);
     int ret = Remote()->SendRequest(IAudioProcessMsg::ON_REGISTER_THREAD_PRIORITY, data, reply, option);
     CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     ret = reply.ReadInt32();

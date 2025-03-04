@@ -155,6 +155,14 @@ bool ResetEndpointThreadPriority() { return false; };
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
+}
+std::map<std::pair<uint32_t, uint32_t>,
+    std::weak_ptr<SharedAudioScheduleGuard>> SharedAudioScheduleGuard::guardMap_;
+std::mutex SharedAudioScheduleGuard::mutex_;
+std::condition_variable SharedAudioScheduleGuard::cv_;
+
 AudioScheduleGuard::AudioScheduleGuard(uint32_t pid, uint32_t tid, const std::string &bundleName)
     : pid_(pid), tid_(tid), bundleName_(bundleName)
 {
@@ -184,11 +192,60 @@ AudioScheduleGuard& AudioScheduleGuard::operator=(AudioScheduleGuard&& audioSche
     return *this;
 }
 
+bool AudioScheduleGuard::operator==(const AudioScheduleGuard&) const = default;
+
 AudioScheduleGuard::~AudioScheduleGuard()
 {
     if (isReported_) {
         UnscheduleReportData(pid_, tid_, bundleName_.c_str());
     }
+}
+
+std::shared_ptr<SharedAudioScheduleGuard> SharedAudioScheduleGuard::Create(uint32_t pid, uint32_t tid,
+    const std::string &bundleName)
+{
+    std::shared_ptr<SharedAudioScheduleGuard> sharedGuard = nullptr;
+    std::unique_lock lock(mutex_);
+    bool isTimeout = !cv_.wait_for(lock, std::chrono::seconds(WAIT_TIMEOUT_SECONDS), [pid, tid, &sharedGuard] () {
+        if (guardMap_.contains({pid, tid})) {
+            sharedGuard = guardMap_.at({pid, tid}).lock();
+            if (sharedGuard != nullptr) {
+                return true;
+            }
+            AUDIO_INFO_LOG("wait");
+            // if contains but sharedGuard is null, wait last object destroy.
+            return false;
+        } else {
+            return true;
+        }
+    });
+    CHECK_AND_RETURN_RET_LOG(!isTimeout, nullptr, "timeout");
+
+    if (sharedGuard) {
+        AUDIO_INFO_LOG("ret exist obj");
+        return sharedGuard;
+    }
+
+    if (!guardMap_.contains({pid, tid})) {
+        sharedGuard = std::make_shared<SharedAudioScheduleGuard>(pid, tid, bundleName);
+        CHECK_AND_RETURN_RET_LOG(sharedGuard, nullptr, "no mem");
+        guardMap_.insert({{pid, tid}, sharedGuard});
+        AUDIO_INFO_LOG("ret new obj");
+        return sharedGuard;
+    }
+
+    AUDIO_ERR_LOG("unknow err");
+    return nullptr;
+}
+
+SharedAudioScheduleGuard::~SharedAudioScheduleGuard()
+{
+    std::lock_guard lock(mutex_);
+    // unreport must guard by mutex
+    AudioScheduleGuard tempGuard(std::move(guard_));
+    guardMap_.erase({pid_, tid_});
+    cv_.notify_all();
+    AUDIO_INFO_LOG("out");
 }
 } // namespace AudioStandard
 } // namespace OHOS
