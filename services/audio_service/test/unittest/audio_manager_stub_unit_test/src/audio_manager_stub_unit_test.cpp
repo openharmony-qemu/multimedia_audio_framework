@@ -1542,5 +1542,217 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_021, TestSize.Level1)
     auto ret = audioServer->OnRemoteRequest(format, data, reply, option);
     EXPECT_EQ(305, ret);
 }
+
+/**
+* @tc.name  : Test HandleFifthPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleFifthPartCode_001
+* @tc.desc  : Test HandleFifthPartCode interface. Set code value to CREATE_IPC_OFFLINE_STREAM
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_IPC_OFFLINE_STREAM);
+    MessageParcel data;
+    data.WriteInt32(0);
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleFifthPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
+
+/**
+* @tc.name  : Test HandleFifthPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleFifthPartCode_002
+* @tc.desc  : Test HandleFifthPartCode interface. interface. Set code value to GET_OFFLINE_AUDIO_EFFECT_CHAINS
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS);
+    MessageParcel data;
+    data.WriteInt32(0);
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleFifthPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
+
+/**
+* @tc.name  : Test HandleFifthPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleFifthPartCode_003
+* @tc.desc  : Test HandleFifthPartCode interface. Set code value to GET_STANDBY_STATUS
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS);
+    MessageParcel data;
+    data.WriteInt32(0);
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleFifthPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
+
+/**
+* @tc.name  : Test HandleFifthPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleFifthPartCode_004
+* @tc.desc  : Test HandleFifthPartCode interface. Set code value to GENERATE_SESSION_ID
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID);
+    MessageParcel data;
+    data.WriteInt32(0);
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleFifthPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_ERR, ret);
+}
+
+/**
+* @tc.name  : Test HandleFifthPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleFifthPartCode_005
+* @tc.desc  : Test HandleFifthPartCode interface. Set code value to LOAD_HDI_ADAPTER
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER);
+    MessageParcel data;
+    data.WriteInt32(0);
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleFifthPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
+
+/**
+* @tc.name  : Test HandleFifthPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleFifthPartCode_006
+* @tc.desc  : Test HandleFifthPartCode interface. Set code value to UNLOAD_HDI_ADAPTER
+*/
+HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_027, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER);
+    MessageParcel data;
+    data.WriteInt32(0);
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleFifthPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
+
+/**
+* @tc.name  : Test HandleThirdPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleThirdPartCode_019
+* @tc.desc  : Test HandleThirdPartCode interface. Set code value to GET_AUDIO_EFFECT_PROPERTY_V3
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_019, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY_V3);
+    MessageParcel data;
+    data.WriteInt32(0);
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleThirdPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
+
+/**
+* @tc.name  : Test HandleThirdPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleThirdPartCode_020
+* @tc.desc  : Test HandleThirdPartCode interface. Set code value to SET_AUDIO_EFFECT_PROPERTY_V3
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_020, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY_V3);
+    MessageParcel data;
+    data.WriteInt32(0);
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleThirdPartCode(format, data, reply, option);
+    EXPECT_EQ(ERROR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name  : Test HandleSecondPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleSecondPartCode_019
+* @tc.desc  : Test HandleSecondPartCode interface. Set code value to CREATE_AUDIOPROCESS
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_019, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_ERR, ret);
+}
+
+/**
+* @tc.name  : Test HandleSecondPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleSecondPartCode_020
+* @tc.desc  : Test HandleSecondPartCode interface. Set code value to REGISET_POLICY_PROVIDER
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_020, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_ERR, ret);
+}
+
+/**
+* @tc.name  : Test HandleSecondPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleSecondPartCode_021
+* @tc.desc  : Test HandleSecondPartCode interface. Set code value to SET_WAKEUP_CLOSE_CALLBACK
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_021, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_ERR, ret);
+}
+
+/**
+* @tc.name  : Test HandleSecondPartCode API
+* @tc.type  : FUNC
+* @tc.number: HandleSecondPartCode_022
+* @tc.desc  : Test HandleSecondPartCode interface. Set code value to CHECK_HIBERNATE_STATE
+*/
+HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_022, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_HIBERNATE_STATE);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
