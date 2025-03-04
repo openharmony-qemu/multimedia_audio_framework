@@ -43,7 +43,7 @@ protected:
 
 private:
     void StandbySleep();
-    int32_t InitSink(const AudioStreamInfo &streamInfo);
+    int32_t InitSink(const AudioStreamInfo &clientStreamInfo);
     int32_t InitSink(uint32_t channel, AudioSampleFormat format, uint32_t rate);
     int32_t SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip);
     void PauseAsync();
@@ -53,8 +53,12 @@ private:
 
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
-    AudioSampleFormat GetDirectDeviceFormate(AudioSampleFormat format);
+    AudioSampleFormat GetDirectDeviceFormat(AudioSampleFormat format);
+    AudioSampleFormat GetDirectVoipDeviceFormat(AudioSampleFormat format);
     int32_t GetDirectFormatByteSize(AudioSampleFormat format);
+
+    void GetTargetSinkStreamInfo(const AudioStreamInfo &clientStreamInfo, uint32_t &targetSampleRate,
+        uint32_t &targetChannel, AudioSampleFormat &targetFormat, bool &isVoip);
 
 private:
     bool isVoip_;
