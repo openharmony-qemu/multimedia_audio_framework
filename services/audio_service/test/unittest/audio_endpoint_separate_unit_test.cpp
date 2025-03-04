@@ -291,7 +291,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_010, TestSize.Level1
     ptr->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
         "endpoint_sep_test", true);
     ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     HdiAdapterManager::GetInstance().ReleaseId(ptr->fastRenderId_);
 }
 
@@ -316,25 +316,25 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_011, TestSize.Level1
     ptr->dstSpanSizeInframe_ = 1;
     ptr->dstBufferFd_ = 1;
     auto ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     ptr->dstBufferFd_ = 0;
     ptr->dstTotalSizeInframe_ = 0;
     ptr->dstSpanSizeInframe_ = 1;
     ptr->dstBufferFd_ = 1;
     ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     ptr->dstBufferFd_ = 0;
     ptr->dstTotalSizeInframe_ = 1;
     ptr->dstSpanSizeInframe_ = 0;
     ptr->dstBufferFd_ = 1;
     ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     ptr->dstBufferFd_ = 0;
     ptr->dstTotalSizeInframe_ = 1;
     ptr->dstSpanSizeInframe_ = 1;
     ptr->dstBufferFd_ = 0;
     ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     HdiAdapterManager::GetInstance().ReleaseId(ptr->fastRenderId_);
 }
 
