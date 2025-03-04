@@ -453,7 +453,6 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
                 sink->Stop();
                 sink->DeInit();
             }
-            HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         } else {
             return SUCCESS;
         }
@@ -503,8 +502,9 @@ int32_t NoneMixEngine::SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip
 {
     Stop();
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
-    CHECK_AND_RETURN_RET(sink != nullptr, ERR_INVALID_HANDLE);
-    sink->DeInit();
+    if (sink != nullptr) {
+        sink->DeInit();
+    }
     isVoip_ = isVoip;
     return InitSink(streamInfo);
 }
