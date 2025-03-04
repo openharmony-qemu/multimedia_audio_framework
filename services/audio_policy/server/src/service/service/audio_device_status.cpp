@@ -948,9 +948,9 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     updatedDesc.spatializationSupported_ = (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
-    && AudioSpatializationService::GetAudioSpatializationService().
-    IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
-    && AudioSpatializationService::GetAudioSpatializationService().IsSpatializationSupported();
+        && AudioSpatializationService::GetAudioSpatializationService().
+        IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
+        && AudioSpatializationService::GetAudioSpatializationService().IsSpatializationSupported();
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
