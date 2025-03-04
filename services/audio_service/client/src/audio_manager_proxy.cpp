@@ -649,8 +649,9 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, nullptr, "CreateAudioProcess failed, error: %{public}d", error);
-    sptr<IRemoteObject> process = reply.ReadRemoteObject();
     errorCode = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "errcode: %{public}d", errorCode);
+    sptr<IRemoteObject> process = reply.ReadRemoteObject();
     return process;
 }
 
