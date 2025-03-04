@@ -659,10 +659,12 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
     const DevicePrivacyInfo &deviceInfo, const std::shared_ptr<AudioDeviceDescriptor> &dev,
     std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
+    CHECK_AND_RETURN_LOG(dev != nullptr, "nullptr dev");
     switch (usage) {
         case MEDIA_OUTPUT_DEVICES:
             if ((static_cast<uint32_t>(dev->deviceRole_) & OUTPUT_DEVICE) &&
-                (static_cast<uint32_t>(deviceInfo.deviceUsage) & MEDIA)) {
+                (static_cast<uint32_t>(deviceInfo.deviceUsage) & MEDIA) &&
+                (dev->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO)) {
                 audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
             }
             break;
