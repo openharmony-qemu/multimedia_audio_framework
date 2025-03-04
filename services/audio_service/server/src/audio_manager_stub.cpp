@@ -461,10 +461,18 @@ int AudioManagerStub::HandleCreateAudioProcess(MessageParcel &data, MessageParce
     AudioPlaybackCaptureConfig filterConfig;
     ProcessConfig::ReadInnerCapConfigFromParcel(filterConfig, data);
     sptr<IRemoteObject> process = CreateAudioProcess(config, errorCode, filterConfig);
-    CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
-        "CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
-    reply.WriteRemoteObject(process);
+    if (process == nullptr) {
+        AUDIO_ERR_LOG("CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
+        if (errorCode == 0) {
+            errorCode = AUDIO_ERR;
+        }
+        reply.WriteInt32(errorCode);
+        // Only ipc failed need return err. Here using errorCode send information.
+        return AUDIO_OK;
+    }
+
     reply.WriteInt32(errorCode);
+    reply.WriteRemoteObject(process);
     return AUDIO_OK;
 }
 

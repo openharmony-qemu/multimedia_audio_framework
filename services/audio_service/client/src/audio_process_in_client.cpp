@@ -52,6 +52,8 @@ static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volum
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
 constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
+constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
+constexpr int32_t MAX_RETRY_COUNT = 8;
 }
 
 class ProcessCbImpl;
@@ -341,6 +343,11 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig, errorCode);
+    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
+        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
