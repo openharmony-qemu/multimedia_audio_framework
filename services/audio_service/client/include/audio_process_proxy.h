@@ -54,6 +54,8 @@ public:
 
     int32_t SetSourceDuration(int64_t duration) override;
 
+    int32_t SetUnderrunCount(uint32_t underrunCnt) override;
+
 private:
     static inline BrokerDelegator<AudioProcessProxy> delegator_;
 };

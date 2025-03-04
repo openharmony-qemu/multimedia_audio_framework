@@ -386,6 +386,7 @@ enum PlayerType : int32_t {
     PLAYER_TYPE_SOUND_POOL = 1000,
     PLAYER_TYPE_AV_PLAYER = 1001,
     PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
+    PLAYER_TYPE_TONE_PLAYER = 1003,
 };
 
 struct AudioRendererInfo {

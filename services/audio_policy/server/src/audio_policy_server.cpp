@@ -216,7 +216,6 @@ void AudioPolicyServer::OnStart()
     DlopenUtils::DeInit();
     isOnStart = true;
     DfxMsgManager::GetInstance().Init();
-    RegisterAppStateListener();
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
@@ -225,6 +224,7 @@ void AudioPolicyServer::AddSystemAbilityListeners()
     AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    AddSystemAbilityListener(APP_MGR_SERVICE_ID);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
 #endif
@@ -293,12 +293,24 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #endif
         default:
-            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            OnAddSystemAbilityExtract(systemAbilityId, deviceId);
             break;
     }
     // eg. done systemAbilityId: [3001] cost 780ms
     AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
         (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
+}
+
+void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId)
+{
+    switch (systemAbilityId) {
+        case APP_MGR_SERVICE_ID:
+            RegisterAppStateListener();
+            break;
+        default:
+            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            break;
+    }
 }
 
 void AudioPolicyServer::HandleKvDataShareEvent()
@@ -3000,8 +3012,9 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
 
 void AudioPolicyServer::RegisterAppStateListener()
 {
+    AUDIO_INFO_LOG("OnAddSystemAbility app manager service start");
     if (appStateListener_ == nullptr) {
-        appStateListener_ = new(std::nothrow) AppStateListener(weak_from_this());
+        appStateListener_ = new(std::nothrow) AppStateListener();
     }
 
     if (appStateListener_ == nullptr) {
@@ -3761,11 +3774,6 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
-}
-
-void AudioPolicyServer::NotifyAppStateChanged(int32_t pid, int32_t uid, int32_t state)
-{
-    interruptService_->HandleAppStateChange(pid, uid, state);
 }
 } // namespace AudioStandard
 } // namespace OHOS

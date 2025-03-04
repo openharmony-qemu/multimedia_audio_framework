@@ -23,10 +23,21 @@
 namespace OHOS {
 namespace AudioStandard {
 
-enum DfxType {
-    DFX_TYPE_RENDERER = 0,
-    DFX_TYPE_CAPTURER,
-    DFX_TYPE_INTERRUPT,
+enum DfxPlayerType {
+    DFX_PLAYER_TYPE_TS_RENDER = 0,
+    DFX_PLAYER_TYPE_NATIVE_RENDER,
+    DFX_PLAYER_TYPE_OPENSL_ES,
+    DFX_PLAYER_TYPE_AVPLAYER,
+    DFX_PLAYER_TYPE_SOUNDPOOL,
+    DFX_PLAYER_TYPE_TONEPLAYER,
+};
+
+enum DfxAppState {
+    DFX_APP_STATE_UNKNOWN = -1,
+    DFX_APP_STATE_START = 0,
+    DFX_APP_STATE_FOREGROUND = 2,
+    DFX_APP_STATE_BACKGROUND = 4,
+    DFX_APP_STATE_END = 16,
 };
 
 struct DfxStatInt32 {
@@ -83,13 +94,14 @@ struct InterruptDfxInfo {
     DfxStatAction interruptAction;
     DfxStatInt32 interruptInfo;
     std::vector<InterruptEffect> interruptEffectVec{};
-    std::vector<DfxStatAction> appStateVec{};
 };
 
-struct DfxBundleInfo {
+struct DfxRunningAppInfo {
     int32_t appUid{-1};
     std::string appName{};
-    int32_t versionCode{};
+    std::string versionName{};
+    std::vector<uint8_t> appStateVec{};
+    std::vector<uint64_t> appStateTimeStampVec{};
 };
 
 } // namespace AudioStandard

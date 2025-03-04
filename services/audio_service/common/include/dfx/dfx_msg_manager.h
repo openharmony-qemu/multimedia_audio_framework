@@ -26,52 +26,100 @@
 #include "dfx_utils.h"
 #include "audio_info.h"
 #include "audio_utils.h"
-#include "event_bean.h"
 #include "audio_safe_block_queue.h"
+#include "event_handler.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 struct DfxMessage {
-    uint32_t appUid{};
+    int32_t appUid{};
     std::list<RenderDfxInfo> renderInfo{};
     std::list<InterruptDfxInfo> interruptInfo{};
     std::list<CapturerDfxInfo> captureInfo{};
     bool ready = false;
 };
 
-class DfxMsgManager {
+struct DfxReportResult {
+    std::string appName{};
+    std::string appVersion{};
+    std::vector<uint32_t> rendererActions{};
+    std::vector<uint32_t> renderInfo{};
+    std::vector<uint64_t> renderTimestamp{};
+    std::vector<std::string> rendererStats{};
+    std::vector<uint32_t> interruptActions{};
+    std::vector<uint64_t> interruptTimestamp{};
+    std::vector<std::string> interruptEffect{};
+    std::vector<uint32_t> interruptInfo{};
+    std::vector<uint32_t> capturerActions{};
+    std::vector<uint32_t> capturerInfo{};
+    std::vector<uint64_t> capturerTimestamp{};
+    std::vector<std::string> capturerStat{};
+    std::vector<uint8_t> appState{};
+    std::vector<uint64_t> appStateTimestamp{};
+    uint64_t summary{};
+};
+
+class DfxMsgHandler : public IHandler {
+public:
+    DfxMsgHandler(IHandler* handler);
+    void OnHandle(uint32_t code, int64_t data) override;
+private:
+    IHandler *handler_ = nullptr;
+};
+
+class DfxMsgManager : public IHandler {
 public:
     static DfxMsgManager& GetInstance();
+    void OnHandle(uint32_t code, int64_t data) override;
+
     bool Enqueue(const DfxMessage &msg);
-    bool HasAppInfo(uint32_t appUid);
+    bool CheckCanAddAppInfo(int32_t appUid);
     void Init();
-    void SaveAppInfo(const DfxBundleInfo info);
+    void SaveAppInfo(const DfxRunningAppInfo info);
+    void UpdateAppState(int32_t appUid, DfxAppState appstate, bool forceUpdate = false);
 private:
     DfxMsgManager();
     virtual ~DfxMsgManager();
     void TimeFunc();
-    bool ProcessCheck(const DfxMessage& msg);
-    bool Process(DfxMessage& msg);
+    bool ProcessCheck(const DfxMessage &msg);
+    bool Process(DfxMessage &msg);
+    void SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int64_t delayTime);
+    void CheckReportDfxMsg();
+    bool IsMsgReady(const DfxMessage &msg);
+    void HandleThreadExit();
+    void InsertReportQueue(const DfxMessage &msg);
+    bool ProcessInner(int32_t index, std::list<RenderDfxInfo> &dfxInfo, std::list<RenderDfxInfo> &curDfxInfo);
+    bool ProcessInner(int32_t index, std::list<InterruptDfxInfo> &dfxInfo, std::list<InterruptDfxInfo> &curDfxInfo);
+    bool ProcessInner(int32_t index, std::list<CapturerDfxInfo> &dfxInfo, std::list<CapturerDfxInfo> &curDfxInfo);
 
-    void InsertReportQueue(const DfxMessage& msg);
-    bool ProcessInner(uint32_t index, std::list<RenderDfxInfo> &dfxInfo, std::list<RenderDfxInfo> &curDfxInfo);
-    bool ProcessInner(uint32_t index, std::list<InterruptDfxInfo> &dfxInfo, std::list<InterruptDfxInfo> &curDfxInfo);
-    bool ProcessInner(uint32_t index, std::list<CapturerDfxInfo> &dfxInfo, std::list<CapturerDfxInfo> &curDfxInfo);
+    void WriteInterruptMsg(DfxMessage &msg, const std::unique_ptr<DfxReportResult> &result);
+    void WriteRenderMsg(DfxMessage &msg, const std::unique_ptr<DfxReportResult> &result);
+    void WriteCapturerMsg(DfxMessage &msg, const std::unique_ptr<DfxReportResult> &result);
+    void WriteRunningAppMsg(DfxMessage &msg, const std::unique_ptr<DfxReportResult> &result);
+    void HandleToHiSysEvent(DfxMessage &msg);
+    void WritePlayAudioStatsEvent(const std::unique_ptr<DfxReportResult> &result);
 
-    void WriteInterruptMsg(const DfxMessage &msg, std::shared_ptr<Media::MediaMonitor::EventBean> &bean);
-    void WriteRenderMsg(const DfxMessage &msg, std::shared_ptr<Media::MediaMonitor::EventBean> &bean);
-    void WriteCapturerMsg(const DfxMessage &msg, std::shared_ptr<Media::MediaMonitor::EventBean> &bean);
-    void HandleToHiSysEvent(const DfxMessage &msg);
-    void WritePlayAudioStatsEvent(std::shared_ptr<Media::MediaMonitor::EventBean> &bean);
+    void LogDfxResult(const std::unique_ptr<DfxReportResult> &result);
 
     AudioSafeBlockQueue<DfxMessage> msgQueue_;
-    std::multimap<uint32_t, DfxMessage> reportQueue_;
+    std::multimap<int32_t, DfxMessage> reportQueue_;
     std::unique_ptr<std::thread> timeThread_ = nullptr;
     std::atomic_bool startThread_ = true;
     std::time_t lastReportTime_{};
-    std::map<uint32_t, DfxBundleInfo> bundleInfo_;
+    std::map<int32_t, DfxRunningAppInfo> appInfo_;
     std::atomic_bool isFull_ = false;
+    std::atomic_int32_t reportedCnt_ = 0;
+    std::shared_ptr<DfxMsgHandler> handler_ = nullptr;
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
+    std::condition_variable cvReachLimit_;
+    std::mutex mutexLock_;
+
+    enum {
+        DFX_CHECK_REPORT_MSG = 0,
+    };
 };
 
 } // namespace AudioStandard

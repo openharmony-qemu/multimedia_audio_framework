@@ -64,6 +64,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
         ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, sessionId_);
+    recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, sessionId_);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -169,6 +170,26 @@ int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
 
 int32_t AudioProcessInServer::Start()
 {
+    int32_t ret = StartInner();
+    if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
+        playerDfx_->WriteDfxStartMsg(sessionId_, stage, sourceDuration_, processConfig_);
+    } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        CapturerStage stage = ret == SUCCESS ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
+        recorderDfx_->WriteDfxStartMsg(sessionId_, stage, processConfig_);
+    }
+
+    lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    if (processBuffer_ != nullptr) {
+        lastWriteFrame_ = processBuffer_->GetCurReadFrame();
+    }
+    lastWriteMuteFrame_ = 0;
+    return ret;
+}
+
+int32_t AudioProcessInServer::StartInner()
+{
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     std::lock_guard<std::mutex> lock(statusLock_);
@@ -206,7 +227,6 @@ int32_t AudioProcessInServer::Start()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
         enterStandbyTime_ = 0;
-        standByState_ = RENDERER_STAGE_STANDBY_END;
     }
 
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
@@ -238,6 +258,12 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
+    }
+
+    if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        playerDfx_->WriteDfxActionMsg(sessionId_, RENDERER_STAGE_PAUSE_OK);
+    } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        recorderDfx_->WriteDfxActionMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK);
     }
 
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
@@ -305,6 +331,19 @@ int32_t AudioProcessInServer::Stop()
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
+    }
+
+    lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    if (processBuffer_ != nullptr) {
+        lastWriteFrame_ = processBuffer_->GetCurReadFrame() - lastWriteFrame_;
+    }
+    if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        playerDfx_->WriteDfxStopMsg(sessionId_, RENDERER_STAGE_STOP_OK,
+            {lastWriteFrame_, lastWriteMuteFrame_, GetLastAudioDuration(), underrunCount_}, processConfig_);
+    } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_STOP_OK,
+            GetLastAudioDuration(), processConfig_);
     }
 
     AUDIO_INFO_LOG("Stop in server success!");
@@ -594,14 +633,19 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
     bean->Add("STREAMID", static_cast<int32_t>(sessionId));
     bean->Add("STANDBY", standby);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
- 
+
     std::unordered_map<std::string, std::string> payload;
     payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
     payload["sessionId"] = std::to_string(sessionId);
     payload["isStandby"] = std::to_string(standby);
     ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_STANDBY);
+
+    if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        playerDfx_->WriteDfxActionMsg(sessionId_, standby == 0 ?
+            RENDERER_STAGE_STANDBY_END : RENDERER_STAGE_STANDBY_BEGIN);
+    }
 }
- 
+
 void AudioProcessInServer::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
 {
 #ifdef RESSCHE_ENABLE
@@ -656,9 +700,21 @@ int32_t AudioProcessInServer::SetSourceDuration(int64_t duration)
     return SUCCESS;
 }
 
-void AudioProcessInServer::SetStandbyState(RendererStage state)
+int32_t AudioProcessInServer::SetUnderrunCount(uint32_t underrunCnt)
 {
-    standByState_ = state;
+    underrunCount_ = underrunCnt;
+    return SUCCESS;
+}
+
+void AudioProcessInServer::AddMuteWriteFrameCnt(int64_t muteFrameCnt)
+{
+    lastWriteMuteFrame_ += muteFrameCnt;
+}
+
+int64_t AudioProcessInServer::GetLastAudioDuration()
+{
+    auto ret = lastStopTime_ - lastStartTime_;
+    return ret < 0 ? -1 : ret;
 }
 
 RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)

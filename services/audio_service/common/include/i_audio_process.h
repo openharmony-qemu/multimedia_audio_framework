@@ -52,6 +52,8 @@ public:
 
     virtual int32_t SetSourceDuration(int64_t duration) = 0;
 
+    virtual int32_t SetUnderrunCount(uint32_t underrunCnt) = 0;
+
     virtual ~AudioProcess() = default;
 };
 
@@ -91,6 +93,7 @@ public:
         ON_SET_DEFAULT_OUTPUT_DEVICE,
         ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS,
         ON_SET_SOURCE_DURATION,
+        ON_SET_UNDERRUN_CNT,
         PROCESS_MAX_MSG
     };
 

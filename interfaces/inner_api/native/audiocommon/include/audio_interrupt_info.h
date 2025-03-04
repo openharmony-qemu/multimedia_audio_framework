@@ -191,13 +191,6 @@ enum InterruptSummary {
     INTERRUPT_SUMMARY_INTERRUPT_BACKGROUND,
 };
 
-enum InterruptAppState {
-    INTERRUPT_APP_STATE_START = 0,
-    INTERRUPT_APP_STATE_FOREGROUND = 2,
-    INTERRUPT_APP_STATE_BACKGROUND = 4,
-    INTERRUPT_APP_STATE_END = 16,
-};
-
 class AudioInterrupt {
 public:
     static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;

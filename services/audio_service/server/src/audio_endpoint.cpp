@@ -1173,7 +1173,6 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", sessionId);
                 processList_[i]->EnableStandby();
                 needCheckStandby = true;
-                processList_[i]->SetStandbyState(RENDERER_STAGE_STANDBY_BEGIN);
                 continue;
             }
             uint64_t curRead = tempBuffer->GetCurReadFrame();
@@ -1425,8 +1424,19 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
             processList_[i]->WriteDumpFile(static_cast<void *>(streamData.bufferDesc.buffer),
                 streamData.bufferDesc.bufLength);
             WriteMuteDataSysEvent(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength, i);
+            HandleMuteWriteData(streamData.bufferDesc, i);
         }
     }
+}
+
+void AudioEndpointInner::HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index)
+{
+    auto tempProcess = processList_[index];
+    CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
+
+    int64_t muteFrameCnt = 0;
+    VolumeTools::CalcMuteFrame(bufferDesc, dstStreamInfo_, logUtilsTag_, volumeDataCount_, muteFrameCnt);
+    tempProcess->AddMuteWriteFrameCnt(muteFrameCnt);
 }
 
 bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
@@ -1468,8 +1478,6 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
             ProcessToDupStream(audioDataList, dstStreamData, capture.first);
         }
     }
-
-    VolumeTools::DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_, logUtilsTag_, volumeDataCount_);
 
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),

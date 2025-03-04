@@ -1736,6 +1736,7 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
 void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
     const uint32_t &streamId, const AudioInterrupt &audioInterrupt)
 {
+    CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "dfxCollector is null");
     AUDIO_INFO_LOG("[SendInterruptEventCallback] hintType= %{public}d", interruptEvent.hintType);
     InterruptDfxBuilder dfxBuilder;
     auto& [infoIdx, effectIdx] = dfxCollector_->GetDfxIndexes(audioInterrupt.streamId);
@@ -1985,53 +1986,16 @@ void AudioInterruptService::WriteFocusMigrateEvent(const int32_t &toZoneId)
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioInterruptService::HandleAppStateChange(int32_t pid, int32_t uid, int32_t state)
-{
-    CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "dfxCollector is null");
-    AUDIO_INFO_LOG("app state changed, pid=%{public}d state=%{public}d", pid, state);
-    auto itZone = zonesMap_.find(ZONEID_DEFAULT);
-    CHECK_AND_RETURN_LOG(itZone != zonesMap_.end(), "can not find zoneid");
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
-    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
-        audioFocusInfoList = itZone->second->audioFocusInfoList;
-    }
-
-    auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), [pid](const auto &item) {
-        return pid == item.first.pid;
-    });
-    if (iter == audioFocusInfoList.end()) {
-        AUDIO_WARNING_LOG("audioFocusInfoList have no match object");
-        return;
-    }
-
-    auto &dfxInfos = dfxCollector_->dfxInfos_;
-    auto iterDfx = std::find_if(dfxInfos.begin(), dfxInfos.end(), [iter](const auto &item) {
-        return item.first == iter->first.streamId;
-    });
-    if (iterDfx == dfxInfos.end()) {
-        AUDIO_WARNING_LOG("dfx message expired");
-        return;
-    }
-
-    AUDIO_INFO_LOG("dfxIdx=%{public}d", iterDfx->first);
-    auto &item = dfxInfos[iterDfx->first].back();
-    InterruptAppState appState =
-        static_cast<AppExecFwk::AppProcessState>(state) == AppExecFwk::AppProcessState::APP_STATE_BACKGROUND ?
-        INTERRUPT_APP_STATE_BACKGROUND : INTERRUPT_APP_STATE_FOREGROUND;
-
-    DfxStatAction dfxAppState = {appState, 0, 0, 0};
-    item.appStateVec.push_back(dfxAppState);
-}
-
 uint8_t AudioInterruptService::GetAppState(int32_t appPid)
 {
     OHOS::AppExecFwk::AppMgrClient appManager;
     OHOS::AppExecFwk::RunningProcessInfo infos;
     uint8_t state = 0;
-    if (appManager.GetRunningProcessInfoByPid(appPid, infos) != OHOS::AppExecFwk::AppMgrResultCode::RESULT_OK) {
-        return state;
-    }
+    appManager.GetRunningProcessInfoByPid(appPid, infos);
     state = static_cast<uint8_t>(infos.state_);
+    if (state == 0) {
+        AUDIO_WARNING_LOG("GetAppState failed");
+    }
     return state;
 }
 
@@ -2044,14 +2008,13 @@ void AudioInterruptService::WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, co
     }
 
     if (audioInterrupt.state == State::PREPARED) {
-        dfxBuilder.WriteAppStateMsg(INTERRUPT_APP_STATE_START);
+        AUDIO_WARNING_LOG("WriteStartDfxMsg check app state");
+        auto &manager = DfxMsgManager::GetInstance();
+        DfxAppState appStartState = static_cast<AppExecFwk::AppProcessState>(GetAppState(audioInterrupt.pid)) ==
+            AppExecFwk::AppProcessState::APP_STATE_BACKGROUND ?
+            DFX_APP_STATE_BACKGROUND : DFX_APP_STATE_FOREGROUND;
+        manager.UpdateAppState(audioInterrupt.uid, appStartState, true);
     }
-
-    InterruptAppState appState =
-        static_cast<AppExecFwk::AppProcessState>(GetAppState(audioInterrupt.pid)) ==
-        AppExecFwk::AppProcessState::APP_STATE_BACKGROUND ?
-        INTERRUPT_APP_STATE_BACKGROUND : INTERRUPT_APP_STATE_FOREGROUND;
-    dfxBuilder.WriteAppStateMsg(appState);
 
     InterruptStage stage = dfxCollector_->IsExist(audioInterrupt.streamId) ?
         INTERRUPT_STAGE_RESTART : INTERRUPT_STAGE_START;
@@ -2061,6 +2024,7 @@ void AudioInterruptService::WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, co
 
 void AudioInterruptService::WriteSessionTimeoutDfxEvent(const int32_t pid)
 {
+    CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "dfxCollector is null");
     auto itZone = zonesMap_.find(ZONEID_DEFAULT);
     CHECK_AND_RETURN_LOG(itZone != zonesMap_.end(), "can not find zoneid");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList{};
@@ -2088,15 +2052,10 @@ void AudioInterruptService::WriteStopDfxMsg(const AudioInterrupt &audioInterrupt
     CHECK_AND_RETURN_LOG((dfxCollector_ != nullptr && policyServer_ != nullptr), "WriteStopDfxMsg nullptr");
     InterruptDfxBuilder dfxBuilder;
     auto& [infoIdx, effectIdx] = dfxCollector_->GetDfxIndexes(audioInterrupt.streamId);
-    dfxBuilder.WriteAppStateMsg(INTERRUPT_APP_STATE_END).WriteActionMsg(infoIdx, effectIdx, INTERRUPT_STAGE_STOP);
+    dfxBuilder.WriteActionMsg(infoIdx, effectIdx, INTERRUPT_STAGE_STOP);
     dfxCollector_->AddDfxMsg(audioInterrupt.streamId, dfxBuilder.GetResult());
 
     if (audioInterrupt.state == State::RELEASED) {
-        auto &manager = DfxMsgManager::GetInstance();
-        if (!manager.HasAppInfo(audioInterrupt.uid)) {
-            auto info = policyServer_->GetBundleInfoFromUid(audioInterrupt.uid);
-            manager.SaveAppInfo({audioInterrupt.uid, info.name, static_cast<int32_t>(info.versionCode)});
-        }
         dfxCollector_->FlushDfxMsg(audioInterrupt.streamId, audioInterrupt.uid);
     }
 }

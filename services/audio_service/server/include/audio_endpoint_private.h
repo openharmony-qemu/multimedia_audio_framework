@@ -200,6 +200,7 @@ private:
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize, int32_t index);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, AudioSampleFormat format);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
+    void HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms

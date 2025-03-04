@@ -1173,6 +1173,7 @@ int32_t AudioProcessInClientInner::Stop()
 
     ClockTime::RelativeSleep(MAX_STOP_FADING_DURATION_NANO);
 
+    processProxy_->SetUnderrunCount(underflowCount_);
     if (processProxy_->Stop() != SUCCESS) {
         streamStatus_->store(oldStatus);
         AUDIO_ERR_LOG("Stop failed in server, reset status to %{public}s", GetStatusInfo(oldStatus).c_str());
