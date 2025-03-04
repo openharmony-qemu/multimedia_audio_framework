@@ -83,7 +83,7 @@ public:
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
     vector<shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
-    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage, shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
+    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage, AudioDeviceDescriptor audioDeviceDescriptor);
 
     void SetAudioSceneOwnerPid(const int32_t pid);
     int32_t GetAudioSceneOwnerPid();
