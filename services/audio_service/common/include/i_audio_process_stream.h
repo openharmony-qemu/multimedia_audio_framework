@@ -57,6 +57,12 @@ public:
     virtual void SetStandbyState(RendererStage state) = 0;
 
     virtual ~IAudioProcessStream() = default;
+ 
+    virtual std::time_t GetStartMuteTime() = 0;
+    virtual void SetStartMuteTime(std::time_t time) = 0;
+ 
+    virtual bool GetSilentState() = 0;
+    virtual void SetSilentState(bool state) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

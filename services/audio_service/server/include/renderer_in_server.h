@@ -119,7 +119,7 @@ private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
-    bool CheckBuffer(uint8_t *buffer, size_t bufferSize);
+    bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
     void DoFadingOut(BufferDesc& bufferDesc);
@@ -183,7 +183,7 @@ private:
     std::mutex fadeoutLock_;
     int32_t fadeoutFlag_ = 0;
     std::time_t startMuteTime_ = 0;
-    int32_t silentState_ = 1; // 0:silent 1:unsilent
+    bool isInSilentState_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     int32_t renderEmptyCountForInnerCap_ = 0;

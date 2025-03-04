@@ -651,7 +651,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_001, Te
 
     bufferDesc.buffer[0] = 0;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
-    EXPECT_EQ(1, rendererInServer->silentState_);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
 
 /**
@@ -671,14 +671,14 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_002, Te
     bufferDesc.buffer[0] = 0;
     rendererInServer->startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
-    EXPECT_EQ(1, rendererInServer->silentState_);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
 
 /**
  * @tc.name  : Test WriteMuteDataSysEvent API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerWriteMuteDataSysEvent_003
- * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is 0 and silentState_ is not 1.
+ * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is 0 and isInSilentState_ is not 1.
  */
 HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_003, TestSize.Level1)
 {
@@ -689,9 +689,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_003, Te
     EXPECT_NE(nullptr, rendererInServer);
 
     bufferDesc.buffer[0] = 0;
-    rendererInServer->silentState_ = 0;
+    rendererInServer->isInSilentState_ = 0;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
-    EXPECT_EQ(1, rendererInServer->silentState_);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
 
 
@@ -712,14 +712,14 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_004, Te
     bufferDesc.buffer[0] = 1;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
     EXPECT_EQ(0, rendererInServer->startMuteTime_);
-    EXPECT_EQ(1, rendererInServer->silentState_);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
 
 /**
  * @tc.name  : Test WriteMuteDataSysEvent API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerWriteMuteDataSysEvent_005
- * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0 and startMuteTime_ is not 0 and silentState_ is 0.
+ * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0 and startMuteTime_ is not 0 and isInSilentState_ is 0.
  */
 HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_005, TestSize.Level1)
 {
@@ -731,10 +731,10 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_005, Te
 
     bufferDesc.buffer[0] = 1;
     rendererInServer->startMuteTime_ = 1;
-    rendererInServer->silentState_ = 0;
+    rendererInServer->isInSilentState_ = 0;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
     EXPECT_EQ(0, rendererInServer->startMuteTime_);
-    EXPECT_EQ(1, rendererInServer->silentState_);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
 
 /**

@@ -107,6 +107,11 @@ public:
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
+    std::time_t GetStartMuteTime() override;
+    void SetStartMuteTime(std::time_t time) override;
+ 
+    bool GetSilentState() override;
+    void SetSilentState(bool state) override;
     int32_t SetSourceDuration(int64_t duration) override;
 
     void SetStandbyState(RendererStage state) override;
@@ -118,6 +123,7 @@ private:
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
+    void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
 
 private:
     std::atomic<bool> muteFlag_ = false;
@@ -149,6 +155,8 @@ private:
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
+    std::time_t startMuteTime_ = 0;
+    bool isInSilentState_ = false;
     RendererStage standByState_ = RENDERER_STAGE_UNKNOWN;
     int64_t sourceDuration_ = -1;
     std::unique_ptr<PlayerDfxWriter> playerDfx_;
