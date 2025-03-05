@@ -134,7 +134,7 @@ bool AudioPolicyManagerListenerProxy::OnCheckClientInfo(const std::string &bundl
         "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
     data.WriteString(bundleName);
     data.WriteUint32(uid);
-    data.WriteInt32(uid);
+    data.WriteInt32(pid);
 
     int error = Remote()->SendRequest(ON_CHECK_CLIENT_INFO, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OnCheckClientInfo failed, error: %{public}d", error);
