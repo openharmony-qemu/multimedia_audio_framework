@@ -1304,7 +1304,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceClassInfo_001, TestSize.Level1)
     for (auto [classType, moduleInfo] : deviceClassInfo) {
         for (auto module : moduleInfo) {
             std::string tvSupported = module.tvSupported;
-            EXPECT_EQ(tvSupported, "false");
+            EXPECT_EQ(tvSupported, "1");
         }
     }
 }
