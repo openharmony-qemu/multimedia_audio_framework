@@ -1452,6 +1452,9 @@ void AudioManagerProxy::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     MessageParcel reply;
     MessageOption option;
 
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "getallsinkinputs failed, error: %{public}d", error);
