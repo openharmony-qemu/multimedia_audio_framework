@@ -302,7 +302,6 @@ private:
 
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
-    std::thread callbackLoop_; // thread for callback to client and write.
     std::atomic<bool> cbThreadReleased_ = true;
     std::mutex writeCbMutex_;
     std::condition_variable cbThreadCv_;
