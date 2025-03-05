@@ -3281,33 +3281,21 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
 
 int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        return interruptService_->CreateAudioInterruptZone(zoneID, pids);
-    }
     return ERR_UNKNOWN;
 }
 
 int32_t AudioPolicyServer::AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        return interruptService_->AddAudioInterruptZonePids(zoneID, pids);
-    }
     return ERR_UNKNOWN;
 }
 
 int32_t AudioPolicyServer::RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        return interruptService_->RemoveAudioInterruptZonePids(zoneID, pids);
-    }
     return ERR_UNKNOWN;
 }
 
 int32_t AudioPolicyServer::ReleaseAudioInterruptZone(const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        return interruptService_->ReleaseAudioInterruptZone(zoneID);
-    }
     return ERR_UNKNOWN;
 }
 
