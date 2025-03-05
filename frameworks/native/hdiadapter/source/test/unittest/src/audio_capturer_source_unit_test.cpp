@@ -646,61 +646,109 @@ HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_012, TestSize.Le
 HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_013, TestSize.Level1)
 {
     AudioCapturerSourceInner capturer;
-    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_U8);
-    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_S16);
-    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_S24);
-    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_S32);
-    capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_F32);
+    AudioFormat format = capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_U8);
+    EXPECT_EQ(format, AUDIO_FORMAT_TYPE_PCM_8_BIT);
+    format = capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_S16);
+    EXPECT_EQ(format, AUDIO_FORMAT_TYPE_PCM_16_BIT);
+    format = capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_S24);
+    EXPECT_EQ(format, AUDIO_FORMAT_TYPE_PCM_24_BIT);
+    format =capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_S32);
+    EXPECT_EQ(format, AUDIO_FORMAT_TYPE_PCM_32_BIT);
+    format =capturer.ConvertToHdiFormat(HdiAdapterFormat::SAMPLE_F32);
+    EXPECT_EQ(format, AUDIO_FORMAT_TYPE_PCM_16_BIT);
 
     int32_t ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_U8);
+    EXPECT_EQ(ret, BYTE_SIZE_SAMPLE_U8);
     ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_S16);
+    EXPECT_EQ(ret, BYTE_SIZE_SAMPLE_S16);
     ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_S24);
+    EXPECT_EQ(ret, BYTE_SIZE_SAMPLE_S24);
     ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_S32);
+    EXPECT_EQ(ret, BYTE_SIZE_SAMPLE_S32);
     ret = GetByteSizeByFormat(HdiAdapterFormat::SAMPLE_F32);
+    EXPECT_EQ(ret, BYTE_SIZE_SAMPLE_S16);
 
     uint32_t id = GenerateUniqueIDBySource(SOURCE_TYPE_EC);
+    EXPECT_NE(id, 0);
     id = GenerateUniqueIDBySource(SOURCE_TYPE_MIC_REF);
+    EXPECT_NE(id, 0);
     id = GenerateUniqueIDBySource(SOURCE_TYPE_WAKEUP);
+    EXPECT_NE(id, 0);
 
     uint64_t layout = GetChannelLayoutByCount(MONO);
+    EXPECT_EQ(layout, CH_LAYOUT_MONO);
     layout = GetChannelLayoutByCount(STEREO);
+    EXPECT_EQ(layout, CH_LAYOUT_STEREO);
     layout = GetChannelLayoutByCount(CHANNEL_4);
+    EXPECT_EQ(layout, CH_LAYOUT_QUAD);
     layout = GetChannelLayoutByCount(CHANNEL_8);
+    EXPECT_EQ(layout, CH_LAYOUT_7POINT1);
     layout = GetChannelLayoutByCount(CHANNEL_16);
-
-    auto res = ConvertToHDIAudioInputType(SOURCE_TYPE_INVALID);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_MIC);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_WAKEUP);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_COMMUNICATION);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_CALL);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_RECOGNITION);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_EC);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_MIC_REF);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_CAMCORDER);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_UNPROCESSED);
-    res = ConvertToHDIAudioInputType(SOURCE_TYPE_MAX);
-
-    AudioCategory audioCategory = GetAudioCategory(AUDIO_SCENE_PHONE_CALL);
-    audioCategory = GetAudioCategory(AUDIO_SCENE_PHONE_CHAT);
-    audioCategory = GetAudioCategory(AUDIO_SCENE_RINGING);
-    audioCategory = GetAudioCategory(AUDIO_SCENE_DEFAULT);
-    audioCategory = GetAudioCategory(AUDIO_SCENE_MAX);
-
-    AudioRouteNode source;
-    ret = SetInputPortPin(DEVICE_TYPE_MIC, source);
-    ret = SetInputPortPin(DEVICE_TYPE_WIRED_HEADSET, source);
-    ret = SetInputPortPin(DEVICE_TYPE_USB_ARM_HEADSET, source);
-    ret = SetInputPortPin(DEVICE_TYPE_USB_HEADSET, source);
-    ret = SetInputPortPin(DEVICE_TYPE_BLUETOOTH_SCO, source);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(layout, CH_LAYOUT_STEREO);
 }
 
 /**
  * @tc.name  : Test Template AudioCapturerSource
  * @tc.number: Audio_Capturer_Source_014
- * @tc.desc  : Test Template AudioCapturerSource call Create Then Init
+ * @tc.desc  : Test Template AudioCapturerSource call Create Then Get Or Set Value
  */
 HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_014, TestSize.Level1)
+{
+    auto res = ConvertToHDIAudioInputType(SOURCE_TYPE_INVALID);
+    EXPECT_EQ(res, AUDIO_INPUT_DEFAULT_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_MIC);
+    EXPECT_EQ(res, AUDIO_INPUT_MIC_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_WAKEUP);
+    EXPECT_EQ(res, AUDIO_INPUT_SPEECH_WAKEUP_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_COMMUNICATION);
+    EXPECT_EQ(res, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_CALL);
+    EXPECT_EQ(res, AUDIO_INPUT_VOICE_CALL_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_RECOGNITION);
+    EXPECT_EQ(res, AUDIO_INPUT_VOICE_RECOGNITION_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_EC);
+    EXPECT_EQ(res, AUDIO_INPUT_EC_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_MIC_REF);
+    EXPECT_EQ(res, AUDIO_INPUT_NOISE_REDUCTION_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_CAMCORDER);
+    EXPECT_EQ(res, AUDIO_INPUT_CAMCORDER_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_UNPROCESSED);
+    EXPECT_EQ(res, AUDIO_INPUT_RAW_TYPE);
+    res = ConvertToHDIAudioInputType(SOURCE_TYPE_MAX);
+    EXPECT_EQ(res, AUDIO_INPUT_NOISE_REDUCTION_TYPE);
+
+    AudioCategory audioCategory = GetAudioCategory(AUDIO_SCENE_PHONE_CALL);
+    EXPECT_EQ(audioCategory, AUDIO_IN_CALL);
+    audioCategory = GetAudioCategory(AUDIO_SCENE_PHONE_CHAT);
+    EXPECT_EQ(audioCategory, AUDIO_IN_COMMUNICATION);
+    audioCategory = GetAudioCategory(AUDIO_SCENE_RINGING);
+    EXPECT_EQ(audioCategory, AUDIO_IN_RINGTONE);
+    audioCategory = GetAudioCategory(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(audioCategory, AUDIO_IN_MEDIA);
+    audioCategory = GetAudioCategory(AUDIO_SCENE_MAX);
+    EXPECT_EQ(audioCategory, AUDIO_IN_MEDIA);
+
+    AudioRouteNode source;
+    auto ret = SetInputPortPin(DEVICE_TYPE_MIC, source);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = SetInputPortPin(DEVICE_TYPE_WIRED_HEADSET, source);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = SetInputPortPin(DEVICE_TYPE_USB_ARM_HEADSET, source);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = SetInputPortPin(DEVICE_TYPE_USB_HEADSET, source);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = SetInputPortPin(DEVICE_TYPE_BLUETOOTH_SCO, source);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = SetInputPortPin(DEVICE_TYPE_MAX, source);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test Template AudioCapturerSource
+ * @tc.number: Audio_Capturer_Source_015
+ * @tc.desc  : Test Template AudioCapturerSource call Create Then Init
+ */
+HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_015, TestSize.Level1)
 {
     AudioCapturerSourceInner capturerSourceInner("primary");
 
@@ -721,10 +769,10 @@ HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_014, TestSize.Le
 
 /**
  * @tc.name  : Test Template AudioCapturerSource
- * @tc.number: Audio_Capturer_Source_015
+ * @tc.number: Audio_Capturer_Source_016
  * @tc.desc  : Test Template AudioCapturerSource call Create Then Update Usb Attrs
  */
-HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_015, TestSize.Level1)
+HWTEST(AudioCapturerSourceUnitTest, AudioCapturerSourceUnitTest_016, TestSize.Level1)
 {
     AudioCapturerSourceInner capturerSourceInner("usb");
 
