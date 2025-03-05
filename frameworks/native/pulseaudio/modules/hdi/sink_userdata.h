@@ -41,6 +41,7 @@ struct Userdata {
     uint32_t sink_latency;
     uint32_t render_in_idle_state;
     uint32_t open_mic_speaker;
+    bool render_full_enable;
     bool offload_enable;
     bool multichannel_enable;
     const char *deviceNetworkId;
