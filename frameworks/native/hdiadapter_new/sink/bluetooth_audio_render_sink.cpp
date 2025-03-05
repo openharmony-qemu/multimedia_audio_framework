@@ -616,7 +616,12 @@ int32_t BluetoothAudioRenderSink::CreateRender(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-    std::string adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp"; // set sound card infomation
+    std::string adapterNameCase = "";
+    if (strcmp(attr_.adapterName, "dp") == 0) {
+        adapterNameCase = attr_.adapterName;
+    } else {
+        std::string adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp"; // set sound card infomation
+    }
     void *render = deviceManager->CreateRender(adapterNameCase, &param, &deviceDesc, hdiRenderId_);
     audioRender_ = static_cast<struct AudioRender *>(render);
     CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERR_NOT_STARTED);
