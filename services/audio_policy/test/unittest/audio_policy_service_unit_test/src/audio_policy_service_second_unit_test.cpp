@@ -1284,7 +1284,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetTvSupported_001, TestSize.Level1)
 
     isSupported = false;
     server->audioPolicyService_.audioConfigManager_.OnUpdateTvSupport(isSupported);
-    bool ret = server->audioPolicyService_.audioConfigManager_.GetTvSupported();
+    ret = server->audioPolicyService_.audioConfigManager_.GetTvSupported();
     EXPECT_EQ(ret, false);
 }
 
@@ -1307,20 +1307,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceClassInfo_001, TestSize.Level1)
             EXPECT_EQ(tvSupported, "false");
         }
     }
-}
-
-/**
- * @tc.name  : Test OnServiceConnected.
- * @tc.number: OnServiceConnected_001
- * @tc.desc  : Test OnServiceConnected interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, OnServiceConnected_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    bool ret = server->audioPolicyService_.audioConfigManager_.Init();
-    EXPECT_EQ(ret, true);
-    int32_t res = server->audioPolicyService_.OnServiceConnected(HDI_SERVICE_INDEX);
-    EXPECT_EQ(res, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

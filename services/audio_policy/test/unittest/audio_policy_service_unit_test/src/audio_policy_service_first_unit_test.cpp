@@ -1000,6 +1000,30 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_002, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test GetSinkPortName.
+* @tc.number: GetSinkPortName_003
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSinkPortName_003 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+    InternalDeviceType deviceType = DEVICE_TYPE_NONE;
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    string retPortName = "";
+
+    // case 13 InternalDeviceType::DEVICE_TYPE_HDMI
+    deviceType = DEVICE_TYPE_HDMI;
+    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
+    EXPECT_EQ(DP_SINK, retPortName);
+
+    // case 14 InternalDeviceType::DEVICE_TYPE_LINE_DIGITAL
+    deviceType = DEVICE_TYPE_LINE_DIGITAL;
+    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
+    EXPECT_EQ(DP_SINK, retPortName);
+}
+
+/**
 * @tc.name  : Test GetSourcePortName.
 * @tc.number: GetSourcePortName_001
 * @tc.desc  : Test AudioPolicyService interfaces.
