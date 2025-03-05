@@ -576,7 +576,7 @@ void RendererInClientInner::InitCallbackLoop()
     cbThreadReleased_ = false;
     auto weakRef = weak_from_this();
     // OS_AudioWriteCB
-    callbackLoop = std::thread([weakRef] {
+    std::thread callbackLoop = std::thread([weakRef] {
         bool keepRunning = true;
         std::shared_ptr<RendererInClientInner> strongRef = weakRef.lock();
         if (strongRef != nullptr) {
