@@ -41,10 +41,32 @@ NapiAudioRendererStateCallback::~NapiAudioRendererStateCallback()
     AUDIO_DEBUG_LOG("NapiAudioRendererStateCallback: instance destroy");
 }
 
-void NapiAudioRendererStateCallback::RemoveCallbackReference()
+void NapiAudioRendererStateCallback::RemoveCallbackReference(const napi_value args)
+{
+    if (!IsSameCallback(args)) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    rendererStateCallback_->cb_ = nullptr;
+    rendererStateCallback_.reset();
+    AUDIO_DEBUG_LOG("Remove rendererStateCallback success");
+}
+
+bool NapiAudioRendererStateCallback::IsSameCallback(const napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    rendererStateCallback_.reset();
+    if (rendererStateCallback_ == nullptr) {
+        return false;
+    }
+    if (args == nullptr) {
+        return true;
+    }
+    napi_value rendererStateCallback = nullptr;
+    napi_get_reference_value(env_, rendererStateCallback_->cb_, &rendererStateCallback);
+    bool isEquals = false;
+    CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, args, rendererStateCallback, &isEquals) == napi_ok, false,
+        "get napi_strict_equals failed");
+    return isEquals;
 }
 
 void NapiAudioRendererStateCallback::SaveCallbackReference(napi_value args)

@@ -2201,6 +2201,24 @@ int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
     return gsp->SetVirtualCall(isVirtual);
 }
 
+int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
+    const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    sptr<AudioPolicyManagerListenerStub> listener = new(std::nothrow) AudioPolicyManagerListenerStub();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
+    listener->SetQueryAllowedPlaybackCallback(callback);
+
+    sptr<IRemoteObject> object = listener->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
+
+    return gsp->SetQueryAllowedPlaybackCallback(object);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

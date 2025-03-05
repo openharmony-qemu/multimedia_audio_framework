@@ -36,7 +36,6 @@
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
 #include "audio_safe_volume_notification.h"
-#include "avsession_manager.h"
 #include "audio_setting_provider.h"
 #include "audio_spatialization_service.h"
 #include "audio_usb_manager.h"
@@ -86,6 +85,7 @@ mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;
+mutex g_policyMgrListenerMutex;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -2055,12 +2055,17 @@ bool AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pi
     if (uid == BOOTUP_MUSIC_UID) {
         return true;
     }
+    lock_guard<mutex> lock(g_policyMgrListenerMutex);
     bool allowed = false;
-    allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
+    if (policyManagerListener_ != nullptr) {
+        allowed = policyManagerListener_->OnQueryAllowedPlayback(uid, pid);
+    }
     if (!allowed) {
         usleep(WATI_PLAYBACK_TIME); //wait for 200ms
         AUDIO_INFO_LOG("IsAudioPlaybackAllowed Try again after 200ms");
-        allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
+        if (policyManagerListener_ != nullptr) {
+            allowed = policyManagerListener_->OnQueryAllowedPlayback(uid, pid);
+        }
     }
     return allowed;
 #endif
@@ -2129,7 +2134,7 @@ void AudioPolicyService::UpdateSafeVolumeByS4()
 
 void AudioPolicyService::UpdateSpatializationSupported(const std::string macAddress, const bool support)
 {
-    audioConnectedDevice_.UpdateSpatializationSupported(macAddress, support);
+    audioDeviceLock_.UpdateSpatializationSupported(macAddress, support);
 }
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t AudioPolicyService::LoadModernInnerCapSink(int32_t innerCapId)
@@ -2159,5 +2164,12 @@ int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
     return SUCCESS;
 }
 #endif
+
+int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object)
+{
+    lock_guard<mutex> lock(g_policyMgrListenerMutex);
+    policyManagerListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

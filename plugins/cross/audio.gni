@@ -23,6 +23,7 @@ audio_include = []
 audio_sources = [
   "$AUDIO_SUBSYSTEM_DIR/services/audio_policy/server/src/service/device/audio_device_descriptor.cpp",
   "$AUDIO_SUBSYSTEM_DIR/services/audio_service/client/src/audio_filter.cpp",
+  "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_callback_inner.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_callbacks.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_device_change_callback.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_info_change_callback.cpp",
@@ -49,6 +50,7 @@ audio_sources = [
   "$WORK_DIR/audiomanager/napi_audio_volume_group_manager.cpp",
   "$WORK_DIR/audiomanager/napi_audio_volume_manager.cpp",
   "$WORK_DIR/audiorenderer/callback/napi_audio_renderer_callback.cpp",
+  "$WORK_DIR/audiorenderer/callback/napi_audio_renderer_callback_inner.cpp",
   "$WORK_DIR/audiorenderer/callback/napi_audio_renderer_device_change_callback.cpp",
   "$WORK_DIR/audiorenderer/callback/napi_audio_renderer_policy_service_died_callback.cpp",
   "$WORK_DIR/audiorenderer/callback/napi_audio_renderer_write_data_callback.cpp",

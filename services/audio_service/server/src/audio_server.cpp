@@ -138,7 +138,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
-static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 10;
+static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 5;
+static constexpr int32_t MAX_WAIT_IN_SERVER_COUNT = 5;
 
 static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_INVALID,
@@ -720,7 +721,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
 
 const std::string AudioServer::GetDPParameter(const std::string &condition)
 {
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DP);
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DP, true);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, "", "get dp sink fail");
 
     return sink->GetAudioParameter(AudioParamKey::GET_DP_DEVICE_INFO, condition);
@@ -858,6 +859,11 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
         return SUCCESS;
     };
     (void)HdiAdapterManager::GetInstance().ProcessSource(processFunc);
+    std::shared_ptr<IDeviceManager> deviceManager = HdiAdapterManager::GetInstance().GetDeviceManager(
+        HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    if (deviceManager != nullptr) {
+        deviceManager->AllAdapterSetMicMute(isMute);
+    }
 
     int32_t ret = SetMicrophoneMuteForEnhanceChain(isMute);
     if (ret != SUCCESS) {
@@ -1168,7 +1174,6 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
         }
         AUDIO_INFO_LOG("callerUid %{public}d, innerCapMode %{public}d", config.callerUid, config.innerCapMode);
     } else {
-        AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission denied");
         config.isInnerCapturer = false;
     }
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -1431,16 +1436,32 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
 #endif
 }
 
+int32_t AudioServer::CheckAndWaitAudioPolicyReady()
+{
+    if (!isAudioPolicyReady_) {
+        std::unique_lock lock(isAudioPolicyReadyMutex_);
+        if (waitCreateStreamInServerCount_ > MAX_WAIT_IN_SERVER_COUNT) {
+            AUDIO_WARNING_LOG("let client retry");
+            return ERR_RETRY_IN_CLIENT;
+        }
+        waitCreateStreamInServerCount_++;
+        isAudioPolicyReadyCv_.wait_for(lock, std::chrono::seconds(WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS), [this] () {
+            return isAudioPolicyReady_.load();
+        });
+        waitCreateStreamInServerCount_--;
+    }
+
+    return SUCCESS;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
     Trace trace("AudioServer::CreateAudioProcess");
 
-    if (!isAudioPolicyReady_) {
-        std::unique_lock lock(isAudioPolicyReadyMutex_);
-        isAudioPolicyReadyCv_.wait_for(lock, std::chrono::seconds(WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS), [this] () {
-            return isAudioPolicyReady_.load();
-        });
+    errorCode = CheckAndWaitAudioPolicyReady();
+    if (errorCode != SUCCESS) {
+        return nullptr;
     }
 
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
@@ -1480,7 +1501,6 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         GetBundleNameFromUid(resetConfig.appInfo.appUid));
 #endif
 #ifdef HAS_FEATURE_INNERCAPTURER
-    // 如果是创建内录流，检测内录实例上限
     if (!HandleCheckCaptureLimit(resetConfig, filterConfig)) {
         return nullptr;
     }
@@ -1494,7 +1514,7 @@ bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
 {
     if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         int32_t innerCapId = 0;
-        if (CheckCaptureLimit(filterConfig, innerCapId) == SUCCESS) {
+        if (InnerCheckCaptureLimit(filterConfig, innerCapId) == SUCCESS) {
             resetConfig.innerCapId = innerCapId;
         } else {
             AUDIO_ERR_LOG("CheckCaptureLimit fail!");
@@ -1502,6 +1522,16 @@ bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
         }
     }
     return true;
+}
+
+int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
+{
+    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
+    int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
+    if (ret == SUCCESS) {
+        PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
+    }
+    return ret;
 }
 #endif
 
@@ -2276,12 +2306,15 @@ void AudioServer::NotifyAudioPolicyReady()
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
 {
-    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
-    if (ret == SUCCESS) {
-        PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    // root user case for auto test
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid == ROOT_UID) {
+        return InnerCheckCaptureLimit(config, innerCapId);
     }
-    return ret;
+    return ERR_NOT_SUPPORTED;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
@@ -2295,6 +2328,20 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
         AUDIO_ERR_LOG("SetInnerCapLimit error");
     }
     return ret;
+}
+
+int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
+{
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    // root user case for auto test
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid == ROOT_UID) {
+        PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId);
+        return SUCCESS;
+    }
+    return ERR_NOT_SUPPORTED;
+#endif
+    return ERR_NOT_SUPPORTED;
 }
 #endif
 

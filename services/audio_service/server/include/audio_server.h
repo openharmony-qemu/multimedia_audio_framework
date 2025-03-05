@@ -199,6 +199,7 @@ public:
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
+    int32_t ReleaseCaptureLimit(int32_t innerCapId) override;
 #endif
 
     int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
@@ -210,6 +211,7 @@ private:
 #ifdef HAS_FEATURE_INNERCAPTURER
     bool HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
         const AudioPlaybackCaptureConfig &filterConfig);
+    int32_t InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
 #endif
     int32_t GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &propertyArray,
         const DeviceType& deviceType);
@@ -269,6 +271,7 @@ private:
     sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
     int32_t SetAsrVoiceSuppressionControlMode(const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode,
         bool on, int32_t modifyVolume);
+    int32_t CheckAndWaitAudioPolicyReady();
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -304,6 +307,8 @@ private:
     std::atomic<bool> isAudioPolicyReady_ = false;
     std::mutex isAudioPolicyReadyMutex_;
     std::condition_variable isAudioPolicyReadyCv_;
+
+    int32_t waitCreateStreamInServerCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

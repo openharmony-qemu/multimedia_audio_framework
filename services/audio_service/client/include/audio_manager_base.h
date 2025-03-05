@@ -506,16 +506,23 @@ public:
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
      * set inner capture limit.
-     *
+     * @param innerCapLimit inner capture limit num
      * @return Returns result 0 if success, error number else.
      */
     virtual int32_t SetInnerCapLimit(uint32_t innerCapLimit) = 0;
     /**
-     * check inner capture limit.
-     *
+     * check inner capture limit
+     * @param AudioPlaybackCaptureConfig inner capture filter info
+     * @param innerCapId unique identifier of inner capture
      * @return Returns result 0 if success, error number else.
      */
     virtual int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) = 0;
+    /**
+     * release inner capture limit
+     * @param innerCapId unique identifier of inner capture
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t ReleaseCaptureLimit(int32_t innerCapId) = 0;
 #endif
 
     /**
@@ -623,6 +630,8 @@ private:
     int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply);
+    int HandleCheckCaptureLimit(MessageParcel &data, MessageParcel &reply);
+    int HandleReleaseCaptureLimit(MessageParcel &data, MessageParcel &reply);
 #endif
     int HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply);
     int HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply);

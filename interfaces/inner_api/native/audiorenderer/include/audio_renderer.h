@@ -954,6 +954,10 @@ public:
 
     virtual bool IsNoStreamRenderer() const = 0;
 
+    virtual int64_t GetSourceDuration() const { return -1; }
+
+    virtual void SetSourceDuration(int64_t duration) {}
+
     /**
      * @brief Temporarily changes the current audio route.
      * @param deviceType to set. The available deviceTypes are EARPIECE/SPEAKER/DEFAULT.

@@ -123,8 +123,6 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     AudioDeviceDescriptor updatedDesc(devType, role == DEVICE_ROLE_NONE ?
         AudioPolicyUtils::GetInstance().GetDeviceRole(devType) : role);
     updatedDesc.hasPair_ = hasPair;
-    updatedDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
-        IsSpatializationSupportedForDevice(updatedDesc.macAddress_);
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
 
     if (isConnected) {
@@ -752,8 +750,6 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         statusInfo.isConnected, statusInfo.mappingVolumeId);
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
-    deviceDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
-        IsSpatializationSupportedForDevice(deviceDesc.macAddress_);
     if (statusInfo.isConnected) {
         if (audioConnectedDevice_.GetConnectedDeviceByType(networkId, devType) != nullptr) {
             return ERROR;
@@ -951,8 +947,10 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     // fill device change action for callback
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
-    updatedDesc.spatializationSupported_ = AudioSpatializationService::GetAudioSpatializationService().
-        IsSpatializationSupportedForDevice(updatedDesc.macAddress_);
+    updatedDesc.spatializationSupported_ = (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)
+        && AudioSpatializationService::GetAudioSpatializationService().
+        IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
+        && AudioSpatializationService::GetAudioSpatializationService().IsSpatializationSupported();
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);

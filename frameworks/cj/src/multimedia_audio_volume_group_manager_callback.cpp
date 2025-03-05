@@ -45,7 +45,7 @@ void CjAudioManagerMicStateChangeCallback::OnMicStateUpdated(const MicStateChang
     if (func_ == nullptr) {
         return;
     }
-    CMicStateChangeEvent cMic;
+    CMicStateChangeEvent cMic{};
     cMic.mute = micStateChangeEvent.mute;
     func_(cMic);
 }

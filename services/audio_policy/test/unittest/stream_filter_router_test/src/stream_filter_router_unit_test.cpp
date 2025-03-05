@@ -57,6 +57,10 @@ AudioPolicyServer *GetServerPtr()
         g_server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
         g_server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
         g_server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        g_server.OnAddSystemAbility(ACCESSIBILITY_MANAGER_SERVICE_ID, "");
+#ifdef USB_ENABLE
+        g_server.OnAddSystemAbility(USB_SYSTEM_ABILITY_ID, "");
+#endif
         g_server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
         g_isInit = true;
     }

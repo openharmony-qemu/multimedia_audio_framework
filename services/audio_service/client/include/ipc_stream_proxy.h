@@ -93,6 +93,8 @@ public:
     int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+
+    int32_t SetSourceDuration(int64_t duration) override;
 private:
     static inline BrokerDelegator<IpcStreamProxy> delegator_;
 };

@@ -71,20 +71,22 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
 
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs);
     if (!latestConnDesc.get()) {
-        AUDIO_INFO_LOG("Have no latest connecte desc, just only add default device.");
+        AUDIO_INFO_LOG("Have no latest connected desc, just only add default device.");
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
     if (latestConnDesc->getType() == DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("Latest connecte desc type is none, just only add default device.");
+        AUDIO_INFO_LOG("Latest connected desc type is none, just only add default device.");
+        descs.push_back(make_shared<AudioDeviceDescriptor>());
+        return descs;
+    }
+    if (latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_A2DP && latestConnDesc->GetDeviceCategory() == BT_SOUNDBOX) {
+        AUDIO_INFO_LOG("Exclude BT soundbox device for alarm stream.");
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
 
-    if (latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_SCO ||
-        latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        latestConnDesc->getType() == DEVICE_TYPE_USB_HEADSET ||
-        latestConnDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+    if (NeedLatestConnectWithDefaultDevices(latestConnDesc->getType())) {
         // Add the latest connected device.
         descs.push_back(move(latestConnDesc));
         switch (streamUsage) {

@@ -23,6 +23,8 @@
 #include "i_stream_manager.h"
 #include "audio_effect.h"
 
+#include "player_dfx_writer.h"
+
 namespace OHOS {
 namespace AudioStandard {
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
@@ -43,6 +45,7 @@ public:
     void OnStatusUpdate(IOperation operation) override;
     void OnStatusUpdateExt(IOperation operation, std::shared_ptr<IStreamListener> stateListener);
     void HandleOperationFlushed();
+    void HandleOperationStarted();
     int32_t OnWriteData(size_t length) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
@@ -100,6 +103,7 @@ public:
     int32_t SetMute(bool isMute);
     int32_t SetDuckFactor(float duckFactor);
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice);
+    int32_t SetSourceDuration(int64_t duration);
 
     void OnDataLinkConnectionUpdate(IOperation operation);
     int32_t GetActualStreamManagerType() const noexcept;
@@ -115,7 +119,7 @@ private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
-    bool CheckBuffer(uint8_t *buffer, size_t bufferSize);
+    bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
     void DoFadingOut(BufferDesc& bufferDesc);
@@ -124,6 +128,8 @@ private:
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
     void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo);
+    int32_t StartInner();
+    int64_t GetLastAudioDuration();
 
 private:
     std::mutex statusLock_;
@@ -177,7 +183,7 @@ private:
     std::mutex fadeoutLock_;
     int32_t fadeoutFlag_ = 0;
     std::time_t startMuteTime_ = 0;
-    int32_t silentState_ = 1; // 0:silent 1:unsilent
+    bool isInSilentState_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     int32_t renderEmptyCountForInnerCap_ = 0;
@@ -185,6 +191,13 @@ private:
     // only read & write in CheckAndWriterRenderStreamStandbySysEvent
     bool lastWriteStandbyEnableStatus_ = false;
     std::set<int32_t> innerCapIds;
+
+    int64_t lastStartTime_{};
+    int64_t lastStopTime_{};
+    int64_t lastWriteFrame_{};
+    int64_t lastWriteMuteFrame_{};
+    int64_t sourceDuration_ = -1;
+    std::unique_ptr<PlayerDfxWriter> playerDfx_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

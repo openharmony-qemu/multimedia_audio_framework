@@ -76,6 +76,8 @@ static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
 constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
+constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
+constexpr int32_t MAX_RETRY_COUNT = 8;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -273,6 +275,11 @@ int32_t RendererInClientInner::InitIpcStream()
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
+        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    }
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
@@ -691,7 +698,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (CheckBuffer(buffer, bufferSize)) {
+    if (IsInvalidBuffer(buffer, bufferSize)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
@@ -710,11 +717,11 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     }
 }
 
-bool RendererInClientInner::CheckBuffer(uint8_t *buffer, size_t bufferSize)
+bool RendererInClientInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
 {
     bool isInvalid = false;
     uint8_t ui8Data = 0;
-    uint16_t ui16Data = 0;
+    int16_t i16Data = 0;
     switch (clientConfig_.streamInfo.format) {
         case SAMPLE_U8:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
@@ -723,8 +730,8 @@ bool RendererInClientInner::CheckBuffer(uint8_t *buffer, size_t bufferSize)
             break;
         case SAMPLE_S16LE:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small");
-            ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
-            isInvalid = ui16Data == 0;
+            i16Data = *(reinterpret_cast<const int16_t*>(buffer));
+            isInvalid = i16Data == 0;
             break;
         default:
             break;

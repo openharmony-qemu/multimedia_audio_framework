@@ -1321,6 +1321,7 @@ public:
     std::string GetSelfBundleName(int32_t uid);
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
+    int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
 
     /**
      * @brief inject interruption event.
@@ -1365,6 +1366,27 @@ public:
     * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
     */
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+    /**
+    * @brief check capture limit
+    *
+    * @param AudioPlaybackCaptureConfig inner capture filter info
+    * @param innerCapId unique identifier of inner capture
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @test
+    */
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
+    
+    /**
+    * @brief release capture limit
+    *
+    * @param innerCapId unique identifier of inner capture
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @test
+    */
+    int32_t ReleaseCaptureLimit(int32_t innerCapId);
+#endif
 
     int32_t GenerateSessionId(uint32_t &sessionId);
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const std::shared_ptr<AudioInterruptCallback> &callback,

@@ -24,7 +24,7 @@ void CjAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
     if (interruptEventfunc_ == nullptr) {
         return;
     }
-    CInterruptEvent event;
+    CInterruptEvent event{};
     event.eventType = static_cast<int32_t>(interruptEvent.eventType);
     event.forceType = static_cast<int32_t>(interruptEvent.forceType);
     event.hintType = static_cast<int32_t>(interruptEvent.hintType);
@@ -88,8 +88,8 @@ void CjAudioCapturerReadCallback::OnReadData(size_t length)
     if (func_ == nullptr) {
         return;
     }
-    CArrUI8 arr;
-    BufferDesc buf;
+    CArrUI8 arr{};
+    BufferDesc buf{};
     audioCapturer_->GetBufferDesc(buf);
     if (buf.buffer == nullptr) {
         return;
@@ -130,7 +130,7 @@ void CjAudioCapturerInfoChangeCallback::OnStateChange(const AudioCapturerChangeI
     if (func_ == nullptr) {
         return;
     }
-    CAudioCapturerChangeInfo cInfo;
+    CAudioCapturerChangeInfo cInfo{};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CAudioCapturerChangeInfo(cInfo, capturerChangeInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
@@ -152,10 +152,11 @@ void CjAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescrip
     if (func_ == nullptr) {
         return;
     }
-    CArrDeviceDescriptor arr;
+    CArrDeviceDescriptor arr{};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     func_(arr);

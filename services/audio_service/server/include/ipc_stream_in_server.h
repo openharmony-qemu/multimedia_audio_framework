@@ -116,6 +116,8 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
+    int32_t SetSourceDuration(int64_t duration) override;
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();

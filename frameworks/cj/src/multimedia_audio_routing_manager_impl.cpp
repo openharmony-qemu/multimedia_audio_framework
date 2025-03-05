@@ -60,7 +60,7 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetDevices(int32_t flags, int32
         *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor arr;
+    CArrDeviceDescriptor arr{};
     Convert2CArrDeviceDescriptor(arr, deviceDescriptors, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(arr);
@@ -72,14 +72,14 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetDevices(int32_t flags, int32
 CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredInputDeviceForCapturerInfo(CAudioCapturerInfo cInfo,
     int32_t *errorCode)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors{};
     AudioCapturerInfo capturerInfo(static_cast<SourceType>(cInfo.source), cInfo.capturerFlags);
     routingMgr_->GetPreferredInputDeviceForCapturerInfo(capturerInfo, outDeviceDescriptors);
     if (outDeviceDescriptors.empty()) {
         *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor arr;
+    CArrDeviceDescriptor arr{};
     Convert2CArrDeviceDescriptor(arr, outDeviceDescriptors, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(arr);
@@ -91,8 +91,8 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredInputDeviceForCaptu
 CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredOutputDeviceForRendererInfo(CAudioRendererInfo cInfo,
     int32_t *errorCode)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors;
-    AudioRendererInfo rendererInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors{};
+    AudioRendererInfo rendererInfo{};
     rendererInfo.streamUsage = static_cast<StreamUsage>(cInfo.usage);
     rendererInfo.rendererFlags = cInfo.rendererFlags;
     routingMgr_->GetPreferredOutputDeviceForRendererInfo(rendererInfo, outDeviceDescriptors);
@@ -100,7 +100,7 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredOutputDeviceForRend
         *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor arr;
+    CArrDeviceDescriptor arr{};
     Convert2CArrDeviceDescriptor(arr, outDeviceDescriptors, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(arr);
@@ -151,7 +151,7 @@ void MMAAudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(int
             *errorCode = CJ_ERR_SYSTEM;
             return;
         }
-        AudioRendererInfo rendererInfo;
+        AudioRendererInfo rendererInfo{};
         rendererInfo.streamUsage = static_cast<StreamUsage>(info.usage);
         rendererInfo.rendererFlags = info.rendererFlags;
         preferredOutputDeviceChangeCallBack_->RegisterFunc(func);

@@ -1269,5 +1269,58 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterTracker_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name  : Test GetTvSupported.
+ * @tc.number: GetTvSupported_001
+ * @tc.desc  : Test GetTvSupported interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetTvSupported_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    bool isSupported = true;
+    server->audioPolicyService_.audioConfigManager_.OnUpdateTvSupport(isSupported);
+    bool ret = server->audioPolicyService_.audioConfigManager_.GetTvSupported();
+    EXPECT_EQ(ret, true);
+
+    isSupported = false;
+    server->audioPolicyService_.audioConfigManager_.OnUpdateTvSupport(isSupported);
+    bool ret = server->audioPolicyService_.audioConfigManager_.GetTvSupported();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test GetDeviceClassInfo.
+ * @tc.number: GetDeviceClassInfo_001
+ * @tc.desc  : Test GetDeviceClassInfo interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceClassInfo_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    bool ret = server->audioPolicyService_.audioConfigManager_.Init();
+    EXPECT_EQ(ret, true);
+
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo = {};
+    server->audioPolicyService_.audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
+    for (auto [classType, moduleInfo] : deviceClassInfo) {
+        for (auto module : moduleInfo) {
+            std::string tvSupported = module.tvSupported;
+            EXPECT_EQ(tvSupported, "false");
+        }
+    }
+}
+
+/**
+ * @tc.name  : Test OnServiceConnected.
+ * @tc.number: OnServiceConnected_001
+ * @tc.desc  : Test OnServiceConnected interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, OnServiceConnected_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    bool ret = server->audioPolicyService_.audioConfigManager_.Init();
+    EXPECT_EQ(ret, true);
+    int32_t res = server->audioPolicyService_.OnServiceConnected(HDI_SERVICE_INDEX);
+    EXPECT_EQ(res, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

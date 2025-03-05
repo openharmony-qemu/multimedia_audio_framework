@@ -52,6 +52,8 @@ static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volum
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
 constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
+constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
+constexpr int32_t MAX_RETRY_COUNT = 8;
 }
 
 class ProcessCbImpl;
@@ -99,6 +101,8 @@ public:
     int32_t SetDuckVolume(float vol) override;
 
     int32_t SetMute(bool mute) override;
+
+    int32_t SetSourceDuration(int64_t duration) override;
 
     uint32_t GetUnderflowCount() override;
 
@@ -339,6 +343,11 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig, errorCode);
+    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
+        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
@@ -442,6 +451,12 @@ int32_t AudioProcessInClientInner::SetMute(bool mute)
 {
     muteVolumeInFloat_ = mute ? 0.0f : 1.0f;
     return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::SetSourceDuration(int64_t duration)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
+    return processProxy_->SetSourceDuration(duration);
 }
 
 int32_t AudioProcessInClientInner::SetDuckVolume(float vol)

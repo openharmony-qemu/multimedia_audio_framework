@@ -37,7 +37,7 @@ MMAAudioRendererImpl::~MMAAudioRendererImpl()
 
 int32_t MMAAudioRendererImpl::CreateAudioRenderer(CAudioRendererOptions options)
 {
-    AudioRendererOptions rendererOptions;
+    AudioRendererOptions rendererOptions{};
     Convert2AudioRendererOptions(rendererOptions, options);
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
     if (audioRenderer_ == nullptr) {
@@ -65,7 +65,7 @@ int32_t MMAAudioRendererImpl::GetState()
 
 int64_t MMAAudioRendererImpl::GetAudioTime(int32_t *errorCode)
 {
-    Timestamp timestamp;
+    Timestamp timestamp{};
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CJ_ERR_INVALID_RETURN_VALUE;
@@ -84,7 +84,7 @@ int64_t MMAAudioRendererImpl::GetAudioTime(int32_t *errorCode)
 
 uint32_t MMAAudioRendererImpl::GetBufferSize(int32_t *errorCode)
 {
-    size_t bufferSize;
+    size_t bufferSize = 0;
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CJ_ERR_INVALID_RETURN_VALUE;
@@ -150,8 +150,12 @@ CArrDeviceDescriptor MMAAudioRendererImpl::GetCurrentOutputDevices(int32_t *erro
         *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor devices;
+    CArrDeviceDescriptor devices{};
     Convert2CArrDeviceDescriptorByDeviceInfo(devices, deviceInfo, errorCode);
+    if (*errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(devices);
+        return CArrDeviceDescriptor();
+    }
     return devices;
 }
 
@@ -510,14 +514,14 @@ CAudioStreamInfo MMAAudioRendererImpl::GetStreamInfo(int32_t *errorCode)
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioStreamInfo();
     }
-    AudioStreamInfo streamInfo;
+    AudioStreamInfo streamInfo{};
     auto ret = audioRenderer_->GetStreamInfo(streamInfo);
     if (ret != SUCCESS_CODE) {
         AUDIO_ERR_LOG("Get StreamInfo failed.");
         *errorCode = CJ_ERR_INVALID_VALUE;
         return CAudioStreamInfo();
     }
-    CAudioStreamInfo cInfo;
+    CAudioStreamInfo cInfo{};
     Convert2CAudioStreamInfo(cInfo, streamInfo);
     return cInfo;
 }
@@ -528,14 +532,14 @@ CAudioRendererInfo MMAAudioRendererImpl::GetRendererInfo(int32_t *errorCode)
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioRendererInfo();
     }
-    AudioRendererInfo rendererInfo;
+    AudioRendererInfo rendererInfo{};
     auto ret = audioRenderer_->GetRendererInfo(rendererInfo);
     if (ret != SUCCESS_CODE) {
         AUDIO_ERR_LOG("Get RendererInfo failed.");
         *errorCode = CJ_ERR_INVALID_VALUE;
         return CAudioRendererInfo();
     }
-    CAudioRendererInfo cInfo;
+    CAudioRendererInfo cInfo{};
     Convert2AudioRendererInfo(cInfo, rendererInfo);
     return cInfo;
 }

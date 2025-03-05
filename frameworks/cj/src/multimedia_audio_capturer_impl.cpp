@@ -29,7 +29,7 @@ MMAAudioCapturerImpl::MMAAudioCapturerImpl()
 
 int32_t MMAAudioCapturerImpl::CreateAudioCapturer(CAudioCapturerOptions options)
 {
-    AudioCapturerOptions capturerOptions;
+    AudioCapturerOptions capturerOptions{};
     Convert2AudioCapturerOptions(capturerOptions, options);
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
     if (audioCapturer_ == nullptr) {
@@ -79,7 +79,7 @@ uint32_t MMAAudioCapturerImpl::GetStreamId(int32_t *errorCode)
 
 int64_t MMAAudioCapturerImpl::GetAudioTime(int32_t *errorCode)
 {
-    Timestamp timestamp;
+    Timestamp timestamp{};
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CJ_ERR_INVALID_RETURN_VALUE;
@@ -98,7 +98,7 @@ int64_t MMAAudioCapturerImpl::GetAudioTime(int32_t *errorCode)
 
 uint32_t MMAAudioCapturerImpl::GetBufferSize(int32_t *errorCode)
 {
-    size_t bufferSize;
+    size_t bufferSize = 0;
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CJ_ERR_INVALID_RETURN_VALUE;
@@ -161,7 +161,7 @@ int32_t MMAAudioCapturerImpl::Release()
 
 CAudioCapturerInfo MMAAudioCapturerImpl::GetCurrentCapturerInfo(int32_t *errorCode)
 {
-    AudioCapturerInfo capturerInfo;
+    AudioCapturerInfo capturerInfo{};
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioCapturerInfo();
@@ -172,14 +172,14 @@ CAudioCapturerInfo MMAAudioCapturerImpl::GetCurrentCapturerInfo(int32_t *errorCo
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioCapturerInfo();
     }
-    CAudioCapturerInfo cInfo;
+    CAudioCapturerInfo cInfo{};
     Convert2CAudioCapturerInfo(cInfo, capturerInfo);
     return cInfo;
 }
 
 CAudioStreamInfo MMAAudioCapturerImpl::GetStreamInfo(int32_t *errorCode)
 {
-    AudioStreamInfo streamInfo;
+    AudioStreamInfo streamInfo{};
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioStreamInfo();
@@ -190,14 +190,14 @@ CAudioStreamInfo MMAAudioCapturerImpl::GetStreamInfo(int32_t *errorCode)
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioStreamInfo();
     }
-    CAudioStreamInfo cInfo;
+    CAudioStreamInfo cInfo{};
     Convert2CAudioStreamInfo(cInfo, streamInfo);
     return cInfo;
 }
 
 CAudioCapturerChangeInfo MMAAudioCapturerImpl::GetAudioCapturerChangeInfo(int32_t *errorCode)
 {
-    AudioCapturerChangeInfo changeInfo;
+    AudioCapturerChangeInfo changeInfo{};
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioCapturerChangeInfo();
@@ -208,7 +208,7 @@ CAudioCapturerChangeInfo MMAAudioCapturerImpl::GetAudioCapturerChangeInfo(int32_
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioCapturerChangeInfo();
     }
-    CAudioCapturerChangeInfo cInfo;
+    CAudioCapturerChangeInfo cInfo{};
     Convert2CAudioCapturerChangeInfo(cInfo, changeInfo, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(cInfo.deviceDescriptors);
@@ -230,8 +230,12 @@ CArrDeviceDescriptor MMAAudioCapturerImpl::GetInputDevices(int32_t *errorCode)
         *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor devices;
+    CArrDeviceDescriptor devices{};
     Convert2CArrDeviceDescriptorByDeviceInfo(devices, deviceInfo, errorCode);
+    if (*errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(devices);
+        return CArrDeviceDescriptor();
+    }
     return devices;
 }
 

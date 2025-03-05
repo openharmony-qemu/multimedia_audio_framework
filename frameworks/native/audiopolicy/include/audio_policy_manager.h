@@ -17,6 +17,7 @@
 #define ST_AUDIO_POLICY_MANAGER_H
 
 #include <cstdint>
+#include <memory>
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_effect.h"
 #include "audio_concurrency_callback.h"
@@ -270,7 +271,7 @@ public:
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-        AudioRendererInfo &rendererInfo);
+        AudioRendererInfo &rendererInfo, bool forceNoBTPermission = false);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo);
@@ -505,6 +506,8 @@ public:
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected);
+
+    int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
 
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);

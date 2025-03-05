@@ -110,8 +110,11 @@ AudioSampleFormat ProRendererStreamImpl::GetDirectFormat(AudioSampleFormat forma
     }
 
     // Both SAMPLE_S16LE and SAMPLE_S32LE are supported for direct VoIP stream.
-    if (format == SAMPLE_S16LE || format == SAMPLE_S32LE || format == SAMPLE_F32LE) {
+    if (format == SAMPLE_S16LE || format == SAMPLE_S32LE) {
         return format;
+    } else if (format == SAMPLE_F32LE) {
+        // Direct VoIP not support SAMPLE_F32LE format.It needs to be converted to S16.
+        return AudioSampleFormat::SAMPLE_S16LE;
     } else {
         AUDIO_WARNING_LOG("The format %{public}u is unsupported for direct VoIP. Use 32Bit.", format);
         return AudioSampleFormat::SAMPLE_S32LE;

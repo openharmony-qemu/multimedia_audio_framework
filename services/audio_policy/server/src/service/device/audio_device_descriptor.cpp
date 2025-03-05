@@ -162,6 +162,11 @@ DeviceRole AudioDeviceDescriptor::getRole() const
     return deviceRole_;
 }
 
+DeviceCategory AudioDeviceDescriptor::GetDeviceCategory() const
+{
+    return deviceCategory_;
+}
+
 bool AudioDeviceDescriptor::IsAudioDeviceDescriptor() const
 {
     return descriptorType_ == AUDIO_DEVICE_DESCRIPTOR;

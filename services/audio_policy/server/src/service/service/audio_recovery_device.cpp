@@ -28,6 +28,9 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
+constexpr int32_t RECOVERY_ATTEMPT_LIMIT = 5;
+constexpr uint32_t INITIAL_STREAM_RESTORATION_WAIT_US = 1000000;
+constexpr uint32_t RETRY_INTERVAL_US = 300000;
 constexpr int32_t EXCLUDED = 0;
 constexpr int32_t UNEXCLUDED = 1;
 } // namespace
@@ -61,16 +64,17 @@ void AudioRecoveryDevice::DeInit()
 void AudioRecoveryDevice::RecoveryPreferredDevices()
 {
     AUDIO_DEBUG_LOG("Start recovery preferred devices.");
-    int32_t tryCounter = 5;
+    int32_t tryCounter = RECOVERY_ATTEMPT_LIMIT;
     // Waiting for 1000000 μs. Ensure that the playback/recording stream is restored first
-    uint32_t firstSleepTime = 1000000;
+    uint32_t firstSleepTime = INITIAL_STREAM_RESTORATION_WAIT_US;
     // Retry interval
-    uint32_t sleepTime = 300000;
+    uint32_t sleepTime = RETRY_INTERVAL_US;
     int32_t result = -1;
     std::map<Media::MediaMonitor::PreferredType,
         std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> preferredDevices;
     usleep(firstSleepTime);
-    while (result != SUCCESS && tryCounter-- > 0) {
+    while (result != SUCCESS && tryCounter > 0) {
+        tryCounter--;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioRouteMsg(preferredDevices);
         if (preferredDevices.size() == 0) {
             continue;
@@ -122,16 +126,17 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
 void AudioRecoveryDevice::RecoverExcludedOutputDevices()
 {
     AUDIO_INFO_LOG("Start recover excluded output devices.");
-    int32_t tryCounter = 5;
+    int32_t tryCounter = RECOVERY_ATTEMPT_LIMIT;
     // Waiting for 1000000 μs. Ensure that the playback/recording stream is restored first
-    uint32_t firstSleepTime = 1000000;
+    uint32_t firstSleepTime = INITIAL_STREAM_RESTORATION_WAIT_US;
     // Retry interval
-    uint32_t sleepTime = 300000;
+    uint32_t sleepTime = RETRY_INTERVAL_US;
     int32_t result = -1;
     map<Media::MediaMonitor::AudioDeviceUsage,
         vector<shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>>> excludedDevicesMap;
     usleep(firstSleepTime);
-    while (result != SUCCESS && tryCounter-- > 0) {
+    while (result != SUCCESS && tryCounter > 0) {
+        tryCounter--;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioExcludedDevicesMsg(excludedDevicesMap);
         for (auto iter = excludedDevicesMap.begin(); iter != excludedDevicesMap.end(); ++iter) {
             result = HandleExcludedOutputDevicesRecovery(static_cast<AudioDeviceUsage>(iter->first), iter->second);
@@ -174,7 +179,7 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     int32_t res = SUCCESS;
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     auto audioDevUsage = AudioPolicyUtils::GetInstance().GetAudioDeviceUsageByStreamUsage(strUsage);
-    if (audioStateManager_.IsExcludedDevice(audioDevUsage, selectedDesc[0])) {
+    if (audioStateManager_.IsExcludedDevice(audioDevUsage, *selectedDesc[0])) {
         res = UnexcludeOutputDevicesInner(audioDevUsage, selectedDesc);
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "UnexcludeOutputDevicesInner fail");
     }

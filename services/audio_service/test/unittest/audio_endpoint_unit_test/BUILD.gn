@@ -102,6 +102,7 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
   include_dirs = [
     "../../../server/include",
     "../../../../audio_service/common/include",
+    "../../../../audio_service/common/include/dfx",
     "../../../../audio_service/common",
     "./include",
     "../../../../../frameworks/native/audioqosmanager/include",

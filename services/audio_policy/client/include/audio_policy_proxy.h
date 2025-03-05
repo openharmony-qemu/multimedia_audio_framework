@@ -193,7 +193,7 @@ public:
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-        AudioRendererInfo &rendererInfo) override;
+        AudioRendererInfo &rendererInfo, bool forceNoBTPermission) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
@@ -382,6 +382,7 @@ public:
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected) override;
 
+    int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

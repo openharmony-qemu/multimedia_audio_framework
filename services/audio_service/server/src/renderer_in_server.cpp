@@ -186,6 +186,7 @@ int32_t RendererInServer::Init()
         + "_renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpC2S_);
+    playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, streamIndex_);
 
     return SUCCESS;
 }
@@ -216,20 +217,12 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
     Trace trace(traceTag_ + " OnStatusUpdate:" + std::to_string(operation));
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released");
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
+    CHECK_AND_RETURN_LOG((stateListener != nullptr && playerDfx_ != nullptr), "nullptr");
     CHECK_AND_RETURN_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
         "stream status is nullptr");
     switch (operation) {
         case OPERATION_STARTED:
-            if (standByEnable_) {
-                standByEnable_ = false;
-                AUDIO_INFO_LOG("%{public}u recv stand-by started", streamIndex_);
-                audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
-                FutexTool::FutexWake(audioServerBuffer_->GetFutex());
-            }
-            CheckAndWriterRenderStreamStandbySysEvent(false);
-            status_ = I_STATUS_STARTED;
-            startedTime_ = ClockTime::GetCurNano();
+            HandleOperationStarted();
             stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
@@ -241,10 +234,16 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             }
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
+            playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_PAUSE_OK);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
+            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+            lastWriteFrame_ = audioServerBuffer_->GetCurReadFrame() - lastWriteFrame_;
+            playerDfx_->WriteDfxStopMsg(streamIndex_, RENDERER_STAGE_STOP_OK,
+                {lastWriteFrame_, lastWriteMuteFrame_, GetLastAudioDuration(), underrunCount_}, processConfig_);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
@@ -261,6 +260,12 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
     }
 }
 
+int64_t RendererInServer::GetLastAudioDuration()
+{
+    auto ret = lastStopTime_ - lastStartTime_;
+    return ret < 0 ? -1 : ret;
+}
+
 void RendererInServer::OnStatusUpdateExt(IOperation operation, std::shared_ptr<IStreamListener> stateListener)
 {
     if (status_ == I_STATUS_DRAINING) {
@@ -268,6 +273,28 @@ void RendererInServer::OnStatusUpdateExt(IOperation operation, std::shared_ptr<I
         stateListener->OnOperationHandled(DRAIN_STREAM, 0);
     }
     afterDrain = true;
+}
+
+void RendererInServer::HandleOperationStarted()
+{
+    CHECK_AND_RETURN_LOG(playerDfx_ != nullptr, "nullptr");
+    CHECK_AND_RETURN_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+        "stream status is nullptr");
+    if (standByEnable_) {
+        standByEnable_ = false;
+        AUDIO_INFO_LOG("%{public}u recv stand-by started", streamIndex_);
+        audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
+        FutexTool::FutexWake(audioServerBuffer_->GetFutex());
+        playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
+    }
+    CheckAndWriterRenderStreamStandbySysEvent(false);
+    status_ = I_STATUS_STARTED;
+    startedTime_ = ClockTime::GetCurNano();
+    
+    lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    lastWriteFrame_ = audioServerBuffer_->GetCurReadFrame();
+    lastWriteMuteFrame_ = 0;
 }
 
 void RendererInServer::OnStatusUpdateSub(IOperation operation)
@@ -341,12 +368,15 @@ void RendererInServer::StandByCheck()
     if (managerType_ == PLAYBACK) {
         stream_->Pause(true);
     }
+
+    if (playerDfx_) {
+        playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_BEGIN);
+    }
 }
 
 bool RendererInServer::ShouldEnableStandBy()
 {
     int64_t timeCost = ClockTime::GetCurNano() - lastWriteTime_;
-
     uint32_t maxStandByCounter = 50; // for 20ms, 50 * 20 = 1000ms
     int64_t timeLimit = 1000000000; // 1s
     if (offloadEnable_) {
@@ -412,11 +442,11 @@ void RendererInServer::DoFadingOut(BufferDesc& bufferDesc)
     }
 }
 
-bool RendererInServer::CheckBuffer(uint8_t *buffer, size_t bufferSize)
+bool RendererInServer::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
 {
     bool isInvalid = false;
     uint8_t ui8Data = 0;
-    uint16_t ui16Data = 0;
+    int16_t i16Data = 0;
     switch (processConfig_.streamInfo.format) {
         case SAMPLE_U8:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 0, false, "buffer size is too small");
@@ -425,8 +455,8 @@ bool RendererInServer::CheckBuffer(uint8_t *buffer, size_t bufferSize)
             break;
         case SAMPLE_S16LE:
             CHECK_AND_RETURN_RET_LOG(bufferSize > 1, false, "buffer size is too small");
-            ui16Data = *(reinterpret_cast<const uint16_t*>(buffer));
-            isInvalid = ui16Data == 0;
+            i16Data = *(reinterpret_cast<const int16_t*>(buffer));
+            isInvalid = i16Data == 0;
             break;
         default:
             break;
@@ -439,13 +469,13 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (CheckBuffer(buffer, bufferSize)) {
+    if (IsInvalidBuffer(buffer, bufferSize)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         }
         std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && silentState_ == 1) { // 1 means unsilent
-            silentState_ = 0; // 0 means silent
+        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isInSilentState_) {
+            isInSilentState_ = true;
             AUDIO_WARNING_LOG("write invalid data for some time in server");
 
             std::unordered_map<std::string, std::string> payload;
@@ -458,9 +488,9 @@ void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if (startMuteTime_ != 0) {
             startMuteTime_ = 0;
         }
-        if (silentState_ == 0) { // 0 means silent
+        if (isInSilentState_) {
             AUDIO_WARNING_LOG("begin write valid data in server");
-            silentState_ = 1; // 1 means unsilent
+            isInSilentState_ = false;
 
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
@@ -702,6 +732,16 @@ int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
 
 int32_t RendererInServer::Start()
 {
+    bool ret = StartInner();
+    RendererStage stage = ret ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
+    if (playerDfx_) {
+        playerDfx_->WriteDfxStartMsg(streamIndex_, stage, sourceDuration_, processConfig_);
+    }
+    return ret;
+}
+
+int32_t RendererInServer::StartInner()
+{
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
@@ -785,6 +825,9 @@ int32_t RendererInServer::Pause()
         standByEnable_ = false;
         enterStandbyTime_ = 0;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
+        if (playerDfx_) {
+            playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
+        }
     }
     standByCounter_ = 0;
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
@@ -927,6 +970,9 @@ int32_t RendererInServer::Stop()
         standByEnable_ = false;
         enterStandbyTime_ = 0;
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
+        if (playerDfx_) {
+            playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
+        }
     }
     {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
@@ -1373,7 +1419,7 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 
 int32_t RendererInServer::SetClientVolume()
 {
-    if (audioServerBuffer_ == nullptr) {
+    if (audioServerBuffer_ == nullptr || playerDfx_ == nullptr) {
         AUDIO_WARNING_LOG("buffer in not inited");
         return ERROR;
     }
@@ -1393,6 +1439,9 @@ int32_t RendererInServer::SetClientVolume()
     if (offloadEnable_) {
         OffloadSetVolumeInner();
     }
+
+    RendererStage stage = clientVolume == 0 ? RENDERER_STAGE_SET_VOLUME_ZERO : RENDERER_STAGE_SET_VOLUME_NONZERO;
+    playerDfx_->WriteDfxActionMsg(streamIndex_, stage);
     return ret;
 }
 
@@ -1595,5 +1644,12 @@ int32_t RendererInServer::SetDefaultOutputDevice(const DeviceType defaultOutputD
     return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, streamIndex_,
         processConfig_.rendererInfo.streamUsage, status_ == I_STATUS_STARTED);
 }
+
+int32_t RendererInServer::SetSourceDuration(int64_t duration)
+{
+    sourceDuration_ = duration;
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

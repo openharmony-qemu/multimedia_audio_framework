@@ -216,16 +216,17 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(
 }
 
 bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
-    shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
+    AudioDeviceDescriptor audioDeviceDescriptor)
 {
     CHECK_AND_RETURN_RET(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES, false);
 
+    auto devDesc = make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
     if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
-        return mediaExcludedDevices_.contains(audioDeviceDescriptor);
+        return mediaExcludedDevices_.contains(devDesc);
     } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
-        return callExcludedDevices_.contains(audioDeviceDescriptor);
+        return callExcludedDevices_.contains(devDesc);
     }
 
     return false;

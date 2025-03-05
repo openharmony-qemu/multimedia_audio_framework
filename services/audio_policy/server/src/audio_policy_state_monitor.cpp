@@ -60,6 +60,7 @@ int32_t AudioPolicyStateMonitor::RegisterCallback(
     }
 
     int32_t cbId = AllocateCbId();
+    std::unique_lock<std::mutex> lock(monitorMutex_);
     if (cbId != INVALID_CB_ID) {
         cb->startTimeStamp_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         cb->delayTime_ = delayTime_;
@@ -92,13 +93,19 @@ void AudioPolicyStateMonitor::TraverseAndInvokeTimeoutCallbacks()
     auto it = monitoredObj_.begin();
     while (it != monitoredObj_.end()) {
         auto cb = it->second;
+        if (cb == nullptr) {
+            AUDIO_INFO_LOG("cb is nullptr");
+            ++it;
+            continue;
+        }
+
         if (now - cb->startTimeStamp_ < cb->delayTime_) {
             ++it;
             continue;
         }
 
         // Running callback in a standalone thread
-        std::thread callbackThread([](const std::shared_ptr<AudioPolicyStateMonitorCallback> &cb) {
+        std::thread callbackThread([](const std::shared_ptr<AudioPolicyStateMonitorCallback> cb) {
             if (cb == nullptr) {
                 AUDIO_ERR_LOG("ExecCallbackInThread cb is nullptr");
                 return;

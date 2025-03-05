@@ -35,10 +35,12 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
     bool OnQueryClientType(const std::string &bundleName, uint32_t uid) override;
+    bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) override;
     // AudioManagerListenerStub
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetAvailableDeviceChangeCallback(const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb);
     void SetQueryClientTypeCallback(const std::weak_ptr<AudioQueryClientTypeCallback> &cb);
+    void SetQueryAllowedPlaybackCallback(const std::weak_ptr<AudioQueryAllowedPlaybackCallback> &callback);
 private:
     void ReadInterruptEventParams(MessageParcel &data, InterruptEventInternal &interruptEvent);
     void ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange);
@@ -46,6 +48,7 @@ private:
     std::weak_ptr<AudioInterruptCallback> callback_;
     std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> audioAvailableDeviceChangeCallback_;
     std::weak_ptr<AudioQueryClientTypeCallback> audioQueryClientTypeCallback_;
+    std::weak_ptr<AudioQueryAllowedPlaybackCallback> audioQueryAllowedPlaybackCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

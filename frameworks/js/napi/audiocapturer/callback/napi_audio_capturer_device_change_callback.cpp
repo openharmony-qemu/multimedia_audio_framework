@@ -40,17 +40,27 @@ NapiAudioCapturerDeviceChangeCallback::~NapiAudioCapturerDeviceChangeCallback()
     AUDIO_DEBUG_LOG("Instance destroy");
 }
 
-void NapiAudioCapturerDeviceChangeCallback::SaveCallbackReference(napi_value args)
+void NapiAudioCapturerDeviceChangeCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    napi_ref callback = nullptr;
-    const int32_t refCount = 1;
+    // create function that will operate while save callback reference success.
+    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
+        [this](std::shared_ptr<AutoRef> generatedCallback) {
+        callbackPtr_ = generatedCallback;
+        callback_ = callbackPtr_->cb_;
+    };
+    NapiAudioCapturerCallbackInner::SaveCallbackReferenceInner(callbackName, args, successed);
+}
 
-    napi_status status = napi_create_reference(env_, args, refCount, &callback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-        "Creating reference for callback fail");
-
-    callback_ = callback;
+void NapiAudioCapturerDeviceChangeCallback::RemoveCallbackReference(
+    const std::string &callbackName, napi_env env, napi_value callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::function<void()> successed = [this]() {
+        callbackPtr_ = nullptr;
+        callback_ = nullptr;
+    };
+    NapiAudioCapturerCallbackInner::RemoveCallbackReferenceInner(callbackName, env, callback, successed);
 }
 
 void NapiAudioCapturerDeviceChangeCallback::CreateCaptureDeviceChangeTsfn(napi_env env)
@@ -133,6 +143,21 @@ void NapiAudioCapturerDeviceChangeCallback::OnJsCallbackCapturerDeviceInfo(napi_
 
     napi_acquire_threadsafe_function(acDevChgTsfn_);
     napi_call_threadsafe_function(acDevChgTsfn_, event, napi_tsfn_blocking);
+}
+
+napi_env &NapiAudioCapturerDeviceChangeCallback::GetEnv()
+{
+    return env_;
+}
+
+std::shared_ptr<AutoRef> &NapiAudioCapturerDeviceChangeCallback::GetCallback(const std::string &callbackName)
+{
+    return callbackPtr_;
+}
+
+bool NapiAudioCapturerDeviceChangeCallback::CheckIfTargetCallbackName(const std::string &callbackName)
+{
+    return (callbackName == INPUTDEVICE_CHANGE_CALLBACK_NAME);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

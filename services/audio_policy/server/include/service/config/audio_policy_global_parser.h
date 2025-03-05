@@ -53,7 +53,7 @@ private:
     void ParserAttribute(xmlNode *node);
 
     xmlDoc *mDoc_ = nullptr;
-    std::unordered_map<std::string, int32_t> globalConfigs_;
+    std::unordered_map<std::string, uint32_t> globalConfigs_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

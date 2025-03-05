@@ -121,5 +121,23 @@ bool AudioPolicyManagerListenerProxy::OnQueryClientType(const std::string &bundl
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OnQueryClientType failed, error: %{public}d", error);
     return reply.ReadBool();
 }
+
+bool AudioPolicyManagerListenerProxy::OnQueryAllowedPlayback(int32_t uid, int32_t pid)
+{
+    AUDIO_DEBUG_LOG("In");
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), false,
+        "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+    data.WriteInt32(uid);
+    data.WriteInt32(pid);
+
+    int error = Remote()->SendRequest(ON_QUERY_ALLOWED_PLAYBACK, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OnQueryAllowedPlayback failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
 } // namespace AudioStandard
 } // namespace OHOS

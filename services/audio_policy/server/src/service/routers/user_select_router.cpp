@@ -77,7 +77,53 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
 vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
+    AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    vector<shared_ptr<AudioDeviceDescriptor>> selectedDesc;
+    AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
+        selectedDesc = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderBTCarDevices();
+    } else {
+        selectedDesc = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
+        audioDevUsage = MEDIA_OUTPUT_DEVICES;
+    }
+
+    shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, selectedDesc);
+    if (!latestConnDesc.get()) {
+        AUDIO_INFO_LOG("Have no latest connected desc, just only add default device.");
+        descs.push_back(make_shared<AudioDeviceDescriptor>());
+        return descs;
+    }
+    if (latestConnDesc->getType() == DEVICE_TYPE_NONE) {
+        AUDIO_INFO_LOG("Latest connected desc type is none, just only add default device.");
+        descs.push_back(make_shared<AudioDeviceDescriptor>());
+        return descs;
+    }
+
+    if (NeedLatestConnectWithDefaultDevices(latestConnDesc->getType())) {
+        // Add the latest connected device.
+        descs.push_back(move(latestConnDesc));
+        switch (streamUsage) {
+            case STREAM_USAGE_ALARM:
+                // Add default device at same time for alarm.
+                descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+                break;
+            case STREAM_USAGE_VOICE_RINGTONE:
+            case STREAM_USAGE_RINGTONE:
+                if (curRingerMode == RINGER_MODE_NORMAL) {
+                    // Add default devices at same time only in ringer normal mode.
+                    descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+                }
+                break;
+            default:
+                AUDIO_DEBUG_LOG("Don't add default device at the same time.");
+                break;
+        }
+    } else if (latestConnDesc->getType() != DEVICE_TYPE_NONE) {
+        descs.push_back(move(latestConnDesc));
+    } else {
+        descs.push_back(make_shared<AudioDeviceDescriptor>());
+    }
     return descs;
 }
 

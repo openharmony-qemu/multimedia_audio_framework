@@ -48,6 +48,20 @@ void PaRendererStreamUnitTestP2::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
+void LoadPaPort()
+{
+    AudioPlaybackCaptureConfig checkConfig;
+    int32_t checkInnerCapId = 0;
+    AudioSystemManager::GetInstance()->CheckCaptureLimit(checkConfig, checkInnerCapId);
+}
+
+void ReleasePaPort()
+{
+    AudioSystemManager::GetInstance()->ReleaseCaptureLimit(1);
+}
+#endif
+
 static AudioProcessConfig GetInnerCapConfig()
 {
     AudioProcessConfig config;
@@ -60,6 +74,7 @@ static AudioProcessConfig GetInnerCapConfig()
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    config.innerCapId = 1;
     return config;
 }
 
@@ -84,6 +99,9 @@ std::shared_ptr<PaRendererStreamImpl> PaRendererStreamUnitTestP2::CreatePaRender
  */
 HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_004, TestSize.Level1)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
+    LoadPaPort();
+#endif
     auto unit = CreatePaRendererStreamImpl();
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->InitPaContext();
@@ -345,6 +363,9 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_015, TestSize.Level1)
     unit->firstGetLatency_= false;
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    ReleasePaPort();
+#endif
 }
 }
 }

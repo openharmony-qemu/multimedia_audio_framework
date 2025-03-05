@@ -557,5 +557,18 @@ int32_t IpcStreamProxy::SetDefaultOutputDevice(const DeviceType defaultOutputDev
     CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
+
+int32_t IpcStreamProxy::SetSourceDuration(int64_t duration)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt64(duration);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_SOURCE_DURATION, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set source duration failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

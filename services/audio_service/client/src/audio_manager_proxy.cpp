@@ -649,8 +649,9 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, nullptr, "CreateAudioProcess failed, error: %{public}d", error);
-    sptr<IRemoteObject> process = reply.ReadRemoteObject();
     errorCode = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "errcode: %{public}d", errorCode);
+    sptr<IRemoteObject> process = reply.ReadRemoteObject();
     return process;
 }
 
@@ -1505,13 +1506,35 @@ int32_t AudioManagerProxy::SetInnerCapLimit(uint32_t innerCapLimit)
     int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT),
         data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Failed, ipc error: %{public}d", ret);
-    ret = reply.ReadInt32();
-    return ret;
+    return reply.ReadInt32();
 }
 
+// for DT test
 int32_t AudioManagerProxy::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
 {
-    return AUDIO_OK;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), AUDIO_ERR, "Write descriptor failed!");
+    ProcessConfig::WriteInnerCapConfigToParcel(config, data);
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_CAPTURE_LIMIT),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
+// for DT test
+int32_t AudioManagerProxy::ReleaseCaptureLimit(int32_t innerCapId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), AUDIO_ERR, "Write descriptor failed!");
+    data.WriteInt32(innerCapId);
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_CAPTURE_LIMIT),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
 }
 #endif
 

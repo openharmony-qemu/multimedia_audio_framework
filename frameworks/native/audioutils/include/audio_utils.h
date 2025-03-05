@@ -50,6 +50,7 @@ namespace AudioStandard {
 const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t MILLISECOND_PER_SECOND = 1000;
 const int32_t GET_EXTRA_PARAM_LEN = 200;
+const uint32_t AUDIO_ID = 1041;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;

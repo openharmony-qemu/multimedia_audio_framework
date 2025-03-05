@@ -86,7 +86,7 @@ bool AudioAdapterManager::Init()
 
     // init volume before kvstore start by local prop for bootanimation
     InitBootAnimationVolume();
-    AudioVolume::GetInstance()->SetMaxAppVolume(GetMaxVolumeLevel(STREAM_APP));
+    AudioVolume::GetInstance()->SetDefaultAppVolume(appConfigVolume_.defaultVolume);
     std::string defaultSafeVolume = std::to_string(GetMaxVolumeLevel(STREAM_MUSIC));
     AUDIO_INFO_LOG("defaultSafeVolume %{public}s", defaultSafeVolume.c_str());
     char currentSafeVolumeValue[3] = {0};
@@ -256,6 +256,9 @@ int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
+    if (volumeType == STREAM_APP) {
+        return appConfigVolume_.maxVolume;
+    }
     if (maxVolumeIndexMap_.end() != maxVolumeIndexMap_.find(volumeType)) {
         return maxVolumeIndexMap_[volumeType];
     } else if (maxVolumeIndexMap_.end() != maxVolumeIndexMap_.find(STREAM_MUSIC)) {
@@ -271,6 +274,9 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
+    if (volumeType == STREAM_APP) {
+        return appConfigVolume_.minVolume;
+    }
     if (minVolumeIndexMap_.end() != minVolumeIndexMap_.find(volumeType)) {
         return minVolumeIndexMap_[volumeType];
     } else if (minVolumeIndexMap_.end() != minVolumeIndexMap_.find(STREAM_MUSIC)) {
@@ -657,8 +663,7 @@ int32_t AudioAdapterManager::GetAppVolumeLevel(int32_t appUid)
     if (volumeDataMaintainer_.IsSetAppVolume(appUid)) {
         return volumeDataMaintainer_.GetAppVolume(appUid);
     } else {
-        AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_APP);
-        return GetMaxVolumeLevel(streamAlias);
+        return appConfigVolume_.defaultVolume;
     }
 }
 
@@ -2099,6 +2104,14 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
 {
     for (auto streamVolInfoPair : streamVolumeInfos_) {
         auto streamVolInfo = streamVolInfoPair.second;
+        if (streamVolInfo->streamType == STREAM_APP) {
+            appConfigVolume_.defaultVolume = streamVolInfo->defaultLevel;
+            appConfigVolume_.maxVolume = streamVolInfo->maxLevel;
+            appConfigVolume_.minVolume = streamVolInfo->minLevel;
+            AUDIO_DEBUG_LOG("AppConfigVolume default = %{public}d, max = %{public}d, min = %{public}d",
+                appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
+            continue;
+        }
         minVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->minLevel;
         maxVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->maxLevel;
         volumeDataMaintainer_.SetStreamVolume(streamVolInfo->streamType, streamVolInfo->defaultLevel);
@@ -2114,7 +2127,7 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
 {
     auto streamVolInfo = streamVolumeInfos_.find(streamType);
     if (streamVolInfo == streamVolumeInfos_.end()) {
-        AUDIO_WARNING_LOG("Cannot find stream type %{public}d and try to use STREAM_MUSIC", streamType);
+        AUDIO_DEBUG_LOG("Cannot find stream type %{public}d and try to use STREAM_MUSIC", streamType);
         streamVolInfo = streamVolumeInfos_.find(STREAM_MUSIC);
         CHECK_AND_RETURN_LOG(streamVolInfo != streamVolumeInfos_.end(),
             "Cannot find stream type STREAM_MUSIC");
@@ -2248,6 +2261,22 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
     AppendFormat(dumpString, "  - SafeStatus: %s\n", status.c_str());
     AppendFormat(dumpString, "  - ActiveBtSafeTime: %lld\n", safeActiveBtTime_);
     AppendFormat(dumpString, "  - ActiveSafeTime: %lld\n", safeActiveTime_);
+}
+
+void AudioAdapterManager::SetVgsVolumeSupported(bool isVgsSupported)
+{
+    AUDIO_INFO_LOG("Set Vgs Supported: %{public}d", isVgsSupported);
+    isVgsVolumeSupported_ = isVgsSupported;
+    AudioVolume::GetInstance()->SetVgsVolumeSupported(isVgsSupported);
+}
+
+bool AudioAdapterManager::IsVgsVolumeSupported() const
+{
+    if (currentActiveDevice_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        AUDIO_INFO_LOG("Current Active Device isn't SCO, return false");
+        return false;
+    }
+    return isVgsVolumeSupported_;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

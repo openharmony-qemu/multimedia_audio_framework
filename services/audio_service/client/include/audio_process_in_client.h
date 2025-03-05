@@ -64,6 +64,8 @@ public:
 
     virtual int32_t SetVolume(int32_t vol) = 0;
 
+    virtual int32_t SetSourceDuration(int64_t duration) = 0;
+
     virtual int32_t Start() = 0;
 
     virtual int32_t Pause(bool isFlush = false) = 0;
