@@ -22,6 +22,39 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioClientTrackerTest : public AudioClientTracker {
+public:
+    virtual ~AudioClientTrackerTest() = default;
+    /**
+     * Mute Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+     /**
+     * Unmute Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+    /**
+     * Paused Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+     /**
+     * Resumed Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+    virtual void SetLowPowerVolumeImpl(float volume) {};
+    virtual void GetLowPowerVolumeImpl(float &volume) {};
+    virtual void GetSingleStreamVolumeImpl(float &volume) {};
+    virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) {};
+    virtual void UnsetOffloadModeImpl() {};
+};
 
 class AudioClientTrackerCallbackProxyUnitTest : public testing::Test {
 public:

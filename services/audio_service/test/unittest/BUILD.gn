@@ -866,3 +866,23 @@ ohos_unittest("audio_manager_listener_proxy_unit_test") {
     "samgr:samgr_proxy",
   ]
 }
+
+ohos_unittest("resource_manager_adapter_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [ "../../server/include" ]
+
+  sources = [ "resource_manager_adapter_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+
+  deps = [ "../../../../services/audio_policy:audio_policy_common" ]
+  external_deps = [
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "hilog:libhilog",
+    "i18n:intl_util",
+    "ipc:ipc_core",
+  ]
+}
