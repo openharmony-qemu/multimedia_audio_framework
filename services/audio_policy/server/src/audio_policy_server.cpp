@@ -997,7 +997,7 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     int32_t volumeLevelInInt = 0;
     if (GetStreamMuteInternal(streamInFocus)) {
-        SetStreamMuteInternal(streamInFocus, false, true);
+        SetStreamMuteInternal(streamInFocus, false, false);
     }
     volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
     int32_t minRet = GetMinVolumeLevel(streamInFocus);
