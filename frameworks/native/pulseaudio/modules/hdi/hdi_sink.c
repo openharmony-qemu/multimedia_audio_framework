@@ -3110,11 +3110,7 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
             u->multiChannel.isHDISinkStarted = false;
             u->multiChannel.sinkAdapter->SinkAdapterDeInit(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkInited = false;
-            if (u->tv_supported) {
-                u->multiChannel.sample_attrs.adapterName = "dp";
-            } else {
-                u->multiChannel.sample_attrs.adapterName = "primary";
-            }
+            u->multiChannel.sample_attrs.adapterName = u->tv_supported ? "dp" : "primary";
             u->multiChannel.sample_attrs.channel = (uint32_t)u->multiChannel.sinkChannel;
             u->multiChannel.sample_attrs.channelLayout = u->multiChannel.sinkChannelLayout;
             u->multiChannel.sinkAdapter->SinkAdapterInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
@@ -4544,11 +4540,6 @@ static int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Use
         return -1;
     }
 
-    if (pa_modargs_get_value_boolean(ma, "tv_supported", &u->tv_supported) < 0) {
-        AUDIO_ERR_LOG("Failed to parse tv_supported argument.");
-        return -1;
-    }
-
     u->test_mode_on = false;
     if (pa_modargs_get_value_boolean(ma, "test_mode_on", &u->test_mode_on) < 0) {
         AUDIO_INFO_LOG("No test_mode_on arg. Normal mode it is.");
@@ -4585,6 +4576,11 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
 {
     if (pa_modargs_get_value_boolean(ma, "offload_enable", &u->offload_enable) < 0) {
         AUDIO_ERR_LOG("Failed to parse offload_enable argument.");
+        return -1;
+    }
+
+    if (pa_modargs_get_value_boolean(ma, "tv_supported", &u->tv_supported) < 0) {
+        AUDIO_ERR_LOG("Failed to parse tv_supported argument.");
         return -1;
     }
 
