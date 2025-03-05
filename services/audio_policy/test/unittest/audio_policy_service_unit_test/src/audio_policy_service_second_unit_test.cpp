@@ -1301,10 +1301,15 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceClassInfo_001, TestSize.Level1)
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo = {};
     server->audioPolicyService_.audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
+    bool isSupported = server->audioPolicyService_.audioConfigManager_.GetTvSupported();
     for (auto [classType, moduleInfo] : deviceClassInfo) {
         for (auto module : moduleInfo) {
             std::string tvSupported = module.tvSupported;
-            EXPECT_EQ(tvSupported, "1");
+            if (isSupported) {
+                EXPECT_EQ(tvSupported, "1");
+            } else {
+                EXPECT_EQ(tvSupported, "0");
+            }
         }
     }
 }
