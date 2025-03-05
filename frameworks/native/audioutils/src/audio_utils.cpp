@@ -1626,6 +1626,9 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
         case HEADSET_VOLUME_TYPE:
             device = "HEADSET";
             break;
+        case DEVICE_TYPE_HDMI:
+            device = "HDMI";
+            break;
         default:
             device = "UNKNOWN";
     }

@@ -159,6 +159,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_DEVICE = 25,
     /**
+     * Indicates a hdmi device
+     */
+    DEVICE_TYPE_HDMI = 27,
+    /**
      * Indicates a debug sink device
      */
     DEVICE_TYPE_FILE_SINK = 50,
@@ -217,6 +221,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
     DeviceType::DEVICE_TYPE_FILE_SINK,
     DeviceType::DEVICE_TYPE_REMOTE_CAST,
+    DeviceType::DEVICE_TYPE_HDMI,
 };
 
 inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)

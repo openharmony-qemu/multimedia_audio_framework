@@ -44,6 +44,7 @@ private:
     static int32_t AudioAnalogHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioAnahsDetectDevice(struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioHDMIDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t SetAudioAnahsEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);
     static int32_t ReadAndScanDpState(const std::string &path, uint32_t &eventType);
     static int32_t ReadAndScanDpName(const std::string &path, std::string &name);
