@@ -1268,5 +1268,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterTracker_001, TestSize.Level1)
         mode, streamChangeInfo, object, API_VERSION::API_9);
     EXPECT_EQ(ret, SUCCESS);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS
