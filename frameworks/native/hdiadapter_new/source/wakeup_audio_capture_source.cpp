@@ -105,6 +105,11 @@ void WakeupBuffer::Offer(const char *frame, const uint64_t bufferBytes)
     size_ += bufferBytes;
 }
 
+WakeupAudioCaptureSource::WakeupAudioCaptureSource(const uint32_t captureId)
+    : audioCaptureSource_(captureId)
+{
+}
+
 int32_t WakeupAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
     std::lock_guard<std::mutex> lock(wakeupMutex_);

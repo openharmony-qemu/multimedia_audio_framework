@@ -31,7 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioRenderSink : public IAudioRenderSink {
 public:
-    explicit AudioRenderSink(const std::string &halName = "primary");
+    explicit AudioRenderSink(const uint32_t renderId, const std::string &halName = "primary");
     ~AudioRenderSink();
 
     int32_t Init(const IAudioSinkAttr &attr) override;
@@ -129,6 +129,7 @@ private:
     static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
 
+    uint32_t renderId_ = HDI_INVALID_ID;
     const std::string halName_ = "";
     IAudioSinkAttr attr_ = {};
     SinkCallbackWrapper callback_ = {};
