@@ -145,7 +145,9 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
 
     void MuteOldSinkForFixPop(const std::string &oldSinkname, int64_t muteTime);
-    void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
+    void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
+        AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
 
     void UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -203,6 +205,9 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
         const AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkForSwitchDistributedDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> &desc,
