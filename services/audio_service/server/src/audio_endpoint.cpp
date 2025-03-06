@@ -880,6 +880,7 @@ bool AudioEndpointInner::DelayStopDevice()
             false, "Sink stop failed.");
     }
     isStarted_ = false;
+    delayStopTime_ = INT64_MAX;
     return true;
 }
 
