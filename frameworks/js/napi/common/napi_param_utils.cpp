@@ -375,6 +375,17 @@ napi_status NapiParamUtils::GetRendererInfo(const napi_env &env, AudioRendererIn
 
     GetValueInt32(env, "rendererFlags", rendererInfo->rendererFlags, in);
 
+    status = GetValueInt32(env, "volumeMode", intValue, in);
+    if (status == napi_ok) {
+        AUDIO_INFO_LOG("volume mode = %{public}d", intValue);
+        if (NapiAudioEnum::IsLegalInputArgumentVolumeMode(intValue)) {
+            rendererInfo->volumeMode = static_cast<AudioVolumeMode>(intValue);
+        } else {
+            AUDIO_INFO_LOG("AudioVolumeMode is invalid parameter");
+            return napi_invalid_arg;
+        }
+    }
+
     return napi_ok;
 }
 
@@ -386,7 +397,7 @@ napi_status NapiParamUtils::SetRendererInfo(const napi_env &env, const AudioRend
     SetValueInt32(env, "content", static_cast<int32_t>(rendererInfo.contentType), result);
     SetValueInt32(env, "usage", static_cast<int32_t>(rendererInfo.streamUsage), result);
     SetValueInt32(env, "rendererFlags", rendererInfo.rendererFlags, result);
-
+    SetValueInt32(env, "volumeMode", static_cast<int32_t>(rendererInfo.volumeMode), result);
     return napi_ok;
 }
 
@@ -761,7 +772,8 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
     SetValueBoolean(env, "updateUi", volumeEvent.updateUi, result);
     SetValueInt32(env, "volumeGroupId", volumeEvent.volumeGroupId, result);
     SetValueString(env, "networkId", volumeEvent.networkId, result);
-    SetValueInt32(env, "AudioVolumeMode", static_cast<int32_t>(volumeEvent.volumeMode), result);
+    SetValueInt32(env, "volumeMode",
+        NapiAudioEnum::GetJsAudioVolumeMode(static_cast<AudioVolumeMode>(volumeEvent.volumeMode)), result);
     return napi_ok;
 }
 

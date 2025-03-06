@@ -430,7 +430,9 @@ int32_t AudioSystemManager::SetSelfAppVolume(int32_t volume, int32_t flag)
 int32_t AudioSystemManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t flag)
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::SetAppVolume");
-    bool ret = PermissionUtil::VerifySelfPermission();
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "SetAppVolume: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolume: No system permission");
     return AudioPolicyManager::GetInstance().SetAppVolumeLevel(appUid, volume);
 }
@@ -438,7 +440,9 @@ int32_t AudioSystemManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t
 int32_t AudioSystemManager::GetAppVolume(int32_t appUid) const
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::GetAppVolume");
-    bool ret = PermissionUtil::VerifySelfPermission();
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "GetAppVolume: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "GetAppVolume: No system permission");
     return AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid);
 }
@@ -453,7 +457,9 @@ int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
 {
     AUDIO_INFO_LOG("SetAppVolumeMuted: appUid[%{public}d], muted[%{public}d], flag[%{public}d]",
         appUid, muted, volumeFlag);
-    bool ret = PermissionUtil::VerifySelfPermission();
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
@@ -489,7 +495,9 @@ int32_t AudioSystemManager::UnsetAppVolumeCallbackForUid(
 bool AudioSystemManager::IsAppVolumeMute(int32_t appUid, bool owned)
 {
     AUDIO_INFO_LOG("IsAppVolumeMute: appUid[%{public}d], muted[%{public}d]", appUid, owned);
-    bool ret = PermissionUtil::VerifySelfPermission();
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
     return AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, owned);
 }

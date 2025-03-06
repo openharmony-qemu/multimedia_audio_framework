@@ -42,6 +42,7 @@ napi_ref NapiAudioEnum::samplingRate_ = nullptr;
 napi_ref NapiAudioEnum::encodingType_ = nullptr;
 napi_ref NapiAudioEnum::contentType_ = nullptr;
 napi_ref NapiAudioEnum::streamUsage_ = nullptr;
+napi_ref NapiAudioEnum::audioVolumeMode_ = nullptr;
 napi_ref NapiAudioEnum::deviceRole_ = nullptr;
 napi_ref NapiAudioEnum::deviceType_ = nullptr;
 napi_ref NapiAudioEnum::sourceType_ = nullptr;
@@ -133,6 +134,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::contentTypeMap = {
     {"CONTENT_TYPE_SONIFICATION", CONTENT_TYPE_SONIFICATION},
     {"CONTENT_TYPE_RINGTONE", CONTENT_TYPE_RINGTONE},
     {"CONTENT_TYPE_ULTRASONIC", CONTENT_TYPE_ULTRASONIC}
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeModeMap = {
+    {"SYSTEM_GLOBAL", AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL},
+    {"APP_INDIVIDUAL", AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
@@ -662,6 +668,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioEncodingType", CreateEnumObject(env, encodingTypeMap, encodingType_)),
         DECLARE_NAPI_PROPERTY("ContentType", CreateEnumObject(env, contentTypeMap, contentType_)),
         DECLARE_NAPI_PROPERTY("StreamUsage", CreateEnumObject(env, streamUsageMap, streamUsage_)),
+        DECLARE_NAPI_PROPERTY("StreamUsage", CreateEnumObject(env, audioVolumeModeMap, audioVolumeMode_)),
         DECLARE_NAPI_PROPERTY("DeviceRole", CreateEnumObject(env, deviceRoleMap, deviceRole_)),
         DECLARE_NAPI_PROPERTY("DeviceType", CreateEnumObject(env, deviceTypeMap, deviceType_)),
         DECLARE_NAPI_PROPERTY("SourceType", CreateEnumObject(env, sourceTypeMap, sourceType_)),
@@ -1229,6 +1236,23 @@ bool NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceTy
     return result;
 }
 
+int32_t NapiAudioEnum::GetJsAudioVolumeMode(AudioVolumeMode volumeMode)
+{
+    int32_t result = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+    switch (volumeMode) {
+        case AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL:
+            result = NapiAudioEnum::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+            break;
+        case AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL:
+            result = NapiAudioEnum::AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+            break;
+        default:
+            result = NapiAudioEnum::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+            break;
+    }
+    return result;
+}
+
 int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
 {
     int32_t result = MEDIA;
@@ -1372,6 +1396,20 @@ bool NapiAudioEnum::IsLegalDeviceUsage(int32_t usage)
     return result;
 }
 
+bool NapiAudioEnum::IsLegalInputArgumentVolumeMode(int32_t volumeMode)
+{
+    bool result = false;
+    switch (volumeMode) {
+        case AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL:
+        case AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 
 bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
 {

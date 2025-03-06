@@ -82,7 +82,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     Trace trace("AudioVolume::GetVolume");
     int32_t volumeLevel = 0;
     int32_t appUid = -1;
-    AudioVolumeMode volumeMode = SYSTEM_GLOBAL;
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     float volumeStream = GetStreamVolume(sessionId, volumeType, appUid, volumeMode);
     float volumeSystem = GetSystemVolume(volumeType, deviceClass, volumeLevel);
     float volumeApp = GetAppVolume(appUid, volumeMode);
@@ -320,7 +320,7 @@ float AudioVolume::GetAppVolume(int32_t appUid, AudioVolumeMode mode)
         appVolume = iter->second.isMuted_ ? 0 : iter->second.volume_;
     }
     AUDIO_DEBUG_LOG("appVolume = %{public}f", appVolume);
-    appVolume = (mode == SYSTEM_GLOBAL) ? 1.0 : appVolume;
+    appVolume = (mode == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL) ? 1.0 : appVolume;
     return appVolume;
 }
 

@@ -671,6 +671,17 @@ int32_t AudioStreamCollector::UpdateTracker(const AudioMode &mode, AudioDeviceDe
     return SUCCESS;
 }
 
+void AudioStreamCollector::UpdateAppVolume(int32_t appUid, int32_t volume)
+{
+    for (auto itemInfo : audioRendererChangeInfos_) {
+        if (itemInfo->clientUID != appUid) {
+            continue;
+        }
+        itemInfo->appVolume = volume;
+        AUDIO_INFO_LOG("UpdateAppVolume success, appuid = %{public}d, volume = %{public}d", appUid, volume);
+    }
+}
+
 int32_t AudioStreamCollector::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

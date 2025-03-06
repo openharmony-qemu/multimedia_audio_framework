@@ -59,12 +59,14 @@ private:
         size_t &argc, napi_value *args);
     static napi_value GetVolumeGroupInfos(napi_env env, napi_callback_info info);
     static napi_value SetAppVolumePercentage(napi_env env, napi_callback_info info);
+    static napi_value SetAppVolumePercentageForUid(napi_env env, napi_callback_info info);
     static napi_value GetAppVolumePercentage(napi_env env, napi_callback_info info);
+    static napi_value GetAppVolumePercentageForUid(napi_env env, napi_callback_info info);
     static napi_value GetVolumeGroupInfosSync(napi_env env, napi_callback_info info);
     static napi_value GetVolumeGroupManager(napi_env env, napi_callback_info info);
     static napi_value GetVolumeGroupManagerSync(napi_env env, napi_callback_info info);
-    static napi_value SetAppVolumeMuted(napi_env env, napi_callback_info info);
-    static napi_value IsAppVolumeMuted(napi_env env, napi_callback_info info);
+    static napi_value SetAppVolumeMutedForUid(napi_env env, napi_callback_info info);
+    static napi_value IsAppVolumeMutedForUid(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);

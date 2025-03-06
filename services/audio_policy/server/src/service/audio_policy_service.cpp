@@ -311,6 +311,8 @@ int32_t AudioPolicyService::SetSystemVolumeLevelWithDevice(AudioStreamType strea
 
 int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
 {
+    // update dump appvolume
+    audioDeviceLock_.UpdateAppVolume(appUid, volumeLevel);
     return audioVolumeManager_.SetAppVolumeLevel(appUid, volumeLevel);
 }
 
