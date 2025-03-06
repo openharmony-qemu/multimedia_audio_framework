@@ -3110,7 +3110,7 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
             u->multiChannel.isHDISinkStarted = false;
             u->multiChannel.sinkAdapter->SinkAdapterDeInit(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkInited = false;
-            u->multiChannel.sample_attrs.adapterName = u->tv_supported ? "dp" : "primary";
+            u->multiChannel.sample_attrs.adapterName = u->tvSupported ? "dp" : "primary";
             u->multiChannel.sample_attrs.channel = (uint32_t)u->multiChannel.sinkChannel;
             u->multiChannel.sample_attrs.channelLayout = u->multiChannel.sinkChannelLayout;
             u->multiChannel.sinkAdapter->SinkAdapterInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
@@ -3124,11 +3124,7 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
             }
         }
     } else {
-        if (u->tv_supported) {
-            u->multiChannel.sample_attrs.adapterName = "dp";
-        } else {
-            u->multiChannel.sample_attrs.adapterName = "primary";
-        }
+        u->multiChannel.sample_attrs.adapterName = u->tvSupported ? "dp" : "primary";
         u->multiChannel.sample_attrs.channel = (uint32_t)u->multiChannel.sinkChannel;
         u->multiChannel.sample_attrs.channelLayout = u->multiChannel.sinkChannelLayout;
         u->multiChannel.sinkAdapter->SinkAdapterInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
@@ -4238,11 +4234,7 @@ static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
     int32_t ret;
 
     sample_attrs.format = ConvertPaToHdiAdapterFormat(u->ss.format);
-    if (u->tv_supported) {
-        sample_attrs.adapterName = "dp";
-    } else {
-        sample_attrs.adapterName = u->adapterName;
-    }
+    sample_attrs.adapterName = u->tvSupported ? "dp" : u->adapterName;
     sample_attrs.openMicSpeaker = u->open_mic_speaker;
     sample_attrs.sampleRate = (uint32_t) u->ss.rate;
     sample_attrs.channel = u->ss.channels;
@@ -4285,11 +4277,7 @@ static int32_t PrepareDeviceOffload(struct Userdata *u)
     sample_attrs.format = format;
     AUDIO_INFO_LOG("PrepareDeviceOffload audiorenderer format: %d ,adapterName %s",
         sample_attrs.format, u->offload.sinkAdapter->deviceClass);
-    if (u->tv_supported) {
-        sample_attrs.adapterName = "dp";
-    } else {
-        sample_attrs.adapterName = adapterName;
-    }
+    sample_attrs.adapterName = u->tvSupported ? "dp" : adapterName;
     sample_attrs.openMicSpeaker = u->open_mic_speaker;
     sample_attrs.sampleRate = u->ss.rate;
     sample_attrs.channel = u->ss.channels;
@@ -4318,11 +4306,7 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct SinkAdapter 
     u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
     AUDIO_INFO_LOG("PrepareDeviceMultiChannel format: %d ,adapterName %s",
         u->multiChannel.sample_attrs.format, sinkAdapter->deviceClass);
-    if (u->tv_supported) {
-        u->multiChannel.sample_attrs.adapterName = "dp";
-    } else {
-        u->multiChannel.sample_attrs.adapterName = u->adapterName;
-    }
+    u->multiChannel.sample_attrs.adapterName = u->tvSupported ? "dp" : u->adapterName;
     u->multiChannel.sample_attrs.openMicSpeaker = u->open_mic_speaker;
     u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
     u->multiChannel.sample_attrs.channel = DEFAULT_MULTICHANNEL_NUM;
@@ -4579,8 +4563,8 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
         return -1;
     }
 
-    if (pa_modargs_get_value_boolean(ma, "tv_supported", &u->tv_supported) < 0) {
-        AUDIO_ERR_LOG("Failed to parse tv_supported argument.");
+    if (pa_modargs_get_value_boolean(ma, "tv_supported", &u->tvSupported) < 0) {
+        AUDIO_ERR_LOG("Failed to parse tvSupported argument.");
         return -1;
     }
 

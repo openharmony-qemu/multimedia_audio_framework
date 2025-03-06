@@ -44,7 +44,7 @@ struct Userdata {
     bool render_full_enable;
     bool offload_enable;
     bool multichannel_enable;
-    bool tv_supported;
+    bool tvSupported;
     const char *deviceNetworkId;
     int32_t deviceType;
     size_t bytes_dropped;

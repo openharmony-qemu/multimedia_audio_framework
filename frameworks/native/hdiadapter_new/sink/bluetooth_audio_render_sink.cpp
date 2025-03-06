@@ -620,7 +620,7 @@ int32_t BluetoothAudioRenderSink::CreateRender(void)
     if (strcmp(attr_.adapterName, "dp") == 0) {
         adapterNameCase = attr_.adapterName;
     } else {
-        std::string adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp"; // set sound card infomation
+        adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp"; // set sound card infomation
     }
     void *render = deviceManager->CreateRender(adapterNameCase, &param, &deviceDesc, hdiRenderId_);
     audioRender_ = static_cast<struct AudioRender *>(render);
