@@ -367,5 +367,41 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_015, TestSize.Level1)
     ReleasePaPort();
 #endif
 }
+
+/**
+ * @tc.name  : Test
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_016
+ * @tc.desc  : Test PAStreamMovedCb.
+ */
+HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_016, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    std::shared_ptr<PaAdapterManager> adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    uint32_t sessionId = 123456;
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    unit->paStream_ = stream;
+    void *userdataRet = nullptr;
+
+    EXPECT_EQ(userdataRet, nullptr);
+    unit->PAStreamMovedCb(stream, userdataRet);
+    unit->PAStreamMovedCb(stream, (void *)1);
+}
+
+/**
+ * @tc.name  : Test
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_017
+ * @tc.desc  : Test UpdateBufferSize.
+ */
+HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_017, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    uint32_t bufferLength = 10;
+    int32_t ret = unit->UpdateBufferSize(bufferLength);
+    EXPECT_EQ(ret, SUCCESS);
+}
 }
 }
