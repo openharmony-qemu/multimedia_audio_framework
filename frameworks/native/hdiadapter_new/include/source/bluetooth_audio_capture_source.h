@@ -34,7 +34,7 @@ typedef struct OHOS::HDI::Audio_Bluetooth::AudioCapture BtAudioCapture;
 
 class BluetoothAudioCaptureSource : public IAudioCaptureSource {
 public:
-    explicit BluetoothAudioCaptureSource();
+    explicit BluetoothAudioCaptureSource(const uint32_t captureId);
     ~BluetoothAudioCaptureSource();
 
     int32_t Init(const IAudioSourceAttr &attr) override;
@@ -96,6 +96,7 @@ private:
     static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
 
+    uint32_t captureId_ = HDI_INVALID_ID;
     std::string halName_ = "";
     IAudioSourceAttr attr_ = {};
     SourceCallbackWrapper callback_ = {};
