@@ -259,7 +259,7 @@ void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo()
             audioModuleInfo.sinkLatency = globalConfigs_.globalPaConfigs_.sinkLatency_;
 
             shouldOpenMicSpeaker_ ? audioModuleInfo.OpenMicSpeaker = "1" : audioModuleInfo.OpenMicSpeaker = "0";
-            shouldSetDefaultAdapter_ ? audioModuleInfo.defaultAdapterEnable = "1" : audioModuleInfo.defaultAdapterEnable = "0";
+            audioModuleInfo.defaultAdapterEnable = shouldSetDefaultAdapter_ ? "1" : "0";
             if (adapterType == AdaptersType::TYPE_PRIMARY &&
                 shouldEnableOffload && pipeInfo.paPropRole_ == MODULE_TYPE_SINK) {
                 audioModuleInfo.offloadEnable = "1";
