@@ -418,6 +418,7 @@ int32_t RemoteAudioCaptureSource::CreateCapture(void)
     void *capture = deviceManager->CreateCapture(deviceNetworkId_, &param, &deviceDesc, hdiCaptureId_);
     audioCapture_.ForceSetRefPtr(static_cast<IAudioCapture *>(capture));
     CHECK_AND_RETURN_RET(audioCapture_ != nullptr, ERR_NOT_STARTED, "create capture fail");
+    deviceManager->RegistCaptureSourceCallback(deviceNetworkId_, hdiCaptureId_, this);
     return SUCCESS;
 }
 
@@ -428,6 +429,7 @@ void RemoteAudioCaptureSource::DestroyCapture(void)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN(deviceManager != nullptr);
     deviceManager->DestroyCapture(deviceNetworkId_, hdiCaptureId_);
+    deviceManager->UnRegistCaptureSourceCallback(deviceNetworkId_, hdiCaptureId_);
     audioCapture_.ForceSetRefPtr(nullptr);
     hdiCaptureId_ = 0;
 }

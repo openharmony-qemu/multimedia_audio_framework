@@ -19,6 +19,7 @@
 #include <iostream>
 #include <cstring>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <mutex>
 #include "v4_0/iaudio_manager.h"
@@ -30,8 +31,10 @@ namespace AudioStandard {
 typedef struct LocalAdapterWrapper {
     struct IAudioAdapter *adapter_ = nullptr;
     struct AudioAdapterDescriptor adapterDesc_ = {};
-    uint32_t renderNum_ = 0;
-    uint32_t captureNum_ = 0;
+    std::unordered_set<uint32_t> hdiRenderIds_;
+    std::unordered_set<uint32_t> hdiCaptureIds_;
+    std::mutex renderMtx_;
+    std::mutex captureMtx_;
     int32_t routeHandle_ = -1;
 } LocalAdapterWrapper;
 

@@ -19,7 +19,7 @@
 #include <iostream>
 #include <cstring>
 #include <unordered_map>
-#include <set>
+#include <unordered_set>
 #include <mutex>
 #include <v1_0/iaudio_manager.h>
 #include <v1_0/iaudio_callback.h>
@@ -56,8 +56,10 @@ typedef struct RemoteAdapterWrapper {
 
     sptr<RemoteIAudioAdapter> adapter_ = nullptr;
     RemoteAudioAdapterDescriptor adapterDesc_ = {};
-    uint32_t renderNum_ = 0;
-    uint32_t captureNum_ = 0;
+    std::unordered_set<uint32_t> hdiRenderIds_;
+    std::unordered_set<uint32_t> hdiCaptureIds_;
+    std::mutex renderMtx_;
+    std::mutex captureMtx_;
     int32_t routeHandle_ = -1;
     std::unordered_map<uint32_t, IDeviceManagerCallback *> renderCallbacks_;
     std::unordered_map<uint32_t, IDeviceManagerCallback *> captureCallbacks_;
