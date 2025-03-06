@@ -18,12 +18,14 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_volume.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t STREAM_MUSIC_TEST = 1;
+const int32_t STREAM_MUSIC_TEST = STREAM_MUSIC;
+const int32_t STREAM_VOICE_TEST = STREAM_VOICE_CALL;
 const int32_t STREAM_USAGE_MEDIA_TEST = 1;
 
 class AudioVolumeUnitTest : public testing::Test {
@@ -70,6 +72,22 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_001, TestSize.Level1)
     uint32_t sessionId = 1;
     int32_t volumeType = STREAM_MUSIC_TEST;
     std::string deviceClass = "speaker";
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
+    EXPECT_EQ(volume, 1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_002, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    int32_t volumeType = STREAM_VOICE_TEST;
+    std::string deviceClass = "speaker";
+    AudioVolume::GetInstance()->SetVgsVolumeSupported(true);
     float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
     EXPECT_EQ(volume, 1.0f);
 }

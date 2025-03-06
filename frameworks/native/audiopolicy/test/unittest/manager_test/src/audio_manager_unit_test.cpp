@@ -20,6 +20,7 @@
 #include "audio_renderer.h"
 #include "audio_capturer.h"
 #include "audio_stream_manager.h"
+#include "audio_utils.h"
 
 #include <chrono>
 #include <thread>
@@ -1829,6 +1830,35 @@ HWTEST(AudioManagerUnitTest, SetRingerModeTest_003, TestSize.Level1)
 }
 
 /**
+* @tc.name   : Test SetRingerMode API
+* @tc.number : SetRingerModeTest_004
+* @tc.desc   : Test setting of ringer mode to VIBRATE
+*/
+HWTEST(AudioManagerUnitTest, SetRingerModeTest_004, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    auto ret = AudioSystemManager::GetInstance()->SetRingerMode(AudioRingerMode::RINGER_MODE_VIBRATE);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_NORMAL);
+}
+
+/**
+* @tc.name   : Test SetRingerMode API
+* @tc.number : SetRingerModeTest_005
+* @tc.desc   : Test setting of ringer mode to SILENT
+*/
+HWTEST(AudioManagerUnitTest, SetRingerModeTest_005, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    auto ret = AudioSystemManager::GetInstance()->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_NORMAL);
+}
+/**
 * @tc.name   : Test SetMicrophoneMute API
 * @tc.number : SetMicrophoneMute_001
 * @tc.desc   : Test muting of microphone to true
@@ -1923,6 +1953,34 @@ HWTEST(AudioManagerUnitTest, SetMute_006, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_DEFAULT, false);
     EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_007
+* @tc.desc   : Test mute functionality of medie stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_007, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_ALL, true);
+    EXPECT_EQ(ret, SUCCESS);
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_SYSTEM);
+    EXPECT_TRUE(isActive);
+}
+
+/**
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_008
+* @tc.desc   : Test unmute functionality of media stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_008, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_ALL, false);
+    EXPECT_EQ(ret, SUCCESS);
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_SYSTEM);
+    EXPECT_FALSE(isActive);
 }
 
 /**
