@@ -1210,7 +1210,7 @@ bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<
             AUDIO_INFO_LOG("set dual hal tone, reset primary sink to default before.");
             audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
             if (enableDualHalToneState_ && enableDualHalToneSessionId_ != sessionId) {
-                AUDIO_INFO_LOG("sesion changed, disable old dual hal tone.");
+                AUDIO_INFO_LOG("session changed, disable old dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
 
@@ -1221,6 +1221,10 @@ bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<
             }
             UpdateDualToneState(true, sessionId);
         } else {
+            if (enableDualHalToneState_ && enableDualHalToneSessionId_ == sessionId) {
+                AUDIO_INFO_LOG("device unavailable, disable dual hal tone.");
+                UpdateDualToneState(false, enableDualHalToneSessionId_);
+            }
             isRingDualToneOnPrimarySpeaker_ = IsRingDualToneOnPrimarySpeaker(descs, sessionId);
             audioRouterCenter_.SetAlarmFollowRingRouter(isRingDualToneOnPrimarySpeaker_);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
