@@ -1380,7 +1380,7 @@ StreamUsage AudioStreamCollector::GetLastestRunningCallStreamUsage()
             return usage;
         }
     }
-    return STREAM_USAGE_VOICE_COMMUNICATION;
+    return STREAM_USAGE_UNKNOWN;
 }
 
 std::vector<uint32_t> AudioStreamCollector::GetAllRendererSessionIDForUID(int32_t uid)
