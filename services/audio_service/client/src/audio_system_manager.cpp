@@ -249,7 +249,19 @@ int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
 
 AudioScene AudioSystemManager::GetAudioScene() const
 {
-    return AudioPolicyManager::GetInstance().GetAudioScene();
+    auto audioScene = AudioPolicyManager::GetInstance().GetAudioScene();
+    AUDIO_DEBUG_LOG("origin audioScene: %{public}d", audioScene);
+    switch (audioScene) {
+        case AUDIO_SCENE_CALL_START:
+        case AUDIO_SCENE_CALL_END:
+            return AUDIO_SCENE_DEFAULT;
+
+        case AUDIO_SCENE_VOICE_RINGING:
+            return AUDIO_SCENE_RINGING;
+    
+        default:
+            return audioScene;
+    }
 }
 
 int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag) const

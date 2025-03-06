@@ -1861,11 +1861,17 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         ERR_INVALID_PARAM, "param is invalid");
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    if (audioScene == AUDIO_SCENE_CALL_START || audioScene == AUDIO_SCENE_CALL_END) {
-        AUDIO_ERR_LOG("param is invalid");
-        return ERR_INVALID_PARAM;
+    switch (audioScene) {
+        case AUDIO_SCENE_DEFAULT:
+        case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_PHONE_CALL:
+        case AUDIO_SCENE_PHONE_CHAT:
+            return audioPolicyService_.SetAudioScene(audioScene);
+    
+        default:
+            AUDIO_ERR_LOG("param is invalid: %{public}d", audioScene);
+            return ERR_INVALID_PARAM;
     }
-    return audioPolicyService_.SetAudioScene(audioScene);
 }
 
 int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene)
