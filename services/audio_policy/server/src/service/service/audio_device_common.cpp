@@ -411,7 +411,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
 
     // Remember the disconnected device descriptor and remove it
-    audioConnectedDevice_.GetAllConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
+    audioDeviceManager_.GetAllConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
         updatedDesc.macAddress_, updatedDesc.deviceRole_, descForCb);
     for (const auto& desc : descForCb) {
         if (desc->deviceType_ == DEVICE_TYPE_DP) { hasDpDevice_ = false; }
@@ -476,6 +476,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     } else {
         audioDeviceManager_.UpdateDeviceDescDeviceId(audioDescriptor);
         CheckAndNotifyUserSelectedDevice(audioDescriptor);
+        audioDeviceManager_.UpdateVirtualDevices(audioDescriptor, true);
     }
     descForCb.push_back(audioDescriptor);
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
@@ -517,6 +518,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
         audioDescriptor->deviceId_ = AudioPolicyUtils::startDeviceId++;
     } else {
         audioDeviceManager_.UpdateDeviceDescDeviceId(audioDescriptor);
+        audioDeviceManager_.UpdateVirtualDevices(audioDescriptor, true);
     }
     descForCb.push_back(audioDescriptor);
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);

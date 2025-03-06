@@ -942,6 +942,12 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     AUDIO_WARNING_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d], mac[%{public}s]",
         devType, isConnected, GetEncryptStr(macAddress).c_str());
 
+    auto devDesc = make_shared<AudioDeviceDescriptor>(updatedDesc);
+    if (audioDeviceManager_.IsConnectedDevices(devDesc) && devDesc->connectState_ == VIRTUAL_CONNECTED) {
+        audioDeviceManager_.UpdateVirtualDevices(devDesc, isConnected);
+        return;
+    }
+
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
     // fill device change action for callback
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
