@@ -1931,42 +1931,34 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_088, TestSize.Level1)
     outputDevices.push_back(std::make_shared<AudioDeviceDescriptor>());
 
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(-1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+    EXPECT_EQ(0, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
 
     outputDevices.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(-1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+    EXPECT_EQ(0, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
 
     audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = true;
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+    EXPECT_EQ(1, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
 
     outputDevices.front()->deviceType_ = DEVICE_TYPE_INVALID;
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+    EXPECT_EQ(2, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
 }
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_089
-* @tc.desc  : Test IsBlueToothOnPrimarySpeaker interface.
+* @tc.desc  : Test IsDualStreamWhenRingDual interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_089, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
 
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    EXPECT_TRUE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
-
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    EXPECT_FALSE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
-
-    audioDeviceCommon.audioA2dpOffloadFlag_.SetA2dpOffloadFlag(A2DP_OFFLOAD);
-    EXPECT_TRUE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
-
-    desc->deviceType_ = DEVICE_TYPE_INVALID;
-    EXPECT_FALSE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
+    EXPECT_TRUE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_RING));
+    EXPECT_TRUE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_ALARM));
+    EXPECT_TRUE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_ACCESSIBILITY));
+    EXPECT_FALSE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_MUSIC));
 }
 
 /**

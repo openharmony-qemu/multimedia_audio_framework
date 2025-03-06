@@ -81,8 +81,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs;
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
-        (streamUsage == STREAM_USAGE_ALARM && isAlarmFollowRingRouter_)) {
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
@@ -106,10 +105,6 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
         descs.push_back(move(latestConnDesc));
         switch (streamUsage) {
             case STREAM_USAGE_ALARM:
-                if (isAlarmFollowRingRouter_ && curRingerMode != RINGER_MODE_NORMAL) {
-                    AUDIO_INFO_LOG("Don't add alarm default device when follow ring and not normal mode.");
-                    break;
-                }
                 // Add default device at same time for alarm.
                 descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
                 break;
