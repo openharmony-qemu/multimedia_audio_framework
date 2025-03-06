@@ -509,11 +509,7 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
     }
     IAudioSinkAttr attr = {};
     bool isTvSupported = AudioService::GetInstance()->GetTvSupported();
-    if (isTvSupported) {
-        attr.adapterName = "dp";
-    } else {
-        attr.adapterName = SINK_ADAPTER_NAME;
-    }
+    attr.adapterName = isTvSupported ? "dp" : SINK_ADAPTER_NAME;
     attr.sampleRate = rate;
     attr.channel = channel;
     attr.format = format;

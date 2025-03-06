@@ -3769,8 +3769,8 @@ int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
 int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
     const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected)
 {
-    AUDIO_INFO_LOG("SetDeviceConnectionStatus deviceName: %{public}s, isConnected: %{public}d",
-        desc->deviceName_.c_str(), isConnected);
+    AUDIO_INFO_LOG("deviceType: %{public}d, deviceRole: %{public}d, isConnected: %{public}d",
+        desc->deviceType_, desc->deviceRole_, isConnected);
     const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MANAGE_AUDIO_CONFIG permission denied");

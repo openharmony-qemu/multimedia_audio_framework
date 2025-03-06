@@ -177,11 +177,7 @@ void AudioEndpointSeparate::Dump(std::string &dumpString)
 void AudioEndpointSeparate::InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo)
 {
     bool isTvSupported = AudioService::GetInstance()->GetTvSupported();
-    if (isTvSupported) {
-        attr.adapterName = "dp";
-    } else {
-        attr.adapterName = "primary";
-    }
+    attr.adapterName = isTvSupported ? "dp" : "primary";
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
     attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
