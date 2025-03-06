@@ -601,8 +601,8 @@ void RendererInClientInner::InitCallbackLoop()
             strongRef->RendererRemoveWatchdog("WatchingWriteCallbackFunc", strongRef->sessionId_); // Remove watchdog
         }
     });
-    callbackLoop.detach();
     pthread_setname_np(callbackLoop.native_handle(), "OS_AudioWriteCB");
+    callbackLoop.detach();
 }
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
