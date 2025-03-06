@@ -154,6 +154,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
             if (desc->deviceType_ == DEVICE_TYPE_NONE) {
                 callStreamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+                callStreamUsage = (callStreamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
+                    callStreamUsage;
                 AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
                     callStreamUsage);
                 desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType);
