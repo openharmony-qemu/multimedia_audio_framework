@@ -193,7 +193,7 @@ public:
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 
-    void SetTvSupported(bool isSupported) override;
+    void SetDefaultAdapterEnable(bool isEnable) override;
 
     void NotifyAudioPolicyReady() override;
 #ifdef HAS_FEATURE_INNERCAPTURER

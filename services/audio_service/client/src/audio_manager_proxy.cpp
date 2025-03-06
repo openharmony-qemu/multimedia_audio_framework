@@ -1465,7 +1465,7 @@ void AudioManagerProxy::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     }
 }
 
-void AudioManagerProxy::SetTvSupported(bool isSupported)
+void AudioManagerProxy::SetDefaultAdapterEnable(bool isEnable)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1473,10 +1473,10 @@ void AudioManagerProxy::SetTvSupported(bool isSupported)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_LOG(ret, "AudioManagerProxy: WriteInterfaceToken failed");
-    data.WriteBool(isSupported);
+    data.WriteBool(isEnable);
 
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::SET_TV_SUPPORTED), data, reply, option);
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_DEFAULT_ADAPTER_ENABLE), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetTvSupport failed, error: %{public}d", error);
     return;
 }

@@ -604,8 +604,8 @@ std::shared_ptr<IAudioRenderSink> AudioEndpointInner::GetFastSink(const AudioDev
 
 void AudioEndpointInner::InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo)
 {
-    bool isTvSupported = AudioService::GetInstance()->GetTvSupported();
-    if (isTvSupported) {
+    bool isDefaultAdapterEnable = AudioService::GetInstance()->GetDefaultAdapterEnable();
+    if (isDefaultAdapterEnable) {
         attr.adapterName = "dp";
     } else {
         attr.adapterName = deviceInfo.networkId_ == LOCAL_NETWORK_ID ? "primary" : "remote";

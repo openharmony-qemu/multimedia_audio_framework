@@ -1235,14 +1235,14 @@ void AudioService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     IStreamManager::GetPlaybackManager(PLAYBACK).GetAllSinkInputs(sinkInputs);
 }
 
-void AudioService::SetTvSupported(bool isSupported)
+void AudioService::SetDefaultAdapterEnable(bool isEnable)
 {
-    isTvSupported_ = isSupported;
+    isDefaultAdapterEnable_ = isEnable;
 }
 
-bool AudioService::GetTvSupported()
+bool AudioService::GetDefaultAdapterEnable()
 {
-    return isTvSupported_;
+    return isDefaultAdapterEnable_;
 }
 
 // need call with streamLifeCycleMutex_ lock

@@ -259,7 +259,7 @@ void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo()
             audioModuleInfo.sinkLatency = globalConfigs_.globalPaConfigs_.sinkLatency_;
 
             shouldOpenMicSpeaker_ ? audioModuleInfo.OpenMicSpeaker = "1" : audioModuleInfo.OpenMicSpeaker = "0";
-            shouldSupportTv_ ? audioModuleInfo.tvSupported = "1" : audioModuleInfo.tvSupported = "0";
+            shouldSetDefaultAdapter_ ? audioModuleInfo.defaultAdapterEnable = "1" : audioModuleInfo.defaultAdapterEnable = "0";
             if (adapterType == AdaptersType::TYPE_PRIMARY &&
                 shouldEnableOffload && pipeInfo.paPropRole_ == MODULE_TYPE_SINK) {
                 audioModuleInfo.offloadEnable = "1";
@@ -701,9 +701,9 @@ void AudioPolicyParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> curNode
             } else if (configInfo.name_ == "anahsShowType") {
                 AUDIO_INFO_LOG("anahs pc support: %{public}s", configInfo.value_.c_str());
                 HandleUpdateAnahsSupportParsed(configInfo.value_);
-            } else if (configInfo.name_ == "smartTVSupport") {
-                AUDIO_INFO_LOG("smart tv support: %{public}s", configInfo.value_.c_str());
-                HandleUpdateTvSupportParsed(configInfo.value_);
+            } else if (configInfo.name_ == "setDefaultAdapter") {
+                AUDIO_INFO_LOG("default adapter support: %{public}s", configInfo.value_.c_str());
+                HandleDefaultAdapterSupportParsed(configInfo.value_);
             }
         }
         curNode->MoveToNext();
@@ -730,14 +730,14 @@ void AudioPolicyParser::HandleUpdateAnahsSupportParsed(std::string &value)
     portObserver_.OnUpdateAnahsSupport(anahsShowType);
 }
 
-void AudioPolicyParser::HandleUpdateTvSupportParsed(std::string &value)
+void AudioPolicyParser::HandleDefaultAdapterSupportParsed(std::string &value)
 {
     if (value == "true") {
-        portObserver_.OnUpdateTvSupport(true);
-        shouldSupportTv_ = true;
+        portObserver_.OnUpdateDefaultAdapter(true);
+        shouldSetDefaultAdapter_ = true;
     } else {
-        portObserver_.OnUpdateTvSupport(false);
-        shouldSupportTv_ = false;
+        portObserver_.OnUpdateDefaultAdapter(false);
+        shouldSetDefaultAdapter_ = false;
     }
 }
 

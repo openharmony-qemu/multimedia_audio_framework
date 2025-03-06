@@ -1173,9 +1173,9 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(audioModuleInfo.offloadEnable);
     }
 
-    if (!audioModuleInfo.tvSupported.empty()) {
-        args.append(" tv_supported=");
-        args.append(audioModuleInfo.tvSupported);
+    if (!audioModuleInfo.defaultAdapterEnable.empty()) {
+        args.append(" default_adapter_enable=");
+        args.append(audioModuleInfo.defaultAdapterEnable);
     }
     AUDIO_INFO_LOG("[Adapter load-module] [PolicyManager] common args:%{public}s", args.c_str());
 }

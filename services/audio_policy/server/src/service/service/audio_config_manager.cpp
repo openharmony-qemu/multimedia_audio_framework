@@ -123,14 +123,14 @@ bool AudioConfigManager::GetUpdateRouteSupport()
     return isUpdateRouteSupported_;
 }
 
-void AudioConfigManager::OnUpdateTvSupport(bool isSupported)
+void AudioConfigManager::OnUpdateDefaultAdapter(bool isEnable)
 {
-    isTvSupported_ = isSupported;
+    isDefaultAdapterEnable_ = isEnable;
 }
 
-bool AudioConfigManager::GetTvSupported()
+bool AudioConfigManager::GetDefaultAdapterEnable()
 {
-    return isTvSupported_;
+    return isDefaultAdapterEnable_;
 }
 
 void AudioConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)

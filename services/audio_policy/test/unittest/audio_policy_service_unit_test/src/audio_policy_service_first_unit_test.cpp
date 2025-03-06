@@ -2751,21 +2751,21 @@ HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_004, TestSize.Le
 }
 
 /**
- * @tc.name  : Test GetTvSupported.
- * @tc.number: GetTvSupported_001
+ * @tc.name  : Test GetDefaultAdapterEnable.
+ * @tc.number: GetDefaultAdapterEnable_001
  * @tc.desc  : Test AudioPolicyService interfaces.
  */
-HWTEST_F(AudioPolicyServiceUnitTest, GetTvSupported_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceUnitTest, GetDefaultAdapterEnable_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
-    bool isSupported = true;
-    server->audioPolicyService_.audioConfigManager_.OnUpdateTvSupport(isSupported);
-    bool ret = server->audioPolicyService_.audioConfigManager_.GetTvSupported();
+    bool isEnable = true;
+    server->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
+    bool ret = server->audioPolicyService_.audioConfigManager_.GetDefaultAdapterEnable();
     EXPECT_EQ(ret, true);
 
-    isSupported = false;
-    server->audioPolicyService_.audioConfigManager_.OnUpdateTvSupport(isSupported);
-    ret = server->audioPolicyService_.audioConfigManager_.GetTvSupported();
+    isEnable = false;
+    server->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
+    ret = server->audioPolicyService_.audioConfigManager_.GetDefaultAdapterEnable();
     EXPECT_EQ(ret, false);
 }
 
@@ -2782,14 +2782,14 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDeviceClassInfo_001, TestSize.Level1)
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo = {};
     server->audioPolicyService_.audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
-    bool isSupported = server->audioPolicyService_.audioConfigManager_.GetTvSupported();
+    bool isEnable = server->audioPolicyService_.audioConfigManager_.GetDefaultAdapterEnable();
     for (auto [classType, moduleInfo] : deviceClassInfo) {
         for (auto module : moduleInfo) {
-            std::string tvSupported = module.tvSupported;
-            if (isSupported) {
-                EXPECT_EQ(tvSupported, "1");
+            std::string defaultAdapterEnable = module.defaultAdapterEnable;
+            if (isEnable) {
+                EXPECT_EQ(defaultAdapterEnable, "1");
             } else {
-                EXPECT_EQ(tvSupported, "0");
+                EXPECT_EQ(defaultAdapterEnable, "0");
             }
         }
     }

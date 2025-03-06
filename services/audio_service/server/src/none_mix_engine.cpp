@@ -508,8 +508,8 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
         return ERR_INVALID_HANDLE;
     }
     IAudioSinkAttr attr = {};
-    bool isTvSupported = AudioService::GetInstance()->GetTvSupported();
-    attr.adapterName = isTvSupported ? "dp" : SINK_ADAPTER_NAME;
+    bool isDefaultAdapterEnable = AudioService::GetInstance()->GetDefaultAdapterEnable();
+    attr.adapterName = isDefaultAdapterEnable ? "dp" : SINK_ADAPTER_NAME;
     attr.sampleRate = rate;
     attr.channel = channel;
     attr.format = format;

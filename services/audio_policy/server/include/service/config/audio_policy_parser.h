@@ -77,7 +77,7 @@ private:
 
     void HandleUpdateRouteSupportParsed(std::string &value);
     void HandleUpdateAnahsSupportParsed(std::string &value);
-    void HandleUpdateTvSupportParsed(std::string &value);
+    void HandleDefaultAdapterSupportParsed(std::string &value);
     PAConfigType GetPaConfigType(std::string &name);
 
     void SplitStringToList(std::string &str, std::list<std::string> &result);
@@ -101,7 +101,7 @@ private:
     std::unordered_map<std::string, std::string> interruptGroupMap_;
     GlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_ = false;
-    bool shouldSupportTv_ = false;
+    bool shouldSetDefaultAdapter_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
