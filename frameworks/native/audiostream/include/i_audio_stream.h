@@ -279,7 +279,7 @@ public:
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
     virtual DeviceType GetDefaultOutputDevice() = 0;
 

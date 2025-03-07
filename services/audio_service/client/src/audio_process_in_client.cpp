@@ -122,7 +122,7 @@ public:
     
     bool Init(const AudioProcessConfig &config);
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
