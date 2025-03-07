@@ -59,7 +59,6 @@ HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_002, TestSize.Level1
 
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_VOICE_RINGTONE, 1).size());
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_RINGTONE, 1).size());
-    router.isAlarmFollowRingRouter_ = true;
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_ALARM, 1).size());
 }
 } // namespace AudioStandard

@@ -228,8 +228,8 @@ private:
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const int32_t sessionId);
-    bool IsBlueToothOnPrimarySpeaker(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState);
+    bool IsDualStreamWhenRingDual(AudioStreamType streamType);
 
     // fetchInput
     void FetchInputDeviceInner(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
@@ -259,7 +259,7 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFirstScreenOn_ = false;
     bool isRingDualToneOnPrimarySpeaker_ = false;
-    int32_t ringDualToneOnPrimarySpeakerSessionId_ = -1;
+    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

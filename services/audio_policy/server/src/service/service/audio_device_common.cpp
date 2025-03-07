@@ -1039,6 +1039,15 @@ void AudioDeviceCommon::TriggerRecreateRendererStreamCallback(int32_t callerPid,
     }
 }
 
+bool AudioDeviceCommon::IsDualStreamWhenRingDual(AudioStreamType streamType)
+{
+    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (volumeType == STREAM_RING || volumeType == STREAM_ALARM || volumeType == STREAM_ACCESSIBILITY) {
+        return true;
+    }
+    return false;
+}
+
 void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices)
 {
@@ -1061,26 +1070,24 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
                 audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
                     audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
             }
-            if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
-                audioRouterCenter_.SetAlarmFollowRingRouter(true);
-            }
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
         }
         shouldUpdateDeviceDueToDualTone_ = true;
     } else {
         audioVolumeManager_.SetRingerModeMute(true);
-        if (isRingDualToneOnPrimarySpeaker_ && IsBlueToothOnPrimarySpeaker(outputDevices.front()) &&
-            streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        if (isRingDualToneOnPrimarySpeaker_ && streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
             std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
             activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
             activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
             AUDIO_INFO_LOG("update desc [%{public}d] with speaker on session [%{public}d]",
                 deviceType, rendererChangeInfo->sessionId);
-            ringDualToneOnPrimarySpeakerSessionId_ = rendererChangeInfo->sessionId;
-            audioPolicyManager_.SetStreamMute(streamCollector_.GetStreamType(rendererChangeInfo->sessionId),
-                true, streamUsage);
+            AudioStreamType streamType = streamCollector_.GetStreamType(rendererChangeInfo->sessionId);
+            if (!IsDualStreamWhenRingDual(streamType)) {
+                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
+                audioPolicyManager_.SetStreamMute(streamType, true, streamUsage);
+            }
         } else {
             audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
@@ -1178,18 +1185,6 @@ void AudioDeviceCommon::FetchStreamForSpkMchStream(std::shared_ptr<AudioRenderer
     }
 }
 
-bool AudioDeviceCommon::IsBlueToothOnPrimarySpeaker(const std::shared_ptr<AudioDeviceDescriptor> &desc)
-{
-    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        return true;
-    }
-    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-        audioA2dpOffloadFlag_.GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
-        return true;
-    }
-    return false;
-}
-
 bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     const int32_t sessionId)
 {
@@ -1202,13 +1197,10 @@ bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_
     if (AudioPolicyUtils::GetInstance().GetSinkName(*descs.back(), sessionId) != PRIMARY_SPEAKER) {
         return false;
     }
-    if (!IsBlueToothOnPrimarySpeaker(descs.front())) {
-        return false;
-    }
     if (descs.back()->deviceType_ != DEVICE_TYPE_SPEAKER) {
         return false;
     }
-    AUDIO_INFO_LOG("ring dual tone on bluetooth and speaker.");
+    AUDIO_INFO_LOG("ring dual tone on primary speaker.");
     return true;
 }
 
@@ -1255,7 +1247,6 @@ bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
             isRingDualToneOnPrimarySpeaker_ = IsRingDualToneOnPrimarySpeaker(descs, sessionId);
-            audioRouterCenter_.SetAlarmFollowRingRouter(isRingDualToneOnPrimarySpeaker_);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
         return true;
@@ -1833,16 +1824,15 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
     }
-    if (IsStopOrReleasePlayback(mode, rendererState) &&
-        (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE)) {
-        audioRouterCenter_.SetAlarmFollowRingRouter(false);
-        if (isRingDualToneOnPrimarySpeaker_) {
-            AUDIO_INFO_LOG("disable bluetooth and speaker dual tone when ringer renderer stop/release.");
-            audioPolicyManager_.SetStreamMute(streamCollector_.GetStreamType(ringDualToneOnPrimarySpeakerSessionId_),
-                false, streamUsage);
-            ringDualToneOnPrimarySpeakerSessionId_ = -1;
-            isRingDualToneOnPrimarySpeaker_ = false;
+    if (isRingDualToneOnPrimarySpeaker_ && IsStopOrReleasePlayback(mode, rendererState) &&
+        Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+        AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer stop/release.");
+        isRingDualToneOnPrimarySpeaker_ = false;
+        FetchDevice(true);
+        for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+            audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
         }
+        streamsWhenRingDualOnPrimarySpeaker_.clear();
     }
 }
 

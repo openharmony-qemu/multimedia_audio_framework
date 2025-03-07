@@ -47,6 +47,7 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_001, TestSize.Level1)
     EXPECT_FALSE(audioRouterCenter.NeedSkipSelectAudioOutputDeviceRefined(STREAM_USAGE_ALARM, descs));
 
     descs.push_back(std::move(desc));
+    descs.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     EXPECT_FALSE(audioRouterCenter.NeedSkipSelectAudioOutputDeviceRefined(STREAM_USAGE_ALARM, descs));
 
     descs.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;

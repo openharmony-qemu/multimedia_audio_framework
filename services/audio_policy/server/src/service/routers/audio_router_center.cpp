@@ -126,10 +126,10 @@ bool AudioRouterCenter::NeedSkipSelectAudioOutputDeviceRefined(StreamUsage strea
         return false;
     }
     CHECK_AND_RETURN_RET(descs.front() != nullptr, false);
-    if (descs.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (descs.front()->deviceType_ == DEVICE_TYPE_SPEAKER) {
         return false;
     }
-    AUDIO_INFO_LOG("Don't add ring ext device when ringer mode is not normal and sco added");
+    AUDIO_INFO_LOG("Don't add ring ext device when ringer mode is not normal and no speaker added");
     return true;
 }
 
@@ -203,6 +203,10 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
             desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType);
         }
         descs.push_back(move(desc));
+    } else if ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) &&
+        streamUsage == STREAM_USAGE_ALARM) {
+            AUDIO_INFO_LOG("alarm follow ring strategy, replace usage alarm to ringtone");
+            descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, clientUID, routerType);
     } else {
         descs = FetchRingRenderDevices(streamUsage, clientUID, routerType);
     }
@@ -307,14 +311,6 @@ int32_t AudioRouterCenter::UnsetAudioDeviceRefinerCallback()
 bool AudioRouterCenter::isCallRenderRouter(StreamUsage streamUsage)
 {
     return renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS;
-}
-
-void AudioRouterCenter::SetAlarmFollowRingRouter(const bool flag)
-{
-    for (auto &router : ringRenderRouters_) {
-        CHECK_AND_CONTINUE_LOG(router != nullptr, "Invalid router.");
-        router->SetAlarmFollowRingRouter(flag);
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
