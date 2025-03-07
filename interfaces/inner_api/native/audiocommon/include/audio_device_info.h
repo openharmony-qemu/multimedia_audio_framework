@@ -444,7 +444,8 @@ public:
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
-        SET_DEFAULT_OUTPUT_DEVICE = 1002
+        SET_DEFAULT_OUTPUT_DEVICE = 1002,
+        DISTRIBUTED_DEVICE = 1003
     };
 
     operator AudioStreamDeviceChangeReason() const

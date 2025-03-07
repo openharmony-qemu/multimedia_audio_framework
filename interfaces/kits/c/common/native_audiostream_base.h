@@ -254,11 +254,6 @@ typedef enum {
     AUDIOSTREAM_USAGE_VIDEO_COMMUNICATION = 17,
 } OH_AudioStream_Usage;
 
-typedef enum {
-    SYSTEM_GLOBAL,
-    APP_INDIVIDUAL
-} OH_AudioStream_VolumeMode;
-
 /**
  * @brief Define the audio latency mode.
  *
@@ -278,6 +273,27 @@ typedef enum {
      */
     AUDIOSTREAM_LATENCY_MODE_FAST = 1
 } OH_AudioStream_LatencyMode;
+
+/**
+ * @brief Define the audio stream volume mode.
+ *
+ * @since 18
+ */
+typedef enum {
+    /**
+     * Indicates this audio stream volume will be affected by system volume, also the default behavior.
+     *
+     * @since 18
+     */
+    AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL = 0,
+    /**
+     * Indicates this audio stream volume will be affected by app's individual volume percentage which set by yourself
+     * using the app volume api.
+     *
+     * @since 18
+     */
+    AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL = 1
+} OH_AudioStream_VolumeMode;
 
 /**
  * @brief Define the audio event.

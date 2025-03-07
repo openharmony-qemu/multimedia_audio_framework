@@ -126,6 +126,14 @@ public:
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
+    void GetRestoreInfo(RestoreInfo &restoreInfo) override;
+
+    void SetRestoreInfo(RestoreInfo &restoreInfo) override;
+
+    RestoreStatus CheckRestoreStatus() override;
+
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -370,7 +378,7 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
         isCallbackLoopEnd_ = true; // change it with lock to break the loop
         threadStatusCV_.notify_all();
         lock.unlock(); // should call unlock before join
-        callbackLoop_.join();
+        callbackLoop_.detach();
     }
     if (isInited_) {
         AudioProcessInClientInner::Release();
@@ -1866,6 +1874,28 @@ int32_t AudioProcessInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
     return processProxy_->SetSilentModeAndMixWithOthers(on);
+}
+
+void AudioProcessInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    audioBuffer_->GetRestoreInfo(restoreInfo);
+    return;
+}
+
+void AudioProcessInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    audioBuffer_->SetRestoreInfo(restoreInfo);
+    return;
+}
+
+RestoreStatus AudioProcessInClientInner::CheckRestoreStatus()
+{
+    return audioBuffer_->CheckRestoreStatus();
+}
+
+RestoreStatus AudioProcessInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
+{
+    return audioBuffer_->SetRestoreStatus(restoreStatus);
 }
 } // namespace AudioStandard
 } // namespace OHOS

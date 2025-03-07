@@ -1324,7 +1324,7 @@ int32_t AudioManagerProxy::UnsetOffloadMode(uint32_t sessionId)
     return reply.ReadInt32();
 }
 
-void AudioManagerProxy::RestoreSession(const int32_t &sessionID, bool isOutput)
+void AudioManagerProxy::RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1332,8 +1332,10 @@ void AudioManagerProxy::RestoreSession(const int32_t &sessionID, bool isOutput)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
-    data.WriteInt32(sessionID);
-    data.WriteInt32(isOutput);
+    data.WriteUint32(sessionID);
+    data.WriteInt32(restoreInfo.restoreReason);
+    data.WriteInt32(restoreInfo.deviceChangeReason);
+    data.WriteInt32(restoreInfo.targetStreamFlag);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_SESSION), data, reply, option);

@@ -72,7 +72,6 @@ static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const uint32_t WAIT_FOR_NEXT_CB = 5000; // 5ms
 static constexpr int32_t ONE_MINUTE = 60;
-static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
 constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
@@ -629,7 +628,10 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
 
-    if (gServerProxy_ == nullptr && getuid() == MEDIA_SERVICE_UID) {
+    // Bugfix. Callback threadloop would go into infinite loop, consuming too much data from app
+    // but fail to play them due to audio server's death. Block and exit callback threadloop when server died.
+    if (gServerProxy_ == nullptr) {
+        cbThreadReleased_ = true;
         uint32_t samplingRate = clientConfig_.streamInfo.samplingRate;
         uint32_t channels = clientConfig_.streamInfo.channels;
         uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);

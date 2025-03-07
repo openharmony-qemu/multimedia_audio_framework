@@ -1776,8 +1776,6 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
-        "SetSinkMuteForSwitchDevice failed, audioRender_  is null");
 
     if (mute) {
         muteCount_++;
@@ -1786,7 +1784,7 @@ int32_t AudioRendererSinkInner::SetSinkMuteForSwitchDevice(bool mute)
             return SUCCESS;
         }
         switchDeviceMute_ = true;
-        if (halName_ == VOIP_HAL_NAME) {
+        if (halName_ == VOIP_HAL_NAME && audioRender_ != nullptr) {
             audioRender_->SetVolume(audioRender_, 0.0f);
         }
     } else {

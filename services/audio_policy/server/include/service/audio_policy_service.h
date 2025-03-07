@@ -491,6 +491,7 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
+    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -533,8 +534,6 @@ private:
     void GetSupportedEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray, const EffectFlag& flag);
     int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
-
-    void RestoreSession(const int32_t &sessionID, bool isOutput);
 
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
 

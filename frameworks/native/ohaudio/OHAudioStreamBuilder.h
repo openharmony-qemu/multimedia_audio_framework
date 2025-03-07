@@ -70,7 +70,7 @@ private:
     // renderer params
     StreamUsage usage_ = STREAM_USAGE_UNKNOWN;
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
-    AudioVolumeMode volumeMode_ = SYSTEM_GLOBAL;
+    AudioVolumeMode volumeMode_ = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;
 

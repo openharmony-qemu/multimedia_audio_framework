@@ -685,9 +685,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerRestoreSession_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    audioServer->RestoreSession(-1, true);
-
-    audioServer->RestoreSession(-1, false);
+    RestoreInfo restoreInfo;
+    audioServer->RestoreSession(-1, restoreInfo);
+    audioServer->RestoreSession(-1, restoreInfo);
 }
 
 /**

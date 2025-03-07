@@ -116,6 +116,7 @@ public:
 
     void SetStandbyState(RendererStage state) override;
 
+    RestoreStatus RestoreSession(RestoreInfo restoreInfo);
 public:
     const AudioProcessConfig processConfig_;
 

@@ -106,6 +106,7 @@ public:
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
     void SetDefaultAdapterEnable(bool isEnable);
     bool GetDefaultAdapterEnable();
+    RestoreStatus RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif

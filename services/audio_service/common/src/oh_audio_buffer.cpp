@@ -742,5 +742,39 @@ size_t OHAudioBuffer::GetDataSize()
     return totalSizeInByte_;
 }
 
+void OHAudioBuffer::GetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    restoreInfo = basicBufferInfo_->restoreInfo;
+    return;
+}
+
+void OHAudioBuffer::SetRestoreInfo(RestoreInfo restoreInfo)
+{
+    basicBufferInfo_->restoreInfo = restoreInfo;
+}
+
+// Compare and swap restore status. If current restore status is NEED_RESTORE, turn it into RESTORING
+// to avoid multiple restore.
+RestoreStatus OHAudioBuffer::CheckRestoreStatus()
+{
+    RestoreStatus expectedStatus = NEED_RESTORE;
+    basicBufferInfo_->restoreStatus.compare_exchange_strong(expectedStatus, RESTORING);
+    return expectedStatus;
+}
+
+// Allow client to set restore status to NO_NEED_FOR_RESTORE if unnecessary restore happens. Restore status
+// can be set to NEED_RESTORE only when it is currently NO_NEED_FOR_RESTORE(and vice versa).
+RestoreStatus OHAudioBuffer::SetRestoreStatus(RestoreStatus restoreStatus)
+{
+    RestoreStatus expectedStatus = RESTORE_ERROR;
+    if (restoreStatus == NEED_RESTORE) {
+        expectedStatus = NO_NEED_FOR_RESTORE;
+        basicBufferInfo_->restoreStatus.compare_exchange_strong(expectedStatus, NEED_RESTORE);
+    } else if (restoreStatus == NO_NEED_FOR_RESTORE) {
+        expectedStatus = RESTORING;
+        basicBufferInfo_->restoreStatus.compare_exchange_strong(expectedStatus, NO_NEED_FOR_RESTORE);
+    }
+    return expectedStatus;
+}
 } // namespace AudioStandard
 } // namespace OHOS

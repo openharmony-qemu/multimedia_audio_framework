@@ -58,7 +58,7 @@ public:
     int32_t UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybackCaptureConfig &config);
 #endif
     void SetNonInterruptMute(const bool muteFlag);
-    void RestoreSession();
+    RestoreStatus RestoreSession(RestoreInfo restoreInfo);
 
 private:
     int32_t InitCacheBuffer(size_t targetSize);

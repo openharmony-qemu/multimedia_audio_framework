@@ -312,6 +312,8 @@ int32_t AudioPolicyService::SetSystemVolumeLevelWithDevice(AudioStreamType strea
 
 int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
 {
+    // update dump appvolume
+    audioDeviceLock_.UpdateAppVolume(appUid, volumeLevel);
     return audioVolumeManager_.SetAppVolumeLevel(appUid, volumeLevel);
 }
 
@@ -436,9 +438,9 @@ bool AudioPolicyService::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
     return audioDeviceLock_.IsArmUsbDevice(desc);
 }
 
-void AudioPolicyService::RestoreSession(const int32_t &sessionID, bool isOutput)
+void AudioPolicyService::RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo)
 {
-    AudioServerProxy::GetInstance().RestoreSessionProxy(sessionID, isOutput);
+    AudioServerProxy::GetInstance().RestoreSessionProxy(sessionID, restoreInfo);
 }
 
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

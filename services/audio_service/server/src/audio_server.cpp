@@ -140,6 +140,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 5;
 static constexpr int32_t MAX_WAIT_IN_SERVER_COUNT = 5;
+static constexpr int32_t RESTORE_SESSION_TRY_COUNT = 10;
+static constexpr uint32_t  RESTORE_SESSION_RETRY_WAIT_TIME_IN_MS = 50000;
 
 static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_INVALID,
@@ -2180,28 +2182,30 @@ void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteF
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
 }
 
-void AudioServer::RestoreSession(const int32_t &sessionID, bool isOutput)
+void AudioServer::RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo)
 {
-    AUDIO_INFO_LOG("restore output: %{public}d, sessionID: %{public}d", isOutput, sessionID);
+    AUDIO_INFO_LOG("restore session: %{public}u, reason: %{public}d, device change reason %{public}d, "
+        "target flag %{public}d", sessionID, restoreInfo.restoreReason, restoreInfo.deviceChangeReason,
+        restoreInfo.targetStreamFlag);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(),
         "Update session connection state refused for %{public}d", callingUid);
-    if (isOutput) {
-        std::shared_ptr<RendererInServer> renderer =
-            AudioService::GetInstance()->GetRendererBySessionID(static_cast<uint32_t>(sessionID));
-        if (renderer == nullptr) {
-            AUDIO_ERR_LOG("No render in server has sessionID");
+    int32_t tryCount = RESTORE_SESSION_TRY_COUNT;
+    RestoreStatus restoreStatus;
+    while (tryCount > 0) {
+        restoreStatus = AudioService::GetInstance()->RestoreSession(sessionID, restoreInfo);
+        if (restoreStatus == NEED_RESTORE) {
             return;
         }
-        renderer->RestoreSession();
-    } else {
-        std::shared_ptr<CapturerInServer> capturer =
-            AudioService::GetInstance()->GetCapturerBySessionID(static_cast<uint32_t>(sessionID));
-        if (capturer == nullptr) {
-            AUDIO_ERR_LOG("No capturer in server has sessionID");
-            return;
+        if (restoreStatus == RESTORING) {
+            AUDIO_WARNING_LOG("Session %{public}u is restoring, wait 50ms, tryCount %{public}d", sessionID, tryCount);
+            usleep(RESTORE_SESSION_RETRY_WAIT_TIME_IN_MS); // Sleep for 50ms and try restore again.
         }
-        capturer->RestoreSession();
+        tryCount--;
+    }
+    
+    if (restoreStatus != NEED_RESTORE) {
+        AUDIO_WARNING_LOG("Restore session in server failed, restore status %{public}d", restoreStatus);
     }
 }
 

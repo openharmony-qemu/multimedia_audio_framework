@@ -167,6 +167,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceLock::GetActiveBluetoothDevice
     return res;
 }
 
+void AudioDeviceLock::UpdateAppVolume(int32_t appUid, int32_t volume)
+{
+    AUDIO_INFO_LOG("appUid = %{public}d, volume = %{public}d", appUid, volume);
+    streamCollector_.UpdateAppVolume(appUid, volume);
+}
+
 void AudioDeviceLock::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);

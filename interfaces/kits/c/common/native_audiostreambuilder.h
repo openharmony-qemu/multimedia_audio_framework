@@ -152,6 +152,16 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilde
     OH_AudioStream_Usage usage);
 
 /*
+ * Set the renderer mode of the stream client
+ *
+ * @param builder Reference provided by OH_AudioStreamBuilder_Create()
+ * @param volumeMode Set the stream volume mode for the renderer client.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetVolumeMode(OH_AudioStreamBuilder* builder,
+    OH_AudioStream_VolumeMode volumeMode);
+
+/*
  * Set the capturer information of the stream client
  *
  * @since 10

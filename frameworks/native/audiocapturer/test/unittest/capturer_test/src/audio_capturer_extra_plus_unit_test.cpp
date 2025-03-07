@@ -218,9 +218,9 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_003, TestSize.Level1)
     AUDIO_INFO_LOG("SetSwitchInfo");
     capturer->SetSwitchInfo(info, capturer->audioStream_);
 
-    uint32_t newSessionId;
+    RestoreInfo restoreInfo;
     capturer->audioInterruptCallback_ = std::make_unique<AudioCapturerInterruptCallbackImpl>(nullptr);
-    auto switchResult = capturer->SwitchToTargetStream(IAudioStream::StreamClass::VOIP_STREAM, newSessionId);
+    auto switchResult = capturer->SwitchToTargetStream(IAudioStream::StreamClass::VOIP_STREAM, restoreInfo);
     EXPECT_EQ(switchResult, false);
 }
 

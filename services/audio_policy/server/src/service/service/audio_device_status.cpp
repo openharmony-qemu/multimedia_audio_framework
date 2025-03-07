@@ -708,7 +708,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
-    audioDeviceCommon_.FetchDevice(true);
+    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
     audioDeviceCommon_.FetchDevice(false);
 
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
@@ -1199,8 +1199,9 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, false);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
-
-    audioDeviceCommon_.FetchDevice(true);
+    AUDIO_INFO_LOG("onDeviceStatusUpdated reson:%{public}d",
+        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
     audioDeviceCommon_.FetchDevice(false);
 }
 

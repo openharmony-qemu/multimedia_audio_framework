@@ -389,7 +389,7 @@ struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
-    AudioVolumeMode volumeMode = SYSTEM_GLOBAL;
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     std::string sceneType = "";
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
@@ -1227,6 +1227,27 @@ enum CapturerStage {
     CAPTURER_STAGE_STOP_OK = 0x30,
 };
 
+
+enum RestoreStatus : int32_t {
+    NO_NEED_FOR_RESTORE = 0,
+    NEED_RESTORE,
+    RESTORING,
+    RESTORE_ERROR,
+};
+
+enum RestoreReason : int32_t {
+    DEFAULT_REASON = 0,
+    DEVICE_CHANGED,
+    STREAM_CONCEDED,
+    STREAM_SPLIT,
+    SERVER_DIED,
+};
+
+struct RestoreInfo {
+    RestoreReason restoreReason = DEFAULT_REASON;
+    int32_t deviceChangeReason = 0;
+    int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

@@ -62,7 +62,7 @@ public:
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
     void CheckHibernateStateProxy(bool hibernate);
-    void RestoreSessionProxy(const int32_t &sessionID, bool isOutput);
+    void RestoreSessionProxy(const uint32_t &sessionID, RestoreInfo RestoreInfo);
     int32_t GetAudioEnhancePropertyProxy(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE);
     int32_t SetAudioEnhancePropertyProxy(const AudioEnhancePropertyArray &propertyArray,

@@ -73,9 +73,9 @@ void LocalDeviceManager::UnloadAdapter(const std::string &adapterName, bool forc
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         adapterName.c_str());
-    CHECK_AND_RETURN_LOG(force || (wrapper->renderNum_ == 0 && wrapper->captureNum_ == 0),
-        "adapter %{public}s has some ports busy, renderNum: %{public}u, captureNum: %{public}u", adapterName.c_str(),
-        wrapper->renderNum_, wrapper->captureNum_);
+    CHECK_AND_RETURN_LOG(force || (wrapper->hdiRenderIds_.size() == 0 && wrapper->hdiCaptureIds_.size() == 0),
+        "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu", adapterName.c_str(),
+        wrapper->hdiRenderIds_.size(), wrapper->hdiCaptureIds_.size());
 
     if (wrapper->routeHandle_ != -1) {
         wrapper->adapter_->ReleaseAudioRoute(wrapper->adapter_, wrapper->routeHandle_);
@@ -275,7 +275,8 @@ void *LocalDeviceManager::CreateRender(const std::string &adapterName, void *par
     AUDIO_INFO_LOG("create render success, hdiRenderId: %{public}u, desc: %{public}s", hdiRenderId,
         localDeviceDesc->desc);
 
-    ++(wrapper->renderNum_);
+    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
+    wrapper->hdiRenderIds_.insert(hdiRenderId);
     return render;
 }
 
@@ -286,9 +287,11 @@ void LocalDeviceManager::DestroyRender(const std::string &adapterName, uint32_t 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper->hdiRenderIds_.count(hdiRenderId) != 0, "render not exist");
     wrapper->adapter_->DestroyRender(wrapper->adapter_, hdiRenderId);
 
-    --(wrapper->renderNum_);
+    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
+    wrapper->hdiRenderIds_.erase(hdiRenderId);
 }
 
 void *LocalDeviceManager::CreateCapture(const std::string &adapterName, void *param, void *deviceDesc,
@@ -314,7 +317,8 @@ void *LocalDeviceManager::CreateCapture(const std::string &adapterName, void *pa
     AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId,
         localDeviceDesc->desc);
 
-    ++(wrapper->captureNum_);
+    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
+    wrapper->hdiCaptureIds_.insert(hdiCaptureId);
     return capture;
 }
 
@@ -325,16 +329,18 @@ void LocalDeviceManager::DestroyCapture(const std::string &adapterName, uint32_t
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper->hdiCaptureIds_.count(hdiCaptureId) != 0, "capture not exist");
     wrapper->adapter_->DestroyCapture(wrapper->adapter_, hdiCaptureId);
 
-    --(wrapper->captureNum_);
+    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
+    wrapper->hdiCaptureIds_.erase(hdiCaptureId);
 }
 
 void LocalDeviceManager::DumpInfo(std::string &dumpString)
 {
     for (auto &item : adapters_) {
-        uint32_t renderNum = item.second == nullptr ? 0 : item.second->renderNum_;
-        uint32_t captureNum = item.second == nullptr ? 0 : item.second->captureNum_;
+        uint32_t renderNum = item.second == nullptr ? 0 : item.second->hdiRenderIds_.size();
+        uint32_t captureNum = item.second == nullptr ? 0 : item.second->hdiCaptureIds_.size();
         dumpString += "  - local/" + item.first + "\trenderNum: " + std::to_string(renderNum) + "\tcaptureNum: " +
             std::to_string(captureNum) + "\n";
     }
