@@ -205,6 +205,11 @@ void AudioConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
     normalVoipFlag_ = normalVoipFlag;
 }
 
+bool AudioConfigManager::GetNormalVoipFlag()
+{
+    return normalVoipFlag_;
+}
+
 int32_t AudioConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
     const AudioSamplingRate &samplingRate)
 {

@@ -77,6 +77,8 @@ public:
     int32_t GetMaxRendererInstances();
     void SetNormalVoipFlag(const bool &normalVoipFlag);
 
+    bool GetNormalVoipFlag();
+
     int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
         const AudioSamplingRate &samplingRate);
 
