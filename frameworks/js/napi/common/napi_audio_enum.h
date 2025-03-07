@@ -53,6 +53,11 @@ public:
         ALL = 100
     };
 
+    enum AudioJsVolumeMode {
+        AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL = 0,
+        AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL
+    };
+
     enum AudioRingMode {
         RINGER_MODE_SILENT = 0,
         RINGER_MODE_VIBRATE,
@@ -91,6 +96,7 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
+    static bool IsLegalInputArgumentVolumeMode(int32_t volumeMode);
     static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
     static bool IsLegalCapturerType(int32_t type);
     static bool IsLegalInputArgumentVolType(int32_t inputType);
@@ -101,6 +107,7 @@ public:
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
     static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
     static int32_t GetJsAudioVolumeType(AudioStreamType volumeType);
+    static int32_t GetJsAudioVolumeMode(AudioVolumeMode volumeMode);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);
     static bool IsValidSourceType(int32_t intValue);
     static bool IsLegalDeviceUsage(int32_t usage);
@@ -151,6 +158,7 @@ private:
     static napi_ref encodingType_;
     static napi_ref contentType_;
     static napi_ref streamUsage_;
+    static napi_ref audioVolumeMode_;
     static napi_ref deviceRole_;
     static napi_ref deviceType_;
     static napi_ref sourceType_;
@@ -199,6 +207,7 @@ private:
     static const std::map<std::string, int32_t> encodingTypeMap;
     static const std::map<std::string, int32_t> contentTypeMap;
     static const std::map<std::string, int32_t> streamUsageMap;
+    static const std::map<std::string, int32_t> audioVolumeModeMap;
     static const std::map<std::string, int32_t> deviceRoleMap;
     static const std::map<std::string, int32_t> deviceTypeMap;
     static const std::map<std::string, int32_t> sourceTypeMap;

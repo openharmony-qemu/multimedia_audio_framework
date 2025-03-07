@@ -389,7 +389,7 @@ struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
-    AudioVolumeMode volumeMode = SYSTEM_GLOBAL;
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     std::string sceneType = "";
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
