@@ -288,7 +288,7 @@ void AudioEnhanceChainFuzzTest()
     EnhanceChainManagerIsEmptyEnhanceChain();
     EnhanceChainManagerInitEnhanceBuffer();
     const char *invalidScene = "SCENE_RECORD";
-    uint32_t sceneTypeCode = GetData<uint32_t>();
+    uint64_t sceneTypeCode = GetData<uint64_t>();
     GetSceneTypeCode(invalidScene, &sceneTypeCode);
     AudioEnhanceChainManagerFuzzTest(audioEnhanceChainMananger);
 }

@@ -411,11 +411,12 @@ static void PostSourceData(pa_source *source, pa_source_output *sourceOutput, pa
     }
 }
 
-static void EnhanceProcess(const uint32_t sceneKeyCode, pa_memchunk *chunk)
+static void EnhanceProcess(const uint64_t sceneKeyCode, pa_memchunk *chunk)
 {
     CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
     void *src = pa_memblock_acquire_chunk(chunk);
-    AUDIO_DEBUG_LOG("EnhanceProcess chunk length: %{public}zu sceneKey: %{public}u", chunk->length, sceneKeyCode);
+    AUDIO_DEBUG_LOG("EnhanceProcess chunk length: %{public}zu sceneKey: %{public}" PRIu64,
+        chunk->length, sceneKeyCode);
     pa_memblock_release(chunk->memblock);
 
     if (CopyToEnhanceBufferAdapter(src, chunk->length) != 0) {
@@ -447,7 +448,7 @@ static void EnhanceProcessDefault(const uint32_t captureId, pa_memchunk *chunk)
     pa_memblock_release(chunk->memblock);
 }
 
-static void EnhanceProcessAndPost(struct Userdata *u, const uint32_t sceneKeyCode, pa_memchunk *enhanceChunk)
+static void EnhanceProcessAndPost(struct Userdata *u, const uint64_t sceneKeyCode, pa_memchunk *enhanceChunk)
 {
     AUTO_CTRACE("EnhanceProcessAndPost");
     CHECK_AND_RETURN_LOG(u != NULL, "userdata is null");
@@ -470,11 +471,11 @@ static void EnhanceProcessAndPost(struct Userdata *u, const uint32_t sceneKeyCod
         if (pa_safe_streq(defaultFlag, "1")) {
             continue;
         }
-        uint32_t sceneTypeCode = 0;
+        uint64_t sceneTypeCode = 0;
         if (GetSceneTypeCode(sourceOutputSceneType, &sceneTypeCode) != 0) {
             continue;
         }
-        uint32_t sceneKeyCodeTemp = 0;
+        uint64_t sceneKeyCodeTemp = 0;
         sceneKeyCodeTemp = (sceneTypeCode << SCENE_TYPE_OFFSET) + (captureId << CAPTURER_ID_OFFSET) + renderId;
         if (sceneKeyCode != sceneKeyCodeTemp) {
             continue;
@@ -727,8 +728,8 @@ static int32_t AudioEnhanceExistAndProcess(pa_memchunk *chunk, struct Userdata *
     uint32_t *sceneKeyNum;
     const void *sceneKey;
     while ((sceneKeyNum = pa_hashmap_iterate(u->sceneToCountMap, &state, &sceneKey))) {
-        uint32_t sceneKeyCode = (uint32_t)strtoul((char *)sceneKey, NULL, BASE_TEN);
-        AUDIO_DEBUG_LOG("Now sceneKeyCode is : %{public}u", sceneKeyCode);
+        uint64_t sceneKeyCode = (uint64_t)strtoul((char *)sceneKey, NULL, BASE_TEN);
+        AUDIO_DEBUG_LOG("Now sceneKeyCode is : %{public}" PRIu64, sceneKeyCode);
 
         pa_memchunk enhanceChunk, rChunk;
         enhanceChunk.length = chunk->length;

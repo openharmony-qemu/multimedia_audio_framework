@@ -37,10 +37,10 @@ public:
     void InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
         std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
-    int32_t CreateAudioEnhanceChainDynamic(const uint32_t sceneKeyCode, const AudioEnhanceDeviceAttr &deviceAttr);
-    int32_t ReleaseAudioEnhanceChainDynamic(const uint32_t sceneKeyCode);
-    bool ExistAudioEnhanceChain(const uint32_t sceneKeyCode);
-    int32_t AudioEnhanceChainGetAlgoConfig(const uint32_t sceneKeyCode, AudioBufferConfig &micConfig,
+    int32_t CreateAudioEnhanceChainDynamic(const uint64_t sceneKeyCode, const AudioEnhanceDeviceAttr &deviceAttr);
+    int32_t ReleaseAudioEnhanceChainDynamic(const uint64_t sceneKeyCode);
+    bool ExistAudioEnhanceChain(const uint64_t sceneKeyCode);
+    int32_t AudioEnhanceChainGetAlgoConfig(const uint64_t sceneKeyCode, AudioBufferConfig &micConfig,
         AudioBufferConfig &ecConfig, AudioBufferConfig &micRefConfig);
     bool IsEmptyEnhanceChain();
     int32_t InitEnhanceBuffer();
@@ -48,7 +48,7 @@ public:
     int32_t CopyEcToEnhanceBuffer(void *data, uint32_t length);
     int32_t CopyMicRefToEnhanceBuffer(void *data, uint32_t length);
     int32_t CopyFromEnhanceBuffer(void *data, uint32_t length);
-    int32_t ApplyAudioEnhanceChain(const uint32_t sceneKeyCode, uint32_t length);
+    int32_t ApplyAudioEnhanceChain(const uint64_t sceneKeyCode, uint32_t length);
     int32_t SetInputDevice(const uint32_t &captureId, const DeviceType &inputDevice,
         const std::string &deviceName = "");
     int32_t SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice);
@@ -74,13 +74,13 @@ private:
     int32_t AddAudioEnhanceChainHandles(std::shared_ptr<AudioEnhanceChain> &audioEnhanceChain,
         const std::string &enhanceChain);
     int32_t FreeEnhanceBuffer();
-    int32_t ParseSceneKeyCode(const uint32_t sceneKeyCode, std::string &sceneType, std::string &capturerDeviceStr,
+    int32_t ParseSceneKeyCode(const uint64_t sceneKeyCode, std::string &sceneType, std::string &capturerDeviceStr,
         std::string &rendererDeivceStr);
     int32_t CreateEnhanceChainInner(std::shared_ptr<AudioEnhanceChain> &audioEnhanceChain,
-        const uint32_t sceneKeyCode, const AudioEnhanceDeviceAttr &deviceAttr, bool &createFlag, bool &defaultFlag);
+        const uint64_t sceneKeyCode, const AudioEnhanceDeviceAttr &deviceAttr, bool &createFlag, bool &defaultFlag);
     int32_t DeleteEnhanceChainInner(std::shared_ptr<AudioEnhanceChain> &audioEnhanceChain,
-        const uint32_t sceneKeyCode);
-    std::string GetEnhanceChainNameBySceneCode(const uint32_t sceneKeyCode, const bool defaultFlag);
+        const uint64_t sceneKeyCode);
+    std::string GetEnhanceChainNameBySceneCode(const uint64_t sceneKeyCode, const bool defaultFlag);
     int32_t UpdatePropertyAndSendToAlgo(const DeviceType &inputDevice);
     void UpdateEnhancePropertyMapFromDb(DeviceType deviceType);
     int32_t WriteEnhancePropertyToDb(const std::string &key, const std::string &property);
@@ -94,8 +94,8 @@ private:
         std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
     void ConstructDeviceEnhances();
 
-    std::map<uint32_t, std::shared_ptr<AudioEnhanceChain>> sceneTypeToEnhanceChainMap_;
-    std::map<uint32_t, int32_t> sceneTypeToEnhanceChainCountMap_;
+    std::map<uint64_t, std::shared_ptr<AudioEnhanceChain>> sceneTypeToEnhanceChainMap_;
+    std::map<uint64_t, int32_t> sceneTypeToEnhanceChainCountMap_;
     std::unordered_map<std::string, std::string> sceneTypeAndModeToEnhanceChainNameMap_;
     std::map<std::string, std::vector<std::string>> enhanceChainToEnhancesMap_;
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> enhanceToLibraryEntryMap_;

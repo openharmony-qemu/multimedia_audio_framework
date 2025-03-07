@@ -39,10 +39,10 @@ struct DeviceAttrAdapter {
     uint32_t micRefFormat;
 };
 
-int32_t EnhanceChainManagerCreateCb(const uint32_t sceneKeyCode, const struct DeviceAttrAdapter *adapter);
-int32_t EnhanceChainManagerReleaseCb(const uint32_t sceneKeyCode);
-bool EnhanceChainManagerExist(const uint32_t sceneKeyCode);
-int32_t EnhanceChainManagerGetAlgoConfig(const uint32_t sceneKeyCode, pa_sample_spec *micSpec,
+int32_t EnhanceChainManagerCreateCb(const uint64_t sceneKeyCode, const struct DeviceAttrAdapter *adapter);
+int32_t EnhanceChainManagerReleaseCb(const uint64_t sceneKeyCode);
+bool EnhanceChainManagerExist(const uint64_t sceneKeyCode);
+int32_t EnhanceChainManagerGetAlgoConfig(const uint64_t sceneKeyCode, pa_sample_spec *micSpec,
     pa_sample_spec *ecSpec, pa_sample_spec *micRefSpec);
 bool EnhanceChainManagerIsEmptyEnhanceChain(void);
 int32_t EnhanceChainManagerInitEnhanceBuffer(void);
@@ -50,8 +50,8 @@ int32_t CopyToEnhanceBufferAdapter(void *data, uint32_t length);
 int32_t CopyEcdataToEnhanceBufferAdapter(void *data, uint32_t length);
 int32_t CopyMicRefdataToEnhanceBufferAdapter(void *data, uint32_t length);
 int32_t CopyFromEnhanceBufferAdapter(void *data, uint32_t length);
-int32_t EnhanceChainManagerProcess(const uint32_t sceneKeyCode, uint32_t length);
-int32_t GetSceneTypeCode(const char *sceneType, uint32_t *sceneTypeCode);
+int32_t EnhanceChainManagerProcess(const uint64_t sceneKeyCode, uint32_t length);
+int32_t GetSceneTypeCode(const char *sceneType, uint64_t *sceneTypeCode);
 int32_t EnhanceChainManagerProcessDefault(const uint32_t captureId, uint32_t length);
 int32_t EnhanceChainManagerSendInitCommand(void);
 
