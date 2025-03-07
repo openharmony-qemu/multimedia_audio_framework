@@ -913,8 +913,8 @@ static int PaHdiCapturerInit(struct Userdata *u)
     // Due to the peculiar implementation of the emulator's HDI,
     // an initial start and stop sequence is required to circumvent protential issues and ensure proper functionality.
     AUDIO_INFO_LOG("do start and stop");
-    u->sourceAdapter->SourceAdapterStart(u->sourceAdapter);
-    u->sourceAdapter->SourceAdapterStop(u->sourceAdapter);
+    u->sourceAdapter->CapturerSourceStart(u->sourceAdapter->wapper);
+    u->sourceAdapter->CapturerSourceStop(u->sourceAdapter->wapper);
 #endif
 
     u->isCapturerStarted = false;
