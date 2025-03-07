@@ -87,25 +87,13 @@ void AudioStateManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
-            auto isPresent = [&desc](const shared_ptr<AudioDeviceDescriptor> &lhs) {
-                return lhs->IsSameDeviceDesc(*desc);
-            };
-            auto it = find_if(mediaExcludedDevices_.begin(), mediaExcludedDevices_.end(), isPresent);
-            if (it == mediaExcludedDevices_.end()) {
-                mediaExcludedDevices_.push_back(desc);
-            }
+            mediaExcludedDevices_.insert(desc);
         }
     } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
-            auto isPresent = [&desc](const shared_ptr<AudioDeviceDescriptor> &lhs) {
-                return lhs->IsSameDeviceDesc(*desc);
-            };
-            auto it = find_if(callExcludedDevices_.begin(), callExcludedDevices_.end(), isPresent);
-            if (it == callExcludedDevices_.end()) {
-                callExcludedDevices_.push_back(desc);
-            }
+            callExcludedDevices_.insert(desc);
         }
     }
 }
@@ -117,10 +105,7 @@ void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
-            auto isPresent = [&desc](const shared_ptr<AudioDeviceDescriptor> &lhs) {
-                return lhs->IsSameDeviceDesc(*desc);
-            };
-            auto it = find_if(mediaExcludedDevices_.begin(), mediaExcludedDevices_.end(), isPresent);
+            auto it = mediaExcludedDevices_.find(desc);
             if (it != mediaExcludedDevices_.end()) {
                 mediaExcludedDevices_.erase(it);
             }
@@ -129,10 +114,7 @@ void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
-            auto isPresent = [&desc](const shared_ptr<AudioDeviceDescriptor> &lhs) {
-                return lhs->IsSameDeviceDesc(*desc);
-            };
-            auto it = find_if(callExcludedDevices_.begin(), callExcludedDevices_.end(), isPresent);
+            auto it = callExcludedDevices_.find(desc);
             if (it != callExcludedDevices_.end()) {
                 callExcludedDevices_.erase(it);
             }
@@ -247,23 +229,16 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(
 }
 
 bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
-    AudioDeviceDescriptor audioDeviceDescriptor)
+    const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     CHECK_AND_RETURN_RET(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES, false);
 
-    auto isPresent = [&audioDeviceDescriptor](const shared_ptr<AudioDeviceDescriptor> &lhs) {
-        return lhs->IsSameDeviceDesc(audioDeviceDescriptor);
-    };
-
-    auto devDesc = make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
     if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
-        auto it = find_if(mediaExcludedDevices_.begin(), mediaExcludedDevices_.end(), isPresent);
-        return it != mediaExcludedDevices_.end();
+        return mediaExcludedDevices_.contains(audioDeviceDescriptor);
     } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
-        auto it = find_if(callExcludedDevices_.begin(), callExcludedDevices_.end(), isPresent);
-        return it != callExcludedDevices_.end();
+        return callExcludedDevices_.contains(audioDeviceDescriptor);
     }
 
     return false;

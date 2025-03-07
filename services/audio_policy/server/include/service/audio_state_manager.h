@@ -16,7 +16,7 @@
 #ifndef ST_AUDIO_STATE_MANAGER_H
 #define ST_AUDIO_STATE_MANAGER_H
 
-#include <set>
+#include <unordered_set>
 #include <shared_mutex>
 #include "audio_system_manager.h"
 
@@ -83,7 +83,8 @@ public:
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
     vector<shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
-    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage, AudioDeviceDescriptor audioDeviceDescriptor);
+    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage,
+        const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
 
     void SetAudioSceneOwnerPid(const int32_t pid);
     int32_t GetAudioSceneOwnerPid();
@@ -98,8 +99,8 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
 
-    vector<shared_ptr<AudioDeviceDescriptor>> mediaExcludedDevices_;
-    vector<shared_ptr<AudioDeviceDescriptor>> callExcludedDevices_;
+    unordered_set<shared_ptr<AudioDeviceDescriptor>> mediaExcludedDevices_;
+    unordered_set<shared_ptr<AudioDeviceDescriptor>> callExcludedDevices_;
 
     std::mutex mutex_;
     shared_mutex mediaExcludedDevicesMutex_;

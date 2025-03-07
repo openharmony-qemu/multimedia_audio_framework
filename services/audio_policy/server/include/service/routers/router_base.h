@@ -52,7 +52,7 @@ public:
         for (const auto &desc : descs) {
             if (desc->exceptionFlag_ || !desc->isEnable_ ||
                 (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == SUSPEND_CONNECTED) ||
-                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, *desc)) {
+                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, desc)) {
                 continue;
             }
             filteredDescs.push_back(desc);

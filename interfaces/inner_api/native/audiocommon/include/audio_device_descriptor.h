@@ -122,6 +122,33 @@ public:
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
     DeviceType MapInternalToExternalDeviceType() const;
+
+    struct AudioDeviceDescriptorHash {
+        size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
+        {
+            if (deviceDescriptor == nullptr) {
+                return 0;
+            }
+            return std::hash<int32_t>{}(static_cast<int32_t>(deviceDescriptor->deviceType_)) ^
+                std::hash<int32_t>{}(static_cast<int32_t>(deviceDescriptor->deviceRole_)) ^
+                std::hash<std::string>{}(deviceDescriptor->macAddress_) ^
+                std::hash<std::string>{}(deviceDescriptor->networkId_);
+        }
+    };
+
+    struct AudioDeviceDescriptorEqual {
+        bool operator()(const std::shared_ptr<AudioDeviceDescriptor> &lhs,
+            const std::shared_ptr<AudioDeviceDescriptor> &rhs) const
+        {
+            if (lhs == nullptr && rhs == nullptr) {
+                return true;
+            }
+            if (lhs == nullptr || rhs == nullptr) {
+                return false;
+            }
+            return lhs->IsSameDeviceDesc(*rhs);
+        }
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS
