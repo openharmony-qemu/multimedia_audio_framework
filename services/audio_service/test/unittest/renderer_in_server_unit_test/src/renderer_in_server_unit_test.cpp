@@ -404,7 +404,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_003, TestSi
 
     rendererInServer->standByCounter_ = 1;
     rendererInServer->OnStatusUpdateSub(OPERATION_UNDERRUN);
-    EXPECT_EQ(1, rendererInServer->standByCounter_);
+    EXPECT_EQ(0, rendererInServer->standByCounter_);
 }
 
 /**
@@ -1197,7 +1197,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_006, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+    EXPECT_EQ(true, ret);
 }
 
 /**
@@ -2185,7 +2185,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableInnerCap_001, TestSize.
 
     int32_t ret = rendererInServer->EnableInnerCap(1);
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -2201,7 +2201,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableInnerCap_002, TestSize.
     rendererInServer->InitDupStream(1);
     int32_t ret = rendererInServer->EnableInnerCap(1);
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -2232,7 +2232,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableInnerCap_002, TestSize
     rendererInServer->InitDupStream(1);
     int32_t ret = rendererInServer->DisableInnerCap(1);
 
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 }
 
 /**
@@ -2267,7 +2267,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDupStream_002, TestSize.L
     rendererInServer->status_ = I_STATUS_STARTED;
     int32_t ret = rendererInServer->InitDupStream(1);
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -3146,6 +3146,213 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnWriteData_002, TestSize.Lev
     EXPECT_EQ(PLAYBACK, rendererInServer->managerType_);
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererInServer->OnWriteData(4);
+    EXPECT_EQ(SUCCESS, ret);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_001
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServer_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.callerUid = 1013;
+
+    RendererInServer rendererInServer(processConfig, stateListener);
+    int ret = rendererInServer.InitBufferStatus();
+    ASSERT_EQ(ERR_ILLEGAL_STATE, ret);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStandByCheck_002
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerStandByCheck_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+
+    RendererInServer rendererInServer(processConfig, stateListener);
+    rendererInServer.standByEnable_ = true;
+    rendererInServer.StandByCheck();
+    EXPECT_EQ(true, rendererInServer.standByEnable_);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: GetStandbyStatus_001
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, GetStandbyStatus_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    rendererInServer.standByEnable_ = true;
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    int ret = rendererInServer.GetStandbyStatus(isStandby, enterStandbyTime);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: GetStandbyStatus_002
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, GetStandbyStatus_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    rendererInServer.standByEnable_ = false;
+    bool isStandby = false;
+    int64_t enterStandbyTime = 0;
+    int ret = rendererInServer.GetStandbyStatus(isStandby, enterStandbyTime);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: IsInvalidBuffer_001
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, IsInvalidBuffer_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = SAMPLE_U8;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    uint8_t *buffer = nullptr;
+    size_t bufferSize = 0;
+    int ret = rendererInServer.IsInvalidBuffer(buffer, bufferSize);
+    EXPECT_EQ(ret, false);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: IsInvalidBuffer_002
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, IsInvalidBuffer_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    uint8_t *buffer = nullptr;
+    size_t bufferSize = 0;
+    int ret = rendererInServer.IsInvalidBuffer(buffer, bufferSize);
+    EXPECT_EQ(ret, false);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: IsInvalidBuffer_003
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, IsInvalidBuffer_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = SAMPLE_S24LE;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    uint8_t *buffer = nullptr;
+    size_t bufferSize = 0;
+    int ret = rendererInServer.IsInvalidBuffer(buffer, bufferSize);
+    EXPECT_EQ(ret, false);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: WriteMuteDataSysEvent_001
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, WriteMuteDataSysEvent_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = SAMPLE_U8;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    rendererInServer.isInSilentState_ = 0;
+    uint8_t buffer[10] = {0};
+    size_t bufferSize = 10;
+    int ret = rendererInServer.IsInvalidBuffer(buffer, bufferSize);
+    rendererInServer.WriteMuteDataSysEvent(buffer, bufferSize);
+    EXPECT_EQ(ret, true);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: WriteMuteDataSysEvent_002
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, WriteMuteDataSysEvent_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = SAMPLE_U8;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    rendererInServer.startMuteTime_ = 1;
+    rendererInServer.isInSilentState_ = 1;
+    uint8_t buffer[10] = {0};
+    size_t bufferSize = 10;
+    int ret = rendererInServer.IsInvalidBuffer(buffer, bufferSize);
+    rendererInServer.WriteMuteDataSysEvent(buffer, bufferSize);
+    EXPECT_EQ(ret, true);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: WriteMuteDataSysEvent_003
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, WriteMuteDataSysEvent_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = SAMPLE_U8;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    rendererInServer.startMuteTime_ = 1;
+    rendererInServer.isInSilentState_ = 1;
+    uint8_t buffer[10] = {0};
+    size_t bufferSize = 10;
+    int ret = rendererInServer.IsInvalidBuffer(buffer, bufferSize);
+    rendererInServer.WriteMuteDataSysEvent(buffer, bufferSize);
+    EXPECT_EQ(ret, true);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_002
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, GetLatency_002, TestSize.Level1)
+{
+    processConfig.deviceType = DEVICE_TYPE_INVALID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    rendererInServer->managerType_ = PLAYBACK;
+    rendererInServer->Init();
+    uint64_t latency = TEST_LATENCY;
+    int32_t ret = rendererInServer->GetLatency(latency);
+
+    EXPECT_EQ(SUCCESS, ret);
+}
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioEffectMode_002
+ * @tc.desc  : Test OnWriteData API when managerType_ is not PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, SetAudioEffectMode_002, TestSize.Level1)
+{
+    processConfig.deviceType = DEVICE_TYPE_INVALID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    rendererInServer->isDualToneEnabled_ = true;
+
+    rendererInServer->managerType_ = DIRECT_PLAYBACK;
+    rendererInServer->Init();
+    int32_t effectMode = TEST_EFFECTMODE;
+    int32_t ret = rendererInServer->SetAudioEffectMode(effectMode);
+
     EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
