@@ -871,8 +871,6 @@ bool AudioDeviceCommon::NotifyRecreateRendererStream(std::shared_ptr<AudioDevice
     CHECK_AND_RETURN_RET_LOG((rendererChangeInfo->outputDeviceInfo.deviceType_ != DEVICE_TYPE_INVALID &&
         desc->deviceType_ != DEVICE_TYPE_INVALID) || desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST,
         false, "isUpdateActiveDevice is false");
-    CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_NORMAL &&
-        rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_FORCED_NORMAL, false, "original flag is normal");
     CHECK_AND_RETURN_RET_LOG(desc->deviceType_ != DEVICE_TYPE_REMOTE_CAST ||
         (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST &&
         rendererChangeInfo->rendererInfo.rendererFlags != AUDIO_FLAG_NORMAL),
@@ -883,6 +881,11 @@ bool AudioDeviceCommon::NotifyRecreateRendererStream(std::shared_ptr<AudioDevice
     bool isOldDeviceLocal = rendererChangeInfo->outputDeviceInfo.networkId_ == "" ||
         rendererChangeInfo->outputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
     bool isNewDeviceLocal = desc->networkId_ == "" || desc->networkId_ == LOCAL_NETWORK_ID;
+    if (!(isOldDeviceLocal ^ isNewDeviceLocal)) {
+        CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_NORMAL &&
+            rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_FORCED_NORMAL, false,
+            "original flag is normal");
+    }
     if ((strcmp(oldDevicePortName.c_str(),
         AudioPolicyUtils::GetInstance().GetSinkPortName(desc->deviceType_).c_str())) ||
         (isOldDeviceLocal ^ isNewDeviceLocal)) {
@@ -1387,8 +1390,11 @@ bool AudioDeviceCommon::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         isUpdateActiveDevice, capturerChangeInfo->capturerInfo.capturerFlags,
         capturerChangeInfo->capturerInfo.originalFlag);
     CHECK_AND_RETURN_RET_LOG(isUpdateActiveDevice, false, "isUpdateActiveDevice is false");
-    CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
-        "original flag is false");
+    if (!((capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID) ^
+        (audioActiveDevice_.GetCurrentInputDevice().networkId_ == LOCAL_NETWORK_ID))) {
+        CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
+            "original flag is false");
+    }
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(
         capturerChangeInfo->inputDeviceInfo.deviceType_);
