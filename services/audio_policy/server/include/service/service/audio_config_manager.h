@@ -52,6 +52,8 @@ public:
 
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
+    void OnUpdateDefaultAdapter(bool isEnable);
+
     void OnAudioLatencyParsed(uint64_t latency);
 
     void OnSinkLatencyParsed(uint32_t latency);
@@ -92,6 +94,8 @@ public:
 
     bool GetUpdateRouteSupport();
 
+    bool GetDefaultAdapterEnable();
+
     bool GetAdapterInfoFlag();
 
     bool GetAdapterInfoByType(AdaptersType type, AudioAdapterInfo &info);
@@ -112,6 +116,7 @@ private:
 
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;
+    bool isDefaultAdapterEnable_ = false;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     GlobalConfigs globalConfigs_;

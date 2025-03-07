@@ -123,6 +123,16 @@ bool AudioConfigManager::GetUpdateRouteSupport()
     return isUpdateRouteSupported_;
 }
 
+void AudioConfigManager::OnUpdateDefaultAdapter(bool isEnable)
+{
+    isDefaultAdapterEnable_ = isEnable;
+}
+
+bool AudioConfigManager::GetDefaultAdapterEnable()
+{
+    return isDefaultAdapterEnable_;
+}
+
 void AudioConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());

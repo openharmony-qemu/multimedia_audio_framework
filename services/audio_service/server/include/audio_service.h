@@ -104,6 +104,8 @@ public:
     void CleanAppUseNumMap(int32_t appUid);
     bool HasBluetoothEndpoint();
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
+    void SetDefaultAdapterEnable(bool isEnable);
+    bool GetDefaultAdapterEnable();
     RestoreStatus RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
@@ -158,6 +160,7 @@ private:
 
     // for inner-capturer
     bool isRegisterCapturerFilterListened_ = false;
+    bool isDefaultAdapterEnable_ = false;
     uint32_t workingDualToneId_ = 0; // invalid sessionId
     AudioPlaybackCaptureConfig workingConfig_;
     std::unordered_map<int32_t, AudioPlaybackCaptureConfig> workingConfigs_;

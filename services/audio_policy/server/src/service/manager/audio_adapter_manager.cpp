@@ -1173,6 +1173,11 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(" offload_enable=");
         args.append(audioModuleInfo.offloadEnable);
     }
+
+    if (!audioModuleInfo.defaultAdapterEnable.empty()) {
+        args.append(" default_adapter_enable=");
+        args.append(audioModuleInfo.defaultAdapterEnable);
+    }
     AUDIO_INFO_LOG("[Adapter load-module] [PolicyManager] common args:%{public}s", args.c_str());
 }
 

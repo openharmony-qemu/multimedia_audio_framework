@@ -27,6 +27,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
+#include "audio_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -214,6 +215,7 @@ AudioModuleInfo AudioOffloadStream::ConstructMchAudioModuleInfo(DeviceType devic
     typeValue << static_cast<int32_t>(deviceType);
     audioModuleInfo.deviceType = typeValue.str();
 
+    audioModuleInfo.defaultAdapterEnable = AudioConfigManager::GetInstance().GetDefaultAdapterEnable() ? "1" : "0";
     audioModuleInfo.adapterName = "primary";
     audioModuleInfo.className = "multichannel"; // used in renderer_sink_adapter.c
     audioModuleInfo.fileName = "mch_dump_file";

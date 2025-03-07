@@ -37,6 +37,8 @@
         <devices>
             <device name="Bt A2dp" type="DEVICE_TYPE_BLUETOOTH_A2DP" role="output" Category="HEADPHONE_UNWEAR" usage="media"/>
             <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="WATCH,HEADPHONE_UNWEAR" usage="media,voice"/>
+            <device name="Hdmi" type="DEVICE_TYPE_HDMI" role="output" Category="" usage="media"/>
+            <device name="Line Digital" type="DEVICE_TYPE_LINE_DIGITAL" role="output" Category="" usage="media"/>
         </devices>
     </adapter>
 </audiodeviceprivacy>

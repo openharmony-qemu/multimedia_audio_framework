@@ -81,6 +81,7 @@ static const char * const VALID_MODARGS[] = {
     "mic_ref_rate",
     "mic_ref_format",
     "mic_ref_channels",
+    "default_adapter_enable",
     NULL
 };
 

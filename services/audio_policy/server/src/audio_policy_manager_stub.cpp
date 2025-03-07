@@ -193,6 +193,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_PREFERRED_DEVICE",
     "SAVE_REMOTE_INFO",
     "SET_VIRTUAL_CALL",
+    "SET_DEVICE_CONNECTION_STATUS",
     "EXCLUDE_OUTPUT_DEVICES",
     "UNEXCLUDE_OUTPUT_DEVICES",
     "GET_EXCLUDED_OUTPUT_DEVICES",
@@ -1234,6 +1235,9 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SAVE_REMOTE_INFO):
             SaveRemoteInfoInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CONNECTION_STATUS):
+            SetDeviceConnectionStatusInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::EXCLUDE_OUTPUT_DEVICES):
             ExcludeOutputDevicesInternal(data, reply);
             break;
@@ -2152,6 +2156,14 @@ void AudioPolicyManagerStub::SetVirtualCallInternal(MessageParcel &data, Message
 {
     bool isVirtual = data.ReadBool();
     int32_t result = SetVirtualCall(isVirtual);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    bool isConnected = data.ReadBool();
+    int32_t result = SetDeviceConnectionStatus(desc, isConnected);
     reply.WriteInt32(result);
 }
 

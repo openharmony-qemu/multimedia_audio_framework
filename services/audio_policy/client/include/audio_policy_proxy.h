@@ -381,6 +381,9 @@ public:
 
     int32_t SetVirtualCall(const bool isVirtual) override;
 
+    int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        const bool isConnected) override;
+
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;

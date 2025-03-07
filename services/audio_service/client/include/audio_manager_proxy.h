@@ -116,6 +116,7 @@ public:
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
+    void SetDefaultAdapterEnable(bool isEnable) override;
     void NotifyAudioPolicyReady() override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;

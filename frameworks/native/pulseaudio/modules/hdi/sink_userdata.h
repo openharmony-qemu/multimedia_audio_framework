@@ -44,6 +44,7 @@ struct Userdata {
     bool render_full_enable;
     bool offload_enable;
     bool multichannel_enable;
+    bool defaultAdapterEnable;
     const char *deviceNetworkId;
     int32_t deviceType;
     size_t bytes_dropped;
