@@ -37,8 +37,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
-    const int32_t VALID_SCENEKEY = 68864;
-    const int32_t INVALID_SCENEKEY = 0;
+    const uint64_t VALID_SCENEKEY = 4563402752;
+    const uint64_t INVALID_SCENEKEY = 0;
     const int32_t VALID_CAPTUREID = 13;
     const int32_t INVALID_CAPTUREID = 0;
     const int32_t DEFAULT_RATE = 48000;
@@ -416,7 +416,7 @@ HWTEST_F(AudioEnhanceChainAdapterUnitTest, EnhanceChainManagerProcess_002, TestS
 HWTEST_F(AudioEnhanceChainAdapterUnitTest, GetSceneTypeCode_001, TestSize.Level1)
 {
     const char *invalidScene = "NONE";
-    uint32_t sceneTypeCode;
+    uint64_t sceneTypeCode;
     int32_t result = GetSceneTypeCode(invalidScene, &sceneTypeCode);
     EXPECT_EQ(ERROR, result);
 }
@@ -429,7 +429,7 @@ HWTEST_F(AudioEnhanceChainAdapterUnitTest, GetSceneTypeCode_001, TestSize.Level1
 HWTEST_F(AudioEnhanceChainAdapterUnitTest, GetSceneTypeCode_002, TestSize.Level1)
 {
     const char *invalidScene = "SCENE_RECORD";
-    uint32_t sceneTypeCode;
+    uint64_t sceneTypeCode;
     int32_t result = GetSceneTypeCode(invalidScene, &sceneTypeCode);
     EXPECT_EQ(SUCCESS, result);
 }
