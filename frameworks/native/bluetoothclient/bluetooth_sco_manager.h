@@ -30,6 +30,7 @@ public:
     static void UpdateScoState(HfpScoConnectState scoState);
     static int32_t HandleScoConnect(ScoCategory scoCategory, BluetoothRemoteDevice *device = nullptr);
     static int32_t HandleScoDisconnect(ScoCategory scoCategory, BluetoothRemoteDevice *device = nullptr);
+    static AudioScoState GetAudioScoState();
     static AudioScoMode GetScoModeFromCategery(ScoCategory scoCategory);
     static ScoCategory GetScoCategeryFromMode(AudioScoMode scoMode);
 private:

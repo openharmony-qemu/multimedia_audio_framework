@@ -20,6 +20,8 @@
 
 #include "audio_policy_service.h"
 
+#include "bluetooth_sco_manager.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -40,8 +42,9 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceT
     shared_ptr<AudioDeviceDescriptor> desc =
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;
+    bool isScoStateConnect = BluetoothScoManager::IsAudioScoStateConnect();
     if (pairDevice != nullptr && pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&
-        pairDevice->isEnable_) {
+        (pairDevice->isEnable_ || isScoStateConnect)) {
         AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
             pairDevice->deviceType_);
         return make_shared<AudioDeviceDescriptor>(*pairDevice);

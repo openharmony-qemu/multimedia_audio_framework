@@ -148,6 +148,7 @@ public:
     static int32_t Connect(const std::string &macAddress);
     static int32_t SetVirtualCall(const bool isVirtual);
     static bool IsVirtualCall();
+    static bool IsAudioScoStateConnect();
 
 private:
     static int32_t ConnectScoUponDefaultScene(int8_t category);
