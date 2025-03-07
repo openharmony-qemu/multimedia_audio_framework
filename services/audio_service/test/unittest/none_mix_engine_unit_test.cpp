@@ -731,8 +731,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_010, TestSize.Level1)
     EXPECT_NE(ptrNoneMixEngine->renderId_, HDI_INVALID_ID);
 
     auto ret = ptrNoneMixEngine->Start();
-    EXPECT_EQ(ret, ERR_NOT_STARTED);
-    HdiAdapterManager::GetInstance().ReleaseId(ptrNoneMixEngine->renderId_);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
 /**
@@ -1204,7 +1203,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_030, TestSize.Level1)
     bool isVoip = true;
     ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
     int32_t ret = ptrNoneMixEngine->Start();
-    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

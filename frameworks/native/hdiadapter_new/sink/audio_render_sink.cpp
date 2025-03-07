@@ -33,8 +33,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioRenderSink::AudioRenderSink(const std::string &halName)
-    : halName_(halName)
+AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
+    : renderId_(renderId), halName_(halName)
 {
     if (halName_ == HDI_ID_INFO_DIRECT || halName_ == HDI_ID_INFO_VOIP) {
         sinkType_ = ADAPTER_TYPE_DIRECT;
@@ -811,13 +811,12 @@ void AudioRenderSink::SetAudioRouteInfoForEnhanceChain(void)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    uint32_t uniqueId = GetUniqueId();
     if (halName_ == HDI_ID_INFO_USB) {
-        audioEnhanceChainManager->SetOutputDevice(uniqueId, DEVICE_TYPE_USB_ARM_HEADSET);
+        audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_USB_ARM_HEADSET);
     } else if (halName_ == HDI_ID_INFO_DP) {
-        audioEnhanceChainManager->SetOutputDevice(uniqueId, DEVICE_TYPE_DP);
+        audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_DP);
     } else {
-        audioEnhanceChainManager->SetOutputDevice(uniqueId, currentActiveDevice_);
+        audioEnhanceChainManager->SetOutputDevice(renderId_, currentActiveDevice_);
     }
 }
 

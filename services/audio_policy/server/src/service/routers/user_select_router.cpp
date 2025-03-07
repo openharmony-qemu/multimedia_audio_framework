@@ -77,32 +77,31 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
 vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
-    vector<shared_ptr<AudioDeviceDescriptor>> selectedDesc;
-    AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
-        selectedDesc = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderBTCarDevices();
-    } else {
-        selectedDesc = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
-        audioDevUsage = MEDIA_OUTPUT_DEVICES;
-    }
-
-    shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, selectedDesc);
-    if (!latestConnDesc.get()) {
-        AUDIO_INFO_LOG("Have no latest connected desc, just only add default device.");
+    AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
+    shared_ptr<AudioDeviceDescriptor> selectedDesc =
+        (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) ?
+        GetCallRenderDevice(streamUsage, clientUID) : GetMediaRenderDevice(streamUsage, clientUID);
+      
+    if (!selectedDesc.get()) {
+        AUDIO_INFO_LOG("Have no selected connected desc, just only add default device.");
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
-    if (latestConnDesc->getType() == DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("Latest connected desc type is none, just only add default device.");
+    if (selectedDesc->getType() == DEVICE_TYPE_NONE) {
+        AUDIO_INFO_LOG("Selected connected desc type is none, just only add default device.");
+        descs.push_back(make_shared<AudioDeviceDescriptor>());
+        return descs;
+    }
+    if (selectedDesc->getType() == DEVICE_TYPE_BLUETOOTH_A2DP && selectedDesc->GetDeviceCategory() == BT_SOUNDBOX) {
+        AUDIO_INFO_LOG("Exclude BT soundbox device for alarm stream.");
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
 
-    if (NeedLatestConnectWithDefaultDevices(latestConnDesc->getType())) {
+    if (NeedLatestConnectWithDefaultDevices(selectedDesc->getType())) {
         // Add the latest connected device.
-        descs.push_back(move(latestConnDesc));
+        descs.push_back(move(selectedDesc));
         switch (streamUsage) {
             case STREAM_USAGE_ALARM:
                 // Add default device at same time for alarm.
@@ -119,8 +118,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
                 AUDIO_DEBUG_LOG("Don't add default device at the same time.");
                 break;
         }
-    } else if (latestConnDesc->getType() != DEVICE_TYPE_NONE) {
-        descs.push_back(move(latestConnDesc));
+    } else if (selectedDesc->getType() != DEVICE_TYPE_NONE) {
+        descs.push_back(move(selectedDesc));
     } else {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
     }

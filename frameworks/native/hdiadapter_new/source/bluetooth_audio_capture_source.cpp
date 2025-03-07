@@ -35,7 +35,8 @@ using namespace OHOS::HDI::Audio_Bluetooth;
 
 namespace OHOS {
 namespace AudioStandard {
-BluetoothAudioCaptureSource::BluetoothAudioCaptureSource()
+BluetoothAudioCaptureSource::BluetoothAudioCaptureSource(const uint32_t captureId)
+    : captureId_(captureId)
 {
     halName_ = "bt_hdap";
 }
@@ -420,8 +421,7 @@ void BluetoothAudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    uint32_t uniqueId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_BLUETOOTH);
-    audioEnhanceChainManager->SetInputDevice(uniqueId, currentActiveDevice_, "");
+    audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
 }
 
 int32_t BluetoothAudioCaptureSource::CreateCapture(void)

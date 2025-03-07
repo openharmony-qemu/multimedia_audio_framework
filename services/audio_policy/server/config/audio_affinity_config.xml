@@ -23,6 +23,7 @@
                 <Affinity networkId="LocalDevice" deviceType="DEVICE_TYPE_SPEAKER" supportedConcurrency="False"/>
                 <Affinity networkId="LocalDevice" deviceType="DEVICE_TYPE_USB_HEADSET" supportedConcurrency="False"/>
                 <Affinity networkId="LocalDevice" deviceType="DEVICE_TYPE_BLUETOOTH_SCO" supportedConcurrency="False"/>
+                <Affinity networkId="LocalDevice" deviceType="DEVICE_TYPE_HDMI" supportedConcurrency="False"/>
             </AffinityGroup>
             <AffinityGroup name="usb" isPrimary="False">
                 <Affinity networkId="LocalDevice" deviceType="DEVICE_TYPE_USB_ARM_HEADSET" supportedConcurrency="True"/>

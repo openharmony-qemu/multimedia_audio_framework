@@ -1542,6 +1542,9 @@ const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_MIC:
             device = "MIC";
             break;
+        case DEVICE_TYPE_HDMI:
+            device = "HDMI";
+            break;
         case DEVICE_TYPE_WAKEUP:
             device = "WAKEUP";
             break;

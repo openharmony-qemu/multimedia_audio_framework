@@ -249,7 +249,19 @@ int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
 
 AudioScene AudioSystemManager::GetAudioScene() const
 {
-    return AudioPolicyManager::GetInstance().GetAudioScene();
+    auto audioScene = AudioPolicyManager::GetInstance().GetAudioScene();
+    AUDIO_DEBUG_LOG("origin audioScene: %{public}d", audioScene);
+    switch (audioScene) {
+        case AUDIO_SCENE_CALL_START:
+        case AUDIO_SCENE_CALL_END:
+            return AUDIO_SCENE_DEFAULT;
+
+        case AUDIO_SCENE_VOICE_RINGING:
+            return AUDIO_SCENE_RINGING;
+    
+        default:
+            return audioScene;
+    }
 }
 
 int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag) const
@@ -753,6 +765,13 @@ int32_t AudioSystemManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
     AUDIO_INFO_LOG("In");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     return AudioPolicyManager::GetInstance().SetQueryClientTypeCallback(callback);
+}
+
+int32_t AudioSystemManager::SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
 }
 
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
@@ -1417,6 +1436,9 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             } else {
                 pin = AUDIO_PIN_OUT_USB_HEADSET;
             }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
+            pin = AUDIO_PIN_OUT_HDMI;
             break;
         default:
             OtherDeviceTypeCases(deviceType);

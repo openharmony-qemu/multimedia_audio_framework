@@ -1422,6 +1422,7 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
         case DeviceType::DEVICE_TYPE_USB_DEVICE:
+        case DeviceType::DEVICE_TYPE_HDMI:
             result = true;
             break;
         default:

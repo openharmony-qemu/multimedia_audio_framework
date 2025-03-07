@@ -80,6 +80,7 @@ public:
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors);
+    bool IsConnectedDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     bool IsVirtualConnectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc);
     int32_t UpdateDeviceDescDeviceId(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
@@ -91,6 +92,9 @@ public:
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
     void Dump(std::string &dumpString);
+    void UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
+    void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
+        std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
 
 private:
     AudioDeviceManager();
@@ -115,6 +119,10 @@ private:
     void AddRemoteRenderDev(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddRemoteCaptureDev(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddDefaultDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+
+    void AddVirtualDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void RemoveVirtualDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool IsVirtualDevicesExist(const shared_ptr<AudioDeviceDescriptor> &devDesc);
 
     void UpdateDeviceInfo(shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     void AddCommunicationDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
@@ -164,6 +172,7 @@ private:
     vector<shared_ptr<AudioDeviceDescriptor>> capturePublicDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> reconCapturePrivacyDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> virtualDevices_;
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
     std::shared_ptr<AudioDeviceDescriptor> earpiece_ = nullptr;
     std::shared_ptr<AudioDeviceDescriptor> speaker_ = nullptr;
@@ -178,6 +187,7 @@ private:
     std::mutex currentActiveDevicesMutex_;
     std::string remoteInfoNetworkId_ = "";
     DeviceType remoteInfoDeviceType_ = DEVICE_TYPE_DEFAULT;
+    std::mutex virtualDevicesMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

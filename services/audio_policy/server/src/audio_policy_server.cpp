@@ -995,7 +995,11 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
     }
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
+    int32_t volumeLevelInInt = 0;
+    if (GetStreamMuteInternal(streamInFocus)) {
+        SetStreamMuteInternal(streamInFocus, false, false);
+    }
+    volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
     int32_t minRet = GetMinVolumeLevel(streamInFocus);
     int32_t maxRet = GetMaxVolumeLevel(streamInFocus);
     if (adjustType == VolumeAdjustType::VOLUME_UP) {
@@ -1857,11 +1861,17 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         ERR_INVALID_PARAM, "param is invalid");
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
-    if (audioScene == AUDIO_SCENE_CALL_START || audioScene == AUDIO_SCENE_CALL_END) {
-        AUDIO_ERR_LOG("param is invalid");
-        return ERR_INVALID_PARAM;
+    switch (audioScene) {
+        case AUDIO_SCENE_DEFAULT:
+        case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_PHONE_CALL:
+        case AUDIO_SCENE_PHONE_CHAT:
+            return audioPolicyService_.SetAudioScene(audioScene);
+    
+        default:
+            AUDIO_ERR_LOG("param is invalid: %{public}d", audioScene);
+            return ERR_INVALID_PARAM;
     }
-    return audioPolicyService_.SetAudioScene(audioScene);
 }
 
 int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene)
@@ -1916,6 +1926,15 @@ int32_t AudioPolicyServer::SetQueryClientTypeCallback(const sptr<IRemoteObject> 
         return ERR_OPERATION_FAILED;
     }
     return audioPolicyService_.SetQueryClientTypeCallback(object);
+}
+
+int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object)
+{
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return ERR_OPERATION_FAILED;
+    }
+    return audioPolicyService_.SetAudioClientInfoMgrCallback(object);
 }
 
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)

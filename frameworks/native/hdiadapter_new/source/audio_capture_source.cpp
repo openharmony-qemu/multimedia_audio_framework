@@ -33,8 +33,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioCaptureSource::AudioCaptureSource(const std::string &halName)
-    : halName_(halName)
+AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
+    : captureId_(captureId), halName_(halName)
 {
 }
 
@@ -782,11 +782,10 @@ void AudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
     }
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    uint32_t uniqueId = GetUniqueId();
     if (halName_ == HDI_ID_INFO_USB) {
-        audioEnhanceChainManager->SetInputDevice(uniqueId, DEVICE_TYPE_USB_ARM_HEADSET, "");
+        audioEnhanceChainManager->SetInputDevice(captureId_, DEVICE_TYPE_USB_ARM_HEADSET, "");
     } else {
-        audioEnhanceChainManager->SetInputDevice(uniqueId, currentActiveDevice_, "");
+        audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
     }
 }
 

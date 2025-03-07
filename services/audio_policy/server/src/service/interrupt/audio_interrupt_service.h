@@ -277,7 +277,7 @@ private:
     int32_t clientOnFocus_ = 0;
 
     std::mutex mutex_;
-    mutable int32_t ownerPid_;
+    mutable int32_t ownerPid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
 };
 } // namespace AudioStandard

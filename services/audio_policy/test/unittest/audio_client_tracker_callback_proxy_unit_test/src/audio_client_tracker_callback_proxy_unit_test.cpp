@@ -35,8 +35,12 @@ HWTEST(AudioClientTrackerCallbackProxyUnitTest, AudioClientTrackerCallbackProxy_
 {
     //std::make_shared<AudioClientTrackerCallbackStub>();
     sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    ASSERT_TRUE(listener != nullptr);
+    std::weak_ptr<AudioClientTrackerTest> callback = std::make_shared<AudioClientTrackerTest>();
+    listener->SetClientTrackerCallback(callback);
 
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
+    ASSERT_TRUE(clientTrackerCallbackListener != nullptr);
 
     StreamSetStateEventInternal streamSetStateEventInternal;
     clientTrackerCallbackListener->MuteStreamImpl(streamSetStateEventInternal);

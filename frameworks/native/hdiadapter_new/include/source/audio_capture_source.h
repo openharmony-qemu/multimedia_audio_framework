@@ -31,7 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioCaptureSource : public IAudioCaptureSource {
 public:
-    explicit AudioCaptureSource(const std::string &halName = "primary");
+    explicit AudioCaptureSource(const uint32_t captureId, const std::string &halName = "primary");
     ~AudioCaptureSource();
 
     int32_t Init(const IAudioSourceAttr &attr) override;
@@ -122,6 +122,7 @@ private:
     static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
 
+    uint32_t captureId_ = HDI_INVALID_ID;
     const std::string halName_ = "";
     IAudioSourceAttr attr_ = {};
     std::mutex callbackMutex_;

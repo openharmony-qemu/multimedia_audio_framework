@@ -30,6 +30,7 @@
             <device name="Bt A2dp" type="DEVICE_TYPE_BLUETOOTH_A2DP" role="output" Category="SOUNDBOX,CAR" usage="media"/>
             <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="SOUNDBOX,CAR" usage="media,voice"/>
             <device name="DP" type="DEVICE_TYPE_DP" role="output" Category="" usage="media"/>
+            <device name="HDMI" type="DEVICE_TYPE_HDMI" role="output" Category="" usage="media"/>
         </devices>
     </adapter>
     <adapter name="negative">

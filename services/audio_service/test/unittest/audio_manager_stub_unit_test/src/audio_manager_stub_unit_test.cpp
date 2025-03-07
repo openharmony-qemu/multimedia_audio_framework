@@ -1542,5 +1542,23 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_021, TestSize.Level1)
     auto ret = audioServer->OnRemoteRequest(format, data, reply, option);
     EXPECT_EQ(305, ret);
 }
+
+/**
+* @tc.name  : Test OnRemoteRequest API
+* @tc.type  : FUNC
+* @tc.number: OnRemoteRequest_022
+* @tc.desc  : Test OnRemoteRequest interface. Set code value to GET_ALL_SINK_INPUTS
+*/
+HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_022, TestSize.Level1)
+{
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS);
+    MessageParcel data;
+    data.WriteInterfaceToken(u"IStandardAudioService");
+    MessageParcel reply;
+    MessageOption option;
+    auto ret = audioServer->OnRemoteRequest(format, data, reply, option);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

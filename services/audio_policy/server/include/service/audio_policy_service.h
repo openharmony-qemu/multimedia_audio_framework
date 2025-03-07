@@ -286,6 +286,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
 
+    int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object);
+
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object, const int32_t apiVersion);
 
@@ -610,7 +612,8 @@ private:
         DEVICE_TYPE_DP,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
-        DEVICE_TYPE_SPEAKER
+        DEVICE_TYPE_SPEAKER,
+        DEVICE_TYPE_HDMI
     };
     std::vector<DeviceType> inputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,

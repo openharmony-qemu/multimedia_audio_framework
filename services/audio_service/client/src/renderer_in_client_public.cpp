@@ -586,7 +586,7 @@ void RendererInClientInner::InitCallbackLoop()
     cbThreadReleased_ = false;
     auto weakRef = weak_from_this();
     // OS_AudioWriteCB
-    callbackLoop_ = std::thread([weakRef] {
+    std::thread callbackLoop = std::thread([weakRef] {
         bool keepRunning = true;
         std::shared_ptr<RendererInClientInner> strongRef = weakRef.lock();
         if (strongRef != nullptr) {
@@ -611,7 +611,8 @@ void RendererInClientInner::InitCallbackLoop()
             strongRef->RendererRemoveWatchdog("WatchingWriteCallbackFunc", strongRef->sessionId_); // Remove watchdog
         }
     });
-    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioWriteCB");
+    pthread_setname_np(callbackLoop.native_handle(), "OS_AudioWriteCB");
+    callbackLoop.detach();
 }
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
@@ -1044,7 +1045,6 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         cbThreadReleased_ = true; // stop loop
         cbThreadCv_.notify_all();
         FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
-        callbackLoop_.detach();
     }
     paramsIsSet_ = false;
 

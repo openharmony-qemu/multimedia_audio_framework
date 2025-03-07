@@ -886,6 +886,7 @@ bool AudioEndpointInner::DelayStopDevice()
             false, "Sink stop failed.");
     }
     isStarted_ = false;
+    delayStopTime_ = INT64_MAX;
     return true;
 }
 
@@ -1395,16 +1396,17 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
         bool muteFlag = processList_[i]->GetMuteState();
+        bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
         if (deviceInfo_.networkId_ == LOCAL_NETWORK_ID &&
             !(deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && volumeType == STREAM_MUSIC &&
-                PolicyHandler::GetInstance().IsAbsVolumeSupported()) &&
-            PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol)) {
+                PolicyHandler::GetInstance().IsAbsVolumeSupported()) && getVolumeRet) {
             streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat *
                 AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
                 clientConfig_.rendererInfo.volumeMode));
         } else {
-            PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-            streamData.volumeStart = vol.isMute ? 0 : curReadSpan->volumeStart;
+            streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart *
+                AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
+                clientConfig_.rendererInfo.volumeMode));
         }
         Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
             " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()));
@@ -1552,7 +1554,9 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
     int64_t readtime = 0;
     if (readTimeModel_.GetFrameStamp(readFrame, readtime)) {
         if (readFrame != posInFrame_) {
-            readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
+            if (!readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_)) {
+                updateThreadCV_.notify_all();
+            }
         }
     }
 
@@ -1572,7 +1576,9 @@ int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
     int64_t writetime = 0;
     if (writeTimeModel_.GetFrameStamp(writeFrame, writetime)) {
         if (writeFrame != posInFrame_) {
-            writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
+            if (!writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_)) {
+                updateThreadCV_.notify_all();
+            }
         }
     }
     int64_t nextHdiWriteTime = writeTimeModel_.GetTimeOfPos(posInFrame);

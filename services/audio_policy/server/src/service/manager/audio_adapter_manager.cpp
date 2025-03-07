@@ -568,6 +568,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
         {DEVICE_TYPE_DP, {DP_CLASS}},
         {DEVICE_TYPE_FILE_SINK, {FILE_CLASS}},
         {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
+        {DEVICE_TYPE_HDMI, {PRIMARY_CLASS}},
     };
 
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
@@ -1308,6 +1309,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_FILE_SOURCE:
         case DEVICE_TYPE_DP:
+        case DEVICE_TYPE_HDMI:
             return SPEAKER_VOLUME_TYPE;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
@@ -1863,6 +1865,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_DP:
+        case DEVICE_TYPE_HDMI:
             type = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:

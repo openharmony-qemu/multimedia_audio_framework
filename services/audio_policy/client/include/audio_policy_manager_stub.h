@@ -194,6 +194,7 @@ private:
     void IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply);
     void SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioClientInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetVirtualCallInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
