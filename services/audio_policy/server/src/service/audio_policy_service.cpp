@@ -1707,9 +1707,9 @@ ConverterConfig AudioPolicyService::GetConverterConfig()
     return converterParser.LoadConfig();
 }
 
-float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId, const uint32_t sessionId, const SourceType sourceType)
+float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId, const AudioInterrupt audioInterrupt)
 {
-    return audioActiveDevice_.GetMaxAmplitude(deviceId, sessionId, sourceType);
+    return audioActiveDevice_.GetMaxAmplitude(deviceId, audioInterrupt);
 }
 
 int32_t AudioPolicyService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)

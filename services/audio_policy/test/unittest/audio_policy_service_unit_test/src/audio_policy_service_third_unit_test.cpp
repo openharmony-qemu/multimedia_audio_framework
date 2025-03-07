@@ -513,7 +513,8 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetMaxAmplitude_001, TestSize.Level1)
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
 
     const int32_t deviceId = 0;
-    float amplitude = GetServerPtr()->audioPolicyService_.GetMaxAmplitude(deviceId, 1000, SOURCE_TYPE_INVALID);
+    AudioInterrupt audioInterrupt;
+    float amplitude = GetServerPtr()->audioPolicyService_.GetMaxAmplitude(deviceId, audioInterrupt);
     EXPECT_EQ((std::abs(amplitude - 0.0f) <= std::abs(FLOAT_EPS)), true);
 }
 

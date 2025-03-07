@@ -183,20 +183,22 @@ std::string AudioActiveDevice::GetCurrentOutputDeviceMacAddr()
     return currentActiveDevice_.macAddress_;
 }
 
-float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId, const uint32_t sessionId, const SourceType sourceType)
+float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId, AudioInterrupt audioInterrupt)
 {
     AudioDeviceDescriptor descriptor = GetCurrentOutputDevice();
     if (deviceId == descriptor.deviceId_) {
+        uint32_t sessionId = audioInterrupt.streamId;
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(descriptor, static_cast<int32_t>(sessionId));
         std::string deviceClass = AudioPolicyUtils::GetInstance().GetOutputDeviceClassBySinkPortName(sinkName);
-        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true, deviceClass, SOURCE_TYPE_INVALID);
+        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true, deviceClass);
     }
 
     descriptor = GetCurrentInputDevice();
     if (deviceId == descriptor.deviceId_) {
         std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(GetCurrentInputDeviceType());
         std::string deviceClass = AudioPolicyUtils::GetInstance().GetInputDeviceClassBySourcePortName(sourceName);
-        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, deviceClass, sourceType);
+        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, deviceClass,
+            audioInterrupt.audioFocusType.sourceType);
     }
 
     return 0;
