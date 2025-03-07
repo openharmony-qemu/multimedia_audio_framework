@@ -397,11 +397,12 @@ public:
      * Get max amplitude for device.
      *
      * @param isOutputDevice specified if the device is output device
-     * @param deviceType specified deviceType to get max amplitude
+     * @param deviceClass specified deviceClass to get max amplitude
+     * @param sourceType specified sourceType when capture
      *
      * @return result of max amplitude.
      */
-    virtual float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) = 0;
+    virtual float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) = 0;
 
     /**
      * Release old endpoint and re-create one.

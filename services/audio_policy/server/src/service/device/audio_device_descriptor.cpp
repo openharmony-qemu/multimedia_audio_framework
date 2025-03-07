@@ -96,6 +96,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     volumeGroupId_ = deviceDescriptor.volumeGroupId_;
     interruptGroupId_ = deviceDescriptor.interruptGroupId_;
     networkId_ = deviceDescriptor.networkId_;
+    dmDeviceType_ = deviceDescriptor.dmDeviceType_;
     displayName_ = deviceDescriptor.displayName_;
     deviceCategory_ = deviceDescriptor.deviceCategory_;
     connectTimeStamp_ = deviceDescriptor.connectTimeStamp_;
@@ -130,6 +131,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     volumeGroupId_ = deviceDescriptor->volumeGroupId_;
     interruptGroupId_ = deviceDescriptor->interruptGroupId_;
     networkId_ = deviceDescriptor->networkId_;
+    dmDeviceType_ = deviceDescriptor->dmDeviceType_;
     displayName_ = deviceDescriptor->displayName_;
     deviceCategory_ = deviceDescriptor->deviceCategory_;
     connectTimeStamp_ = deviceDescriptor->connectTimeStamp_;
@@ -194,6 +196,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel) const
     parcel.WriteInt32(interruptGroupId_);
     parcel.WriteInt32(volumeGroupId_);
     parcel.WriteString(networkId_);
+    parcel.WriteUint16(dmDeviceType_);
     parcel.WriteString(displayName_);
     parcel.WriteInt32(deviceCategory_);
     parcel.WriteInt32(connectState_);
@@ -212,6 +215,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel) const
         parcel.WriteString(macAddress_) &&
         audioStreamInfo_.Marshalling(parcel) &&
         parcel.WriteString(networkId_) &&
+        parcel.WriteUint16(dmDeviceType_) &&
         parcel.WriteString(displayName_) &&
         parcel.WriteInt32(interruptGroupId_) &&
         parcel.WriteInt32(volumeGroupId_) &&
@@ -266,6 +270,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
             deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : macAddress_) &&
         streamInfo.Marshalling(parcel) &&
         parcel.WriteString(hasSystemPermission ? networkId_ : "") &&
+        parcel.WriteUint16(dmDeviceType_) &&
         parcel.WriteString(displayName_) &&
         parcel.WriteInt32(hasSystemPermission ? interruptGroupId_ : INVALID_GROUP_ID) &&
         parcel.WriteInt32(hasSystemPermission ? volumeGroupId_ : INVALID_GROUP_ID) &&
@@ -304,6 +309,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
     interruptGroupId_ = parcel.ReadInt32();
     volumeGroupId_ = parcel.ReadInt32();
     networkId_ = parcel.ReadString();
+    dmDeviceType_ = parcel.ReadUint16();
     displayName_ = parcel.ReadString();
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
     connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
@@ -321,6 +327,7 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
     macAddress_ = parcel.ReadString();
     audioStreamInfo_.Unmarshalling(parcel);
     networkId_ = parcel.ReadString();
+    dmDeviceType_ = parcel.ReadUint16();
     displayName_ = parcel.ReadString();
     interruptGroupId_ = parcel.ReadInt32();
     volumeGroupId_ = parcel.ReadInt32();

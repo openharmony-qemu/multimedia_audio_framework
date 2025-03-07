@@ -3467,7 +3467,15 @@ int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
 
 float AudioPolicyServer::GetMaxAmplitude(int32_t deviceId)
 {
-    return audioPolicyService_.GetMaxAmplitude(deviceId);
+    AudioInterrupt audioInterrupt;
+    GetSessionInfoInFocus(audioInterrupt);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (audioInterrupt.uid == callerUid) {
+        return audioPolicyService_.GetMaxAmplitude(deviceId, audioInterrupt.streamId,
+            audioInterrupt.audioFocusType.sourceType);
+    } else {
+        return 0.0f;
+    }
 }
 
 bool AudioPolicyServer::IsHeadTrackingDataRequested(const std::string &macAddress)

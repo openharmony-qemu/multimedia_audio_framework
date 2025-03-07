@@ -96,6 +96,9 @@ void AudioPolicyClientStub::OnMaxRemoteRequest(uint32_t updateCode, MessageParce
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERER_DEVICE_CHANGE):
             HandleRendererDeviceChange(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_DISTRIBUTED_OUTPUT_CHANGE):
+            HandleDistribuitedOutputChange(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_RECREATE_RENDERER_STREAM_EVENT):
             HandleRecreateRendererStreamEvent(data, reply);
             break;
@@ -218,6 +221,14 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
         deviceChange.deviceDescriptors.emplace_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
     }
     OnDeviceChange(deviceChange);
+}
+
+void AudioPolicyClientStub::HandleDistribuitedOutputChange(MessageParcel &data, MessageParcel &reply)
+{
+    auto descDesc = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    CHECK_AND_RETURN_LOG(descDesc, "descDesc is nullptr");
+    bool isRemote = data.ReadBool();
+    OnDistribuitedOutputChange(*descDesc, isRemote);
 }
 
 void AudioPolicyClientStub::HandleMicrophoneBlocked(MessageParcel &data, MessageParcel &reply)

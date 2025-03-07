@@ -348,6 +348,27 @@ void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
     reply.ReadInt32();
 }
 
+void AudioPolicyClientProxy::OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_DISTRIBUTED_OUTPUT_CHANGE));
+
+    deviceDesc.Marshalling(data);
+    data.WriteBool(isRemote);
+    auto error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending DistribuitedOutputChange: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
 void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
     const AudioStreamDeviceChangeReasonExt reason)
 {

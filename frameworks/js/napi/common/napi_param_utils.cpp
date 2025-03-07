@@ -44,6 +44,7 @@ const std::vector<DeviceType> DEVICE_TYPE_SET = {
     DEVICE_TYPE_DP,
     DEVICE_TYPE_REMOTE_CAST,
     DEVICE_TYPE_USB_DEVICE,
+    DEVICE_TYPE_REMOTE_DAUDIO,
     DEVICE_TYPE_USB_ARM_HEADSET,
     DEVICE_TYPE_FILE_SINK,
     DEVICE_TYPE_FILE_SOURCE,
@@ -482,6 +483,7 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
     SetValueString(env, "name", deviceInfo.deviceName_, result);
     SetValueString(env, "address", deviceInfo.macAddress_, result);
     SetValueString(env, "networkId", deviceInfo.networkId_, result);
+    SetValueInt32(env, "dmDeviceType", static_cast<int32_t>(deviceInfo.dmDeviceType_), result);
     SetValueString(env, "displayName", deviceInfo.displayName_, result);
     SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(deviceInfo.interruptGroupId_), result);
     SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(deviceInfo.volumeGroupId_), result);
@@ -812,6 +814,9 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
 
     selectedAudioDevice->networkId_ = GetPropertyString(env, in, "networkId");
 
+    if (GetValueInt32(env, "dmDeviceType", intValue, in) == napi_ok) {
+        selectedAudioDevice->dmDeviceType_ = static_cast<uint16_t>(intValue);
+    }
     selectedAudioDevice->displayName_ = GetPropertyString(env, in, "displayName");
 
     status = GetValueInt32(env, "interruptGroupId", intValue, in);

@@ -51,6 +51,7 @@ public:
     int32_t interruptGroupId_ = 0;
     int32_t volumeGroupId_ = 0;
     std::string networkId_;
+    uint16_t dmDeviceType_{0};
     std::string displayName_;
     DeviceStreamInfo audioStreamInfo_ = {};
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;

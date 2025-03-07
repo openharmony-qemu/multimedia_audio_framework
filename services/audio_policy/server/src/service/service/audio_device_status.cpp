@@ -742,6 +742,11 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
     AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
+    // need fix to detect dmDeviceType and displayName
+    if (devType == DEVICE_TYPE_SPEAKER && networkId != LOCAL_NETWORK_ID) {
+        deviceDesc.dmDeviceType_ = 0x0B8;
+        statusInfo.deviceName = "HiCar";
+    }
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
     deviceDesc.networkId_ = networkId;

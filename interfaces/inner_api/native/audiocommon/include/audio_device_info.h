@@ -159,6 +159,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_DEVICE = 25,
     /**
+     * Indicates a Distributed virtualization audio device.
+     */
+    DEVICE_TYPE_REMOTE_DAUDIO = 29,
+    /**
      * Indicates a hdmi device
      */
     DEVICE_TYPE_HDMI = 27,
@@ -226,6 +230,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_FILE_SINK,
     DeviceType::DEVICE_TYPE_REMOTE_CAST,
     DeviceType::DEVICE_TYPE_HDMI,
+    DeviceType::DEVICE_TYPE_REMOTE_DAUDIO,
 };
 
 inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)

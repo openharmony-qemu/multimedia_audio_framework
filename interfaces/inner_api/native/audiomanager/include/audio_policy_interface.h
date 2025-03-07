@@ -106,6 +106,19 @@ public:
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
 };
 
+class AudioDistribuitedOutputChangeCallback {
+public:
+    virtual ~AudioDistribuitedOutputChangeCallback() = default;
+    /**
+     * Called when Distribuited output device changed
+     *
+     * @param deviceDesc selected device
+     * @param isRemote is cast direction remote
+     * @since 16
+     */
+    virtual void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) = 0;
+};
+
 class AudioQueryClientTypeCallback {
 public:
     virtual ~AudioQueryClientTypeCallback() = default;

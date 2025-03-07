@@ -56,7 +56,7 @@ public:
     bool UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsDeviceActive(DeviceType deviceType);
-    float GetMaxAmplitude(const int32_t deviceId);
+    float GetMaxAmplitude(const int32_t deviceId, const uint32_t sessionId, const SourceType sourceType);
     void UpdateInputDeviceInfo(DeviceType deviceType);
     std::string GetActiveBtDeviceMac();
     void SetActiveBtDeviceMac(const std::string macAddress);

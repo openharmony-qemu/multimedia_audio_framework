@@ -55,7 +55,8 @@ enum class AudioPolicyClientCode {
     ON_MICRO_PHONE_BLOCKED,
     ON_AUDIO_SCENE_CHANGED,
     ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    ON_DISTRIBUTED_OUTPUT_CHANGE,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_DISTRIBUTED_OUTPUT_CHANGE,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -78,6 +79,7 @@ public:
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
     virtual void OnRendererDeviceChange(const uint32_t sessionId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
+    virtual void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) = 0;
     virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) = 0;
     virtual void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
@@ -93,7 +95,7 @@ public:
     virtual void OnNnStateChange(const int32_t &nnState) = 0;
     virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
     virtual void OnAudioSceneChange(const AudioScene &audioScene) = 0;
-    
+
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
     int32_t apiVersion_ = API_VERSION_MAX;

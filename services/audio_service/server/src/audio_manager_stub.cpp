@@ -707,8 +707,9 @@ int AudioManagerStub::HandleGetEffectLatency(MessageParcel &data, MessageParcel 
 int AudioManagerStub::HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply)
 {
     bool isOutputDevice = data.ReadBool();
-    int32_t deviceType = data.ReadInt32();
-    float result = GetMaxAmplitude(isOutputDevice, deviceType);
+    std::string deviceClass = data.ReadString();
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    float result = GetMaxAmplitude(isOutputDevice, deviceClass, sourceType);
     reply.WriteFloat(result);
     return AUDIO_OK;
 }

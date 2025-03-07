@@ -43,6 +43,7 @@ public:
     bool IsConnectedOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool CheckDeviceConnected(std::string selectedDevice);
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
+    void SetDmDeviceType(const uint16_t dmDeviceType);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(int32_t deviceType);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType);

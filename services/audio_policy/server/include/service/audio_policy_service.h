@@ -224,6 +224,8 @@ public:
 
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
 
+    void SetDmDeviceType(const uint16_t dmDeviceType);
+
     bool IsDataShareReady();
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
@@ -418,7 +420,7 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
-    float GetMaxAmplitude(const int32_t deviceId);
+    float GetMaxAmplitude(const int32_t deviceId, const uint32_t sessionId, const SourceType sourceType);
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
