@@ -48,9 +48,6 @@ public:
         return instance;
     }
     bool CheckActiveOutputDeviceSupportOffload();
-    DeviceType GetActiveInputDevice();
-    void SetCurrenInputDevice(const AudioDeviceDescriptor &desc);
-    void SetCurrenOutputDevice(const AudioDeviceDescriptor &desc);
     bool IsDirectSupportedDevice();
     void NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     bool UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,

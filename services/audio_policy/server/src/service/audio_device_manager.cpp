@@ -1266,12 +1266,12 @@ int32_t AudioDeviceManager::SetDefaultOutputDevice(const DeviceType deviceType, 
 {
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
     selectedDefaultOutputDeviceInfo_[sessionID] = std::make_pair(deviceType, streamUsage);
-    if (!isRunning) {
-        AUDIO_WARNING_LOG("no need to set default output device since current stream has not started");
-        return SUCCESS;
-    }
     AUDIO_INFO_LOG("stream %{public}u with usage %{public}d selects output device %{public}d",
         sessionID, streamUsage, deviceType);
+    if (!isRunning) {
+        AUDIO_WARNING_LOG("current stream has not started");
+        return SUCCESS;
+    }
     if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
         // select media default output device
         auto it = std::find_if(mediaDefaultOutputDevices_.begin(), mediaDefaultOutputDevices_.end(),

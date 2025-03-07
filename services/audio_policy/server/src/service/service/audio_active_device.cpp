@@ -99,17 +99,6 @@ bool AudioActiveDevice::CheckActiveOutputDeviceSupportOffload()
         dev == DEVICE_TYPE_USB_HEADSET;
 }
 
-void AudioActiveDevice::SetCurrenInputDevice(const AudioDeviceDescriptor &desc)
-{
-    std::lock_guard<std::mutex> lock(curInputDevice_);
-    currentActiveInputDevice_ = AudioDeviceDescriptor(desc);
-}
-
-void AudioActiveDevice::SetCurrenOutputDevice(const AudioDeviceDescriptor &desc)
-{
-    currentActiveDevice_ = AudioDeviceDescriptor(desc);
-}
-
 void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
