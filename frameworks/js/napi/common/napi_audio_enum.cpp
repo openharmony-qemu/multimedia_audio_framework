@@ -187,6 +187,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"DISPLAY_PORT", DEVICE_TYPE_DP},
     {"REMOTE_CAST", DEVICE_TYPE_REMOTE_CAST},
     {"USB_DEVICE", DEVICE_TYPE_USB_DEVICE},
+    {"REMOTE_DAUDIO", DEVICE_TYPE_REMOTE_DAUDIO},
     {"DEFAULT", DEVICE_TYPE_DEFAULT},
     {"MAX", DEVICE_TYPE_MAX},
 };
@@ -1459,6 +1460,7 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
         case DeviceType::DEVICE_TYPE_USB_DEVICE:
         case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_REMOTE_DAUDIO:
             result = true;
             break;
         default:

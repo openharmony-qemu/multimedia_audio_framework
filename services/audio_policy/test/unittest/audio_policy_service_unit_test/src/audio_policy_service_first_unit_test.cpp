@@ -2328,6 +2328,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetDisplayName_001, TestSize.Level1)
     isLocalDevice = false;
     GetServerPtr()->audioPolicyService_.SetDisplayName("deviceY", isLocalDevice);
     GetServerPtr()->audioPolicyService_.SetDisplayName("deviceZ", isLocalDevice);
+    GetServerPtr()->audioPolicyService_.SetDmDeviceType(1);
 }
 
 /**

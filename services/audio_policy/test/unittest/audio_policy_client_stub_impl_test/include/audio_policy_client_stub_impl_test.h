@@ -60,7 +60,12 @@ public:
 
 class ConcreteAudioSessionCallback : public AudioSessionCallback {
 public:
-     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override {}
+    void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override {}
+};
+
+class ConcreteAudioDistribuitedOutputChangeCallback : public AudioDistribuitedOutputChangeCallback {
+public:
+    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override {};
 };
 
 class ConcreteAudioManagerMicStateChangeCallback : public AudioManagerMicStateChangeCallback {

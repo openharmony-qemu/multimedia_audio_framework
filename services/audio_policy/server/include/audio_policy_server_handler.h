@@ -78,6 +78,7 @@ public:
         NN_STATE_CHANGE,
         AUDIO_SCENE_CHANGE,
         SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        DISTRIBUTED_OUTPUT_CHANGE,
     };
     /* event data */
     class EventContextObj {
@@ -118,6 +119,15 @@ public:
         const uint32_t sessionId_;
         const AudioDeviceDescriptor outputDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    };
+
+    struct DistributedOutputChangeEvent {
+        DistributedOutputChangeEvent() = delete;
+        DistributedOutputChangeEvent(const AudioDeviceDescriptor &deviceDesc, const bool isRemote)
+            : deviceDesc_(deviceDesc), isRemote_(isRemote) {}
+
+        const AudioDeviceDescriptor &deviceDesc_;
+        const bool isRemote_;
     };
 
     struct CapturerCreateEvent {
@@ -170,6 +180,7 @@ public:
     bool SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
         const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason);
+    bool SendDistribuitedOutputChangeEvent(const AudioDeviceDescriptor &desc, bool isRemote);
     bool SendCapturerCreateEvent(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint64_t sessionId, bool isSync, int32_t &error);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
@@ -220,6 +231,7 @@ private:
     void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleDistributedOutputChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event);
