@@ -750,9 +750,12 @@ int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParc
 
 int AudioManagerStub::HandleRestoreSession(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t sessionID = data.ReadInt32();
-    int32_t isOutput = data.ReadBool();
-    RestoreSession(sessionID, isOutput);
+    RestoreInfo restoreInfo;
+    uint32_t sessionID = data.ReadUint32();
+    restoreInfo.restoreReason = static_cast<RestoreReason>(data.ReadInt32());
+    restoreInfo.deviceChangeReason = data.ReadInt32();
+    restoreInfo.targetStreamFlag = data.ReadInt32();
+    RestoreSession(sessionID, restoreInfo);
     return AUDIO_OK;
 }
 

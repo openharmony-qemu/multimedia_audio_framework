@@ -114,6 +114,14 @@ public:
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual void GetRestoreInfo(RestoreInfo &restoreInfo) = 0;
+    
+    virtual void SetRestoreInfo(RestoreInfo &restoreInfo) = 0;
+
+    virtual RestoreStatus CheckRestoreStatus() = 0;
+
+    virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

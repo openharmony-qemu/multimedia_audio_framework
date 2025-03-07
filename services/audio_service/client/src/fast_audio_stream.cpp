@@ -1039,5 +1039,35 @@ int32_t FastAudioStream::SetCallbacksWhenRestore()
     }
     return ret;
 }
+
+void FastAudioStream::GetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    processClient_->GetRestoreInfo(restoreInfo);
+    return;
+}
+
+void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    processClient_->SetRestoreInfo(restoreInfo);
+    return;
+}
+
+RestoreStatus FastAudioStream::CheckRestoreStatus()
+{
+    return processClient_->CheckRestoreStatus();
+}
+
+RestoreStatus FastAudioStream::SetRestoreStatus(RestoreStatus restoreStatus)
+{
+    return processClient_->SetRestoreStatus(restoreStatus);
+}
+
+void FastAudioStream::FetchDeviceForSplitStream()
+{
+    AUDIO_WARNING_LOG("Fast stream does not support split stream");
+    if (processClient_) {
+        processClient_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

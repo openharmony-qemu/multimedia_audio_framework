@@ -303,7 +303,7 @@ public:
      * @return Returns <b>true</b> if the capturing is successfully started; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Start() const = 0;
+    virtual bool Start() = 0;
 
     /**
      * @brief capture audio data.
@@ -320,7 +320,7 @@ public:
      * <b>ERR_INVALID_READ</b>: The read size < 0.
      * @since 8
      */
-    virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const = 0;
+    virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) = 0;
 
     /**
      * @brief Obtains the audio capture state.
@@ -519,7 +519,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
 
     /**
      * @brief Enqueues used buffer to the bufferQueue for recording new data.
@@ -529,7 +529,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
+    virtual int32_t Enqueue(const BufferDesc &bufDesc) = 0;
 
     /**
      * @brief Clears the bufferQueue.

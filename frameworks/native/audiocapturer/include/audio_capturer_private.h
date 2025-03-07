@@ -41,8 +41,8 @@ public:
     int32_t GetParams(AudioCapturerParams &params) const override;
     int32_t GetCapturerInfo(AudioCapturerInfo &capturerInfo) const override;
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
-    bool Start() const override;
-    int32_t  Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const override;
+    bool Start() override;
+    int32_t  Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
     CapturerState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Pause() const override;
@@ -61,8 +61,8 @@ public:
     int32_t SetCaptureMode(AudioCaptureMode renderMode) override;
     AudioCaptureMode GetCaptureMode()const override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
-    int32_t GetBufferDesc(BufferDesc &bufDesc)const override;
-    int32_t Enqueue(const BufferDesc &bufDesc)const override;
+    int32_t GetBufferDesc(BufferDesc &bufDesc) override;
+    int32_t Enqueue(const BufferDesc &bufDesc) override;
     int32_t Clear()const override;
     int32_t GetBufQueueState(BufferQueueState &bufState)const override;
     void SetValid(bool valid) override;
@@ -93,9 +93,8 @@ public:
 
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
 
-    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
-        const AudioStreamDeviceChangeReasonExt reason);
     void ConcedeStream();
+    void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
@@ -123,17 +122,31 @@ public:
     }
 
 private:
+    int32_t CheckAndRestoreAudioCapturer(std::string callingFunc);
     int32_t InitAudioInterruptCallback();
     int32_t InitInputDeviceChangeCallback();
+    IAudioStream::StreamClass GetTargetStreamClass(int32_t streamFlag);
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
-    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId);
+    bool ContinueAfterConcede(IAudioStream::StreamClass &targetClass, RestoreInfo restoreInfo);
+    bool ContinueAfterSplit(RestoreInfo restoreInfo);
+    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo);
+    bool FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, CapturerState previousState,
+        IAudioStream::SwitchInfo &info);
+    bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, CapturerState previousState,
+        IAudioStream::SwitchInfo &info);
+    void HandleAudioInterruptWhenServerDied();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
     int32_t InitAudioConcurrencyCallback();
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
     void ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass);
     void WriteOverflowEvent() const;
+    int32_t GetCurrentInputDevicesInner(AudioDeviceDescriptor &deviceInfo) const;
+    int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
+    uint32_t GetOverflowCountInner() const;
+    CapturerState GetStatusInner() const;
+    std::shared_ptr<IAudioStream> GetInnerStream() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
@@ -161,8 +174,7 @@ private:
     AudioCaptureMode audioCaptureMode_ = CAPTURE_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
     std::mutex setCapturerCbMutex_;
-    std::mutex setParamsMutex_;
-    std::mutex captureMutex_;
+    mutable std::shared_mutex capturerMutex_;
     std::mutex capturerPolicyServiceDiedCbMutex_;
 };
 

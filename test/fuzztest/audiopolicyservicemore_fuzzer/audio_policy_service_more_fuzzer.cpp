@@ -415,9 +415,11 @@ void AudioPolicyServiceTestIII()
     GetServerPtr()->audioPolicyService_.audioDeviceStatus_.ReloadA2dpOffloadOnDeviceChanged(deviceType,
         GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "DeviceName", audioStreamInfo);
 
-    int32_t usageOrSourceType = GetData<int32_t>();
-    bool isOutput = GetData<bool>();
-    GetServerPtr()->audioPolicyService_.RestoreSession(usageOrSourceType, isOutput);
+    int32_t sessionId = GetData<int32_t>();
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = static_cast<RestoreReason>(GetData<int32_t>());
+    restoreInfo.targetStreamFlag = GetData<int32_t>();
+    GetServerPtr()->audioPolicyService_.RestoreSession(sessionId, restoreInfo);
 }
 
 void AudioPolicyServiceTestIV()

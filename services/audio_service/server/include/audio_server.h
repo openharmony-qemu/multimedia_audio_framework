@@ -165,7 +165,7 @@ public:
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 
-    void RestoreSession(const int32_t &sessionID, bool isOutput) override;
+    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) override;
 
     void SetRotationToEffect(const uint32_t rotate) override;
 

@@ -406,7 +406,7 @@ public:
      * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
      * @since 11
      */
-    virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
+    virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
 
     /**
      * @brief Obtains the latency in microseconds.
@@ -692,7 +692,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
 
     /**
      * @brief Enqueues the buffer to the bufferQueue.
@@ -704,7 +704,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
+    virtual int32_t Enqueue(const BufferDesc &bufDesc) = 0;
 
     /**
      * @brief Clears the bufferQueue.

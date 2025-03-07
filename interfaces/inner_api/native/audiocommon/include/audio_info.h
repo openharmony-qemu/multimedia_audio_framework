@@ -1227,6 +1227,27 @@ enum CapturerStage {
     CAPTURER_STAGE_STOP_OK = 0x30,
 };
 
+
+enum RestoreStatus : int32_t {
+    NO_NEED_FOR_RESTORE = 0,
+    NEED_RESTORE,
+    RESTORING,
+    RESTORE_ERROR,
+};
+
+enum RestoreReason : int32_t {
+    DEFAULT_REASON = 0,
+    DEVICE_CHANGED,
+    STREAM_CONCEDED,
+    STREAM_SPLIT,
+    SERVER_DIED,
+};
+
+struct RestoreInfo {
+    RestoreReason restoreReason = DEFAULT_REASON;
+    int32_t deviceChangeReason = 0;
+    int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

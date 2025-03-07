@@ -1073,19 +1073,11 @@ void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppEx
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
-    if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
-        AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
-        return;
-    }
-    sptr<IAudioPolicyClient> rendererCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
-    CHECK_AND_RETURN_LOG(rendererCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
-
-    if (clientCallbacksMap_.count(eventContextObj->clientId) > 0 &&
-        clientCallbacksMap_[eventContextObj->clientId].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
-        clientCallbacksMap_[eventContextObj->clientId][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
-        rendererCb->OnRecreateRendererStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag,
-            eventContextObj->reason_);
-    }
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEVICE_CHANGED;
+    restoreInfo.targetStreamFlag = eventContextObj->streamFlag;
+    restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
+    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
 void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1093,19 +1085,11 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
-    if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
-        AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
-        return;
-    }
-    sptr<IAudioPolicyClient> capturerCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
-    CHECK_AND_RETURN_LOG(capturerCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
-
-    if (clientCallbacksMap_.count(eventContextObj->clientId) > 0 &&
-        clientCallbacksMap_[eventContextObj->clientId].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
-        clientCallbacksMap_[eventContextObj->clientId][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
-        capturerCb->OnRecreateCapturerStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag,
-            eventContextObj->reason_);
-    }
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEVICE_CHANGED;
+    restoreInfo.targetStreamFlag = eventContextObj->streamFlag;
+    restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
+    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
 void AudioPolicyServerHandler::HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1280,11 +1264,10 @@ void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExec
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
     std::unique_lock<std::mutex> lock(handleMapMutex_);
-    std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher = concurrencyEventDispatcher_.lock();
-    lock.unlock();
-    if (dispatcher != nullptr) {
-        dispatcher->DispatchConcurrencyEventWithSessionId(eventContextObj->sessionId);
-    }
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = STREAM_CONCEDED;
+    restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
 // Run with event-runner mutex hold, lock any mutex that SendSyncEvent-calling holds may cause dead lock.

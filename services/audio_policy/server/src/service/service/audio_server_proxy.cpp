@@ -220,12 +220,12 @@ void AudioServerProxy::CheckHibernateStateProxy(bool hibernate)
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioServerProxy::RestoreSessionProxy(const int32_t &sessionID, bool isOutput)
+void AudioServerProxy::RestoreSessionProxy(const uint32_t &sessionID, RestoreInfo restoreInfo)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->RestoreSession(sessionID, isOutput);
+    gsp->RestoreSession(sessionID, restoreInfo);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
