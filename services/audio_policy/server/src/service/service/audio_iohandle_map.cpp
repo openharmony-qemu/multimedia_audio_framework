@@ -127,6 +127,7 @@ AudioIOHandle AudioIOHandleMap::GetSinkIOHandle(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_EARPIECE:
         case DeviceType::DEVICE_TYPE_SPEAKER:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_HDMI:
             ioHandle = IOHandles_[PRIMARY_SPEAKER];
             break;
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:

@@ -1425,6 +1425,9 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
                 pin = AUDIO_PIN_OUT_USB_HEADSET;
             }
             break;
+        case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
+            pin = AUDIO_PIN_OUT_HDMI;
+            break;
         default:
             OtherDeviceTypeCases(deviceType);
             break;

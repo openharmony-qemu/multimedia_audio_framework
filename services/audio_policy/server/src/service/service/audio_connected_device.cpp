@@ -299,7 +299,8 @@ DeviceType AudioConnectedDevice::FindConnectedHeadset()
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_DP) ||
-            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET));
+            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_HDMI));
     });
 
     DeviceType retType = DEVICE_TYPE_NONE;
