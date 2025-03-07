@@ -859,6 +859,7 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.overFlowCount = GetOverflowCount();
 
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
+    info.defaultOutputDevice = defaultOutputDevice_;
 
     {
         std::lock_guard<std::mutex> lock(setPreferredFrameSizeMutex_);
@@ -958,6 +959,9 @@ bool FastAudioStream::RestoreAudioStream(bool needStoreState)
     if (SetAudioStreamInfo(streamInfo_, proxyObj_) != SUCCESS || SetCallbacksWhenRestore() != SUCCESS) {
         goto error;
     }
+
+    SetDefaultOutputDevice(defaultOutputDevice_);
+
     switch (oldState) {
         case RUNNING:
             result = StartAudioStream();
@@ -1001,15 +1005,18 @@ bool FastAudioStream::GetHighResolutionEnabled()
     return false;
 }
 
-int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOuputDevice)
+int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
-    return processClient_->SetDefaultOutputDevice(defaultOuputDevice);
+    int32_t ret = processClient_->SetDefaultOutputDevice(defaultOutputDevice);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice error.");
+    defaultOutputDevice_ = defaultOutputDevice;
+    return SUCCESS;
 }
 
 DeviceType FastAudioStream::GetDefaultOutputDevice()
 {
-    return DEVICE_TYPE_NONE;
+    return defaultOutputDevice_;
 }
 
 // diffrence from GetAudioPosition only when set speed

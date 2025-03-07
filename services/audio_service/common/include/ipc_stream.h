@@ -98,7 +98,7 @@ public:
 
     virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
     virtual int32_t SetSourceDuration(int64_t duration) = 0;
 

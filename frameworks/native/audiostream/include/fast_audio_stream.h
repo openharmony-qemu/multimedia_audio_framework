@@ -187,7 +187,7 @@ public:
 
     bool GetSilentModeAndMixWithOthers() override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
     DeviceType GetDefaultOutputDevice() override;
 
@@ -230,6 +230,7 @@ private:
     bool streamTrackerRegistered_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     bool silentModeAndMixWithOthers_ = false;
+    DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
 
     std::mutex streamCbMutex_;
     std::weak_ptr<AudioStreamCallback> streamCallback_;
