@@ -57,13 +57,13 @@ int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, std::vector<
     return result;
 }
 
-float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, DeviceType type)
+float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    float maxAmplitude = gsp->GetMaxAmplitude(flag, type);
+    float maxAmplitude = gsp->GetMaxAmplitude(flag, portName, sourceType);
     IPCSkeleton::SetCallingIdentity(identity);
     return maxAmplitude;
 }

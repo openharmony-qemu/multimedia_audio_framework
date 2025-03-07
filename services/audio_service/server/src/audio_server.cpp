@@ -2065,32 +2065,25 @@ int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
     return SUCCESS;
 }
 
-float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
+float AudioServer::GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("GetMaxAmplitude in audio server deviceClass %{public}s", deviceClass.c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), 0, "GetMaxAmplitude refused for %{public}d", callingUid);
 
     float fastMaxAmplitude = AudioService::GetInstance()->GetMaxAmplitude(isOutputDevice);
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
     if (isOutputDevice) {
-        if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            sink = GetSinkByProp(HDI_ID_TYPE_BLUETOOTH);
-        } else if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-            sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-        } else {
-            sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-        }
+        uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass);
+        sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
         if (sink != nullptr) {
             float normalMaxAmplitude = sink->GetMaxAmplitude();
             return (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
         }
     } else {
-        if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-            source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-        } else {
-            source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
-        }
+        uint32_t sourceId = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(deviceClass, sourceType);
+        source = HdiAdapterManager::GetInstance().GetCaptureSource(sourceId, false);
         if (source != nullptr) {
             float normalMaxAmplitude = source->GetMaxAmplitude();
             return (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;

@@ -317,6 +317,44 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
     return portName;
 }
 
+std::string AudioPolicyUtils::GetOutputDeviceClassBySinkPortName(std::string sinkPortName)
+{
+    std::map<std::string, std::string> sinkPortStrToClassStrMap_ = {
+        {PRIMARY_SPEAKER, PRIMARY_CLASS},
+        {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
+        {BLUETOOTH_SPEAKER, A2DP_CLASS},
+        {USB_SPEAKER, USB_CLASS},
+        {PRIMARY_DIRECT_VOIP, DIRECT_VOIP_CLASS},
+        {DP_SINK, DP_CLASS},
+        {FILE_SINK, FILE_CLASS},
+        {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CLASS},
+        {MCH_PRIMARY_SPEAKER, MCH_CLASS},
+        {PORT_NONE, INVALID_CLASS}
+    };
+    std::string deviceClass = INVALID_CLASS;
+    if (sinkPortStrToClassStrMap_.count(sinkPortName) > 0) {
+        deviceClass = sinkPortStrToClassStrMap_.at(sinkPortName);
+    }
+    return deviceClass;
+}
+
+std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string sourcePortName)
+{
+    std::map<std::string, std::string> sourcePortStrToClassStrMap_ = {
+        {PRIMARY_MIC, PRIMARY_CLASS},
+        {USB_MIC, USB_CLASS},
+        {PRIMARY_WAKEUP, PRIMARY_CLASS},
+        {FILE_SOURCE, FILE_CLASS},
+        {BLUETOOTH_MIC, A2DP_CLASS},
+        {PORT_NONE, INVALID_CLASS}
+    };
+    std::string deviceClass = INVALID_CLASS;
+    if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
+        deviceClass = sourcePortStrToClassStrMap_.at(sourcePortName);
+    }
+    return deviceClass;
+}
+
 std::shared_ptr<DataShare::DataShareHelper> AudioPolicyUtils::CreateDataShareHelperInstance()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();

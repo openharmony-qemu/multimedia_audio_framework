@@ -45,7 +45,7 @@ public:
     const sptr<IStandardAudioService> GetAudioServerProxy();
     int32_t SetAudioSceneProxy(AudioScene audioScene, std::vector<DeviceType> activeOutputDevices,
         DeviceType deviceType, BluetoothOffloadState state);
-    float GetMaxAmplitudeProxy(bool flag, DeviceType type);
+    float GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType);
     void UpdateEffectBtOffloadSupportedProxy(const bool &isSupported);
     void SetOutputDeviceSinkProxy(DeviceType deviceType, std::string sinkName);
     bool GetEffectOffloadEnabledProxy();

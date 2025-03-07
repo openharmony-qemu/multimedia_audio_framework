@@ -49,7 +49,12 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_002, TestSize.Leve
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
     int32_t deviceId = AudioActiveDevice::GetInstance().GetCurrentInputDevice().deviceId_;
-    float result = audioActiveDevice->GetMaxAmplitude(deviceId);
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+
+    float result = audioActiveDevice->GetMaxAmplitude(deviceId, rendererChangeInfo->sessionId, SOURCE_TYPE_INVALID);
     EXPECT_NE(audioActiveDevice, nullptr);
 }
 
