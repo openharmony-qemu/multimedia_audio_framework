@@ -417,6 +417,16 @@ bool AudioPolicyServerHandler::SendRendererDeviceChangeEvent(const int32_t clien
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendDistribuitedOutputChangeEvent(const AudioDeviceDescriptor &desc, bool isRemote)
+{
+    AUDIO_INFO_LOG("Send Event DISTRIBUTED_OUTPUT_CHANGE. isRemote=%{public}d", isRemote);
+    auto event = make_shared<DistributedOutputChangeEvent>(desc, isRemote);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DISTRIBUTED_OUTPUT_CHANGE, event));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendDistribuitedOutputChangeEvent event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendCapturerCreateEvent(AudioCapturerInfo capturerInfo,
     AudioStreamInfo streamInfo, uint64_t sessionId, bool isSync, int32_t &error)
 {
@@ -781,7 +791,7 @@ void AudioPolicyServerHandler::HandleAppVolumeChangeEvent(const AppExecFwk::Inne
             AUDIO_ERR_LOG("appVolumeChangeListenerCb nullptr for client %{public}d", it->first);
             continue;
         }
-        
+
         AUDIO_INFO_LOG("appVolumeChangeListenerCb client %{public}d :volumeMode %{public}d :appUid%{public}d",
             it->first, static_cast<int32_t>(eventContextObj->volumeEvent.volumeMode), eventContextObj->appUid);
         if (clientCallbacksMap_.count(it->first) > 0 &&
@@ -1037,6 +1047,21 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
         clientCallbacksMap_[pid].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
         clientCallbacksMap_[pid][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
         capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
+    }
+}
+
+void AudioPolicyServerHandler::HandleDistributedOutputChange(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    auto eventContextObj = event->GetSharedObject<DistributedOutputChangeEvent>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "eventContextObj is nullptr");
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> audioPolicyClient = it->second;
+        CHECK_AND_RETURN_LOG(audioPolicyClient, "Client(Pid[%{public}d]) Callback is nullptr.", it->first);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_DISTRIBUTED_OUTPUT_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_DISTRIBUTED_OUTPUT_CHANGE]) {
+            audioPolicyClient->OnDistribuitedOutputChange(eventContextObj->deviceDesc_, eventContextObj->isRemote_);
+        }
     }
 }
 
@@ -1355,6 +1380,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::MICROPHONE_BLOCKED:
             HandleMicrophoneBlockedCallback(event);
+            break;
+        case EventAudioServerCmd::DISTRIBUTED_OUTPUT_CHANGE:
+            HandleDistributedOutputChange(event);
             break;
         case EventAudioServerCmd::NN_STATE_CHANGE:
             HandleNnStateChangeEvent(event);

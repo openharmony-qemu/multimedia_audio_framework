@@ -150,6 +150,13 @@ typedef enum {
     AUDIO_DEVICE_TYPE_USB_DEVICE = 25,
 
     /**
+     * @brief Distributed virtualization audio device.
+     *
+     * @since 18
+     */
+    AUDIO_DEVICE_TYPE_REMOTE_DAUDIO = 29,
+
+    /**
      * @brief Default device type.
      */
     AUDIO_DEVICE_TYPE_DEFAULT = 1000,

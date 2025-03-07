@@ -76,6 +76,11 @@ static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 const int32_t UID_AUDIO = 1041;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 
+static int16_t IsDistributedOutput(const AudioDeviceDescriptor &desc)
+{
+    return (desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID) ? 1 : 0;
+}
+
 #ifdef BLUETOOTH_ENABLE
 static sptr<IStandardAudioService> g_btProxy = nullptr;
 #endif
@@ -446,6 +451,15 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
     Trace trace("AudioPolicyService::SelectOutputDevice");
+    if (!selectedDesc.empty() && selectedDesc[0]) {
+        int16_t isDistOld = IsDistributedOutput(audioActiveDevice_.GetCurrentOutputDevice());
+        int16_t isDistNew = IsDistributedOutput(selectedDesc[0]);
+        AUDIO_INFO_LOG("Entry. Check Distributed Output Change[%{public}d-->%{public}d]", isDistOld, isDistNew);
+        int16_t flag = isDistNew - isDistOld;
+        if (audioPolicyServerHandler_ && flag != 0) {
+            audioPolicyServerHandler_->SendDistribuitedOutputChangeEvent(selectedDesc[0], flag > 0);
+        }
+    }
     return audioDeviceLock_.SelectOutputDevice(audioRendererFilter, selectedDesc);
 }
 
@@ -764,6 +778,11 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
 void AudioPolicyService::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
 {
     audioDeviceLock_.SetDisplayName(deviceName, isLocalDevice);
+}
+
+void AudioPolicyService::SetDmDeviceType(const uint16_t dmDeviceType)
+{
+    audioDeviceLock_.SetDmDeviceType(dmDeviceType);
 }
 
 void AudioPolicyService::RegisterRemoteDevStatusCallback()

@@ -224,6 +224,8 @@ public:
 
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
 
+    void SetDmDeviceType(const uint16_t dmDeviceType);
+
     bool IsDataShareReady();
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);

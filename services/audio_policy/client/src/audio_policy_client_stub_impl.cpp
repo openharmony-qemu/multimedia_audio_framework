@@ -201,6 +201,13 @@ void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
     }
 }
 
+void AudioPolicyClientStubImpl::OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote)
+{
+    for (auto &item : distribuitedOutputChangeCallback_) {
+        item->OnDistribuitedOutputChange(deviceDesc, isRemote);
+    }
+}
+
 void AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedInfo &blockedInfo)
 {
     std::lock_guard<std::mutex> lockCbMap(microphoneBlockedMutex_);
@@ -456,6 +463,14 @@ int32_t AudioPolicyClientStubImpl::AddAudioSessionCallback(const std::shared_ptr
     AUDIO_INFO_LOG("AddAudioSessionCallback in");
     std::lock_guard<std::mutex> lockCbMap(audioSessionMutex_);
     audioSessionCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::SetDistribuitedOutputChangeCallback(
+    const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb)
+{
+    distribuitedOutputChangeCallback_.clear();
+    distribuitedOutputChangeCallback_.push_back(cb);
     return SUCCESS;
 }
 

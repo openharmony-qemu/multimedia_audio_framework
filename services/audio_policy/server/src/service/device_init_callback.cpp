@@ -38,6 +38,7 @@ void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDevi
 
     //OnDeviceChanged listeren did not report networkId information
     audioPolicyService_.SetDisplayName(strDeviceName, false);
+    audioPolicyService_.SetDmDeviceType(dmDeviceBasicInfo.deviceTypeId);
 }
 #endif
 } // namespace AudioStandard

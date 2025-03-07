@@ -58,6 +58,8 @@ public:
     int32_t SetDeviceChangeCallback(const DeviceFlag flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback);
 
+    int32_t SetDistribuitedOutputChangeCallback(const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb);
+
     int32_t SetQueryClientTypeCallback(
         const std::shared_ptr<AudioQueryClientTypeCallback>& callback);
 

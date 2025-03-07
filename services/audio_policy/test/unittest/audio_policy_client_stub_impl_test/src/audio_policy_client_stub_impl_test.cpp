@@ -304,6 +304,13 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_014, TestSize.Le
     result = audioPolicyClient->RemoveAudioSessionCallback();
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(audioPolicyClient->GetAudioSessionCallbackSize(), 0);
+
+    auto cb2 = std::make_shared<ConcreteAudioDistribuitedOutputChangeCallback>();
+    result = audioPolicyClient->SetDistribuitedOutputChangeCallback(cb2);
+    EXPECT_EQ(result, SUCCESS);
+    AudioDeviceDescriptor desc;
+    audioPolicyClient->OnDistribuitedOutputChange(desc, true);
+    EXPECT_NE(audioPolicyClient, nullptr);
 }
 
 /**

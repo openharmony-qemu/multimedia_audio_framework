@@ -222,6 +222,15 @@ void AudioConnectedDevice::SetDisplayName(const std::string &deviceName, bool is
     }
 }
 
+void AudioConnectedDevice::SetDmDeviceType(const uint16_t dmDeviceType)
+{
+    for (const auto& deviceInfo : connectedDevices_) {
+        if (deviceInfo->networkId_ != LOCAL_NETWORK_ID) {
+            deviceInfo->dmDeviceType_ = dmDeviceType;
+        }
+    }
+}
+
 void AudioConnectedDevice::SetDisplayName(const std::string macAddress, const std::string deviceName)
 {
     for (auto device : connectedDevices_) {
