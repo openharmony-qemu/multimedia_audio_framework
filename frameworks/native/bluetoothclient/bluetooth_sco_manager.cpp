@@ -42,7 +42,7 @@ void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState)
         currentScoState_ = AudioScoState::CONNECTED;
         stateLock.unlock();
         if (lastScoState == AudioScoState::DISCONNECT_AFTER_CONNECTED) {
-            BluetoothScoManager::HandleScoConnect(GetScoCategeryFromMode(currentScoMode_));
+            BluetoothScoManager::HandleScoDisconnect(GetScoCategeryFromMode(currentScoMode_));
         } else if (lastScoState == AudioScoState::CONNECT_AFTER_DISCONNECTED) {
             BluetoothScoManager::HandleScoDisconnect(GetScoCategeryFromMode(lastScoMode_));
             BluetoothScoManager::HandleScoConnect(GetScoCategeryFromMode(tmpMode));
@@ -111,6 +111,11 @@ int32_t BluetoothScoManager::HandleScoDisconnect(ScoCategory scoCategory, Blueto
         currentScoState_ = AudioScoState::DISCONNECT_AFTER_CONNECTED;
     }
     return SUCCESS;
+}
+
+AudioScoState BluetoothScoManager::GetAudioScoState()
+{
+    return currentScoState_;
 }
 
 AudioScoMode BluetoothScoManager::GetScoModeFromCategery(ScoCategory scoCategory)

@@ -521,7 +521,8 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeHfpDevice_.GetDeviceAddr()).c_str());
     if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
         AUDIO_WARNING_LOG("Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
-        DisconnectSco();
+        int32_t ret = DisconnectSco();
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     }
     std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
@@ -726,6 +727,12 @@ bool AudioHfpManager::IsVirtualCall()
     return isVirtualCall;
 }
 
+bool AudioHfpManager::IsAudioScoStateConnect()
+{
+    AudioScoState scoState = BluetoothScoManager::GetAudioScoState();
+    return scoState == (AudioScoState::CONNECTED || AudioScoState::CONNECTING) ? true : false;
+}
+
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
     AUDIO_WARNING_LOG("state:[%{public}d] reason:[%{public}d] device:[%{public}s]",
@@ -768,6 +775,7 @@ void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &dev
             AudioHfpManager::UpdateCurrentActiveHfpDevice(defaultDevice);
             AUDIO_WARNING_LOG("Current active hfp device diconnect, need set audio scene as default.");
             AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT);
+            BluetoothScoManager::UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED);
         }
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::DISCONNECT_ACTION);
     }
