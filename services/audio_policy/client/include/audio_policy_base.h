@@ -377,7 +377,7 @@ public:
     virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
 
     virtual int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected) = 0;
+        const bool isConnected) = 0;
 
     virtual int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
 

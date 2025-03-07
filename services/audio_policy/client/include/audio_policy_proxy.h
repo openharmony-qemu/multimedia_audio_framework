@@ -382,7 +382,7 @@ public:
     int32_t SetVirtualCall(const bool isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected) override;
+        const bool isConnected) override;
 
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 private:

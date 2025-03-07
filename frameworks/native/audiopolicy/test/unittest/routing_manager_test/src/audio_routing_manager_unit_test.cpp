@@ -263,14 +263,9 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetDeviceConnectionSta
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     desc->deviceName_ = "Speaker_Out";
     desc->deviceRole_ = OUTPUT_DEVICE;
-    std::shared_ptr<AudioStreamInfo> streamInfo = std::make_shared<AudioStreamInfo>();
-    streamInfo->samplingRate = SAMPLE_RATE_48000;
-    streamInfo->encoding = ENCODING_PCM;
-    streamInfo->format = SAMPLE_S16LE;
-    streamInfo->channels = STEREO;
 
     bool isConnected = true;
-    int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, streamInfo, isConnected);
+    int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, isConnected);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -282,10 +277,9 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetDeviceConnectionSta
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetDeviceConnectionStatus_002, TestSize.Level1)
 {
     std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
-    std::shared_ptr<AudioStreamInfo> streamInfo = nullptr;
 
     bool isConnected = true;
-    int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, streamInfo, isConnected);
+    int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, isConnected);
     EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard

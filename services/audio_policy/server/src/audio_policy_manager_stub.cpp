@@ -2162,10 +2162,8 @@ void AudioPolicyManagerStub::SetVirtualCallInternal(MessageParcel &data, Message
 void AudioPolicyManagerStub::SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
-    std::shared_ptr<AudioStreamInfo> streamInfo = std::make_shared<AudioStreamInfo>();
-    streamInfo->Unmarshalling(data);
     bool isConnected = data.ReadBool();
-    int32_t result = SetDeviceConnectionStatus(desc, streamInfo, isConnected);
+    int32_t result = SetDeviceConnectionStatus(desc, isConnected);
     reply.WriteInt32(result);
 }
 

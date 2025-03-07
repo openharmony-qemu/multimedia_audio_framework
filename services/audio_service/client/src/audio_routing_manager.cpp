@@ -141,11 +141,11 @@ void AudioRoutingManager::SaveRemoteInfo(const std::string &networkId, DeviceTyp
 }
 
 int32_t AudioRoutingManager::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-    const std::shared_ptr<AudioStreamInfo> &streamInfo, const bool isConnected)
+    const bool isConnected)
 {
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr && streamInfo != nullptr, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM,
         "desc or streamInfo is nullptr");
-    return AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, streamInfo, isConnected);
+    return AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
 }
 } // namespace AudioStandard
 } // namespace OHOS
