@@ -144,7 +144,7 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
 
-    void MuteOldSinkForFixPop(const std::string &oldSinkname, int64_t muteTime);
+    void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
