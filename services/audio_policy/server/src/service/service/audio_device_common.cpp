@@ -977,8 +977,6 @@ void AudioDeviceCommon::MuteOldSinkForFixPop(const std::string &oldSinkname, int
 void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    auto ringermode = audioPolicyManager_.GetRingerMode();
-    AudioScene scene = audioSceneManager_.GetAudioScene(true);
     if (reason.isOverride() || reason.isSetDefaultOutputDevice()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
@@ -994,20 +992,6 @@ void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkName, const std::
         MuteOldSinkForFixPop(oldSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true);
-    } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-        ringermode != RINGER_MODE_NORMAL))) {
-        audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
-        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
-    } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
-        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
-        ringermode != RINGER_MODE_NORMAL))) {
-        audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true);
-        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
-    } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
-        oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
-        // remote cast -> earpiece 300ms fix sound leak
-        audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
     }
     MuteSinkPortLogic(oldSinkName, newSinkName, reason);
 }
@@ -1015,11 +999,27 @@ void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkName, const std::
 void AudioDeviceCommon::MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
+    auto ringermode = audioPolicyManager_.GetRingerMode();
+    AudioScene scene = audioSceneManager_.GetAudioScene(true);
     if (reason == DISTRIBUTED_DEVICE) {
         AUDIO_INFO_LOG("distribute device mute, reason: %{public}d", static_cast<int>(reason));
         int64_t muteTime = DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS;
         audioIOHandleMap_.MuteSinkPort(newSinkName, DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true);
+    } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
+        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
+        ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
+        audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
+        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
+    } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
+        ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
+        ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
+        audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true);
+        usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
+    } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
+        oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
+        // remote cast -> earpiece 300ms fix sound leak
+        audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
     }
 }
 
