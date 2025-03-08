@@ -463,8 +463,8 @@ public:
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
-    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, bool isUpdateUi);
-    void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, bool isUpdateUi);
+    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
+    void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
     void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel, bool mute);
 
     void ProcUpdateRingerMode();
