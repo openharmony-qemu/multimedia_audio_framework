@@ -19,17 +19,50 @@
 #include "audio_routing_manager_unit_test.h"
 #include "audio_stream_manager.h"
 #include "audio_system_manager.h"
+#include "message_parcel.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+#include "access_token.h"
 
 using namespace std;
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+bool g_hasPermission = false;
+constexpr uid_t UID_TV_PROCESS_SA = 7501;
 
 void AudioRoutingManagerUnitTest::SetUpTestCase(void) {}
 void AudioRoutingManagerUnitTest::TearDownTestCase(void) {}
 void AudioRoutingManagerUnitTest::SetUp(void) {}
 void AudioRoutingManagerUnitTest::TearDown(void) {}
+
+static void GetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+        };
+
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audio_policy_service_unit_test",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
+}
 
 /**
  * @tc.name   : Test Audio_Routing_Manager_SetMicStateChangeCallback_001 via legal state
@@ -260,10 +293,45 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableDevices_00
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetDeviceConnectionStatus_001, TestSize.Level1)
 {
     std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
-
     bool isConnected = true;
     int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, isConnected);
     EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Routing_Manager_SetDeviceConnectionStatus via legal state
+ * @tc.number: Audio_Routing_Manager_SetDeviceConnectionStatus_002
+ * @tc.desc  : Test SetDeviceConnectionStatus interface.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetDeviceConnectionStatus_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc->deviceName_ = "Speaker_Out";
+    desc->deviceRole_ = OUTPUT_DEVICE;
+
+    bool isConnected = true;
+    int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, isConnected);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Routing_Manager_SetDeviceConnectionStatus via legal state
+ * @tc.number: Audio_Routing_Manager_SetDeviceConnectionStatus_003
+ * @tc.desc  : Test SetDeviceConnectionStatus interface.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetDeviceConnectionStatus_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc->deviceName_ = "Speaker_Out";
+    desc->deviceRole_ = OUTPUT_DEVICE;
+
+    bool isConnected = true;
+    setuid(UID_TV_PROCESS_SA);
+    GetPermission();
+    int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, isConnected);
+    EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS
