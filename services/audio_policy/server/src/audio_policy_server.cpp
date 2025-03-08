@@ -3457,13 +3457,7 @@ float AudioPolicyServer::GetMaxAmplitude(int32_t deviceId)
 {
     AudioInterrupt audioInterrupt;
     GetSessionInfoInFocus(audioInterrupt);
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    if (audioInterrupt.uid == callerUid) {
-        return audioPolicyService_.GetMaxAmplitude(deviceId, audioInterrupt.streamId,
-            audioInterrupt.audioFocusType.sourceType);
-    } else {
-        return 0.0f;
-    }
+    return audioPolicyService_.GetMaxAmplitude(deviceId, audioInterrupt);
 }
 
 bool AudioPolicyServer::IsHeadTrackingDataRequested(const std::string &macAddress)

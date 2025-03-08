@@ -420,7 +420,7 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
-    float GetMaxAmplitude(const int32_t deviceId, const uint32_t sessionId, const SourceType sourceType);
+    float GetMaxAmplitude(const int32_t deviceId, const AudioInterrupt audioInterrupt);
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
