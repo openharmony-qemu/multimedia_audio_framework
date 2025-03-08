@@ -1038,6 +1038,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_011, TestSize.Le
 }
 
 /**
+* @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
+* @tc.type  : FUNC
+* @tc.number: AudioInfoDumpUtils_GetDeviceTypeName_012
+* @tc.desc  : Test AudioInfoDumpUtils GetDeviceTypeName API,Return HDMI
+*             when deviceType is DEVICE_TYPE_HDMI
+*/
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_012, TestSize.Level0)
+{
+    DeviceType deviceType = DEVICE_TYPE_HDMI;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "HDMI");
+}
+
+/**
 * @tc.name  : Test AudioInfoDumpUtils::GetConnectTypeName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetConnectTypeName_001

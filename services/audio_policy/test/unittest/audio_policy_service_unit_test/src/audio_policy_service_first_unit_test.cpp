@@ -117,7 +117,8 @@ static const std::vector<DeviceType> deviceTypes = {
     DEVICE_TYPE_FILE_SOURCE,
     DEVICE_TYPE_EXTERN_CABLE,
     DEVICE_TYPE_DEFAULT,
-    DEVICE_TYPE_USB_ARM_HEADSET
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_HDMI
 };
 
 static const std::vector<StreamSetState> streamSetStates = {
@@ -1062,6 +1063,10 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSourcePortName_001, TestSize.Level1)
     deviceType = DEVICE_TYPE_MAX;
     retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
     EXPECT_EQ(PORT_NONE, retPortName);
+
+    deviceType = DEVICE_TYPE_HDMI;
+    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
+    EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 }
 
 /**
