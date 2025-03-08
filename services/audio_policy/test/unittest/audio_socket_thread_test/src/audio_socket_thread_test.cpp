@@ -941,6 +941,120 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_039, TestSize.Level1)
 }
 
 /**
+ * @tc.name : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_040
+ * @tc.desc : Test AudioHDMIDetectDevice
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_040, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    // Test case 1: Invalid parameter (NULL audioPnpUevent)
+    {
+        int32_t result = audioSocketThread.AudioHDMIDetectDevice(nullptr);
+        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+    }
+    // Test case 2: Invalid subSystem
+    {
+        AudioPnpUevent uevent = {
+            .subSystem = "invalid",
+            .switchName = "hdmi_mipi_audio",
+            .action = "change",
+            .switchState = "1"
+        };
+        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
+        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+    }
+    // Test case 3: Invalid switchName
+    {
+        AudioPnpUevent uevent = {
+            .subSystem = "switch",
+            .switchName = "invalid",
+            .action = "change",
+            .switchState = "1"
+        };
+        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
+        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+    }
+}
+
+/**
+ * @tc.name : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_041
+ * @tc.desc : Test AudioHDMIDetectDevice
+ */
+ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_041, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    // Test case 4: Invalid action
+    {
+        AudioPnpUevent uevent = {
+            .subSystem = "switch",
+            .switchName = "hdmi_mipi_audio",
+            .action = "invalid",
+            .switchState = "1"
+        };
+        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
+        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+    }
+    // Test case 5: Device Add Event
+    {
+        AudioPnpUevent uevent = {
+            .subSystem = "switch",
+            .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
+            .action = "change",
+            .switchState = "1"
+        };
+        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
+        EXPECT_EQ(result, SUCCESS);
+        // Additional checks can be added here to verify the internal state
+    }
+    // Test case 6: Device Remove Event
+    {
+        AudioPnpUevent uevent = {
+            .subSystem = "switch",
+            .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
+            .action = "change",
+            .switchState = "0"
+        };
+        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
+        EXPECT_EQ(result, SUCCESS);
+        // Additional checks can be added here to verify the internal state
+    }
+}
+
+/**
+ * @tc.name : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_042
+ * @tc.desc : Test AudioHDMIDetectDevice
+ */
+ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_042, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    // Test case 7: Invalid switchState
+    {
+        AudioPnpUevent uevent = {
+            .subSystem = "switch",
+            .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
+            .action = "change",
+            .switchState = "invalid"
+        };
+        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
+        EXPECT_EQ(result, ERROR);
+    }
+    // Test case 8: No device_port in switchName
+    {
+        AudioPnpUevent uevent = {
+            .subSystem = "switch",
+            .switchName = "hdmi_mipi_audio,",
+            .action = "change",
+            .switchState = "1"
+        };
+        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
+        EXPECT_EQ(result, SUCCESS);
+    }
+}
+
+/**
  * @tc.name  : DetectAnalogHeadsetState_Headset_Remove
  * @tc.number: Audio_AudioSocketThread_DetectAnalogHeadsetState_003
  * @tc.desc  : Test DetectAnalogHeadsetState function when headset is removed.

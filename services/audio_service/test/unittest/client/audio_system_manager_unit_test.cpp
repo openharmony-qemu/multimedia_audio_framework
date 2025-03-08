@@ -141,6 +141,20 @@ HWTEST(AudioSystemManagerUnitTest, GetPinValueFromType_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetPinValueFromType API
+ * @tc.type  : FUNC
+ * @tc.number: GetPinValueFromType_002
+ * @tc.desc  : Test GetPinValueFromType interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetPinValueFromType_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetPinValueFromType_002 start");
+    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueFromType(DEVICE_TYPE_HDMI, OUTPUT_DEVICE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest ->GetPinValueFromType_002() pinValue:%{public}d", pinValue);
+    EXPECT_NE(pinValue, AUDIO_PIN_NONE);
+}
+
+/**
  * @tc.name  : Test RegisterWakeupSourceCallback API
  * @tc.type  : FUNC
  * @tc.number: RegisterWakeupSourceCallback_001
