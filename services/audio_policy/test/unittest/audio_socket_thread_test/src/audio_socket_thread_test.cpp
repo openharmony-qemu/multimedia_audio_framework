@@ -1045,7 +1045,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_040, TestSize.Level1)
     {
         AudioPnpUevent uevent = {
             .subSystem = "switch",
-            .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
+            .switchName = "hdmi_mipi_audio,",
             .action = "change",
             .switchState = "1"
         };
