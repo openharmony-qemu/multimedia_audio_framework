@@ -99,8 +99,10 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
 
-    unordered_set<shared_ptr<AudioDeviceDescriptor>> mediaExcludedDevices_;
-    unordered_set<shared_ptr<AudioDeviceDescriptor>> callExcludedDevices_;
+    unordered_set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorHash,
+        AudioDeviceDescriptor::AudioDeviceDescriptorEqual> mediaExcludedDevices_;
+    unordered_set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorHash,
+        AudioDeviceDescriptor::AudioDeviceDescriptorEqual> callExcludedDevices_;
 
     std::mutex mutex_;
     shared_mutex mediaExcludedDevicesMutex_;
