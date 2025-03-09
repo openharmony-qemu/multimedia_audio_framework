@@ -220,9 +220,10 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
     std::shared_ptr<WaitActiveDeviceAction> action = std::make_shared<WaitActiveDeviceAction>(duration, portName);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionDesc desc;
-    desc.delayTimeMs = muteLatencyTime;
     desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
     DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+
+    usleep(muteLatencyTime * US_PER_MS); // sleep fix data cache pop.
 }
 
 void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)
