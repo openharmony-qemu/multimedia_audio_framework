@@ -267,8 +267,7 @@ int32_t FastAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType 
 
 int32_t FastAudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
 {
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
+    return DoSetInputRoute(inputDevice);
 }
 
 void FastAudioCaptureSource::RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback)
