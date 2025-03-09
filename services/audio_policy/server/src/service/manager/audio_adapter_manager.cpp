@@ -2105,12 +2105,14 @@ void AudioAdapterManager::InitVolumeMapIndex()
 
 void AudioAdapterManager::UpdateVolumeMapIndex()
 {
+    bool isAppConfigVolumeInit = false;
     for (auto streamVolInfoPair : streamVolumeInfos_) {
         auto streamVolInfo = streamVolInfoPair.second;
         if (streamVolInfo->streamType == STREAM_APP) {
             appConfigVolume_.defaultVolume = streamVolInfo->defaultLevel;
             appConfigVolume_.maxVolume = streamVolInfo->maxLevel;
             appConfigVolume_.minVolume = streamVolInfo->minLevel;
+            isAppConfigVolumeInit = true;
             AUDIO_DEBUG_LOG("AppConfigVolume default = %{public}d, max = %{public}d, min = %{public}d",
                 appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
             continue;
@@ -2123,6 +2125,22 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
             maxVolumeIndexMap_[streamVolInfo->streamType],
             volumeDataMaintainer_.GetStreamVolume(streamVolInfo->streamType));
     }
+    if (isAppConfigVolumeInit) {
+        return;
+    }
+    if (minVolumeIndexMap_.find(STREAM_MUSIC) != minVolumeIndexMap_.end() &&
+        maxVolumeIndexMap_.find(STREAM_MUSIC) != maxVolumeIndexMap_.end()) {
+        appConfigVolume_.defaultVolume = maxVolumeIndexMap_[STREAM_MUSIC];
+        appConfigVolume_.maxVolume = maxVolumeIndexMap_[STREAM_MUSIC];
+        appConfigVolume_.minVolume = minVolumeIndexMap_[STREAM_MUSIC];
+    } else {
+        appConfigVolume_.defaultVolume = MAX_VOLUME_LEVEL;
+        appConfigVolume_.maxVolume = MAX_VOLUME_LEVEL;
+        appConfigVolume_.minVolume = MIN_VOLUME_LEVEL;
+    }
+    isAppConfigVolumeInit = true;
+    AUDIO_DEBUG_LOG("next AppConfigVolume default = %{public}d, max = %{public}d, min = %{public}d",
+        appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
 }
 
 void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
