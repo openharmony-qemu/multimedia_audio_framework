@@ -72,6 +72,7 @@ private:
         int32_t channelBlendMode;
         DeviceRole deviceRole;
         int32_t deviceType;
+        Timestamp timeStamp;
         AudioRendererOptions rendererOptions;
         AudioDeviceDescriptor deviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
         AudioRendererInfo rendererInfo;
@@ -120,6 +121,8 @@ private:
     static napi_value GetCurrentOutputDevicesSync(napi_env env, napi_callback_info info);
     static napi_value GetUnderflowCount(napi_env env, napi_callback_info info);
     static napi_value GetUnderflowCountSync(napi_env env, napi_callback_info info);
+    static napi_value GetAudioTimestampInfo(napi_env env, napi_callback_info info);
+    static napi_value GetAudioTimestampInfoSync(napi_env env, napi_callback_info info);
     static napi_value GetAudioEffectMode(napi_env env, napi_callback_info info);
     static napi_value SetAudioEffectMode(napi_env env, napi_callback_info info);
     static napi_value SetChannelBlendMode(napi_env env, napi_callback_info info);

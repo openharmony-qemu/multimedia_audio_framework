@@ -1004,6 +1004,17 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
+class AudioCapturerPolicyServiceDiedCallback {
+public:
+    virtual ~AudioCapturerPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 10
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
 class AudioStreamPolicyServiceDiedCallback {
 public:
     virtual ~AudioStreamPolicyServiceDiedCallback() = default;
@@ -1182,6 +1193,59 @@ enum WriteDataCallbackType {
      * @since 12
      */
     WRITE_DATA_CALLBACK_WITH_RESULT = 1
+};
+
+enum ReadDataCallbackType {
+    /**
+     * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnReadData
+     * @since 12
+     */
+    READ_DATA_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioCapturer_OnReadDataCallback.
+     * @since 12
+     */
+    READ_DATA_CALLBACK_WITH_RESULT = 1
+};
+
+enum StreamEventCallbackType {
+    /**
+     * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnStreamEvent
+     * @since 12
+     */
+    STREAM_EVENT_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioCapturer_OnStreamEventCallback.
+     * @since 12
+     */
+    STREAM_EVENT_CALLBACK_WITH_RESULT = 1
+};
+
+enum InterruptEventCallbackType {
+    /**
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnInterruptEvent
+     * @since 12
+     */
+    INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioRenderer_OnInterruptEventCallback.
+     * @since 12
+     */
+    INTERRUPT_EVENT_CALLBACK_WITH_RESULT = 1
+};
+
+enum ErrorCallbackType {
+    /**
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnError
+     *
+     * @since 12
+     */
+    ERROR_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioRenderer_OnErrorCallback.
+     * @since 12
+     */
+    ERROR_CALLBACK_WITH_RESULT = 1
 };
 
 enum PolicyType {

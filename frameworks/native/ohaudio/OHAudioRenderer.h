@@ -91,6 +91,11 @@ public:
         void *userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
+    OHAudioRendererCallback(OH_AudioRenderer_OnInterruptCallback onInterruptEventCallback,
+        OH_AudioRenderer *audioRenderer, void *userData) : onInterruptEventCallback_(onInterruptEventCallback),
+        ohAudioRenderer_(audioRenderer), userData_(userData)
+    {
+    }
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType) override
     {
@@ -99,6 +104,7 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
+    OH_AudioRenderer_OnInterruptCallback onInterruptEventCallback_ = nullptr;
     OH_AudioRenderer *ohAudioRenderer_;
     void *userData_;
 };
@@ -109,11 +115,16 @@ public:
         void *userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
+    OHServiceDiedCallback(OH_AudioRenderer_OnErrorCallback errorCallback, OH_AudioRenderer *audioRenderer,
+        void *userData) : errorCallback_(errorCallback), ohAudioRenderer_(audioRenderer), userData_(userData)
+    {
+    }
 
     void OnAudioPolicyServiceDied() override;
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
+    OH_AudioRenderer_OnErrorCallback errorCallback_ = nullptr;
     OH_AudioRenderer *ohAudioRenderer_;
     void *userData_;
 };
@@ -124,6 +135,10 @@ public:
         void *userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
+    OHAudioRendererErrorCallback(OH_AudioRenderer_OnErrorCallback errorCallback, OH_AudioRenderer *audioRenderer,
+        void *userData) : errorCallback_(errorCallback), ohAudioRenderer_(audioRenderer), userData_(userData)
+    {
+    }
 
     void OnError(AudioErrors errorCode) override;
 
@@ -131,6 +146,7 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
+    OH_AudioRenderer_OnErrorCallback errorCallback_ = nullptr;
     OH_AudioRenderer *ohAudioRenderer_;
     void *userData_;
 };
@@ -154,6 +170,10 @@ struct RendererCallback {
     OH_AudioRenderer_Callbacks callbacks;
 
     OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback;
+
+    OH_AudioRenderer_OnInterruptCallback onInterruptEventCallback;
+
+    OH_AudioRenderer_OnErrorCallback onErrorCallback;
 
     OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback;
 };
@@ -206,8 +226,14 @@ class OHAudioRenderer {
         bool GetSilentModeAndMixWithOthers();
         int32_t SetDefaultOutputDevice(DeviceType deviceType);
 
-        void SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType);
-        WriteDataCallbackType GetRendererCallbackType();
+        void SetRendererWriteDataCallbackType(WriteDataCallbackType writeDataCallbackType);
+        WriteDataCallbackType GetRendererWriteDataCallbackType();
+
+        void SetRendererInterruptEventCallbackType(InterruptEventCallbackType InterruptEventCallbackType);
+        InterruptEventCallbackType GetRendererInterruptEventCallbackType();
+
+        void SetRendererErrorCallbackType(ErrorCallbackType errorCallbackType);
+        ErrorCallbackType GetRendererErrorCallbackType();
 
         void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
     private:
@@ -216,6 +242,8 @@ class OHAudioRenderer {
         std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
         std::shared_ptr<OHRendererPositionCallback> rendererPositionCallback_;
         WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
+        InterruptEventCallbackType interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
+        ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
 
         void SetWriteDataCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData,
             AudioEncodingType encodingType);

@@ -654,7 +654,13 @@ void OHAudioRenderer::SetWriteDataCallback(RendererCallback rendererCallbacks, v
 
 void OHAudioRenderer::SetInterruptCallback(RendererCallback rendererCallbacks, void *userData)
 {
-    if (rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
+    if (interruptEventCallbackType_ == INTERRUPT_EVENT_CALLBACK_WITH_RESULT &&
+        rendererCallbacks.onInterruptEventCallback != nullptr) {
+        audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(
+            rendererCallbacks.onInterruptEventCallback, (OH_AudioRenderer*)this, userData);
+        audioRenderer_->SetRendererCallback(audioRendererCallback_);
+    } else if (interruptEventCallbackType_ == INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT &&
+        rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
         audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(rendererCallbacks.callbacks,
             (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererCallback(audioRendererCallback_);
@@ -665,7 +671,19 @@ void OHAudioRenderer::SetInterruptCallback(RendererCallback rendererCallbacks, v
 
 void OHAudioRenderer::SetErrorCallback(RendererCallback rendererCallbacks, void *userData)
 {
-    if (rendererCallbacks.callbacks.OH_AudioRenderer_OnError != nullptr) {
+    if (errorCallbackType_ == ERROR_CALLBACK_WITH_RESULT &&
+        rendererCallbacks.onErrorCallback != nullptr) {
+        std::shared_ptr<AudioRendererPolicyServiceDiedCallback> callback =
+            std::make_shared<OHServiceDiedCallback>(rendererCallbacks.onErrorCallback,
+            (OH_AudioRenderer*)this, userData);
+        int32_t clientPid = getpid();
+        audioRenderer_->RegisterAudioPolicyServerDiedCb(clientPid, callback);
+
+        std::shared_ptr<AudioRendererErrorCallback> errorCallback = std::make_shared<OHAudioRendererErrorCallback>(
+            rendererCallbacks.onErrorCallback, (OH_AudioRenderer*)this, userData);
+        audioRenderer_->SetAudioRendererErrorCallback(errorCallback);
+    } else if (errorCallbackType_ == ERROR_CALLBACK_WITHOUT_RESULT &&
+        rendererCallbacks.callbacks.OH_AudioRenderer_OnError != nullptr) {
         std::shared_ptr<AudioRendererPolicyServiceDiedCallback> callback =
             std::make_shared<OHServiceDiedCallback>(rendererCallbacks.callbacks, (OH_AudioRenderer*)this, userData);
         int32_t clientPid = getpid();
@@ -732,12 +750,12 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
         writeDataWithMetadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
             (void*)bufDesc.metaBuffer, bufDesc.metaLength);
     } else {
-        if (audioRenderer->GetRendererCallbackType() == WRITE_DATA_CALLBACK_WITHOUT_RESULT &&
+        if (audioRenderer->GetRendererWriteDataCallbackType() == WRITE_DATA_CALLBACK_WITHOUT_RESULT &&
             callbacks_.OH_AudioRenderer_OnWriteData != nullptr) {
             callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
         }
-        if (audioRenderer->GetRendererCallbackType() == WRITE_DATA_CALLBACK_WITH_RESULT &&
+        if (audioRenderer->GetRendererWriteDataCallbackType() == WRITE_DATA_CALLBACK_WITH_RESULT &&
             onWriteDataCallback_ != nullptr) {
             OH_AudioData_Callback_Result result = onWriteDataCallback_(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
@@ -763,18 +781,37 @@ void OHAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const AudioDevice
 void OHAudioRendererCallback::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnInterruptEvent != nullptr, "pointer to the function is nullptr");
-    OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
-    OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
-    callbacks_.OH_AudioRenderer_OnInterruptEvent(ohAudioRenderer_, userData_, type, hint);
+    OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
+    if (audioRenderer->GetRendererInterruptEventCallbackType() == INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioRenderer_OnInterruptEvent != nullptr) {
+        OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
+        OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
+        callbacks_.OH_AudioRenderer_OnInterruptEvent(ohAudioRenderer_, userData_, type, hint);
+    }
+
+    if (audioRenderer->GetRendererInterruptEventCallbackType() == INTERRUPT_EVENT_CALLBACK_WITH_RESULT &&
+        onInterruptEventCallback_ != nullptr) {
+        OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
+        OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
+        onInterruptEventCallback_(ohAudioRenderer_, userData_, type, hint);
+    }
 }
 
 void OHServiceDiedCallback::OnAudioPolicyServiceDied()
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnError != nullptr, "pointer to the function is nullptr");
-    OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
-    callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+    OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
+    if (audioRenderer->GetRendererErrorCallbackType() == ERROR_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioRenderer_OnError != nullptr) {
+            OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
+        callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+    }
+
+    if (audioRenderer->GetRendererErrorCallbackType() == ERROR_CALLBACK_WITH_RESULT &&
+        errorCallback_ != nullptr) {
+            OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
+        errorCallback_(ohAudioRenderer_, userData_, error);
+    }
 }
 
 OH_AudioStream_Result OHAudioRendererErrorCallback::GetErrorResult(AudioErrors errorCode) const
@@ -793,10 +830,18 @@ OH_AudioStream_Result OHAudioRendererErrorCallback::GetErrorResult(AudioErrors e
 
 void OHAudioRendererErrorCallback::OnError(AudioErrors errorCode)
 {
-    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr && callbacks_.OH_AudioRenderer_OnError != nullptr,
-        "renderer client or error callback funtion is nullptr");
-    OH_AudioStream_Result error = GetErrorResult(errorCode);
-    callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
+    OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
+    if (audioRenderer->GetRendererErrorCallbackType() == ERROR_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioRenderer_OnError != nullptr) {
+        OH_AudioStream_Result error = GetErrorResult(errorCode);
+        callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+    }
+
+    if (audioRenderer->GetRendererErrorCallbackType() == ERROR_CALLBACK_WITH_RESULT && errorCallback_ != nullptr) {
+        OH_AudioStream_Result error = GetErrorResult(errorCode);
+        errorCallback_(ohAudioRenderer_, userData_, error);
+    }
 }
 
 void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
@@ -832,14 +877,34 @@ int32_t OHAudioRenderer::SetDefaultOutputDevice(DeviceType deviceType)
     return audioRenderer_->SetDefaultOutputDevice(deviceType);
 }
 
-void OHAudioRenderer::SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType)
+void OHAudioRenderer::SetRendererWriteDataCallbackType(WriteDataCallbackType writeDataCallbackType)
 {
     writeDataCallbackType_ = writeDataCallbackType;
 }
 
-WriteDataCallbackType OHAudioRenderer::GetRendererCallbackType()
+WriteDataCallbackType OHAudioRenderer::GetRendererWriteDataCallbackType()
 {
     return writeDataCallbackType_;
+}
+
+void OHAudioRenderer::SetRendererInterruptEventCallbackType(InterruptEventCallbackType InterruptEventCallbackType)
+{
+    interruptEventCallbackType_ = InterruptEventCallbackType;
+}
+
+InterruptEventCallbackType OHAudioRenderer::GetRendererInterruptEventCallbackType()
+{
+    return interruptEventCallbackType_;
+}
+
+void OHAudioRenderer::SetRendererErrorCallbackType(ErrorCallbackType errorCallbackType)
+{
+    errorCallbackType_ = errorCallbackType;
+}
+
+ErrorCallbackType OHAudioRenderer::GetRendererErrorCallbackType()
+{
+    return errorCallbackType_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

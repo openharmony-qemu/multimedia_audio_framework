@@ -249,6 +249,22 @@ public:
         return sharedAudioCapturer_->SetAudioSourceConcurrency(targetSources);
     }
 
+    void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override
+    {
+        return sharedAudioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
+    }
+
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+        const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override
+    {
+        return sharedAudioCapturer_->RegisterAudioPolicyServerDiedCb(clientPid, callback);
+    }
+
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override
+    {
+        return sharedAudioCapturer_->GetAudioTimestampInfo(timestamp, base);
+    }
+
     ~SharedCapturerWrapper() override = default;
 
     SharedCapturerWrapper(const SharedCapturerWrapper&) = delete;

@@ -748,6 +748,106 @@ typedef enum {
  */
 typedef OH_AudioData_Callback_Result (*OH_AudioRenderer_OnWriteDataCallback)(OH_AudioRenderer* renderer, void* userData,
     void* audioData, int32_t audioDataSize);
+
+/**
+ * @brief Callback function of audio interrupt event.
+ *
+ * This function pointer will point to the callback function that
+ * is used to handle audio interrupt events.
+ *
+ * @param renderer AudioRenderer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param type Interrupt event type.
+ * @param hint Interrupt event hint.
+ * @return Audio Data callback result.
+ * @see OH_AudioRenderer_Callbacks_Struct.OH_AudioRenderer_OnInterruptEvent
+ * @since 16
+ */
+typedef OH_AudioData_Callback_Result (*OH_AudioRenderer_OnInterruptCallback)(OH_AudioRenderer* renderer,
+    void* userData, OH_AudioInterrupt_ForceType type, OH_AudioInterrupt_Hint hint);
+
+/**
+ * @brief Callback function of audio error.
+ *
+ * This function pointer will point to the callback function that
+ * is used to  used to handle audio error result.
+ *
+ * @param renderer AudioRenderer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param error Error code.
+ * @return Audio Data callback result.
+ * @see OH_AudioRenderer_Callbacks_Struct.OH_AudioRenderer_OnError
+ * @since 16
+ */
+typedef OH_AudioData_Callback_Result (*OH_AudioRenderer_OnErrorCallback)(OH_AudioRenderer* renderer, void* userData,
+    OH_AudioStream_Result error);
+
+/**
+ * @brief Callback function of read data.
+ *
+ * This function is similar with OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnReadData instead of the return
+ * value.The return result of this function indicates whether the data has filled in the buffer successfully or not. If
+ * result is invalid, which indicates the record data do not fill in the buffer.
+ *
+ * @param capturer AudioCapturer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param audioData Audio data pointer, where fill in record data.
+ * @param audioDataSize Size of audio data that capturer has recorded.
+ * @return Audio Data callback result.
+ * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnReadData
+ * @since 16
+ */
+typedef OH_AudioData_Callback_Result (*OH_AudioCapturer_OnReadDataCallback)(OH_AudioCapturer* capturer, void* userData,
+    void* audioData, int32_t audioDataSize);
+
+/**
+ * @brief Callback function of stream events.
+ *
+ * This function is similar with OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnStreamEvent instead of the return
+ * value.The return result of this function indicates whether the stream event callabck is valid or not.
+ *
+ * @param capturer AudioCapturer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param event AudioStream event.
+ * @return OH_AudioData_Callback_Result.
+ * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnStreamEvent
+ * @since 16
+ */
+typedef void (*OH_AudioCapturer_OnDeviceChangeCallback)(OH_AudioCapturer* capturer, void* userData,
+    OH_AudioStream_Event event);
+
+/**
+ * @brief Callback function of  interrupt event.
+ *
+ * This function is similar with OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnInterruptEvent instead of the
+ * return value.
+ *
+ * @param capturer AudioCapturer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param forceType Type which is choose based on priorities.
+ * @param hintType Hint which is Selected hint type based on the interrupt type.
+ * @return Audio Data callback result.
+ * @see OH_AudioCapturer_OnInterruptEventCallbacks_Struct.OH_AudioCapturer_OnInterruptEvent
+ * @since 16
+ */
+typedef OH_AudioData_Callback_Result (*OH_AudioCapturer_OnInterruptCallback)(OH_AudioCapturer* capturer,
+    void* userData, OH_AudioInterrupt_ForceType forceType, OH_AudioInterrupt_Hint hintType);
+
+/**
+ * @brief Callback function of  error.
+ *
+ * This function is similar with OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnError instead of the return
+ * value.
+ *
+ * @param capturer AudioCapturer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param error Error which is represented the result status of audio stream operations.
+ * @return Audio Data callback result.
+ * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnError
+ * @since 16
+ */
+typedef OH_AudioData_Callback_Result (*OH_AudioCapturer_OnErrorCallback)(OH_AudioCapturer* capturer, void* userData,
+    OH_AudioStream_Result error);
 #ifdef __cplusplus
 }
 #endif

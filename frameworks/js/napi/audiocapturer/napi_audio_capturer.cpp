@@ -84,6 +84,8 @@ napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &const
         DECLARE_NAPI_FUNCTION("getCurrentMicrophones", GetCurrentMicrophones),
         DECLARE_NAPI_FUNCTION("getOverflowCount", GetOverflowCount),
         DECLARE_NAPI_FUNCTION("getOverflowCountSync", GetOverflowCountSync),
+        DECLARE_NAPI_FUNCTION("getAudioTimestampInfo", GetAudioTimestampInfo),
+        DECLARE_NAPI_FUNCTION("getAudioTimestampInfoSync", GetAudioTimestampInfoSync),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_GETTER("state", GetState),
@@ -909,6 +911,56 @@ napi_value NapiAudioCapturer::GetOverflowCountSync(napi_env env, napi_callback_i
     uint32_t overflowCount = napiAudioCapturer->audioCapturer_->GetOverflowCount();
 
     NapiParamUtils::SetValueUInt32(env, overflowCount, result);
+    return result;
+}
+
+napi_value NapiAudioCapturer::GetAudioTimestampInfo(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            "context object state is error.");
+        int32_t ret = napiAudioCapturer->audioCapturer_->GetAudioTimestampInfo(context->timeStamp,
+            Timestamp::Timestampbase::MONOTONIC);
+        if (ret != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetTimeStampInfo(env, context->timeStamp, output);
+    };
+
+    return NapiAsyncWork::Enqueue(env, context, "GetAudioTimestampInfo", executor, complete);
+}
+
+napi_value NapiAudioCapturer::GetAudioTimestampInfoSync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+
+    auto *napiAudioCapturer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invaild param");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr, result, "audioCapturer_ is nullptr");
+
+    Timestamp timeStamp;
+    int32_t ret = napiAudioCapturer->audioCapturer_->GetAudioTimestampInfo(timeStamp,
+        Timestamp::Timestampbase::MONOTONIC);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetAudioTimestampInfo failure!");
+    NapiParamUtils::SetTimeStampInfo(env, timeStamp, result);
     return result;
 }
 
