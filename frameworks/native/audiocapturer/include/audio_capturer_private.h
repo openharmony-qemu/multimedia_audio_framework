@@ -79,7 +79,11 @@ public:
         const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback) override;
     int32_t RegisterAudioCapturerEventListener() override;
     int32_t UnregisterAudioCapturerEventListener() override;
+    void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override;
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+        const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
 
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     int32_t RegisterCapturerPolicyServiceDiedCallback();
     int32_t RemoveCapturerPolicyServiceDiedCallback();
 
@@ -153,6 +157,7 @@ private:
     mutable std::shared_mutex switchStreamMutex_;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
+    std::shared_ptr<AudioCapturerErrorCallback> audioCapturerErrorCallback_ = nullptr;
     AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, false}, 0};
@@ -165,6 +170,7 @@ private:
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
     std::shared_ptr<CapturerPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     std::shared_ptr<AudioCapturerConcurrencyCallbackImpl> audioConcurrencyCallback_ = nullptr;
+    std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
     AudioDeviceDescriptor currentDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     bool latencyMeasEnabled_ = false;
     int32_t firstConcurrencyResult_ = 0; // 0 is SUCCESS in error code
@@ -176,6 +182,8 @@ private:
     std::mutex setCapturerCbMutex_;
     mutable std::shared_mutex capturerMutex_;
     std::mutex capturerPolicyServiceDiedCbMutex_;
+    std::mutex audioCapturerErrCallbackMutex_;
+    std::mutex policyServiceDiedCallbackMutex_;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

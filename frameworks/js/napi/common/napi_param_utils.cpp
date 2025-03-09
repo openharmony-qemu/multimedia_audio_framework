@@ -453,6 +453,18 @@ napi_status NapiParamUtils::SetStreamInfo(const napi_env &env, const AudioStream
     return napi_ok;
 }
 
+napi_status NapiParamUtils::SetTimeStampInfo(const napi_env &env, const Timestamp &timestamp, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetTimeStampInfo napi_create_object failed");
+    SetValueInt32(env, "framePos", static_cast<int64_t>(timestamp.framePosition), result);
+    static const int64_t secToNano = 1000000000;
+    int64_t time = timestamp.time.tv_sec * secToNano + timestamp.time.tv_nsec;
+    SetValueInt32(env, "timestamp", time, result);
+
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::SetValueInt32Element(const napi_env &env, const std::string &fieldStr,
     const std::vector<int32_t> &values, napi_value &result)
 {

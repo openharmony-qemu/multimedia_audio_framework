@@ -292,6 +292,104 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(OH_
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererWriteDataCallback(OH_AudioStreamBuilder* builder,
     OH_AudioRenderer_OnWriteDataCallback callback, void* userData);
+
+/**
+ * @brief Set the callback of interrupt event to renderer client.
+ *
+ * This function is similar with {@link OH_AudioStreamBuilder_SetRendererCallback}. Only the last callback set by
+ * OH_AudioStreamBuilder_SetRendererCallback or this function will become effective.
+ *
+ * @param builder Builder provided by OH_AudioStreamBuilder_Create()
+ * @param callback Callback to functions that will inte to renderer client.
+ * @param userData Pointer to an application data structure that will be passed to the callback functions.
+ * @return Result code.
+ *     {@link AUDIOSTREAM_SUCCESS} Success.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} Parameter is invalid, e.g. builder is nullptr, e.t.c.
+ * @since 16
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_OnInterruptCallback callback, void* userData);
+
+/**
+ * @brief Set the callback of error code to renderer client.
+ *
+ * This function is similar with {@link OH_AudioStreamBuilder_SetRendererCallback}. Only the last callback set by
+ * OH_AudioStreamBuilder_SetRendererCallback or this function will become effective.
+ *
+ * @param builder Builder provided by OH_AudioStreamBuilder_Create()
+ * @param callback Callback to functions that will inte to renderer client.
+ * @param userData Pointer to an application data structure that will be passed to the callback functions.
+ * @return Result code.
+ *     {@link AUDIOSTREAM_SUCCESS} Success.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} Parameter is invalid, e.g. builder is nullptr, e.t.c.
+ * @since 16
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererErrorCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_OnErrorCallback callback, void* userData);
+
+/**
+ * @brief Set the callback of reading data to capturer client.
+ *
+ * This function is similar with {@link OH_AudioStreamBuilder_SetCapturerCallback}. Only the last callback set by
+ * OH_AudioStreamBuilder_SetCapturerCallback or this function will become effective.
+ *
+ * @param builder Builder provided by OH_AudioStreamBuilder_Create()
+ * @param callback Callback to functions that will read audio data to capturer client.
+ * @param userData Pointer to an application data structure that will eb passed to the callback functions.
+ * @return Result code.
+ *     {@link AUDIOSTREAM_SUCCESS} Success.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} Parameter is invalid, e.g. builder is nullptr, e.t.c.
+ * @since 16
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerReadDataCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioCapturer_OnReadDataCallback callback, void* userData);
+
+/**
+ * @brief Set the callback of stream event to capturer client.
+ *
+ * This function is similar with {@link OH_AudioStreamBuilder_SetCapturerCallback}. Only the last callback set by
+ * OH_AudioStreamBuilder_SetCapturerCallback or this function will become effective.
+ *
+ * @param builder Builder provided by OH_AudioStreamBuilder_Create()
+ * @param callback Callback to functions that will handle audio capturer stream events to capturer client.
+ * @param userData Pointer to an application data structure that will eb passed to the callback functions.
+ * @return Result code.
+ *     {@link AUDIOSTREAM_SUCCESS} Success.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} Parameter is invalid, e.g. builder is nullptr, e.t.c.
+ * @since 16
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerDeviceChangeCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioCapturer_OnDeviceChangeCallback callback, void* userData);
+
+/**
+ * @brief Callback function of  interrupt event.
+ *
+ * This function is similar with {@OH_AudioStreamBuilder_SetCapturerCallback}. Only the last callback set by
+ * OH_AudioStreamBuilder_SetCapturerCallback or this function will become effective.
+ *
+ * @param builder builder provided by OH_AudioStreamBuilder_Create().
+ * @param callback Callback to Function that will int to capturer client.
+ * @param userData User data which is passed by user.
+ * @return result code.
+ * @since 16
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerInterruptCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioCapturer_OnInterruptCallback callback, void* userData);
+
+/**
+ * @brief Callback function of  error event.
+ *
+ * This function is similar with {@OH_AudioStreamBuilder_SetCapturerCallback}. Only the last callback set by
+ * OH_AudioStreamBuilder_SetCapturerCallback or this function will become effective.
+ *
+ * @param builder builder provided by OH_AudioStreamBuilder_Create().
+ * @param callback Callback to Function that will int to capturer client.
+ * @param userData User data which is passed by user.
+ * @return result code.
+ * @since 16
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerErrorCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioCapturer_OnErrorCallback callback, void* userData);
 #ifdef __cplusplus
 }
 #endif

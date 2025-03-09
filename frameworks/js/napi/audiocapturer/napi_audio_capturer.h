@@ -66,6 +66,7 @@ private:
         AudioCapturerOptions capturerOptions;
         AudioCapturerInfo capturerInfo;
         AudioStreamInfo streamInfo;
+        Timestamp timeStamp;
         uint32_t overflowCount;
     };
 
@@ -89,6 +90,8 @@ private:
     static napi_value GetBufferSizeSync(napi_env env, napi_callback_info info);
     static napi_value GetAudioStreamId(napi_env env, napi_callback_info info);
     static napi_value GetAudioStreamIdSync(napi_env env, napi_callback_info info);
+    static napi_value GetAudioTimestampInfo(napi_env env, napi_callback_info info);
+    static napi_value GetAudioTimestampInfoSync(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value GetCurrentInputDevices(napi_env env, napi_callback_info info);

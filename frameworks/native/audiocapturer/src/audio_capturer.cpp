@@ -487,6 +487,25 @@ int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCap
     return SUCCESS;
 }
 
+void AudioCapturerPrivate::SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback)
+{
+    std::shared_lock sharedLock(capturerMutex_);
+    std::lock_guard lock(audioCapturerErrCallbackMutex_);
+    audioCapturerErrorCallback_ = errorCallback;
+}
+
+int32_t AudioCapturerPrivate::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+    const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback)
+{
+    AUDIO_INFO_LOG("RegisterAudioPolicyServerDiedCb client id: %{public}d", clientPid);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
+
+    std::lock_guard<std::mutex> lock(policyServiceDiedCallbackMutex_);
+
+    policyServiceDiedCallback_ = callback;
+    return AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid, callback);
+}
+
 int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
@@ -785,6 +804,13 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
+}
+
+// diffrence from GetAudioPosition only when set speed
+int32_t AudioCapturerPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return audioStream_->GetAudioTimestampInfo(timestamp, base);
 }
 
 AudioCapturerInterruptCallbackImpl::AudioCapturerInterruptCallbackImpl(const std::shared_ptr<IAudioStream> &audioStream)

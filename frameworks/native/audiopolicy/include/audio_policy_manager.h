@@ -309,6 +309,8 @@ public:
     float GetMaxStreamVolume(void);
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
+    int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+        const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback);
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 
     int32_t RegisterAudioStreamPolicyServerDiedCb(
@@ -540,6 +542,7 @@ private:
     std::atomic<bool> isAudioPolicyClientRegisted_ = false;
 
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
+    static std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> capturerCB_;
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
     static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> clientTrackerStubMap_;
 

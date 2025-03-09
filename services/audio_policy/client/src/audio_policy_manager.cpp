@@ -43,6 +43,7 @@ constexpr auto SLEEP_TIMES_RETYT_FAILED = 1min;
 std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
+std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> AudioPolicyManager::capturerCB_;
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
 std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> AudioPolicyManager::clientTrackerStubMap_;
 
@@ -211,6 +212,9 @@ int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callback
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
 {
     GetInstance().ResetClientTrackerStubMap();
+    if (auto capturerCb = capturerCB_.lock()) {
+        capturerCb->OnAudioPolicyServiceDied();
+    }
     {
         std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
         AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
@@ -1252,6 +1256,14 @@ int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t client
         rendererCBMap_.erase(clientPid);
     }
     rendererCBMap_[clientPid] = callback;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
+    const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
+    capturerCB_ = callback;
     return SUCCESS;
 }
 
