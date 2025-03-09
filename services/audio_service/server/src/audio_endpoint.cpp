@@ -886,7 +886,6 @@ bool AudioEndpointInner::DelayStopDevice()
             false, "Sink stop failed.");
     }
     isStarted_ = false;
-    delayStopTime_ = INT64_MAX;
     return true;
 }
 
@@ -1041,7 +1040,6 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         workThreadCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_IN_DEFAULT), [this] {
             return endpointStatus_ != STARTING;
         });
-        AUDIO_DEBUG_LOG("LinkProcessStream wait start end.");
     }
 
     if (endpointStatus_ == RUNNING) {
@@ -1052,6 +1050,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     if (endpointStatus_ == UNLINKED) {
         endpointStatus_ = IDEL; // handle push_back in IDEL
         if (isDeviceRunningInIdel_) {
+            delayStopTime_ = INT64_MAX;
             CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
             delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
                 ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : LINK_RECORDER_DELAY_STOP_HDI_TIME_NS);
