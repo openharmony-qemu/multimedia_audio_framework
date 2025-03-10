@@ -778,7 +778,7 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
         futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
             [this] () {
                 return (state_ != RUNNING) ||
-                    (clientBuffer_->GetAvailableDataFrames() >= static_cast<int32_t>(spanSizeInFrame_));
+                    (static_cast<uint32_t>(clientBuffer_->GetAvailableDataFrames()) >= spanSizeInFrame_);
             });
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
         CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
