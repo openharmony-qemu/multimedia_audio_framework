@@ -1040,6 +1040,25 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_048, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_049
+* @tc.desc  : Test MuteSinkForSwitchDistributedDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_049, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
+    audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
+    audioDeviceCommon.MuteSinkForSwitchDistributedDevice(rendererChangeInfo,
+        audioDeviceDescriptorUniqueptrVector, reason);
+    EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_050
 * @tc.desc  : Test IsRendererStreamRunning interface.
 */
