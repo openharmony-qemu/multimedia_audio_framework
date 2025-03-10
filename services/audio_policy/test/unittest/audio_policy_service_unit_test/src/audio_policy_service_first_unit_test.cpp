@@ -1012,9 +1012,16 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_003, TestSize.Level1)
     InternalDeviceType deviceType = DEVICE_TYPE_NONE;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     string retPortName = "";
+    bool isEnable = false;
 
     // case 13 InternalDeviceType::DEVICE_TYPE_HDMI
     deviceType = DEVICE_TYPE_HDMI;
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
+    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
+    EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
+
+    isEnable = true;
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(DP_SINK, retPortName);
 
@@ -1022,6 +1029,11 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_003, TestSize.Level1)
     deviceType = DEVICE_TYPE_LINE_DIGITAL;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(DP_SINK, retPortName);
+
+    isEnable = false;
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
+    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
+    EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 }
 
 /**
