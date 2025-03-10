@@ -41,6 +41,18 @@ public:
     void TearDown();
 };
 
+class RemoteObjectTestStub : public IRemoteObject {
+public:
+    RemoteObjectTestStub() : IRemoteObject(u"IRemoteObject") {}
+    int32_t GetObjectRefCount() { return 0; };
+    int SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) { return 0; };
+    bool AddDeathRecipient(const sptr<DeathRecipient> &recipient) { return true; };
+    bool RemoveDeathRecipient(const sptr<DeathRecipient> &recipient) { return true; };
+    int Dump(int fd, const std::vector<std::u16string> &args) { return 0; };
+
+    DECLARE_INTERFACE_DESCRIPTOR(u"RemoteObjectTestStub");
+};
+
 void IpcStreamStubUnitTest::SetUpTestCase(void)
 {
     // input testsuit setup step，setup invoked before all testcases
@@ -595,6 +607,181 @@ HWTEST(IpcStreamStubUnitTest, IpcStreamStub_023, TestSize.Level1)
         OnRemoteRequest(IpcStream::IpcStreamMsg::ON_SET_RATE,
             data, reply, option);
     EXPECT_NE(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test IpcStreamStub API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamStub_024
+ * @tc.desc  : Test IpcStreamStub::OnMiddleCodeRemoteRequest.
+ */
+HWTEST(IpcStreamStubUnitTest, IpcStreamStub_024, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    int32_t ret = 0;
+    sptr<IpcStreamInServer> ptrIpcStreamStub = IpcStreamInServer::Create(config, ret);
+
+    EXPECT_NE(ptrIpcStreamStub, nullptr);
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    auto result = ptrIpcStreamStub->OnMiddleCodeRemoteRequest(IpcStream::IpcStreamMsg::ON_SET_DUCK_FACTOR,
+        data, reply, option);
+    EXPECT_EQ(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test IpcStreamStub API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamStub_025
+ * @tc.desc  : Test IpcStreamStub::OnMiddleCodeRemoteRequest.
+ */
+HWTEST(IpcStreamStubUnitTest, IpcStreamStub_025, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    int32_t ret = 0;
+    sptr<IpcStreamInServer> ptrIpcStreamStub = IpcStreamInServer::Create(config, ret);
+
+    EXPECT_NE(ptrIpcStreamStub, nullptr);
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    auto result = ptrIpcStreamStub->OnMiddleCodeRemoteRequest(IpcStream::IpcStreamMsg::ON_SET_DEFAULT_OUTPUT_DEVICE,
+        data, reply, option);
+    EXPECT_EQ(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test IpcStreamStub API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamStub_026
+ * @tc.desc  : Test IpcStreamStub::OnRemoteRequest.
+ */
+HWTEST(IpcStreamStubUnitTest, IpcStreamStub_026, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    int32_t ret = 0;
+    sptr<IpcStreamInServer> ptrIpcStreamStub = IpcStreamInServer::Create(config, ret);
+
+    EXPECT_NE(ptrIpcStreamStub, nullptr);
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    auto result = ptrIpcStreamStub->
+        OnRemoteRequest(IpcStream::IpcStreamMsg::ON_REGISTER_STREAM_LISTENER,
+            data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::ON_RESOLVE_BUFFER,
+            data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::ON_GET_AUDIO_SESSIONID,
+        data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::ON_START,
+        data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::ON_STOP,
+        data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::ON_RELEASE,
+        data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::ON_FLUSH,
+        data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test IpcStreamStub API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamStub_027
+ * @tc.desc  : Test IpcStreamStub::OnRemoteRequest.
+ */
+HWTEST(IpcStreamStubUnitTest, IpcStreamStub_027, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    int32_t ret = 0;
+    sptr<IpcStreamInServer> ptrIpcStreamStub = IpcStreamInServer::Create(config, ret);
+
+    EXPECT_NE(ptrIpcStreamStub, nullptr);
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    auto result = ptrIpcStreamStub->
+        OnRemoteRequest(IpcStream::IpcStreamMsg::ON_DRAIN,
+            data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::ON_UPDATA_PLAYBACK_CAPTURER_CONFIG,
+            data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::OH_GET_AUDIO_POSITION,
+        data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::OH_GET_AUDIO_POSITION,
+        data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test IpcStreamStub API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamStub_028
+ * @tc.desc  : Test IpcStreamStub::HandleRegisterStreamListener.
+ */
+HWTEST(IpcStreamStubUnitTest, IpcStreamStub_028, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    int32_t ret = 0;
+    sptr<IpcStreamInServer> ptrIpcStreamStub = IpcStreamInServer::Create(config, ret);
+    ASSERT_TRUE(ptrIpcStreamStub != nullptr);
+
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto result = ptrIpcStreamStub->HandleRegisterStreamListener(data, reply);
+    EXPECT_EQ(result, AUDIO_INVALID_PARAM);
+
+    sptr<IRemoteObject> impl = new RemoteObjectTestStub();
+    data.WriteRemoteObject(impl);
+    result = ptrIpcStreamStub->HandleRegisterStreamListener(data, reply);
+    EXPECT_EQ(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test IpcStreamStub API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamStub_029
+ * @tc.desc  : Test IpcStreamStub::HandleResolveBuffer.
+ */
+HWTEST(IpcStreamStubUnitTest, IpcStreamStub_029, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    int32_t ret = 0;
+    sptr<IpcStreamInServer> ptrIpcStreamStub = IpcStreamInServer::Create(config, ret);
+    ASSERT_TRUE(ptrIpcStreamStub != nullptr);
+
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto result = ptrIpcStreamStub->HandleResolveBuffer(data, reply);
+    EXPECT_EQ(result, AUDIO_OK);
 }
 } // namespace AudioStandard
 } // namespace OHOS
