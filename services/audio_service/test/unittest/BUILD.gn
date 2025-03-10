@@ -905,3 +905,25 @@ ohos_unittest("resource_manager_adapter_unit_test") {
     "ipc:ipc_core",
   ]
 }
+
+ohos_unittest("policy_handler_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  include_dirs = [ "../../../../services/audio_service/server/include" ]
+
+  sources = [ "policy_handler_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  cflags = [ "-fno-access-control" ]
+
+  deps = [ "../../../audio_service:audio_process_service_static" ]
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+}
