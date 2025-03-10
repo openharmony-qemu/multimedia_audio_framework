@@ -896,6 +896,21 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
     return deviceInfo;
 }
 
+void AudioService::CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord)
+{
+    // release at once to avoid normal fastsource and voip fastsource existing at the same time
+    if (isVoip && isRecord) {
+        for (auto &item : endpointList_) {
+            if (item.second->GetAudioMode() == AudioMode::AUDIO_MODE_RECORD) {
+                std::string endpointName = item.second->GetEndpointName();
+                DelayCallReleaseEndpoint(endpointName, 0);
+                AUDIO_INFO_LOG("Release endpoint %{public}s change to now", endpointName.c_str());
+                break;
+            }
+        }
+    }
+}
+
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
     const AudioProcessConfig &clientConfig, bool isVoipStream)
 {
@@ -913,6 +928,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
             AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
             return endpointList_[deviceKey];
         } else {
+            CheckBeforeVoipEndpointCreate(isVoipStream, clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
             std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ?
                 AudioEndpoint::TYPE_VOIP_MMAP : AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
             CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
