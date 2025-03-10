@@ -23,7 +23,6 @@
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
-#include "access_token.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -42,19 +41,19 @@ static void GetPermission()
 {
     if (!g_hasPermission) {
         uint64_t tokenId;
-        constexpr int perNum = 10;
+        constexpr int perNum = 1;
         const char *perms[perNum] = {
             "ohos.permission.MANAGE_AUDIO_CONFIG",
         };
 
         NativeTokenInfoParams infoInstance = {
             .dcapsNum = 0,
-            .permsNum = 10,
+            .permsNum = 1,
             .aclsNum = 0,
             .dcaps = nullptr,
             .perms = perms,
             .acls = nullptr,
-            .processName = "audio_policy_service_unit_test",
+            .processName = "audio_routing_manager_unit_test",
             .aplStr = "system_basic",
         };
         tokenId = GetAccessTokenId(&infoInstance);
