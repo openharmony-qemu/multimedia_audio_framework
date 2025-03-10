@@ -654,5 +654,16 @@ int32_t AudioPolicyUtils::UnexcludeOutputDevices(std::vector<std::shared_ptr<Aud
 
     return SUCCESS;
 }
+
+void AudioPolicyUtils::SetScoExcluded(bool scoExcluded)
+{
+    isScoExcluded_ = scoExcluded;
+}
+
+bool AudioPolicyUtils::GetScoExcluded()
+{
+    return isScoExcluded_;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
