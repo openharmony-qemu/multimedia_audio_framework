@@ -242,7 +242,7 @@ void ReleaseRenderIdFuzzTest()
         true);
 }
 
-typedef void (*TestFuncs[23])();
+typedef void (*TestFuncs[22])();
 
 TestFuncs g_testFuncs = {
     InitFuzzTest,
