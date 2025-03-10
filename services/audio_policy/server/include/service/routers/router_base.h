@@ -21,6 +21,7 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_policy_log.h"
 #include "audio_state_manager.h"
+#include "audio_state_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -51,7 +52,8 @@ public:
         // remove abnormal device or excluded device
         for (const auto &desc : descs) {
             if (desc->exceptionFlag_ || !desc->isEnable_ ||
-                (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == SUSPEND_CONNECTED) ||
+                (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+                (desc->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded())) ||
                 AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, desc)) {
                 continue;
             }
