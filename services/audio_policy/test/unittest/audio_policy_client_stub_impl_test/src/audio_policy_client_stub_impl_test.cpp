@@ -612,5 +612,29 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_028, TestSize.Le
     audioPolicyClient->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     EXPECT_NE(audioPolicyClient, nullptr);
 }
+
+/**
+* @tc.name  : Test AudioDeviceDescriptor.
+* @tc.number: AudioDeviceDescriptor_001
+* @tc.desc  : Test AudioDeviceDescriptor/MapInternalToExternalDeviceType.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.hasPair_ = true;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(), DEVICE_TYPE_USB_HEADSET);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(), DEVICE_TYPE_USB_HEADSET);
+    deviceDescriptor.hasPair_ = false;
+    deviceDescriptor.deviceRole_ = OUTPUT_DEVICE;
+    deviceDescriptor.MapInternalToExternalDeviceType();
+    deviceDescriptor.deviceRole_ = INPUT_DEVICE;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(), DEVICE_TYPE_USB_DEVICE);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(), DEVICE_TYPE_BLUETOOTH_A2DP);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(), DEVICE_TYPE_SPEAKER);
+}
 } // namespace AudioStandard
 } // namespace OHOS

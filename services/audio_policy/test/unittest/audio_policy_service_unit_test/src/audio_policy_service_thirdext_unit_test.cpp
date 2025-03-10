@@ -1199,5 +1199,18 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnloadModernInnerCapSink_001, TestSiz
     int32_t ret = server->audioPolicyService_.UnloadModernInnerCapSink(1);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioDeviceManager_001
+* @tc.desc  : Test AudioDeviceManager interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceManager_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest AudioDeviceManager_001 start");
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioDeviceManager_.FindConnectedDeviceById(1);
+}
 } // namespace AudioStandard
 } // namespace OHOS
