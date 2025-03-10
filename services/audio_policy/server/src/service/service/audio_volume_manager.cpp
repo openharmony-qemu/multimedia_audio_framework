@@ -257,7 +257,7 @@ void AudioVolumeManager::UpdateVolumeForLowLatency()
         vol.isMute = GetStreamMute(*iter);
         vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevelNoMuteState(*iter));
         vol.volumeFloat = audioPolicyManager_.GetSystemVolumeInDb(*iter,
-            (Volume.isMute ? 0 : volumeInt), curOutputDeviceType);
+            (vol.isMute ? 0 : vol.volumeInt), curOutputDeviceType);
         SetSharedVolume(*iter, curOutputDeviceType, vol);
     }
     SetSharedAbsVolumeScene(audioPolicyManager_.IsAbsVolumeScene());
