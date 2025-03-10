@@ -455,8 +455,8 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
 
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0, ERR_INVALID_PARAM, "No device to exclude");
 
-    if (audioDeviceDescriptor.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        aidopDeviceDescriptors.front()->macAddress_.empty()) {
+    if (audioDeviceDescriptors.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        audioDeviceDescriptors.front()->macAddress_.empty()) {
         AudioPolicyUtils::GetInstance().SetScoExcluded(true);
         return SUCCESS;
     }
@@ -498,8 +498,8 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
 int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    if (audioDeviceDescriptor.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        aidopDeviceDescriptors.front()->macAddress_.empty()) {
+    if (audioDeviceDescriptors.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        audioDeviceDescriptors.front()->macAddress_.empty()) {
         AudioPolicyUtils::GetInstance().SetScoExcluded(false);
         return SUCCESS;
     }
