@@ -383,6 +383,8 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
     audioEffectChain->SetSpatializationSceneType(spatializationSceneType_);
     audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
+    audioEffectChain->SetLidState(lidState_);
+    audioEffectChain->SetFoldState(foldState_);
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)
