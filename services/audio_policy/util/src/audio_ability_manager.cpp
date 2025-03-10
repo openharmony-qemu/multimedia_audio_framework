@@ -38,12 +38,7 @@ AudioAbilityManager *AudioAbilityManager::GetInstance()
     return &audioManager;
 }
 
-AudioAbilityManager::~AudioAbilityManager()
-{
-    if (g_asProxy != nullptr) {
-        g_asProxy = nullptr;
-    }
-}
+AudioAbilityManager::~AudioAbilityManager() {}
 
 static const sptr<IStandardAudioService> GetAudioAbilityManagerProxy()
 {

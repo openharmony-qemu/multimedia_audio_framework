@@ -254,6 +254,135 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_001, TestSize.Level1
 }
 
 /**
+ * @tc.name  : Test GetExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_002
+ * @tc.desc  : Test GetExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys;
+    std::string mainKey = "PCM_DUMP";
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test GetExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_003
+ * @tc.desc  : Test GetExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys;
+    std::string mainKey = "test_003";
+    AudioServer::audioParameterKeys = {
+        {
+            "Category1", {
+                {"Key1", {"Value1", "Value2"}}
+            }
+        }
+    };
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    auto it = AudioServer::audioParameterKeys.find(mainKey);
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase(mainKey);
+    }
+}
+
+/**
+ * @tc.name  : Test GetExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_004
+ * @tc.desc  : Test GetExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_004, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys;
+    std::string mainKey = "test_004";
+    AudioServer::audioParameterKeys = {
+        {
+            "test_004", {
+                {"Key1", {"Value1", "Value2"}}
+            }
+        }
+    };
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(SUCCESS, ret);
+    auto it = AudioServer::audioParameterKeys.find(mainKey);
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase(mainKey);
+    }
+}
+
+/**
+ * @tc.name  : Test GetExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_005
+ * @tc.desc  : Test GetExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_005, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys = {"test_005"};
+    std::string mainKey = "test_005";
+    AudioServer::audioParameterKeys = {
+        {
+            "test_005", {
+                {"test_005", {"Value1", "Value2"}}
+            }
+        }
+    };
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(SUCCESS, ret);
+    auto it = AudioServer::audioParameterKeys.find(mainKey);
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase(mainKey);
+    }
+}
+
+/**
+ * @tc.name  : Test GetExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_006
+ * @tc.desc  : Test GetExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_006, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys = {""};
+    std::string mainKey = "test_006";
+    AudioServer::audioParameterKeys = {
+        {
+            "test_006", {
+                {"test_006", {"Value1", "Value2"}}
+            }
+        }
+    };
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    auto it = AudioServer::audioParameterKeys.find(mainKey);
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase(mainKey);
+    }
+}
+
+/**
  * @tc.name  : Test CheckAndPrintStacktrace API
  * @tc.type  : FUNC
  * @tc.number: AudioServerGetExtraParameters_001
@@ -266,6 +395,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckAndPrintStacktrace, TestSize.Level
     EXPECT_TRUE(audioServer->CheckAndPrintStacktrace("dump_pulseaudio_stacktrace"));
 
     EXPECT_TRUE(audioServer->CheckAndPrintStacktrace("recovery_audio_server"));
+
+    EXPECT_TRUE(audioServer->CheckAndPrintStacktrace("dump_pa_stacktrace_and_kill"));
+
+    EXPECT_FALSE(audioServer->CheckAndPrintStacktrace(""));
 }
 
 /**
@@ -548,6 +681,21 @@ HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test PermissionChecker API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerPermissionChecker_003
+ * @tc.desc  : Test PermissionChecker interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_RECORD;
+    bool ret = audioServer->PermissionChecker(config);
+    EXPECT_FALSE(ret);
+}
+
+/**
  * @tc.name  : Test CheckRecorderPermission API
  * @tc.type  : FUNC
  * @tc.number: AudioServerCheckRecorderPermission_001
@@ -581,6 +729,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
     EXPECT_TRUE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    ret = audioServer->CheckRecorderPermission(config);
+    EXPECT_TRUE(ret);
+
+    config.appInfo.appUid = 0;
     ret = audioServer->CheckRecorderPermission(config);
     EXPECT_TRUE(ret);
 }
@@ -723,9 +875,23 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_001, TestSize.Level1
     config.audioMode = AUDIO_MODE_RECORD;
     int32_t errorCode = 0;
     audioServer->CreateAudioProcess(config, errorCode);
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    audioServer->CreateAudioProcess(config, errorCode);
     EXPECT_EQ(errorCode, 0);
+}
+
+/**
+ * @tc.name  : Test CreateAudioProcess API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCreateAudioProcess_002
+ * @tc.desc  : Test CreateAudioProcess interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    int32_t errorCode = 0;
+    audioServer->waitCreateStreamInServerCount_ = 6;
+    audioServer->CreateAudioProcess(config, errorCode);
+    EXPECT_EQ(errorCode, ERR_RETRY_IN_CLIENT);
 }
 
 /**

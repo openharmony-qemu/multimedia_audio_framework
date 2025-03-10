@@ -687,6 +687,9 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_027, TestSize.Level1
     format = SAMPLE_S32LE;
     ret = ConvertToHdiAdapterFormat(format);
     EXPECT_EQ(ret, SAMPLE_S32LE);
+    format = SAMPLE_F32LE;
+    ret = ConvertToHdiAdapterFormat(format);
+    EXPECT_EQ(ret, SAMPLE_F32LE);
     format = INVALID_WIDTH;
     ret = ConvertToHdiAdapterFormat(format);
     EXPECT_EQ(ret, INVALID_WIDTH);
