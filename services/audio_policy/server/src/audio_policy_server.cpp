@@ -484,6 +484,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
     keyOptionMute->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_MUTE);
     keyOptionMute->SetFinalKeyDown(true);
     keyOptionMute->SetFinalKeyDownDuration(VOLUME_MUTE_KEY_DURATION);
+    keyOptionMute->SetRepeat(false);
     guard.CheckCurrTimeout();
     int32_t muteKeySubId = im->SubscribeKeyEvent(keyOptionMute,
         [this](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {

@@ -541,7 +541,7 @@ private:
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t VOLUME_CHANGE_FACTOR = 1;
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
-    static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 1;
+    static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 0;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t EDM_SERVICE_UID = 3057;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
