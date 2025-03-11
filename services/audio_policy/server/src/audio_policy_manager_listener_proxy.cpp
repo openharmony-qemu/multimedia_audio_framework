@@ -155,7 +155,7 @@ bool AudioPolicyManagerListenerProxy::OnQueryAllowedPlayback(int32_t uid, int32_
     data.WriteInt32(pid);
 
     int error = Remote()->SendRequest(ON_QUERY_ALLOWED_PLAYBACK, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OnQueryAllowedPlayback failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, true, "OnQueryAllowedPlayback failed, error: %{public}d", error);
     return reply.ReadBool();
 }
 } // namespace AudioStandard
