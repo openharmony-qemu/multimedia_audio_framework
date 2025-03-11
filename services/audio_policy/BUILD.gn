@@ -523,7 +523,6 @@ audio_ohos_library("audio_policy_client") {
     "client/src/audio_policy_manager_device.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
-    "client/src/audio_service_load.cpp",
     "client/src/audio_spatialization_state_change_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
     "client/src/proxy/audio_policy_callback_proxy.cpp",
