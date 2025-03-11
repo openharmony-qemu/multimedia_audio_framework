@@ -224,9 +224,9 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
     if (resMode.size() == resSize) {
         std::string modeString = "";
         modeString = resMode[1];
-        auto itAceMode = AEC_MODE_MAP.find(modeString);
-        if (itAceMode != AEC_MODE_MAP.end()) {
-            asrAecMode = itAceMode->second;
+        auto itAecMode = AEC_MODE_MAP.find(modeString);
+        if (itAecMode != AEC_MODE_MAP.end()) {
+            asrAecMode = itAecMode->second;
         } else {
             AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
