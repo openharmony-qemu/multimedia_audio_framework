@@ -1027,7 +1027,7 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
             curMaxAmplitude = value;
         }
     }
-    return float(curMaxAmplitude) / INT_MAX;
+    return float(curMaxAmplitude) / static_cast<float>(INT_MAX);
 }
 
 template <typename T>
