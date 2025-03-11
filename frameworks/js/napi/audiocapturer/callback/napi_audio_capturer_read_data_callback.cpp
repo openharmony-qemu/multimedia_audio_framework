@@ -48,7 +48,6 @@ void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callb
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     if (callbackName == READ_DATA_CALLBACK_NAME) {
         capturerReadDataCallback_ = cb;
-        callback_ = callback;
         isCallbackInited_ = true;
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
@@ -63,14 +62,14 @@ void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_va
     napi_value copyValue = nullptr;
 
     if (callback == nullptr) {
-        napi_status ret = napi_delete_reference(env, callback_);
+        napi_status ret = napi_delete_reference(env, capturerReadDataCallback_->cb_);
         CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
         AUDIO_INFO_LOG("Remove Js Callback");
         capturerReadDataCallback_->cb_ = nullptr;
         return;
     }
 
-    napi_get_reference_value(env, callback_, &copyValue);
+    napi_get_reference_value(env, capturerReadDataCallback_->cb_, &copyValue);
     CHECK_AND_RETURN_LOG(copyValue != nullptr, "copyValue is nullptr");
     CHECK_AND_RETURN_LOG(napi_strict_equals(env, callback, copyValue, &isEquals) == napi_ok,
         "get napi_strict_equals failed");

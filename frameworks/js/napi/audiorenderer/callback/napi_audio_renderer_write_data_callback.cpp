@@ -61,7 +61,6 @@ void NapiRendererWriteDataCallback::AddCallbackReference(const std::string &call
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     if (callbackName == WRITE_DATA_CALLBACK_NAME) {
         rendererWriteDataCallback_ = cb;
-        callback_ = callback;
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
@@ -74,14 +73,14 @@ void NapiRendererWriteDataCallback::RemoveCallbackReference(napi_env env, napi_v
     napi_value copyValue = nullptr;
 
     if (callback == nullptr) {
-        napi_status ret = napi_delete_reference(env, callback_);
+        napi_status ret = napi_delete_reference(env, rendererWriteDataCallback_->cb_);
         CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
         rendererWriteDataCallback_->cb_ = nullptr;
         AUDIO_INFO_LOG("Remove Js Callback");
         return;
     }
 
-    napi_get_reference_value(env, callback_, &copyValue);
+    napi_get_reference_value(env, rendererWriteDataCallback_->cb_, &copyValue);
     CHECK_AND_RETURN_LOG(copyValue != nullptr, "copyValue is nullptr");
     CHECK_AND_RETURN_LOG(napi_strict_equals(env, callback, copyValue, &isEquals) == napi_ok,
         "get napi_strict_equals failed");
