@@ -868,6 +868,8 @@ void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
     RegisterAccessiblilityBalance();
     RegisterAccessiblilityMono();
+    AUDIO_INFO_LOG("Registering accessibility blance and accessibility mono successfully");
+    AUDIO_INFO_LOG("Registering accessibility monitor helper successfully");
 }
 
 void AudioPolicyService::RegisterAccessiblilityBalance()

@@ -2723,7 +2723,7 @@ void AudioPolicyServer::RegisterBluetoothListener()
 
 void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
 {
-    AUDIO_INFO_LOG("SubscribeAccessibilityConfigObserver");
+    AUDIO_INFO_LOG("OnAddSystemAbility accessibility config observer service start");
     audioPolicyService_.SubscribeAccessibilityConfigObserver();
 }
 
