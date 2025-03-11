@@ -1468,7 +1468,7 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
     std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
     if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
         if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
-            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+            audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
             audioStream_->SetSilentModeAndMixWithOthers(on);
