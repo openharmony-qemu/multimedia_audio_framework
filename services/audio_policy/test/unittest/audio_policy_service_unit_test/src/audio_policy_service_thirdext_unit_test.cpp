@@ -1199,5 +1199,142 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnloadModernInnerCapSink_001, TestSiz
     int32_t ret = server->audioPolicyService_.UnloadModernInnerCapSink(1);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test ExcludeOutputDevices
+ * @tc.number: ExcludeOutputDevices_001
+ * @tc.desc  : Test ExcludeOutputDevices interfaces.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, ExcludeOutputDevices_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ExcludeOutputDevices_001 start");
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
+    audioDeviceDescriptors.push_back(audioDevDesc);
+
+    int32_t ret = server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+
+/**
+ * @tc.name  : Test ExcludeOutputDevices
+ * @tc.number: ExcludeOutputDevices_002
+ * @tc.desc  : Test ExcludeOutputDevices interfaces.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, ExcludeOutputDevices_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ExcludeOutputDevices_002 start");
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
+    audioDeviceDescriptors.push_back(audioDevDesc);
+
+    int32_t ret = server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name   : Test UnexcludeOutputDevices API
+ * @tc.number : UnexcludeOutputDevicesTest_001
+ * @tc.desc   : Test UnexcludeOutputDevices interface.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_001 start");
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
+    audioDeviceDescriptors.push_back(audioDevDesc);
+
+    server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    int32_t result = server->audioPolicyService_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_001() result:%{public}d", result);
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test UnexcludeOutputDevices API
+ * @tc.number : UnexcludeOutputDevicesTest_002
+ * @tc.desc   : Test UnexcludeOutputDevices interface.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_002 start");
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
+    audioDeviceDescriptors.push_back(audioDevDesc);
+
+    server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    int32_t result = server->audioPolicyService_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_002() result:%{public}d", result);
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test GetExcludedDevices API
+ * @tc.number : GetExcludedDevicesTest_001
+ * @tc.desc   : Test GetExcludedDevices interface.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetExcludedDevicesTest_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetExcludedDevicesTest_001 start");
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
+        server->audioPolicyService_.GetExcludedDevices(audioDevUsage);
+    EXPECT_EQ(audioDeviceDescriptors.size(), 0);
+}
+
+/**
+ * @tc.name   : Test GetExcludedDevices API
+ * @tc.number : GetExcludedDevicesTest_002
+ * @tc.desc   : Test GetExcludedDevices interface.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetExcludedDevicesTest_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetExcludedDevicesTest_002 start");
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
+        server->audioPolicyService_.GetExcludedDevices(audioDevUsage);
+    EXPECT_EQ(audioDeviceDescriptors.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
