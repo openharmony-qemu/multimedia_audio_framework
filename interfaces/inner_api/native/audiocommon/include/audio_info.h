@@ -363,6 +363,7 @@ struct AudioParameters {
     StreamUsage usage;
     DeviceRole deviceRole;
     DeviceType deviceType;
+    AudioVolumeMode mode;
 };
 
 struct A2dpDeviceConfigInfo {

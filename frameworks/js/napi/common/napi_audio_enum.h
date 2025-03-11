@@ -54,8 +54,8 @@ public:
     };
 
     enum AudioJsVolumeMode {
-        AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL = 0,
-        AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL
+        SYSTEM_GLOBAL = 0,
+        APP_INDIVIDUAL
     };
 
     enum AudioRingMode {
@@ -143,6 +143,8 @@ private:
     static napi_value SetDeviceRole(napi_env env, napi_callback_info info);
     static napi_value GetDeviceType(napi_env env, napi_callback_info info);
     static napi_value SetDeviceType(napi_env env, napi_callback_info info);
+    static napi_value GetVolumeMode(napi_env env, napi_callback_info info);
+    static napi_value SetVolumeMode(napi_env env, napi_callback_info info);
 
     static napi_value CreateEnumObject(const napi_env &env, const std::map<std::string, int32_t> &map,
         napi_ref &ref);

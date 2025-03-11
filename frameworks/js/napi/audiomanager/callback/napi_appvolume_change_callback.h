@@ -25,7 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string APP_VOLUME_CHANGE_CALLBACK_NAME_FOR_UID = "appVolumeChangeForUID";
+const std::string APP_VOLUME_CHANGE_CALLBACK_NAME_FOR_UID = "appVolumeChangeForUid";
 const std::string APP_VOLUME_CHANGE_CALLBACK_NAME = "appVolumeChange";
 class NapiAudioManagerAppVolumeChangeCallback : public AudioManagerAppVolumeChangeCallback {
 public:
