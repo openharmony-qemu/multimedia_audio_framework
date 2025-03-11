@@ -1201,6 +1201,19 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnloadModernInnerCapSink_001, TestSiz
 }
 
 /**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioDeviceManager_001
+* @tc.desc  : Test AudioDeviceManager interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceManager_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest AudioDeviceManager_001 start");
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioDeviceManager_.FindConnectedDeviceById(1);
+}
+
+/**
  * @tc.name  : Test ExcludeOutputDevices
  * @tc.number: ExcludeOutputDevices_001
  * @tc.desc  : Test ExcludeOutputDevices interfaces.
@@ -1223,7 +1236,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ExcludeOutputDevices_001, TestSize.Le
     int32_t ret = server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     EXPECT_EQ(SUCCESS, ret);
 }
-
 
 /**
  * @tc.name  : Test ExcludeOutputDevices
