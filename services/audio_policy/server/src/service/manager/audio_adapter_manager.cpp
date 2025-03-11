@@ -399,6 +399,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevelWithDevice(AudioStreamType stre
     if (currentActiveDevice_ != deviceType) {
         handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
     } else {
+        volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
         handler_->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
     }
     SetDeviceSafeVolume(streamType, volumeLevel);
