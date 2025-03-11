@@ -1398,17 +1398,13 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 int32_t AudioPolicyServer::SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
     bool isUpdateUi, bool mute, DeviceType deviceType)
 {
-    int32_t ret = audioPolicyService_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
-    if (ret == SUCCESS) {
-        UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
-    } else if (ret == ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
-        AUDIO_ERR_LOG("fail to set system volume level by safe vol");
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    int32_t ret = SUCCESS;
+    if (curOutputDeviceType != deviceType) {
+        ret = audioPolicyService_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
     } else {
-        AUDIO_ERR_LOG("fail to set system volume level, ret is %{public}d", ret);
+        ret = SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi, mute);
     }
-
     return ret;
 }
 
