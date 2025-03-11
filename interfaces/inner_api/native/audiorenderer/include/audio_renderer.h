@@ -651,6 +651,19 @@ public:
     static std::vector<AudioEncodingType> GetSupportedEncodingTypes();
 
     /**
+     * @brief Mute the buffer form (addr + offset) to (addr + offset + length). Make sure the buffer is valid!
+     *
+     * @param addr Indicates the buffer.
+     * @param offset Indicates the offset base, which can be zero.
+     * @param length Indicates the length to be mute.
+     * @param format Indicates the format.
+     *
+     * @return Returns {@link SUCCESS} or an error code defined in {@link audio_errors.h}.
+     * @since 8
+     */
+    static int32_t MuteAudioBuffer(uint8_t *addr, size_t offset, size_t length, AudioSampleFormat format);
+
+    /**
      * @brief Sets the render mode. By default the mode is RENDER_MODE_NORMAL.
      * This API is needs to be used only if RENDER_MODE_CALLBACK is required.
      *
