@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_policy_server.h"
-#include <dlfcn.h>
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -71,9 +70,6 @@ const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
     STREAM_MUSIC
 };
 
-constexpr int32_t SYSTEM_STATUS_START = 1;
-constexpr int32_t SYSTEM_STATUS_STOP = 0;
-constexpr int32_t SYSTEM_PROCESS_TYPE = 1;
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
@@ -224,7 +220,6 @@ void AudioPolicyServer::AddSystemAbilityListeners()
     AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
-    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
 #endif
@@ -248,7 +243,6 @@ void AudioPolicyServer::OnStop()
 #endif
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
-    NotifyProcessStatus(false);
     return;
 }
 
@@ -294,56 +288,12 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #endif
         default:
-            OnAddSystemAbilityExtract(systemAbilityId, deviceId);
+            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
     // eg. done systemAbilityId: [3001] cost 780ms
     AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
         (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
-}
-
-void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId)
-{
-    AUDIO_INFO_LOG("SA Id is :%{public}d", systemAbilityId);
-    switch (systemAbilityId) {
-        case MEMORY_MANAGER_SA_ID:
-            NotifyProcessStatus(true);
-            break;
-        default:
-            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
-            break;
-    }
-}
-
-void AudioPolicyServer::NotifyProcessStatus(bool isStart)
-{
-    int pid = getpid();
-    void *libMemMgrClientHandle = dlopen("libmemmgrclient.z.so", RTLD_NOW);
-    if (!libMemMgrClientHandle) {
-        AUDIO_ERR_LOG("dlopen libmemmgrclient library failed");
-        return;
-    }
-    void *notifyProcessStatusFunc = dlsym(libMemMgrClientHandle, "notify_process_status");
-    if (!notifyProcessStatusFunc) {
-        AUDIO_ERR_LOG("dlsm notify_process_status failed");
-#ifndef TEST_COVERAGE
-        dlclose(libMemMgrClientHandle);
-#endif
-        return;
-    }
-    auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
-    if (isStart) {
-        AUDIO_ERR_LOG("notify to memmgr when audio_policy_server is started");
-        // 1 indicates the service is started
-        notifyProcessStatus(pid, SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_START, AUDIO_POLICY_SERVICE_ID);
-    } else {
-        AUDIO_ERR_LOG("notify to memmgr when audio_policy_server is stopped");
-        // 0 indicates the service is stopped
-        notifyProcessStatus(pid, SYSTEM_PROCESS_TYPE, SYSTEM_STATUS_STOP, AUDIO_POLICY_SERVICE_ID);
-    }
-#ifndef TEST_COVERAGE
-    dlclose(libMemMgrClientHandle);
-#endif
 }
 
 void AudioPolicyServer::HandleKvDataShareEvent()
