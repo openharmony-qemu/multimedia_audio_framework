@@ -3583,8 +3583,14 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
     }
 }
 
-static void SetThreadPriority()
+static void SetThreadPriority(char *sinkName)
 {
+    if (!strcmp(sinkName, OFFLOAD_SINK_NAME)) {
+        // offload process data thread does not need to set qos priority
+        ScheduleThreadInServer(getpid(), gettid());
+        return;
+    }
+
     if (g_isFirstStarted) {
         char paraValue[30] = {0}; // 30 for system parameter
         int32_t ret = GetParameter(BOOT_ANIMATION_FINISHED_EVENT, "false", paraValue, sizeof(paraValue));
@@ -3603,14 +3609,26 @@ static void SetThreadPriority()
     }
 }
 
+static void UnsetThreadPriority(char *sinkName)
+{
+    if (!strcmp(sinkName, OFFLOAD_SINK_NAME)) {
+        // offload case
+        UnscheduleThreadInServer(getpid(), gettid());
+        return;
+    }
+
+    // primary case
+    ReSetThreadQosLevel();
+}
+
 static void ThreadFuncRendererTimerBus(void *userdata)
 {
-    // set audio thread priority
-    SetThreadPriority();
-
     struct Userdata *u = userdata;
 
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
+
+    // set audio thread priority
+    SetThreadPriority(u->sink->name);
 
     const char *deviceClass = u->primary.sinkAdapter->deviceClass;
     AUDIO_INFO_LOG("Thread %s(use timing bus) starting up, pid %d, tid %d", deviceClass, getpid(), gettid());
@@ -3662,7 +3680,9 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         ThreadFuncRendererTimerProcessData(u);
     }
-    ReSetThreadQosLevel();
+
+    // Unset audio thread priority
+    UnsetThreadPriority(u->sink->name);
 }
 
 static void ThreadFuncWriteHDIMultiChannel(void *userdata)
