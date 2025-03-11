@@ -948,7 +948,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
         devType, isConnected, GetEncryptStr(macAddress).c_str());
 
     auto devDesc = make_shared<AudioDeviceDescriptor>(updatedDesc);
-    if (audioDeviceManager_.IsConnectedDevices(devDesc) && devDesc->connectState_ == VIRTUAL_CONNECTED) {
+    if (!isActualConnection && audioDeviceManager_.IsConnectedDevices(devDesc)) {
         audioDeviceManager_.UpdateVirtualDevices(devDesc, isConnected);
         return;
     }

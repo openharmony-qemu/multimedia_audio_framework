@@ -952,6 +952,9 @@ int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
         ERR_INVALID_PARAM, "invalid parameter: only support output device");
     auto unexcludeOutputDevices = GetExcludedDevices(audioDevUsage);
+    if (unexcludeOutputDevices.empty()) {
+        return SUCCESS;
+    }
     for (const auto &devDesc : unexcludeOutputDevices) {
         CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter: mull pointer in list");
         CHECK_AND_RETURN_RET_LOG(!(devDesc->deviceType_ == DEVICE_TYPE_SPEAKER &&

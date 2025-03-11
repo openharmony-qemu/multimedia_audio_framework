@@ -1483,7 +1483,7 @@ void AudioManagerProxy::SetDefaultAdapterEnable(bool isEnable)
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_DEFAULT_ADAPTER_ENABLE), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetTvSupport failed, error: %{public}d", error);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetDefaultAdapterEnable failed, error: %{public}d", error);
     return;
 }
 

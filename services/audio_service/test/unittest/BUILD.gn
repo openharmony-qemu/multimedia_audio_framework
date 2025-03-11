@@ -285,6 +285,7 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
     "../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_policy:audio_foundation",
     "../../../../services/audio_service:audio_client",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_service_static",

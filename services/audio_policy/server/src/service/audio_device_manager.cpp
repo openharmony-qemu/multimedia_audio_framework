@@ -269,7 +269,7 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
         if (it != connectedDevices_.end()) {
             if (devDesc->connectState_ != VIRTUAL_CONNECTED && IsVirtualDevicesExist(devDesc)) {
                 (*it)->connectState_ = VIRTUAL_CONNECTED;
-                break;
+                continue;
             }
             if ((*it)->pairDeviceDescriptor_ != nullptr) {
                 (*it)->pairDeviceDescriptor_->pairDeviceDescriptor_ = nullptr;
@@ -286,7 +286,6 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
     CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
     auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &desc) {
         return desc->connectState_ != VIRTUAL_CONNECTED &&
-            desc->deviceRole_ == devDesc->deviceRole_ &&
             desc->deviceType_ == devDesc->deviceType_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->macAddress_ == devDesc->macAddress_;
@@ -296,6 +295,8 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
     if (itr != connectedDevices_.end()) {
         isConnectedDevice = true;
     }
+    AUDIO_INFO_LOG("Connected list %{public}s",
+        AudioPolicyUtils::GetInstance().GetDevicesStr(connectedDevices_).c_str());
     return isConnectedDevice;
 }
 
@@ -305,7 +306,7 @@ void AudioDeviceManager::UpdateVirtualDevices(const std::shared_ptr<AudioDeviceD
     if (isConnected) {
         AddVirtualDevices(devDesc);
     } else {
-        RemoveVirtualConnectedDevice(devDesc);
+        RemoveVirtualDevices(devDesc);
     }
 }
 
@@ -313,8 +314,7 @@ void AudioDeviceManager::AddVirtualDevices(const std::shared_ptr<AudioDeviceDesc
 {
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Invalid device descriptor");
     auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &desc) {
-        return desc->deviceRole_ == devDesc->deviceRole_ &&
-            desc->deviceType_ == devDesc->deviceType_ &&
+        return desc->deviceType_ == devDesc->deviceType_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->macAddress_ == devDesc->macAddress_;
     };
@@ -332,27 +332,23 @@ void AudioDeviceManager::RemoveVirtualDevices(const std::shared_ptr<AudioDeviceD
 {
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Invalid device descriptor");
     auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &desc) {
-        return desc->deviceRole_ == devDesc->deviceRole_ &&
-            desc->deviceType_ == devDesc->deviceType_ &&
+        return desc->deviceType_ == devDesc->deviceType_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->macAddress_ == devDesc->macAddress_;
     };
 
-    auto it = find_if(virtualDevices_.begin(), virtualDevices_.end(), isPresent);
-    if (it != virtualDevices_.end()) {
-        std::lock_guard<std::mutex> lock(virtualDevicesMutex_);
-        virtualDevices_.erase(it);
-        AUDIO_INFO_LOG("VirtualDevices list %{public}s",
-            AudioPolicyUtils::GetInstance().GetDevicesStr(virtualDevices_).c_str());
-    }
+    std::lock_guard<std::mutex> lock(virtualDevicesMutex_);
+    virtualDevices_.erase(std::remove_if(virtualDevices_.begin(), virtualDevices_.end(), isPresent),
+        virtualDevices_.end());
+    AUDIO_INFO_LOG("VirtualDevices list %{public}s",
+        AudioPolicyUtils::GetInstance().GetDevicesStr(virtualDevices_).c_str());
 }
 
 bool AudioDeviceManager::IsVirtualDevicesExist(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
     auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &desc) {
-        return desc->deviceRole_ == devDesc->deviceRole_ &&
-            desc->deviceType_ == devDesc->deviceType_ &&
+        return desc->deviceType_ == devDesc->deviceType_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->macAddress_ == devDesc->macAddress_;
     };
