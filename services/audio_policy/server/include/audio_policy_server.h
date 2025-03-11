@@ -59,10 +59,6 @@ class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
 
-const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
-    STREAM_NOTIFICATION
-};
-
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
                           public AudioStreamRemovedCallback,
