@@ -697,7 +697,7 @@ private:
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
-    AudioActiveDevice& audioActiveDevice_ = AudioActiveDevice::GetInstance();
+    AudioActiveDevice& audioActiveDevice_;
     std::mutex onStartLock_;
     bool isOnStart = false;
 };
