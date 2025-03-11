@@ -3585,7 +3585,7 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
 
 static void SetThreadPriority(char *sinkName)
 {
-    if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
+    if (!strcmp(sinkName, OFFLOAD_SINK_NAME)) {
         // offload process data thread does not need to set qos priority
         ScheduleThreadInServer(getpid(), gettid());
         return;
@@ -3611,7 +3611,7 @@ static void SetThreadPriority(char *sinkName)
 
 static void UnsetThreadPriority(char *sinkName)
 {
-    if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
+    if (!strcmp(sinkName, OFFLOAD_SINK_NAME)) {
         // offload case
         UnscheduleThreadInServer(getpid(), gettid());
         return;
