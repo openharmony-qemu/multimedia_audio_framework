@@ -647,7 +647,8 @@ void AudioSpatializationService::InitSpatializationState()
         }
 
         ret = settingProvider.GetIntValue(SPATIALIZATION_SCENE_SETTINGKEY, sceneType);
-        if (ret != SUCCESS || sceneType < SPATIALIZATION_SCENE_TYPE_DEFAULT || sceneType > SPATIALIZATION_SCENE_TYPE_MAX) {
+        if (ret != SUCCESS || sceneType < SPATIALIZATION_SCENE_TYPE_DEFAULT ||
+                sceneType > SPATIALIZATION_SCENE_TYPE_MAX) {
             AUDIO_WARNING_LOG("Failed to read spatialization_scene from setting db! Err: %{public}d", ret);
             WriteSpatializationStateToDb(WRITE_SPATIALIZATION_SCENE);
         } else {
