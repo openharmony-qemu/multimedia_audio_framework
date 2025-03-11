@@ -71,6 +71,10 @@ const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
     STREAM_MUSIC
 };
 
+const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
+    STREAM_NOTIFICATION
+};
+
 constexpr int32_t SYSTEM_STATUS_START = 1;
 constexpr int32_t SYSTEM_STATUS_STOP = 0;
 constexpr int32_t SYSTEM_PROCESS_TYPE = 1;
@@ -110,7 +114,8 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
-      audioPolicyDump_(AudioPolicyDump::GetInstance())
+      audioPolicyDump_(AudioPolicyDump::GetInstance()),
+      audioActiveDevice_(AudioActiveDevice::GetInstance())
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
@@ -1398,17 +1403,13 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 int32_t AudioPolicyServer::SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
     bool isUpdateUi, bool mute, DeviceType deviceType)
 {
-    int32_t ret = audioPolicyService_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
-    if (ret == SUCCESS) {
-        UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
-    } else if (ret == ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
-        AUDIO_ERR_LOG("fail to set system volume level by safe vol");
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    int32_t ret = SUCCESS;
+    if (curOutputDeviceType != deviceType) {
+        ret = audioPolicyService_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
     } else {
-        AUDIO_ERR_LOG("fail to set system volume level, ret is %{public}d", ret);
+        ret = SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi, mute);
     }
-
     return ret;
 }
 
