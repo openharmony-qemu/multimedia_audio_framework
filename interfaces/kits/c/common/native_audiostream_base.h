@@ -46,6 +46,8 @@
 extern "C" {
 #endif
 
+struct OH_AudioDeviceDescriptorArray;
+
 /**
  * @brief Define the result of the function execution.
  *
@@ -761,7 +763,7 @@ typedef OH_AudioData_Callback_Result (*OH_AudioRenderer_OnWriteDataCallback)(OH_
  * @param hint Interrupt event hint.
  * @return Audio Data callback result.
  * @see OH_AudioRenderer_Callbacks_Struct.OH_AudioRenderer_OnInterruptEvent
- * @since 16
+ * @since 18
  */
 typedef OH_AudioData_Callback_Result (*OH_AudioRenderer_OnInterruptCallback)(OH_AudioRenderer* renderer,
     void* userData, OH_AudioInterrupt_ForceType type, OH_AudioInterrupt_Hint hint);
@@ -777,7 +779,7 @@ typedef OH_AudioData_Callback_Result (*OH_AudioRenderer_OnInterruptCallback)(OH_
  * @param error Error code.
  * @return Audio Data callback result.
  * @see OH_AudioRenderer_Callbacks_Struct.OH_AudioRenderer_OnError
- * @since 16
+ * @since 18
  */
 typedef OH_AudioData_Callback_Result (*OH_AudioRenderer_OnErrorCallback)(OH_AudioRenderer* renderer, void* userData,
     OH_AudioStream_Result error);
@@ -795,7 +797,7 @@ typedef OH_AudioData_Callback_Result (*OH_AudioRenderer_OnErrorCallback)(OH_Audi
  * @param audioDataSize Size of audio data that capturer has recorded.
  * @return Audio Data callback result.
  * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnReadData
- * @since 16
+ * @since 18
  */
 typedef OH_AudioData_Callback_Result (*OH_AudioCapturer_OnReadDataCallback)(OH_AudioCapturer* capturer, void* userData,
     void* audioData, int32_t audioDataSize);
@@ -808,13 +810,13 @@ typedef OH_AudioData_Callback_Result (*OH_AudioCapturer_OnReadDataCallback)(OH_A
  *
  * @param capturer AudioCapturer where this callback occurs.
  * @param userData User data which is passed by user.
- * @param event AudioStream event.
+ * @param deviceArray Audio device descriptors should be released.
  * @return OH_AudioData_Callback_Result.
  * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnStreamEvent
- * @since 16
+ * @since 18
  */
 typedef void (*OH_AudioCapturer_OnDeviceChangeCallback)(OH_AudioCapturer* capturer, void* userData,
-    OH_AudioStream_Event event);
+    OH_AudioDeviceDescriptorArray* deviceArray);
 
 /**
  * @brief Callback function of  interrupt event.
@@ -828,7 +830,7 @@ typedef void (*OH_AudioCapturer_OnDeviceChangeCallback)(OH_AudioCapturer* captur
  * @param hintType Hint which is Selected hint type based on the interrupt type.
  * @return Audio Data callback result.
  * @see OH_AudioCapturer_OnInterruptEventCallbacks_Struct.OH_AudioCapturer_OnInterruptEvent
- * @since 16
+ * @since 18
  */
 typedef OH_AudioData_Callback_Result (*OH_AudioCapturer_OnInterruptCallback)(OH_AudioCapturer* capturer,
     void* userData, OH_AudioInterrupt_ForceType forceType, OH_AudioInterrupt_Hint hintType);
@@ -844,7 +846,7 @@ typedef OH_AudioData_Callback_Result (*OH_AudioCapturer_OnInterruptCallback)(OH_
  * @param error Error which is represented the result status of audio stream operations.
  * @return Audio Data callback result.
  * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnError
- * @since 16
+ * @since 18
  */
 typedef OH_AudioData_Callback_Result (*OH_AudioCapturer_OnErrorCallback)(OH_AudioCapturer* capturer, void* userData,
     OH_AudioStream_Result error);
