@@ -546,7 +546,7 @@ int32_t AudioHfpManager::ConnectScoUponDefaultScene(int8_t category)
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
-    int32_t ret = hfpInstance_->ConnectSco(static_cast<uint8_t>(ScoCategory::SCO_VIRTUAL));
+    int32_t ret = BluetoothScoManager::HandleScoConnect(ScoCategory::SCO_VIRTUAL);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "ConnectSco failed, result: %{public}d", ret);
     return ret;
 }
