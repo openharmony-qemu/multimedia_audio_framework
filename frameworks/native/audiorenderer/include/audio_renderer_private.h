@@ -19,6 +19,8 @@
 #include <shared_mutex>
 #include <optional>
 
+#include "securec.h"
+
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
 #include "audio_renderer.h"
