@@ -237,7 +237,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
         AdjustAudioBalance(&data, len);
     }
     CheckUpdateState(&data, len);
-    if (switchDeviceMute_) {
+    if (switchDeviceMute_ || deviceConnectedFlag_) {
         Trace trace("AudioRenderSink::RenderFrame::renderEmpty");
         if (memset_s(reinterpret_cast<void *>(&data), static_cast<size_t>(len), 0, static_cast<size_t>(len)) != EOK) {
             AUDIO_WARNING_LOG("call memset_s fail");
@@ -435,6 +435,13 @@ int32_t AudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
         }
     }
 
+    return SUCCESS;
+}
+
+int32_t AudioRenderSink::SetDeviceConnectedFlag(bool flag)
+{
+    AUDIO_INFO_LOG("flag %{public}d", flag);
+    deviceConnectedFlag_ = flag;
     return SUCCESS;
 }
 

@@ -545,5 +545,14 @@ void AudioServerProxy::UnloadHdiAdapterProxy(uint32_t devMgrType, const std::str
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+void AudioServerProxy::SetDeviceConnectedFlag(bool flag)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->SetDeviceConnectedFlag(flag);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 }
 }

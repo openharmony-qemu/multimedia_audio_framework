@@ -343,6 +343,17 @@ int32_t SinkAdapterSplitRenderFrame(struct SinkAdapter *adapter, char *data, uin
     return sink->SplitRenderFrame(*data, len, *writeLen, streamType);
 }
 
+int32_t SinkSetDeviceConnectedFlag(struct SinkAdapter *adapter, bool flag)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
+ 
+    return sink->SetDeviceConnectedFlag(flag);
+}
+
 #ifdef __cplusplus
 }
 #endif

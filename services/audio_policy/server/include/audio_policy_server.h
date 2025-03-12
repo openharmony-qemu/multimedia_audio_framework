@@ -523,6 +523,9 @@ public:
     void UpdateSafeVolumeByS4();
     AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
 
+    void CheckConnectedDevice();
+    void SetDeviceConnectedFlagFalseAfterDuration();
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void RegisterParamCallback();

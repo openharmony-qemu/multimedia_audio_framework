@@ -494,6 +494,8 @@ public:
 #endif
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
+    void CheckConnectedDevice();
+    void SetDeviceConnectedFlagFalseAfterDuration();
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

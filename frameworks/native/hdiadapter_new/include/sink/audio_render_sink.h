@@ -62,6 +62,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
+    int32_t SetDeviceConnectedFlag(bool flag) override;
 
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
     int32_t GetAudioScene(void) override;
@@ -179,6 +180,8 @@ private:
     std::string address_ = "";
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
     std::mutex sinkMutex_;
+    // primary extend function
+    virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
 };
 
 } // namespace AudioStandard

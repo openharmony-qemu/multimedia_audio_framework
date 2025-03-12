@@ -2321,5 +2321,13 @@ void AudioServer::UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapt
 
     HdiAdapterManager::GetInstance().UnloadAdapter(static_cast<HdiDeviceManagerType>(devMgrType), adapterName, force);
 }
+
+void AudioServer::SetDeviceConnectedFlag(bool flag)
+{
+    std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
+    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
+    primarySink->SetDeviceConnectedFlag(flag);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
