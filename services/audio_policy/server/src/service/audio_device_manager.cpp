@@ -246,6 +246,7 @@ void AudioDeviceManager::AddConnectedDevices(const shared_ptr<AudioDeviceDescrip
 
 void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
+    Trace trace("AudioDeviceManager::RemoveConnectedDevices");
     auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &descriptor) {
         if (descriptor->deviceType_ == devDesc->deviceType_ &&
             descriptor->networkId_ == devDesc->networkId_) {
@@ -265,10 +266,12 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
     };
 
     for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
+        Trace traceSec("AudioDeviceManager::RemoveConnectedDevices:erase");
         it = find_if(it, connectedDevices_.end(), isPresent);
         if (it != connectedDevices_.end()) {
             if (devDesc->connectState_ != VIRTUAL_CONNECTED && IsVirtualDevicesExist(devDesc)) {
                 (*it)->connectState_ = VIRTUAL_CONNECTED;
+                ++it;
                 continue;
             }
             if ((*it)->pairDeviceDescriptor_ != nullptr) {
@@ -295,7 +298,7 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
     if (itr != connectedDevices_.end()) {
         isConnectedDevice = true;
     }
-    AUDIO_INFO_LOG("Connected list %{public}s",
+    AUDIO_INFO_LOG("isConnectedDevice %{public}d, connected list %{public}s", isConnectedDevice,
         AudioPolicyUtils::GetInstance().GetDevicesStr(connectedDevices_).c_str());
     return isConnectedDevice;
 }
@@ -319,9 +322,9 @@ void AudioDeviceManager::AddVirtualDevices(const std::shared_ptr<AudioDeviceDesc
             desc->macAddress_ == devDesc->macAddress_;
     };
 
+    std::lock_guard<std::mutex> lock(virtualDevicesMutex_);
     auto it = find_if(virtualDevices_.begin(), virtualDevices_.end(), isPresent);
     if (it == virtualDevices_.end()) {
-        std::lock_guard<std::mutex> lock(virtualDevicesMutex_);
         virtualDevices_.push_back(devDesc);
         AUDIO_INFO_LOG("VirtualDevices list %{public}s",
             AudioPolicyUtils::GetInstance().GetDevicesStr(virtualDevices_).c_str());
@@ -355,7 +358,10 @@ bool AudioDeviceManager::IsVirtualDevicesExist(const std::shared_ptr<AudioDevice
 
     std::lock_guard<std::mutex> lock(virtualDevicesMutex_);
     auto it = find_if(virtualDevices_.begin(), virtualDevices_.end(), isPresent);
-    return it != virtualDevices_.end();
+    bool isExist = it != virtualDevices_.end();
+    AUDIO_INFO_LOG("isVirtualDevicesExist %{public}d, virtualDevices list %{public}s", isExist,
+        AudioPolicyUtils::GetInstance().GetDevicesStr(virtualDevices_).c_str());
+    return isExist;
 }
 
 void AudioDeviceManager::AddDefaultDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -521,6 +527,7 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
 
 void AudioDeviceManager::RemoveNewDevice(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
+    Trace trace("AudioDeviceManager::RemoveNewDevice");
     int32_t audioId = devDesc->deviceId_;
     AUDIO_INFO_LOG("remove type:id %{public}d:%{public}d ", devDesc->getType(), audioId);
 
