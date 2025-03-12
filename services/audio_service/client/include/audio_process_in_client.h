@@ -23,6 +23,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+class FastAudioStream;
+
 class AudioDataCallback {
 public:
     virtual ~AudioDataCallback() = default;
@@ -50,7 +53,8 @@ class AudioProcessInClient {
 public:
     static constexpr int32_t PROCESS_VOLUME_MAX = 1 << 16; // 0 ~ 65536
     static bool CheckIfSupport(const AudioProcessConfig &config);
-    static std::shared_ptr<AudioProcessInClient> Create(const AudioProcessConfig &config);
+    static std::shared_ptr<AudioProcessInClient> Create(const AudioProcessConfig &config,
+        std::weak_ptr<FastAudioStream> weakStream);
 
     virtual ~AudioProcessInClient() = default;
 

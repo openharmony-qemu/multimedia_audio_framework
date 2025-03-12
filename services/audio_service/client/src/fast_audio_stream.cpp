@@ -46,6 +46,7 @@ FastAudioStream::~FastAudioStream()
     if (state_ != RELEASED && state_ != NEW) {
         ReleaseAudioStream(false);
     }
+    AUDIO_INFO_LOG("FastAudioStream dtor, session %{public}u", sessionId_);
 }
 
 void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
@@ -126,7 +127,10 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     CHECK_AND_RETURN_RET_LOG(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
         "Stream is not supported.");
     processconfig_ = config;
-    processClient_ = AudioProcessInClient::Create(config);
+    // OS_AudioPlayCb/RecordCb should lock weak_ptr of FastAudioStream before calling OnWriteData to
+    // avoid using FastAudioStream after free in callback.
+    auto weakStream = weak_from_this();
+    processClient_ = AudioProcessInClient::Create(config, weakStream);
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_INVALID_PARAM,
         "Client test creat process client fail.");
     state_ = PREPARED;

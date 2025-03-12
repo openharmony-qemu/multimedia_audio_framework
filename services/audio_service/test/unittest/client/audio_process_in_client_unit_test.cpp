@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include "audio_process_in_client.h"
 #include "audio_process_in_client.cpp"
+#include "fast_audio_stream.h"
 
 using namespace testing::ext;
 
@@ -1402,9 +1403,10 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_070, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = false;
     auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
+    auto ptrFastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_RECORD, config.appInfo.appUid);
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-    bool ret = ptrAudioProcessInClientInner->Init(config);
+    bool ret = ptrAudioProcessInClientInner->Init(config, ptrFastAudioStream);
     EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard

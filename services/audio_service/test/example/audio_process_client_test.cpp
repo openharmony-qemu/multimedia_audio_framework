@@ -34,6 +34,7 @@
 #include "parameter.h"
 #include "pcm2wav.h"
 #include "audio_process_in_client.h"
+#include "fast_audio_stream.h"
 
 using namespace std;
 namespace OHOS {
@@ -328,6 +329,8 @@ private:
     std::shared_ptr<AudioProcessInClient> micProcessClient_ = nullptr;
     std::shared_ptr<AudioProcessTestCallback> spkProcClientCb_ = nullptr;
     std::shared_ptr<AudioProcessTestCallback> micProcClientCb_ = nullptr;
+    std::shared_ptr<FastAudioStream> spkFastAudioStream_ = nullptr;
+    std::shared_ptr<FastAudioStream> micFastAudioStream_ = nullptr;
     int32_t loopCount_ = -1; // for loop
     bool isInited_ = false;
 };
@@ -584,7 +587,9 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
         cout << "channels:" << config.streamInfo.channels << endl;
     }
 
-    spkProcessClient_ = AudioProcessInClient::Create(config);
+    spkFastAudioStream_ = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    spkProcessClient_ = AudioProcessInClient::Create(config, spkFastAudioStream_);
     CHECK_AND_RETURN_RET_LOG(spkProcessClient_ != nullptr, ERR_INVALID_HANDLE,
         "Client test creat process client fail.");
 
@@ -673,7 +678,9 @@ int32_t AudioProcessTest::InitMic(bool isRemote)
         return ERROR_UNSUPPORTED;
     }
 
-    micProcessClient_ = AudioProcessInClient::Create(config);
+    micFastAudioStream_ = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_RECORD, config.appInfo.appUid);
+    micProcessClient_ = AudioProcessInClient::Create(config, micFastAudioStream_);
     CHECK_AND_RETURN_RET_LOG(micProcessClient_ != nullptr, ERR_INVALID_HANDLE,
         "Client test creat process client fail.");
 
