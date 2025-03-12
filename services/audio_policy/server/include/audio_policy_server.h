@@ -59,10 +59,6 @@ class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
 
-const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
-    STREAM_NOTIFICATION
-};
-
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
                           public AudioStreamRemovedCallback,
@@ -695,6 +691,7 @@ private:
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
+    AudioActiveDevice& audioActiveDevice_;
     std::mutex onStartLock_;
     bool isOnStart = false;
 };

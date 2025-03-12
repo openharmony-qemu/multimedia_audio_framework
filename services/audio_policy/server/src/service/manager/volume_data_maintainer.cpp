@@ -732,6 +732,10 @@ std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType
         AUDIO_ERR_LOG("device %{public}d is not supported for datashare", deviceType);
         return "";
     }
+    if (VolumeUtils::IsPCVolumeEnable() && streamType == AudioStreamType::STREAM_MUSIC &&
+        deviceType == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO) {
+        type = AUDIO_STREAMTYPE_VOLUME_MAP[STREAM_VOICE_CALL];
+    }
     return type + deviceTypeName;
 }
 
@@ -751,6 +755,10 @@ std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, 
     if (deviceTypeName == "") {
         AUDIO_ERR_LOG("device %{public}d is not supported for datashare", deviceType);
         return "";
+    }
+    if (VolumeUtils::IsPCVolumeEnable() && streamType == AudioStreamType::STREAM_MUSIC &&
+        deviceType == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO) {
+        type = AUDIO_STREAMTYPE_VOLUME_MAP[STREAM_VOICE_CALL];
     }
     return type + deviceTypeName;
 }

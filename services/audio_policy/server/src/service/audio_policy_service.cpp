@@ -889,6 +889,7 @@ void AudioPolicyService::RegisterAccessiblilityBalance()
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver balance failed");
     }
+    AUDIO_INFO_LOG("Register accessibility balance successfully");
 }
 
 void AudioPolicyService::RegisterAccessiblilityMono()
@@ -906,6 +907,7 @@ void AudioPolicyService::RegisterAccessiblilityMono()
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver mono failed");
     }
+    AUDIO_INFO_LOG("Register accessibility mono successfully");
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
@@ -951,13 +953,13 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
 
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
-    AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_INFO_LOG("audioMono = %{public}s", audioMono? "true": "false");
     AudioServerProxy::GetInstance().SetAudioMonoStateProxy(audioMono);
 }
 
 void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
-    AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
+    AUDIO_INFO_LOG("audioBalance = %{public}f", audioBalance);
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
 

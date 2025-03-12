@@ -1495,20 +1495,22 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
     Trace trace(std::string("AudioRenderer::SetSilentModeAndMixWithOthers:") + (on ? "on" : "off"));
     std::shared_lock<std::shared_mutex> sharedLockSwitch(rendererMutex_);
     std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
-    if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
-        if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
-            audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
+    if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
+        audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
+        if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
             int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
-            audioStream_->SetSilentModeAndMixWithOthers(on);
-            return;
-        } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
-            audioStream_->SetSilentModeAndMixWithOthers(on);
-            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
-            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
-            return;
         }
+        audioStream_->SetSilentModeAndMixWithOthers(on);
+        return;
+    } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
+        audioStream_->SetSilentModeAndMixWithOthers(on);
+        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
+        if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
+            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, true);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "ActivateAudioInterrupt Failed");
+        }
+        return;
     }
     audioStream_->SetSilentModeAndMixWithOthers(on);
 }
