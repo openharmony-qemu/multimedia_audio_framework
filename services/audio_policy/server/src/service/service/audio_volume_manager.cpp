@@ -1049,18 +1049,8 @@ int32_t AudioVolumeManager::DealWithEventVolume(const int32_t notificationId)
 
 int32_t AudioVolumeManager::ResetRingerModeMute()
 {
-    if (!ringerModeMute_.load()) {
-        std::unique_lock<std::mutex> lock(ringerModeMuteMutex_);
-        bool resetWaiting = ringerModeMuteCondition_.wait_for(lock,
-            std::chrono::milliseconds(WAIT_RINGER_MODE_MUTE_RESET_TIME_MS),
-            [this] { return !ringerModeMute_.load(); }
-        );
-        if (!resetWaiting || audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_DEFAULT) {
-            AUDIO_INFO_LOG("reset ringer mode mute after time out.");
-            if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
-                ringerModeMute_.store(true);
-            }
-        }
+    if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
+        SetRingerModeMute(true);
     }
     return SUCCESS;
 }

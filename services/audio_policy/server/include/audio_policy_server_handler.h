@@ -253,8 +253,6 @@ private:
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
-    void ResetRingerModeMute(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
-
     std::vector<AudioRendererInfo> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
 
