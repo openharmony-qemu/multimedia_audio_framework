@@ -1719,7 +1719,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_019, TestSize.Level1)
     MessageParcel reply;
     MessageOption option;
     auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
-    EXPECT_NE(AUDIO_ERR, ret);
+    EXPECT_EQ(AUDIO_OK, ret);
 }
 
 /**
