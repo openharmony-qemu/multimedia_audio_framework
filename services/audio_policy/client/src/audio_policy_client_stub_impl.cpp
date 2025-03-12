@@ -814,6 +814,10 @@ void AudioPolicyClientStubImpl::OnCapturerStateChange(
         }
     }
     for (auto it = tmpCallbackList.begin(); it != tmpCallbackList.end(); ++it) {
+        if (*it == nullptr) {
+            AUDIO_WARNING_LOG("tmpCallbackList is nullptr");
+            continue;
+        }
         (*it)->OnCapturerStateChange(audioCapturerChangeInfos);
     }
 }
