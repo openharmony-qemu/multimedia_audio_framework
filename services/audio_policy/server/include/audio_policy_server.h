@@ -692,8 +692,6 @@ private:
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
     AudioActiveDevice& audioActiveDevice_;
-    std::mutex onStartLock_;
-    bool isOnStart = false;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

@@ -167,8 +167,6 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
-    std::lock_guard<std::mutex> lock(onStartLock_);
-    if (isOnStart) {return;}
     AUDIO_INFO_LOG("Audio policy server on start");
     DlopenUtils::Init();
     interruptService_ = std::make_shared<AudioInterruptService>();
@@ -214,7 +212,6 @@ void AudioPolicyServer::OnStart()
     InitKVStore();
     isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
     DlopenUtils::DeInit();
-    isOnStart = true;
     DfxMsgManager::GetInstance().Init();
     RegisterAppStateListener();
     AUDIO_INFO_LOG("Audio policy server start end");
