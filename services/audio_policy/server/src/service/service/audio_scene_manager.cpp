@@ -52,6 +52,7 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene)
             std::make_shared<AudioDeviceDescriptor>());
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
+        AudioPolicyUtils::GetInstance().SetScoExcluded(false);
 #endif
     }
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
@@ -77,6 +78,9 @@ int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOf
         audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
     }
     int32_t result = SUCCESS;
+    if (AudioPolicyUtils::GetInstance().GetScoExcluded()) {
+        return result;
+    }
     if (haveArmUsbDevice) {
         result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
             DEVICE_TYPE_USB_ARM_HEADSET, state);

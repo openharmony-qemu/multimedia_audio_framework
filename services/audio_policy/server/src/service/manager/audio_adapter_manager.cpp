@@ -399,6 +399,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevelWithDevice(AudioStreamType stre
     if (currentActiveDevice_ != deviceType) {
         handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
     } else {
+        volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
         handler_->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
     }
     SetDeviceSafeVolume(streamType, volumeLevel);
@@ -890,7 +891,7 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
 
 void AudioAdapterManager::MaximizeVoiceAssistantVolume(InternalDeviceType deviceType)
 {
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
         volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
         SetVolumeDb(STREAM_VOICE_ASSISTANT);
         AUDIO_INFO_LOG("MaximizeVoiceAssistantVolume ok");

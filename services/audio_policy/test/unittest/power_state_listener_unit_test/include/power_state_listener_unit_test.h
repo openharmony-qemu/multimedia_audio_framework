@@ -13,32 +13,28 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_AUDIOSERVER_SA_LOAD_H
-#define OHOS_AUDIOSERVER_SA_LOAD_H
 
-#include "iremote_object.h"
-#include "system_ability_definition.h"
-#include "system_ability_load_callback_stub.h"
+#ifndef POWER_STATE_LISTENER_UNIT_TEST_H
+#define POWER_STATE_LISTENER_UNIT_TEST_H
+
+#include "gtest/gtest.h"
+#include "audio_policy_server.h"
+#include "power_state_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioLoadCallback : public SystemAbilityLoadCallbackStub {
+class PowerStateListenerUnitTest : public testing::Test {
 public:
-    void OnLoadSystemAbilitySuccess(int32_t systemAbilityId,
-        const sptr<IRemoteObject> &remoteObject) override;
-    void OnLoadSystemAbilityFail(int32_t systemAbilityId) override;
-};
-
-class AudioServiceLoad {
-public:
-    static AudioServiceLoad *GetInstance();
-    int32_t LoadAudioService(void);
-    void SetLoadFinish(void);
-private:
-    std::mutex mutex_;
-    std::atomic<bool> isAudioServiceLoading_ = false;
+    // SetUpTestCase: Called before all test cases
+    static void SetUpTestCase(void);
+    // TearDownTestCase: Called after all test case
+    static void TearDownTestCase(void);
+    // SetUp: Called before each test cases
+    void SetUp(void);
+    // TearDown: Called after each test cases
+    void TearDown(void);
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // OHOS_AUDIOSERVER_SA_LOAD_H
+#endif //POWER_STATE_LISTENER_UNIT_TEST_H

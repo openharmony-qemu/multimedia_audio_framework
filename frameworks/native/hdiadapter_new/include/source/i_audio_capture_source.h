@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 typedef struct IAudioSourceAttr {
-    const char *adapterName = nullptr;
+    const char *adapterName = "";
     uint32_t openMicSpeaker = 0;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRate = 0;

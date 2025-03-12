@@ -29,7 +29,6 @@
 #include "audio_manager_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_policy_manager.h"
-#include "audio_service_load.h"
 #include "audio_utils.h"
 #include "audio_manager_listener_stub.h"
 #include "audio_policy_interface.h"
@@ -167,12 +166,7 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
 
         AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS);
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-        if (object == nullptr) {
-            AUDIO_ERR_LOG("get audio server SA failed, try loading");
-            AudioServiceLoad::GetInstance()->LoadAudioService();
-            object = samgr->CheckSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-            CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "Loading SA failed.");
-        }
+        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
         g_asProxy = iface_cast<IStandardAudioService>(object);
         CHECK_AND_RETURN_RET_LOG(g_asProxy != nullptr, nullptr, "get audio service proxy failed");
         xcollieGetSystemAbility.CancelXCollieTimer();
@@ -952,6 +946,9 @@ int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
         ERR_INVALID_PARAM, "invalid parameter: only support output device");
     auto unexcludeOutputDevices = GetExcludedDevices(audioDevUsage);
+    if (unexcludeOutputDevices.empty()) {
+        return SUCCESS;
+    }
     for (const auto &devDesc : unexcludeOutputDevices) {
         CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter: mull pointer in list");
         CHECK_AND_RETURN_RET_LOG(!(devDesc->deviceType_ == DEVICE_TYPE_SPEAKER &&

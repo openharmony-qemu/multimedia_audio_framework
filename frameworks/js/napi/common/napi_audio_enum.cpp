@@ -671,7 +671,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioEncodingType", CreateEnumObject(env, encodingTypeMap, encodingType_)),
         DECLARE_NAPI_PROPERTY("ContentType", CreateEnumObject(env, contentTypeMap, contentType_)),
         DECLARE_NAPI_PROPERTY("StreamUsage", CreateEnumObject(env, streamUsageMap, streamUsage_)),
-        DECLARE_NAPI_PROPERTY("StreamUsage", CreateEnumObject(env, audioVolumeModeMap, audioVolumeMode_)),
+        DECLARE_NAPI_PROPERTY("AudioVolumeMode", CreateEnumObject(env, audioVolumeModeMap, audioVolumeMode_)),
         DECLARE_NAPI_PROPERTY("DeviceRole", CreateEnumObject(env, deviceRoleMap, deviceRole_)),
         DECLARE_NAPI_PROPERTY("DeviceType", CreateEnumObject(env, deviceTypeMap, deviceType_)),
         DECLARE_NAPI_PROPERTY("SourceType", CreateEnumObject(env, sourceTypeMap, sourceType_)),
@@ -733,7 +733,8 @@ napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_GETTER_SETTER("contentType", GetContentType, SetContentType),
         DECLARE_NAPI_GETTER_SETTER("usage", GetStreamUsage, SetStreamUsage),
         DECLARE_NAPI_GETTER_SETTER("deviceRole", GetDeviceRole, SetDeviceRole),
-        DECLARE_NAPI_GETTER_SETTER("deviceType", GetDeviceType, SetDeviceType)
+        DECLARE_NAPI_GETTER_SETTER("deviceType", GetDeviceType, SetDeviceType),
+        DECLARE_NAPI_GETTER_SETTER("mode", GetVolumeMode, SetVolumeMode)
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_ENUM_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
@@ -996,6 +997,35 @@ napi_value NapiAudioEnum::GetStreamUsage(napi_env env, napi_callback_info info)
     return jsResult;
 }
 
+napi_value NapiAudioEnum::GetVolumeMode(napi_env env, napi_callback_info info)
+{
+    AudioVolumeMode mode;
+    napi_value jsResult = nullptr;
+    NapiAudioEnum *napiAudioEnum = GetValue(env, info);
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    mode = napiAudioEnum->audioParameters_->mode;
+    napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(mode), jsResult);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetVolumeMode fail");
+
+    return jsResult;
+}
+
+napi_value NapiAudioEnum::SetVolumeMode(napi_env env, napi_callback_info info)
+{
+    napi_value jsResult = nullptr;
+    napi_value args[1] = { nullptr };
+    NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
+    int32_t mode;
+    napi_status status = NapiParamUtils::GetValueInt32(env, mode, args[0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->mode = static_cast<AudioVolumeMode>(mode);
+    return jsResult;
+}
+
 napi_value NapiAudioEnum::SetStreamUsage(napi_env env, napi_callback_info info)
 {
     napi_value jsResult = nullptr;
@@ -1241,16 +1271,16 @@ bool NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceTy
 
 int32_t NapiAudioEnum::GetJsAudioVolumeMode(AudioVolumeMode volumeMode)
 {
-    int32_t result = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+    int32_t result = NapiAudioEnum::SYSTEM_GLOBAL;
     switch (volumeMode) {
         case AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL:
-            result = NapiAudioEnum::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+            result = NapiAudioEnum::SYSTEM_GLOBAL;
             break;
         case AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL:
-            result = NapiAudioEnum::AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+            result = NapiAudioEnum::APP_INDIVIDUAL;
             break;
         default:
-            result = NapiAudioEnum::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+            result = NapiAudioEnum::SYSTEM_GLOBAL;
             break;
     }
     return result;

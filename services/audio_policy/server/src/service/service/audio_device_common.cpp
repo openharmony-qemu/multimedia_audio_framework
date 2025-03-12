@@ -41,7 +41,7 @@ static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
-static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1000000;  // 1s
+static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t DISTRIBUTED_DEVICE = 1003;
@@ -730,8 +730,6 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
-    audioIOHandleMap_.SetDeviceInfos(rendererChangeInfo->outputDeviceInfo.deviceType_,
-        outputDevices.front()->deviceType_);
     if (outputDevices.size() != 1) {
         // mute primary when play music and ring
         if (audioSceneManager_.IsStreamActive(STREAM_MUSIC)) {
@@ -1013,6 +1011,7 @@ void AudioDeviceCommon::MuteSinkPortLogic(const std::string &oldSinkName, const 
     } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
+        MutePrimaryOrOffloadSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
     } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||

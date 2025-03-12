@@ -131,5 +131,180 @@ HWTEST(AudioDumpPcmUnitTest, DumpAllMemBlock_002, TestSize.Level1)
     int32_t ret = audioCacheMgrInner.DumpAllMemBlock();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test DumpAllMemBlock API
+* @tc.type  : FUNC
+* @tc.number: DumpAllMemBlock_003
+* @tc.desc  : Test DumpAllMemBlock interface.
+*/
+HWTEST(AudioDumpPcmUnitTest, DumpAllMemBlock_003, TestSize.Level1)
+{
+    AudioCacheMgrInner audioCacheMgrInner;
+    std::shared_ptr<MemChunk> memChunk = std::make_shared<MemChunk>();
+    audioCacheMgrInner.isInited_ = true;
+
+    audioCacheMgrInner.memChunkDeque_.push_back(memChunk);
+    int32_t ret = audioCacheMgrInner.DumpAllMemBlock();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test CacheData API
+* @tc.type  : FUNC
+* @tc.number: CacheData_001
+* @tc.desc  : Test CacheData interface.
+*/
+HWTEST(AudioDumpPcmUnitTest, CacheData_001, TestSize.Level1)
+{
+    std::string dumpFileName;
+    void* srcDataPointer;
+    size_t dataLength;
+    uint8_t srcBuffer[16] = {0};
+    AudioCacheMgrInner audioCacheMgrInner;
+
+    dumpFileName = "test.txt";
+    srcDataPointer = static_cast<void *>(srcBuffer);
+    dataLength = 8;
+    audioCacheMgrInner.isInited_ = false;
+    audioCacheMgrInner.CacheData(dumpFileName, srcDataPointer, dataLength);
+    EXPECT_EQ(audioCacheMgrInner.isInited_, false);
+
+    audioCacheMgrInner.isInited_ = true;
+    audioCacheMgrInner.isDumpingData_ = true;
+    audioCacheMgrInner.CacheData(dumpFileName, srcDataPointer, dataLength);
+    EXPECT_EQ(audioCacheMgrInner.isDumpingData_, true);
+
+    audioCacheMgrInner.isDumpingData_ = false;
+    audioCacheMgrInner.totalMemChunkNums_ = -1;
+    audioCacheMgrInner.CacheData(dumpFileName, srcDataPointer, dataLength);
+    EXPECT_EQ(audioCacheMgrInner.isDumpingData_, false);
+
+    audioCacheMgrInner.isDumpingData_ = false;
+    audioCacheMgrInner.totalMemChunkNums_ = 1;
+    audioCacheMgrInner.CacheData(dumpFileName, srcDataPointer, dataLength);
+    EXPECT_EQ(audioCacheMgrInner.isDumpingData_, false);
+}
+
+/**
+* @tc.name  : Test GetCachedDuration API
+* @tc.type  : FUNC
+* @tc.number: GetCachedDuration_001
+* @tc.desc  : Test GetCachedDuration interface.
+*/
+HWTEST(AudioDumpPcmUnitTest, GetCachedDuration_001, TestSize.Level1)
+{
+    int64_t startTime = 0;
+    int64_t endTime = 0;
+    std::shared_ptr<MemChunk> memChunk = std::make_shared<MemChunk>();
+    AudioCacheMgrInner audioCacheMgrInner;
+
+    audioCacheMgrInner.isInited_ = false;
+    audioCacheMgrInner.GetCachedDuration(startTime, endTime);
+    EXPECT_EQ(audioCacheMgrInner.isInited_, false);
+
+    audioCacheMgrInner.isInited_ = true;
+    audioCacheMgrInner.GetCachedDuration(startTime, endTime);
+    EXPECT_EQ(audioCacheMgrInner.memChunkDeque_.size(), 0);
+
+    audioCacheMgrInner.memChunkDeque_.push_back(memChunk);
+    audioCacheMgrInner.memChunkDeque_.push_back(memChunk);
+    audioCacheMgrInner.GetCachedDuration(startTime, endTime);
+    EXPECT_NE(audioCacheMgrInner.memChunkDeque_.size(), 0);
+}
+
+/**
+* @tc.name  : Test GetDumpParameter API
+* @tc.type  : FUNC
+* @tc.number: GetDumpParameter_001
+* @tc.desc  : Test GetDumpParameter interface.
+*/
+HWTEST(AudioDumpPcmUnitTest, GetDumpParameter_001, TestSize.Level1)
+{
+    std::vector<std::string> subKeys;
+    std::vector<std::pair<std::string, std::string>> result;
+    bool ret;
+    AudioCacheMgrInner audioCacheMgrInner;
+
+    subKeys.push_back(GET_STATUS_KEY);
+    ret = audioCacheMgrInner.GetDumpParameter(subKeys, result);
+    EXPECT_EQ(ret, true);
+
+    subKeys.clear();
+    subKeys.push_back(GET_TIME_KEY);
+    ret = audioCacheMgrInner.GetDumpParameter(subKeys, result);
+    EXPECT_EQ(ret, true);
+
+    subKeys.clear();
+    subKeys.push_back(GET_MEMORY_KEY);
+    ret = audioCacheMgrInner.GetDumpParameter(subKeys, result);
+    EXPECT_EQ(ret, true);
+
+    subKeys.clear();
+    subKeys.push_back("test");
+    ret = audioCacheMgrInner.GetDumpParameter(subKeys, result);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test SetDumpParameter API
+* @tc.type  : FUNC
+* @tc.number: SetDumpParameter_001
+* @tc.desc  : Test SetDumpParameter interface.
+*/
+HWTEST(AudioDumpPcmUnitTest, SetDumpParameter_001, TestSize.Level1)
+{
+    std::vector<std::pair<std::string, std::string>> params;
+    bool ret;
+    AudioCacheMgrInner audioCacheMgrInner;
+
+    params.push_back(std::make_pair(SET_OPEN_KEY, "test"));
+    ret = audioCacheMgrInner.SetDumpParameter(params);
+    EXPECT_EQ(ret, true);
+
+    params.clear();
+    params.push_back(std::make_pair(SET_CLOSE_KEY, "test"));
+    ret = audioCacheMgrInner.SetDumpParameter(params);
+    EXPECT_EQ(ret, true);
+
+    params.clear();
+    params.push_back(std::make_pair(SET_UPLOAD_KEY, "test"));
+    ret = audioCacheMgrInner.SetDumpParameter(params);
+    EXPECT_NE(ret, true);
+
+    params.clear();
+    params.push_back(std::make_pair("test1", "test"));
+    ret = audioCacheMgrInner.SetDumpParameter(params);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test OnHandle API
+* @tc.type  : FUNC
+* @tc.number: OnHandle_001
+* @tc.desc  : Test OnHandle interface.
+*/
+HWTEST(AudioDumpPcmUnitTest, OnHandle_001, TestSize.Level1)
+{
+    uint32_t code;
+    int64_t data = 0;
+    AudioCacheMgrInner audioCacheMgrInner;
+
+    code = AudioCacheMgrInner::RELEASE_OVERTIME_MEMBLOCK;
+    audioCacheMgrInner.OnHandle(code, data);
+    EXPECT_EQ(code, AudioCacheMgrInner::RELEASE_OVERTIME_MEMBLOCK);
+
+    code = AudioCacheMgrInner::PRINT_MEMORY_CONDITION;
+    audioCacheMgrInner.OnHandle(code, data);
+    EXPECT_EQ(code, AudioCacheMgrInner::PRINT_MEMORY_CONDITION);
+
+    code = AudioCacheMgrInner::RAISE_PRIORITY;
+    audioCacheMgrInner.OnHandle(code, data);
+    EXPECT_EQ(code, AudioCacheMgrInner::RAISE_PRIORITY);
+
+    code = 5;
+    audioCacheMgrInner.OnHandle(code, data);
+    EXPECT_EQ(code, 5);
+}
 } // namespace AudioStandard
 } // namespace OHOS

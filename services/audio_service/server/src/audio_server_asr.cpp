@@ -194,7 +194,6 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     std::string key = "asr_aec_mode";
-    std::string keyAec = "ASR_AEC";
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
@@ -206,6 +205,7 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
     } else {
         // if asr_aec_mode null, return ASR_AEC.
         // if asr_aec_mode null and ASR_AEC null, return err.
+        std::string keyAec = "ASR_AEC";
         auto itAec = AudioServer::audioParameters.find(keyAec);
         std::string asrAecSink = itAec->second;
         if (asrAecSink == "ASR_AEC=ON") {
@@ -221,12 +221,12 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
 
     std::vector<std::string> resMode = splitString(asrAecModeSink, "=");
     const int32_t resSize = 2;
-    std::string modeString = "";
     if (resMode.size() == resSize) {
+        std::string modeString = "";
         modeString = resMode[1];
-        auto it = AEC_MODE_MAP.find(modeString);
-        if (it != AEC_MODE_MAP.end()) {
-            asrAecMode = it->second;
+        auto itAecMode = AEC_MODE_MAP.find(modeString);
+        if (itAecMode != AEC_MODE_MAP.end()) {
+            asrAecMode = itAecMode->second;
         } else {
             AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
@@ -283,12 +283,12 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
 
     std::vector<std::string> resMode = splitString(asrNoiseSuppressionModeSink, "=");
     const int32_t resSize = 2;
-    std::string modeString = "";
     if (resMode.size() == resSize) {
+        std::string modeString = "";
         modeString = resMode[1];
-        auto it = NS_MODE_MAP.find(modeString);
-        if (it != NS_MODE_MAP.end()) {
-            asrNoiseSuppressionMode = it->second;
+        auto itNsMode = NS_MODE_MAP.find(modeString);
+        if (itNsMode != NS_MODE_MAP.end()) {
+            asrNoiseSuppressionMode = itNsMode->second;
         } else {
             AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
@@ -345,12 +345,12 @@ int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhis
 
     std::vector<std::string> resMode = splitString(asrWhisperDetectionModeSink, "=");
     const int32_t resSize = 2;
-    std::string modeString = "";
     if (resMode.size() == resSize) {
+        std::string modeString = "";
         modeString = resMode[1];
-        auto it = WHISPER_DETECTION_MODE_MAP.find(modeString);
-        if (it != WHISPER_DETECTION_MODE_MAP.end()) {
-            asrWhisperDetectionMode = it->second;
+        auto itWhisper = WHISPER_DETECTION_MODE_MAP.find(modeString);
+        if (itWhisper != WHISPER_DETECTION_MODE_MAP.end()) {
+            asrWhisperDetectionMode = itWhisper->second;
         } else {
             AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
@@ -396,8 +396,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     auto itVerse = VC_MODE_MAP_VERSE.find(asrVoiceControlMode);
     auto itCallAssistant = VOICE_CALL_ASSISTANT_SUPPRESSION.find(asrVoiceControlMode);
     auto res = RES_MAP_VERSE.find(on);
-    if ((itVerse == VC_MODE_MAP_VERSE.end() && itCallAssistant == VOICE_CALL_ASSISTANT_SUPPRESSION.end()) ||
-        res == RES_MAP_VERSE.end()) {
+    if (itVerse == VC_MODE_MAP_VERSE.end() && itCallAssistant == VOICE_CALL_ASSISTANT_SUPPRESSION.end()) {
         AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
     }
@@ -406,7 +405,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
-    if ((itVerse != VC_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
+    if (itVerse != VC_MODE_MAP_VERSE.end()) {
         value = itVerse->second + "=" + res->second;
         AudioServer::audioParameters[key] = value;
         deviceManager->SetAudioParameter("primary", paramKey, "", value);

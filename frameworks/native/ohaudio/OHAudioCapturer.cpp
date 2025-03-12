@@ -463,7 +463,18 @@ void OHAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescrip
     }
     if (audioCapturer->GetCapturerStreamEventCallbackType() == STREAM_EVENT_CALLBACK_WITH_RESULT &&
         onDeviceChangeCallback_ != nullptr) {
-            onDeviceChangeCallback_(ohAudioCapturer_, userData_, event);
+        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor =
+            std::make_shared<AudioDeviceDescriptor>(deviceInfo);
+        OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
+            (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
+        int32_t arraySize = 1;
+        int32_t arrayIndex = 0;
+        audioDeviceDescriptorArray->size = arraySize;
+        audioDeviceDescriptorArray->descriptors =
+            (OH_AudioDeviceDescriptor **)malloc(sizeof(OH_AudioDeviceDescriptor *) * arraySize);
+        audioDeviceDescriptorArray->descriptors[arrayIndex] =
+            (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(audioDeviceDescriptor));
+        onDeviceChangeCallback_(ohAudioCapturer_, userData_, audioDeviceDescriptorArray);
     }
 }
 
@@ -477,7 +488,7 @@ void OHAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
         OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
         callbacks_.OH_AudioCapturer_OnInterruptEvent(ohAudioCapturer_, userData_, type, hint);
     } else if (audioCapturer->GetCapturerInterruptEventCallbackType() == INTERRUPT_EVENT_CALLBACK_WITH_RESULT &&
-        callbacks_.OH_AudioCapturer_OnInterruptEvent != nullptr) {
+        onInterruptEventCallback_ != nullptr) {
         OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
         OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
         onInterruptEventCallback_(ohAudioCapturer_, userData_, type, hint);
