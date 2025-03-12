@@ -982,30 +982,10 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
             clientCallbacksMap_[it->first][CALLBACK_RENDERER_STATE_CHANGE]) {
                 Trace traceCallback("rendererStateChangeCb->OnRendererStateChange");
             rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
-            ResetRingerModeMute(eventContextObj->audioRendererChangeInfos);
         }
     }
     AUDIO_INFO_LOG("pids: %{public}s size: %{public}zu", pidsStrForPrinting_.c_str(),
         audioPolicyClientProxyAPSCbsMap_.size());
-}
-
-void AudioPolicyServerHandler::ResetRingerModeMute(const std::vector<std::shared_ptr<AudioRendererChangeInfo>>
-    &audioRendererChangeInfos)
-{
-    for (const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
-        if (!rendererChangeInfo) {
-            AUDIO_ERR_LOG("Renderer change info null, something wrong!!");
-            continue;
-        }
-        StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
-        RendererState rendererState = rendererChangeInfo->rendererState;
-        if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && (rendererState == RENDERER_PAUSED ||
-            rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
-            AUDIO_INFO_LOG("reset ringer mode mute, stream usage:%{public}d, renderer state:%{public}d",
-                streamUsage, rendererState);
-            AudioPolicyService::GetAudioPolicyService().ResetRingerModeMute();
-        }
-    }
 }
 
 void AudioPolicyServerHandler::HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event)

@@ -20,6 +20,7 @@
 
 #include "audio_client_tracker_callback_proxy.h"
 #include "audio_spatialization_service.h"
+#include "audio_volume_manager.h"
 
 #include "media_monitor_manager.h"
 
@@ -455,7 +456,9 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
                 audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
             }
             AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
-
+            RendererState rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
+            StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
+            ResetRingerModeMute(rendererState, streamUsage);
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
                 audioRendererChangeInfos_.erase(it);
                 rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
@@ -471,6 +474,16 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
     return SUCCESS;
 }
 
+void AudioStreamCollector::ResetRingerModeMute(RendererState rendererState, StreamUsage streamUsage)
+{
+    if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && (rendererState == RENDERER_PAUSED ||
+        rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED) &&
+        !AudioVolumeManager::GetInstance().IsRingerModeMute()) {
+        AUDIO_INFO_LOG("reset ringer mode mute, stream usage:%{public}d, renderer state:%{public}d",
+            streamUsage, rendererState);
+        AudioVolumeManager::GetInstance().ResetRingerModeMute();
+    }
+}
 
 int32_t AudioStreamCollector::UpdateRendererStreamInternal(AudioStreamChangeInfo &streamChangeInfo)
 {
