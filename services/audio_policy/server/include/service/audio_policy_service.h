@@ -809,7 +809,9 @@ private:
 
     void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
 
-    void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
+    void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
+
+    void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
 
     void MuteDefaultSinkPort();
