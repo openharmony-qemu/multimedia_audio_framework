@@ -1890,23 +1890,6 @@ bool AudioServer::CreatePlaybackCapturerManager()
 #endif
 }
 
-int32_t AudioServer::SetSupportStreamUsage(std::vector<int32_t> usage)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    AUDIO_INFO_LOG("SetSupportStreamUsage with usage num:%{public}zu", usage.size());
-
-    if (!PermissionUtil::VerifyIsAudio()) {
-        AUDIO_ERR_LOG("not audio calling!");
-        return ERR_OPERATION_FAILED;
-    }
-    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    playbackCapturerMgr->SetSupportStreamUsage(usage);
-    return SUCCESS;
-#else
-    return ERROR;
-#endif
-}
-
 void AudioServer::RegisterAudioCapturerSourceCallback()
 {
     IdHandler &idHandler = IdHandler::GetInstance();
@@ -1972,22 +1955,6 @@ void AudioServer::RegisterAudioRendererSinkCallback()
         return false;
     };
     HdiAdapterManager::GetInstance().RegistSinkCallback(HDI_CB_RENDER_STATE, this, limitFunc);
-}
-
-int32_t AudioServer::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    if (!PermissionUtil::VerifyIsAudio()) {
-        AUDIO_ERR_LOG("not audio calling!");
-        return ERR_OPERATION_FAILED;
-    }
-
-    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    playbackCapturerMgr->SetCaptureSilentState(state);
-    return SUCCESS;
-#else
-    return ERROR;
-#endif
 }
 
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)

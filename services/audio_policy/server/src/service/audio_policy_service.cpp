@@ -1586,35 +1586,6 @@ void AudioPolicyService::RegisterDataObserver()
     RegisterNameMonitorHelper();
 }
 
-int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    int32_t ret = AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(config.silentCapture);
-    CHECK_AND_RETURN_RET_LOG(!ret, ERR_OPERATION_FAILED, "SetCaptureSilentState failed");
-
-    std::vector<int32_t> targetUsages;
-    AUDIO_INFO_LOG("start");
-    for (size_t i = 0; i < config.filterOptions.usages.size(); i++) {
-        if (count(targetUsages.begin(), targetUsages.end(), config.filterOptions.usages[i]) == 0) {
-            targetUsages.emplace_back(config.filterOptions.usages[i]); // deduplicate
-        }
-    }
-
-    return AudioServerProxy::GetInstance().SetSupportStreamUsageProxy(targetUsages);
-#else
-    return ERROR;
-#endif
-}
-
-int32_t AudioPolicyService::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    return AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(state);
-#else
-    return ERROR;
-#endif
-}
-
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     int32_t rate = 48000;

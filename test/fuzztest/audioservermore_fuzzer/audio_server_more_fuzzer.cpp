@@ -113,23 +113,6 @@ void AudioServerUpdateSpatialDeviceTypeTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerSetCaptureSilentStateTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    bool isSilent = *reinterpret_cast<const bool*>(rawData);
-    data.WriteBool(isSilent);
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    MessageParcel reply;
-    MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE),
-        data, reply, option);
-}
-
 void AudioServerLoadConfigurationTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -612,7 +595,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::FuzzTest(data, size);
     OHOS::AudioStandard::AudioServerSetSpatializationSceneTypeTest(data, size);
     OHOS::AudioStandard::AudioServerUpdateSpatialDeviceTypeTest(data, size);
-    OHOS::AudioStandard::AudioServerSetCaptureSilentStateTest(data, size);
     OHOS::AudioStandard::AudioServerLoadConfigurationTest(data, size);
     OHOS::AudioStandard::AudioServerGetExtarAudioParametersTest(data, size);
     OHOS::AudioStandard::AudioServerSetExtraAudioParametersTest(data, size);

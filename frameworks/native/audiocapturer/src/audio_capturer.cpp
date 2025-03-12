@@ -233,29 +233,6 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
     }
 }
 
-int32_t AudioCapturerPrivate::InitPlaybackCapturer(int32_t type, const AudioPlaybackCaptureConfig &config)
-{
-    if (type != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        return SUCCESS;
-    }
-#ifdef HAS_FEATURE_INNERCAPTURER
-    return AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(config, appInfo_.appTokenId);
-#else
-    AUDIO_WARNING_LOG("Inner capture is not supported.");
-    return ERR_NOT_SUPPORTED;
-#endif
-}
-
-int32_t AudioCapturerPrivate::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    return AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
-#else
-    AUDIO_WARNING_LOG("Inner capture is not supported.");
-    return ERR_NOT_SUPPORTED;
-#endif
-}
-
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();

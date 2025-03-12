@@ -465,8 +465,7 @@ void AudioPolicyServiceEnhanceTenFuzzTest()
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.CancelSafeVolumeNotification(notificationId);
     int64_t activateSessionId = GetData<int64_t>();
     GetServerPtr()->audioPolicyService_.CheckStreamMode(activateSessionId);
-    bool state = GetData<bool>();
-    GetServerPtr()->audioPolicyService_.SetCaptureSilentState(state);
+
     GetServerPtr()->audioPolicyService_.GetConverterConfig();
 
     std::string dumpString = "";

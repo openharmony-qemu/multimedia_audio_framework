@@ -76,41 +76,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_003, TestS
 
 /**
 * @tc.name  : Test AudioPolicyManagerStub.
-* @tc.number: AudioPolicyManagerStubUnitTest_004.
-* @tc.desc  : Test SetPlaybackCapturerFilterInfosInternal.
-*/
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_004, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    AudioPolicyManage_->SetPlaybackCapturerFilterInfosInternal(data, reply);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    data.WriteInt32(1);
-    AudioPolicyManage_->SetPlaybackCapturerFilterInfosInternal(data, reply);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManagerStub.
-* @tc.number: AudioPolicyManagerStubUnitTest_005.
-* @tc.desc  : Test SetPlaybackCapturerFilterInfosInternal.
-*/
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_005, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    data.WriteUint32(30);
-    data.WriteInt32(1);
-    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    AudioPolicyManage_->SetPlaybackCapturerFilterInfosInternal(data, reply);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-}
-
-
-/**
-* @tc.name  : Test AudioPolicyManagerStub.
 * @tc.number: AudioPolicyManagerStubUnitTest_006.
 * @tc.desc  : Test CreateAudioInterruptZoneInternal.
 */
@@ -441,16 +406,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_014_2, Tes
 
         AudioPolicyManage_->OnMiddleFouRemoteRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_EFFECT_SCENEMODE),
-        data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddleFouRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO),
-        data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddleFouRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE),
         data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 

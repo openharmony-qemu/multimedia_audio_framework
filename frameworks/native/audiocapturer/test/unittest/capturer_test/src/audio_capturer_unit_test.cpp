@@ -2096,59 +2096,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.
 }
 
 /**
-* @tc.name  : Test InitPlaybackCapturer.
-* @tc.number: InitPlaybackCapturer_001
-* @tc.desc  : Test InitPlaybackCapturer.
-*/
-HWTEST(AudioCapturerUnitTest, InitPlaybackCapturer_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    int32_t type = 3;
-    const AudioPlaybackCaptureConfig config;
-    int32_t ret = audioCapturer->InitPlaybackCapturer(type, config);
-
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test InitPlaybackCapturer.
-* @tc.number: InitPlaybackCapturer_002
-* @tc.desc  : Test InitPlaybackCapturer.
-*/
-HWTEST(AudioCapturerUnitTest, InitPlaybackCapturer_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    int32_t type = 2;
-    const AudioPlaybackCaptureConfig config;
-    int32_t ret = audioCapturer->InitPlaybackCapturer(type, config);
-
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test SetCaptureSilentState.
-* @tc.number: SetCaptureSilentState_001
-* @tc.desc  : Test SetCaptureSilentState.
-*/
-HWTEST(AudioCapturerUnitTest, SetCaptureSilentState_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    int32_t ret = audioCapturer->SetCaptureSilentState(true);
-    EXPECT_EQ(ret, ERROR);
-    ret = audioCapturer->SetCaptureSilentState(false);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
 * @tc.name  : Test CheckSignalData.
 * @tc.number: CheckSignalData
 * @tc.desc  : Test CheckSignalData.

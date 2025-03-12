@@ -2735,40 +2735,6 @@ int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supported
     return ret;
 }
 
-int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
-    uint32_t appTokenId)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    for (auto &usg : config.filterOptions.usages) {
-        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
-            continue;
-        }
-
-        if (!VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, appTokenId)) {
-            AUDIO_ERR_LOG("downlink capturer permission check failed");
-            return ERR_PERMISSION_DENIED;
-        }
-    }
-    return audioPolicyService_.SetPlaybackCapturerFilterInfos(config);
-#else
-    return ERROR;
-#endif
-}
-
-int32_t AudioPolicyServer::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid != UID_CAST_ENGINE_SA) {
-        AUDIO_ERR_LOG("SetCaptureSilentState callerUid is Error: not cast_engine");
-        return ERROR;
-    }
-    return audioPolicyService_.SetCaptureSilentState(state);
-#else
-    return ERROR;
-#endif
-}
-
 int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     return audioPolicyService_.GetHardwareOutputSamplingRate(desc);

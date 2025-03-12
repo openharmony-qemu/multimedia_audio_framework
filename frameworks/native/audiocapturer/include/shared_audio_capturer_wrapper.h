@@ -234,11 +234,6 @@ public:
         return sharedAudioCapturer_->GetCurrentMicrophones();
     }
 
-    int32_t SetCaptureSilentState(bool state) override
-    {
-        return sharedAudioCapturer_->SetCaptureSilentState(state);
-    }
-
     uint32_t GetOverflowCount() const override
     {
         return sharedAudioCapturer_->GetOverflowCount();
