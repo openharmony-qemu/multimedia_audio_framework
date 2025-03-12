@@ -180,8 +180,8 @@ private:
     std::string address_ = "";
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
     std::mutex sinkMutex_;
-    // primary extend function
-    virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
+    // for setdeviceconnect flag
+    bool SetDeviceConnectedFlag =false;
 };
 
 } // namespace AudioStandard
