@@ -1473,15 +1473,20 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
         UpdateSafeVolume();
         return;
     }
+    bool resetFirstFlag = false;
     AUDIO_INFO_LOG("InitVolumeMap: Wrote default stream volumes to KvStore");
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMapTemp = volumeDataMaintainer_.GetVolumeMap();
     for (auto &deviceType: VOLUME_GROUP_TYPE_LIST) {
         for (auto &streamType: VOLUME_TYPE_LIST) {
             // if GetVolume failed, wirte default value
             if (!volumeDataMaintainer_.GetVolume(deviceType, streamType)) {
-                volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevelMapTemp[streamType]);
+                auto ret = volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevelMapTemp[streamType]);
+                resetFirstFlag = ret ? resetFirstFlag : true;
             }
         }
+    }
+    if (resetFirstFlag) {
+        SetFirstBoot();
     }
     // reLoad the current device volume
     LoadVolumeMap();
