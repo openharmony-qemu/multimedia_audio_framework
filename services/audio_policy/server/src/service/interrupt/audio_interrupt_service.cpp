@@ -1215,6 +1215,11 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
     WriteStartDfxMsg(dfxBuilder, incomingInterrupt);
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
     zonesMap_[zoneId] = targetZoneIt->second;
+    RemoveAllPlaceholderInterrupt(removeFocusInfoPidList);
+}
+
+void AudioInterruptService::RemoveAllPlaceholderInterrupt(std::list<int32_t> &removeFocusInfoPidList)
+{
     for (auto pid : removeFocusInfoPidList) {
         RemovePlaceholderInterruptForSession(pid);
     }
@@ -1386,11 +1391,10 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
             break;
         }
 
-        std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
+        std::pair<AudioFocusType, AudioFocusType> focusPair =
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
-        CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(audioFocusTypePair) != focusCfgMap_.end(), ERR_INVALID_PARAM,
-            "audio focus type pair is invalid");
-        AudioFocusEntry focusEntry = focusCfgMap_[audioFocusTypePair];
+        CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM, "no focus cfg");
+        AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingConcurrentSources);
         if (focusEntry.actionOn == CURRENT || iterActive->second == PLACEHOLDER ||
             CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) { continue; }
@@ -1413,14 +1417,19 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
             incomingState = STOP;
             break;
         }
-        auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
-        AudioFocuState newState = (pos == HINT_STATE_MAP.end()) ? ACTIVE : pos->second;
-        incomingState = (newState > incomingState) ? newState : incomingState;
+        incomingState = GetNewIncomingState(focusEntry.hintType, incomingState);
     }
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
     AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
     SendInterruptEventToIncomingStream(interruptEvent, incomingInterrupt);
     return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
+}
+
+AudioFocuState AudioInterruptService::GetNewIncomingState(InterruptHint hintType, AudioFocuState oldState)
+{
+    auto pos = HINT_STATE_MAP.find(hintType);
+    AudioFocuState newState = (pos == HINT_STATE_MAP.end()) ? ACTIVE : pos->second;
+    return (newState > oldState) ? newState : oldState;
 }
 
 bool AudioInterruptService::IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt)
