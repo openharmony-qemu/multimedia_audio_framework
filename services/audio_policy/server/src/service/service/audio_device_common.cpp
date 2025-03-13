@@ -608,7 +608,7 @@ bool AudioDeviceCommon::NotifyRecreateDirectStream(std::shared_ptr<AudioRenderer
     return false;
 }
 
-void SetDeviceConnectedFlagWhenFetchOutputDevice()
+void AudioDeviceCommon::SetDeviceConnectedFlagWhenFetchOutputDevice()
 {
     AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
     if (currentActiveDevice.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
