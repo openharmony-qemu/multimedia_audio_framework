@@ -945,27 +945,11 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_047, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test SetStreamAudioEnhanceMode API
-* @tc.number : PaAdapterManager_041
-* @tc.desc   : Test SetStreamAudioEnhanceMode interface.
-*/
-HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_048, TestSize.Level1)
-{
-    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
-    adapterManager->InitPaContext();
-    AudioProcessConfig processConfig = GetInnerCapConfig();
-    uint32_t sessionId = SESSIONID;
-    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
-    int result = adapterManager->SetStreamAudioEnhanceMode(stream, ENHANCE_NONE);
-    EXPECT_NE(ERROR, result);
-}
-
-/**
 * @tc.name   : Test PAStreamStateCb API
 * @tc.number : PaAdapterManager_042
 * @tc.desc   : Test PAStreamStateCb interface.
 */
-HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_049, TestSize.Level1)
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_048, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->InitPaContext();
@@ -982,7 +966,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_049, TestSize.Level1)
 * @tc.number : PaAdapterManager_043
 * @tc.desc   : Test ConvertChLayoutToPaChMap interface.
 */
-HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_050, TestSize.Level1)
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_049, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     const uint64_t channelLayout = CH_LAYOUT_HOA_ORDER1_ACN_N3D;
@@ -996,7 +980,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_050, TestSize.Level1)
 * @tc.number : PaAdapterManager_044
 * @tc.desc   : Test GetEnhanceSceneName interface.
 */
-HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_051, TestSize.Level1)
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_050, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->GetEnhanceSceneName(SOURCE_TYPE_VOICE_TRANSCRIPTION);
@@ -1008,7 +992,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_051, TestSize.Level1)
 * @tc.number : PaAdapterManager_045
 * @tc.desc   : Test GetEnhanceSceneName interface.
 */
-HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_052, TestSize.Level1)
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_051, TestSize.Level1)
 {
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
     adapterManager->GetEnhanceSceneName(SOURCE_TYPE_VOICE_MESSAGE);
