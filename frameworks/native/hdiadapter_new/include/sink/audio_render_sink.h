@@ -181,7 +181,7 @@ private:
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
     std::mutex sinkMutex_;
     // for setdeviceconnect flag
-    bool SetDeviceConnectedFlag =false;
+    bool deviceConnectedFlag_ = false;
 };
 
 } // namespace AudioStandard
