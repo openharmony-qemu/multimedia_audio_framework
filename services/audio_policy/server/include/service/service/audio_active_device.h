@@ -50,6 +50,8 @@ public:
     bool CheckActiveOutputDeviceSupportOffload();
     bool IsDirectSupportedDevice();
     void NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+    void DisconnectScoWhenUserSelectInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+
     bool UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsDeviceActive(DeviceType deviceType);

@@ -217,6 +217,21 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
 #endif
 }
 
+void AudioActiveDevice::DisconnectScoWhenUserSelectInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+{
+    if (audioDeviceDescriptor == nullptr) {
+        AUDIO_ERR_LOG("nullptr audioDeviceDescriptor");
+        return;
+    }
+#ifdef BLUETOOTH_ENABLE
+    DeviceType curInputDeviceType = GetCurrentInputDeviceType();
+    if (curInputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        AUDIO_INFO_LOG("user select ready to disconnect");
+        Bluetooth::AudioHfpManager::DisconnectSco();
+    }
+#endif
+}
+
 void AudioActiveDevice::WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const AudioStreamDeviceChangeReason reason)
 {
