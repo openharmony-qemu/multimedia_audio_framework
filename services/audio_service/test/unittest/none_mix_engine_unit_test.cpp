@@ -527,7 +527,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_001, TestSize.Level1)
     bool isVoipRet = true;
     noneMixEngineRet.isInit_ = true;
     deviceRet.deviceType_ = DEVICE_TYPE_INVALID;
-    noneMixEngineRet.device_.deviceType = DEVICE_TYPE_NONE;
+    noneMixEngineRet.device_.deviceType_ = DEVICE_TYPE_NONE;
     noneMixEngineRet.renderId_ = HDI_INVALID_ID;
 
     auto ret = noneMixEngineRet.Init(deviceRet, isVoipRet);
@@ -550,7 +550,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_002, TestSize.Level1)
     bool isVoipRet = true;
     noneMixEngineRet.isInit_ = true;
     deviceRet.deviceType_ = DEVICE_TYPE_INVALID;
-    noneMixEngineRet.device_.deviceType = DEVICE_TYPE_INVALID;
+    noneMixEngineRet.device_.deviceType_ = DEVICE_TYPE_INVALID;
     noneMixEngineRet.renderId_ = HDI_INVALID_ID;
 
     auto ret = noneMixEngineRet.Init(deviceRet, isVoipRet);
@@ -691,28 +691,6 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_008, TestSize.Level1)
     AudioSamplingRate sampleRateRet = AudioSamplingRate::SAMPLE_RATE_8000;
     auto ret = noneMixEngineRet.GetDirectVoipSampleRate(sampleRateRet);
     EXPECT_EQ(ret, AudioSamplingRate::SAMPLE_RATE_16000);
-}
-
-/**
- * @tc.name  : Test NoneMixEngine API
- * @tc.type  : FUNC
- * @tc.number: NoneMixEngine_009
- * @tc.desc  : Test NoneMixEngine interface.
- */
-HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_009, TestSize.Level1)
-{
-    NoneMixEngine noneMixEngineRet;
-    AudioSampleFormat formatRet = AudioSampleFormat::SAMPLE_S32LE;
-    auto ret = noneMixEngineRet.GetDirectDeviceFormate(formatRet);
-    EXPECT_EQ(ret, SAMPLE_S32LE);
-
-    formatRet = AudioSampleFormat::SAMPLE_F32LE;
-    ret = noneMixEngineRet.GetDirectDeviceFormate(formatRet);
-    EXPECT_EQ(ret, SAMPLE_F32LE);
-
-    formatRet = AudioSampleFormat::INVALID_WIDTH;
-    ret = noneMixEngineRet.GetDirectDeviceFormate(formatRet);
-    EXPECT_EQ(ret, SAMPLE_S16LE);
 }
 
 /**
@@ -1369,6 +1347,261 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_036, TestSize.Level1)
 
     latency = ptrNoneMixEngine->GetLatency();
     EXPECT_NE(latency, 0);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_037
+ * @tc.desc  : Test NoneMixEngine::Stop()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_037, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    std::string name = "test";
+    ptrNoneMixEngine->isStart_ = true;
+    ptrNoneMixEngine->playbackThread_ = std::make_unique<AudioThreadTask>(name);
+    auto ret = ptrNoneMixEngine->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_038
+ * @tc.desc  : Test NoneMixEngine::PauseAsync()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_038, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    ptrNoneMixEngine->playbackThread_ = nullptr;
+    ptrNoneMixEngine->PauseAsync();
+    EXPECT_EQ(ptrNoneMixEngine->isStart_, false);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_039
+ * @tc.desc  : Test NoneMixEngine::StopAudioSink()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_039, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    ptrNoneMixEngine->renderId_ = -1;
+    auto ret = ptrNoneMixEngine->StopAudioSink();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_040
+ * @tc.desc  : Test NoneMixEngine::StopAudioSink()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_040, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    ptrNoneMixEngine->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY,
+        HDI_ID_INFO_DEFAULT, true);
+    auto sink = HdiAdapterManager::GetInstance().GetRenderSink(ptrNoneMixEngine->renderId_, true);
+    ASSERT_TRUE(sink != nullptr);
+
+    auto ret = ptrNoneMixEngine->StopAudioSink();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_041
+ * @tc.desc  : Test NoneMixEngine::Pause()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_041, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    ptrNoneMixEngine->isStart_ = true;
+    std::string name = "test";
+    ptrNoneMixEngine->playbackThread_ = std::make_unique<AudioThreadTask>(name);
+    auto ret = ptrNoneMixEngine->Pause();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_042
+ * @tc.desc  : Test NoneMixEngine::DoFadeinOut()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_042, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    EXPECT_NE(ptrNoneMixEngine, nullptr);
+
+    bool isFadeOut = true;
+    char buffer = 'a';
+    size_t bufferSize = 2;
+    char *pBuffer = &buffer;
+    EXPECT_NE(pBuffer, nullptr);
+
+    ptrNoneMixEngine->uChannel_ = 1;
+    ptrNoneMixEngine->uFormat_ = sizeof(int16_t);
+
+    ptrNoneMixEngine->DoFadeinOut(isFadeOut, pBuffer, bufferSize);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_043
+ * @tc.desc  : Test NoneMixEngine::DoFadeinOut()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_043, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    char buffer = 'a';
+    char *pBuffer = &buffer;
+    ptrNoneMixEngine->uFormat_ = 1;
+    ptrNoneMixEngine->uChannel_ = 1;
+    ptrNoneMixEngine->uFormat_ = sizeof(int16_t);
+    bool isFadeOut = false;
+    size_t bufferSize = 2;
+    ptrNoneMixEngine->DoFadeinOut(isFadeOut, pBuffer, bufferSize);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_044
+ * @tc.desc  : Test NoneMixEngine::DoFadeinOut()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_044, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    char buffer = 'a';
+    char *pBuffer = &buffer;
+    ptrNoneMixEngine->uFormat_ = 1;
+    ptrNoneMixEngine->uChannel_ = 1;
+    ptrNoneMixEngine->uFormat_ = sizeof(int16_t);
+    bool isFadeOut = false;
+    size_t bufferSize = 0;
+    ptrNoneMixEngine->DoFadeinOut(isFadeOut, pBuffer, bufferSize);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_045
+ * @tc.desc  : Test NoneMixEngine::AdjustVoipVolume()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_045, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    ptrNoneMixEngine->isVoip_ = false;
+    ptrNoneMixEngine->AdjustVoipVolume();
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_046
+ * @tc.desc  : Test NoneMixEngine::AdjustVoipVolume()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_046, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    AudioProcessConfig processConfig;
+    ptrNoneMixEngine->isVoip_ = true;
+    ptrNoneMixEngine->firstSetVolume_ = false;
+    ptrNoneMixEngine->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    ptrNoneMixEngine->AdjustVoipVolume();
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_047
+ * @tc.desc  : Test NoneMixEngine::AdjustVoipVolume()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_047, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    AudioProcessConfig processConfig;
+    ptrNoneMixEngine->isVoip_ = true;
+    ptrNoneMixEngine->firstSetVolume_ = true;
+    ptrNoneMixEngine->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    ptrNoneMixEngine->AdjustVoipVolume();
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_048
+ * @tc.desc  : Test NoneMixEngine::AddRenderer()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_048, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    AudioProcessConfig configRet;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream1 = std::make_shared<ProRendererStreamImpl>(configRet, true);
+    ptrNoneMixEngine->stream_ = nullptr;
+    ptrNoneMixEngine->AddRenderer(rendererStream1);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_049
+ * @tc.desc  : Test NoneMixEngine::AddRenderer()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_049, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    AudioProcessConfig configRet;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream1 = std::make_shared<ProRendererStreamImpl>(configRet, true);
+    ptrNoneMixEngine->stream_ = rendererStream1;
+    ptrNoneMixEngine->AddRenderer(rendererStream1);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_050
+ * @tc.desc  : Test NoneMixEngine::GetLatency()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_050, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    ptrNoneMixEngine->isStart_ = true;
+    ptrNoneMixEngine->latency_ = 1;
+    auto ret = ptrNoneMixEngine->GetLatency();
+    EXPECT_EQ(ret, 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS
