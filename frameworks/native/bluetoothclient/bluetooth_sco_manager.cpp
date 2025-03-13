@@ -71,6 +71,7 @@ int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory, const Blu
     int32_t ret = ERROR;
     if (lastScoState == AudioScoState::DISCONNECTED) {
         if (currentScoMode_ == AudioScoMode::REC_MODE) {
+            CHECK_AND_RETURN_RET_LOG(device == nullptr, ERROR, "HandleScoConnect failed, device is nullptr");
             ret = ((hfpInstance_->OpenVoiceRecognition(*device) == true) ? SUCCESS : ERROR);
         } else {
             ret = hfpInstance_->ConnectSco(static_cast<uint8_t> (scoCategory));
@@ -99,6 +100,7 @@ int32_t BluetoothScoManager::HandleScoDisconnect(ScoCategory scoCategory, const 
     int32_t ret = ERROR;
     if (lastScoState == AudioScoState::CONNECTED) {
         if (currentScoMode_ == AudioScoMode::REC_MODE) {
+            CHECK_AND_RETURN_RET_LOG(device == nullptr, ERROR, "HandleScoDisconnect failed, device is nullptr");
             ret = ((hfpInstance_->CloseVoiceRecognition(*device) == true) ? SUCCESS : ERROR);
         } else {
             ret = hfpInstance_->DisconnectSco(static_cast<uint8_t> (scoCategory));
