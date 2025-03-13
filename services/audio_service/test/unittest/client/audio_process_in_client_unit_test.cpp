@@ -36,7 +36,6 @@ public:
 
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 constexpr size_t NUMBER1 = 1;
-constexpr size_t NUMBER2 = 2;
 constexpr size_t NUMBER4 = 4;
 constexpr size_t NUMBER6 = 6;
 
@@ -198,7 +197,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_008, TestSize.Lev
     info.channels = AudioChannel::MONO;
     auto ret = GetFormatSize(info);
 
-    EXPECT_EQ(ret, NUMBER2);
+    EXPECT_EQ(ret, NUMBER4);
 }
 
 /**

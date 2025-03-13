@@ -862,34 +862,59 @@ ohos_unittest("policy_provider_stub_unit_test") {
 ohos_unittest("audio_manager_listener_proxy_unit_test") {
   testonly = true
   module_out_path = module_output_path
-  include_dirs = [
-    "../../server/include",
-    "../../../../interfaces/inner_api/native/audiomanager/include",
-    "../../../../frameworks/native/audiopolicy/include",
-  ]
-
-  sources = [ "audio_manager_listener_proxy_unit_test.cpp" ]
 
   configs = [ ":module_private_config" ]
+
+  include_dirs = [
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/server/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../frameworks/native/audioinnercall/include",
+    "../../../../frameworks/native/audiopolicy/include",
+    "../../../../frameworks/native/hdiadapter_new/include",
+  ]
+
+  sources = [
+    "../../../../services/audio_service/server/src/audio_manager_listener_proxy.cpp",
+    "./client/capturer_in_client_unit_test.cpp",
+  ]
+
+  deps = [
+    "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_policy:audio_policy_client",
+    "../../../../services/audio_policy:audio_policy_service",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_common",
+    "../../../../services/audio_service:audio_process_service",
+    "../../../../services/audio_service:audio_service",
+  ]
+
   cflags = [ "-fno-access-control" ]
 
-  deps = [ "../../../../services/audio_service:audio_service_static" ]
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "drivers_interface_audio:libeffect_proxy_1.0",
-    "hicollie:libhicollie",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
     "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "init:libbegetutil",
     "ipc:ipc_single",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
     "pulseaudio:pulse",
-    "pulseaudio:pulseaudio",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
