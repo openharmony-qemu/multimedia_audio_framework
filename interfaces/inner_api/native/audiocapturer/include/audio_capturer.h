@@ -684,15 +684,6 @@ public:
     virtual std::vector<sptr<MicrophoneDescriptor>> GetCurrentMicrophones() const = 0;
 
     /**
-     * @brief Set Capturer Silent State.
-     *
-     * @return Returns {@link SUCCESS} if state setting is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 11
-     */
-    virtual int32_t SetCaptureSilentState(bool state) = 0;
-
-    /**
      * @brief Obtains the position info after speed convert.
      *
      * @param timestamp Indicates a {@link Timestamp} instance reference provided by the caller.

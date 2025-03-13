@@ -468,34 +468,6 @@ void AudioServerProxy::SetAudioBalanceValueProxy(float audioBalance)
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-int32_t AudioServerProxy::SetSupportStreamUsageProxy(std::vector<int32_t> usage)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetSupportStreamUsage(usage);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return ret;
-#else
-    return ERROR;
-#endif
-}
-
-int32_t AudioServerProxy::SetCaptureSilentStateProxy(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t res = gsp->SetCaptureSilentState(state);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return res;
-#else
-    return ERROR;
-#endif
-}
-
 void AudioServerProxy::NotifyAccountsChanged()
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

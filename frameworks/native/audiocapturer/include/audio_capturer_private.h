@@ -110,8 +110,6 @@ public:
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
     bool isChannelChange_ = false;
-    int32_t InitPlaybackCapturer(int32_t type, const AudioPlaybackCaptureConfig &config);
-    int32_t SetCaptureSilentState(bool state) override;
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioCapturerParams params)
     {
         AudioStreamParams audioStreamParams;

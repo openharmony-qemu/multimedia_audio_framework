@@ -53,60 +53,6 @@ void PlaybackPlaybackCapturerManagerUnitTest::TearDown(void)
 }
 
 /**
- * @tc.name  : Test IsStreamSupportInnerCapturer API via legal state
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupportInnerCapturer_001
- * @tc.desc  : Test IsStreamSupportInnerCapturer interface. Is stream support inner capturer and return ret.
- */
-HWTEST(PlaybackPlaybackCapturerManagerUnitTest, IsStreamSupportInnerCapturer_001, TestSize.Level1)
-{
-    std::vector<int32_t> usage;
-    usage.push_back(STREAM_USAGE_MEDIA);
-    usage.push_back(STREAM_USAGE_MUSIC);
-    usage.push_back(STREAM_USAGE_GAME);
-    usage.push_back(STREAM_USAGE_MOVIE);
-    usage.push_back(STREAM_USAGE_AUDIOBOOK);
-    playbackCapturerMgr_->SetSupportStreamUsage(usage);
-    for (int32_t usageItem : usage) {
-        bool ret = IsStreamSupportInnerCapturer(usageItem);
-        EXPECT_TRUE(ret);
-    }
-}
-
-/**
- * @tc.name  : Test IsStreamSupportInnerCapturer API via illegal state
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupportInnerCapturer_002
- * @tc.desc  : Test IsStreamSupportInnerCapturer interface. Is stream support inner capturer and return ret.
- */
-HWTEST(PlaybackPlaybackCapturerManagerUnitTest, IsStreamSupportInnerCapturer_002, TestSize.Level1)
-{
-    std::vector<int32_t> usage;
-    playbackCapturerMgr_->SetSupportStreamUsage(usage);
-    bool ret = playbackCapturerMgr_->IsStreamSupportInnerCapturer(STREAM_USAGE_RANGING);
-    EXPECT_FALSE(ret);
-}
-
-/**
- * @tc.name  : Test IsStreamSupportInnerCapturer API via legal state
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupportInnerCapturer_003
- * @tc.desc  : Test IsStreamSupportInnerCapturer interface. Is stream support inner capturer and return ret.
- */
-HWTEST(PlaybackPlaybackCapturerManagerUnitTest, IsStreamSupportInnerCapturer_003, TestSize.Level1)
-{
-    std::vector<int32_t> usage;
-    usage.push_back(STREAM_USAGE_MEDIA);
-    usage.push_back(STREAM_USAGE_MUSIC);
-    usage.push_back(STREAM_USAGE_GAME);
-    usage.push_back(STREAM_USAGE_MOVIE);
-    usage.push_back(STREAM_USAGE_AUDIOBOOK);
-    playbackCapturerMgr_->SetSupportStreamUsage(usage);
-    bool ret = playbackCapturerMgr_->IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA);
-    EXPECT_TRUE(ret);
-}
-
-/**
  * @tc.name  : Test IsPrivacySupportInnerCapturer API via legal state
  * @tc.type  : FUNC
  * @tc.number: IsPrivacySupportInnerCapturer_001

@@ -1342,34 +1342,6 @@ int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supporte
     return error;
 }
 
-int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config,
-    uint32_t appTokenId)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->SetPlaybackCapturerFilterInfos(config, appTokenId);
-#else
-    return ERROR;
-#endif
-}
-
-int32_t AudioPolicyManager::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("SetCaptureSilentState: audio policy manager proxy is NULL");
-        return ERROR;
-    }
-
-    return gsp->SetCaptureSilentState(state);
-#else
-    return ERROR;
-#endif
-}
-
 int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

@@ -145,8 +145,6 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
     ret = audioManagerProxy->RegiestPolicyProvider(object);
     EXPECT_EQ(SUCCESS, ret);
 
-    bool state = false;
-    ret = audioManagerProxy->SetCaptureSilentState(state);
     EXPECT_TRUE(ret == ERROR_62980101 || ret == SUCCESS);
 
     bool result = audioManagerProxy->CreatePlaybackCapturerManager();

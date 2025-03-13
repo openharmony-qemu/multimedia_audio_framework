@@ -92,8 +92,6 @@ public:
     void SetRotationToEffectProxy(const uint32_t rotate);
     void SetAudioMonoStateProxy(bool audioMono);
     void SetAudioBalanceValueProxy(float audioBalance);
-    int32_t SetSupportStreamUsageProxy(std::vector<int32_t> usage);
-    int32_t SetCaptureSilentStateProxy(bool state);
     void NotifyAccountsChanged();
     void GetAllSinkInputsProxy(std::vector<SinkInput> &sinkInputs);
     void NotifyAudioPolicyReady();

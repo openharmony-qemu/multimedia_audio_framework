@@ -328,24 +328,6 @@ public:
     virtual bool CreatePlaybackCapturerManager() = 0;
 
     /**
-     * Set StreamUsage set which support playback capturer.
-     *
-     * @param usage value of StreamUsage which support inner capturer.
-     *
-     * @return result of setting. 0 if success, error number else.
-     */
-    virtual int32_t SetSupportStreamUsage(std::vector<int32_t> usage) = 0;
-
-    /**
-     * Mark if playback capture silently.
-     *
-     * @param state identify the capture state
-     *
-     * @return result of setting. 0 if success, error number else.
-     */
-    virtual int32_t SetCaptureSilentState(bool state) = 0;
-
-    /**
      * Update spatialization enabled state and head tracking enabled state.
      *
      * @param state identify the enabled state
@@ -579,10 +561,8 @@ private:
     int HandleCreateAudioEffectChainManager(MessageParcel &data, MessageParcel &reply);
     int HandleSetOutputDeviceSink(MessageParcel &data, MessageParcel &reply);
     int HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply);
-    int HandleSetSupportStreamUsage(MessageParcel &data, MessageParcel &reply);
     int HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply);
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
-    int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply);
     int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
