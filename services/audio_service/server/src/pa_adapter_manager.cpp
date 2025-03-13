@@ -737,29 +737,6 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEnhanceMode mode)
-{
-    PaLockGuard lock(mainLoop_);
-    pa_proplist *propList = pa_proplist_new();
-    if (propList == nullptr) {
-        AUDIO_ERR_LOG("pa_proplist_new failed.");
-        return ERROR;
-    }
-    std::string upDevice = "DEVICE_TYPE_MIC";
-    std::string downDevice = "DEVICE_TYPE_SPEAKER";
-    pa_proplist_sets(propList, "device.up", upDevice.c_str());
-    pa_proplist_sets(propList, "device.down", downDevice.c_str());
-    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
-        nullptr, nullptr);
-    if (updatePropOperation == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_proplist_update failed.");
-        return ERROR;
-    }
-    pa_proplist_free(propList);
-    pa_operation_unref(updatePropOperation);
-    return SUCCESS;
-}
-
 void PaAdapterManager::PAStreamUpdateStreamIndexSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     AUDIO_DEBUG_LOG("PAStreamUpdateStreamIndexSuccessCb in");

@@ -106,7 +106,6 @@ private:
     int32_t ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
         SourceType source, const std::string &deviceName);
 
-    int32_t SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEnhanceMode mode);
     const std::string GetEnhanceSceneName(SourceType sourceType);
 
     // Callbacks to be implemented
