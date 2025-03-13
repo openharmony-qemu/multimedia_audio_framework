@@ -614,7 +614,7 @@ void AudioDeviceCommon::SetDeviceConnectedFlagWhenFetchOutputDevice()
     if (currentActiveDevice.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
         currentActiveDevice.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         AudioServerProxy::GetInstance().SetDeviceConnectedFlag(false);
-    } 
+    }
 }
 
 void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
