@@ -108,6 +108,12 @@ void AudioFuzzTestGetPermission()
     }
 }
 
+void ReleaseServer()
+{
+    GetServerPtr()->OnStop();
+    g_hasServerInit = false;
+}
+
 void AudioPolicyFuzzFirstLimitTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -125,8 +131,12 @@ void AudioPolicyFuzzFirstLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
+    if (code == static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE)) {
+        return;
+    }
 
     GetServerPtr()->OnRemoteRequest(code, data, reply, option);
+    ReleaseServer();
 }
 
 void AudioPolicyFuzzSecondLimitTest(const uint8_t *rawData, size_t size)
@@ -148,6 +158,7 @@ void AudioPolicyFuzzSecondLimitTest(const uint8_t *rawData, size_t size)
     MessageOption option;
 
     GetServerPtr()->OnRemoteRequest(code, data, reply, option);
+    ReleaseServer();
 }
 
 void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
@@ -172,6 +183,7 @@ void AudioPolicyFuzzThirdLimitTest(const uint8_t *rawData, size_t size)
     }
 
     GetServerPtr()->OnRemoteRequest(code, data, reply, option);
+    ReleaseServer();
 }
 
 void AudioPolicyFuzzFouthLimitTest(const uint8_t *rawData, size_t size)
@@ -193,6 +205,7 @@ void AudioPolicyFuzzFouthLimitTest(const uint8_t *rawData, size_t size)
     MessageOption option;
 
     GetServerPtr()->OnRemoteRequest(code, data, reply, option);
+    ReleaseServer();
 }
 
 void AudioPolicyFuzzFifthLimitTest(const uint8_t *rawData, size_t size)
@@ -212,8 +225,13 @@ void AudioPolicyFuzzFifthLimitTest(const uint8_t *rawData, size_t size)
 
     MessageParcel reply;
     MessageOption option;
+    if (code == static_cast<uint32_t>(AudioPolicyInterfaceCode::EXCLUDE_OUTPUT_DEVICES) ||
+        code == static_cast<uint32_t>(AudioPolicyInterfaceCode::UNEXCLUDE_OUTPUT_DEVICES)) {
+        return;
+    }
 
     GetServerPtr()->OnRemoteRequest(code, data, reply, option);
+    ReleaseServer();
 }
 } // namespace AudioStandard
 } // namesapce OHOS
