@@ -344,16 +344,14 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         tempChannel = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
 
-    for (auto &streamProp : pipeIt->second->streamPropInfos_) {
-        if (streamProp->format_ == desc->streamInfo_.format &&
-            streamProp->sampleRate_ == desc->streamInfo_.samplingRate &&
-            streamProp->channels_ == tempChannel) {
-            info = streamProp;
-            AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, channels:%{public}u,"
-                " desc channels:%{public}u", info->format_, info->sampleRate_, info->channelLayout_, info->channels_,
-                tempChannel);
-            return;
-        }
+    auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, desc->streamInfo_.format,
+        desc->streamInfo_.sampleRate, tempChannel);
+    if (streamProp != nullptr) {
+        info = streamProp;
+        AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, channels:%{public}u,"
+            " desc channels:%{public}u", info->format_, info->sampleRate_, info->channelLayout_, info->channels_,
+            tempChannel);
+        return;
     }
 
     if (SupportImplicitConversion(desc->routeFlag_)) {
@@ -366,26 +364,36 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         AUDIO_INFO_LOG("Find streamPropInfo failed, choose normal flag");
         desc->routeFlag_ = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
             AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
-        auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
-        for (auto &streamProp : pipeIt->second->streamPropInfos_) {
-            if (streamProp->format_ == desc->streamInfo_.format &&
-                streamProp->sampleRate_ == desc->streamInfo_.samplingRate &&
-                streamProp->channels_ == desc->streamInfo_.channels) {
-                info = streamProp;
-                AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, "
-                    "channels:%{public}u, desc channels:%{public}u", info->format_, info->sampleRate_,
-                    info->channelLayout_, info->channels_, desc->streamInfo_.channels);
-                return;
-            }
+        auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, desc->streamInfo_.format,
+            desc->streamInfo_.sampleRate, desc->streamInfo_.channels);
+        if (streamProp != nullptr) {
+            info = streamProp;
+            AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, "
+                "channels:%{public}u, desc channels:%{public}u", info->format_, info->sampleRate_,
+                info->channelLayout_, info->channels_, desc->streamInfo_.channels);
+            return;
         }
     }
     if (info->format_ == INVALID_WIDTH && info->sampleRate_ == 0 && info->channelLayout_ == CH_LAYOUT_UNKNOWN &&
         desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_NORMAL || AUDIO_INPUT_FLAG_NORMAL) &&
         !pipeIt->second->streamPropInfos_.empty()) {
-        info = pipeIt->second->streamPropInfos_.front(); // if not match, choose first?
-    }
+        info = pipeIt->second->streamPropInfos_.front();
+    } // if not match, choose first?
     AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}lu, channels:%{public}u",
         info->format_, info->sampleRate_, info->channelLayout_, info->channels_, desc->streamInfo_.channels);
+}
+
+std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
+    std::shared_ptr<AdapterPipeInfo> &info, AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels)
+{
+    for (auto &streamProp : info->streamPropInfos_) {
+        if (streamProp->format_ == format &&
+            streamProp->sampleRate_ == sampleRate &&
+            streamProp->channels_ == channels) {
+            return streamProp;
+        }
+    }
+    return nullptr;
 }
 
 bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
