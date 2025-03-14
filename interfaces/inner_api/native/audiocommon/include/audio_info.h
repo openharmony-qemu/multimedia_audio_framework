@@ -369,7 +369,7 @@ struct AudioParameters {
 struct A2dpDeviceConfigInfo {
     DeviceStreamInfo streamInfo;
     bool absVolumeSupport = false;
-    int32_t volumeLevel;
+    int32_t volumeLevel = -1;
     bool mute = false;
 };
 

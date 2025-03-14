@@ -1215,7 +1215,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
             AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d, mute = %{public}d, level = %{public}d",
                 audioStreamType, mute, volumeLevel);
             int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi, mute);
-            if (setResult != SUCCESS) {
+            if (setResult != SUCCESS && setResult != ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
                 return setResult;
             }
         }
