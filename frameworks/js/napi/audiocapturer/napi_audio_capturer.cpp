@@ -932,7 +932,7 @@ napi_value NapiAudioCapturer::GetAudioTimestampInfo(napi_env env, napi_callback_
             "context object state is error.");
         int32_t ret = napiAudioCapturer->audioCapturer_->GetAudioTimestampInfo(context->timeStamp,
             Timestamp::Timestampbase::MONOTONIC);
-        if (ret != SUCCESS) {
+        if (ret != true) {
             context->SignError(NAPI_ERR_SYSTEM);
         }
     };
@@ -959,7 +959,7 @@ napi_value NapiAudioCapturer::GetAudioTimestampInfoSync(napi_env env, napi_callb
     Timestamp timeStamp;
     int32_t ret = napiAudioCapturer->audioCapturer_->GetAudioTimestampInfo(timeStamp,
         Timestamp::Timestampbase::MONOTONIC);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetAudioTimestampInfo failure!");
+    CHECK_AND_RETURN_RET_LOG(ret == true, result, "GetAudioTimestampInfo failure!");
     NapiParamUtils::SetTimeStampInfo(env, timeStamp, result);
     return result;
 }
