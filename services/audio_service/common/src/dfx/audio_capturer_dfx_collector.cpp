@@ -25,16 +25,18 @@
 namespace OHOS {
 namespace AudioStandard {
 
-void AudioCapturerDfxCollector::FlushDfxMsg(uint32_t index, uint32_t appUid)
+void AudioCapturerDfxCollector::FlushDfxMsg(uint32_t index, int32_t appUid)
 {
-    if (!IsExist(index) || appUid == -1) {
+    if (appUid == DFX_INVALID_APP_UID) {
         AUDIO_INFO_LOG("flush failed index=%{public}d, appUid=%{public}d", index, appUid);
         return;
     }
-    AUDIO_INFO_LOG("FlushDfxMsg...");
-    auto &item = dfxInfos_[index];
-    DfxMsgManager::GetInstance().Enqueue({.appUid = appUid, .captureInfo = item});
-    dfxInfos_.erase(index);
+
+    for (auto &item : dfxInfos_) {
+        AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d", item.first, appUid);
+        DfxMsgManager::GetInstance().Enqueue({.appUid = appUid, .captureInfo = item.second});
+    }
+    dfxInfos_.clear();
 }
 
 CapturerDfxBuilder &CapturerDfxBuilder::WriteActionMsg(uint32_t dfxIndex, CapturerStage stage)

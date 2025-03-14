@@ -254,5 +254,18 @@ int32_t AudioProcessProxy::SetSourceDuration(int64_t duration)
     return reply.ReadInt32();
 }
 
+int32_t AudioProcessProxy::SetUnderrunCount(uint32_t underrunCnt)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteUint32(underrunCnt);
+    int ret = Remote()->SendRequest(IAudioProcessMsg::ON_SET_UNDERRUN_CNT, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

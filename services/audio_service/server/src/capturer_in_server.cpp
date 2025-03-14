@@ -325,8 +325,8 @@ int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
 
 int32_t CapturerInServer::Start()
 {
-    bool ret = StartInner();
-    CapturerStage stage = ret ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
+    int32_t ret = StartInner();
+    CapturerStage stage = ret == SUCCESS ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
     if (recorderDfx_) {
         recorderDfx_->WriteDfxStartMsg(streamIndex_, stage, processConfig_);
     }

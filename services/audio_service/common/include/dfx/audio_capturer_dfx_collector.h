@@ -30,7 +30,7 @@ struct RecordStat {
 
 class AudioCapturerDfxCollector : public DfxCollector<CapturerDfxInfo> {
 public:
-    void FlushDfxMsg(uint32_t index, uint32_t appUid) override;
+    void FlushDfxMsg(uint32_t index, int32_t appUid) override;
 
     AppInfo appInfo_{};
 };

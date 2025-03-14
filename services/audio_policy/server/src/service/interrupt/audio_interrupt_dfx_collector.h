@@ -28,7 +28,7 @@ namespace AudioStandard {
 
 class AudioInterruptDfxCollector : public DfxCollector<InterruptDfxInfo> {
 public:
-    void FlushDfxMsg(uint32_t index, uint32_t appUid) override;
+    void FlushDfxMsg(uint32_t index, int32_t appUid) override;
     std::tuple<uint8_t, uint8_t> &GetDfxIndexes(uint32_t index);
 private:
     std::map<uint32_t, std::tuple<uint8_t, uint8_t>> dfxIdx2InfoIdx_;
@@ -40,7 +40,6 @@ public:
     InterruptDfxBuilder &WriteInfoMsg(const AudioInterrupt &audioInterrupt);
     InterruptDfxBuilder &WriteEffectMsg(uint8_t appstate, const std::string &bundleName,
         const AudioInterrupt &audioInterrupt, const InterruptHint &hintType);
-    InterruptDfxBuilder &WriteAppStateMsg(InterruptAppState state);
     InterruptDfxInfo GetResult();
 private:
     InterruptDfxInfo dfxInfo_{};

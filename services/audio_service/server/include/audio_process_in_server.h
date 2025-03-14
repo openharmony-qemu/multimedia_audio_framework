@@ -23,6 +23,7 @@
 #include "i_audio_process_stream.h"
 #include "i_process_status_listener.h"
 #include "player_dfx_writer.h"
+#include "recorder_dfx_writer.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -114,13 +115,16 @@ public:
     void SetSilentState(bool state) override;
     int32_t SetSourceDuration(int64_t duration) override;
 
-    void SetStandbyState(RendererStage state) override;
+    int32_t SetUnderrunCount(uint32_t underrunCnt) override;
+    void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
 
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
 public:
     const AudioProcessConfig processConfig_;
 
 private:
+    int32_t StartInner();
+    int64_t GetLastAudioDuration();
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
@@ -158,9 +162,15 @@ private:
     int64_t enterStandbyTime_ = 0;
     std::time_t startMuteTime_ = 0;
     bool isInSilentState_ = false;
-    RendererStage standByState_ = RENDERER_STAGE_UNKNOWN;
+
+    int64_t lastStartTime_{};
+    int64_t lastStopTime_{};
+    int64_t lastWriteFrame_{};
+    int64_t lastWriteMuteFrame_{};
+    std::atomic<uint32_t> underrunCount_ = 0;
     int64_t sourceDuration_ = -1;
     std::unique_ptr<PlayerDfxWriter> playerDfx_;
+    std::unique_ptr<RecorderDfxWriter> recorderDfx_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -76,7 +76,8 @@ std::string DfxUtils::SerializeToJSONString(const std::vector<InterruptEffect> &
     return ret;
 }
 
-std::string DfxUtils::SerializeToJSONString(const std::vector<std::string> &data)
+template<class T>
+std::string DfxUtils::SerializeToJSONString(const std::vector<T> &data)
 {
     std::string ret{};
     nlohmann::json jsonArray;
@@ -90,5 +91,9 @@ std::string DfxUtils::SerializeToJSONString(const std::vector<std::string> &data
     return ret;
 }
 
+template std::string DfxUtils::SerializeToJSONString<uint8_t>(const std::vector<uint8_t> &data);
+template std::string DfxUtils::SerializeToJSONString<uint32_t>(const std::vector<uint32_t> &data);
+template std::string DfxUtils::SerializeToJSONString<uint64_t>(const std::vector<uint64_t> &data);
+template std::string DfxUtils::SerializeToJSONString<std::string>(const std::vector<std::string> &data);
 } // namespace AudioStandard
 } // namespace OHOS

@@ -536,7 +536,39 @@ void VolumeTools::DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, s
             + static_cast<int64_t>(vols.volStart[1]) / HALF_FACTOR);
         }
         AudioLogUtils::ProcessVolumeData(logTag, vols, volumeDataCount);
-        AUDIO_ERR_LOG("volumeDataCount=%{public}" PRId64, volumeDataCount);
+    }
+    Trace::Count(logTag, minVolume);
+}
+
+void VolumeTools::CalcMuteFrame(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
+    int64_t &volumeDataCount, int64_t &muteFrameCnt, size_t split)
+{
+    size_t byteSizePerData = VolumeTools::GetByteSize(streamInfo.format);
+    size_t byteSizePerFrame = byteSizePerData * streamInfo.channels;
+    size_t frameLen = byteSizePerData * static_cast<size_t>(streamInfo.channels) *
+        static_cast<size_t>(streamInfo.samplingRate) * 0.02; // 0.02s
+
+    if (frameLen == 0) {
+        AUDIO_ERR_LOG("invalid size");
+        return;
+    }
+    int64_t minVolume = INT_32_MAX;
+    for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
+        BufferDesc temp = {buffer.buffer + frameLen * index, std::min(buffer.bufLength - frameLen * index, frameLen),
+            std::min(buffer.dataLength - frameLen * index, frameLen)};
+
+        size_t frameSize = temp.bufLength / byteSizePerFrame;
+        ChannelVolumes vols = VolumeTools::CountVolumeLevel(temp, streamInfo.format, streamInfo.channels, split);
+        if (streamInfo.channels == MONO) {
+            minVolume = std::min(minVolume, static_cast<int64_t>(vols.volStart[0]));
+        } else {
+            minVolume = std::min(minVolume, static_cast<int64_t>(vols.volStart[0]) / HALF_FACTOR
+                + static_cast<int64_t>(vols.volStart[1]) / HALF_FACTOR);
+        }
+        AudioLogUtils::ProcessVolumeData(logTag, vols, volumeDataCount);
+        if (volumeDataCount < 0) {
+            muteFrameCnt += frameSize;
+        }
     }
     Trace::Count(logTag, minVolume);
 }

@@ -100,7 +100,6 @@ public:
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeByStreamId(int32_t streamId);
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
-    void HandleAppStateChange(int32_t pid, int32_t uid, int32_t state);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
