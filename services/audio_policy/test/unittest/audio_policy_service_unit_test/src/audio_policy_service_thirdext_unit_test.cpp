@@ -1174,6 +1174,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_002, TestSize.Level
     EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 /**
 * @tc.name  : Test LoadModernInnerCapSink.
 * @tc.number: LoadModernInnerCapSink_001
@@ -1187,6 +1188,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadModernInnerCapSink_001, TestSize.
     EXPECT_EQ(ret, SUCCESS);
 }
 
+
 /**
 * @tc.name  : Test UnloadModernInnerCapSink.
 * @tc.number: UnloadModernInnerCapSink_001
@@ -1199,6 +1201,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnloadModernInnerCapSink_001, TestSiz
     int32_t ret = server->audioPolicyService_.UnloadModernInnerCapSink(1);
     EXPECT_EQ(ret, SUCCESS);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioDeviceManager.

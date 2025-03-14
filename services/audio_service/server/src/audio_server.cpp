@@ -2240,7 +2240,6 @@ int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config,
     if (callingUid == ROOT_UID) {
         return InnerCheckCaptureLimit(config, innerCapId);
     }
-    return ERR_NOT_SUPPORTED;
 #endif
     return ERR_NOT_SUPPORTED;
 }
@@ -2267,7 +2266,6 @@ int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
         PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId);
         return SUCCESS;
     }
-    return ERR_NOT_SUPPORTED;
 #endif
     return ERR_NOT_SUPPORTED;
 }

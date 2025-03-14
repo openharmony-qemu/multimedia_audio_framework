@@ -110,7 +110,6 @@ const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
-const char *SINK_NAME_INNER_CAPTURER = "InnerCapturerSink";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
 const char *MCH_SINK_NAME = "MCH_Speaker";
@@ -3222,7 +3221,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     corking ? pa_atomic_store(&i->isFirstReaded, 0) : (void)0;
     starting ? pa_atomic_store(&i->isFirstReaded, 1) : (void)0;
 
-    if (!strcmp(i->sink->name, SINK_NAME_INNER_CAPTURER) ||
+    if (!IsInnerCapSinkName(i->sink->name) ||
         !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER) ||
         !strcmp(i->sink->driver, "module_split_stream_sink.c")) {
         ResetFadeoutPause(i, state);
