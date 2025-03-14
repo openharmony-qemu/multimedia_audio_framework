@@ -39,8 +39,7 @@ static const char* ADAPTER_TYPE_USB = "usb";
 static const char* ADAPTER_TYPE_DP = "dp";
 static const char* ADAPTER_TYPE_SLE = "sle";
 
-struct PairHash
-{
+struct PairHash {
     template <class T1, class T2>
     std::size_t operator() (const std::pair<T1, T2> &tp) const
     {

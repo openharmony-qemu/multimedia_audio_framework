@@ -349,8 +349,9 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
             streamProp->sampleRate_ == desc->streamInfo_.samplingRate &&
             streamProp->channels_ == tempChannel) {
             info = streamProp;
-            AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, channels:%{public}u, desc channels:%{public}u",
-                info->format_, info->sampleRate_, info->channelLayout_, info->channels_, tempChannel);
+            AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, channels:%{public}u,"
+                " desc channels:%{public}u", info->format_, info->sampleRate_, info->channelLayout_, info->channels_,
+                tempChannel);
             return;
         }
     }
@@ -369,10 +370,11 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         for (auto &streamProp : pipeIt->second->streamPropInfos_) {
             if (streamProp->format_ == desc->streamInfo_.format &&
                 streamProp->sampleRate_ == desc->streamInfo_.samplingRate &&
-                streamProp->channels_ == desc->streamInfo_.channels_) {
+                streamProp->channels_ == desc->streamInfo_.channels) {
                 info = streamProp;
-                AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, channels:%{public}u, desc channels:%{public}u",
-                    info->format_, info->sampleRate_, info->channelLayout_, info->channels_, desc->streamInfo_.channels_);
+                AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, "
+                    "channels:%{public}u, desc channels:%{public}u", info->format_, info->sampleRate_,
+                    info->channelLayout_, info->channels_, desc->streamInfo_.channels);
                 return;
             }
         }
@@ -388,12 +390,12 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
 
 bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
 {
-    if (routeFlag & AUDIO_OUTPUT_FLAG_NORMAL ||
-        routeFlag & AUDIO_OUTPUT_FLAG_DIRECT ||
-        routeFlag & AUDIO_OUTPUT_FLAG_MULTICHANNEL ||
-        routeFlag & AUDIO_OUTPUT_FLAG_LOWPOWER ||
-        routeFlag & AUDIO_INPUT_FLAG_NORMAL ||
-        routeFlag & AUDIO_INPUT_FLAG_WAKEUP) {
+    if ((routeFlag & AUDIO_OUTPUT_FLAG_NORMAL) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_LOWPOWER) ||
+        (routeFlag & AUDIO_INPUT_FLAG_NORMAL) ||
+        (routeFlag & AUDIO_INPUT_FLAG_WAKEUP)) {
         return true;
     }
     return false

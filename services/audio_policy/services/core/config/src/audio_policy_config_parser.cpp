@@ -112,7 +112,8 @@ void AudioPolicyConfigParser::ParseAdapters(std::shared_ptr<AudioXmlNode> curNod
     ConvertAdapterInfoToAudioModuleInfo();
 }
 
-void AudioPolicyConfigParser::ParseAdapter(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
+void AudioPolicyConfigParser::ParseAdapter(std::shared_ptr<AudioXmlNode> curNode,
+    std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
 {
     std::string adapterName;
     CHECK_AND_RETURN_LOG(curNode->GetProp("name", adapterName) == SUCCESS, "Get prop name failed");
@@ -141,7 +142,8 @@ void AudioPolicyConfigParser::ParseAdapter(std::shared_ptr<AudioXmlNode> curNode
     }
 }
 
-void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
+void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode,
+    std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
 {
     curNode->MoveToChildren();
     std::list<std::shared_ptr<AdapterPipeInfo>> pipeInfos = {};
@@ -163,7 +165,8 @@ void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode, 
     adapterInfo->pipeInfos = std::move(pipeInfos);
 }
 
-void AudioPolicyConfigParser::ParsePipeInfos(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+void AudioPolicyConfigParser::ParsePipeInfos(std::shared_ptr<AudioXmlNode> curNode,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     curNode->MoveToChildren();
     while (curNode->IsNodeValid()) {
@@ -187,7 +190,8 @@ void AudioPolicyConfigParser::ParsePipeInfos(std::shared_ptr<AudioXmlNode> curNo
     }
 }
 
-void AudioPolicyConfigParser::ParsePaProp(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+void AudioPolicyConfigParser::ParsePaProp(std::shared_ptr<AudioXmlNode> curNode,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     PaPropInfo paProp = {};
 
@@ -204,7 +208,8 @@ void AudioPolicyConfigParser::ParsePaProp(std::shared_ptr<AudioXmlNode> curNode,
     pipeInfo->paProp_ = std::move(paProp);
 }
 
-void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> curNode,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     curNode->MoveToChildren();
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos = {};
@@ -239,7 +244,8 @@ void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> cur
     pipeInfo->streamPropInfos_ = std::move(streamPropInfos);
 }
 
-void AudioPolicyConfigParser::ParseAttributes(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+void AudioPolicyConfigParser::ParseAttributes(std::shared_ptr<AudioXmlNode> curNode,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     curNode->MoveToChildren();
     std::list<std::shared_ptr<AttributeInfo>> attributeInfos = {};
@@ -257,7 +263,8 @@ void AudioPolicyConfigParser::ParseAttributes(std::shared_ptr<AudioXmlNode> curN
     pipeInfo->attributeInfos_ = std::move(attributeInfos);
 }
 
-void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo, std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     if (attributeInfo.name_ == "flag") {
         std::list<std::string> supportFlags = {};
@@ -276,7 +283,8 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
     }
 }
 
-void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
+void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode,
+    std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
 {
     curNode->MoveToChildren();
     std::list<std::shared_ptr<AdapterDeviceInfo>> deviceInfos = {};
