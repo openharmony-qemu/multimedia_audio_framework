@@ -7124,42 +7124,6 @@ void AudioPolicyService::RegisterDataObserver()
     RegisterNameMonitorHelper();
 }
 
-int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED,
-        "SetPlaybackCapturerFilterInfos, Audio Server Proxy is null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetCaptureSilentState(config.silentCapture);
-    IPCSkeleton::SetCallingIdentity(identity);
-    CHECK_AND_RETURN_RET_LOG(!ret, ERR_OPERATION_FAILED, "SetCaptureSilentState failed");
-
-    std::vector<int32_t> targetUsages;
-    AUDIO_INFO_LOG("SetPlaybackCapturerFilterInfos");
-    for (size_t i = 0; i < config.filterOptions.usages.size(); i++) {
-        if (count(targetUsages.begin(), targetUsages.end(), config.filterOptions.usages[i]) == 0) {
-            targetUsages.emplace_back(config.filterOptions.usages[i]); // deduplicate
-        }
-    }
-
-    identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t res = gsp->SetSupportStreamUsage(targetUsages);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return res;
-}
-
-int32_t AudioPolicyService::SetCaptureSilentState(bool state)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "SetCaptureSilentState, Audio server Proxy is null");
-
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t res = gsp->SetCaptureSilentState(state);
-    IPCSkeleton::SetCallingIdentity(identity);
-    return res;
-}
-
 bool AudioPolicyService::IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc)
 {
     DeviceType deviceType = desc->deviceType_;

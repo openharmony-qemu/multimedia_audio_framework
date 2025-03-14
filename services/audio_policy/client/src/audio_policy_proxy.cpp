@@ -1562,49 +1562,6 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     return 0;
 }
 
-int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
-    data.WriteInt32(static_cast<int32_t>(config.silentCapture));
-    size_t ss = config.filterOptions.usages.size();
-    data.WriteUint32(ss);
-    for (size_t i = 0; i < ss; i++) {
-        data.WriteInt32(static_cast<int32_t>(config.filterOptions.usages[i]));
-    }
-    data.WriteUint32(appTokenId);
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SetPlaybackCapturerFilterInfos failed, error: %d", error);
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::SetCaptureSilentState(bool state)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG(" SetCaptureSilentState WriteInterfaceToken failed");
-        return ERROR;
-    }
-    data.WriteBool(state);
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetCaptureSilentState failed, error: %d", error);
-        return ERROR;
-    }
-    return reply.ReadInt32();
-}
-
 int32_t AudioPolicyProxy::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
 {
     MessageParcel data;

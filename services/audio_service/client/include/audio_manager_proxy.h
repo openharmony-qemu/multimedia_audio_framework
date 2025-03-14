@@ -64,9 +64,7 @@ public:
         const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     bool CreatePlaybackCapturerManager() override;
-    int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
-    int32_t SetCaptureSilentState(bool state) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;

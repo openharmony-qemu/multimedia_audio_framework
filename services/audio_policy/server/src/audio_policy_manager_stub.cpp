@@ -102,8 +102,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "ADJUST_SYSTEM_VOLUME_BY_STEP",
     "GET_SYSTEM_VOLUME_IN_DB",
     "QUERY_EFFECT_SCENEMODE",
-    "SET_PLAYBACK_CAPTURER_FILTER_INFO",
-    "SET_CAPTURER_SILENT_STATE",
     "GET_HARDWARE_OUTPUT_SAMPLING_RATE",
     "GET_AUDIO_CAPTURER_MICROPHONE_DESCRIPTORS",
     "GET_AVAILABLE_MICROPHONE_DESCRIPTORS",
@@ -948,41 +946,6 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
     }
 }
 
-void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t maxUsageNum = 30;
-    AudioPlaybackCaptureConfig config;
-    int32_t flag = data.ReadInt32();
-    if (flag == 1) {
-        config.silentCapture = true;
-    }
-    uint32_t ss = data.ReadUint32();
-    if (ss >= maxUsageNum) {
-        reply.WriteInt32(ERROR);
-        return;
-    }
-    for (uint32_t i = 0; i < ss; i++) {
-        int32_t tmp_usage = data.ReadInt32();
-        if (std::find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmp_usage) ==
-            AUDIO_SUPPORTED_STREAM_USAGES.end()) {
-            continue;
-        }
-        config.filterOptions.usages.push_back(static_cast<StreamUsage>(tmp_usage));
-    }
-    uint32_t appTokenId = data.ReadUint32();
-
-    int32_t ret = SetPlaybackCapturerFilterInfos(config, appTokenId);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::SetCaptureSilentStateInternal(MessageParcel &data, MessageParcel &reply)
-{
-    bool flag = data.ReadBool();
-
-    int32_t ret = SetCaptureSilentState(flag);
-    reply.WriteInt32(ret);
-}
-
 void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
@@ -1612,12 +1575,6 @@ void AudioPolicyManagerStub::OnMiddleFouRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_EFFECT_SCENEMODE):
             QueryEffectSceneModeInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO):
-            SetPlaybackCapturerFilterInfosInternal(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE):
-            SetCaptureSilentStateInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_HARDWARE_OUTPUT_SAMPLING_RATE):
             GetHardwareOutputSamplingRateInternal(data, reply);

@@ -101,8 +101,6 @@ private:
     void AdjustSystemVolumeByStepInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);
     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
-    void SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply);
-    void SetCaptureSilentStateInternal(MessageParcel &data, MessageParcel &reply);
     void GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioCapturerMicrophoneDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetAvailableMicrophonesInternal(MessageParcel &data, MessageParcel &reply);

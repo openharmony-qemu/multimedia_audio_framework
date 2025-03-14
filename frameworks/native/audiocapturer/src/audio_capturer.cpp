@@ -212,19 +212,6 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
     }
 }
 
-int32_t AudioCapturerPrivate::InitPlaybackCapturer(int32_t type, const AudioPlaybackCaptureConfig &config)
-{
-    if (type != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        return SUCCESS;
-    }
-    return AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(config, appInfo_.appTokenId);
-}
-
-int32_t AudioCapturerPrivate::SetCaptureSilentState(bool state)
-{
-    return AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
-}
-
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 {
     return audioStream_->GetFrameCount(frameCount);

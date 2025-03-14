@@ -1674,19 +1674,6 @@ bool AudioServer::CreatePlaybackCapturerManager()
     return true;
 }
 
-int32_t AudioServer::SetSupportStreamUsage(std::vector<int32_t> usage)
-{
-    AUDIO_INFO_LOG("SetSupportStreamUsage with usage num:%{public}zu", usage.size());
-
-    if (!PermissionUtil::VerifyIsAudio()) {
-        AUDIO_ERR_LOG("not audio calling!");
-        return ERR_OPERATION_FAILED;
-    }
-    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    playbackCapturerMgr->SetSupportStreamUsage(usage);
-    return SUCCESS;
-}
-
 void AudioServer::RegisterAudioCapturerSourceCallback()
 {
     IAudioCapturerSource* audioCapturerSourceWakeupInstance =
@@ -1714,18 +1701,6 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
                 }));
         }
     }
-}
-
-int32_t AudioServer::SetCaptureSilentState(bool state)
-{
-    if (!PermissionUtil::VerifyIsAudio()) {
-        AUDIO_ERR_LOG("not audio calling!");
-        return ERR_OPERATION_FAILED;
-    }
-
-    PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    playbackCapturerMgr->SetCaptureSilentState(state);
-    return SUCCESS;
 }
 
 int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatializationState)

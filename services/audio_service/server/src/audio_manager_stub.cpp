@@ -55,10 +55,8 @@ const char *g_audioServerCodeStrs[] = {
     "CREATE_AUDIO_EFFECT_CHAIN_MANAGER",
     "SET_OUTPUT_DEVICE_SINK",
     "CREATE_PLAYBACK_CAPTURER_MANAGER",
-    "SET_SUPPORT_STREAM_USAGE",
     "REGISET_POLICY_PROVIDER",
     "SET_WAKEUP_CLOSE_CALLBACK",
-    "SET_CAPTURE_SILENT_STATE",
     "UPDATE_SPATIALIZATION_STATE",
     "UPDATE_SPATIAL_DEVICE_TYPE",
     "OFFLOAD_SET_VOLUME",
@@ -528,25 +526,6 @@ int AudioManagerStub::HandleCreatePlaybackCapturerManager(MessageParcel &data, M
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleSetSupportStreamUsage(MessageParcel &data, MessageParcel &reply)
-{
-    vector<int32_t> usage;
-    size_t cnt = static_cast<size_t>(data.ReadInt32());
-    CHECK_AND_RETURN_RET_LOG(cnt <= AUDIO_SUPPORTED_STREAM_USAGES.size(), AUDIO_ERR,
-        "Set support stream usage failed, please check");
-    for (size_t i = 0; i < cnt; i++) {
-        int32_t tmp_usage = data.ReadInt32();
-        if (find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmp_usage) ==
-            AUDIO_SUPPORTED_STREAM_USAGES.end()) {
-            continue;
-        }
-        usage.emplace_back(tmp_usage);
-    }
-    int32_t ret = SetSupportStreamUsage(usage);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
@@ -563,18 +542,6 @@ int AudioManagerStub::HandleSetWakeupSourceCallback(MessageParcel &data, Message
         "SET_WAKEUP_CLOSE_CALLBACK obj is null");
     int32_t result = SetWakeupSourceCallback(object);
     reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply)
-{
-    bool state = false;
-    int32_t flag = data.ReadInt32();
-    if (flag == 1) {
-        state = true;
-    }
-    int32_t ret = SetCaptureSilentState(state);
-    reply.WriteInt32(ret);
     return AUDIO_OK;
 }
 
@@ -848,14 +815,10 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleSetOutputDeviceSink(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER):
             return HandleCreatePlaybackCapturerManager(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SUPPORT_STREAM_USAGE):
-            return HandleSetSupportStreamUsage(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER):
             return HandleRegiestPolicyProvider(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK):
             return HandleSetWakeupSourceCallback(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE):
-            return HandleSetCaptureSilentState(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE):
             return HandleUpdateSpatializationState(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIAL_DEVICE_TYPE):

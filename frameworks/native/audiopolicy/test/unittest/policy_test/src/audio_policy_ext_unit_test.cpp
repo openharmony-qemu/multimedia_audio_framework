@@ -266,18 +266,6 @@ HWTEST(AudioPolicyExtUnitTest, QueryEffectSceneMode_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetPlaybackCapturerFilterInfos via legal state
- * @tc.number: SetPlaybackCapturerFilterInfos_001
- * @tc.desc  : Test SetPlaybackCapturerFilterInfos interface.set playback capturer filter infos and return ret.
- */
-HWTEST(AudioPolicyExtUnitTest, SetPlaybackCapturerFilterInfos_001, TestSize.Level1)
-{
-    AudioPlaybackCaptureConfig audioPlaybackCaptureConfig;
-    int32_t ret = AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(audioPlaybackCaptureConfig, 0);
-    EXPECT_EQ(0, ret);
-}
-
-/**
  * @tc.name  : Test GetMaxAmplitude via legal state
  * @tc.number: GetMaxAmplitude_001
  * @tc.desc  : Test GetMaxAmplitude interface.Query effect scene mode and return ret.

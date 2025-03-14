@@ -212,10 +212,6 @@ public:
 
     virtual int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) = 0;
 
-    virtual int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId) = 0;
-
-    virtual int32_t SetCaptureSilentState(bool state) = 0;
-
     virtual int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) = 0;
 
     virtual std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) = 0;
