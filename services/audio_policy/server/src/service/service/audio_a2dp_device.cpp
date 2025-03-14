@@ -155,6 +155,11 @@ bool AudioA2dpDevice::SetA2dpDeviceAbsVolumeSupport(const std::string& device, c
     auto configInfoPos = connectedA2dpDeviceMap_.find(device);
     if (configInfoPos != connectedA2dpDeviceMap_.end()) {
         configInfoPos->second.absVolumeSupport = support;
+        if (support && configInfoPos->second.volumeLevel == -1) {
+            configInfoPos->second.volumeLevel =
+                AudioVolumeManager::GetInstance().GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
+            configInfoPos->second.mute = AudioVolumeManager::GetInstance().GetStreamMute(STREAM_MUSIC);
+        }
         return true;
     }
     return false;
