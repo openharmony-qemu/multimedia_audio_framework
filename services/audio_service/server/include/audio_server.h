@@ -200,6 +200,7 @@ public:
 
     int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
     void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
+    void SetDeviceConnectedFlag(bool flag) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

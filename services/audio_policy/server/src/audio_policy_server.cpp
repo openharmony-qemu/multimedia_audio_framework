@@ -3504,6 +3504,16 @@ void AudioPolicyServer::UpdateSafeVolumeByS4()
     audioPolicyService_.UpdateSafeVolumeByS4();
 }
 
+void AudioPolicyServer::CheckConnectedDevice()
+{
+    audioPolicyService_.CheckConnectedDevice();
+}
+
+void AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration()
+{
+    audioPolicyService_.SetDeviceConnectedFlagFalseAfterDuration();
+}
+
 int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();

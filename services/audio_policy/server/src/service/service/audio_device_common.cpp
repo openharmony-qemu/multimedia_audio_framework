@@ -608,6 +608,15 @@ bool AudioDeviceCommon::NotifyRecreateDirectStream(std::shared_ptr<AudioRenderer
     return false;
 }
 
+void AudioDeviceCommon::SetDeviceConnectedFlagWhenFetchOutputDevice()
+{
+    AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    if (currentActiveDevice.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
+        currentActiveDevice.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        AudioServerProxy::GetInstance().SetDeviceConnectedFlag(false);
+    }
+}
+
 void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -628,6 +637,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             continue;
         }
         runningStreamCount++;
+        SetDeviceConnectedFlagWhenFetchOutputDevice();
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs = GetDeviceDescriptorInner(rendererChangeInfo);
         if (HandleDeviceChangeForFetchOutputDevice(descs.front(), rendererChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE &&
             !Util::IsRingerOrAlarmerStreamUsage(rendererChangeInfo->rendererInfo.streamUsage)) {

@@ -66,6 +66,9 @@ static void FillAdapterFuncPtr(struct SinkAdapter *adapter)
 
     // remote extend function
     adapter->SinkAdapterSplitRenderFrame = SinkAdapterSplitRenderFrame;
+
+    // primary extend function
+    adapter->SinkSetDeviceConnectedFlag = SinkSetDeviceConnectedFlag;
 }
 
 struct SinkAdapter *GetSinkAdapter(const char *deviceClass, const char *info)

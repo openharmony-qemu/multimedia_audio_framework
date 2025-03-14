@@ -528,6 +528,7 @@ public:
      * @return none.
      */
     virtual void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) = 0;
+    virtual void SetDeviceConnectedFlag(bool flag) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -616,6 +617,7 @@ private:
 #endif
     int HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply);
     int HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply);
+    int HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

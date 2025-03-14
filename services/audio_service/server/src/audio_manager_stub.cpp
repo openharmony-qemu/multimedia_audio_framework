@@ -117,6 +117,7 @@ const char *g_audioServerCodeStrs[] = {
     "UNLOAD_HDI_ADAPTER",
     "CHECK_CAPTURE_LIMIT",
     "RELEASE_CAPTURE_LIMIT",
+    "DEVICE_CONNECTED_FLAG",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -774,6 +775,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleNotifyAccountsChanged(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_AUDIO_POLICY_READY):
             return HandleNotifyAudioPolicyReady(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG):
+            return HandleDeviceConnectedFlag(data, reply);
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }
@@ -1176,6 +1179,13 @@ int AudioManagerStub::HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel 
     const std::string adapterName = data.ReadString();
     bool force = data.ReadBool();
     UnloadHdiAdapter(devMgrType, adapterName, force);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply)
+{
+    bool flag = data.ReadBool();
+    SetDeviceConnectedFlag(flag);
     return AUDIO_OK;
 }
 

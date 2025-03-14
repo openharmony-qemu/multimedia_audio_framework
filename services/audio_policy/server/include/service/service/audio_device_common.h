@@ -196,6 +196,7 @@ private:
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
     void FetchOutputDeviceWhenNoRunningStream();
+    void SetDeviceConnectedFlagWhenFetchOutputDevice();
     int32_t HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,

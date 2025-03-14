@@ -75,6 +75,7 @@ static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 const int32_t UID_AUDIO = 1041;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
+static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
 
 static int16_t IsDistributedOutput(const AudioDeviceDescriptor &desc)
 {
@@ -2126,6 +2127,19 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, false);
     return SUCCESS;
+}
+
+void AudioPolicyService::CheckConnectedDevice()
+{
+    bool flag = audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_USB_ARM_HEADSET ||
+        audioPolicyManager_.GetActiveDevice() ==  DEVICE_TYPE_USB_HEADSET;
+    AudioServerProxy::GetInstance().SetDeviceConnectedFlag(flag);
+}
+
+void AudioPolicyService::SetDeviceConnectedFlagFalseAfterDuration()
+{
+    usleep(DEVICE_CONNECTED_FLAG_DURATION_MS); // 3s
+    AudioServerProxy::GetInstance().SetDeviceConnectedFlag(false);
 }
 
 void AudioPolicyService::CheckHibernateState(bool hibernate)

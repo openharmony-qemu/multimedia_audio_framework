@@ -97,7 +97,8 @@ namespace AudioStandard {
         UNLOAD_HDI_ADAPTER,
         CHECK_CAPTURE_LIMIT,
         RELEASE_CAPTURE_LIMIT,
-        AUDIO_SERVER_CODE_MAX = RELEASE_CAPTURE_LIMIT,
+        DEVICE_CONNECTED_FLAG,
+        AUDIO_SERVER_CODE_MAX = DEVICE_CONNECTED_FLAG,
     };
 } // namespace AudioStandard
 } // namespace OHOS
