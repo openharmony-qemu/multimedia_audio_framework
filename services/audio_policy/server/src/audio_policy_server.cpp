@@ -1715,11 +1715,14 @@ void AudioPolicyServer::InitMicrophoneMute()
 int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, bool isLegacy)
 {
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
-    bool isMicrophoneMute = isLegacy ? IsMicrophoneMuteLegacy() : IsMicrophoneMute();
+    bool originalMicrophoneMute = IsMicrophoneMute();
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
-    if (ret == SUCCESS && isMicrophoneMute != isMute && audioPolicyServerHandler_ != nullptr) {
+    bool newMicrophoneMute = IsMicrophoneMute();
+    if (ret == SUCCESS && originalMicrophoneMute != newMicrophoneMute && audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
-        micStateChangeEvent.mute = audioPolicyService_.IsMicrophoneMute();
+        micStateChangeEvent.mute = newMicrophoneMute;
+        AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set common mic mute state:%{public}d, isLegacy:%{public}d",
+            newMicrophoneMute, isLegacy);
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
     }
     return ret;
@@ -1756,6 +1759,7 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const 
     CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
         "MICROPHONE_CONTROL_PERMISSION permission denied");
     WatchTimeout guard("PrivacyKit::SetMutePolicy:SetMicrophoneMutePersistent");
+    bool originalMicrophoneMute = IsMicrophoneMute();
     int32_t ret = PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[type], MICPHONE_CALLER, isMute,
         IPCSkeleton::GetCallingTokenID());
     guard.CheckCurrTimeout();
@@ -1764,10 +1768,11 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const 
         return ret;
     }
     ret = audioPolicyService_.SetMicrophoneMutePersistent(isMute);
-    if (ret == SUCCESS && audioPolicyServerHandler_ != nullptr) {
+    bool newMicrophoneMute = IsMicrophoneMute();
+    if (ret == SUCCESS && originalMicrophoneMute != newMicrophoneMute && audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
-        micStateChangeEvent.mute = audioPolicyService_.IsMicrophoneMute();
-        AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set mic mute state persistent.");
+        micStateChangeEvent.mute = newMicrophoneMute;
+        AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set persistent mic mute state:%{public}d", newMicrophoneMute);
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
     }
     return ret;
