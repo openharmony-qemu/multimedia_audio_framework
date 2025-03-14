@@ -2463,24 +2463,25 @@ void AudioPolicyService::MuteSinkPort(const std::string &portName, int32_t durat
     switchThread.detach();
 }
 
-void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
+void AudioPolicyService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
     auto ringermode = GetRingerMode();
     if (reason.isOverride() || reason.isSetDefaultOutputDevice()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
-        if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
+        if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
         }
+        MutePrimaryOrOffloadSink(oldSinkName, muteTime);
         MuteSinkPort(newSinkName, SELECT_DEVICE_MUTE_MS, true);
-        MuteSinkPort(oldSinkname, muteTime, true);
+        MuteSinkPort(oldSinkName, muteTime, true);
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
         int64_t muteTime = NEW_DEVICE_AVALIABLE_MUTE_MS;
-        if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkname == OFFLOAD_PRIMARY_SPEAKER) {
+        if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS;
         }
         MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
-        MuteSinkPort(oldSinkname, muteTime, true);
+        MuteSinkPort(oldSinkName, muteTime, true);
     } else if (reason.IsOldDeviceUnavaliable() && ((audioScene_ == AUDIO_SCENE_DEFAULT) ||
         ((audioScene_ == AUDIO_SCENE_RINGING || audioScene_ == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL))) {
@@ -2492,9 +2493,19 @@ void AudioPolicyService::MuteSinkPort(const std::string &oldSinkname, const std:
         MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
     } else if (reason == AudioStreamDeviceChangeReason::UNKNOWN &&
-        oldSinkname == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
+        oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
         MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
+    }
+}
+
+void AudioPolicyService::MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime)
+{
+    // fix pop when switching devices during multiple concurrent streams
+    if (sinkName == OFFLOAD_PRIMARY_SPEAKER) {
+        MuteSinkPort(PRIMARY_SPEAKER, muteTime, true);
+    } else if (sinkName == PRIMARY_SPEAKER) {
+        MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, muteTime, true);
     }
 }
 
@@ -4117,7 +4128,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     } else {
         UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-        FetchDevice(true, reason); // fix pop, fetch device before unload module
         result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
     }
