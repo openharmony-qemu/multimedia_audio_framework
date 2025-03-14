@@ -606,6 +606,7 @@ ohos_executable("audio_process_client_test") {
   install_enable = false
 
   include_dirs = [
+    "../../frameworks/native/audiostream/include",
     "../../frameworks/native/audioutils/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "client/include",

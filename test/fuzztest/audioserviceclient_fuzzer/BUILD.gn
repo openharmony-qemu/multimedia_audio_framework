@@ -21,6 +21,7 @@ ohos_fuzztest("AudioServiceClientFuzzTest") {
 
   include_dirs = [
     "../../../frameworks/native/audioinnercall/include",
+    "../../../frameworks/native/audiostream/include",
     "../../../frameworks/native/hdiadapter/sink/common",
     "../../../services/audio_service/server/include",
     "../../../services/audio_service/client/include",
