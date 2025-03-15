@@ -45,21 +45,13 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioA2dpOffloadManager;
 class AudioCoreService : public enable_shared_from_this<AudioCoreService> {
-public:
-    void SetAudioServerProxy();
-    std::string GetAdapterNameBySessionId(uint32_t sessionId);
-    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo);
-    int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    int32_t ScoInputDeviceFetchedForRecongnition(
-        bool handleFlag, const std::string &address, ConnectState connectState);
-    void BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    uint32_t GenerateSessionId();
-    void CheckModemScene(const AudioStreamDeviceChangeReasonExt reason);
-    
+public:  
     class EventEntry : public ICoreServiceProvider, public IDeviceStatusObserver {
     public:
         EventEntry(std::shared_ptr<AudioCoreService> coreService);
-        void RegiestCoreService();
+        void RegistCoreService();
+
+        // Stream operations
         int32_t CreateRendererClient(
             std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
         int32_t CreateCapturerClient(
@@ -88,37 +80,26 @@ public:
         void OnServiceDisconnected(AudioServiceIndex serviceIndex) override;
         void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress) override;
 
+        // Functions related to assignment operations - device related
         int32_t SetAudioScene(AudioScene audioScene);
-        bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
         int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid);
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-            AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
-            AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
-        std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
         int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
-        std::vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
         int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
             const sptr<IRemoteObject> &object, const int32_t apiVersion);
         int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
         void RegisteredTrackerClientDied(pid_t uid);
         bool ConnectServiceAdapter();
         void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
-        std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
-        std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
         int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
         int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
-        int32_t GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
-            &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission);
         void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
         int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
         void OnCapturerSessionRemoved(uint64_t sessionID);
         void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
         int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
-        std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
         void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
             const AudioStreamDeviceChangeReasonExt reason);
         void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
@@ -126,18 +107,25 @@ public:
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
         int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
+
+        // Functions related to get operations - device related
+        bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
+            AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
             AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
+        std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
+        std::vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
+        std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
+        std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
+        int32_t GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
+            &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission);
+        int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+            bool hasBTPermission, bool hasSystemPermission);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
         int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
         int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
-
-private:
-#ifdef HAS_FEATURE_INNERCAPTURER
-        void LoadModernInnerCapSink();
-#endif
-        void LoadHdiEffectModel();
-
+        std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
@@ -155,6 +143,7 @@ private:
     std::shared_ptr<EventEntry> GetEventEntry();
 
     // Called by EventEntry - with lock
+    // Stream operations
     int32_t CreateRendererClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
     int32_t CreateCapturerClient(
@@ -164,40 +153,15 @@ private:
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId);
 
-    int32_t SetAudioScene(AudioScene audioScene);
-    bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
-        AudioCapturerInfo &captureInfo, std::string networkId);
-    std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
+    // ICoreServiceProvider from EventEntry
+    int32_t SetDefaultOutputDevice(
+        const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
+    std::string GetAdapterNameBySessionId(uint32_t sessionId);
+    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo);
+    uint32_t GenerateSessionId();
+
+    // IDeviceStatusObserver from EventEntry
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
-    std::vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-        const AudioStreamDeviceChangeReasonExt reason);
-    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
-    int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
-    bool ConnectServiceAdapter();
-    bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
-    void LoadModernInnerCapSink();
-    int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-                            const sptr<IRemoteObject> &object, const int32_t apiVersion);
-    int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
-    void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
-    void UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-        RendererState rendererState);
-    void RegisteredTrackerClientDied(pid_t uid);
-    void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
-
-
-    // device status listener inner
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false);
@@ -209,25 +173,53 @@ private:
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
-    // device status listener inner end
 
-    std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
-    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
+    // Functions related to assignment operations - device related
+    int32_t SetAudioScene(AudioScene audioScene);
+    bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid);
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+    int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
+        const sptr<IRemoteObject> &object, const int32_t apiVersion);
+    int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+    void RegisteredTrackerClientDied(pid_t uid);
+    bool ConnectServiceAdapter();
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
-
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
-    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
-    int32_t GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
-        &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission);
-    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
+    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
     void OnCapturerSessionRemoved(uint64_t sessionID);
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
+    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
+    int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+
+    // Functions related to get operations - device related
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
+        AudioRendererInfo &rendererInfo, std::string networkId);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
+        AudioCapturerInfo &captureInfo, std::string networkId);
+    std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
+    std::vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
+    std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
+    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
+    int32_t GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
+        &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission);
+    int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+        bool hasBTPermission, bool hasSystemPermission);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
+    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
+    bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
 
     // Called by Others - without lock
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
@@ -235,20 +227,25 @@ private:
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void RegisterBluetoothListener();
     void UnregisterBluetoothListener();
-    void NotifyAccountsChanged(const int &id);
-    void RegisterDataObserver();
+    void ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
+    int32_t SetRingerMode(AudioRingerMode ringMode);
+    int32_t FetchOutputDeviceAndRoute(
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    int32_t FetchInputDeviceAndRoute();
+    void SetAudioServerProxy();
+
+private:
+    static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchCapturerPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    int32_t SelectInputDeviceAndRoute();
-    int32_t SelectOutputDeviceAndRoute(
-        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-    void ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
-    int32_t SetRingerMode(AudioRingerMode ringMode);
-    int32_t SetDefaultOutputDevice(
-        const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
-
-private:
+    int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    int32_t ScoInputDeviceFetchedForRecongnition(
+        bool handleFlag, const std::string &address, ConnectState connectState);
+    void BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void CheckModemScene(const AudioStreamDeviceChangeReasonExt reason);
+    void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+    void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
     int32_t BluetoothDeviceFetchOutputHandle(shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> desc,
@@ -264,22 +261,12 @@ private:
     void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
         SourceType sourceType);
     bool IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo);
-
 #ifdef BLUETOOTH_ENABLE
     const sptr<IStandardAudioService> RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
-
-    int32_t SelectDeviceAndRoute(
+    int32_t FetchDeviceAndRoute(
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-    int32_t FetchOutputDevice(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, const AudioStreamDeviceChangeReasonExt reason);
-    int32_t FetchInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    int32_t FetchOutputDevices(std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs,
-        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    int32_t FetchInputDevices(std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs);
-    int32_t FetchPipesAndExecute(
-        std::vector<AudioStreamDescriptor> &outputStreamDescs, const AudioStreamDeviceChangeReasonExt reason);
     int32_t FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         uint32_t &sessionId, uint32_t &audioFlag,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
@@ -315,15 +302,11 @@ private:
     static int32_t GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     static void UpdateRendererInfoWhenNoPermission(const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
         bool hasSystemPermission);
+    static void UpdateCapturerInfoWhenNoPermission( const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
+        bool hasSystemPermission);
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
-    void SubscribeAccessibilityConfigObserver();
-    void RegisterAccessibilityMonitorHelper();
-    void RegisterAccessiblilityBalance();
-    void RegisterAccessiblilityMono();
-    void OnMonoAudioConfigChanged(bool audioMono);
-    void RegisterNameMonitorHelper();
     void SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
@@ -331,9 +314,7 @@ private:
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
-
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
-    void OnAudioBalanceChanged(float audioBalance);
     bool GetFastControlParam();
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
@@ -342,11 +323,9 @@ private:
     bool IsPaRoute(uint32_t routeFlag);
     int32_t HandleScoOutputDeviceFetched(
         shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason);
-
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
-
     AudioActiveDevice& audioActiveDevice_;
     AudioSceneManager& audioSceneManager_;
     AudioVolumeManager& audioVolumeManager_;
@@ -391,7 +370,6 @@ private:
         .type = CAST_TYPE_NULL
     };
 };
-static std::string GetEncryptAddr(const std::string &addr);
 }
 }
 #endif // AUDIO_CORE_SERVICE_H

@@ -590,7 +590,7 @@ int32_t AudioManagerProxy::RegiestPolicyProvider(const sptr<IRemoteObject> &obje
     return reply.ReadInt32();
 }
 
-int32_t AudioManagerProxy::RegiestCoreServiceProvider(const sptr<IRemoteObject> &object)
+int32_t AudioManagerProxy::RegistCoreServiceProvider(const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;

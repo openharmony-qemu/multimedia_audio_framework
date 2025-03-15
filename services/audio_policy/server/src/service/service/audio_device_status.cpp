@@ -160,8 +160,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
     // fetch input&output device
-    AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(reason);
-    AudioCoreService::GetCoreService()->SelectInputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
     // update a2dp offload
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
@@ -712,9 +712,9 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
-    AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
         AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
-    AudioCoreService::GetCoreService()->SelectInputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     if (AudioPolicyUtils::GetInstance().GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
         remoteCapturerSwitch_ = true;
@@ -961,7 +961,7 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, audioDeviceDescriptors[0]);
     }
-    AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
     audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "OnForcedDeviceSelected");
 }
@@ -996,8 +996,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
         return;
     }
     // fetch input&output device
-    AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(reason);
-    AudioCoreService::GetCoreService()->SelectInputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     // update a2dp offload
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
@@ -1022,7 +1022,7 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
         CheckForA2dpSuspend(updatedDesc);
-        AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(reason); //  fix pop, fetch device before unload module
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason); //  fix pop, fetch device before unload module
         int32_t result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
@@ -1074,8 +1074,8 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
 
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     OnPreferredStateUpdated(desc, command, reason);
-    AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(reason);
-    AudioCoreService::GetCoreService()->SelectInputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
@@ -1233,8 +1233,8 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
     AUDIO_INFO_LOG("onDeviceStatusUpdated reson:%{public}d",
         AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
-    AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
-    AudioCoreService::GetCoreService()->SelectInputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 }
 
 }

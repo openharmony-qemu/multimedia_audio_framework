@@ -602,11 +602,11 @@ int AudioManagerStub::HandleRegiestPolicyProvider(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleRegiestCoreServiceProvider(MessageParcel &data, MessageParcel &reply)
+int AudioManagerStub::HandleRegistCoreServiceProvider(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     CHECK_AND_RETURN_RET_LOG(object != nullptr, AUDIO_ERR, "obj is null");
-    int32_t result = RegiestCoreServiceProvider(object);
+    int32_t result = RegistCoreServiceProvider(object);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -918,7 +918,7 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER):
             return HandleRegiestPolicyProvider(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_CORE_SERVICE_PROVIDER):
-            return HandleRegiestCoreServiceProvider(data, reply);
+            return HandleRegistCoreServiceProvider(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK):
             return HandleSetWakeupSourceCallback(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE):

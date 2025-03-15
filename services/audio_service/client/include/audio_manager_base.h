@@ -327,7 +327,7 @@ public:
      *
      * @return result code.
      */
-    virtual int32_t RegiestCoreServiceProvider(const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) = 0;
 
     /**
      * Create playback capturer manager.
@@ -632,7 +632,7 @@ private:
     int HandleSetOutputDeviceSink(MessageParcel &data, MessageParcel &reply);
     int HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply);
     int HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply);
-    int HandleRegiestCoreServiceProvider(MessageParcel &data, MessageParcel &reply);
+    int HandleRegistCoreServiceProvider(MessageParcel &data, MessageParcel &reply);
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply);

@@ -128,7 +128,7 @@ public:
 
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
 
-    int32_t RegiestCoreServiceProvider(const sptr<IRemoteObject> &object) override;
+    int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) override;
 
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
 

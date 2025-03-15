@@ -84,7 +84,7 @@ public:
     bool CreateEffectChainManagerProxy(std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam);
     int32_t RegiestPolicyProviderProxy(const sptr<IRemoteObject> &object);
-    int32_t RegiestCoreServiceProviderProxy(const sptr<IRemoteObject> &object);
+    int32_t RegistCoreServiceProviderProxy(const sptr<IRemoteObject> &object);
     void SetParameterCallbackProxy(const sptr<IRemoteObject>& object);
     int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
         const DeviceType& deviceType = DEVICE_TYPE_NONE);

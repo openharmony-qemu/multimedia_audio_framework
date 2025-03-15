@@ -57,7 +57,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     AUDIO_INFO_LOG("Pipe list size: %{public}zu, routeFlag: %{public}u", pipeInfoList.size(), streamDesc->routeFlag_);
 
     std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList {};
-    for (auto curPipeInfo : pipeInfoList) {
+    for (auto &curPipeInfo : pipeInfoList) {
         if (curPipeInfo->pipeRole_ == static_cast<AudioPipeRole>(streamDesc->audioMode_)) {
             selectedPipeInfoList.push_back(curPipeInfo);
         }
@@ -71,7 +71,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
         AUDIO_ERR_LOG("Pipe info is null");
         return selectedPipeInfoList;
     }
-    for (auto pipeInfo : selectedPipeInfoList) {
+    for (auto &pipeInfo : selectedPipeInfoList) {
         std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = pipeInfoPtr->adapterInfo_.lock();
         if (adapterInfoPtr == nullptr) {
             AUDIO_ERR_LOG("Adapter info is null");
@@ -105,7 +105,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
     if (streamDescs.size() == 0) {
         return selectedPipeInfoList;
     }
-    for (auto curPipeInfo : pipeInfoList) {
+    for (auto &curPipeInfo : pipeInfoList) {
         if (curPipeInfo->pipeRole_ == static_cast<AudioPipeRole>(streamDescs[0]->audioMode_)) {
             selectedPipeInfoList.push_back(curPipeInfo);
         }
@@ -114,16 +114,16 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
 
     //Record current pipe--stream info for later use (Judge stream action)
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToPipeInfo;
-    for (auto pipeInfo : selectedPipeInfoList) {
+    for (auto &pipeInfo : selectedPipeInfoList) {
         pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
-        for (auto streamDesc : pipeInfo->streamDescriptors_) {
+        for (auto &streamDesc : pipeInfo->streamDescriptors_) {
             streamDescToPipeInfo[streamDesc->sessionId_] = pipeInfo;
         }
     }
 
     // deep copy to new pipeList
     std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
-    for (auto pipeInfo : selectedPipeInfoList) {
+    for (auto &pipeInfo : selectedPipeInfoList) {
         std::shared_ptr<AudioPipeInfo> temp = std::make_shared<AudioPipeInfo>(*pipeInfo);
         temp->streamDescriptors_.clear();
         temp->streamDescMap_.clear();
@@ -137,7 +137,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
         AUDIO_INFO_LOG("adapter name: %{public}s", adapterName.c_str());
         ScanPipeListForStreamDesc(newPipeInfoList, streamDesc); // Get route flag and apply concurrency
         bool isFindPipeInfo = false;
-        for (auto newPipeInfo : newPipeInfoList) {
+        for (auto &newPipeInfo : newPipeInfoList) {
             if (newPipeInfo->adapterName_ == adapterName && newPipeInfo->routeFlag_ == streamDesc->routeFlag_) {
                 newPipeInfo->streamDescriptors_.push_back(streamDesc);
                 if (streamDescToPipeInfo.find(streamDesc->sessionId_) == streamDescToPipeInfo.end()) {
@@ -168,7 +168,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
     }
 
     // Check is pipe update
-    for (auto pipeInfo : selectedPipeInfoList) {
+    for (auto &pipeInfo : selectedPipeInfoList) {
         if (pipeInfo->streamDescriptors_.size() == 0) {
             pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
         }
@@ -182,9 +182,9 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
     AUDIO_INFO_LOG("Route flag: %{public}u", streamDesc->routeFlag_);
 
-    for (auto pipeInfo : pipeInfoList) {
+    for (auto &pipeInfo : pipeInfoList) {
         bool isUpdate = false;
-        for (auto streamDescInPipe : pipeInfo->streamDescriptors_) {
+        for (auto &streamDescInPipe : pipeInfo->streamDescriptors_) {
             isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc);
             AUDIO_INFO_LOG("isUpdate: %{public}d, action: %{public}d", isUpdate, streamDescInPipe->streamAction_);
         }
@@ -228,7 +228,6 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
         }
     }
 }
-
 
 bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
     std::shared_ptr<AudioStreamDescriptor> cmpStream)

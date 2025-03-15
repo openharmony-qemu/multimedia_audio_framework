@@ -256,6 +256,8 @@ audio_ohos_library("audio_policy_service") {
     "services/core/config/src/audio_policy_config_manager.cpp",
     "services/core/config/src/audio_policy_config_parser.cpp",    
     "services/core/src/audio_core_service.cpp",
+    "services/core/src/audio_core_service_entry.cpp",
+    "services/core/src/audio_core_service_private.cpp",
     "services/pipe/src/audio_pipe_manager.cpp",
     "services/pipe/src/audio_pipe_selector.cpp",
     "util/src/audio_ability_manager.cpp",

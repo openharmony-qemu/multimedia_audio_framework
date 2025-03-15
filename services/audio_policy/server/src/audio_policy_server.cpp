@@ -2370,7 +2370,7 @@ int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: System use permission: %{public}d", hasSystemPermission);
 
-    return audioPolicyService_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos,
+    return eventEntry_->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos,
         hasBTPermission, hasSystemPermission);
 }
 
@@ -2702,7 +2702,7 @@ void AudioPolicyServer::RegisterParamCallback()
     audioPolicyService_.SetParameterCallback(remoteParameterCallback_);
     // regiest policy provider in audio server
     audioPolicyService_.RegiestPolicy();
-    eventEntry_->RegiestCoreService();
+    eventEntry_->RegistCoreService();
 }
 
 void AudioPolicyServer::RegisterBluetoothListener()
@@ -2765,7 +2765,7 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
 
 void AudioPolicyServer::RegisterDataObserver()
 {
-    coreService_->RegisterDataObserver();
+    audioPolicyService_.RegisterDataObserver();
 }
 
 int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
@@ -3508,7 +3508,7 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
-    coreService_->NotifyAccountsChanged(id);
+    audioPolicyService_.NotifyAccountsChanged(id);
 }
 
 int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)

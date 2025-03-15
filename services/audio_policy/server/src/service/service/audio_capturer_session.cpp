@@ -119,12 +119,12 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
         audioPolicyManager_.ResetRemoteCastDeviceVolume();
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
-        AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute(
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
             AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
         UnloadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     }
-    AudioCoreService::GetCoreService()->SelectOutputDeviceAndRoute();
-    AudioCoreService::GetCoreService()->SelectInputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
     // update a2dp offload
     if (audioA2dpOffloadManager_) {

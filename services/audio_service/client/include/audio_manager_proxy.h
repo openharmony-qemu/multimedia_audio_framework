@@ -65,7 +65,7 @@ public:
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     bool CreatePlaybackCapturerManager() override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
-    int32_t RegiestCoreServiceProvider(const sptr<IRemoteObject> &object) override;
+    int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
