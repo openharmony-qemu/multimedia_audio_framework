@@ -471,7 +471,7 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
 int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 {
     int32_t ret = SUCCESS;
-
+    AUDIO_INFO_LOG("Input device type %{public}d", inputDevice);
     switch (inputDevice) {
         case DEVICE_TYPE_MIC:
         case DEVICE_TYPE_EARPIECE:

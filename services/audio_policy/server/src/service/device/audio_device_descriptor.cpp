@@ -362,6 +362,14 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
         (!IsUsb(deviceType_) || deviceDescriptor.deviceRole_ == deviceRole_);
 }
 
+bool AudioDeviceDescriptor::IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const
+{
+    return deviceDescriptor->deviceType_ == deviceType_ &&
+        deviceDescriptor->macAddress_ == macAddress_ &&
+        deviceDescriptor->networkId_ == networkId_ &&
+        (!IsUsb(deviceType_) || deviceDescriptor->deviceRole_ == deviceRole_);
+}
+
 bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const
 {
     return deviceType_ == deviceInfo.deviceType_ &&
@@ -377,6 +385,16 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.deviceType_ == deviceType_ &&
         deviceDescriptor.macAddress_ == macAddress_ &&
         deviceDescriptor.networkId_ == networkId_;
+}
+
+void AudioDeviceDescriptor::Dump(std::string &dumpString) {
+    dumpString += "deviceName: " + deviceName_ + " deviceRole: ";
+    if (deviceRole_ != INPUT_DEVICE && deviceRole_ != OUTPUT_DEVICE) {
+        dumpString += "INVALID";
+    } else {
+        dumpString += deviceRole_ == INPUT_DEVICE ? "INPUT" : "OUTPUT";
+    }
+    dumpString += " deviceType: " + std::to_string(deviceType_);
 }
 
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType() const

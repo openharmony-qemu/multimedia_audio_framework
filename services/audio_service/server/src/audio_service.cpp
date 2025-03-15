@@ -24,6 +24,7 @@
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
+#include "core_service_handler.h"
 #include "ipc_stream_in_server.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
@@ -156,6 +157,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
     Trace trace("AudioService::GetIpcStream");
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (!isRegisterCapturerFilterListened_) {
+        AUDIO_INFO_LOG("isRegisterCapturerFilterListened_ is false");
         PlaybackCapturerManager::GetInstance()->RegisterCapturerFilterListener(this);
         isRegisterCapturerFilterListened_ = true;
     }
@@ -870,15 +872,32 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
 {
     // send the config to AudioPolicyServera and get the device info.
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, false, deviceInfo);
-    if (ret) {
+    int32_t ret =
+        CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId, deviceInfo);
+    if (ret == SUCCESS) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
             "supportLowLatency: %{public}d", deviceInfo.deviceType_, deviceInfo.isLowLatencyDevice_);
+        if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+            config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+            if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
+                AUDIO_INFO_LOG("VoIP 16K");
+                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+            } else {
+                AUDIO_INFO_LOG("VoIP 48K");
+                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+            }
+
+        } else {
+            AUDIO_INFO_LOG("Fast stream");
+            AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+            deviceInfo.audioStreamInfo_ = targetStreamInfo;
+            deviceInfo.deviceName_ = "mmap_device";
+        }
         return deviceInfo;
-    } else {
-        AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
     }
 
+    AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");
     if (config.audioMode == AUDIO_MODE_RECORD) {
         deviceInfo.deviceId_ = 1;
         deviceInfo.networkId_ = LOCAL_NETWORK_ID;

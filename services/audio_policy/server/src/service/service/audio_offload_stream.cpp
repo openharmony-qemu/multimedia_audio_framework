@@ -66,13 +66,7 @@ void AudioOffloadStream::HandlePowerStateChanged(PowerMgr::PowerState state)
 
 void AudioOffloadStream::SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo)
 {
-    if (moduleInfo.name == "Speaker") {
-        for (const auto &portInfo : moduleInfo.ports) {
-            if ((portInfo.adapterName == "primary") && (portInfo.offloadEnable == "1")) {
-                isOffloadAvailable_ = true;
-            }
-        }
-    }
+    isOffloadAvailable_ = true;
 }
 
 bool AudioOffloadStream::GetOffloadAvailableFromXml() const
@@ -104,15 +98,7 @@ void AudioOffloadStream::OffloadStreamSetCheck(uint32_t sessionId)
     std::string curOutputNetworkId = audioActiveDevice_.GetCurrentOutputDeviceNetworkId();
     std::string curOutputMacAddr = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    ret = streamCollector_.GetRendererDeviceInfo(sessionId, deviceInfo);
-    if (ret != SUCCESS || curOutputNetworkId != LOCAL_NETWORK_ID ||
-        curOutputDeviceType == DEVICE_TYPE_REMOTE_CAST ||
-        deviceInfo.deviceType_ != curOutputDeviceType ||
-        deviceInfo.networkId_ != curOutputNetworkId ||
-        deviceInfo.macAddress_ != curOutputMacAddr) {
-        AUDIO_INFO_LOG("sessionId[%{public}d] not fetch device, Offload Skipped", sessionId);
-        return;
-    }
+    streamCollector_.GetRendererDeviceInfo(sessionId, deviceInfo);
 
     AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
     if (!CheckStreamOffloadMode(sessionId, streamType)) {
@@ -158,11 +144,6 @@ bool AudioOffloadStream::CheckStreamOffloadMode(int64_t activateSessionId, Audio
 
     if (!audioActiveDevice_.CheckActiveOutputDeviceSupportOffload()) {
         AUDIO_PRERELEASE_LOGI("Offload not available on current output device, skipped");
-        return false;
-    }
-
-    if (!streamCollector_.IsOffloadAllowed(activateSessionId)) {
-        AUDIO_PRERELEASE_LOGI("Offload is not allowed, Skipped");
         return false;
     }
 
@@ -306,15 +287,7 @@ int32_t AudioOffloadStream::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
 
 void AudioOffloadStream::ResetOffloadMode(int32_t sessionId)
 {
-    AUDIO_DEBUG_LOG("Doing reset offload mode!");
-
-    if (!audioActiveDevice_.CheckActiveOutputDeviceSupportOffload()) {
-        AUDIO_DEBUG_LOG("Resetting offload not available on this output device! Release.");
-        OffloadStreamReleaseCheck(*offloadSessionID_);
-        return;
-    }
-
-    OffloadStreamSetCheck(sessionId);
+    AUDIO_INFO_LOG("No need to reset offload mode! SKIPPED");
 }
 
 void AudioOffloadStream::OffloadStreamReleaseCheck(uint32_t sessionId)

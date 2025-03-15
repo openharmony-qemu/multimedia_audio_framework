@@ -193,7 +193,7 @@ uint32_t AudioDefinitionPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
 
 AudioChannel AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(AudioChannelLayout layout)
 {
-    AudioChannel channel = AudioChannel::CHANNEL_UNKNOWN;
+    AudioChannel channel = AudioChannel::CHANNEL_UNKNOW;
     switch (layout) {
         case AudioChannelLayout::CH_LAYOUT_MONO:
             channel = AudioChannel::MONO;
@@ -230,7 +230,7 @@ AudioChannel AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(AudioChanne
             channel = AudioChannel::CHANNEL_12;
             break;
         default:
-            channel = AudioChannel::CHANNEL_UNKNOWN;
+            channel = AudioChannel::CHANNEL_UNKNOW;
             break;
     }
     return channel;

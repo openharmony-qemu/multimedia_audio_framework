@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../../../config.gni")
+config("audio_utils_public_config") {
+  include_dirs = [ "./include" ]
+
+  cflags_cc = [ "-std=c++20" ]
+}
+
+ohos_shared_library("audio_server_definitions") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  public_configs = [ ":audio_utils_public_config" ]
+  install_enable = true
+  include_dirs = [
+    "./include",
+  ]
+
+  sources = [
+    "./src/audio_service_definiton.cpp",
+  ]
+
+  public_external_deps = [ "bounds_checking_function:libsec_shared" ]
+
+  external_deps = [ 
+    "c_utils:utils",
+    "ipc:ipc_single",
+  ]
+
+  defines = []
+
+  if (build_variant == "user") {
+    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
+  } else if (build_variant == "root") {
+    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
+  }
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}

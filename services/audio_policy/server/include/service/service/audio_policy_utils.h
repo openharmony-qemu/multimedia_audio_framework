@@ -59,7 +59,8 @@ public:
     std::string GetNewSinkPortName(DeviceType deviceType);
     std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
     string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
-    std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
+    std::string GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId);
+    std::string GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId);
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
     std::string GetSourcePortName(DeviceType deviceType);
     void UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);

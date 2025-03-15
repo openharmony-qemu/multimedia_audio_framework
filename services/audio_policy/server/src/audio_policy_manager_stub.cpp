@@ -79,6 +79,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_SINK_LATENCY",
     "GET_PREFERRED_OUTPUT_STREAM_TYPE",
     "GET_PREFERRED_INPUT_STREAM_TYPE",
+    "CREATE_RENDERER_CLIENT",
+    "CREATE_CAPTURER_CLIENT",
     "REGISTER_TRACKER",
     "UPDATE_TRACKER",
     "GET_RENDERER_CHANGE_INFOS",
@@ -644,6 +646,30 @@ void AudioPolicyManagerStub::GetPreferredInputStreamTypeInternal(MessageParcel &
     capturerInfo.Unmarshalling(data);
     int32_t result = GetPreferredInputStreamType(capturerInfo);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::CreateRendererClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->Unmarshalling(data);
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    int32_t ret = CreateRendererClient(streamDesc, flag, sessionId);
+    reply.WriteUint32(flag);
+    reply.WriteUint32(sessionId);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::CreateCapturerClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->Unmarshalling(data);
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    int32_t ret = CreateCapturerClient(streamDesc, flag, sessionId);
+    reply.WriteUint32(flag);
+    reply.WriteUint32(sessionId);
+    reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
@@ -1572,6 +1598,12 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INPUT_STREAM_TYPE):
             GetPreferredInputStreamTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_RENDERER_CLIENT):
+            CreateRendererClientInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_CAPTURER_CLIENT):
+            CreateCapturerClientInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_TRACKER):
             RegisterTrackerInternal(data, reply);

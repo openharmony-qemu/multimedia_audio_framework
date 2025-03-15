@@ -28,6 +28,7 @@
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_ec_info.h"
+#include "hdi_adapter_type.h"
 #include "datashare_helper.h"
 #include "audio_errors.h"
 
@@ -83,6 +84,7 @@ public:
     bool CreateEffectChainManagerProxy(std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam);
     int32_t RegiestPolicyProviderProxy(const sptr<IRemoteObject> &object);
+    int32_t RegiestCoreServiceProviderProxy(const sptr<IRemoteObject> &object);
     void SetParameterCallbackProxy(const sptr<IRemoteObject>& object);
     int32_t SetAudioEffectPropertyProxy(const AudioEffectPropertyArrayV3 &propertyArray,
         const DeviceType& deviceType = DEVICE_TYPE_NONE);
@@ -101,6 +103,11 @@ public:
 #endif
     int32_t LoadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName);
     void UnloadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName, bool force);
+    uint32_t CreateHdiSinkPortProxy(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSinkAttr &attr);
+    uint32_t CreateHdiSourcePortProxy(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSourceAttr &attr);
+    void DestroyHdiPortProxy(uint32_t id);
     void SetDeviceConnectedFlag(bool flag);
 private:
     AudioServerProxy() {}

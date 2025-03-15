@@ -117,7 +117,7 @@ public:
     AudioSampleFormat format_ = INVALID_WIDTH;
     uint32_t sampleRate_ = 0;
     AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
-    AudioChannel channels_ = CHANNEL_UNKNOWN;
+    AudioChannel channels_ = CHANNEL_UNKNOW;
     uint32_t bufferSize_ = 0;
 
     std::weak_ptr<AdapterPipeInfo> pipeInfo_;
@@ -205,7 +205,7 @@ public:
 
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap {};
     std::unordered_map<std::pair<DeviceType, DeviceRole>,
-        std::vector<std::shared_ptr<AdapterDeviceInfo>>, pairHash> deviceInfoMap {};
+        std::vector<std::shared_ptr<AdapterDeviceInfo>>, PairHash> deviceInfoMap {};
 private:
     AudioPolicyConfigData() = default;
     AudioPolicyConfigData(const AudioPolicyConfigData&) = delete;

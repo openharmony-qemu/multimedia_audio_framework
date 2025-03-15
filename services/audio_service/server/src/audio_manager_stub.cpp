@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_manager_base.h"
+#include <sstream>
 #include "audio_system_manager.h"
 #include "audio_service_log.h"
 #include "i_audio_process.h"
@@ -64,6 +65,7 @@ const char *g_audioServerCodeStrs[] = {
     "SET_OUTPUT_DEVICE_SINK",
     "CREATE_PLAYBACK_CAPTURER_MANAGER",
     "REGISET_POLICY_PROVIDER",
+    "REGISET_CORE_SERVICE_PROVIDER",
     "SET_WAKEUP_CLOSE_CALLBACK",
     "SET_CAPTURE_SILENT_STATE",
     "UPDATE_SPATIALIZATION_STATE",
@@ -117,6 +119,11 @@ const char *g_audioServerCodeStrs[] = {
     "UNLOAD_HDI_ADAPTER",
     "CHECK_CAPTURE_LIMIT",
     "RELEASE_CAPTURE_LIMIT",
+    "CREATE_HDI_SINK_PORT",
+    "CREATE_SINK_PORT",
+    "CREATE_HDI_SOURCE_PORT",
+    "CREATE_SOURCE_PORT",
+    "DESTROY_HDI_PORT",
     "DEVICE_CONNECTED_FLAG",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
@@ -595,6 +602,15 @@ int AudioManagerStub::HandleRegiestPolicyProvider(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleRegiestCoreServiceProvider(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, AUDIO_ERR, "obj is null");
+    int32_t result = RegiestCoreServiceProvider(object);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
@@ -816,6 +832,16 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleLoadHdiAdapter(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER):
             return HandleUnloadHdiAdapter(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SINK_PORT):
+            return HandleCreateHdiSinkPort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_SINK_PORT):
+            return HandleCreateSinkPort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SOURCE_PORT):
+            return HandleCreateHdiSourcePort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_SOURCE_PORT):
+            return HandleCreateSourcePort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::DESTROY_HDI_PORT):
+            return HandleDestroyHdiPort(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -891,6 +917,8 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleCreatePlaybackCapturerManager(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER):
             return HandleRegiestPolicyProvider(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_CORE_SERVICE_PROVIDER):
+            return HandleRegiestCoreServiceProvider(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK):
             return HandleSetWakeupSourceCallback(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE):
@@ -1186,6 +1214,103 @@ int AudioManagerStub::HandleDeviceConnectedFlag(MessageParcel &data, MessageParc
 {
     bool flag = data.ReadBool();
     SetDeviceConnectedFlag(flag);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateHdiSinkPort(MessageParcel &data, MessageParcel &reply)
+{
+    std::string deviceClass = data.ReadString();
+    std::string idInfo = data.ReadString();
+    IAudioSinkAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSinkAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
+    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.address = data.ReadString();
+    attr.aux = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+
+    uint32_t id = CreateHdiSinkPort(deviceClass, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateSinkPort(MessageParcel &data, MessageParcel &reply)
+{
+    HdiIdBase idBase = static_cast<HdiIdBase>(data.ReadUint32());
+    HdiIdType idType = static_cast<HdiIdType>(data.ReadUint32());
+    std::string idInfo = data.ReadString();
+    IAudioSinkAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSinkAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
+    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.address = data.ReadString();
+    attr.aux = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+
+    uint32_t id = CreateSinkPort(idBase, idType, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateHdiSourcePort(MessageParcel &data, MessageParcel &reply)
+{
+    std::string deviceClass = data.ReadString();
+    std::string idInfo = data.ReadString();
+    IAudioSourceAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSourceAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
+    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+
+    uint32_t id = CreateHdiSourcePort(deviceClass, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateSourcePort(MessageParcel &data, MessageParcel &reply)
+{
+    HdiIdBase idBase = static_cast<HdiIdBase>(data.ReadUint32());
+    HdiIdType idType = static_cast<HdiIdType>(data.ReadUint32());
+    std::string idInfo = data.ReadString();
+    IAudioSourceAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSourceAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
+    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+
+    uint32_t id = CreateSourcePort(idBase, idType, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t id = data.ReadUint32();
+    DestroyHdiPort(id);
     return AUDIO_OK;
 }
 

@@ -15,6 +15,7 @@
 
 #ifndef I_AUDIO_POLICY_INTERFACE_H
 #define I_AUDIO_POLICY_INTERFACE_H
+#define HDI_INVALID_ID 0xFFFFFFFF
 
 #include "audio_adapter_info.h"
 #include "audio_policy_manager.h"
@@ -23,6 +24,7 @@
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
 #include "audio_manager_base.h"
+#include "audio_pipe_info.h"
 
 #include <memory>
 #include <string>
@@ -76,9 +78,11 @@ public:
 
     virtual std::vector<SourceOutput> GetAllSourceOutputs() = 0;
 
-    virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo) = 0;
+    virtual AudioIOHandle OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex) = 0;
 
-    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, bool isSync = false) = 0;
+    virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
+
+    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID, bool isSync = false) = 0;
 
     virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name) = 0;
 

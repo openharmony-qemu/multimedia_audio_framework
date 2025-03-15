@@ -174,7 +174,7 @@ Fail:
 
 uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
 {
-    AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
+    AUDIO_PRERELEASE_LOGI("Enter, port name : %{public}s", audioPortName.c_str());
     AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::OpenAudioPort", PA_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("OpenAudioPort timeout");

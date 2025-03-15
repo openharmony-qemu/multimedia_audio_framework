@@ -48,7 +48,7 @@ bool AudioPolicyConfigManager::Init()
 
 void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
 {
-    AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", audioPolicyCOnfig_.adapterInfoMap.size());
+    AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", audioPolicyConfig_.adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!audioPolicyConfig_.adapterInfoMap.empty(),
         "Parse audio policy xml failed, received data is empty");
 
@@ -331,9 +331,9 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
     auto newDeviceDesc = desc->newDeviceDescs_.front();
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetDeviceInfo(
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
         newDeviceDesc->deviceType_, newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_);
-    CHECK_AND_RETURN_LOG(deviceInfo != nullptr, flag, "Find device failed;none streamProp");
+    CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
     CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), "Find pipeInfo failed;none streamProp");
@@ -345,12 +345,12 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     }
 
     auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, desc->streamInfo_.format,
-        desc->streamInfo_.sampleRate, tempChannel);
+        desc->streamInfo_.samplingRate, tempChannel);
     if (streamProp != nullptr) {
         info = streamProp;
-        AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, channels:%{public}u,"
-            " desc channels:%{public}u", info->format_, info->sampleRate_, info->channelLayout_, info->channels_,
-            tempChannel);
+        // AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout: %{public}" PRIu64 " ",
+        //     "channels:%{public}u, desc channels:%{public}u",
+        //     info->format_, info->sampleRate_, info->channelLayout_, info->channels_, tempChannel);
         return;
     }
 
@@ -365,12 +365,12 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         desc->routeFlag_ = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
             AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
         auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, desc->streamInfo_.format,
-            desc->streamInfo_.sampleRate, desc->streamInfo_.channels);
+            desc->streamInfo_.samplingRate, desc->streamInfo_.channels);
         if (streamProp != nullptr) {
             info = streamProp;
-            AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}u, "
-                "channels:%{public}u, desc channels:%{public}u", info->format_, info->sampleRate_,
-                info->channelLayout_, info->channels_, desc->streamInfo_.channels);
+            // AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout: %{public}" PRIu64 " "
+            //     "channels:%{public}u, desc channels: %{public}hu ", info->format_, info->sampleRate_,
+            //     info->channelLayout_, info->channels_, desc->streamInfo_.channels);
             return;
         }
     }
@@ -379,8 +379,6 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         !pipeIt->second->streamPropInfos_.empty()) {
         info = pipeIt->second->streamPropInfos_.front();
     } // if not match, choose first?
-    AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout:%{public}lu, channels:%{public}u",
-        info->format_, info->sampleRate_, info->channelLayout_, info->channels_, desc->streamInfo_.channels);
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
@@ -406,8 +404,7 @@ bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_WAKEUP)) {
         return true;
     }
-    return false
+    return false;
 }
-
 }
 }

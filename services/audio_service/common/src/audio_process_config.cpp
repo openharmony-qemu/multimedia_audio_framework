@@ -329,7 +329,9 @@ std::string ProcessConfig::DumpProcessConfig(const AudioProcessConfig &config)
             config.capturerInfo.capturerFlags << ") ";
     }
 
-    temp << "streamType<" << config.streamType << ">";
+    temp << "streamType<" << config.streamType << "> ";
+
+    temp << "originalSessionId<" << config.originalSessionId << ">";
 
     return temp.str();
 }

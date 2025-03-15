@@ -23,6 +23,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_async_action_handler.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -175,9 +176,27 @@ AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
 int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleName,
     const AudioModuleInfo &moduleInfo)
 {
-    AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo);
+    AUDIO_INFO_LOG("In, name: %{public}s", moduleName.c_str());
+    uint32_t paIndex = 0;
+    AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
         "OpenAudioPort failed %{public}d", ioHandle);
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
+    pipeInfo_->id_ = ioHandle;
+    pipeInfo_->paIndex_ = paIndex;
+    if (moduleInfo.role == "sink") {
+        pipeInfo_->pipeRole_ = PIPE_ROLE_OUTPUT;
+        pipeInfo_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    } else {
+        pipeInfo_->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    }
+    pipeInfo_->adapterName_ = moduleInfo.adapterName;
+    pipeInfo_->moduleInfo_ = moduleInfo;
+    pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
+    
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo_);
 
     AddIOHandleInfo(moduleName, ioHandle);
     return SUCCESS;
@@ -190,8 +209,13 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
         "can not find %{public}s in io map", moduleName.c_str());
     DelIOHandleInfo(moduleName);
 
-    AUDIO_INFO_LOG("[close-module] %{public}s,id:%{public}d", moduleName.c_str(), ioHandle);
-    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, isSync);
+    std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t paIndex = pipeManager->GetPaIndexByIoHandle(ioHandle);
+    pipeManager->RemoveAudioPipeInfo(ioHandle);
+
+    AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        moduleName.c_str(), ioHandle, paIndex);
+    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, paIndex, isSync);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     return SUCCESS;
 }

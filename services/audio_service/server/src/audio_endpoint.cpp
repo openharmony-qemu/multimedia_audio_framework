@@ -34,6 +34,7 @@
 #include "audio_service_log.h"
 #include "audio_schedule.h"
 #include "audio_qosmanager.h"
+#include "audio_utils.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"
@@ -437,12 +438,16 @@ bool AudioEndpointInner::ConfigInputPoint(const AudioDeviceDescriptor &deviceInf
         return false;
     }
 
-    int32_t err = source->Init(attr);
-    if (err != SUCCESS || !source->IsInited()) {
-        AUDIO_ERR_LOG("init remote fast fail, err %{public}d.", err);
-        HdiAdapterManager::GetInstance().ReleaseId(fastCaptureId_);
-        return false;
+    if (!source->IsInited()) {
+        AUDIO_INFO_LOG("Source is not inited");
+        int32_t err = source->Init(attr);
+        if (err != SUCCESS || !source->IsInited()) {
+            AUDIO_ERR_LOG("init remote fast fail, err %{public}d.", err);
+            HdiAdapterManager::GetInstance().ReleaseId(fastCaptureId_);
+            return false;
+        }
     }
+
     if (PrepareDeviceBuffer(deviceInfo) != SUCCESS) {
         source->DeInit();
         HdiAdapterManager::GetInstance().ReleaseId(fastCaptureId_);
@@ -492,12 +497,15 @@ std::shared_ptr<IAudioCaptureSource> AudioEndpointInner::GetFastSource(const std
 
     attr.adapterName = "primary";
     if (type == AudioEndpoint::TYPE_MMAP) {
+        AUDIO_INFO_LOG("Use mmap");
         fastSourceType_ = FAST_SOURCE_TYPE_NORMAL;
+        return SwitchSource(fastCaptureId_, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT);
     } else if (type == AudioEndpoint::TYPE_VOIP_MMAP) {
+        AUDIO_INFO_LOG("Use voip mmap");
         fastSourceType_ = FAST_SOURCE_TYPE_VOIP;
+        SwitchSource(fastCaptureId_, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT); // In plan: should use voip mmap
     }
-    // voip delete, maybe need fix
-    return SwitchSource(fastCaptureId_, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT);
+    return nullptr;
 }
 
 void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
@@ -546,11 +554,16 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
     IAudioSinkAttr attr = {};
     InitSinkAttr(attr, deviceInfo);
 
-    sink->Init(attr);
+
     if (!sink->IsInited()) {
-        HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
-        return false;
+        AUDIO_INFO_LOG("Sink is not inited");
+        sink->Init(attr);
+        if (!sink->IsInited()) {
+            HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
+            return false;
+        }
     }
+
     if (PrepareDeviceBuffer(deviceInfo) != SUCCESS) {
         sink->DeInit();
         HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
@@ -568,10 +581,12 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
 
 static std::shared_ptr<IAudioRenderSink> SwitchSink(uint32_t &id, HdiIdType type, const std::string &info)
 {
+    AUDIO_INFO_LOG("Id: %{public}u", id);
     if (id != HDI_INVALID_ID) {
         HdiAdapterManager::GetInstance().ReleaseId(id);
     }
     id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, type, info, true);
+    AUDIO_INFO_LOG("Id after process: %{public}u", id);
     return HdiAdapterManager::GetInstance().GetRenderSink(id, true);
 }
 
@@ -2233,7 +2248,7 @@ bool AudioEndpointInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, Aud
     }
     return isInvalid;
 }
- 
+
 void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize, int32_t index)
 {
     auto tempProcess = processList_[index];
@@ -2262,7 +2277,7 @@ void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSiz
         if (tempProcess->GetSilentState()) {
             AUDIO_WARNING_LOG("begin write valid data in server");
             tempProcess->SetSilentState(false);
- 
+
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(tempProcess->GetAppInfo().appUid);
             payload["sessionId"] = std::to_string(tempProcess->GetAudioSessionId());
@@ -2273,7 +2288,7 @@ void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSiz
         }
     }
 }
- 
+
 void AudioEndpointInner::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
 {
 #ifdef RESSCHE_ENABLE

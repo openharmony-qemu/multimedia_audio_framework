@@ -914,6 +914,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
     preWriteEndTime_ = 0;
+    AUDIO_INFO_LOG("Start end");
     return true;
 }
 

@@ -4509,7 +4509,7 @@ static int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Use
         return -1;
     }
 
-    AUDIO_DEBUG_LOG("Load sink adapter");
+    AUDIO_INFO_LOG("Load sink adapter");
     const char *deviceClass = pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS);
     u->primary.sinkAdapter = GetSinkAdapter(deviceClass, pa_modargs_get_value(ma, "network_id",
         DEFAULT_DEVICE_NETWORKID));
@@ -4639,6 +4639,7 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
+    AUDIO_INFO_LOG("In");
     struct Userdata *u = NULL;
     char *hdiThreadName = NULL;
     char *hdiThreadNameMch = NULL;
@@ -4798,6 +4799,7 @@ static void FreeLimiter(struct Userdata *u)
 
 static void UserdataFree(struct Userdata *u)
 {
+    AUDIO_INFO_LOG("In");
     if (u == NULL) {
         AUDIO_INFO_LOG("Userdata is null, free done");
         return;
@@ -4861,7 +4863,7 @@ static void UserdataFree(struct Userdata *u)
 void PaHdiSinkFree(pa_sink *s)
 {
     AUTO_CTRACE("PaHdiSinkFree");
-    AUDIO_INFO_LOG("PaHdiSinkFree, free userdata");
+    AUDIO_INFO_LOG("In, PaHdiSinkFree, free userdata");
     struct Userdata *u = NULL;
 
     pa_sink_assert_ref(s);

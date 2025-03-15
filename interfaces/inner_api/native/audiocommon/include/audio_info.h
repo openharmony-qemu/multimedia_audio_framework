@@ -941,10 +941,12 @@ enum AudioPin {
     AUDIO_PIN_OUT_HDMI = 1 << 3, // HDMI output pin
     AUDIO_PIN_OUT_USB = 1 << 4, // USB output pin
     AUDIO_PIN_OUT_USB_EXT = 1 << 5, // Extended USB output pin
+    AUDIO_PIN_OUT_EARPIECE = 1 << 5 | 1 << 4, // Earpiece output pin
     AUDIO_PIN_OUT_BLUETOOTH_SCO = 1 << 6, // Bluetooth SCO output pin
     AUDIO_PIN_OUT_DAUDIO_DEFAULT = 1 << 7, // Daudio default output pin
     AUDIO_PIN_OUT_HEADPHONE = 1 << 8, // Wired headphone output pin
     AUDIO_PIN_OUT_USB_HEADSET = 1 << 9,  // Arm usb output pin
+    AUDIO_PIN_OUT_BLUETOOTH_A2DP = 1 << 10,  // Bluetooth A2dp output pin
     AUDIO_PIN_OUT_DP = 1 << 11,
     AUDIO_PIN_IN_MIC = 1 << 27 | 1 << 0, // Microphone input pin
     AUDIO_PIN_IN_HS_MIC = 1 << 27 | 1 << 1, // Wired headset microphone pin for input
@@ -1315,6 +1317,7 @@ struct RestoreInfo {
     RestoreReason restoreReason = DEFAULT_REASON;
     int32_t deviceChangeReason = 0;
     int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
+    uint32_t routeFlag = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
