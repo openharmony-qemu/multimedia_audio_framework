@@ -146,9 +146,9 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
 bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
 {
     AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
-    if (routeFlag & AUDIO_OUTPUT_FLAG_FAST ||
-        routeFlag & AUDIO_INPUT_FLAG_FAST ||
-        routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
+    if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
+        (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD)) {
         return true;
     }
     return false;

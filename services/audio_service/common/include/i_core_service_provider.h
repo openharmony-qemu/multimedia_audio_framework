@@ -27,8 +27,8 @@ namespace AudioStandard {
 class ICoreServiceProvider {
 public:
     virtual int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) = 0;
-    virtual int32_t SetDefaultOutputDevice(
-        const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning) = 0;
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
+        const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning) = 0;
     virtual std::string GetAdapterNameBySessionId(uint32_t sessionID) = 0;
     virtual int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionID, AudioDeviceDescriptor &deviceInfo) = 0;
     virtual uint32_t GenerateSessionId() = 0;

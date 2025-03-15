@@ -106,7 +106,8 @@ CoreServiceProviderWrapper::~CoreServiceProviderWrapper()
     coreServiceWorker_ = nullptr;
 }
 
-CoreServiceProviderWrapper::CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker) : coreServiceWorker_(coreServiceWorker)
+CoreServiceProviderWrapper::CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker) :
+    coreServiceWorker_(coreServiceWorker)
 {
 }
 

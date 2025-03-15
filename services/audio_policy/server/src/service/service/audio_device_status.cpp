@@ -1233,7 +1233,8 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
     AUDIO_INFO_LOG("onDeviceStatusUpdated reson:%{public}d",
         AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
+        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 }
 

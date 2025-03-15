@@ -348,9 +348,6 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         desc->streamInfo_.samplingRate, tempChannel);
     if (streamProp != nullptr) {
         info = streamProp;
-        // AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout: %{public}" PRIu64 " ",
-        //     "channels:%{public}u, desc channels:%{public}u",
-        //     info->format_, info->sampleRate_, info->channelLayout_, info->channels_, tempChannel);
         return;
     }
 
@@ -368,9 +365,6 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
             desc->streamInfo_.samplingRate, desc->streamInfo_.channels);
         if (streamProp != nullptr) {
             info = streamProp;
-            // AUDIO_INFO_LOG("format:%{public}u, sampleRate:%{public}u, channelLayout: %{public}" PRIu64 " "
-            //     "channels:%{public}u, desc channels: %{public}hu ", info->format_, info->sampleRate_,
-            //     info->channelLayout_, info->channels_, desc->streamInfo_.channels);
             return;
         }
     }

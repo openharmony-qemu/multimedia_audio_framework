@@ -254,7 +254,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/session/audio_session_state_monitor.cpp",
     "server/src/service/spatialization/audio_spatialization_service.cpp",
     "services/core/config/src/audio_policy_config_manager.cpp",
-    "services/core/config/src/audio_policy_config_parser.cpp",    
+    "services/core/config/src/audio_policy_config_parser.cpp",
     "services/core/src/audio_core_service.cpp",
     "services/core/src/audio_core_service_entry.cpp",
     "services/core/src/audio_core_service_private.cpp",
@@ -553,7 +553,7 @@ audio_ohos_library("audio_policy_client") {
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioutils:audio_utils",
   ]
-  
+
   public_configs = [ ":audio_policy_client_config" ]
 
   include_dirs = [ "../../frameworks/native/audioutils/include" ]
@@ -696,7 +696,7 @@ ohos_shared_library("audio_foundation") {
 }
 
 config("audio_manager_client_public_config") {
-  include_dirs = [ 
+  include_dirs = [
     "util/include",
     "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiodefinitions/include/common",

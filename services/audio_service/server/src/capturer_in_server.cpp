@@ -477,22 +477,19 @@ int32_t CapturerInServer::Stop()
 int32_t CapturerInServer::Release()
 {
     AudioService::GetInstance()->RemoveCapturer(streamIndex_);
-    {
-        std::unique_lock<std::mutex> lock(statusLock_);
-        if (status_ == I_STATUS_RELEASED) {
-            AUDIO_INFO_LOG("Already released");
-            return SUCCESS;
-        }
+    std::unique_lock<std::mutex> lock(statusLock_);
+    if (status_ == I_STATUS_RELEASED) {
+        AUDIO_INFO_LOG("Already released");
+        return SUCCESS;
     }
+    lock.unlock();
     AUDIO_INFO_LOG("Start release capturer");
 
-    int32_t ret;
-
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+        int32_t result = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
     }
-    ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
+    int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
 
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);

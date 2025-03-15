@@ -43,9 +43,6 @@ public:
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;
-
-private:
-    
 };
 } // namespace AudioStandard
 } // namespace OHOS

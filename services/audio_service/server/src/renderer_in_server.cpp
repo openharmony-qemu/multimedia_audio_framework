@@ -751,8 +751,7 @@ int32_t RendererInServer::StartInner()
     int32_t ret = 0;
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
-            ERR_OPERATION_FAILED, "stream status is nullptr");
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
         standByCounter_ = 0;
         startedTime_ = ClockTime::GetCurNano();
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
@@ -769,11 +768,10 @@ int32_t RendererInServer::StartInner()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STARTING;
-    {
-        std::lock_guard<std::mutex> lock(fadeoutLock_);
-        AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
-        fadeoutFlag_ = NO_FADING;
-    }
+    std::unique_lock<std::mutex> fadeLock(fadeoutLock_);
+    AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
+    fadeoutFlag_ = NO_FADING;
+    fadeLock.unlock();
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
@@ -787,14 +785,13 @@ int32_t RendererInServer::StartInner()
     AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time%{public} " PRId64".", currentReadFrame, tempTime);
     resetTime_ = true;
 
-    {
-        std::lock_guard<std::mutex> lock(dupMutex_);
-        for (auto &capInfo : captureInfos_) {
-            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-                capInfo.second.dupStream->Start();
-            }
+    std::unique_lock<std::mutex> dupLock(dupMutex_);
+    for (auto &capInfo : captureInfos_) {
+        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+            capInfo.second.dupStream->Start();
         }
     }
+    dupLock.unlock();
     enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
@@ -1036,7 +1033,6 @@ int32_t RendererInServer::Release()
 
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
-
     ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
 
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);

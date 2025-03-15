@@ -45,7 +45,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioA2dpOffloadManager;
 class AudioCoreService : public enable_shared_from_this<AudioCoreService> {
-public:  
+public:
     class EventEntry : public ICoreServiceProvider, public IDeviceStatusObserver {
     public:
         EventEntry(std::shared_ptr<AudioCoreService> coreService);
@@ -302,12 +302,13 @@ private:
     static int32_t GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     static void UpdateRendererInfoWhenNoPermission(const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
         bool hasSystemPermission);
-    static void UpdateCapturerInfoWhenNoPermission( const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
+    static void UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
         bool hasSystemPermission);
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     void SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    AudioFlag CheckIsSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
     std::vector<SourceOutput> GetSourceOutputs();
@@ -320,6 +321,9 @@ private:
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) const;
     bool IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+
     bool IsPaRoute(uint32_t routeFlag);
     int32_t HandleScoOutputDeviceFetched(
         shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason);

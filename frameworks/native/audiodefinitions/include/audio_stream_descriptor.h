@@ -31,7 +31,7 @@ enum AudioStreamAction : uint32_t {
     AUDIO_STREAM_ACTION_RECREATE,
 };
 
-class AudioStreamDescriptor{
+class AudioStreamDescriptor {
 public:
     AudioStreamInfo streamInfo_;
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;

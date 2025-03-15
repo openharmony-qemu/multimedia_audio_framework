@@ -560,7 +560,7 @@ public:
      *
      * @return Returns render id if success, HDI_INVALID_ID else.
      */
-    virtual uint32_t CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo, 
+    virtual uint32_t CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
         const IAudioSinkAttr &attr) = 0;
 
     /**
@@ -572,7 +572,7 @@ public:
      *
      * @return Returns capture id if success, HDI_INVALID_ID else.
      */
-     virtual uint32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+    virtual uint32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
         const IAudioSourceAttr &attr) = 0;
 
     /**
@@ -585,7 +585,7 @@ public:
      *
      * @return Returns capture id if success, HDI_INVALID_ID else.
      */
-    virtual uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo, 
+    virtual uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
         const IAudioSourceAttr &attr) = 0;
 
     /**
@@ -698,6 +698,7 @@ private:
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFifthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    int HandleSixthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

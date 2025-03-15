@@ -340,10 +340,8 @@ void AudioPolicyDump::GetGroupInfoDump(std::string &dumpString)
     dumpString += "\n";
 }
 
-void AudioPolicyDump::AudioPolicyParserDumpInner(std::string &dumpString,
-    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>>& adapterInfoMap,
-    const std::unordered_map<std::string, std::string>& volumeGroupData,
-    std::unordered_map<std::string, std::string>& interruptGroupData, PolicyGlobalConfigs globalConfigs)
+void AudioPolicyDump::AudioPolicyParserDumpAdapterInfo(std::string &dumpString,
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>>& adapterInfoMap)
 {
     for (auto &[adapterType, adapterInfo] : adapterInfoMap) {
         AppendFormat(dumpString, " - adapter : %s -- adapterType=%u, supportSelectScene=%s\n",
@@ -382,6 +380,12 @@ void AudioPolicyDump::AudioPolicyParserDumpInner(std::string &dumpString,
             AppendFormat(dumpString, "\n");
         }
     }
+}
+
+void AudioPolicyDump::AudioPolicyParserDumpInner(std::string &dumpString,
+    const std::unordered_map<std::string, std::string>& volumeGroupData,
+    std::unordered_map<std::string, std::string>& interruptGroupData, PolicyGlobalConfigs globalConfigs)
+{
     for (auto& volume : volumeGroupData) {
         AppendFormat(dumpString, " - volumeGroupMap_ first:%s, second:%s\n", volume.first.c_str(),
             volume.second.c_str());
@@ -416,7 +420,8 @@ void AudioPolicyDump::AudioPolicyParserDump(std::string &dumpString)
     audioConfigManager_.GetInterruptGroupData(interruptGroupData);
     audioConfigManager_.GetGlobalConfigs(globalConfigs);
 
-    AudioPolicyParserDumpInner(dumpString, adapterInfoMap, volumeGroupData, interruptGroupData, globalConfigs);
+    AudioPolicyParserDumpAdapterInfo(dumpString, adapterInfoMap);
+    AudioPolicyParserDumpInner(dumpString, volumeGroupData, interruptGroupData, globalConfigs);
 }
 
 void AudioPolicyDump::AudioStreamDump(std::string &dumpString)

@@ -554,7 +554,6 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
     IAudioSinkAttr attr = {};
     InitSinkAttr(attr, deviceInfo);
 
-
     if (!sink->IsInited()) {
         AUDIO_INFO_LOG("Sink is not inited");
         sink->Init(attr);

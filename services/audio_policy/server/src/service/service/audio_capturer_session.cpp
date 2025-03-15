@@ -296,7 +296,7 @@ int32_t AudioCapturerSession::CloseWakeUpAudioCapturer()
 }
 
 // private method
-bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, 
+bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo,
     std::shared_ptr<AdapterPipeInfo> pipeInfo, AudioModuleInfo &audioModuleInfo)
 {
     if (pipeInfo == nullptr) {

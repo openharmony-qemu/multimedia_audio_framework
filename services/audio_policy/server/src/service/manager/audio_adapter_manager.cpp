@@ -974,9 +974,9 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
 
 bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 {
-    if (routeFlag & AUDIO_OUTPUT_FLAG_DIRECT ||
-        routeFlag & AUDIO_OUTPUT_FLAG_FAST ||
-        routeFlag & AUDIO_INPUT_FLAG_FAST) {
+    if ((routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
+        (routeFlag & AUDIO_INPUT_FLAG_FAST)) {
         return false;
     }
     return true;
@@ -1104,7 +1104,7 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) {
                 idInfo = HDI_ID_INFO_VOIP;
             }
-        } 
+        }
     }
 }
 
@@ -1446,7 +1446,7 @@ static AudioSampleFormat ParseSourceAudioSampleFormat(const std::string &format)
 
 static bool IsBigEndian(const std::string &format)
 {
-    if (format == "s16be" || format == "s24be" || format == "s32be" || format == "f32be") {// TODO: S24_32BE?
+    if (format == "s16be" || format == "s24be" || format == "s32be" || format == "f32be") {
         return true;
     }
     return false;
@@ -1473,7 +1473,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
         attr.deviceType = std::stoi(audioModuleInfo.deviceType);
     }
     if (audioModuleInfo.className == "multichannel") {
-        attr.channelLayout = HDI_DEFAULT_MULTICHANNEL_CHANNELLAYOUT; 
+        attr.channelLayout = HDI_DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
     }
     return attr;
 }

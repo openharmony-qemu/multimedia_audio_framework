@@ -126,8 +126,8 @@ const char *g_audioServerCodeStrs[] = {
     "DESTROY_HDI_PORT",
     "DEVICE_CONNECTED_FLAG",
 };
-constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
-static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
+constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
+static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
     "keep same with AudioServerInterfaceCode");
 }
 static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>& effectList, MessageParcel &data,
@@ -828,6 +828,15 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
         case static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_CAPTURE_LIMIT):
             return HandleReleaseCaptureLimit(data, reply);
 #endif
+        default:
+            return HandleSixthPartCode(code, data, reply, option);
+    }
+}
+
+int AudioManagerStub::HandleSixthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    switch (code) {
         case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER):
             return HandleLoadHdiAdapter(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER):
@@ -938,7 +947,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
         -1, "ReadInterfaceToken failed");
-    Trace trace(code >= codeNums ? "invalid audio server code!" : g_audioServerCodeStrs[code]);
+    Trace trace(code >= CODE_NUMS ? "invalid audio server code!" : g_audioServerCodeStrs[code]);
     if (code <= static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX)) {
         switch (code) {
             case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_PARAMETER):

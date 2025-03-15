@@ -226,13 +226,15 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBl
     return coreService_->GetActiveBluetoothDevice();
 }
 
-void AudioCoreService::EventEntry::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
+void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
+    AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->OnDeviceInfoUpdated(desc, command);
 }
 
-int32_t AudioCoreService::EventEntry::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+int32_t AudioCoreService::EventEntry::SetCallDeviceActive(
+    InternalDeviceType deviceType, bool active, std::string address)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->SetCallDeviceActive(deviceType, active, address);

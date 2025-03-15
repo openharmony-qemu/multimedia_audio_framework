@@ -887,7 +887,6 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
                 AUDIO_INFO_LOG("VoIP 48K");
                 deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
             }
-
         } else {
             AUDIO_INFO_LOG("Fast stream");
             AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};

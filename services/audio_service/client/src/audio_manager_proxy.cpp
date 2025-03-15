@@ -1624,7 +1624,7 @@ uint32_t AudioManagerProxy::CreateHdiSourcePort(const std::string &deviceClass, 
     return reply.ReadUint32();
 }
 
-uint32_t AudioManagerProxy::CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo, 
+uint32_t AudioManagerProxy::CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
     const IAudioSourceAttr &attr)
 {
     MessageParcel data;

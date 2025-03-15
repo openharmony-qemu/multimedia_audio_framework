@@ -22,7 +22,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-CoreServiceProviderProxy::CoreServiceProviderProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<ICoreServiceProviderIpc>(impl)
+CoreServiceProviderProxy::CoreServiceProviderProxy(const sptr<IRemoteObject> &impl) :
+    IRemoteProxy<ICoreServiceProviderIpc>(impl)
 {
 }
 

@@ -151,7 +151,7 @@ int32_t AudioCoreService::CreateRendererClient(
     }
     {
         // handle a2dp
-        std::string encryptMacAddr = 
+        std::string encryptMacAddr =
             GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
         int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc->newDeviceDescs_.front(),
             AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
@@ -199,7 +199,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     return SUCCESS;
 }
 
-bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     Trace trace("IsStreamSupportMultiChannel");
     AUDIO_INFO_LOG("In");
@@ -217,7 +217,7 @@ bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDe
     return AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
 }
 
-bool IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     Trace trace("IsStreamSupportDirect");
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_WIRED_HEADSET &&
@@ -268,8 +268,7 @@ void AudioCoreService::SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescript
         return;
     }
     AUDIO_INFO_LOG("rendererFlag: %{public}d", streamDesc->rendererInfo_.rendererFlags);
-    switch (streamDesc->rendererInfo_.originalFlag)
-    {
+    switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
             return;
@@ -282,21 +281,22 @@ void AudioCoreService::SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescript
         default:
             break;
     }
+    streamDesc->audioFlag_ = CheckIsSpecialStream(streamDesc);
+}
 
+AudioFlag AudioCoreService::CheckIsSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
     if (IsStreamSupportDirect(streamDesc)) {
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_HD;
-        return;
+        return AUDIO_OUTPUT_FLAG_HD;
     }
     if (IsStreamSupportLowpower(streamDesc)) {
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
-        return;
+        return AUDIO_OUTPUT_FLAG_LOWPOWER;
     }
     if (IsStreamSupportMultiChannel(streamDesc)) {
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
-        return;
+        return AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     }
-    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     AUDIO_INFO_LOG("StreamDesc flag use default - NORMAL");
+    return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
 void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
@@ -317,8 +317,7 @@ void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_WAKEUP) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_WAKEUP;
     }
-    switch (streamDesc->capturerInfo_.capturerFlags)
-    {
+    switch (streamDesc->capturerInfo_.capturerFlags) {
         case AUDIO_FLAG_MMAP:
             streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_FAST;
             return;
@@ -344,7 +343,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
-        if (streamDesc->newDeviceDescs_.size() == 2) {
+        if (streamDesc->newDeviceDescs_.size() == 2) { // 2 for dual use
             std::string firstSinkName =
                 AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_[0], streamDesc->sessionId_);
             std::string secondSinkName =
@@ -695,7 +694,8 @@ int32_t AudioCoreService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioR
     return status;
 }
 
-int32_t AudioCoreService::GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
+int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
+    vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
     bool hasBTPermission, bool hasSystemPermission)
 {
     int status = streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);

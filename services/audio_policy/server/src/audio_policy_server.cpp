@@ -2237,12 +2237,14 @@ int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &captur
     return eventEntry_->GetPreferredInputStreamType(capturerInfo);
 }
 
-int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+int32_t AudioPolicyServer::CreateRendererClient(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     return eventEntry_->CreateRendererClient(streamDesc, flag, sessionId);
 }
 
-int32_t AudioPolicyServer::CreateCapturerClient(std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+int32_t AudioPolicyServer::CreateCapturerClient(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     return eventEntry_->CreateCapturerClient(streamDesc, flag, sessionId);
 }

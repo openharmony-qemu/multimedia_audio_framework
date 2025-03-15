@@ -2311,7 +2311,7 @@ uint32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const st
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), 0, "refused for %{public}d", callingUid);
 
     uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true);
-    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);  
+    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id, true);
     if (sink == nullptr) {
         HdiAdapterManager::GetInstance().ReleaseId(id);
@@ -2323,7 +2323,7 @@ uint32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const st
     return id;
 }
 
-uint32_t AudioServer::CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo, 
+uint32_t AudioServer::CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
     const IAudioSinkAttr &attr)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2348,7 +2348,7 @@ uint32_t AudioServer::CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const s
     return id;
 }
 
-uint32_t AudioServer::CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo, 
+uint32_t AudioServer::CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
     const IAudioSourceAttr &attr)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();

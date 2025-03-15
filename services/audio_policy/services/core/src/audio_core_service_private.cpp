@@ -409,7 +409,6 @@ void AudioCoreService::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const Audi
         moduleInfo.renderInIdleState = "1";
         moduleInfo.sinkLatency = "0";
     }
-    // audioEcManager_.UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
 }
 
 bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo)
@@ -445,7 +444,6 @@ int32_t AudioCoreService::FetchDeviceAndRoute(const AudioStreamDeviceChangeReaso
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     uint32_t &sessionId, uint32_t &audioFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
-
     if (sessionId == 0) {
         streamDesc->sessionId_ = GenerateSessionId();
         sessionId = streamDesc->sessionId_;
@@ -738,7 +736,6 @@ void AudioCoreService::MoveToNewOutputDevice(
         UpdateOutputRoute(streamDesc);
     }
 
-    
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
         streamDesc->sessionId_);
     audioVolumeManager_.SetVolumeForSwitchDevice(streamDesc->newDeviceDescs_.front()->deviceType_, newSinkName);
@@ -837,7 +834,6 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
         : MoveToRemoteInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front());
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
-
 
     if (policyConfigMananger_.GetUpdateRouteSupport() &&
         streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID) {
@@ -1258,9 +1254,9 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
 
 bool AudioCoreService::IsPaRoute(uint32_t routeFlag)
 {
-    if (routeFlag & AUDIO_OUTPUT_FLAG_DIRECT ||
-        routeFlag & AUDIO_OUTPUT_FLAG_FAST ||
-        routeFlag & AUDIO_INPUT_FLAG_FAST) {
+    if ((routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
+        (routeFlag & AUDIO_INPUT_FLAG_FAST)) {
         return false;
     }
     return true;
@@ -1298,8 +1294,8 @@ int32_t AudioCoreService::GetRealUid(std::shared_ptr<AudioStreamDescriptor> stre
     return streamDesc->callerUid_;
 }
 
-void AudioCoreService::UpdateRendererInfoWhenNoPermission(const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
-    bool hasSystemPermission)
+void AudioCoreService::UpdateRendererInfoWhenNoPermission(
+    const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos, bool hasSystemPermission)
 {
     if (!hasSystemPermission) {
         audioRendererChangeInfos->clientUID = 0;
@@ -1307,8 +1303,8 @@ void AudioCoreService::UpdateRendererInfoWhenNoPermission(const shared_ptr<Audio
     }
 }
 
-void AudioCoreService::UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
-    bool hasSystemPermission)
+void AudioCoreService::UpdateCapturerInfoWhenNoPermission(
+    const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos, bool hasSystemPermission)
 {
     if (!hasSystemPermission) {
         audioCapturerChangeInfos->clientUID = 0;
@@ -1443,7 +1439,5 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     }
     return ret;
 }
-
-
 }
 }

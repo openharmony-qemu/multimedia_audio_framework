@@ -387,7 +387,8 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.networkId_ == networkId_;
 }
 
-void AudioDeviceDescriptor::Dump(std::string &dumpString) {
+void AudioDeviceDescriptor::Dump(std::string &dumpString)
+{
     dumpString += "deviceName: " + deviceName_ + " deviceRole: ";
     if (deviceRole_ != INPUT_DEVICE && deviceRole_ != OUTPUT_DEVICE) {
         dumpString += "INVALID";

@@ -585,8 +585,8 @@ ohos_shared_library("audio_sasdk") {
 
   deps = [
     ":audio_common",
-    "../audio_policy:audio_policy_client",
     "../../frameworks/native/audiodefinitions:audio_definitions",
+    "../audio_policy:audio_policy_client",
   ]
 
   external_deps = [
