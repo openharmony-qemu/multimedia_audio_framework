@@ -34,6 +34,7 @@ config("audio_external_library_config") {
     "include",
     "../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../frameworks/native/audiodefinitions/include",
     "../../../frameworks/native/audiostream/include",
     "../../../services/audio_service/client/include",
     "../../../interfaces/kits/c/common",

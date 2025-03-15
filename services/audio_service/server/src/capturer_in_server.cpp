@@ -486,11 +486,11 @@ int32_t CapturerInServer::Release()
     AUDIO_INFO_LOG("Start release capturer");
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        int32_t result = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+        int32_t result =
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
     }
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
-
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;

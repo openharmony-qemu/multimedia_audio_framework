@@ -134,6 +134,7 @@ config("audio_client_public_config") {
     "../audio_policy/common/include",
     "../audio_policy/util/include",
     "../audio_policy/server/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audiostream/include",
     "../../frameworks/native/audioutils/include",

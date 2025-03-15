@@ -346,29 +346,7 @@ void AudioPolicyDump::AudioPolicyParserDumpAdapterInfo(std::string &dumpString,
     for (auto &[adapterType, adapterInfo] : adapterInfoMap) {
         AppendFormat(dumpString, " - adapter : %s -- adapterType=%u, supportSelectScene=%s\n",
             adapterInfo->adapterName.c_str(), adapterType, adapterInfo->adapterSupportScene.c_str());
-        for (auto &pipeInfo : adapterInfo->pipeInfos) {
-            AppendFormat(dumpString, "     -pipeInfo : %s -- role=%u, supportFlags=0x%x, lib=%s, "
-                "paPropRole=%s, fixedLatency=%s, renderInIdleState=%s\n", pipeInfo->name_.c_str(),
-                pipeInfo->role_, pipeInfo->supportFlags_, pipeInfo->paProp_.lib_.c_str(),
-                pipeInfo->paProp_.role_.c_str(), pipeInfo->paProp_.fixedLatency_.c_str(),
-                pipeInfo->paProp_.renderInIdleState_.c_str());
-            
-            for (auto &streamProp : pipeInfo->streamPropInfos_) {
-                AppendFormat(dumpString, "         - streamProp : -- format=%zu, sampleRates=%zu, channelLayout=%zu,"
-                    " channels=%zu, bufferSize=%zu\n", streamProp->format_, streamProp->sampleRate_,
-                    streamProp->channelLayout_, streamProp->channels_, streamProp->bufferSize_);
-                AppendFormat(dumpString, "             - support device | ");
-                for (auto deviceIt : streamProp->supportDeviceMap_) {
-                    AppendFormat(dumpString, "%s,", deviceIt.second->name_.c_str());
-                }
-                AppendFormat(dumpString, "\n");
-            }
-
-            for (auto &attributeInfo : pipeInfo->attributeInfos_) {
-                AppendFormat(dumpString, "         - attribute : -- name=%s, value=%s\n", attributeInfo->name_.c_str(),
-                    attributeInfo->value_.c_str());
-            }
-        }
+        AudioPolicyParserDumpPipeInfo(dumpString, adapterInfo);
 
         for (auto &deviceInfo : adapterInfo->deviceInfos) {
             AppendFormat(dumpString, "     - device : %s -- type=%u, pin=%u, role=%u\n",
@@ -378,6 +356,34 @@ void AudioPolicyDump::AudioPolicyParserDumpAdapterInfo(std::string &dumpString,
                 AppendFormat(dumpString, "%s,", pipeIt.second->name_.c_str());
             }
             AppendFormat(dumpString, "\n");
+        }
+    }
+}
+
+void AudioPolicyDump::AudioPolicyParserDumpPipeInfo(std::string &dumpString,
+    std::shared_ptr<PolicyAdapterInfo> &adapterInfo)
+{
+    for (auto &pipeInfo : adapterInfo->pipeInfos) {
+        AppendFormat(dumpString, "     -pipeInfo : %s -- role=%u, supportFlags=0x%x, lib=%s, "
+            "paPropRole=%s, fixedLatency=%s, renderInIdleState=%s\n", pipeInfo->name_.c_str(),
+            pipeInfo->role_, pipeInfo->supportFlags_, pipeInfo->paProp_.lib_.c_str(),
+            pipeInfo->paProp_.role_.c_str(), pipeInfo->paProp_.fixedLatency_.c_str(),
+            pipeInfo->paProp_.renderInIdleState_.c_str());
+
+        for (auto &streamProp : pipeInfo->streamPropInfos_) {
+            AppendFormat(dumpString, "         - streamProp : -- format=%zu, sampleRates=%zu, channelLayout=%zu,"
+                " channels=%zu, bufferSize=%zu\n", streamProp->format_, streamProp->sampleRate_,
+                streamProp->channelLayout_, streamProp->channels_, streamProp->bufferSize_);
+            AppendFormat(dumpString, "             - support device | ");
+            for (auto deviceIt : streamProp->supportDeviceMap_) {
+                AppendFormat(dumpString, "%s,", deviceIt.second->name_.c_str());
+            }
+            AppendFormat(dumpString, "\n");
+        }
+
+        for (auto &attributeInfo : pipeInfo->attributeInfos_) {
+            AppendFormat(dumpString, "         - attribute : -- name=%s, value=%s\n", attributeInfo->name_.c_str(),
+                attributeInfo->value_.c_str());
         }
     }
 }

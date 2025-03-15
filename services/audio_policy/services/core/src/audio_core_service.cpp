@@ -43,32 +43,32 @@ static sptr<IStandardAudioService> g_btProxy = nullptr;
 mutex g_btProxyMutex;
 #endif
 
-AudioCoreService::AudioCoreService() :
-    audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
-    audioActiveDevice_(AudioActiveDevice::GetInstance()),
-    audioSceneManager_(AudioSceneManager::GetInstance()),
-    audioVolumeManager_(AudioVolumeManager::GetInstance()),
-    audioCapturerSession_(AudioCapturerSession::GetInstance()),
-    audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-    audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
-    audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
-    audioEffectService_(AudioEffectService::GetAudioEffectService()),
-    audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
-    audioRecoveryDevice_(AudioRecoveryDevice::GetInstance()),
-    audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
-    streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
-    audioStateManager_(AudioStateManager::GetAudioStateManager()),
-    audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
-    audioOffloadStream_(AudioOffloadStream::GetInstance()),
-    audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
-    audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-    audioRouteMap_(AudioRouteMap::GetInstance()),
-    audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
-    audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
-    audioEcManager_(AudioEcManager::GetInstance()),
-    policyConfigMananger_(AudioPolicyConfigManager::GetInstance()),
-    audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
-    pipeManager_(AudioPipeManager::GetPipeManager())
+AudioCoreService::AudioCoreService()
+    : audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
+      audioActiveDevice_(AudioActiveDevice::GetInstance()),
+      audioSceneManager_(AudioSceneManager::GetInstance()),
+      audioVolumeManager_(AudioVolumeManager::GetInstance()),
+      audioCapturerSession_(AudioCapturerSession::GetInstance()),
+      audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
+      audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
+      audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
+      audioEffectService_(AudioEffectService::GetAudioEffectService()),
+      audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
+      audioRecoveryDevice_(AudioRecoveryDevice::GetInstance()),
+      audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
+      streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+      audioStateManager_(AudioStateManager::GetAudioStateManager()),
+      audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
+      audioOffloadStream_(AudioOffloadStream::GetInstance()),
+      audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
+      audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+      audioRouteMap_(AudioRouteMap::GetInstance()),
+      audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
+      audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
+      audioEcManager_(AudioEcManager::GetInstance()),
+      policyConfigMananger_(AudioPolicyConfigManager::GetInstance()),
+      audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
+      pipeManager_(AudioPipeManager::GetPipeManager())
 {
     AUDIO_INFO_LOG("Ctor");
 }

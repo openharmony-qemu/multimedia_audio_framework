@@ -80,6 +80,7 @@ private:
     void GetCapturerStreamDump(std::string &dumpString);
     void AudioPolicyParserDumpAdapterInfo(std::string &dumpString,
         std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>>& adapterInfoMap);
+    void AudioPolicyParserDumpPipeInfo(std::string &dumpString, std::shared_ptr<PolicyAdapterInfo> &adapterInfo);
     void AudioPolicyParserDumpInner(std::string &dumpString,
         const std::unordered_map<std::string, std::string>& volumeGroupData,
         std::unordered_map<std::string, std::string>& interruptGroupData,

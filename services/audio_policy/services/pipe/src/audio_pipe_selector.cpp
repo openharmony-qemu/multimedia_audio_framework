@@ -137,13 +137,11 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
         AUDIO_INFO_LOG("adapter name: %{public}s", adapterName.c_str());
         ScanPipeListForStreamDesc(newPipeInfoList, streamDesc); // Get route flag and apply concurrency
         bool isFindPipeInfo = IsPipeExist(newPipeInfoList, adapterName, streamDesc, streamDescToPipeInfo);
-
         if (!isFindPipeInfo) {
             AUDIO_INFO_LOG("Cannot find pipe info: %{public}s", adapterName.c_str());
             HandlePipeNotExist(newPipeInfoList, streamDesc, streamDescToPipeInfo);
         }
     }
-
     // Check is pipe update
     for (auto &pipeInfo : selectedPipeInfoList) {
         if (pipeInfo->streamDescriptors_.size() == 0) {

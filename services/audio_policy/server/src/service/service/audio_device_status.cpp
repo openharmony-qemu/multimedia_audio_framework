@@ -1022,7 +1022,8 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
         CheckForA2dpSuspend(updatedDesc);
-        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason); //  fix pop, fetch device before unload module
+        // fix pop, fetch device before unload module
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
         int32_t result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
