@@ -34,11 +34,11 @@ void AudioEcManagerUnitTest::TearDown(void) {}
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_001, TestSize.Level1)
 {
     std::string halName = DP_CLASS;
-    StreamPropInfo outModuleInfo;
+    std::shared_ptr<PipeStreamPropInfo> outModuleInfo;
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     std::string sRet;
 
-    outModuleInfo.sampleRate_ = 41000;
+    outModuleInfo->sampleRate_ = 41000;
     sRet = ecManager.GetEcSamplingRate(halName, outModuleInfo);
     EXPECT_EQ(sRet, "41000");
 
@@ -68,11 +68,11 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_001, TestSize.Level1)
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_002, TestSize.Level1)
 {
     std::string halName = DP_CLASS;
-    StreamPropInfo outModuleInfo;
+    std::shared_ptr<PipeStreamPropInfo> outModuleInfo;
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     std::string sRet;
 
-    outModuleInfo.channelLayout_ = 3;
+    outModuleInfo->channelLayout_ = CH_LAYOUT_STEREO;
     sRet = ecManager.GetEcChannels(halName, outModuleInfo);
     EXPECT_EQ(sRet, "3");
 
@@ -101,11 +101,11 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_002, TestSize.Level1)
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_003, TestSize.Level1)
 {
     std::string halName = DP_CLASS;
-    StreamPropInfo outModuleInfo;
+    std::shared_ptr<PipeStreamPropInfo> outModuleInfo;
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     std::string sRet;
 
-    outModuleInfo.format_ = "3";
+    outModuleInfo->format_ = SAMPLE_S32LE;
     sRet = ecManager.GetEcFormat(halName, outModuleInfo);
     EXPECT_EQ(sRet, "3");
 
@@ -197,7 +197,7 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_005, TestSize.Level1)
 {
     std::string role = ROLE_SOURCE;
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    PipeInfo pipeInfo;
+    std::shared_ptr<AdapterPipeInfo> pipeInfo;
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     int32_t ret;
 

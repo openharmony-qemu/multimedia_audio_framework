@@ -411,8 +411,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_014, TestSize.Level1)
     int32_t flags = 1;
     std::string networkId = "";
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    const std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
-    audioDeviceCommon.audioConfigManager_.OnAudioPolicyXmlParsingCompleted(adapterInfoMap);
     int32_t ret = audioDeviceCommon.GetPreferredOutputStreamTypeInner(streamUsage,
         deviceType, flags, networkId, samplingRate);
     EXPECT_EQ(AUDIO_FLAG_NORMAL, ret);
