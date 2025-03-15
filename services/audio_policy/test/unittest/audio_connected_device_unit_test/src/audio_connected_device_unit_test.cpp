@@ -287,9 +287,10 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_014, TestSiz
 HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_015, TestSize.Level1)
 {
     std::string macAddress = "test";
-    bool spatializationSupported == true;
+    bool spatializationSupported = true;
     auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
-    std::string encryAddress = audioConnectedDevice->GetSha256EncryptAddress(macAddress);
+    std::string encryAddress = 
+        AudioSpatializationService::GetAudioSpatializationService().GetSha256EncryptAddress(macAddress);
 
     auto desc1 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP,
         DeviceRole::OUTPUT_DEVICE);
@@ -325,9 +326,10 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_015, TestSiz
 HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_016, TestSize.Level1)
 {
     std::string macAddress = "test";
-    bool spatializationSupported == true;
+    bool spatializationSupported = true;
     auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
-    std::string encryAddress = audioConnectedDevice->GetSha256EncryptAddress(macAddress);
+    std::string encryAddress = 
+        AudioSpatializationService::GetAudioSpatializationService().GetSha256EncryptAddress(macAddress);
 
     auto desc1 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP,
         DeviceRole::OUTPUT_DEVICE);

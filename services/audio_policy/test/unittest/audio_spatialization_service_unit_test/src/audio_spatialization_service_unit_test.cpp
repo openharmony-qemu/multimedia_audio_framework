@@ -988,8 +988,8 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_045, Tes
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
     std::string testAddress = "test_address";
-    std::string encryptedAddress = ptrAudioSpatializationService.GetSha256EncryptAddress(testAddress);
-    auto result = ptrAudioSpatializationService->UpdateSpatializationSupported(encryptedAddress);
+    std::string encryptedAddress = ptrAudioSpatializationService->GetSha256EncryptAddress(testAddress);
+    ptrAudioSpatializationService->UpdateSpatializationSupported(encryptedAddress);
 }
 } // namespace AudioStandard
 } // namespace OHOS
