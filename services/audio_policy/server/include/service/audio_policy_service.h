@@ -61,7 +61,7 @@
 #include "audio_a2dp_offload_manager.h"
 #include "audio_iohandle_map.h"
 #include "audio_router_map.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_connected_device.h"
 #include "audio_tone_manager.h"
 #include "audio_microphone_descriptor.h"
@@ -508,7 +508,7 @@ private:
         audioGlobalConfigManager_(AudioGlobalConfigManager::GetAudioGlobalConfigManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioToneManager_(AudioToneManager::GetInstance()),
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
@@ -655,7 +655,7 @@ private:
 
     AudioIOHandleMap& audioIOHandleMap_;
     AudioRouteMap& audioRouteMap_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioToneManager& audioToneManager_;
     AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;

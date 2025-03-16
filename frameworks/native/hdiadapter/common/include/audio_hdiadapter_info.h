@@ -16,7 +16,9 @@
 #ifndef AUDIO_HDIADAPTER_INFO_H
 #define AUDIO_HDIADAPTER_INFO_H
 
+#ifndef MAX_MIX_CHANNELS
 #define MAX_MIX_CHANNELS 128
+#endif
 #define PA_MAX_OUTPUTS_PER_SOURCE 256
 
 #include <inttypes.h>

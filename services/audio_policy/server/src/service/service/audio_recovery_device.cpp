@@ -23,6 +23,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -223,8 +224,8 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
 void AudioRecoveryDevice::HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason,
     const std::string &caller)
 {
-    audioDeviceCommon_.FetchDevice(true, reason);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     auto currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     auto currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(
@@ -247,7 +248,7 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceForFastInner(sptr<AudioRendererFi
     res = SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
         "AddFastRouteMapInfo failed! fastRouteMap is too large!");
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
     return true;
 }
 
@@ -383,7 +384,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
             "AddFastRouteMapInfo failed! fastRouteMap is too large!");
         AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",
             audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
-        audioDeviceCommon_.FetchDevice(false);
+        AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
         audioCapturerSession_.ReloadSourceForDeviceChange(
             audioActiveDevice_.GetCurrentInputDevice(),
             audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice fast");
@@ -398,7 +399,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectedDesc[0]);
     }
     audioActiveDevice_.DisconnectScoWhenUserSelectInput(selectedDesc[0]);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
     audioDeviceCommon_.OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(),
         audioActiveDevice_.GetCurrentInputDevice().networkId_);
@@ -442,8 +443,8 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         WriteExcludeOutputSysEvents(audioDevUsage, desc);
     }
 
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(
@@ -469,8 +470,8 @@ int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsa
     int32_t ret = UnexcludeOutputDevicesInner(audioDevUsage, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Unexclude devices failed");
 
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(

@@ -36,12 +36,12 @@ void AudioPolicyConfigData::SetDeviceInfoMap(std::list<std::shared_ptr<AdapterDe
     }
 
     for (auto &deviceInfo : deviceInfos) {
-        std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(deviceInfo->type_, deviceInfo->role);
+        std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(deviceInfo->type_, deviceInfo->role_);
         auto deviceInfoIt = deviceInfoMap.find(deviceMapKey);
         if (deviceInfoIt != deviceInfoMap.end()) {
             deviceInfoIt->second.push_back(deviceInfo);
         } else {
-            std::vector<std::shared_ptr<AdapterDeviceInfo> deviceVector;
+            std::vector<std::shared_ptr<AdapterDeviceInfo>> deviceVector;
             deviceVector.push_back(deviceInfo);
             deviceInfoMap.insert({deviceMapKey, deviceVector});
         }
@@ -117,7 +117,7 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
 
     // use primary to select device when in remote cast;
     DeviceType tempType = (type_ == DEVICE_TYPE_REMOTE_CAST ? DEVICE_TYPE_SPEAKER : type_);
-    std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(tempType, role);
+    std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(tempType, role_);
     auto deviceVectorIt = deviceInfoMap.find(deviceMapKey);
     if (deviceVectorIt == deviceInfoMap.end()) {
         AUDIO_ERR_LOG("Device Not Configured!");

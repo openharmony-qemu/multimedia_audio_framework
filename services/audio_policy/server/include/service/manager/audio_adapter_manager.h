@@ -30,6 +30,8 @@
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
 #include "audio_utils.h"
+#include "common/hdi_adapter_info.h"
+#include "hdi_adapter_type.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,6 +60,11 @@ public:
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_DELAY_TIME = 200000;
     static constexpr float MIN_VOLUME = 0.0f;
     static constexpr uint32_t NUMBER_TWO = 2;
+    static constexpr float HDI_MAX_SINK_VOLUME_LEVEL = 1.0f;
+    static constexpr uint32_t HDI_DEFAULT_MULTICHANNEL_CHANNELLAYOUT = 1551;
+    static constexpr uint32_t HDI_EC_SAME_ADAPTER = 1;
+    static constexpr std::string_view HDI_AUDIO_PORT_SINK_ROLE = "sink";
+    static constexpr std::string_view HDI_AUDIO_PORT_SOURCE_ROLE = "source";
     bool Init();
     void Deinit(void);
     void InitKVStore();
@@ -110,9 +117,11 @@ public:
 
     std::vector<SourceOutput> GetAllSourceOutputs();
 
-    AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioModuleInfo);
+    AudioIOHandle OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
 
-    int32_t CloseAudioPort(AudioIOHandle ioHandle, bool isSync = false);
+    AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
+
+    int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID, bool isSync = false);
 
     int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
 
@@ -172,6 +181,16 @@ public:
     bool IsAbsVolumeMute() const;
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
+
+    std::string GetHdiSinkIdInfo(const AudioModuleInfo &audioModuleInfo) const;
+
+    std::string GetSinkIdInfo(std::shared_ptr<AudioPipeInfo> pipeInfo) const;
+
+    std::string GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const;
+
+    IAudioSinkAttr GetAudioSinkAttr(const AudioModuleInfo &audioModuleInfo) const;
+
+    IAudioSourceAttr GetAudioSourceAttr(const AudioModuleInfo &audioModuleInfo) const;
 
     void ResetRemoteCastDeviceVolume();
 
@@ -299,6 +318,12 @@ private:
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot();
     void MaximizeVoiceAssistantVolume(InternalDeviceType deviceType);
+    bool IsPaRoute(uint32_t routeFlag);
+    AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
+    AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
+    void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
+    void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
+
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {

@@ -24,6 +24,7 @@
 #include "audio_policy_log.h"
 
 #include "audio_policy_utils.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -105,6 +106,7 @@ void AudioCapturerSession::UnloadInnerCapturerSink(std::string moduleName)
 void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo)
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
+    AUDIO_INFO_LOG("Is connected: %{public}d", isConnected);
     AudioDeviceDescriptor updatedDesc = AudioDeviceDescriptor(DEVICE_TYPE_REMOTE_CAST,
         AudioPolicyUtils::GetInstance().GetDeviceRole(DEVICE_TYPE_REMOTE_CAST));
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
@@ -117,11 +119,12 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
         audioPolicyManager_.ResetRemoteCastDeviceVolume();
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
-        audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
+            AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
         UnloadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     }
-    audioDeviceCommon_.FetchDevice(true);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
     // update a2dp offload
     if (audioA2dpOffloadManager_) {
@@ -144,11 +147,10 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
         // normal source types, dynamic open
-        StreamPropInfo targetInfo;
+        PipeStreamPropInfo targetInfo;
         SourceType targetSource;
         int32_t res = audioEcManager_.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
-        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
-            "fetch target source info error");
+        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "fetch target source info error");
 
         if (audioEcManager_.GetSourceOpened() == SOURCE_TYPE_INVALID) {
             // normal source is not opened before
@@ -233,15 +235,15 @@ bool AudioCapturerSession::ConstructWakeupAudioModuleInfo(const AudioStreamInfo 
         return false;
     }
 
-    AudioAdapterInfo info;
-    AdaptersType type = static_cast<AdaptersType>(AudioPolicyUtils::portStrToEnum[std::string(PRIMARY_WAKEUP)]);
+    std::shared_ptr<PolicyAdapterInfo> info;
+    AudioAdapterType type = static_cast<AudioAdapterType>(AudioPolicyUtils::portStrToEnum[std::string(PRIMARY_WAKEUP)]);
     bool ret = audioConfigManager_.GetAdapterInfoByType(type, info);
     if (!ret) {
         AUDIO_ERR_LOG("can not find adapter info");
         return false;
     }
 
-    auto pipeInfo = info.GetPipeByName(PIPE_WAKEUP_INPUT);
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = info->GetPipeInfoByName(PIPE_WAKEUP_INPUT);
     if (pipeInfo == nullptr) {
         AUDIO_ERR_LOG("wakeup pipe info is nullptr");
         return false;
@@ -252,9 +254,9 @@ bool AudioCapturerSession::ConstructWakeupAudioModuleInfo(const AudioStreamInfo 
         return false;
     }
 
-    audioModuleInfo.adapterName = info.adapterName_;
-    audioModuleInfo.name = pipeInfo->moduleName_;
-    audioModuleInfo.lib = pipeInfo->lib_;
+    audioModuleInfo.adapterName = info->adapterName;
+    audioModuleInfo.name = pipeInfo->paProp_.moduleName_;
+    audioModuleInfo.lib = pipeInfo->paProp_.lib_;
     audioModuleInfo.networkId = "LocalDevice";
     audioModuleInfo.className = "primary";
     audioModuleInfo.fileName = "";
@@ -294,8 +296,8 @@ int32_t AudioCapturerSession::CloseWakeUpAudioCapturer()
 }
 
 // private method
-bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, PipeInfo *pipeInfo,
-    AudioModuleInfo &audioModuleInfo)
+bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo,
+    std::shared_ptr<AdapterPipeInfo> pipeInfo, AudioModuleInfo &audioModuleInfo)
 {
     if (pipeInfo == nullptr) {
         AUDIO_ERR_LOG("wakeup pipe info is nullptr");
@@ -307,16 +309,16 @@ bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &strea
         return false;
     }
 
-    auto targetIt = pipeInfo->streamPropInfos_.begin();
-    for (auto it = pipeInfo->streamPropInfos_.begin(); it != pipeInfo->streamPropInfos_.end(); ++it) {
-        if (it -> channelLayout_ == static_cast<uint32_t>(streamInfo.channels)) {
+    auto targetIt = *pipeInfo->streamPropInfos_.begin();
+    for (auto it : pipeInfo->streamPropInfos_) {
+        if (it -> channels_ == static_cast<uint32_t>(streamInfo.channels)) {
             targetIt = it;
             break;
         }
     }
 
-    audioModuleInfo.format = targetIt->format_;
-    audioModuleInfo.channels = std::to_string(targetIt->channelLayout_);
+    audioModuleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetIt->format_];
+    audioModuleInfo.channels = std::to_string(targetIt->channels_);
     audioModuleInfo.rate = std::to_string(targetIt->sampleRate_);
     audioModuleInfo.bufferSize =  std::to_string(targetIt->bufferSize_);
 

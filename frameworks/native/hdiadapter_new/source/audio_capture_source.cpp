@@ -47,6 +47,7 @@ AudioCaptureSource::~AudioCaptureSource()
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
+    AUDIO_INFO_LOG("In, attr's adapter name: %{public}s", adapterNameCase_.c_str());
     std::lock_guard<std::mutex> lock(statusMutex_);
     if (attr.sourceType == SOURCE_TYPE_MIC_REF || attr.sourceType == SOURCE_TYPE_EC) {
         InitEcOrMicRefAttr(attr);
@@ -421,10 +422,8 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType acti
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    AUDIO_INFO_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevice);
-    if (!openMic_) {
-        return SUCCESS;
-    }
+    AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, device: %{public}d",
+        audioScene, currentAudioScene_, activeDevice);
 
     if (audioScene != currentAudioScene_) {
         struct AudioSceneDescriptor sceneDesc;
@@ -825,6 +824,8 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     int32_t streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
+        attr_.adapterName, inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(adapterNameCase_, inputDevice, streamId, inputType);
     return ret;
 }
@@ -835,7 +836,7 @@ int32_t AudioCaptureSource::InitCapture(void)
         AUDIO_INFO_LOG("capture already inited");
         return SUCCESS;
     }
-
+    AUDIO_INFO_LOG("In, openMicL %{public}u, halName: %{public}s", openMic_, halName_.c_str());
     int32_t ret = CreateCapture();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
     if (openMic_) {
@@ -1019,6 +1020,7 @@ void AudioCaptureSource::CaptureThreadLoop(void)
 
 int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice)
 {
+    AUDIO_INFO_LOG("current active device: %{public}d, inputDevice: %{public}d", currentActiveDevice_, inputDevice);
     if (currentActiveDevice_ == inputDevice) {
         AUDIO_INFO_LOG("input device not change, device: %{public}d, sourceType: %{public}d", inputDevice,
             attr_.sourceType);

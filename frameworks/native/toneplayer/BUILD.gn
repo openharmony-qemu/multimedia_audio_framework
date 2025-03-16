@@ -17,6 +17,7 @@ import("../../../config.gni")
 config("audio_toneplayer_config") {
   include_dirs = [
     "include",
+    "../audiodefinitions/include",
     "../audiostream/include",
     "../audioutils/include",
     "../audiorenderer/include",

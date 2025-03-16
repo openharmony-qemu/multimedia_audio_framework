@@ -45,8 +45,10 @@ public:
     int32_t UpdateTrackerInternal(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, AudioDeviceDescriptor &outputDeviceInfo);
+    int32_t UpdateRendererDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> outputDeviceInfo);
     int32_t UpdateRendererPipeInfo(const int32_t sessionId, const AudioPipeType pipeType);
     int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, AudioDeviceDescriptor &inputDeviceInfo);
+    int32_t UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
@@ -73,6 +75,7 @@ public:
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
+    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& GetConcurrencyMap();
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     StreamUsage GetRunningStreamUsageNoUltrasonic();

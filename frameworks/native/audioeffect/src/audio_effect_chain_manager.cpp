@@ -778,6 +778,9 @@ int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     uint32_t tmpChannelCount = DEFAULT_NUM_CHANNEL;
     uint64_t tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    if (sceneTypeToSessionIDMap_.size() == 0) {
+        return SUCCESS;
+    }
     for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
         std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); ++s) {

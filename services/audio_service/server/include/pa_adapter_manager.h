@@ -100,10 +100,11 @@ private:
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream);
     std::shared_ptr<ICapturerStream> CreateCapturerStream(AudioProcessConfig processConfig, pa_stream *paStream);
     int32_t ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
-        SourceType source, int32_t innerCapId, const std::string &deviceName = "");
+        SourceType source, int32_t innerCapId, uint32_t sessionId, const std::string &deviceName = "");
     void ReleasePaStream(pa_stream *paStream);
-    int32_t ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, int32_t innerCapId);
-    int32_t ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
+    int32_t ConnectRendererStreamToPA(
+        pa_stream *paStream, pa_sample_spec sampleSpec, uint32_t sessionId, int32_t innerCapId);
+    int32_t ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, uint32_t sessionId,
         SourceType source, const std::string &deviceName);
 
     const std::string GetEnhanceSceneName(SourceType sourceType);

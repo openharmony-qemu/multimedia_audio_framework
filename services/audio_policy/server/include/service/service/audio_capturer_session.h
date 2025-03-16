@@ -34,7 +34,7 @@
 
 #include "audio_iohandle_map.h"
 #include "audio_active_device.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_connected_device.h"
 #include "audio_ec_manager.h"
 #include "audio_device_common.h"
@@ -71,7 +71,7 @@ private:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioEcManager_(AudioEcManager::GetInstance()),
         audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
@@ -89,7 +89,7 @@ private:
 
     bool ConstructWakeupAudioModuleInfo(const AudioStreamInfo &streamInfo,
         AudioModuleInfo &audioModuleInfo);
-    bool FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, PipeInfo *pipeInfo,
+    bool FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, std::shared_ptr<AdapterPipeInfo> pipeInfo,
         AudioModuleInfo &audioModuleInfo);
     int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
@@ -104,7 +104,7 @@ private:
     AudioRouterCenter& audioRouterCenter_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioActiveDevice& audioActiveDevice_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioEcManager& audioEcManager_;
     AudioDeviceCommon& audioDeviceCommon_;
