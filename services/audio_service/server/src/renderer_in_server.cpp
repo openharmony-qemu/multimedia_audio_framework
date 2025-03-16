@@ -300,6 +300,7 @@ void RendererInServer::HandleOperationStarted()
 void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
     switch (operation) {
         case OPERATION_RELEASED:
             stateListener->OnOperationHandled(RELEASE_STREAM, 0);
