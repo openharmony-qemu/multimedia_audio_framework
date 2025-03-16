@@ -136,6 +136,7 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
 int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,
     AudioStreamInfo streamInfo)
 {
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " source: %{public}d", sessionID, sessionInfo.sourceType);
     CHECK_AND_RETURN_RET_LOG(isPolicyConfigParsered_ && audioVolumeManager_.GetLoadFlag(), ERROR,
         "policyConfig not loaded");
@@ -174,6 +175,7 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
 
 void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
 {
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     AUDIO_INFO_LOG("sessionid:%{public}" PRIu64, sessionID);
     if (sessionWithSpecialSourceType_.count(sessionID) > 0) {
         if (sessionWithSpecialSourceType_[sessionID].sourceType == SOURCE_TYPE_REMOTE_CAST) {
@@ -201,6 +203,7 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
     sessionIdisRemovedSet_.insert(sessionID);
 }
 
+// HandleRemainingSource must be called with onCapturerSessionChangedMutex_ held
 void AudioCapturerSession::HandleRemainingSource()
 {
     SourceType highestSource = SOURCE_TYPE_INVALID;
@@ -355,6 +358,7 @@ bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inpu
 void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
     const AudioDeviceDescriptor &outputDevice, const std::string &caller)
 {
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     AUDIO_INFO_LOG("form caller: %{public}s", caller.c_str());
     if (!audioEcManager_.GetEcFeatureEnable()) {
         AUDIO_INFO_LOG("reload ignore for feature not enable");
@@ -429,6 +433,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV
     std::string oldVoipUpProp = GetEnhancePropByNameV3(oldPropertyArray, "voip_up");
     std::string newRecordProp = GetEnhancePropByNameV3(newPropertyArray, "record");
     std::string newVoipUpProp = GetEnhancePropByNameV3(newPropertyArray, "voip_up");
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
         (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
@@ -465,6 +470,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray
     std::string oldVoipUpProp = GetEnhancePropByName(oldPropertyArray, "voip_up");
     std::string newRecordProp = GetEnhancePropByName(newPropertyArray, "record");
     std::string newVoipUpProp = GetEnhancePropByName(newPropertyArray, "voip_up");
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
         (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
