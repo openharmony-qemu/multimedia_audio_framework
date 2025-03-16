@@ -201,7 +201,7 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
     sessionIdisRemovedSet_.insert(sessionID);
 }
 
-//HandleRemainingSource must be called with onCapturerSessionChangedMutex_ held
+// HandleRemainingSource must be called with onCapturerSessionChangedMutex_ held
 void AudioCapturerSession::HandleRemainingSource()
 {
     SourceType highestSource = SOURCE_TYPE_INVALID;
