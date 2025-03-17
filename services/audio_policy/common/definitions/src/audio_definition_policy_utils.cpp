@@ -206,6 +206,8 @@ AudioChannel AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(AudioChanne
             channel = AudioChannel::CHANNEL_3;
             break;
         case AudioChannelLayout::CH_LAYOUT_3POINT1:
+        case AudioChannelLayout::CH_LAYOUT_4POINT0:
+        case AudioChannelLayout::CH_LAYOUT_QUAD:
             channel = AudioChannel::CHANNEL_4;
             break;
         case AudioChannelLayout::CH_LAYOUT_5POINT0:
