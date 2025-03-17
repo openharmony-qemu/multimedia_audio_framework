@@ -822,12 +822,18 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
     Trace trace("AudioCoreService::MoveToNewInputDevice");
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_);
 
-    AUDIO_INFO_LOG("Move session %{public}u, [%{public}d][%{public}s]-->[%{public}d][%{public}s]",
-        streamDesc->sessionId_, streamDesc->oldDeviceDescs_.front()->deviceType_,
-        GetEncryptAddr(streamDesc->oldDeviceDescs_.front()->macAddress_).c_str(),
-        streamDesc->newDeviceDescs_.front()->deviceType_,
-        GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_).c_str());
-    
+    if (streamDesc->oldDeviceDescs_.size() == 0) {
+        AUDIO_INFO_LOG("Move session %{public}u to [%{public}d][%{public}s]",
+            streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_,
+            GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_).c_str());
+    } else {
+        AUDIO_INFO_LOG("Move session %{public}u, [%{public}d][%{public}s]-->[%{public}d][%{public}s]",
+            streamDesc->sessionId_, streamDesc->oldDeviceDescs_.front()->deviceType_,
+            GetEncryptAddr(streamDesc->oldDeviceDescs_.front()->macAddress_).c_str(),
+            streamDesc->newDeviceDescs_.front()->deviceType_,
+            GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_).c_str());
+    }
+
     // MoveSourceOuputByIndexName
     auto ret = (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front())
@@ -1425,7 +1431,7 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
             AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
             return false;
         }
-    return true;
+    return false;
 }
 
 int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
