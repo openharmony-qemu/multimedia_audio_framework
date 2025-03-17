@@ -160,7 +160,7 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     serviceLock.unlock();
     if (ret == SUCCESS) {
 #ifdef USB_ENABLE
-        AudioUsbManager::GetInstance().Init(this);
+        AudioUsbManager::GetInstance().Init();
 #endif
         coreService_->audioEffectService_.SetMasterSinkAvailable();
     }

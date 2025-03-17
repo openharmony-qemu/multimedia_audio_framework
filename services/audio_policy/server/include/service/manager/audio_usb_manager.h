@@ -51,6 +51,9 @@ struct SoundCard {
 struct UsbAudioDevice {
     UsbAddr usbAddr_;
     string name_;
+    uint32_t cardNum_{0};
+    bool isCapturer_{false};
+    bool isPlayer_{false};
     inline bool operator==(const UsbAudioDevice &o) const
     {
         return usbAddr_ == o.usbAddr_;
@@ -68,19 +71,19 @@ public:
 
     static AudioUsbManager& GetInstance();
     static map<UsbAddr, SoundCard> GetUsbSoundCardMap();
-    static vector<UsbAudioDevice> GetUsbAudioDevices();
-    static vector<UsbAudioDevice> GetPlayerDevices();
-    static vector<UsbAudioDevice> GetCapturerDevices();
+    static int32_t GetUsbAudioDevices(vector<UsbAudioDevice> &result);
 
-    void Init(IDeviceStatusObserver *observer);
+    void Init();
     void Deinit();
     void SubscribeEvent();
 
 private:
-    void HandleUsbAudioDeviceAttach(const UsbAudioDevice &device);
-    void HandleUsbAudioDeviceDetach(const UsbAudioDevice &device);
+    AudioUsbManager(IDeviceStatusObserver &observer) : observer_(observer) {}
     void RefreshUsbAudioDevices();
     void NotifyDevice(const UsbAudioDevice &device, const bool isConnected);
+    void HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p);
+    bool FillUsbAudioDevice(UsbAudioDevice &device);
+    void UpdateDevice(const UsbAudioDevice &dev, std::__wrap_iter<UsbAudioDevice *> &it);
 
     vector<UsbAudioDevice> audioDevices_;
     map<UsbAddr, SoundCard> soundCardMap_;
@@ -88,7 +91,7 @@ private:
     bool initialized_{false};
 
     mutex mutex_;
-    IDeviceStatusObserver *observer_{nullptr};
+    IDeviceStatusObserver &observer_;
 };
 
 } // namespace AudioStandard
