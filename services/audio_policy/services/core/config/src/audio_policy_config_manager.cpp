@@ -391,7 +391,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
 bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
 {
     if ((routeFlag & AUDIO_OUTPUT_FLAG_NORMAL) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) ||
+        ((routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) && (routeFlag & AUDIO_OUTPUT_FLAG_HD)) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_LOWPOWER) ||
         (routeFlag & AUDIO_INPUT_FLAG_NORMAL) ||
