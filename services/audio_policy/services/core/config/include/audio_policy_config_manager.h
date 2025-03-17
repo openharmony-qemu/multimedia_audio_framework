@@ -92,8 +92,6 @@ public:
     {
     }
 private:
-    static bool xmlHasLoaded = false;
-
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;

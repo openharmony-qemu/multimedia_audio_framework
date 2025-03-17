@@ -33,6 +33,8 @@ const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
 const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
 
+static bool xmlHasLoaded = false;
+
 bool AudioPolicyConfigManager::Init()
 {
     if (xmlHasLoaded) {
