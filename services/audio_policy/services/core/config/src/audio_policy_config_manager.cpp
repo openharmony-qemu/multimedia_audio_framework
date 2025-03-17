@@ -35,6 +35,10 @@ const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
 
 bool AudioPolicyConfigManager::Init()
 {
+    if (xmlHasLoaded) {
+        AUDIO_WARNING_LOG("Audio Policy Config Load Configuration Retry!");
+        return true;
+    }
     std::unique_ptr<AudioPolicyConfigParser> audioPolicyConfigParser = make_unique<AudioPolicyConfigParser>(this);
     CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser != nullptr, false, "AudioPolicyConfigParser create failed");
     bool ret = audioPolicyConfigParser->LoadConfiguration();
@@ -43,6 +47,7 @@ bool AudioPolicyConfigManager::Init()
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
+    xmlHasLoaded = true;
     return ret;
 }
 

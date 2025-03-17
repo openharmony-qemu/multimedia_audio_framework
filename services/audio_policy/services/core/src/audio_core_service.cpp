@@ -108,8 +108,6 @@ void AudioCoreService::Init()
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Register for device status events failed");
         AUDIO_ERR_LOG("Register for device status events failed");
     }
-
-    policyConfigMananger_.Init();
 }
 
 void AudioCoreService::DeInit()
