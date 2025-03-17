@@ -1619,7 +1619,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_001, TestSiz
     EXPECT_NE(configData.adapterInfoMap.size(), 0);
     EXPECT_NE(configData.deviceInfoMap.size(), 0);
 
-    for (auto &pair : adapterInfoMap) {
+    for (auto &pair : configData.adapterInfoMap) {
         EXPECT_NE(pair.second->adapterName, "");
         EXPECT_NE(pair.second->deviceInfos.size(), 0);
         EXPECT_NE(pair.second->pipeInfos.size(), 0);
