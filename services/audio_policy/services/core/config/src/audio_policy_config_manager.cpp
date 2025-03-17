@@ -33,11 +33,11 @@ const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
 const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
 
-static bool xmlHasLoaded = false;
+static bool g_xmlHasLoaded = false;
 
 bool AudioPolicyConfigManager::Init()
 {
-    if (xmlHasLoaded) {
+    if (g_xmlHasLoaded) {
         AUDIO_WARNING_LOG("Audio Policy Config Load Configuration Retry!");
         return true;
     }
@@ -49,7 +49,7 @@ bool AudioPolicyConfigManager::Init()
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
-    xmlHasLoaded = true;
+    g_xmlHasLoaded = true;
     return ret;
 }
 
