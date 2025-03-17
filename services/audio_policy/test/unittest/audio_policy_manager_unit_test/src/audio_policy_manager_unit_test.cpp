@@ -15,6 +15,7 @@
 
 #include "audio_errors.h"
 #include "audio_policy_manager_unit_test.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 
@@ -579,6 +580,54 @@ HWTEST(AudioPolicyManager, UnsetAudioSceneChangeCallbackTest_001, TestSize.Level
 
     audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
     result = audioPolicyManager_->UnsetAudioSceneChangeCallback(callback);
+    EXPECT_EQ(result,  SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: CreateRenderClient_001.
+* @tc.desc  : Test CreateRendererClient.
+*/
+HWTEST(AudioPolicyManager, CreateRendererClient_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 123;
+    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flag, originalSessionId);
+    EXPECT_EQ(result,  SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: CreateRenderClient_001.
+* @tc.desc  : Test CreateRendererClient.
+*/
+HWTEST(AudioPolicyManager, CreateCapturerClient_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 123;
+    auto result = audioPolicyManager_->CreateCapturerClient(streamDesc, flag, originalSessionId);
     EXPECT_EQ(result,  SUCCESS);
 }
 } // namespace AudioStandard

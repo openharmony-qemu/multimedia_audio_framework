@@ -1213,5 +1213,46 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_044, TestSize.Level1
     bool ret = collector.HasVoipRendererStream();
     EXPECT_TRUE(ret);
 }
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateRenderDeviceInfo_001
+* @tc.desc  : Test UpdateRenderDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateRendererDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    int32_t ret = collector.UpdateRendererDeviceInfo(outputDeviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateRenderDeviceInfo_001
+* @tc.desc  : Test UpdateRenderDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateCapturerDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor iutputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    captureChangeInfo->clientUID = 1001;
+    captureChangeInfo->createrUID = 1001;
+    captureChangeInfo->sessionId = 2001;
+    captureChangeInfo->inputDeviceInfo = iutputDeviceInfo;
+    collector.audioCapturerChangeInfos_.push_back(move(captureChangeInfo));
+
+    int32_t ret = collector.UpdateCapturerDeviceInfo(iutputDeviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
