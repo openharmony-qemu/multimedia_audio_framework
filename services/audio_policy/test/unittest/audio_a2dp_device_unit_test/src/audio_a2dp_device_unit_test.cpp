@@ -270,7 +270,9 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SetA2dpDeviceAbsVolumeSupport_001, TestSize.Le
     std::string device = "test_device";
     AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
     bool support = true;
-    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceAbsVolumeSupport(device, support);
+    int32_t volume = 0;
+    bool mute = true;
+    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceAbsVolumeSupport(device, support, volume, mute);
     EXPECT_TRUE(result);
     A2dpDeviceConfigInfo info;
     bool getInfoResult = AudioA2dpDevice::GetInstance().GetA2dpDeviceInfo(device, info);
@@ -289,7 +291,9 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SetA2dpDeviceAbsVolumeSupport_002, TestSize.Le
 {
     std::string device = "non_existent_device";
     bool support = true;
-    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceAbsVolumeSupport(device, support);
+    int32_t volume = 0;
+    bool mute = true;
+    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceAbsVolumeSupport(device, support, volume, mute);
     EXPECT_FALSE(result);
 }
 
