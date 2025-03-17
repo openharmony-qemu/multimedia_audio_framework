@@ -1609,7 +1609,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_001, TestSiz
 {
     AudioPolicyConfigManager &audioPolicyConfigManager = AudioPolicyConfigManager::GetInstance();
     bool ret = false;
-    ret = audioPolicyConfigManager->Init();
+    ret = audioPolicyConfigManager.Init();
     EXPECT_EQ(ret, true);
 
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
