@@ -15,6 +15,7 @@
 
 #include "get_server_util.h"
 #include "audio_policy_service_thirdext_unit_test.h"
+#include "audio_policy_config_manager.h"
 #include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
 #include "dfx_msg_manager.h"
@@ -1597,6 +1598,42 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerAppStateTest_001, TestSi
     }
     EXPECT_EQ(checkSize2, size);
     manager.appInfo_.clear();
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_001
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioPolicyConfigManager = AudioPolicyConfigManager::GetInstance();
+    bool ret = false;
+    ret = audioPolicyConfigManager->Init();
+    EXPECT_EQ(ret, true);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::string version = configData.GetVersion();
+    EXPECT_EQ(version, "2.0");
+
+    EXPECT_NE(configData.adapterInfoMap.size(), 0);
+    EXPECT_NE(configData.deviceInfoMap.size(), 0);
+
+    for (auto &pair : adapterInfoMap) {
+        EXPECT_NE(pair.second->adapterName, "");
+        EXPECT_NE(pair.second->deviceInfos.size(), 0);
+        EXPECT_NE(pair.second->pipeInfos.size(), 0);
+        
+        for (auto &deviceInfo : pair.second->deviceInfos) {
+            EXPECT_NE(deviceInfo->supportPipeMap_.size(), 0);
+        }
+
+        for (auto &pipeInfo : pair.second->pipeInfos) {
+            for (auto &streamPropInfo : pipeInfo->streamPropInfos_) {
+                EXPECT_NE(streamPropInfo->supportDeviceMap_.size(), 0);
+            }
+        }
+    }
 }
 
 } // namespace AudioStandard

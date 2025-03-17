@@ -790,6 +790,8 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
   module_out_path = module_output_path1
   include_dirs = [
     "./unittest/audio_policy_service_unit_test/include",
+    "../../common/definitions/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../audio_service/common/include/dfx",
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include/service/listener",
