@@ -24,6 +24,8 @@ extern "C" {
 #define SPRINTF_STRING_LEN 256
 #define AUTO_CLEANUP(func) __attribute__((cleanup(func)))
 #define AUTO_CLEAR AUTO_CLEANUP(CallEndAndClear)
+#define SINK_NAME_INNER_CAPTURER "InnerCapturerSink"
+#define MAX_MEM_MALLOC_SIZE (128 * 8)
 
 typedef struct CTrace CTrace;
 
@@ -48,6 +50,8 @@ void EndCTrace(CTrace *cTrace);
 void CTraceCount(const char *traceName, int64_t count);
 
 void CallEndAndClear(CTrace **cTrace);
+
+bool IsInnerCapSinkName(char *pattern);
 
 #ifdef __cplusplus
 }
