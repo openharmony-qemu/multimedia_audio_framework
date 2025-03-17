@@ -63,7 +63,7 @@ void PlayerDfxWriter::WriteDfxStopMsg(uint32_t index, RendererStage stage,
 
     RenderDfxBuilder dfxBuilder;
     dfxBuilder.WriteStatMsg(
-        processConfig.rendererInfo, {stat.frameCnt, stat.muteFrameCnt,
+        processConfig, {stat.frameCnt, stat.muteFrameCnt,
         stat.playDuration, stat.underFlowCnt}).GetResult();
 
     dfxBuilder.WriteActionMsg(dfxCollector_->dfxIndex_, stage);

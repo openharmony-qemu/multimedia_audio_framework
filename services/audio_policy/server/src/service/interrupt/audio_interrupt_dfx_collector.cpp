@@ -32,8 +32,9 @@ void AudioInterruptDfxCollector::FlushDfxMsg(uint32_t index, int32_t appUid)
         AUDIO_INFO_LOG("flush failed index=%{public}d, appUid=%{public}d", index, appUid);
         return;
     }
-    AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d", index, appUid);
     auto &item = dfxInfos_[index];
+    AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d, size=%{public}d", index, appUid,
+        static_cast<int32_t>(item.size()));
     DfxMsgManager::GetInstance().Enqueue({.appUid = appUid, .interruptInfo = item});
 
     dfxInfos_.erase(index);
@@ -59,15 +60,15 @@ InterruptDfxBuilder &InterruptDfxBuilder::WriteActionMsg(uint8_t infoIndex, uint
     return *this;
 }
 
-InterruptDfxBuilder &InterruptDfxBuilder::WriteInfoMsg(const AudioInterrupt &audioInterrupt)
+InterruptDfxBuilder &InterruptDfxBuilder::WriteInfoMsg(const AudioInterrupt &audioInterrupt,
+    const AudioSessionStrategy &strategy, InterruptStrategyType interruptType)
 {
     AUDIO_INFO_LOG("[WriteInfoMsg] streamUsage=%{public}d, concurrencyMode=%{public}d",
         audioInterrupt.streamUsage, audioInterrupt.sessionStrategy.concurrencyMode);
     uint8_t value3 = static_cast<uint8_t>(audioInterrupt.streamUsage);
 
-    uint8_t interruptType = 0;
-    uint8_t value4 = (static_cast<uint8_t>(audioInterrupt.sessionStrategy.concurrencyMode) & 0x0F) << 4 |
-        (interruptType & 0x0F);
+    uint8_t value4 = (static_cast<uint8_t>(strategy.concurrencyMode) & 0x0F) << 4 |
+        (static_cast<uint8_t>(interruptType) & 0x0F);
 
     dfxInfo_.interruptInfo = {0, 0, value3, value4};
     return *this;

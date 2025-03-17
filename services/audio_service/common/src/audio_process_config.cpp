@@ -232,6 +232,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.capturerInfo.capturerFlags);
     parcel.WriteInt32(config.capturerInfo.originalFlag);
     parcel.WriteInt32(config.capturerInfo.pipeType);
+    parcel.WriteInt32(config.capturerInfo.recorderType);
 
     // streamType
     parcel.WriteInt32(config.streamType);
@@ -291,6 +292,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.capturerInfo.capturerFlags = parcel.ReadInt32();
     config.capturerInfo.originalFlag = parcel.ReadInt32();
     config.capturerInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+    config.capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
 
     // streamType
     config.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());

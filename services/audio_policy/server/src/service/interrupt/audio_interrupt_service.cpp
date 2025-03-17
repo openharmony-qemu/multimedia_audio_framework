@@ -2042,7 +2042,7 @@ uint8_t AudioInterruptService::GetAppState(int32_t appPid)
     appManager.GetRunningProcessInfoByPid(appPid, infos);
     state = static_cast<uint8_t>(infos.state_);
     if (state == 0) {
-        AUDIO_WARNING_LOG("GetAppState failed");
+        AUDIO_WARNING_LOG("GetAppState failed, appPid=%{public}d", appPid);
     }
     return state;
 }
@@ -2066,7 +2066,16 @@ void AudioInterruptService::WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, co
 
     InterruptStage stage = dfxCollector_->IsExist(audioInterrupt.streamId) ?
         INTERRUPT_STAGE_RESTART : INTERRUPT_STAGE_START;
-    dfxBuilder.WriteActionMsg(++infoIdx, effectIdx, stage).WriteInfoMsg(audioInterrupt);
+
+    AudioSessionStrategy strategy = audioInterrupt.sessionStrategy;
+    auto audioSession = sessionService_->GetAudioSessionByPid(audioInterrupt.pid);
+    InterruptStrategyType interruptType = InterruptStrategyType::INTERRUPT_TYPE_DEFAULT;
+    if (audioSession != nullptr) {
+        strategy = audioSession->GetSessionStrategy();
+        interruptType = INTERRUPT_TYPE_AUDIO_SESSION;
+    }
+
+    dfxBuilder.WriteActionMsg(++infoIdx, effectIdx, stage).WriteInfoMsg(audioInterrupt, strategy, interruptType);
     dfxCollector_->AddDfxMsg(audioInterrupt.streamId, dfxBuilder.GetResult());
 }
 

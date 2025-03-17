@@ -437,8 +437,12 @@ public:
         return sharedAudioRenderer_->GetAudioTimestampInfo(timestamp, base);
     }
 
+    void SetSourceDuration(int64_t duration) override
+    {
+        return sharedAudioRenderer_->SetSourceDuration(duration);
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
-   
     {
     }
 
