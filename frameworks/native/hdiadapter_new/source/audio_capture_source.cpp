@@ -734,7 +734,7 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
 
-    if (attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) {
+    if ((attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) && attr_.channelEc != 0) {
         param.ecSampleAttributes.ecInterleaved = true;
         param.ecSampleAttributes.ecFormat = ConvertToHdiFormat(attr_.formatEc);
         param.ecSampleAttributes.ecSampleRate = attr_.sampleRateEc;
