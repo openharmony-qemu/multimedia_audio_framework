@@ -33,7 +33,7 @@ struct PlayStat {
 
 class AudioRenderDfxCollector : public DfxCollector<RenderDfxInfo> {
 public:
-    void FlushDfxMsg(uint32_t index, uint32_t appUid) override;
+    void FlushDfxMsg(uint32_t index, int32_t appUid) override;
 };
 
 class RenderDfxBuilder {

@@ -250,6 +250,12 @@ enum AudioPipeType {
     PIPE_TYPE_DIRECT_VOIP = 14,
 };
 
+enum AudioPreloadType {
+    PRELOAD_TYPE_UNKNOWN = -1,
+    PRELOAD_TYPE_NOTSUPPORT = 0,
+    PRELOAD_TYPE_SUPPORT = 1,
+};
+
 struct AudioStreamParams {
     uint32_t samplingRate = 0;
     uint8_t encoding = 0;
@@ -296,6 +302,7 @@ enum AudioSampleFormat : uint8_t {
 
 // channel
 enum AudioChannel : uint8_t {
+    CHANNEL_UNKNOW = 0,
     MONO = 1,
     STEREO = 2,
     CHANNEL_3 = 3,

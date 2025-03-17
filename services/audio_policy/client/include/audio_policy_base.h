@@ -25,6 +25,7 @@
 #include "audio_system_manager.h"
 #include "audio_effect.h"
 #include "microphone_descriptor.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -167,6 +168,12 @@ public:
     virtual int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) = 0;
 
     virtual int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) = 0;
+
+    virtual int32_t CreateRendererClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) = 0;
+
+    virtual int32_t CreateCapturerClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) = 0;
 
     virtual int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) = 0;

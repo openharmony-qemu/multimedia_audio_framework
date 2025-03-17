@@ -1903,9 +1903,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     pipeInfo.streamPropInfos_.push_back(streamPropInfo);
     pipeInfos_.push_back(pipeInfo);
     adapterInfo.pipeInfos_ = pipeInfos_;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_ = {};
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.insert({AdaptersType::TYPE_PRIMARY,
-        adapterInfo});
 
     int32_t ret = SUCCESS;
     GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;

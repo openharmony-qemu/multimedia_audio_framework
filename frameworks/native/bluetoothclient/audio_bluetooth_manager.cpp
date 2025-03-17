@@ -730,7 +730,8 @@ bool AudioHfpManager::IsVirtualCall()
 bool AudioHfpManager::IsAudioScoStateConnect()
 {
     AudioScoState scoState = BluetoothScoManager::GetAudioScoState();
-    bool isConnect = (scoState == AudioScoState::CONNECTED || scoState == AudioScoState::CONNECTING);
+    bool isConnect = (scoState == AudioScoState::CONNECTED || scoState == AudioScoState::CONNECTING ||
+        scoState == AudioScoState::CONNECT_AFTER_DISCONNECTED);
     return isConnect;
 }
 

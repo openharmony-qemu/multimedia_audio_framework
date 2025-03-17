@@ -22,6 +22,7 @@ ohos_unittest("audio_renderer_unit_test") {
   include_dirs = [
     "./include",
     "../../../src",
+    "../../../../audiodefinitions/include",
     "../../../../audiorenderer/include",
     "../../../../audiostream/include",
     "../../../../common/include",
@@ -42,6 +43,7 @@ ohos_unittest("audio_renderer_unit_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../audiodefinitions:audio_definitions",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioutils:audio_utils",
   ]

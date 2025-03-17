@@ -27,6 +27,7 @@
 #include "pa_capturer_stream_impl.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
+#include "core_service_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -98,7 +99,7 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     uint32_t sessionId = 0;
     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK ||
         processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
-        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+        sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     } else {
         sessionId = processConfig.originalSessionId;
     }
@@ -411,7 +412,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
 
 pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId, bool isRecording)
 {
-    AUDIO_DEBUG_LOG("Enter InitPaStream");
+    AUDIO_INFO_LOG("In, isInnerCapturer: %{public}d", processConfig.isInnerCapturer);
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     PaLockGuard palock(mainLoop_);
     if (CheckReturnIfinvalid(mainLoop_ && context_, ERR_ILLEGAL_STATE) < 0) {
@@ -456,7 +457,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     }
 
     int32_t ret = ConnectStreamToPA(paStream, sampleSpec, processConfig.capturerInfo.sourceType,
-        processConfig.innerCapId, deviceName);
+        processConfig.innerCapId, sessionId, deviceName);
     if (ret < 0) {
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         ReleasePaStream(paStream);
@@ -631,9 +632,9 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
 }
 
 int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
-    SourceType source, int32_t innerCapId, const std::string &deviceName)
+    SourceType source, int32_t innerCapId, uint32_t sessionId, const std::string &deviceName)
 {
-    AUDIO_DEBUG_LOG("Enter PaAdapterManager::ConnectStreamToPA");
+    AUDIO_INFO_LOG("In");
     if (CheckReturnIfinvalid(mainLoop_ && context_ && paStream, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -641,12 +642,12 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     PaLockGuard lock(mainLoop_);
     int32_t XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG;
     if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
-        int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec, innerCapId);
+        int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec, sessionId, innerCapId);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
     if (managerType_ == RECORDER) {
         XcollieFlag = AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY;
-        int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, source, deviceName);
+        int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, sessionId, source, deviceName);
         CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
     }
     while (waitConnect_) {
@@ -670,7 +671,8 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, int32_t innerCapId)
+int32_t PaAdapterManager::ConnectRendererStreamToPA(
+    pa_stream *paStream, pa_sample_spec sampleSpec, uint32_t sessionId, int32_t innerCapId)
 {
     uint32_t tlength = 4; // 4 is tlength of playback
     uint32_t maxlength = 4; // 4 is max buffer length of playback
@@ -680,8 +682,8 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
         maxlength = 20; // 20 for cover offload
         prebuf = 2; // 2 is double of normal, use more prebuf for dup stream
     }
-    AUDIO_INFO_LOG("Create ipc playback stream tlength: %{public}u, maxlength: %{public}u prebuf: %{public}u", tlength,
-        maxlength, prebuf);
+    AUDIO_INFO_LOG("Create ipc playback stream tlength: %{public}u, maxlength: %{public}u prebuf: %{public}u"
+        "sessionId: %{public}u, innerCapId: %{public}d", tlength, maxlength, prebuf, sessionId, innerCapId);
     pa_buffer_attr bufferAttr;
     bufferAttr.fragsize = static_cast<uint32_t>(-1);
     bufferAttr.prebuf = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * prebuf, &sampleSpec);
@@ -690,8 +692,22 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
     std::string dupSinkName = AppendDeviceName(innerCapId, AppendType::APPEND_RENDER);
-    const char *sinkName = managerType_ == DUP_PLAYBACK ? dupSinkName.c_str() :
-        (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
+    const char *sinkName = nullptr;
+    std::string sinkNameStr = "";
+    if (managerType_ == DUP_PLAYBACK) {
+        sinkName = dupSinkName.c_str();
+    } else if (managerType_ == DUAL_PLAYBACK) {
+        sinkName = "Speaker";
+    } else {
+        sinkNameStr = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+        sinkName = strdup(sinkNameStr.c_str());
+    }
+    if (strcmp(sinkName, "") == 0) {
+        AUDIO_INFO_LOG("Sink name is null");
+        sinkName = "Speaker";
+    }
+    AUDIO_INFO_LOG("Sink name: %{public}s", sinkName);
+    
     uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;
     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
@@ -708,7 +724,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
+int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, uint32_t sessionId,
     SourceType source, const std::string &deviceName)
 {
     uint32_t fragsize = 1; // 1 is frag size of recorder
@@ -719,7 +735,15 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}d, fragsize: %{public}d",
         bufferAttr.maxlength, bufferAttr.fragsize);
 
-    const char *cDeviceName = (deviceName == "") ? nullptr : deviceName.c_str();
+    const char *cDeviceName = "Built_in_mic";
+    std::string sourceNameStr = "";
+    if (source == SOURCE_TYPE_PLAYBACK_CAPTURE || source == SOURCE_TYPE_REMOTE_CAST) {
+        cDeviceName = deviceName.c_str();
+    } else {
+        sourceNameStr = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+        cDeviceName = strdup(sourceNameStr.c_str());
+    }
+    AUDIO_INFO_LOG("Source name: %{public}s", cDeviceName);
 
     uint32_t flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED | PA_STREAM_VARIABLE_RATE;
     if (source == SOURCE_TYPE_PLAYBACK_CAPTURE) {

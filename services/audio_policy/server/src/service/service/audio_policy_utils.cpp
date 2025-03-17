@@ -293,6 +293,17 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
     }
 }
 
+std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId)
+{
+    if (desc->networkId_ == LOCAL_NETWORK_ID) {
+        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+        streamCollector_.GetPipeType(sessionId, pipeType);
+        return GetSinkPortName(desc->deviceType_, pipeType);
+    } else {
+        return GetRemoteModuleName(desc->networkId_, desc->deviceRole_);
+    }
+}
+
 std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
 {
     std::string portName = PORT_NONE;
@@ -496,9 +507,11 @@ AudioModuleInfo AudioPolicyUtils::ConstructRemoteAudioModuleInfo(std::string net
         audioModuleInfo.format = "s16le"; // 16bit little endian
         audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
         audioModuleInfo.renderInIdleState = "1";
+        audioModuleInfo.role = "sink";
     } else if (deviceRole == DeviceRole::INPUT_DEVICE) {
         audioModuleInfo.lib = "libmodule-hdi-source.z.so";
         audioModuleInfo.format = "s16le"; // we assume it is bigger endian
+        audioModuleInfo.role = "source";
     } else {
         AUDIO_WARNING_LOG("Invalid flag provided %{public}d", static_cast<int32_t>(deviceType));
     }

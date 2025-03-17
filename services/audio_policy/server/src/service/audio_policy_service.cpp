@@ -75,19 +75,13 @@ static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 const int32_t UID_AUDIO = 1041;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
+static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
 
 static int16_t IsDistributedOutput(const AudioDeviceDescriptor &desc)
 {
     return (desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID) ? 1 : 0;
 }
-
-#ifdef BLUETOOTH_ENABLE
-static sptr<IStandardAudioService> g_btProxy = nullptr;
-#endif
 mutex g_dataShareHelperMutex;
-#ifdef BLUETOOTH_ENABLE
-mutex g_btProxyMutex;
-#endif
 bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;
 mutex g_policyMgrListenerMutex;
@@ -118,7 +112,6 @@ bool AudioPolicyService::LoadAudioPolicyConfig()
 
 bool AudioPolicyService::Init(void)
 {
-    serviceFlag_.reset();
     audioPolicyManager_.Init();
     audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
@@ -127,8 +120,6 @@ bool AudioPolicyService::Init(void)
     audioPnpServer_.init();
 #endif
     audioGlobalConfigManager_.ParseGlobalConfigXml();
-    audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
-    if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
 
     bool ret = LoadAudioPolicyConfig();
     if (!ret) {
@@ -139,21 +130,6 @@ bool AudioPolicyService::Init(void)
     ret = audioToneManager_.LoadToneDtmfConfig();
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Tone Load Configuration failed");
 #endif
-
-    int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
-    if (status != SUCCESS) {
-        AudioPolicyUtils::GetInstance().WriteServiceStartupError("[Policy Service] Register for device status "
-            "events failed");
-    }
-    CHECK_AND_RETURN_RET_LOG(status == SUCCESS, false, "[Policy Service] Register for device status events failed");
-
-    audioVolumeManager_.Init(audioPolicyServerHandler_);
-    audioDeviceCommon_.Init(audioPolicyServerHandler_);
-    audioRecoveryDevice_.Init(audioA2dpOffloadManager_);
-
-    audioDeviceStatus_.Init(audioA2dpOffloadManager_, audioPolicyServerHandler_);
-    audioDeviceLock_.Init(audioA2dpOffloadManager_);
-    audioCapturerSession_.Init(audioA2dpOffloadManager_);
 
     CreateRecoveryThread();
     std::string versionType = OHOS::system::GetParameter("const.logsystem.versiontype", "commercial");
@@ -917,28 +893,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
 
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
-    AUDIO_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);
-    CHECK_AND_RETURN_LOG(serviceIndex >= HDI_SERVICE_INDEX && serviceIndex <= AUDIO_SERVICE_INDEX, "invalid index");
-
-    // If audio service or hdi service is not ready, donot load default modules
-    lock_guard<mutex> lock(serviceFlagMutex_);
-    serviceFlag_.set(serviceIndex, true);
-    if (serviceFlag_.count() != MIN_SERVICE_COUNT) {
-        AUDIO_INFO_LOG("[module_load]::hdi service or audio service not up. Cannot load default module now");
-        return;
-    }
-
-    int32_t ret = audioDeviceLock_.OnServiceConnected(serviceIndex);
-    if (ret == SUCCESS) {
-#ifdef USB_ENABLE
-        AudioUsbManager::GetInstance().Init(this);
-#endif
-        audioEffectService_.SetMasterSinkAvailable();
-    }
-    // RegisterBluetoothListener() will be called when bluetooth_host is online
-    // load hdi-effect-model
-    LoadHdiEffectModel();
-    AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
+    AUDIO_INFO_LOG("Not support, use AudioCoreService");
 }
 
 void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
@@ -1044,7 +999,7 @@ int32_t AudioPolicyService::SetAudioClientInfoMgrCallback(const sptr<IRemoteObje
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     if (callback != nullptr) {
-        return audioRecoveryDevice_.SetAudioClientInfoMgrCallback(callback);
+        return audioStateManager_.SetAudioClientInfoMgrCallback(callback);
     } else {
         AUDIO_ERR_LOG("Client info manager callback is null");
     }
@@ -1299,10 +1254,6 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
 void AudioPolicyService::RegiestPolicy()
 {
     AUDIO_INFO_LOG("Start");
-    const sptr<IStandardAudioService> gsp = AudioServerProxy::GetInstance().GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "RegiestPolicy, Audio Server Proxy is null");
-    audioPolicyManager_.SetAudioServerProxy(gsp);
-
     sptr<PolicyProviderWrapper> wrapper = new(std::nothrow) PolicyProviderWrapper(this);
     CHECK_AND_RETURN_LOG(wrapper != nullptr, "Get null PolicyProviderWrapper");
     sptr<IRemoteObject> object = wrapper->AsObject();
@@ -1456,51 +1407,6 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
     return audioConfigManager_.GetMaxRendererInstances();
 }
 
-#ifdef BLUETOOTH_ENABLE
-const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
-{
-    lock_guard<mutex> lock(g_btProxyMutex);
-    if (g_btProxy == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr,
-            "get sa manager failed");
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
-        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr,
-            "get audio service remote object failed");
-        g_btProxy = iface_cast<IStandardAudioService>(object);
-        CHECK_AND_RETURN_RET_LOG(g_btProxy != nullptr, nullptr,
-            "get audio service proxy failed");
-
-        // register death recipent
-        sptr<AudioServerDeathRecipient> asDeathRecipient =
-            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
-        if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
-                AudioPolicyService::BluetoothServiceCrashedCallback(pid, uid);
-            });
-            bool result = object->AddDeathRecipient(asDeathRecipient);
-            if (!result) {
-                AUDIO_ERR_LOG("failed to add deathRecipient");
-            }
-        }
-    }
-    sptr<IStandardAudioService> gasp = g_btProxy;
-    return gasp;
-}
-
-void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
-{
-    AUDIO_INFO_LOG("Bluetooth sa crashed, will restore proxy in next call");
-    lock_guard<mutex> lock(g_btProxyMutex);
-    g_btProxy = nullptr;
-    isBtListenerRegistered = false;
-    isBtCrashed = true;
-    Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
-    Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSource();
-    Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
-}
-#endif
-
 void AudioPolicyService::RegisterBluetoothListener()
 {
 #ifdef BLUETOOTH_ENABLE
@@ -1518,11 +1424,6 @@ void AudioPolicyService::RegisterBluetoothListener()
     
     isBtListenerRegistered = true;
     isBtCrashed = false;
-    const sptr<IStandardAudioService> gsp = RegisterBluetoothDeathCallback();
-    AudioPolicyUtils::GetInstance().SetBtConnecting(true);
-    Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
-    Bluetooth::AudioHfpManager::CheckHfpDeviceReconnect();
-    AudioPolicyUtils::GetInstance().SetBtConnecting(false);
 #endif
 }
 
@@ -2126,6 +2027,19 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, false);
     return SUCCESS;
+}
+
+void AudioPolicyService::CheckConnectedDevice()
+{
+    bool flag = audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_USB_ARM_HEADSET ||
+        audioPolicyManager_.GetActiveDevice() ==  DEVICE_TYPE_USB_HEADSET;
+    AudioServerProxy::GetInstance().SetDeviceConnectedFlag(flag);
+}
+
+void AudioPolicyService::SetDeviceConnectedFlagFalseAfterDuration()
+{
+    usleep(DEVICE_CONNECTED_FLAG_DURATION_MS); // 3s
+    AudioServerProxy::GetInstance().SetDeviceConnectedFlag(false);
 }
 
 void AudioPolicyService::CheckHibernateState(bool hibernate)

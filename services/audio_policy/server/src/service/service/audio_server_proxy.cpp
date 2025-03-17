@@ -391,6 +391,16 @@ int32_t AudioServerProxy::RegiestPolicyProviderProxy(const sptr<IRemoteObject> &
     return ret;
 }
 
+int32_t AudioServerProxy::RegistCoreServiceProviderProxy(const sptr<IRemoteObject> &object)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_HANDLE, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->RegistCoreServiceProvider(object);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return ret;
+}
+
 void AudioServerProxy::SetParameterCallbackProxy(const sptr<IRemoteObject>& object)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -514,6 +524,46 @@ void AudioServerProxy::UnloadHdiAdapterProxy(uint32_t devMgrType, const std::str
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->UnloadHdiAdapter(devMgrType, adapterName, force);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+uint32_t AudioServerProxy::CreateHdiSinkPortProxy(const std::string &deviceClass, const std::string &idInfo,
+    const IAudioSinkAttr &attr)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, HDI_INVALID_ID, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    uint32_t res = gsp->CreateHdiSinkPort(deviceClass, idInfo, attr);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
+
+uint32_t AudioServerProxy::CreateHdiSourcePortProxy(const std::string &deviceClass, const std::string &idInfo,
+    const IAudioSourceAttr &attr)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, HDI_INVALID_ID, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    uint32_t res = gsp->CreateHdiSourcePort(deviceClass, idInfo, attr);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
+
+void AudioServerProxy::DestroyHdiPortProxy(uint32_t id)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->DestroyHdiPort(id);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+void AudioServerProxy::SetDeviceConnectedFlag(bool flag)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->SetDeviceConnectedFlag(flag);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

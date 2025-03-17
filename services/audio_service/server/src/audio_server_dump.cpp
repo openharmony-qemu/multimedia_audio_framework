@@ -213,6 +213,7 @@ void AudioServerDump::HelpInfoDump(string &dumpString)
     AppendFormat(dumpString, "  -cm\t\t\t|dump AudioCached memory info\n");
     AppendFormat(dumpString, "  -pm\t\t\t|dump AudioPerformMonitor info\n");
     AppendFormat(dumpString, "  -ha\t\t\t|dump HdiAdapter info\n");
+    AppendFormat(dumpString, "  -ap\t\t\t|dump AudioPipeManager info\n");
 }
 
 void AudioServerDump::AudioDataDump(string &dumpString, std::queue<std::u16string>& argQue)

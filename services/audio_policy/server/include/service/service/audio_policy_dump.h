@@ -32,7 +32,7 @@
 #include "audio_effect_service.h"
 
 #include "audio_active_device.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_scene_manager.h"
 #include "audio_volume_manager.h"
 #include "audio_connected_device.h"
@@ -78,12 +78,13 @@ private:
     void GetGroupInfoDump(std::string &dumpString);
 
     void GetCapturerStreamDump(std::string &dumpString);
-
+    void AudioPolicyParserDumpAdapterInfo(std::string &dumpString,
+        std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>>& adapterInfoMap);
+    void AudioPolicyParserDumpPipeInfo(std::string &dumpString, std::shared_ptr<PolicyAdapterInfo> &adapterInfo);
     void AudioPolicyParserDumpInner(std::string &dumpString,
-        const std::unordered_map<AdaptersType, AudioAdapterInfo>& adapterInfoMap,
         const std::unordered_map<std::string, std::string>& volumeGroupData,
         std::unordered_map<std::string, std::string>& interruptGroupData,
-        GlobalConfigs globalConfigs);
+        PolicyGlobalConfigs globalConfigs);
     void GetEffectManagerInfo();
     bool IsStreamSupported(AudioStreamType streamType);
 private:
@@ -91,7 +92,7 @@ private:
         audioEffectService_(AudioEffectService::GetAudioEffectService()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioSceneManager_(AudioSceneManager::GetInstance()),
         audioVolumeManager_(AudioVolumeManager::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
@@ -105,7 +106,7 @@ private:
     AudioEffectService& audioEffectService_;
     AudioStreamCollector& streamCollector_;
     AudioActiveDevice& audioActiveDevice_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioSceneManager& audioSceneManager_;
     AudioVolumeManager& audioVolumeManager_;
     AudioConnectedDevice& audioConnectedDevice_;

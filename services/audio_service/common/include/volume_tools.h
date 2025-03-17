@@ -45,6 +45,9 @@ public:
         size_t split = 1);
     static void DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
         int64_t &volumeDataCount, size_t split = 1);
+
+    static void CalcMuteFrame(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
+        int64_t &volumeDataCount, int64_t &muteFrameCnt, size_t split = 1);
 };
 } // namespace AudioStandard
 } // namespace OHOS

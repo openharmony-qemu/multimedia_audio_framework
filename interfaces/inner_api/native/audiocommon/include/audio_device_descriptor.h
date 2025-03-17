@@ -117,11 +117,15 @@ public:
 
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
+    bool IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
+
     bool IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const;
 
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
     DeviceType MapInternalToExternalDeviceType() const;
+
+    void Dump(std::string &dumpString);
 
     struct AudioDeviceDescriptorHash {
         size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
