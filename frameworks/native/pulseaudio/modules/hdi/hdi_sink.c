@@ -2265,7 +2265,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
             frameSize * sizeof(float));
         CHECK_AND_RETURN_LOG(ret == 0, "SinkRenderPrimaryProcess: copy from bufIn to tempBufIn fail!");
         u->bufferAttr->numChanIn = (int32_t)processChannels;
-        u->bufferAttr->frameLen = frameSize / (uint32_t)u->bufferAttr->numChanIn;
+        u->bufferAttr->frameLen = (int32_t)frameSize / u->bufferAttr->numChanIn;
         size_t outBufferLen = byteSize > 0 ? length / byteSize : 0;
         PrimaryEffectProcess(u, sinkSceneType, sceneType, outBufferLen);
         pa_memblock_release(chunkIn->memblock);
