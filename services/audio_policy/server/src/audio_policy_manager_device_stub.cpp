@@ -161,8 +161,9 @@ void AudioPolicyManagerStub::SelectInputDeviceInternal(MessageParcel &data, Mess
 void AudioPolicyManagerStub::ExcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+    int validSize = 20; // Use 20 as limit.
     int size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0, "ExcludeOutputDevices get invalid device size.");
+    CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "ExcludeOutputDevices get invalid device size.");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
     for (int i = 0; i < size; i++) {
         std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
@@ -177,8 +178,9 @@ void AudioPolicyManagerStub::ExcludeOutputDevicesInternal(MessageParcel &data, M
 void AudioPolicyManagerStub::UnexcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+    int validSize = 20; // Use 20 as limit.
     int size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0, "UnexcludeOutputDevices get invalid device size.");
+    CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "UnexcludeOutputDevices get invalid device size.");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
     for (int i = 0; i < size; i++) {
         std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
