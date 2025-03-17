@@ -73,6 +73,7 @@ group("audio_unit_test") {
     "../services/audio_policy/test:audio_policy_unittest_packages",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
     "../services/audio_service/test/unittest:audio_dump_pcm_unit_test",
+    "../services/audio_service/test/unittest:audio_engine_manager_unit_test",
     "../services/audio_service/test/unittest:audio_manager_listener_proxy_unit_test",
     "../services/audio_service/test/unittest:audio_spatial_channel_converter_unit_test",
     "../services/audio_service/test/unittest:audio_thread_task_unit_test",

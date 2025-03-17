@@ -47,6 +47,7 @@ group("audio_policy_unittest_packages") {
     ":audio_policy_async_action_handler_test",
     ":audio_policy_client_proxy_unit_test",
     ":audio_policy_client_stub_impl_test",
+    ":audio_policy_client_stub_unit_test",
     ":audio_policy_manager_stub_test",
     ":audio_policy_manager_unit_test",
     ":audio_policy_server_handler_unit_test",
@@ -3723,4 +3724,42 @@ ohos_unittest("audio_server_definitions_unit_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_common",
   ]
+}
+
+ohos_unittest("audio_policy_client_stub_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./unittest/audio_policy_client_stub_unit_test/include",
+    "../../audio_policy/client/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_policy_client_stub_unit_test/src/audio_policy_client_stub_unit_test.cpp" ]
+
+  deps = [ "../../../services/audio_policy:audio_policy_client_static" ]
 }
