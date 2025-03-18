@@ -1365,10 +1365,10 @@ void AudioCoreService::UpdateTrackerDeviceChange(const vector<std::shared_ptr<Au
 
 bool AudioCoreService::GetFastControlParam()
 {
-    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
+    int32_t fastControlFlag = 0; // default 0, set isFastControlled_ false
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
-    if (fastControlFlag == 0) {
-        isFastControlled_ = false;
+    if (fastControlFlag == 1) {
+        isFastControlled_ = true;
     }
     return isFastControlled_;
 }
