@@ -727,26 +727,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSinkLatencyFromXml_001, Test
 }
 
 /**
- * @tc.name  : Test Audio_Policy_Manager_SetCaptureSlientState_001
- * @tc.number: Audio_Policy_Manager_SetCaptureSlientState_001
- * @tc.desc  : Test SetCaptureSlientState with no permission.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetCaptureSlientState_001, TestSize.Level1)
-{
-    bool state = true;
-    int32_t ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
-    EXPECT_EQ(ERROR, ret);
-    ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
-    EXPECT_EQ(ERROR, ret);
-
-    state = false;
-    ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
-    EXPECT_EQ(ERROR, ret);
-    ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
-    EXPECT_EQ(ERROR, ret);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_Manager_IsAbsVolumeScene_001
  * @tc.number: Audio_Policy_Manager_IsAbsVolumeScene_001
  * @tc.desc  : Test IsAbsVolumeScene interface.

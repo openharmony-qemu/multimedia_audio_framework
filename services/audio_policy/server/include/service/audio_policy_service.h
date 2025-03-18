@@ -377,10 +377,6 @@ public:
 
     void UpdateDescWhenNoBTPermission(vector<sptr<AudioDeviceDescriptor>> &desc);
 
-    int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config);
-
-    int32_t SetCaptureSilentState(bool state);
-
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc);
 
     vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);

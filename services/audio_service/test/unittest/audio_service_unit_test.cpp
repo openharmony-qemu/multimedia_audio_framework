@@ -34,7 +34,6 @@ std::unique_ptr<AudioManagerProxy> audioManagerProxy;
 std::shared_ptr<AudioProcessInClient> processClient_;
 const int32_t TEST_RET_NUM = 0;
 const int32_t RENDERER_FLAGS = 0;
-constexpr int32_t ERROR_62980101 = -62980101;
 
 class AudioServiceUnitTest : public testing::Test {
 public:
@@ -136,10 +135,6 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
 
     ret = audioManagerProxy->RegiestPolicyProvider(object);
     EXPECT_EQ(SUCCESS, ret);
-
-    bool state = false;
-    ret = audioManagerProxy->SetCaptureSilentState(state);
-    EXPECT_TRUE(ERROR_62980101 == ret || SUCCESS == ret);
 
     bool result = audioManagerProxy->CreatePlaybackCapturerManager();
     EXPECT_EQ(result, true);

@@ -809,48 +809,6 @@ bool AudioManagerProxy::CreatePlaybackCapturerManager()
     return reply.ReadBool();
 }
 
-int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
-{
-    int32_t error;
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-
-    int32_t cnt = (int32_t)usage.size();
-    data.WriteInt32(cnt);
-    for (int32_t i = 0; i < cnt; i++) {
-        data.WriteInt32(usage[i]);
-    }
-
-    error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::SET_SUPPORT_STREAM_USAGE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
-        "SetSupportStreamUsage failed, error: %{public}d", error);
-
-    return reply.ReadInt32();
-}
-
-int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
-{
-    int32_t error;
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-
-    data.WriteInt32(static_cast<int32_t>(state));
-    error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE),
-        data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
-        "SetCaptureSilentState failed, error: %{public}d", error);
-    return reply.ReadInt32();
-}
-
 int32_t AudioManagerProxy::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     int32_t error;
