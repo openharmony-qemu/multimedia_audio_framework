@@ -994,7 +994,6 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
         }
-        OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
     }
 
     for (auto streamDesc : outputStreamDescs) {
@@ -1021,6 +1020,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
     }
 
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
+    OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
     return ret;
 }
 
@@ -1038,6 +1038,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
     }
 
     int32_t ret = FetchCapturerPipesAndExecute(inputStreamDescs);
+    OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), ""); // networkId is not used.
     return ret;
 }
 
