@@ -1406,6 +1406,7 @@ int32_t AudioSystemManager::SetA2dpDeviceVolume(const std::string &macAddress, c
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
 {
     AudioPin pin = AUDIO_PIN_NONE;
+    uint16_t dmDeviceType = 0;
     switch (deviceType) {
         case OHOS::AudioStandard::DEVICE_TYPE_NONE:
         case OHOS::AudioStandard::DEVICE_TYPE_INVALID:
@@ -1444,6 +1445,14 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
             pin = AUDIO_PIN_OUT_HDMI;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_ACCESSORY:
+            dmDeviceType = GetDmDeviceType();
+            if (dmDeviceType == DM_DEVICE_TYPE_PENCIL) {
+                pin = AUDIO_PIN_IN_PENCIL;
+            } else if (dmDeviceType == DM_DEVICE_TYPE_UWB) {
+                pin = AUDIO_PIN_IN_UWB;
+            }
             break;
         default:
             OtherDeviceTypeCases(deviceType);
@@ -1503,6 +1512,10 @@ DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const
             break;
         case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
             type = DEVICE_TYPE_DEFAULT;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_PENCIL:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_UWB:
+            type = DEVICE_TYPE_ACCESSORY;
             break;
         default:
             AUDIO_INFO_LOG("invalid input parameter");
@@ -1737,6 +1750,11 @@ int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
 {
     AUDIO_INFO_LOG("%{public}d", state);
     return SUCCESS;
+}
+
+uint16_t AudioSystemManager::GetDmDeviceType() const
+{
+    return AudioPolicyManager::GetInstance().GetDmDeviceType();
 }
 } // namespace AudioStandard
 } // namespace OHOS

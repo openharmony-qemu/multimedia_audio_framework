@@ -125,6 +125,7 @@ const char *g_audioServerCodeStrs[] = {
     "CREATE_SOURCE_PORT",
     "DESTROY_HDI_PORT",
     "DEVICE_CONNECTED_FLAG",
+    "SET_DM_DEVICE_TYPE",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -370,6 +371,13 @@ int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, Messag
     std::string deviceName = data.ReadString();
     int32_t ret = UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, deviceName);
     reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetDmDeviceType(MessageParcel &data, MessageParcel &reply)
+{
+    int16_t dmDeviceType = data.ReadUint16();
+    SetDmDeviceType(dmDeviceType);
     return AUDIO_OK;
 }
 
@@ -982,6 +990,8 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 return HandleGetAllSinkInputs(data, reply);
             case static_cast<uint32_t>(AudioServerInterfaceCode::SET_DEFAULT_ADAPTER_ENABLE):
                 return HandleSetDefaultAdapterEnable(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_DM_DEVICE_TYPE):
+                return HandleSetDmDeviceType(data, reply);
             default:
                 return HandleSecondPartCode(code, data, reply, option);
         }

@@ -61,6 +61,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
+
 private:
     bool sourceInited_ = false;
     FILE *file_ = nullptr;

@@ -48,6 +48,7 @@ private:
     void SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void GetDmDeviceTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetInputDeviceInternal(MessageParcel &data, MessageParcel &reply);

@@ -199,6 +199,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_EXCLUDED_OUTPUT_DEVICES",
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
+    "GET_DM_DEVICE_TYPE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1723,6 +1724,9 @@ void AudioPolicyManagerStub::OnMiddlesRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK):
             UnsetInterruptCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DM_DEVICE_TYPE):
+            GetDmDeviceTypeInternal(data, reply);
             break;
         default:
             OnMiddleFirRemoteRequest(code, data, reply, option);

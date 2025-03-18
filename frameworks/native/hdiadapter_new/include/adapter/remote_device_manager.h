@@ -104,6 +104,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
+
 private:
     void InitAudioManager(void);
     std::shared_ptr<RemoteAdapterWrapper> GetAdapter(const std::string &adapterName, bool tryCreate = false);

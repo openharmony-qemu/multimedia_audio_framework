@@ -940,6 +940,9 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
 
     if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
         UpdateArmInstance(sink, source);
+    } else if (type == DEVICE_TYPE_ACCESSORY) {
+        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
+        source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
     } else {
         UpdatePrimaryInstance(sink, source);
         if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD &&
@@ -997,6 +1000,12 @@ int32_t AudioServer::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, 
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
     return SetIORoutes(activeDevices, a2dpOffloadFlag, deviceName);
+}
+
+void AudioServer::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
+    source->SetDmDeviceType(dmDeviceType);
 }
 
 void AudioServer::SetAudioMonoState(bool audioMono)

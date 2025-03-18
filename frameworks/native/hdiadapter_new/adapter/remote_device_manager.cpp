@@ -578,5 +578,10 @@ int32_t RemoteDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteN
     return ret;
 }
 
+void RemoteDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

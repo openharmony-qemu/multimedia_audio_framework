@@ -339,5 +339,9 @@ uint32_t BluetoothDeviceManager::GetHdiCaptureId(const std::string &adapterName)
     return hdiCaptureId;
 }
 
+void BluetoothDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -212,6 +212,13 @@ public:
         BluetoothOffloadState a2dpOffloadFlag) = 0;
 
     /**
+     * Set device dmDevice type.
+     *
+     * @return none.
+     */
+    virtual void SetDmDeviceType(uint16_t dmDeviceType) = 0;
+
+    /**
      * Update the audio route after devices is detected and route is decided
      *
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
@@ -616,6 +623,7 @@ private:
     int HandleSetAudioScene(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDevicesRoute(MessageParcel &data, MessageParcel &reply);
+    int HandleSetDmDeviceType(MessageParcel &data, MessageParcel &reply);
     int HandleDualToneState(MessageParcel &data, MessageParcel &reply);
     int HandleGetTransactionId(MessageParcel &data, MessageParcel &reply);
     int HandleSetParameterCallback(MessageParcel &data, MessageParcel &reply);

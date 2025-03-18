@@ -182,6 +182,8 @@ public:
 
     DeviceType GetActiveOutputDevice();
 
+    uint16_t GetDmDeviceType();
+
     shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
 
     DeviceType GetActiveInputDevice();
@@ -620,7 +622,8 @@ private:
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_WAKEUP,
-        DEVICE_TYPE_MIC
+        DEVICE_TYPE_MIC,
+        DEVICE_TYPE_ACCESSORY
     };
 
     AudioEffectService& audioEffectService_;

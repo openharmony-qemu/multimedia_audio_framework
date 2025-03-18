@@ -126,6 +126,8 @@ public:
 
     DeviceType GetActiveOutputDevice();
 
+    uint16_t GetDmDeviceType();
+
     DeviceType GetActiveInputDevice();
 
     int32_t SetRingerModeLegacy(AudioRingerMode ringMode);

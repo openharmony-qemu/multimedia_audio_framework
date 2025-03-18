@@ -591,5 +591,10 @@ int32_t FastAudioCaptureSource::CheckPositionTime(void)
     return ERR_OPERATION_FAILED;
 }
 
+void FastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

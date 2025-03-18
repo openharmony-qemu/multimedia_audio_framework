@@ -69,6 +69,8 @@ public:
     virtual void DestroyCapture(const std::string &adapterName, uint32_t hdiCaptureId) = 0;
 
     virtual void DumpInfo(std::string &dumpString) = 0;
+
+    virtual void SetDmDeviceType(uint16_t dmDeviceType) = 0;
 };
 
 } // namespace AudioStandard

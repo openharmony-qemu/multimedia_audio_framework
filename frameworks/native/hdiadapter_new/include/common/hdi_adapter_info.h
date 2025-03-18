@@ -35,6 +35,7 @@ enum HdiIdType : uint32_t {
     HDI_ID_TYPE_OFFLOAD,
     HDI_ID_TYPE_MULTICHANNEL,
     HDI_ID_TYPE_WAKEUP,
+    HDI_ID_TYPE_ACCESSORY,
     HDI_ID_TYPE_NUM,
 };
 
@@ -48,6 +49,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_EC "ec"
 #define HDI_ID_INFO_MIC_REF "mic_ref"
 #define HDI_ID_INFO_MMAP "mmap"
+#define HDI_ID_INFO_ACCESSORY "accessory"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {

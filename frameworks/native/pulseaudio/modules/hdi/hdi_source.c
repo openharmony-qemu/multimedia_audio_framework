@@ -75,6 +75,7 @@
 
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_A2DP = "a2dp";
+const char *ACCESSORY_SOURCE = "accessory_mic";
 const int32_t SUCCESS = 0;
 const int32_t ERROR = -1;
 

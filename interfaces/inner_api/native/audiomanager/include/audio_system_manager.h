@@ -1397,6 +1397,8 @@ public:
     int32_t SetVirtualCall(const bool isVirtual);
 
     int32_t OnVoiceWakeupState(bool state);
+
+    uint16_t GetDmDeviceType() const;
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

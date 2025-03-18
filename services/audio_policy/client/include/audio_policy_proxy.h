@@ -82,6 +82,8 @@ public:
 
     DeviceType GetActiveOutputDevice() override;
 
+    uint16_t GetDmDeviceType() override;
+
     DeviceType GetActiveInputDevice() override;
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

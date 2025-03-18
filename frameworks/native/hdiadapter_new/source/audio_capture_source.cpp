@@ -669,6 +669,8 @@ uint32_t AudioCaptureSource::GetUniqueId(void) const
 {
     if (halName_ == HDI_ID_INFO_USB) {
         return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_USB);
+    } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_ACCESSORY);
     }
     return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
 }
@@ -756,6 +758,12 @@ void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc
     deviceDesc.pins = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
+    } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+            deviceDesc.pins = PIN_IN_PENCIL;
+        } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+            deviceDesc.pins = PIN_IN_UWB;
+        }
     }
     deviceDesc.desc = const_cast<char *>(address_.c_str());
 }
@@ -767,6 +775,12 @@ void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, A
     AudioPortPin pin = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
         pin = PIN_IN_USB_HEADSET;
+    } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+            pin = PIN_IN_PENCIL;
+        } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+            pin = PIN_IN_UWB;
+        }
     }
     AUDIO_DEBUG_LOG("pin: %{public}d", pin);
     sceneDesc.desc.pins = pin;
@@ -1070,6 +1084,15 @@ void AudioCaptureSource::DumpData(char *frame, uint64_t &replyBytes)
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void*>(frame), replyBytes);
     }
+}
+
+void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    dmDeviceType_ = dmDeviceType;
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    deviceManager->SetDmDeviceType(dmDeviceType);
 }
 
 } // namespace AudioStandard

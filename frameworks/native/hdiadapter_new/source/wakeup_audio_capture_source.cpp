@@ -299,5 +299,10 @@ void WakeupAudioCaptureSource::DumpInfo(std::string &dumpString)
     dumpString += "type: WakeupSource\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
 }
 
+void WakeupAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
