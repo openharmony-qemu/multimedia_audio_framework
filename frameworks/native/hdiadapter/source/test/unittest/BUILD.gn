@@ -14,7 +14,8 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-module_output_path = "multimedia_audio_framework/audio_capturer_source"
+module_output_path =
+    "audio_framework/audio_framework_route/audio_capturer_source"
 
 ohos_unittest("remote_fast_audio_capturer_source_unittest") {
   module_out_path = module_output_path

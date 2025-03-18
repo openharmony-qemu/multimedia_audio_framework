@@ -13,7 +13,8 @@
 
 import("//build/test.gni")
 
-module_output_path = "multimedia_audio_framework/audio_running_lock_manager"
+module_output_path =
+    "audio_framework/audio_framework_route/audio_running_lock_manager"
 
 ohos_unittest("audio_running_lock_manager_unit_test") {
   testonly = true
