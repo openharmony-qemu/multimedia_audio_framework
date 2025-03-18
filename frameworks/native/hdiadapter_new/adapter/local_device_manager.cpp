@@ -48,10 +48,11 @@ int32_t LocalDeviceManager::LoadAdapter(const std::string &adapterName)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && adapter != nullptr, ERR_NOT_STARTED, "load adapter fail");
     ret = adapter->InitAllPorts(adapter);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "init all ports fail");
-    std::lock_guard<std::mutex> lock(adapterMtx_);
+    adapterMtx_.lock();
     adapters_[adapterName] = std::make_shared<LocalAdapterWrapper>();
     adapters_[adapterName]->adapterDesc_ = descs[index];
     adapters_[adapterName]->adapter_ = adapter;
+    adapterMtx_.unlock();
     // LCOV_EXCL_START
     for (auto it = reSetParams_.begin(); it != reSetParams_.end();) {
         if (it->adapterName_ == adapterName) {
