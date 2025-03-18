@@ -33,13 +33,11 @@ const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
 const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
 
-static bool g_xmlHasLoaded = false;
-
-bool AudioPolicyConfigManager::Init()
+bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
-    if (g_xmlHasLoaded) {
-        AUDIO_WARNING_LOG("Audio Policy Config Load Configuration Retry!");
-        return true;
+    if (xmlHasLoaded && !isRefresh) {
+        AUDIO_WARNING_LOG("Unexpected Duplicate Load AudioPolicyConfig!");
+        return false;
     }
     std::unique_ptr<AudioPolicyConfigParser> audioPolicyConfigParser = make_unique<AudioPolicyConfigParser>(this);
     CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser != nullptr, false, "AudioPolicyConfigParser create failed");
@@ -49,7 +47,7 @@ bool AudioPolicyConfigManager::Init()
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
-    g_xmlHasLoaded = true;
+    xmlHasLoaded = true;
     return ret;
 }
 
@@ -149,6 +147,12 @@ void AudioPolicyConfigManager::OnHasEarpiece()
 void AudioPolicyConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
 {
     normalVoipFlag_ = normalVoipFlag;
+}
+
+
+bool AudioPolicyConfigManager::GetNormalVoipFlag()
+{
+    return normalVoipFlag_;
 }
 
 bool AudioPolicyConfigManager::GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList)

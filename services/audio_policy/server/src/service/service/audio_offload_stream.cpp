@@ -196,7 +196,8 @@ AudioModuleInfo AudioOffloadStream::ConstructMchAudioModuleInfo(DeviceType devic
     typeValue << static_cast<int32_t>(deviceType);
     audioModuleInfo.deviceType = typeValue.str();
 
-    audioModuleInfo.defaultAdapterEnable = AudioConfigManager::GetInstance().GetDefaultAdapterEnable() ? "1" : "0";
+    bool isDefaultAdapterEnable = AudioPolicyConfigManager::GetInstance().GetDefaultAdapterEnable();
+    audioModuleInfo.defaultAdapterEnable = isDefaultAdapterEnable ? "1" : "0";
     audioModuleInfo.adapterName = "primary";
     audioModuleInfo.className = "multichannel"; // used in renderer_sink_adapter.c
     audioModuleInfo.fileName = "mch_dump_file";

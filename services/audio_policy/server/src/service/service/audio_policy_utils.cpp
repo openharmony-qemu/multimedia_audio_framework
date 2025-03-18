@@ -256,7 +256,7 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
             break;
         case DeviceType::DEVICE_TYPE_HDMI:
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
-            portName = AudioConfigManager::GetInstance().GetDefaultAdapterEnable() ? DP_SINK : PRIMARY_SPEAKER;
+            portName = AudioPolicyConfigManager::GetInstance().GetDefaultAdapterEnable() ? DP_SINK : PRIMARY_SPEAKER;
             break;
         default:
             portName = GetNewSinkPortName(deviceType);

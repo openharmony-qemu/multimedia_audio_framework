@@ -39,11 +39,11 @@ void AudioPolicyConfigData::SetDeviceInfoMap(std::list<std::shared_ptr<AdapterDe
         std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(deviceInfo->type_, deviceInfo->role_);
         auto deviceInfoIt = deviceInfoMap.find(deviceMapKey);
         if (deviceInfoIt != deviceInfoMap.end()) {
-            deviceInfoIt->second.push_back(deviceInfo);
+            deviceInfoIt->second.insert(deviceInfo);
         } else {
-            std::vector<std::shared_ptr<AdapterDeviceInfo>> deviceVector;
-            deviceVector.push_back(deviceInfo);
-            deviceInfoMap.insert({deviceMapKey, deviceVector});
+            std::set<std::shared_ptr<AdapterDeviceInfo>> deviceSet;
+            deviceSet.insert(deviceInfo);
+            deviceInfoMap.insert({deviceMapKey, deviceSet});
         }
         tmpDeviceInfoMap_.insert({deviceInfo->name_, deviceInfo});
     }
@@ -118,14 +118,19 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
     // use primary to select device when in remote cast;
     DeviceType tempType = (type_ == DEVICE_TYPE_REMOTE_CAST ? DEVICE_TYPE_SPEAKER : type_);
     std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(tempType, role_);
-    auto deviceVectorIt = deviceInfoMap.find(deviceMapKey);
-    if (deviceVectorIt == deviceInfoMap.end()) {
+    auto deviceSetIt = deviceInfoMap.find(deviceMapKey);
+    if (deviceSetIt == deviceInfoMap.end()) {
         AUDIO_ERR_LOG("Device Not Configured!");
         return nullptr;
     }
 
-    if (deviceVectorIt->second.size() == 1) {
-        return deviceVectorIt->second.front();
+    if (deviceSetIt->second.empty()) {
+        AUDIO_ERR_LOG("Device Set Is Empty!");
+        return nullptr;
+    }
+
+    if (deviceSetIt->second.size() == 1) {
+        return *(deviceSetIt->second.begin());
     }
 
     std::string targetAdapterName = "";
@@ -139,7 +144,7 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
         }
     }
 
-    for (auto &deviceInfo : deviceVectorIt->second) {
+    for (auto &deviceInfo : deviceSetIt->second) {
         std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
         if (adapterInfoPtr == nullptr) {
             AUDIO_ERR_LOG("AdapterInfo is nullptr!");
