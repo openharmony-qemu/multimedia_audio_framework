@@ -46,6 +46,7 @@ static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
+static const uint32_t RECHECK_SINK_STATE_IN_US = 100000; // 100ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
@@ -1172,8 +1173,12 @@ void AudioService::CheckHibernateState(bool onHibernate)
     if (onHibernate) {
         bool ret = true;
         if (allRunningSinks_.empty()) {
-            AUDIO_INFO_LOG("No running sinks, continue to hibernate");
-            return;
+            // Sleep for 100ms and recheck to avoid another sink start right after first check.
+            AUDIO_INFO_LOG("No running sinks, sleep for 100ms and check again");
+            lock.unlock(); // Unlock so that other running sinks can be added
+            usleep(RECHECK_SINK_STATE_IN_US); // sleep for 100ms
+            lock.lock();
+            CHECK_AND_RETURN_LOG(!allRunningSinks_.empty(), "No running sinks, continue to hibernate");
         }
         AUDIO_INFO_LOG("Wait for all sinks to stop");
         ret = allRunningSinksCV_.wait_for(lock, std::chrono::milliseconds(BLOCK_HIBERNATE_CALLBACK_IN_MS),
