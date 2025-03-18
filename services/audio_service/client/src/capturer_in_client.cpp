@@ -2055,7 +2055,7 @@ DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 // diffrence from GetAudioPosition only when set speed
 int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    return GetAudioTime(timestamp, base);
+    return GetAudioTime(timestamp, base) ? SUCCESS : ERROR;
 }
 
 void CapturerInClientInner::SetSwitchingStatus(bool isSwitching)
