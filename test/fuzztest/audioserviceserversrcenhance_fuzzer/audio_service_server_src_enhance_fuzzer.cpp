@@ -153,7 +153,9 @@ void AudioCapturerInServerMoreFuzzTest()
     capturerInServer->UpdatePlaybackCaptureConfig(captureconfig);
 #endif
     capturerInServer->SetNonInterruptMute(true);
-    capturerInServer->RestoreSession(restoreInfo);
+    if (capturerInServer->isInited_ == true) {
+        capturerInServer->RestoreSession(restoreInfo);
+    }
 }
 
 void AudioNoneMixEngineMoreFuzzTest()
