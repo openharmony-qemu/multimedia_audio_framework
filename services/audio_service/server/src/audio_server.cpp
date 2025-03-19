@@ -229,27 +229,37 @@ static void UpdatePrimaryInstance(std::shared_ptr<IAudioRenderSink> &sink,
 
 class CapturerStateOb final : public IAudioSourceCallback {
 public:
-    explicit CapturerStateOb(std::function<void(bool, int32_t)> callback) : callback_(callback)
+    explicit CapturerStateOb(uint32_t captureId, std::function<void(bool, size_t, size_t)> callback)
+        : captureId_(captureId), callback_(callback)
     {
-        num_ = count_.fetch_add(1, std::memory_order_relaxed);
     }
 
     ~CapturerStateOb() override final
     {
-        count_.fetch_sub(1, std::memory_order_relaxed);
     }
 
     void OnCaptureState(bool isActive) override final
     {
-        callback_(isActive, num_);
+        std::lock_guard<std::mutex> lock(captureIdMtx_);
+        auto preNum = captureIds_.size();
+        if (isActive) {
+            captureIds_.insert(captureId_);
+        } else {
+            captureIds_.erase(captureId_);
+        }
+        auto curNum = captureIds_.size();
+        AUDIO_INFO_LOG("captureId: %{public}u, preNum: %{public}zu, curNum: %{public}zu, isActive: %{public}d",
+            captureId_, preNum, curNum, isActive);
+        callback_(isActive, preNum, curNum);
     }
 
 private:
-    static inline std::atomic<int32_t> count_ = 0;
-    int32_t num_;
+    static inline std::unordered_set<uint32_t> captureIds_;
+    static inline std::mutex captureIdMtx_;
 
+    uint32_t captureId_;
     // callback to audioserver
-    std::function<void(bool, int32_t)> callback_;
+    std::function<void(bool, size_t, size_t)> callback_;
 };
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
@@ -1607,7 +1617,7 @@ void AudioServer::OnWakeupClose()
     callback->OnWakeupClose();
 }
 
-void AudioServer::OnCapturerState(bool isActive, int32_t num)
+void AudioServer::OnCapturerState(bool isActive, size_t preNum, size_t curNum)
 {
     AUDIO_DEBUG_LOG("OnCapturerState Callback start");
     std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
@@ -1618,20 +1628,8 @@ void AudioServer::OnCapturerState(bool isActive, int32_t num)
 
     // Ensure that the send callback is not executed concurrently
     std::lock_guard<std::mutex> lockCb(onCapturerStateCbMutex_);
-
-    uint64_t previousStateFlag;
-    uint64_t currentStateFlag;
-    if (isActive) {
-        uint64_t tempFlag = static_cast<uint64_t>(1) << num;
-        previousStateFlag = capturerStateFlag_.fetch_or(tempFlag);
-        currentStateFlag = previousStateFlag | tempFlag;
-    } else {
-        uint64_t tempFlag = ~(static_cast<uint64_t>(1) << num);
-        previousStateFlag = capturerStateFlag_.fetch_and(tempFlag);
-        currentStateFlag = previousStateFlag & tempFlag;
-    }
-    bool previousState = previousStateFlag;
-    bool currentState = currentStateFlag;
+    bool previousState = preNum;
+    bool currentState = curNum;
 
     if (previousState == currentState) {
         // state not change, need not trigger callback
@@ -1643,7 +1641,7 @@ void AudioServer::OnCapturerState(bool isActive, int32_t num)
     int64_t stamp = ClockTime::GetCurNano();
     callback->OnCapturerState(isActive);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("isActive:%{public}d num:%{public}d cb cost[%{public}" PRId64 "]", isActive, num, stamp);
+    AUDIO_INFO_LOG("isActive:%{public}d cb cost[%{public}" PRId64 "]", isActive, stamp);
 }
 
 int32_t AudioServer::SetParameterCallback(const sptr<IRemoteObject>& object)
@@ -1929,12 +1927,15 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         }
         return false;
     };
-    std::shared_ptr<CapturerStateOb> callback = make_shared<CapturerStateOb>(
-        [this] (bool isActive, int32_t num) {
-            this->OnCapturerState(isActive, num);
-        }
-    );
-    HdiAdapterManager::GetInstance().RegistSourceCallback(HDI_CB_CAPTURE_STATE, callback, limitFunc);
+    std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> callbackGenerator = [this](uint32_t captureId) ->
+        std::shared_ptr<IAudioSourceCallback> {
+        return std::make_shared<CapturerStateOb>(captureId,
+            [this] (bool isActive, size_t preNum, size_t curNum) {
+                this->OnCapturerState(isActive, preNum, curNum);
+            }
+        );
+    };
+    HdiAdapterManager::GetInstance().RegistSourceCallbackGenerator(HDI_CB_CAPTURE_STATE, callbackGenerator, limitFunc);
 }
 
 void AudioServer::RegisterAudioRendererSinkCallback()

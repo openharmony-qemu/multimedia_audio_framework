@@ -71,9 +71,15 @@ public:
         const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
     void RegistSinkCallback(HdiAdapterCallbackType type, IAudioSinkCallback *cb,
         const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
+    void RegistSinkCallbackGenerator(HdiAdapterCallbackType type,
+        const std::function<std::shared_ptr<IAudioSinkCallback>(uint32_t)> cbGenerator,
+        const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
     void RegistSourceCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSourceCallback> cb,
         const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
     void RegistSourceCallback(HdiAdapterCallbackType type, IAudioSourceCallback *cb,
+        const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
+    void RegistSourceCallbackGenerator(HdiAdapterCallbackType type,
+        const std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> cbGenerator,
         const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
 
     void DumpInfo(std::string &dumpString);

@@ -152,7 +152,7 @@ public:
 
     bool GetEffectOffloadEnabled() override;
 
-    void OnCapturerState(bool isActive, int32_t num);
+    void OnCapturerState(bool isActive, size_t preNum, size_t curNum);
 
     // IAudioServerInnerCall
     int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;

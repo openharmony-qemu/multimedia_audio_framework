@@ -936,8 +936,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
     audioServer->OnRenderSinkParamChange("", key, "", "");
     audioServer->OnCaptureSourceParamChange("", key, "", "");
     audioServer->OnWakeupClose();
-    audioServer->OnCapturerState(true, 1);
-    audioServer->OnCapturerState(false, 1);
+    audioServer->OnCapturerState(true, 0, 1);
+    audioServer->OnCapturerState(false, 1, 0);
     int32_t res = audioServer->SetParameterCallback(remoteObject);
     EXPECT_EQ(res, ERR_INVALID_PARAM);
     res = audioServer->SetWakeupSourceCallback(remoteObject);

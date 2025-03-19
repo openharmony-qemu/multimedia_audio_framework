@@ -269,6 +269,17 @@ void HdiAdapterManager::RegistSinkCallback(HdiAdapterCallbackType type, IAudioSi
     AUDIO_INFO_LOG("regist sink callback succ, type: %{public}u", type);
 }
 
+void HdiAdapterManager::RegistSinkCallbackGenerator(HdiAdapterCallbackType type,
+    const std::function<std::shared_ptr<IAudioSinkCallback>(uint32_t)> cbGenerator,
+    const std::function<bool(uint32_t)> &limitFunc)
+{
+    CHECK_AND_RETURN_LOG(cbGenerator, "callback generator of type %{public}u is nullptr", type);
+
+    sinkCbs_.RegistCallbackGenerator(type, cbGenerator);
+    cbLimitFunc_[HDI_ID_BASE_RENDER][type] = limitFunc;
+    AUDIO_INFO_LOG("regist sink callback generator succ, type: %{public}u", type);
+}
+
 void HdiAdapterManager::RegistSourceCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSourceCallback> cb,
     const std::function<bool(uint32_t)> &limitFunc)
 {
@@ -287,6 +298,17 @@ void HdiAdapterManager::RegistSourceCallback(HdiAdapterCallbackType type, IAudio
     sourceCbs_.RegistCallback(type, cb);
     cbLimitFunc_[HDI_ID_BASE_CAPTURE][type] = limitFunc;
     AUDIO_INFO_LOG("regist source callback succ, type: %{public}u", type);
+}
+
+void HdiAdapterManager::RegistSourceCallbackGenerator(HdiAdapterCallbackType type,
+    const std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> cbGenerator,
+    const std::function<bool(uint32_t)> &limitFunc)
+{
+    CHECK_AND_RETURN_LOG(cbGenerator, "callback generator of type %{public}u is nullptr", type);
+
+    sourceCbs_.RegistCallbackGenerator(type, cbGenerator);
+    cbLimitFunc_[HDI_ID_BASE_CAPTURE][type] = limitFunc;
+    AUDIO_INFO_LOG("regist source callback generator succ, type: %{public}u", type);
 }
 
 void HdiAdapterManager::DumpInfo(std::string &dumpString)
@@ -376,7 +398,7 @@ void HdiAdapterManager::DoRegistSinkCallback(uint32_t id, std::shared_ptr<IAudio
     CHECK_AND_RETURN_LOG(sink != nullptr, "sink is nullptr");
 
     for (uint32_t type = 0; type < HDI_CB_TYPE_NUM; ++type) {
-        auto cb = sinkCbs_.GetCallback(type);
+        auto cb = sinkCbs_.GetCallback(type, id);
         auto rawCb = sinkCbs_.GetRawCallback(type);
         if (cbLimitFunc_[HDI_ID_BASE_RENDER][type] == nullptr || !cbLimitFunc_[HDI_ID_BASE_RENDER][type](id)) {
             continue;
@@ -396,7 +418,7 @@ void HdiAdapterManager::DoRegistSourceCallback(uint32_t id, std::shared_ptr<IAud
     CHECK_AND_RETURN_LOG(source != nullptr, "source is nullptr");
 
     for (uint32_t type = 0; type < HDI_CB_TYPE_NUM; ++type) {
-        auto cb = sourceCbs_.GetCallback(type);
+        auto cb = sourceCbs_.GetCallback(type, id);
         auto rawCb = sourceCbs_.GetRawCallback(type);
         if (cbLimitFunc_[HDI_ID_BASE_CAPTURE][type] == nullptr || !cbLimitFunc_[HDI_ID_BASE_CAPTURE][type](id)) {
             continue;
