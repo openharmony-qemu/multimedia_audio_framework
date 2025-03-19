@@ -205,7 +205,7 @@ public:
 
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap {};
     std::unordered_map<std::pair<DeviceType, DeviceRole>,
-        std::vector<std::shared_ptr<AdapterDeviceInfo>>, PairHash> deviceInfoMap {};
+        std::set<std::shared_ptr<AdapterDeviceInfo>>, PairHash> deviceInfoMap {};
 private:
     AudioPolicyConfigData() = default;
     AudioPolicyConfigData(const AudioPolicyConfigData&) = delete;

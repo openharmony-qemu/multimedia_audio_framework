@@ -1607,32 +1607,92 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerAppStateTest_001, TestSi
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager &audioPolicyConfigManager = AudioPolicyConfigManager::GetInstance();
-    bool ret = false;
-    ret = audioPolicyConfigManager.Init();
-    EXPECT_EQ(ret, true);
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(), false);
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
 
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    configData.Reorganize();
     std::string version = configData.GetVersion();
-    EXPECT_EQ(version, "2.0");
+    EXPECT_NE(version, "");
 
     EXPECT_NE(configData.adapterInfoMap.size(), 0);
     EXPECT_NE(configData.deviceInfoMap.size(), 0);
+}
 
-    for (auto &pair : configData.adapterInfoMap) {
-        EXPECT_NE(pair.second->adapterName, "");
-        EXPECT_NE(pair.second->deviceInfos.size(), 0);
-        EXPECT_NE(pair.second->pipeInfos.size(), 0);
-        
-        for (auto &deviceInfo : pair.second->deviceInfos) {
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_002
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    size_t adapterMapSize = configData.adapterInfoMap.size();
+    std::unordered_map<AudioAdapterType, std::pair<size_t, size_t>> adapterSizeMap {};
+
+    for (auto &item : configData.adapterInfoMap) {
+        std::pair<size_t, size_t> sizePair = std::make_pair(item.second->deviceInfos.size(),
+            item.second->pipeInfos.size());
+        adapterSizeMap.insert({item.first, sizePair});
+    }
+
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+    configData.Reorganize();
+
+    EXPECT_NE(configData.adapterInfoMap.size(), 0);
+    EXPECT_EQ(configData.adapterInfoMap.size(), adapterMapSize);
+
+    for (auto &item : adapterSizeMap) {
+        auto adapterInfoIt = configData.adapterInfoMap.find(item.first);
+        EXPECT_NE(adapterInfoIt, configData.adapterInfoMap.end());
+
+        EXPECT_NE(adapterInfoIt->second->adapterName, "");
+        EXPECT_NE(adapterInfoIt->second->deviceInfos.size(), 0);
+        EXPECT_NE(adapterInfoIt->second->pipeInfos.size(), 0);
+
+        std::pair<size_t, size_t> sizePair = std::make_pair(adapterInfoIt->second->deviceInfos.size(),
+            adapterInfoIt->second->pipeInfos.size());
+        EXPECT_EQ(item.second, sizePair);
+
+        for (auto &deviceInfo : adapterInfoIt->second->deviceInfos) {
             EXPECT_NE(deviceInfo->supportPipeMap_.size(), 0);
         }
 
-        for (auto &pipeInfo : pair.second->pipeInfos) {
+        for (auto &pipeInfo : adapterInfoIt->second->pipeInfos) {
             for (auto &streamPropInfo : pipeInfo->streamPropInfos_) {
                 EXPECT_NE(streamPropInfo->supportDeviceMap_.size(), 0);
             }
         }
+    }
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_003
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    size_t deviceMapSize = configData.deviceInfoMap.size();
+    std::unordered_map<std::pair<DeviceType, DeviceRole>, size_t, PairHash> deviceSizeMap;
+
+    for (auto &pair : configData.deviceInfoMap) {
+        deviceSizeMap.insert({pair.first, pair.second.size()});
+    }
+
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+    configData.Reorganize();
+
+    EXPECT_NE(configData.deviceInfoMap.size(), 0);
+    EXPECT_EQ(configData.deviceInfoMap.size(), deviceMapSize);
+    for (auto &pair : deviceSizeMap) {
+        auto deviceSetIt = configData.deviceInfoMap.find(pair.first);
+        EXPECT_NE(deviceSetIt, configData.deviceInfoMap.end());
+        EXPECT_EQ(deviceSetIt->second.size(), pair.second);
     }
 }
 

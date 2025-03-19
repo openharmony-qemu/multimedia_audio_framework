@@ -36,7 +36,7 @@ public:
         static AudioPolicyConfigManager instance;
         return instance;
     }
-    bool Init();
+    bool Init(bool isRefresh = false);
     
     void OnAudioPolicyConfigXmlParsingCompleted();
 
@@ -65,6 +65,7 @@ public:
     int32_t GetMaxFastRenderersInstances();
     int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
         const AudioSamplingRate &samplingRate);
+    bool GetNormalVoipFlag();
     int32_t GetAudioLatencyFromXml() const;
     uint32_t GetSinkLatencyFromXml() const;
     void GetAudioAdapterInfos(std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap);
@@ -92,6 +93,8 @@ public:
     {
     }
 private:
+    bool xmlHasLoaded_ = false;
+
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;
