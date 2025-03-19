@@ -332,23 +332,36 @@ void AudioPipeManager::Dump(std::string &dumpString)
     dumpString += "\n^^^^^^^^^^AudioPipeManager Infos^^^^^^^^^^\n";
 }
 
-uint32_t AudioPipeManager::GetModemCommunicationId()
+bool AudioPipeManager::IsModemCommunicationIdExist()
 {
-    return modemCommunicationId_.load();
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    return !modemCommunicationIdSet_.empty();
 }
 
-void AudioPipeManager::SetModemCommunicationId(uint32_t id)
+bool AudioPipeManager::IsModemCommunicationIdExist(uint32_t id)
 {
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    return modemCommunicationIdSet_.find(id) != modemCommunicationIdSet_.end();
+}
+
+void AudioPipeManager::AddModemCommunicationId(uint32_t id)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     if (id < FIRST_SESSIONID || id > MAX_VALID_SESSIONID) {
         AUDIO_ERR_LOG("Invalid id %{public}u", id);
     }
-    modemCommunicationId_.store(id);
+    modemCommunicationIdSet_.insert(id);
 }
 
-void AudioPipeManager::ResetModemCommunicationId()
+void AudioPipeManager::RemoveModemCommunicationId(uint32_t id)
 {
-    AUDIO_INFO_LOG("In");
-    modemCommunicationId_.store(0);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    if (modemCommunicationIdSet_.find(id) != modemCommunicationIdSet_.end()) {
+        modemCommunicationIdSet_.erase(id);
+        AUDIO_INFO_LOG("RemoveModemCommunicationId %{public}u success", id);
+    } else {
+        AUDIO_WARNING_LOG("RemoveModemCommunicationId fail, cannot find id %{public}u", id);
+    }
 }
 
 } // namespace AudioStandard

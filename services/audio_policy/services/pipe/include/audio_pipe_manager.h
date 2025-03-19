@@ -18,6 +18,7 @@
 #include <string>
 #include <mutex>
 #include <shared_mutex>
+#include <set>
 
 #include "audio_stream_descriptor.h"
 #include "audio_module_info.h"
@@ -65,14 +66,15 @@ public:
     uint32_t PcmOffloadSessionCount();
 
     void Dump(std::string &dumpString);
-    uint32_t GetModemCommunicationId();
-    void SetModemCommunicationId(uint32_t id);
-    void ResetModemCommunicationId();
+    bool IsModemCommunicationIdExist();
+    bool IsModemCommunicationIdExist(uint32_t id);
+    void AddModemCommunicationId(uint32_t id);
+    void RemoveModemCommunicationId(uint32_t id);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
 
-    std::atomic<uint32_t> modemCommunicationId_ = 0;
+    std::set<uint32_t> modemCommunicationIdSet_{};
     std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_;
     std::shared_mutex pipeListLock_;
 };

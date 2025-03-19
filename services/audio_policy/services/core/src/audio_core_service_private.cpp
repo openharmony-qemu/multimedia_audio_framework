@@ -168,8 +168,7 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
 
 void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt reason)
 {
-    if (pipeManager_->GetModemCommunicationId() != 0) {
-        AUDIO_INFO_LOG("Modem communication id %{public}u", pipeManager_->GetModemCommunicationId());
+    if (pipeManager_->IsModemCommunicationIdExist() != 0) {
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1);
         AUDIO_INFO_LOG("Size %{public}zu", descs.size());
