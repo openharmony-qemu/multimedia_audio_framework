@@ -40,6 +40,7 @@
 
 #include <time.h>
 #include "native_audiostream_base.h"
+#include "native_audio_device_base.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -239,6 +240,64 @@ OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer,
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioCapturer_GetOverflowCount(OH_AudioCapturer* capturer, uint32_t* count);
+
+/**
+ * @brief Callback function of read data.
+ *
+ * This function is similar with OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnReadData
+ *
+ * @param capturer AudioCapturer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param audioData Audio data pointer, where user should read.
+ * @param audioDataSize Size of audio data that user should read.
+ * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnReadData
+ * @since 18
+ */
+typedef void (*OH_AudioCapturer_OnReadDataCallback)(OH_AudioCapturer* capturer, void* userData, void* audioData,
+    int32_t audioDataSize);
+
+/**
+ * @brief Callback when input device of an AudioCapturer changes.
+ *
+ * This function is similar with OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnStreamEvent
+ *
+ * @param capturer AudioCapturer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param deviceArray Array of AudioDeviceDescriptor where the capturing data from.
+ * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnStreamEvent
+ * @since 18
+ */
+typedef void (*OH_AudioCapturer_OnDeviceChangeCallback)(OH_AudioCapturer* capturer, void* userData,
+    OH_AudioDeviceDescriptorArray* deviceArray);
+
+/**
+ * @brief Callback function of interrupt event on AudioCapturer.
+ *
+ * This function is similar with OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnInterruptEvent.
+ *
+ * @param capturer AudioCapturer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param type Force type of this interrupt event.
+ * @param hint Hint of this interrupt event.
+ * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnInterruptEvent.
+ * @since 18
+ */
+typedef void (*OH_AudioCapturer_OnInterruptCallback)(OH_AudioCapturer* capturer, void* userData,
+    OH_AudioInterrupt_ForceType type, OH_AudioInterrupt_Hint hint);
+
+/**
+ * @brief Callback function of error on AudioCapturer.
+ *
+ * This function is similar with OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnError.
+ *
+ * @param renderer AudioCapturer where this callback occurs.
+ * @param userData User data which is passed by user.
+ * @param error Error while using AudioCapturer.
+ * @see OH_AudioCapturer_Callbacks_Struct.OH_AudioCapturer_OnError
+ * @since 18
+ */
+typedef void (*OH_AudioCapturer_OnErrorCallback)(OH_AudioCapturer* renderer, void* userData,
+    OH_AudioStream_Result error);
 
 #ifdef __cplusplus
 }

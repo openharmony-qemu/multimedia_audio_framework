@@ -40,6 +40,7 @@
 
 #include "native_audiostream_base.h"
 #include "native_audiorenderer.h"
+#include "native_audiocapturer.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -176,6 +177,10 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerInfo(OH_AudioStreamBuilde
 /*
  * Set the callbacks for the renderer client
  *
+ * @deprecated since 18
+ * @useinstead Set the callback functions separately using OH_AudioStreamBuilder_SetRendererWriteDataCallback,
+ * OH_AudioStreamBuilder_SetRendererInterruptCallback, OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback
+ * and OH_AudioStreamBuilder_SetRendererErrorCallback.
  * @since 10
  *
  * @param builder Reference provided by OH_AudioStreamBuilder_Create()
@@ -202,6 +207,10 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallbac
 /*
  * Set the callbacks for the capturer client
  *
+ * @deprecated since 18
+ * @useinstead Set the callback functions separately using OH_AudioStreamBuilder_SetCapturerReadDataCallback,
+ * OH_AudioStreamBuilder_SetCapturerDeviceChangeCallback, OH_AudioStreamBuilder_SetCapturerInterruptCallback
+ * and OH_AudioStreamBuilder_SetCapturerErrorCallback.
  * @since 10
  *
  * @param builder Reference provided by OH_AudioStreamBuilder_Create()
