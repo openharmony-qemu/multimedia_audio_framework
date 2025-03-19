@@ -199,6 +199,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
+    int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
+
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
         const std::shared_ptr<AudioInterruptCallback> &callback);
 

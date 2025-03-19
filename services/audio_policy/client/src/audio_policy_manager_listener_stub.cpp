@@ -103,6 +103,11 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             OnCheckClientInfo(bundleName, uid, pid);
             return AUDIO_OK;
         }
+        case ON_QUERY_BUNDLE_NAME_LIST: {
+            std::string bundleName = data.ReadString();
+            OnQueryBundleNameIsInList(bundleName);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -163,6 +168,17 @@ bool AudioPolicyManagerListenerStub::OnQueryAllowedPlayback(int32_t uid, int32_t
     return audioQueryAllowedPlaybackCallback->OnQueryAllowedPlayback(uid, pid);
 }
 
+bool AudioPolicyManagerListenerStub::OnQueryBundleNameIsInList(const std::string &bundleName)
+{
+    std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
+        audioQueryBundleNameListCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioQueryBundleNameListCallback != nullptr, false,
+        "audioQueryBundleNameListCallback_ is nullptr");
+
+    return audioQueryBundleNameListCallback->OnQueryBundleNameIsInList(bundleName);
+}
+
 void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
 {
     callback_ = callback;
@@ -188,6 +204,12 @@ void AudioPolicyManagerListenerStub::SetQueryAllowedPlaybackCallback(
     const std::weak_ptr<AudioQueryAllowedPlaybackCallback> &cb)
 {
     audioQueryAllowedPlaybackCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStub::SetQueryBundleNameListCallback(
+    const std::weak_ptr<AudioQueryBundleNameListCallback> &cb)
+{
+    audioQueryBundleNameListCallback_ = cb;
 }
 } // namespace AudioStandard
 } // namespace OHOS

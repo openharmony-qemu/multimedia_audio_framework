@@ -189,6 +189,12 @@ private:
     std::shared_ptr<AudioManagerCallback> cb_;
 };
 
+class AudioQueryBundleNameListCallback {
+public:
+    virtual ~AudioQueryBundleNameListCallback() = default;
+    virtual bool OnQueryBundleNameIsInList(const std::string &bundleName) = 0;
+};
+
 class AudioManagerAvailableDeviceChangeCallback {
 public:
     virtual ~AudioManagerAvailableDeviceChangeCallback() = default;
@@ -1323,6 +1329,8 @@ public:
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
     int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
+
+    int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
 
     /**
      * @brief inject interruption event.
