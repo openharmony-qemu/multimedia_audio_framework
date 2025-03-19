@@ -181,7 +181,7 @@ void AudioPolicyServer::OnStart()
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
     audioPolicyService_.Init();
-
+    InitApiVersionGetter();
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
@@ -745,6 +745,13 @@ void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateCh
 void AudioPolicyServer::InitKVStore()
 {
     audioPolicyService_.InitKVStore();
+}
+
+void AudioPolicyServer::InitApiVersionGetter()
+{
+    SetApiVersionGetter([this] {
+        return GetApiTargerVersion();
+    });
 }
 
 void AudioPolicyServer::ConnectServiceAdapter()
