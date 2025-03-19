@@ -1648,16 +1648,16 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
         isNeedCopyMuteData_ = true;
         isNeedCopyRingerModeData_ = true;
         isNeedCopySystemUrlData_ = true;
-        SetFirstBoot();
+        SetFirstBoot(false);
         return true;
     }
     // first boot
     char firstboot[3] = {0};
-    auto ret = GetParameter("persist.multimedia.audio.firstboot", "1", firstboot, sizeof(firstboot));
-    if (ret <= 0) {
+    GetParameter("persist.multimedia.audio.firstboot", "0", firstboot, sizeof(firstboot));
+    if (stoi(firstboot) == 1) {
         AUDIO_INFO_LOG("first boot, ready init data to database");
         isFirstBoot = true;
-        SetFirstBoot();
+        SetFirstBoot(false);
     }
 
     return true;
@@ -1767,7 +1767,8 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
         }
     }
     if (resetFirstFlag) {
-        SetFirstBoot();
+        AUDIO_INFO_LOG("reset first boot init settingsdata");
+        SetFirstBoot(true);
     }
     // reLoad the current device volume
     LoadVolumeMap();
@@ -2535,13 +2536,18 @@ int32_t AudioAdapterManager::GetSafeVolumeTimeout() const
     return safeVolumeTimeout_;
 }
 
-void AudioAdapterManager::SetFirstBoot()
+void AudioAdapterManager::SetFirstBoot(bool isFirst)
 {
-    int32_t ret = SetParameter("persist.multimedia.audio.firstboot", std::to_string(0).c_str());
-    if (ret == 0) {
-        AUDIO_INFO_LOG("Save first boot success");
+    int32_t ret = 0;
+    if (isFirst) {
+        ret = SetParameter("persist.multimedia.audio.firstboot", std::to_string(1).c_str());
     } else {
-        AUDIO_ERR_LOG("Save first boot failed, result %{public}d", ret);
+        ret = SetParameter("persist.multimedia.audio.firstboot", std::to_string(0).c_str());
+    }
+    if (ret == 0) {
+        AUDIO_INFO_LOG("Set first boot %{public}d success", isFirst);
+    } else {
+        AUDIO_ERR_LOG("Set first boot %{public}d failed, result %{public}d", isFirst, ret);
     }
 }
 
