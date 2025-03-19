@@ -93,7 +93,7 @@ public:
     {
     }
 private:
-    bool xmlHasLoaded = false;
+    bool xmlHasLoaded_ = false;
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     bool hasEarpiece_ = false;

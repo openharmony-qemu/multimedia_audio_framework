@@ -35,7 +35,7 @@ const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
 
 bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
-    if (xmlHasLoaded && !isRefresh) {
+    if (xmlHasLoaded_ && !isRefresh) {
         AUDIO_WARNING_LOG("Unexpected Duplicate Load AudioPolicyConfig!");
         return false;
     }
@@ -47,7 +47,7 @@ bool AudioPolicyConfigManager::Init(bool isRefresh)
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
-    xmlHasLoaded = true;
+    xmlHasLoaded_ = true;
     return ret;
 }
 
