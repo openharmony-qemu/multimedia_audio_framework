@@ -221,6 +221,8 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
@@ -702,6 +704,7 @@ private:
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
     AudioActiveDevice& audioActiveDevice_;
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

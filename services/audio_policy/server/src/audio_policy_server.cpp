@@ -1916,6 +1916,19 @@ int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObjec
     return audioPolicyService_.SetAudioClientInfoMgrCallback(object);
 }
 
+int32_t AudioPolicyServer::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
+{
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return ERR_OPERATION_FAILED;
+    }
+
+    if (interruptService_ != nullptr) {
+        return interruptService_->SetQueryBundleNameListCallback(object);
+    }
+    return ERR_UNKNOWN;
+}
+
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     if (interruptService_ != nullptr) {
