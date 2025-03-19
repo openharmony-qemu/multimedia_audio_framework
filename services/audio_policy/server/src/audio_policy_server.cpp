@@ -181,7 +181,7 @@ void AudioPolicyServer::OnStart()
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
     audioPolicyService_.Init();
-
+    InitApiVersionGetter();
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
@@ -746,6 +746,13 @@ void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateCh
 void AudioPolicyServer::InitKVStore()
 {
     audioPolicyService_.InitKVStore();
+}
+
+void AudioPolicyServer::InitApiVersionGetter()
+{
+    SetApiVersionGetter([this] {
+        return GetApiTargerVersion();
+    });
 }
 
 void AudioPolicyServer::ConnectServiceAdapter()
@@ -1840,7 +1847,7 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         case AUDIO_SCENE_PHONE_CALL:
         case AUDIO_SCENE_PHONE_CHAT:
             return eventEntry_->SetAudioScene(audioScene);
-    
+
         default:
             AUDIO_ERR_LOG("param is invalid: %{public}d", audioScene);
             return ERR_INVALID_PARAM;
