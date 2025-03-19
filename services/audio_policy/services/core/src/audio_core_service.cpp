@@ -136,7 +136,7 @@ int32_t AudioCoreService::CreateRendererClient(
         audioFlag = AUDIO_FLAG_NORMAL;
         sessionId = GenerateSessionId();
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
-        pipeManager_->SetModemCommunicationId(sessionId);
+        pipeManager_->AddModemCommunicationId(sessionId);
         return SUCCESS;
     }
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
@@ -333,6 +333,11 @@ void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("In, session %{public}u", sessionId);
+    if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
+        AUDIO_INFO_LOG("Modem communication, directly return");
+        return SUCCESS;
+    }
+
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     if (streamDesc == nullptr) {
         AUDIO_ERR_LOG("Cannot find session %{public}u", sessionId);
@@ -410,9 +415,9 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
 int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("Release session %{public}u", sessionId);
-    if (sessionId == pipeManager_->GetModemCommunicationId()) {
+    if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
-        pipeManager_->ResetModemCommunicationId();
+        pipeManager_->RemoveModemCommunicationId(sessionId);
         return SUCCESS;
     }
     pipeManager_->RemoveClient(sessionId);
