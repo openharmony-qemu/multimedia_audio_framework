@@ -221,3 +221,47 @@ ohos_unittest("audio_renderer_proxy_obj_unit_test") {
     "samgr:samgr_proxy",
   ]
 }
+
+ohos_unittest("renderer_in_client_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../../audiorenderer/include",
+    "../../../../audiostream/include",
+    "../../../../common/include",
+    "../../../../../../frameworks/native/audioutils/include/",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../services/audio_policy/client/include",
+    "../../../../../../services/audio_service/common/include/",
+    "../../../../../audio_utils/include",
+  ]
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sources = [ "src/renderer_in_client_unit_test.cpp" ]
+
+  deps = [
+    "../../../../../../services/audio_policy:audio_policy_client",
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_common",
+    "../../../../audiorenderer:audio_renderer",
+    "../../../../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "pulseaudio:pulse",
+    "samgr:samgr_proxy",
+  ]
+
+  resource_config_file =
+      "../../../../../../test/resource/audio_renderer/ohos_test.xml"
+}
