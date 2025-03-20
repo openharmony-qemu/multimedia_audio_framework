@@ -370,8 +370,8 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     uint32_t curPaIndex = pipeManager_->GetPaIndexByIoHandle(activateDeviceIOHandle);
     AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u", activateDeviceIOHandle, curPaIndex);
     int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
-        "CloseAudioPort failed %{public}d", result);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
+    pipeManager_->RemoveAudioPipeInfo(activateDeviceIOHandle);
 
     // Load a2dp sink or source module again with the configuration of active a2dp device.
     GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
@@ -395,7 +395,7 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     pipeInfo_->moduleInfo_ = moduleInfo;
     pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
     pipeManager_->AddAudioPipeInfo(pipeInfo_);
-    AUDIO_INFO_LOG("Add PipeInfo %{public}u in reloada2dp.", pipeInfo_->id_);
+    AUDIO_INFO_LOG("Close paIndex: %{public}u, open paIndex: %{public}u", curPaIndex, paIndex);
     return SUCCESS;
 }
 
