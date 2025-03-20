@@ -865,6 +865,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         if (audioRendererErrorCallback_) {
             audioRendererErrorCallback_->OnError(ERROR_SYSTEM); // Notify app if switch failed.
         }
+        AUDIO_INFO_LOG("Deactivate audio interrupt after switch to target stream");
         AudioInterrupt audioInterrupt = audioInterrupt_;
         int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "DeactivateAudioInterrupt Failed");

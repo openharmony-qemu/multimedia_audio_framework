@@ -1401,21 +1401,20 @@ void AudioInterruptService::UpdateAudioFocusStrategy(AudioFocusType existAudioFo
 bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
     &iterActive, AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt)
 {
-    bool continueFlag = false;
     SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
     std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
     if (focusEntry.actionOn == CURRENT || iterActive->second == PLACEHOLDER ||
             CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) {
-        continueFlag = true;
+        return true;
     }
     if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject)
         && (IsAudioSourceConcurrency((iterActive->first).audioFocusType.sourceType, incomingSourceType,
         (iterActive->first).currencySources.sourcesTypes, incomingConcurrentSources)
         // if the rejection is caused by the existing peeling recording, just ignore it
         || IsLowestPriorityRecording(iterActive->first))) {
-        continueFlag = true;
+        return true;
     }
-    return continueFlag;
+    return false;
 }
 
 int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
