@@ -67,15 +67,16 @@ public:
 
     void Dump(std::string &dumpString);
     bool IsModemCommunicationIdExist();
-    bool IsModemCommunicationIdExist(uint32_t id);
-    void AddModemCommunicationId(uint32_t id);
-    void RemoveModemCommunicationId(uint32_t id);
+    bool IsModemCommunicationIdExist(uint32_t sessionId);
+    void AddModemCommunicationId(uint32_t sessionId, int32_t clientUid);
+    void RemoveModemCommunicationId(uint32_t sessionId);
+    std::unordered_map<uint32_t, int32_t> GetModemCommunicationMap();
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
 
-    std::set<uint32_t> modemCommunicationIdSet_{};
-    std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_;
+    std::unordered_map<uint32_t, int32_t> modemCommunicationIdMap_{}; // key -> sessionId, value -> clientUid
+    std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_{};
     std::shared_mutex pipeListLock_;
 };
 } // namespace AudioStandard
