@@ -1761,7 +1761,8 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
         for (auto &streamType: VOLUME_TYPE_LIST) {
             // if GetVolume failed, wirte default value
             if (!volumeDataMaintainer_.GetVolume(deviceType, streamType)) {
-                auto ret = volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevelMapTemp[streamType]);
+                auto ret = volumeDataMaintainer_.SaveVolume(deviceType, streamType,
+                    volumeLevelMapTemp[VolumeUtils::GetVolumeTypeFromStreamType(streamType)]);
                 resetFirstFlag = ret ? resetFirstFlag : true;
             }
         }
@@ -2379,12 +2380,13 @@ void AudioAdapterManager::InitVolumeMapIndex()
 {
     useNonlinearAlgo_ = 0;
     for (auto streamType : VOLUME_TYPE_LIST) {
-        minVolumeIndexMap_[streamType] = MIN_VOLUME_LEVEL;
-        maxVolumeIndexMap_[streamType] = MAX_VOLUME_LEVEL;
+        minVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)] = MIN_VOLUME_LEVEL;
+        maxVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)] = MAX_VOLUME_LEVEL;
         volumeDataMaintainer_.SetStreamVolume(streamType, DEFAULT_VOLUME_LEVEL);
         AUDIO_DEBUG_LOG("streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
-            streamType, minVolumeIndexMap_[streamType],
-            maxVolumeIndexMap_[streamType], volumeDataMaintainer_.GetStreamVolume(streamType));
+            streamType, minVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)],
+            maxVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)],
+            volumeDataMaintainer_.GetStreamVolume(streamType));
     }
 
     volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_CALL_ASSISTANT, MAX_VOLUME_LEVEL);
@@ -2405,13 +2407,13 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
                 appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
             continue;
         }
-        minVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->minLevel;
-        maxVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->maxLevel;
+        AudioVolumeType CurStreamType = VolumeUtils::GetVolumeTypeFromStreamType(streamVolInfo->streamType);
+        minVolumeIndexMap_[CurStreamType] = streamVolInfo->minLevel;
+        maxVolumeIndexMap_[CurStreamType] = streamVolInfo->maxLevel;
         volumeDataMaintainer_.SetStreamVolume(streamVolInfo->streamType, streamVolInfo->defaultLevel);
         AUDIO_DEBUG_LOG("update streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
-            streamVolInfo->streamType, minVolumeIndexMap_[streamVolInfo->streamType],
-            maxVolumeIndexMap_[streamVolInfo->streamType],
-            volumeDataMaintainer_.GetStreamVolume(streamVolInfo->streamType));
+            streamVolInfo->streamType, minVolumeIndexMap_[CurStreamType], maxVolumeIndexMap_[CurStreamType],
+            volumeDataMaintainer_.GetStreamVolume(CurStreamType));
     }
     if (isAppConfigVolumeInit) {
         return;
