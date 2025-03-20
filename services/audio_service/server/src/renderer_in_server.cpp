@@ -1391,8 +1391,7 @@ bool RendererInServer::IsHighResolution() const noexcept
         return false;
     }
     if (processConfig_.streamType != STREAM_MUSIC || processConfig_.streamInfo.samplingRate < SAMPLE_RATE_48000 ||
-        processConfig_.streamInfo.format < SAMPLE_S24LE ||
-        processConfig_.rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
+        processConfig_.streamInfo.format < SAMPLE_S24LE) {
         AUDIO_INFO_LOG("normal stream because stream info");
         return false;
     }
