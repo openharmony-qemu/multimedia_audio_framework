@@ -349,7 +349,7 @@ bool AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned)
 
 bool AudioAdapterManager::IsCurDeviceNeedSaveVolumeToDatabase()
 {
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_SPEAKER && currentActiveDevice_.networkId_ != "LocalDevice") {
+    if (currentActiveDevice_.IsDistributedSpeaker()) {
         return false;
     }
 
@@ -364,13 +364,14 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_.deviceType_, volumeLevel);
-    if (GetSystemVolumeLevel(streamType) == volumeLevel && currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
+    if (GetSystemVolumeLevel(streamType) == volumeLevel &&
+        currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
         currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP && !VolumeUtils::IsPCVolumeEnable()) {
         AUDIO_INFO_LOG("The volume is the same as before.");
         return SUCCESS;
     }
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
-        streamType, currentActiveDevice_, volumeLevel);
+        streamType, currentActiveDevice_.deviceType_, volumeLevel);
     if (volumeLevel == 0 && !VolumeUtils::IsPCVolumeEnable() &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
@@ -387,13 +388,13 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     // Save the volume to volumeLevelMap_.
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
     // Save the volume to settingsdata.
-    if (IsCurDeviceNeedSaveVolumeToDatabase) {
+    if (IsCurDeviceNeedSaveVolumeToDatabase()) {
         if (handler_ != nullptr) {
-            if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_ != DEVICE_TYPE_REMOTE_CAST) {
+            if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_.deviceType_ != DEVICE_TYPE_REMOTE_CAST) {
                 AUDIO_INFO_LOG("DualToneStreamType. Save volume for speaker.");
                 handler_->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel);
             } else {
-                handler_->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
+                handler_->SendSaveVolume(currentActiveDevice_.deviceType_, streamType, volumeLevel);
                 SetDeviceSafeVolume(streamType, volumeLevel);
             }
         }
@@ -406,7 +407,8 @@ int32_t AudioAdapterManager::SetSystemVolumeLevelWithDevice(AudioStreamType stre
     DeviceType deviceType)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevelWithDevice: streamType: %{public}d, currentDeviceType: %{public}d, "
-        "volumeLevel:%{public}d, deviceType: %{public}d", streamType, currentActiveDevice_.deviceType_, volumeLevel, deviceType);
+        "volumeLevel:%{public}d, deviceType: %{public}d", streamType, currentActiveDevice_.deviceType_,
+        volumeLevel, deviceType);
     int32_t mimRet = GetMinVolumeLevel(streamType);
     int32_t maxRet = GetMaxVolumeLevel(streamType);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
@@ -598,8 +600,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     }
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
-    if (GetActiveDevice() == DEVICE_TYPE_SPEAKER &&
-        GetActiveDeviceDescriptor->networkId_ != "LocalDevice") {
+    if (currentActiveDevice_.IsDistributedSpeaker()) {
         SystemVolume systemVolume(volumeType, REMOTE_CLASS, volumeDb, volumeLevel, isMuted);
         audioVolume->SetSystemVolume(systemVolume);
         return;
@@ -919,39 +920,41 @@ void AudioAdapterManager::MaximizeVoiceAssistantVolume(InternalDeviceType device
     }
 }
 
-bool AudioAdapterManager::CheckAndUpdateVolumeForDeviceChange(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
+bool AudioAdapterManager::CheckAndUpdateVolumeForDeviceChange(AudioDeviceDescriptor deviceDescriptor)
 {
-    if ((currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP) ||
-        (currentActiveDevice_.deviceType_ == DEVICE_TYPE_SPEAKER && currentActiveDevice_.networkId_ != "LocalDevice")) {
-        volumeDataMaintainer_.StoreToTmpVolumeLevelMap();
+    if (currentActiveDevice_.IsDistributedSpeaker() ||
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP) {
+        volumeDataMaintainer_.StoreRemoteVolumeLevelMap();
         return true;
     }
 
-    if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_DP) ||
-        (deviceDescriptor->deviceType_ == DEVICE_TYPE_SPEAKER && deviceDescriptor->networkId_ != "LocalDevice")) {
-        volumeDataMaintainer_.LoadFromTmpVolumeLevelMap();
+    if (deviceDescriptor.IsDistributedSpeaker() ||
+        deviceDescriptor.deviceType_ == DEVICE_TYPE_DP) {
+        volumeDataMaintainer_.LoadRemoteVolumeLevelMap();
     }
 
     return false;
 }
 
-void AudioAdapterManager::SetVolumeForSwitchDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
+void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor)
 {
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
-    MaximizeVoiceAssistantVolume(deviceDescriptor->deviceType_);
+    MaximizeVoiceAssistantVolume(deviceDescriptor.deviceType_);
     // The same device does not set the volume
-    bool isSameVolumeGroup = GetVolumeGroupForDevice(currentActiveDevice_.deviceType_) == GetVolumeGroupForDevice(deviceDescriptor->deviceType_);
-    if (currentActiveDevice_.deviceType_ == deviceDescriptor->deviceType_) {
+    bool isSameVolumeGroup = GetVolumeGroupForDevice(currentActiveDevice_.deviceType_) ==
+        GetVolumeGroupForDevice(deviceDescriptor.deviceType_);
+    if ((currentActiveDevice_.deviceType_ == deviceDescriptor.deviceType_) &&
+        (currentActiveDevice_.networkId_ == deviceDescriptor.networkId_)) {
         AUDIO_INFO_LOG("Old device: %{public}d. New device: %{public}d. No need to update volume",
-            currentActiveDevice_.deviceType_, deviceDescriptor->deviceType_);
+            currentActiveDevice_.deviceType_, deviceDescriptor.deviceType_);
         return;
     }
 
     bool isNeedLoadVolumeFromDatabase = CheckAndUpdateVolumeForDeviceChange(deviceDescriptor);
     AUDIO_INFO_LOG("SetVolumeForSwitchDevice: Load volume and mute status for new device %{public}d,"
-        "same volume group %{public}d", deviceDescriptor->deviceType_, isSameVolumeGroup);
+        "same volume group %{public}d", deviceDescriptor.deviceType_, isSameVolumeGroup);
     // Current device must be updated even if kvStore is nullptr.
-    currentActiveDevice_ = *deviceDescriptor;
+    currentActiveDevice_ = deviceDescriptor;
 
     if (!isSameVolumeGroup || isNeedLoadVolumeFromDatabase) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
@@ -1780,7 +1783,7 @@ void AudioAdapterManager::UpdateSafeVolume()
             }
             break;
         default:
-            AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_);
+            AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_.deviceType_);
             break;
     }
 }
@@ -1835,7 +1838,7 @@ void AudioAdapterManager::SetMaxVolumeForDeviceChange()
             volumeDataMaintainer_.SetStreamMuteStatus(streamType, false);
         }
     }
-    volumeDataMaintainer_.StoreToTmpVolumeLevelMap();
+    volumeDataMaintainer_.StoreRemoteVolumeLevelMap();
 }
 
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
@@ -1961,8 +1964,7 @@ void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, 
         }
         volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false);
     }
-    if (currentActiveDevice_.deviceType_
-         == deviceType) {
+    if (currentActiveDevice_.deviceType_ == deviceType) {
         SetVolumeDb(streamType);
     }
 }
@@ -2506,15 +2508,15 @@ void AudioAdapterManager::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolu
     streamVolumeInfos = streamVolumeInfos_;
 }
 
-void AudioAdapterManager::SetActiveDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
+void AudioAdapterManager::SetActiveDeviceDescriptor(AudioDeviceDescriptor deviceDescriptor)
 {
-    AUDIO_PRERELEASE_LOGI("SetActiveDevice deviceType %{public}d", deviceType);
+    AUDIO_PRERELEASE_LOGI("SetActiveDevice deviceType %{public}d", deviceDescriptor.deviceType_);
     SetVolumeForSwitchDevice(deviceDescriptor);
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioAdapterManager::GetActiveDeviceDescriptor()
+AudioDeviceDescriptor AudioAdapterManager::GetActiveDeviceDescriptor()
 {
-    return std::make_shared<AudioDeviceDescriptor>(currentActiveDevice_);
+    return currentActiveDevice_;
 }
 
 DeviceType AudioAdapterManager::GetActiveDevice()
@@ -2643,7 +2645,7 @@ void AudioAdapterManager::SetVgsVolumeSupported(bool isVgsSupported)
 
 bool AudioAdapterManager::IsVgsVolumeSupported() const
 {
-    if (currentActiveDevice_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
         AUDIO_INFO_LOG("Current Active Device isn't SCO, return false");
         return false;
     }

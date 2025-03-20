@@ -438,9 +438,8 @@ void AudioA2dpOffloadManager::GetA2dpOffloadCodecAndSendToDsp()
 
 int32_t AudioA2dpOffloadManager::HandleActiveDevice(DeviceType deviceType)
 {
-    std::shared_ptr<AudioDeviceDescriptor> curOutputDevice =
-        std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
-    if (GetVolumeGroupType(curOutputDevice->deviceType_) != GetVolumeGroupType(deviceType)) {
+    AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    if (GetVolumeGroupType(curOutputDevice.deviceType_) != GetVolumeGroupType(deviceType)) {
         audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDevice);
     }
     if (audioConfigManager_.GetUpdateRouteSupport()) {

@@ -353,7 +353,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor audioDeviceDescriptor;
 
     audioVolumeManager.UpdateSafeVolumeByS4();
     audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor);

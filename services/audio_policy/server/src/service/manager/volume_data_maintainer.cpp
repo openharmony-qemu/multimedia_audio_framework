@@ -100,14 +100,14 @@ bool VolumeDataMaintainer::CheckOsAccountReady()
     return AudioSettingProvider::CheckOsAccountReady();
 }
 
-void VolumeDataMaintainer::StoreToTmpVolumeLevelMap()
+void VolumeDataMaintainer::StoreRemoteVolumeLevelMap()
 {
-    tmpVolumeLevelMap_ = volumeLevelMap_;
+    remoteVolumeLevelMap_ = volumeLevelMap_;
 }
 
-void VolumeDataMaintainer::LoadFromTmpVolumeLevelMap()
+void VolumeDataMaintainer::LoadRemoteVolumeLevelMap()
 {
-    volumeLevelMap_ = tmpVolumeLevelMap_;
+    volumeLevelMap_ = remoteVolumeLevelMap_;
 }
 
 void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)

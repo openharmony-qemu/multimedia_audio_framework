@@ -792,7 +792,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
 
         if (statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
             AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
-            if (deviceDesc.networkId_ != "LocalDevice" && deviceDesc.deviceType_ == DEVICE_TYPE_SPEAKER) {
+            if (deviceDesc.IsDistributedSpeaker()) {
                 audioVolumeManager_.SetMaxVolumeForDeviceChange();
             }
         }
@@ -920,8 +920,7 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
         audioActiveDevice_.SetCurrentOutputDevice(*outDevice);
         shared_ptr<AudioDeviceDescriptor> inDevice = audioDeviceManager_.GetCaptureDefaultDevice();
         audioActiveDevice_.SetCurrentInputDevice(*inDevice);
-        std::shared_ptr<AudioDeviceDescriptor> curDevice =
-            std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
+        AudioDeviceDescriptor curDevice = audioActiveDevice_.GetCurrentOutputDevice();
         audioVolumeManager_.SetVolumeForSwitchDevice(curDevice);
         OnPreferredDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
             audioActiveDevice_.GetCurrentInputDeviceType());

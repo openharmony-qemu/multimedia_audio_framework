@@ -87,7 +87,7 @@ public:
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
         bool connected, int32_t mappingId);
     void GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& volumeGroupInfos);
-    void SetVolumeForSwitchDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor, const std::string &newSinkName = PORT_NONE);
+    void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor, const std::string &newSinkName = PORT_NONE);
 
     bool IsRingerModeMute();
     void SetRingerModeMute(bool flag);
@@ -100,6 +100,7 @@ public:
     void NotifyVolumeGroup();
     bool GetLoadFlag();
     void UpdateSafeVolumeByS4();
+    void SetMaxVolumeForDeviceChange();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),

@@ -97,8 +97,8 @@ public:
     bool GetMicMuteState(bool &isMute);
     bool CheckOsAccountReady();
 
-    void StoreToTmpVolumeLevelMap(void);
-    void LoadFromTmpVolumeLevelMap(void);
+    void StoreRemoteVolumeLevelMap(void);
+    void LoadRemoteVolumeLevelMap(void);
 
 private:
     VolumeDataMaintainer();
@@ -118,7 +118,7 @@ private:
     ffrt::mutex volumeForDbMutex_;
     std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save System volume Mutestatus map
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save system volume map
-    std::unordered_map<AudioStreamType, int32_t> tmpVolumeLevelMap_; // save system tmp volume map
+    std::unordered_map<AudioStreamType, int32_t> remoteVolumeLevelMap_; // save system remote volume map
     std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
     std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
     bool isSettingsCloneHaveStarted_ = false;

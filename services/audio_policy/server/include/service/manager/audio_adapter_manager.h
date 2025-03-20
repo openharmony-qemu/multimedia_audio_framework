@@ -128,7 +128,7 @@ public:
     int32_t SetDeviceActive(InternalDeviceType deviceType, std::string name, bool active,
         DeviceFlag flag = ALL_DEVICES_FLAG);
 
-    void SetVolumeForSwitchDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor);
 
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
@@ -162,11 +162,11 @@ public:
 
     DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
 
-    void SetActiveDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    void SetActiveDeviceDescriptor(AudioDeviceDescriptor deviceDescriptor);
 
     DeviceType GetActiveDevice();
 
-    std::shared_ptr<AudioDeviceDescriptor> GetActiveDeviceDescriptor();
+    AudioDeviceDescriptor GetActiveDeviceDescriptor();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
@@ -327,7 +327,7 @@ private:
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
-    bool CheckAndUpdateVolumeForDeviceChange(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    bool CheckAndUpdateVolumeForDeviceChange(AudioDeviceDescriptor deviceDescriptor);
     bool IsCurDeviceNeedSaveVolumeToDatabase();
 
     template<typename T>

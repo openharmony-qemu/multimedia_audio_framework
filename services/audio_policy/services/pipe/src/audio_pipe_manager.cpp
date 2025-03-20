@@ -335,34 +335,39 @@ void AudioPipeManager::Dump(std::string &dumpString)
 bool AudioPipeManager::IsModemCommunicationIdExist()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    return !modemCommunicationIdSet_.empty();
+    return !modemCommunicationIdMap_.empty();
 }
 
-bool AudioPipeManager::IsModemCommunicationIdExist(uint32_t id)
+bool AudioPipeManager::IsModemCommunicationIdExist(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    return modemCommunicationIdSet_.find(id) != modemCommunicationIdSet_.end();
+    return modemCommunicationIdMap_.find(sessionId) != modemCommunicationIdMap_.end();
 }
 
-void AudioPipeManager::AddModemCommunicationId(uint32_t id)
+void AudioPipeManager::AddModemCommunicationId(uint32_t sessionId, int32_t clientUid)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    if (id < FIRST_SESSIONID || id > MAX_VALID_SESSIONID) {
-        AUDIO_ERR_LOG("Invalid id %{public}u", id);
+    if (sessionId < FIRST_SESSIONID || sessionId > MAX_VALID_SESSIONID) {
+        AUDIO_ERR_LOG("Invalid id %{public}u", sessionId);
     }
-    modemCommunicationIdSet_.insert(id);
+    modemCommunicationIdMap_[sessionId] = clientUid;
 }
 
-void AudioPipeManager::RemoveModemCommunicationId(uint32_t id)
+void AudioPipeManager::RemoveModemCommunicationId(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    if (modemCommunicationIdSet_.find(id) != modemCommunicationIdSet_.end()) {
-        modemCommunicationIdSet_.erase(id);
-        AUDIO_INFO_LOG("RemoveModemCommunicationId %{public}u success", id);
+    if (modemCommunicationIdMap_.find(sessionId) != modemCommunicationIdMap_.end()) {
+        modemCommunicationIdMap_.erase(sessionId);
+        AUDIO_INFO_LOG("RemoveModemCommunicationId %{public}u success", sessionId);
     } else {
-        AUDIO_WARNING_LOG("RemoveModemCommunicationId fail, cannot find id %{public}u", id);
+        AUDIO_WARNING_LOG("RemoveModemCommunicationId fail, cannot find id %{public}u", sessionId);
     }
 }
 
+std::unordered_map<uint32_t, int32_t> AudioPipeManager::GetModemCommunicationMap()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    return modemCommunicationIdMap_;
+}
 } // namespace AudioStandard
 } // namespace OHOS

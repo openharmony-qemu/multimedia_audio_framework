@@ -617,7 +617,7 @@ void AudioDeviceCommon::FetchOutputDeviceWhenNoRunningStream()
     }
     audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
     AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
-    audioVolumeManager_.SetVolumeForSwitchDevice(descs.front());
+    audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
     }
@@ -638,10 +638,9 @@ int32_t AudioDeviceCommon::HandleDeviceChangeForFetchOutputDevice(std::shared_pt
             && desc->deviceType_ != preferredDesc->deviceType_)
             || ((preferredDesc->deviceType_ == DEVICE_TYPE_NONE) && !IsSameDevice(desc, tmpOutputDeviceDesc))) {
             audioActiveDevice_.SetCurrentOutputDevice(*desc);
-            std::shared_ptr<AudioDeviceDescriptor> curOutputDevice =
-                std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
+            AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
             audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDevice);
-            audioActiveDevice_.UpdateActiveDeviceRoute(curOutputDevice->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            audioActiveDevice_.UpdateActiveDeviceRoute(curOutputDevice.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
             OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
         }
         return ERR_NEED_NOT_SWITCH_DEVICE;
@@ -850,7 +849,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
 
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
         rendererChangeInfo->sessionId);
-    audioVolumeManager_.SetVolumeForSwitchDevice(outputDevices.front(), newSinkName);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*outputDevices.front(), newSinkName);
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
@@ -1920,10 +1919,9 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
     std::string lastActiveA2dpDevice = audioActiveDevice_.GetActiveBtDeviceMac();
     audioActiveDevice_.SetActiveBtDeviceMac(deviceDescriptor->macAddress_);
-    std::shared_ptr<AudioDeviceDescriptor> lastDevice =
-        std::make_shared<AudioDeviceDescriptor>(audioPolicyManager_.GetActiveDeviceDescriptor());
+    AudioDeviceDescriptor lastDevice = audioPolicyManager_.GetActiveDeviceDescriptor();
     deviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioPolicyManager_.SetActiveDeviceDescriptor(deviceDescriptor);
+    audioPolicyManager_.SetActiveDeviceDescriptor(*deviceDescriptor);
 
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
         audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {

@@ -102,7 +102,7 @@ public:
 
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 
-    virtual void SetVolumeForSwitchDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) = 0;
+    virtual void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor) = 0;
 
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
@@ -158,11 +158,11 @@ public:
 
     virtual void SafeVolumeDump(std::string &dumpString) = 0;
 
-    virtual void SetActiveDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) = 0;
+    virtual void SetActiveDeviceDescriptor(AudioDeviceDescriptor deviceDescriptor) = 0;
 
     virtual DeviceType GetActiveDevice() = 0;
 
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetActiveDeviceDescriptor() = 0;
+    virtual AudioDeviceDescriptor GetActiveDeviceDescriptor() = 0;
 
     virtual void NotifyAccountsChanged(const int &id) = 0;
 
