@@ -353,9 +353,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
 
     audioVolumeManager.UpdateSafeVolumeByS4();
-    audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(DEVICE_TYPE_NONE);
+    audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor);
     EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, true);
 }
 } // namespace AudioStandard

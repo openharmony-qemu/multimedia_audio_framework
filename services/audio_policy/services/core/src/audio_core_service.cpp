@@ -993,7 +993,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
         }
         audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
         AUDIO_DEBUG_LOG("currentActiveDevice %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
-        audioVolumeManager_.SetVolumeForSwitchDevice(descs.front()->deviceType_);
+        audioVolumeManager_.SetVolumeForSwitchDevice(descs.front());
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
         }

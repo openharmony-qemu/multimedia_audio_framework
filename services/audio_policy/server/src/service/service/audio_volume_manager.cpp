@@ -213,11 +213,11 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
     return audioPolicyManager_.GetSystemVolumeLevelNoMuteState(streamType);
 }
 
-void AudioVolumeManager::SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName)
+void AudioVolumeManager::SetVolumeForSwitchDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor, const std::string &newSinkName)
 {
-    Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceType));
+    Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor->deviceType_));
     // Load volume from KvStore and set volume for each stream type
-    audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
+    audioPolicyManager_.SetVolumeForSwitchDevice(deviceDescriptor);
 
     // The volume of voice_call needs to be adjusted separately
     if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
@@ -331,6 +331,11 @@ bool AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned)
     AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppVolumeMute");
     bool result = audioPolicyManager_.IsAppVolumeMute(appUid, owned);
     return result;
+}
+
+void AudioVolumeManager::SetMaxVolumeForDeviceChange()
+{
+    audioPolicyManager_.SetMaxVolumeForDeviceChange();
 }
 
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)

@@ -128,7 +128,7 @@ public:
     int32_t SetDeviceActive(InternalDeviceType deviceType, std::string name, bool active,
         DeviceFlag flag = ALL_DEVICES_FLAG);
 
-    void SetVolumeForSwitchDevice(InternalDeviceType deviceType);
+    void SetVolumeForSwitchDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
 
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
@@ -162,9 +162,11 @@ public:
 
     DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
 
-    void SetActiveDevice(DeviceType deviceType);
+    void SetActiveDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
 
     DeviceType GetActiveDevice();
+
+    std::shared_ptr<AudioDeviceDescriptor> GetActiveDeviceDescriptor();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
@@ -193,6 +195,8 @@ public:
     IAudioSourceAttr GetAudioSourceAttr(const AudioModuleInfo &audioModuleInfo) const;
 
     void ResetRemoteCastDeviceVolume();
+
+    void SetMaxVolumeForDeviceChange();
 
     int32_t GetStreamVolume(AudioStreamType streamType);
 
@@ -323,6 +327,8 @@ private:
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
+    bool CheckAndUpdateVolumeForDeviceChange(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    bool IsCurDeviceNeedSaveVolumeToDatabase();
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -348,7 +354,7 @@ private:
     std::mutex systemSoundMutex_;
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
-    DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioDeviceDescriptor currentActiveDevice_;
     AudioRingerMode ringerMode_;
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
