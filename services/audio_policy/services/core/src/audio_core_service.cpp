@@ -227,8 +227,7 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
         }
     if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC ||
         streamDesc->streamInfo_.samplingRate < SAMPLE_RATE_48000 ||
-        streamDesc->streamInfo_.format < SAMPLE_S24LE ||
-        streamDesc->rendererInfo_.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
+        streamDesc->streamInfo_.format < SAMPLE_S24LE) {
             AUDIO_INFO_LOG("normal stream because stream info");
             return false;
         }
