@@ -346,6 +346,10 @@ bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inpu
     if (outputDesc.size() > 0 && outputDesc.front() != nullptr) {
         realOutputDevice = *outputDesc.front();
     }
+    if (!inputDevice.IsSameDeviceDesc(realInputDevice) || !outputDevice.IsSameDeviceDesc(realOutputDevice)) {
+        AUDIO_INFO_LOG("target device is not ready, so ignore reload");
+        return false;
+    }
     AudioEcInfo lastEcInfo = audioEcManager_.GetAudioEcInfo();
     if (!lastEcInfo.inputDevice.IsSameDeviceDesc(realInputDevice) ||
         !lastEcInfo.outputDevice.IsSameDeviceDesc(realOutputDevice)) {
