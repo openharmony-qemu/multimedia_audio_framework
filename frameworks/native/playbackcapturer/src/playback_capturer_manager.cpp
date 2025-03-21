@@ -194,7 +194,7 @@ int32_t PlaybackCapturerManager::CheckCaptureLimit(const AudioPlaybackCaptureCon
     }
     if (!isSame) {
         GetFilterIndex();
-        innerCapId = filterNowIndex_;
+        innerCapId = static_cast<int32_t>(filterNowIndex_);
         AUDIO_INFO_LOG("Capture num add innerId:%{public}d", innerCapId);
         CaptureFilterRef captureFilter;
         captureFilter.ref = 1;
