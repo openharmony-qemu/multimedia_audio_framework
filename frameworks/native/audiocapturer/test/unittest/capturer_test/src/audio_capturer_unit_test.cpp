@@ -2302,10 +2302,11 @@ HWTEST(AudioCapturerUnitTest, RestoreTheadLoop_001, TestSize.Level1)
 */
 HWTEST(AudioCapturerUnitTest, SetInputDevice_001, TestSize.Level1)
 {
+    AppInfo appInfo = {};
     unique_ptr<AudioCapturerPrivate> audioCapturer =
         std::make_unique<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
 
-    result = audioCapturer->SetInputDevice(DEVICE_TYPE_MIC);
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_MIC);
     EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard
