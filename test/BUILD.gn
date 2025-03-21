@@ -84,6 +84,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:futex_tool_unit_test",
     "../services/audio_service/test/unittest:ipc_stream_in_server_unit_test",
     "../services/audio_service/test/unittest:ipc_stream_stub_unit_test",
+    "../services/audio_service/test/unittest:offline_stream_in_server_unit_test",
     "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
