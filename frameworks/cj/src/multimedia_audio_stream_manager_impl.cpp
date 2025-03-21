@@ -50,8 +50,11 @@ CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_
     }
     CArrI32 arr{};
     arr.size = static_cast<int64_t>(audioSceneEffectInfo.mode.size());
+    if (arr.size == 0) {
+        return CArrI32();
+    }
     int32_t mallocSize = static_cast<int32_t>(sizeof(int32_t)) * static_cast<int32_t>(arr.size);
-    if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(int32_t) * MAX_MEM_MALLOC_SIZE)) {
+    if (mallocSize > static_cast<int32_t>(sizeof(int32_t) * MAX_MEM_MALLOC_SIZE)) {
         *errorCode = CJ_ERR_SYSTEM;
         return CArrI32();
     }
@@ -84,8 +87,11 @@ CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeI
     }
     CArrAudioRendererChangeInfo arrInfo{};
     arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
+    if (arrInfo.size == 0) {
+        return CArrAudioRendererChangeInfo();
+    }
     int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioRendererChangeInfo)) * static_cast<int32_t>(arrInfo.size);
-    if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(CAudioRendererChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
+    if (mallocSize > static_cast<int32_t>(sizeof(CAudioRendererChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioRendererChangeInfo();
     }
@@ -122,8 +128,11 @@ CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray
     }
     CArrAudioCapturerChangeInfo arrInfo{};
     arrInfo.size = static_cast<int64_t>(audioCapturerChangeInfos.size());
+    if (arrInfo.size == 0) {
+        return CArrAudioCapturerChangeInfo();
+    }
     int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioRendererChangeInfo)) * static_cast<int32_t>(arrInfo.size);
-    if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(AudioCapturerChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
+    if (mallocSize > static_cast<int32_t>(sizeof(AudioCapturerChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioCapturerChangeInfo();
     }
