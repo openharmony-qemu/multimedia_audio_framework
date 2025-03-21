@@ -211,7 +211,6 @@ void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const Aud
 {
     if (mode == AUDIO_MODE_PLAYBACK) {
         streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-        return;
     } else {
         // mode == AUDIO_MODE_RECORDING
         streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
