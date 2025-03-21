@@ -1405,6 +1405,7 @@ public:
     int32_t SetVirtualCall(const bool isVirtual);
 
     int32_t OnVoiceWakeupState(bool state);
+    std::string GetSelfBundleName();
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:
@@ -1441,7 +1442,7 @@ private:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
     int32_t GetCallingPid() const;
-    std::string GetSelfBundleName();
+    
 
     int32_t RegisterWakeupSourceCallback();
     void OtherDeviceTypeCases(DeviceType deviceType) const;
