@@ -31,7 +31,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = { 
+static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     // all volume types except STREAM_ALL
     STREAM_RING,
     STREAM_VOICE_CALL,
@@ -2416,6 +2416,14 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
             volumeDataMaintainer_.GetStreamVolume(CurStreamType));
     }
     if (isAppConfigVolumeInit) {
+        return;
+    } else {
+        appConfigVolume_.defaultVolume = APP_DEFAULT_VOLUME_LEVEL;
+        appConfigVolume_.maxVolume = APP_MAX_VOLUME_LEVEL;
+        appConfigVolume_.minVolume = APP_MIN_VOLUME_LEVEL;
+        isAppConfigVolumeInit = true;
+        AUDIO_DEBUG_LOG("isAppConfigVolumeInit AppConfigVolume default = %{public}d, max = %{public}d, min = %{public}d",
+            appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
         return;
     }
     if (minVolumeIndexMap_.find(STREAM_MUSIC) != minVolumeIndexMap_.end() &&
