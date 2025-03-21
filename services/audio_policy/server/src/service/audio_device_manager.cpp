@@ -420,7 +420,9 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
 
 void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && devDesc->deviceCategory_ == CATEGORY_DEFAULT &&
+    if (devDesc->connectState_ != VIRTUAL_CONNECTED &&
+        devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        devDesc->deviceCategory_ == CATEGORY_DEFAULT &&
         devDesc->isEnable_) {
         if (devDesc->deviceRole_ == INPUT_DEVICE) {
             commCapturePrivacyDevices_.push_back(devDesc);
