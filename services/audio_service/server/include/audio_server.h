@@ -294,7 +294,7 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
-    bool isFastControlled_ = true;
+    bool isFastControlled_ = false;
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem
