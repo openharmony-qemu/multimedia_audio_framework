@@ -47,6 +47,8 @@ NapiRendererWriteDataCallback::~NapiRendererWriteDataCallback()
     }
 #endif
     if (napiRenderer_ != nullptr) {
+        std::lock_guard lock(napiRenderer_->writeCallbackMutex_);
+        napiRenderer_->enqueued_ = true;
         napiRenderer_->writeCallbackCv_.notify_all();
     }
     if (regArWriteDataTsfn_) {
