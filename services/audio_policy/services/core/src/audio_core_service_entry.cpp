@@ -79,7 +79,6 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
 
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)
 {
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetAdapterNameBySessionId(sessionId);
 }
 

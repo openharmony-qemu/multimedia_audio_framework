@@ -295,8 +295,6 @@ private:
     void UpdateDualToneState(const bool &enable, const int32_t &sessionId);
     int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         std::shared_ptr<AudioPipeInfo> pipeInfo, std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor);
-    void UpdateDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc,
-        const std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc, bool hasBTPermission, bool hasSystemPermission);
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
     void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, uint32_t routeFlag,
         const AudioStreamDeviceChangeReasonExt::ExtEnum reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);

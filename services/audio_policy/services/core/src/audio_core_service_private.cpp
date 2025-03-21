@@ -853,8 +853,8 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
         streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID) {
         audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_.front()->deviceType_,
             DeviceFlag::INPUT_DEVICES_FLAG, streamDesc->newDeviceDescs_.front()->deviceName_);
-        streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
     }
+    streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
 }
 
 int32_t AudioCoreService::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
@@ -1154,49 +1154,6 @@ int32_t AudioCoreService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInp
 
     isCurrentRemoteRenderer_ = false;
     return SUCCESS;
-}
-
-void AudioCoreService::UpdateDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc,
-    const std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc, bool hasBTPermission, bool hasSystemPermission)
-{
-    oldDeviceDesc->deviceType_ = newDeviceDesc->deviceType_;
-    oldDeviceDesc->deviceRole_ = newDeviceDesc->deviceRole_;
-    oldDeviceDesc->deviceId_ = newDeviceDesc->deviceId_;
-    oldDeviceDesc->channelMasks_ = newDeviceDesc->channelMasks_;
-    oldDeviceDesc->channelIndexMasks_ = newDeviceDesc->channelIndexMasks_;
-    oldDeviceDesc->displayName_ = newDeviceDesc->displayName_;
-    oldDeviceDesc->connectState_ = newDeviceDesc->connectState_;
-
-    if (oldDeviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        oldDeviceDesc->a2dpOffloadFlag_ = audioA2dpOffloadFlag_.GetA2dpOffloadFlag();
-    }
-
-    if (hasBTPermission) {
-        oldDeviceDesc->deviceName_ = newDeviceDesc->deviceName_;
-        oldDeviceDesc->macAddress_ = newDeviceDesc->macAddress_;
-        oldDeviceDesc->deviceCategory_ = newDeviceDesc->deviceCategory_;
-    } else {
-        oldDeviceDesc->deviceName_ = "";
-        oldDeviceDesc->macAddress_ = "";
-        oldDeviceDesc->deviceCategory_ = CATEGORY_DEFAULT;
-    }
-
-    oldDeviceDesc->isLowLatencyDevice_ = HasLowLatencyCapability(oldDeviceDesc->deviceType_,
-        newDeviceDesc->networkId_ != LOCAL_NETWORK_ID);
-
-    if (hasSystemPermission) {
-        oldDeviceDesc->networkId_ = newDeviceDesc->networkId_;
-        oldDeviceDesc->volumeGroupId_ = newDeviceDesc->volumeGroupId_;
-        oldDeviceDesc->interruptGroupId_ = newDeviceDesc->interruptGroupId_;
-    } else {
-        oldDeviceDesc->networkId_ = "";
-        oldDeviceDesc->volumeGroupId_ = GROUP_ID_NONE;
-        oldDeviceDesc->interruptGroupId_ = GROUP_ID_NONE;
-    }
-    oldDeviceDesc->audioStreamInfo_.samplingRate = newDeviceDesc->audioStreamInfo_.samplingRate;
-    oldDeviceDesc->audioStreamInfo_.encoding = newDeviceDesc->audioStreamInfo_.encoding;
-    oldDeviceDesc->audioStreamInfo_.format = newDeviceDesc->audioStreamInfo_.format;
-    oldDeviceDesc->audioStreamInfo_.channels = newDeviceDesc->audioStreamInfo_.channels;
 }
 
 bool AudioCoreService::HasLowLatencyCapability(DeviceType deviceType, bool isRemote)

@@ -170,6 +170,7 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeinfoByNameAndFlag(
 std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("Cur Pipe list size %{public}zu, sessionId %{public}u", curPipeList_.size(), sessionId);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto pipeInfo : curPipeList_) {
         for (auto desc : pipeInfo->streamDescriptors_) {
             if (desc->sessionId_ != sessionId) {

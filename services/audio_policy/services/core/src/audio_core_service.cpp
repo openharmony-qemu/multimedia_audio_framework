@@ -374,6 +374,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     } else {
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
+        streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
     }
 
     pipeManager_->StartClient(sessionId);
