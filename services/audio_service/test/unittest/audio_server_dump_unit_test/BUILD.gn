@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-module_output_path = "multimedia_audio_framework/audio_server"
+module_output_path = "audio_framework/audio_framework_route/audio_server"
 
 config("module_private_config") {
   visibility = [ ":*" ]
@@ -50,7 +50,9 @@ ohos_unittest("audio_server_dump_unit_test") {
     "../../../../../frameworks/native/hdiadapter/common/include",
     "../../../../../frameworks/native/hdiadapter/sink/common",
     "../../../../../frameworks/native/hdiadapter_new/include",
+    "../../../../../frameworks/native/hdiadapter_new/include/common",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../frameworks/native/audiodefinitions/include",
     "../../../../../frameworks/native/audioinnercall/include",
     "../../../../../frameworks/native/hdiadapter/sink/common",
     "../../../../../services/audio_service/server/include",

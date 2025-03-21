@@ -1819,6 +1819,29 @@ void CallEndAndClear(CTrace **cTrace)
     }
 }
 
+bool IsInnerCapSinkName(char *pattern)
+{
+    size_t patternLength = strlen(pattern);
+    if (patternLength > MAX_MEM_MALLOC_SIZE) {
+        return false;
+    }
+    char *patternCopy = (char*)malloc(patternLength + 1);
+    if (patternCopy == nullptr) {
+        return false;
+    }
+    if (strcpy_s(patternCopy, patternLength + 1, pattern) != 0) {
+        free(patternCopy);
+        return false;
+    }
+    char *firstPart = strtok(patternCopy, "_");
+    bool result = false;
+    if (firstPart != nullptr && strcmp(firstPart, SINK_NAME_INNER_CAPTURER) == 0) {
+        result = true;
+    }
+    free(patternCopy);
+    return result;
+}
+
 #ifdef __cplusplus
 }
 #endif

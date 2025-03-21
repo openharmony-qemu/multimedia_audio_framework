@@ -87,17 +87,29 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     float volumeSystem = GetSystemVolume(volumeType, deviceClass, volumeLevel);
     float volumeApp = GetAppVolume(appUid, volumeMode);
     float volumeFloat = volumeStream * volumeSystem * volumeApp;
+    if (IsChangeVolume(sessionId, volumeFloat, volumeLevel)) {
+        AUDIO_INFO_LOG("volume, sessionId:%{public}u, volume:%{public}f, volumeType:%{public}d, devClass:%{public}s,"
+            " stream volume:%{public}f, system volume:%{public}f app volume:%{public}f",
+            sessionId, volumeFloat, volumeType, deviceClass.c_str(), volumeStream, volumeSystem, volumeApp);
+    }
+    Trace traceVolume("Volume, sessionId:" + std::to_string(sessionId) +
+        ", volumeType:" + std::to_string(volumeFloat) + ", devClass:" + deviceClass +
+        ", volume:" + std::to_string(volumeFloat) + ", stream volume:" + std::to_string(volumeStream) +
+        ", system volume:" + std::to_string(volumeSystem) + ", app volume:" + std::to_string(volumeApp));
+    return volumeFloat;
+}
+
+bool AudioVolume::IsChangeVolume(uint32_t sessionId, float volumeFloat, int32_t volumeLevel)
+{
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
+    bool isChange = false;
     if (monitorVolume_.find(sessionId) != monitorVolume_.end()) {
         if (monitorVolume_[sessionId].first != volumeFloat) {
-            AUDIO_INFO_LOG("volume, sessionId:%{public}u, volume:%{public}f, volumeType:%{public}d,"
-                " deviceClass:%{public}s, stream volume:%{public}f, system volume:%{public}f",
-                sessionId, volumeFloat, volumeType, deviceClass.c_str(), volumeStream, volumeSystem);
+            isChange = true;
         }
         monitorVolume_[sessionId] = {volumeFloat, volumeLevel};
     }
-    Trace traceVolume("Volume, sessionId:" + std::to_string(sessionId) + ", volume:" + std::to_string(volumeFloat) +
-        ", stream volume:" + std::to_string(volumeStream) + ", system volume:" + std::to_string(volumeSystem));
-    return volumeFloat;
+    return isChange;
 }
 
 float AudioVolume::GetStreamVolume(uint32_t sessionId, int32_t& volumeType,

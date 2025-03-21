@@ -1453,5 +1453,107 @@ HWTEST(AudioPolicyUnitTest, MicrophoneMuteInfoDump_001, TestSize.Level1)
     std::string dumpString = "";
     ptrAudioPolicyServer->MicrophoneMuteInfoDump(dumpString);
 }
+
+/**
+* @tc.name  : Test ChangeVolumeOnVoiceAssistant.
+* @tc.number: ChangeVolumeOnVoiceAssistant_002
+* @tc.desc  : Test AudioPolicyServer::ChangeVolumeOnVoiceAssistant
+*/
+HWTEST(AudioPolicyUnitTest, ChangeVolumeOnVoiceAssistant_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_DEFAULT;
+    ptrAudioPolicyServer->ChangeVolumeOnVoiceAssistant(streamInFocus);
+}
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_046
+* @tc.desc  : Test AudioPolicyServer::GetSystemVolumeLevelNoMuteState
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_046, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->volumeApplyToAll_ = true;
+    ptrAudioPolicyServer->isScreenOffOrLock_ = true;
+
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    EXPECT_EQ(ret, AUDIO_OK);
+}
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_047
+* @tc.desc  : Test AudioPolicyServer::GetSystemVolumeLevelNoMuteState
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_047, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->volumeApplyToAll_ = true;
+    ptrAudioPolicyServer->isScreenOffOrLock_ = false;
+
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    EXPECT_EQ(ret, ERROR_UNSUPPORTED);
+}
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_048
+* @tc.desc  : Test AudioPolicyServer::GetSystemVolumeLevelNoMuteState
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_048, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->volumeApplyToAll_ = false;
+    ptrAudioPolicyServer->isScreenOffOrLock_ = true;
+
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    EXPECT_EQ(ret, AUDIO_OK);
+}
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_049
+* @tc.desc  : Test AudioPolicyServer::GetSystemVolumeLevelNoMuteState
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_049, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->volumeApplyToAll_ = false;
+    ptrAudioPolicyServer->isScreenOffOrLock_ = false;
+
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    EXPECT_EQ(ret, AUDIO_OK);
+}
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_050
+* @tc.desc  : Test AudioPolicyServer::GetSystemVolumeLevelNoMuteState
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_050, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
+    int32_t ret = ptrAudioPolicyServer->SetStreamMute(AudioStreamType::STREAM_ALL, false, deviceType);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
 } // AudioStandard
 } // OHOS

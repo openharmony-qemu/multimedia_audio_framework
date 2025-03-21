@@ -32,6 +32,7 @@
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
+#include "core_service_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -325,8 +326,8 @@ int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
 
 int32_t CapturerInServer::Start()
 {
-    bool ret = StartInner();
-    CapturerStage stage = ret ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
+    int32_t ret = StartInner();
+    CapturerStage stage = ret == SUCCESS ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
     if (recorderDfx_) {
         recorderDfx_->WriteDfxStartMsg(streamIndex_, stage, processConfig_);
     }
@@ -367,10 +368,14 @@ int32_t CapturerInServer::StartInner()
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
 
+    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+    }
+
     AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
 
     status_ = I_STATUS_STARTING;
-    int ret = stream_->Start();
+    int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
     return SUCCESS;
@@ -472,14 +477,19 @@ int32_t CapturerInServer::Stop()
 int32_t CapturerInServer::Release()
 {
     AudioService::GetInstance()->RemoveCapturer(streamIndex_);
-    {
-        std::unique_lock<std::mutex> lock(statusLock_);
-        if (status_ == I_STATUS_RELEASED) {
-            AUDIO_INFO_LOG("Already released");
-            return SUCCESS;
-        }
+    std::unique_lock<std::mutex> lock(statusLock_);
+    if (status_ == I_STATUS_RELEASED) {
+        AUDIO_INFO_LOG("Already released");
+        return SUCCESS;
     }
+    lock.unlock();
     AUDIO_INFO_LOG("Start release capturer");
+
+    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        int32_t result =
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
+    }
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
@@ -489,7 +499,7 @@ int32_t CapturerInServer::Release()
     status_ = I_STATUS_RELEASED;
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        AUDIO_INFO_LOG("Disable inner capturer for %{public}u， innerCapId :%{public}d, innerCapMode:%{public}d",
+        AUDIO_INFO_LOG("Disable inner capturer for %{public}u, innerCapId :%{public}d, innerCapMode:%{public}d",
             streamIndex_, innerCapId_, processConfig_.innerCapMode);
         if (processConfig_.innerCapMode == MODERN_INNER_CAP) {
             PlaybackCapturerManager::GetInstance()->RemovePlaybackCapturerFilterInfo(streamIndex_, innerCapId_);

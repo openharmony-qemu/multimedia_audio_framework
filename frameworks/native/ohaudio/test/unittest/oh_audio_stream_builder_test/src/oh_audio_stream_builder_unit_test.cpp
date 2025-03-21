@@ -651,6 +651,27 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_017, Tes
 }
 
 /**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetVolumeMode API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_021
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetVolumeMode interface. Returns error code, if the builder type is
+ *             AUDIOSTREAM_TYPE_RENDERER.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_021, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_VolumeMode mode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    result = OH_AudioStreamBuilder_SetVolumeMode(builder, mode);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
  * @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_U8.
  * @tc.number: OH_AudioStreamBuilder_SetSampleFormat_001
  * @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.

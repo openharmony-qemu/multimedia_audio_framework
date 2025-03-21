@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include <shared_mutex>
 #include "audio_system_manager.h"
+#include "i_standard_audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -88,6 +89,9 @@ public:
 
     void SetAudioSceneOwnerPid(const int32_t pid);
     int32_t GetAudioSceneOwnerPid();
+    
+    int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
+    const std::string GetBundleNameFromUid(int32_t uid);
 
 private:
     AudioStateManager() {};
@@ -109,6 +113,7 @@ private:
     shared_mutex callExcludedDevicesMutex_;
     int32_t ownerPid_ = 0;
     std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedDeviceMapList_;
+    sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_;
     void RemoveForcedDeviceMapData(int32_t pid);
 };
 

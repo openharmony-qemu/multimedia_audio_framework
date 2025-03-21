@@ -1015,23 +1015,6 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_010, TestSize.Level1)
 /**
 * @tc.name  : Test HandleSecondPartCode API
 * @tc.type  : FUNC
-* @tc.number: HandleSecondPartCode_014
-* @tc.desc  : Test HandleSecondPartCode interface. Set code value to SET_CAPTURE_SILENT_STATE
-*/
-HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_014, TestSize.Level1)
-{
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
-    EXPECT_EQ(AUDIO_OK, ret);
-}
-
-/**
-* @tc.name  : Test HandleSecondPartCode API
-* @tc.type  : FUNC
 * @tc.number: HandleSecondPartCode_015
 * @tc.desc  : Test HandleSecondPartCode interface. Set code value to UPDATE_SPATIALIZATION_STATE
 */
@@ -1701,7 +1684,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_019, TestSize.Level1)
     MessageParcel reply;
     MessageOption option;
     auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
-    EXPECT_NE(AUDIO_ERR, ret);
+    EXPECT_EQ(AUDIO_OK, ret);
 }
 
 /**

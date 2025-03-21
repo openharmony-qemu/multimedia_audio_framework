@@ -483,7 +483,7 @@ int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRem
             }
         }
     }
-    CHECK_AND_RETURN_RET_LOG(ret == true, ERROR, "HandleScoWithRecongnition failed, result: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "HandleScoWithRecongnition failed, result: %{public}d", ret);
     return SUCCESS;
 }
 
@@ -730,7 +730,8 @@ bool AudioHfpManager::IsVirtualCall()
 bool AudioHfpManager::IsAudioScoStateConnect()
 {
     AudioScoState scoState = BluetoothScoManager::GetAudioScoState();
-    bool isConnect = (scoState == AudioScoState::CONNECTED || scoState == AudioScoState::CONNECTING);
+    bool isConnect = (scoState == AudioScoState::CONNECTED || scoState == AudioScoState::CONNECTING ||
+        scoState == AudioScoState::CONNECT_AFTER_DISCONNECTED);
     return isConnect;
 }
 
@@ -756,7 +757,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             AudioHfpManager::UpdateCurrentActiveHfpDevice(device);
         }
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        BluetoothScoManager::UpdateScoState(scoState);
+        BluetoothScoManager::UpdateScoState(scoState, &device);
         HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
     }
 }
@@ -776,7 +777,7 @@ void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &dev
             AudioHfpManager::UpdateCurrentActiveHfpDevice(defaultDevice);
             AUDIO_WARNING_LOG("Current active hfp device diconnect, need set audio scene as default.");
             AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT);
-            BluetoothScoManager::UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED);
+            BluetoothScoManager::UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, &device);
         }
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::DISCONNECT_ACTION);
     }

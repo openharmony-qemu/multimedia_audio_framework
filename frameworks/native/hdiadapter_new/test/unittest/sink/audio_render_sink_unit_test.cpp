@@ -105,6 +105,8 @@ void AudioRenderSinkUnitTest::InitPrimarySink()
 void AudioRenderSinkUnitTest::DeInitPrimarySink()
 {
     if (primarySink_ && primarySink_->IsInited() && !primarySinkInited_) {
+        std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
+        primarySink_->UpdateActiveDevice(deviceTypes);
         primarySink_->DeInit();
     }
     primarySink_ = nullptr;
@@ -130,6 +132,8 @@ void AudioRenderSinkUnitTest::InitUsbSink()
 void AudioRenderSinkUnitTest::DeInitUsbSink()
 {
     if (usbSink_ && usbSink_->IsInited()) {
+        std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
+        usbSink_->UpdateActiveDevice(deviceTypes);
         usbSink_->DeInit();
     }
     usbSink_ = nullptr;
@@ -155,6 +159,8 @@ void AudioRenderSinkUnitTest::InitDirectSink()
 void AudioRenderSinkUnitTest::DeInitDirectSink()
 {
     if (directSink_ && directSink_->IsInited()) {
+        std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
+        directSink_->UpdateActiveDevice(deviceTypes);
         directSink_->DeInit();
     }
     directSink_ = nullptr;
@@ -180,6 +186,8 @@ void AudioRenderSinkUnitTest::InitVoipSink()
 void AudioRenderSinkUnitTest::DeInitVoipSink()
 {
     if (voipSink_ && voipSink_->IsInited()) {
+        std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
+        voipSink_->UpdateActiveDevice(deviceTypes);
         voipSink_->DeInit();
     }
     voipSink_ = nullptr;

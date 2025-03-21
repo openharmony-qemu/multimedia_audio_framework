@@ -48,10 +48,11 @@ int32_t LocalDeviceManager::LoadAdapter(const std::string &adapterName)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && adapter != nullptr, ERR_NOT_STARTED, "load adapter fail");
     ret = adapter->InitAllPorts(adapter);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "init all ports fail");
-    std::lock_guard<std::mutex> lock(adapterMtx_);
+    adapterMtx_.lock();
     adapters_[adapterName] = std::make_shared<LocalAdapterWrapper>();
     adapters_[adapterName]->adapterDesc_ = descs[index];
     adapters_[adapterName]->adapter_ = adapter;
+    adapterMtx_.unlock();
     // LCOV_EXCL_START
     for (auto it = reSetParams_.begin(); it != reSetParams_.end();) {
         if (it->adapterName_ == adapterName) {
@@ -471,7 +472,7 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
 int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 {
     int32_t ret = SUCCESS;
-
+    AUDIO_INFO_LOG("Input device type %{public}d", inputDevice);
     switch (inputDevice) {
         case DEVICE_TYPE_MIC:
         case DEVICE_TYPE_EARPIECE:

@@ -744,12 +744,13 @@ size_t OHAudioBuffer::GetDataSize()
 
 void OHAudioBuffer::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(basicBufferInfo_ != nullptr, "basicBufferInfo_ is nullptr");
     restoreInfo = basicBufferInfo_->restoreInfo;
-    return;
 }
 
 void OHAudioBuffer::SetRestoreInfo(RestoreInfo restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(basicBufferInfo_ != nullptr, "basicBufferInfo_ is nullptr");
     basicBufferInfo_->restoreInfo = restoreInfo;
 }
 
@@ -757,6 +758,7 @@ void OHAudioBuffer::SetRestoreInfo(RestoreInfo restoreInfo)
 // to avoid multiple restore.
 RestoreStatus OHAudioBuffer::CheckRestoreStatus()
 {
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, RESTORE_ERROR, "basicBufferInfo_ is nullptr");
     RestoreStatus expectedStatus = NEED_RESTORE;
     basicBufferInfo_->restoreStatus.compare_exchange_strong(expectedStatus, RESTORING);
     return expectedStatus;
@@ -766,6 +768,7 @@ RestoreStatus OHAudioBuffer::CheckRestoreStatus()
 // can be set to NEED_RESTORE only when it is currently NO_NEED_FOR_RESTORE(and vice versa).
 RestoreStatus OHAudioBuffer::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, RESTORE_ERROR, "basicBufferInfo_ is nullptr");
     RestoreStatus expectedStatus = RESTORE_ERROR;
     if (restoreStatus == NEED_RESTORE) {
         expectedStatus = NO_NEED_FOR_RESTORE;

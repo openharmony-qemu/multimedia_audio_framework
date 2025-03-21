@@ -739,6 +739,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
 {
     OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
     OHOS::AudioStandard::ObjectRefMap objectGuard(audioRenderer);
+    audioRenderer = objectGuard.GetPtr();
     CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_PCM) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
         ((encodingType_ == ENCODING_PCM) && (onWriteDataCallback_ != nullptr)) ||

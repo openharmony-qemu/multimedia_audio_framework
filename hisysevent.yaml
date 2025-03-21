@@ -202,21 +202,21 @@ EXCLUDE_OUTPUT_DEVICE:
   DEVICE_TYPE: {type: UINT8, desc: audio device type which is excluded}
 
 PLAYING_AUDIO_STAT:
-  __BASE: {type: BEHAVIOR, level: MINOR, desc: Audio stream statistics}
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: Audio stream statistics}
   APP_NAME: {type: STRING, desc: application name}
   APP_VERSION: {type: STRING, desc: application version}
-  INTERRUPT_ACTION: {type: STRING, desc: audio renderer stream usage }
-  INTERRUPT_TIMESTAMP: {type: STRING, desc: interrupt timestamp }
-  INTERRUPT_INFO: {type: STRING, desc: interrupt info }
+  INTERRUPT_ACTION: {type: UINT32, desc: audio renderer stream usage }
+  INTERRUPT_TIMESTAMP: {type: UINT64, desc: interrupt timestamp }
+  INTERRUPT_INFO: {type: UINT32, desc: interrupt info }
   INTERRUPT_EFFECT: {type: STRING, desc: interrupted application info }
-  RENDERER_ACTION: {type: STRING, desc: audio renderer state }
-  RENDERER_TIMESTAMP: {type: STRING, desc: audio renderer timestamp }
-  RENDERER_INFO: {type: STRING, desc: audio renderer info }
+  RENDERER_ACTION: {type: UINT32, desc: audio renderer state }
+  RENDERER_TIMESTAMP: {type: UINT64, desc: audio renderer timestamp }
+  RENDERER_INFO: {type: UINT32, desc: audio renderer info }
   RENDERER_STATS: {type: STRING, desc: audio renderer end statistics }
-  RECORDER_ACTION: {type: STRING, desc: audio capturer state }
-  RECORDER_TIMESTAMP: {type: STRING, desc: audio capturer timestamp }
-  RECORDER_INFO: {type: STRING, desc: audio capturer info }
+  RECORDER_ACTION: {type: UINT32, desc: audio capturer state }
+  RECORDER_TIMESTAMP: {type: UINT64, desc: audio capturer timestamp }
+  RECORDER_INFO: {type: UINT32, desc: audio capturer info }
   RECORDER_STATS: {type: STRING, desc: audio capturer end statistics }
-  APP_STATE: {type: STRING, desc: app is background or foreground }
-  APP_STATE_TIMESTAMP: {type: STRING, desc: app state change timestamp }
+  APP_STATE: {type: UINT8, desc: app is background or foreground }
+  APP_STATE_TIMESTAMP: {type: UINT64, desc: app state change timestamp }
   SUMMARY: {type: UINT64, desc: summary }

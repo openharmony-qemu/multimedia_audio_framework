@@ -621,6 +621,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_028, TestSize.Le
 HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_001, TestSize.Level1)
 {
     AudioDeviceDescriptor deviceDescriptor;
+    SetApiVersionGetter([] { return API_VERSION_MAX; });
     deviceDescriptor.hasPair_ = true;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
     EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(), DEVICE_TYPE_USB_HEADSET);

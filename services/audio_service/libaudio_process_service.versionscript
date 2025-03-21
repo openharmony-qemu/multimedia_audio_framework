@@ -55,6 +55,7 @@
     *GenerateSessionId*;
     *LoadModernInnerCapSink*;
     *UnloadModernInnerCapSink*;
+    *ConfigCoreServiceProvider*;
   local:
     *;
 };

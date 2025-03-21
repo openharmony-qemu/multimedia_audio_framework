@@ -26,16 +26,20 @@
 namespace OHOS {
 namespace AudioStandard {
 
-void AudioInterruptDfxCollector::FlushDfxMsg(uint32_t index, uint32_t appUid)
+void AudioInterruptDfxCollector::FlushDfxMsg(uint32_t index, int32_t appUid)
 {
-    if (!IsExist(index) || appUid == -1) {
+    if (!IsExist(index) || appUid == DFX_INVALID_APP_UID) {
         AUDIO_INFO_LOG("flush failed index=%{public}d, appUid=%{public}d", index, appUid);
         return;
     }
-    AUDIO_INFO_LOG("FlushDfxMsg...");
+    AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d", index, appUid);
     auto &item = dfxInfos_[index];
     DfxMsgManager::GetInstance().Enqueue({.appUid = appUid, .interruptInfo = item});
+
     dfxInfos_.erase(index);
+    if (dfxIdx2InfoIdx_.count(index) != 0) {
+        dfxIdx2InfoIdx_.erase(index);
+    }
 }
 
 std::tuple<uint8_t, uint8_t> &AudioInterruptDfxCollector::GetDfxIndexes(uint32_t index)
@@ -50,17 +54,20 @@ std::tuple<uint8_t, uint8_t> &AudioInterruptDfxCollector::GetDfxIndexes(uint32_t
 
 InterruptDfxBuilder &InterruptDfxBuilder::WriteActionMsg(uint8_t infoIndex, uint8_t effectIdx, InterruptStage stage)
 {
+    AUDIO_INFO_LOG("[WriteInfoMsg] infoIdx=%{public}d, effectIdx=%{public}d", infoIndex, effectIdx);
     dfxInfo_.interruptAction = {infoIndex, effectIdx, 0, stage};
     return *this;
 }
 
 InterruptDfxBuilder &InterruptDfxBuilder::WriteInfoMsg(const AudioInterrupt &audioInterrupt)
 {
-    AUDIO_INFO_LOG("[WriteInfoMsg] streamUsage=%{public}d, concurrencyMode=%{public}d api=%{public}d",
-        audioInterrupt.streamUsage, audioInterrupt.sessionStrategy.concurrencyMode, audioInterrupt.api);
+    AUDIO_INFO_LOG("[WriteInfoMsg] streamUsage=%{public}d, concurrencyMode=%{public}d",
+        audioInterrupt.streamUsage, audioInterrupt.sessionStrategy.concurrencyMode);
     uint8_t value3 = static_cast<uint8_t>(audioInterrupt.streamUsage);
+
+    uint8_t interruptType = 0;
     uint8_t value4 = (static_cast<uint8_t>(audioInterrupt.sessionStrategy.concurrencyMode) & 0x0F) << 4 |
-        (static_cast<uint8_t>(audioInterrupt.api) & 0x0F);
+        (interruptType & 0x0F);
 
     dfxInfo_.interruptInfo = {0, 0, value3, value4};
     return *this;
@@ -71,13 +78,6 @@ InterruptDfxBuilder &InterruptDfxBuilder::WriteEffectMsg(uint8_t appstate, const
 {
     InterruptEffect interruptEffect{bundleName, audioInterrupt.streamUsage, appstate, hintType};
     dfxInfo_.interruptEffectVec.push_back(interruptEffect);
-    return *this;
-}
-
-InterruptDfxBuilder &InterruptDfxBuilder::WriteAppStateMsg(InterruptAppState state)
-{
-    DfxStatAction dfxAppState = {state, 0, 0, 0};
-    dfxInfo_.appStateVec.push_back(dfxAppState);
     return *this;
 }
 

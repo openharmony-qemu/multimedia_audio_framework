@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +22,7 @@
 #include "audio_concurrency_callback.h"
 #include "audio_interrupt_callback.h"
 #include "i_audio_stream.h"
+#include "audio_stream_descriptor.h"
 #include "audio_capturer_proxy_obj.h"
 
 namespace OHOS {
@@ -126,8 +127,9 @@ public:
 private:
     int32_t CheckAndRestoreAudioCapturer(std::string callingFunc);
     int32_t InitAudioInterruptCallback();
+    std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
+    void SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass);
     int32_t InitInputDeviceChangeCallback();
-    IAudioStream::StreamClass GetTargetStreamClass(int32_t streamFlag);
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
     bool ContinueAfterConcede(IAudioStream::StreamClass &targetClass, RestoreInfo restoreInfo);
@@ -150,6 +152,7 @@ private:
     CapturerState GetStatusInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
+    IAudioStream::StreamClass SetCaptureInfo(AudioStreamParams &audioStreamParams);
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
     mutable std::shared_mutex switchStreamMutex_;

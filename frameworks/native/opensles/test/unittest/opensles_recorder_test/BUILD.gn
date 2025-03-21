@@ -14,7 +14,7 @@
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "multimedia_audio_framework/audio_opensles"
+module_output_path = "audio_framework/audio_framework_route/audio_opensles"
 
 config("audio_capture_config") {
   include_dirs = [

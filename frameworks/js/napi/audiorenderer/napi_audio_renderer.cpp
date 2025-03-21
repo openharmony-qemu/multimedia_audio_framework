@@ -213,6 +213,7 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     if (rendererOptions.rendererInfo.rendererFlags != 0) {
         rendererOptions.rendererInfo.rendererFlags = 0;
     }
+    rendererOptions.rendererInfo.playerType = PLAYER_TYPE_ARKTS_AUDIO_RENDERER;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
 #else

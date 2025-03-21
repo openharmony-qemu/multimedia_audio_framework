@@ -18,6 +18,7 @@
 
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -477,29 +478,27 @@ bool AudioPolicyServerHandler::SendWakeupCloseEvent(bool isSync)
 }
 
 bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(
-    int32_t clientId, uint32_t sessionID, int32_t streamFlag,
-    const AudioStreamDeviceChangeReasonExt reason)
+    int32_t clientId, uint32_t sessionID, uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->clientId = clientId;
     eventContextObj->sessionId = sessionID;
-    eventContextObj->streamFlag = streamFlag;
     eventContextObj->reason_ = reason;
+    eventContextObj->routeFlag = routeFlag;
     return SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT,
         eventContextObj));
 }
 
 bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(
-    int32_t clientId, uint32_t sessionID, int32_t streamFlag,
-    const AudioStreamDeviceChangeReasonExt reason)
+    int32_t clientId, uint32_t sessionID, uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->clientId = clientId;
     eventContextObj->sessionId = sessionID;
-    eventContextObj->streamFlag = streamFlag;
     eventContextObj->reason_ = reason;
+    eventContextObj->routeFlag = routeFlag;
     return SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT,
         eventContextObj));
 }
@@ -695,6 +694,11 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
         sptr<IAudioPolicyClient> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        if (VolumeUtils::GetVolumeTypeFromStreamType(eventContextObj->volumeEvent.volumeType) == STREAM_SYSTEM &&
+            !volumeChangeCb->hasSystemPermission_) {
+            AUDIO_DEBUG_LOG("volumeChangeCb: Non system applications do not send system callbacks");
             continue;
         }
         AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
@@ -1054,7 +1058,7 @@ void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::Inner
     SessionInfo sessionInfo{eventContextObj->capturerInfo_.sourceType, eventContextObj->streamInfo_.samplingRate,
         eventContextObj->streamInfo_.channels};
 
-    eventContextObj->error_ = AudioPolicyService::GetAudioPolicyService().OnCapturerSessionAdded(sessionId,
+    eventContextObj->error_ = AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionAdded(sessionId,
         sessionInfo, eventContextObj->streamInfo_);
 }
 
@@ -1065,7 +1069,7 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
 
     uint64_t sessionId = *eventContextObj;
 
-    AudioPolicyService::GetAudioPolicyService().OnCapturerSessionRemoved(sessionId);
+    AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionRemoved(sessionId);
 }
 
 void AudioPolicyServerHandler::HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1080,8 +1084,8 @@ void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppEx
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = DEVICE_CHANGED;
-    restoreInfo.targetStreamFlag = eventContextObj->streamFlag;
     restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
+    restoreInfo.routeFlag = static_cast<uint32_t>(eventContextObj->routeFlag);
     AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
@@ -1092,8 +1096,8 @@ void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppEx
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = DEVICE_CHANGED;
-    restoreInfo.targetStreamFlag = eventContextObj->streamFlag;
     restoreInfo.deviceChangeReason = static_cast<int32_t>(eventContextObj->reason_);
+    restoreInfo.routeFlag = static_cast<uint32_t>(eventContextObj->routeFlag);
     AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
@@ -1272,6 +1276,7 @@ void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExec
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = STREAM_CONCEDED;
     restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+    restoreInfo.routeFlag = AUDIO_FLAG_NONE;
     AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 

@@ -34,6 +34,7 @@ ohos_shared_library("sink_adapter") {
   include_dirs = [
     "include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../audiodefinitions/include",
     "../../../../hdiadapter_new/include",
   ]
 
@@ -73,6 +74,7 @@ ohos_shared_library("source_adapter") {
   include_dirs = [
     "include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../audiodefinitions/include",
     "../../../../hdiadapter_new/include",
   ]
 

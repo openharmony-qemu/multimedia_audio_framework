@@ -32,7 +32,7 @@ AudioScoMode BluetoothScoManager::lastScoMode_ = AudioScoMode::DEFAULT_MODE;
 HandsFreeAudioGateway *BluetoothScoManager::hfpInstance_ = HandsFreeAudioGateway::GetProfile();
 std::mutex g_scoStateLock;
 
-void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState)
+void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState, const BluetoothRemoteDevice *device)
 {
     std::unique_lock<std::mutex> stateLock(g_scoStateLock);
     AudioScoState lastScoState = currentScoState_;
@@ -42,27 +42,27 @@ void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState)
         currentScoState_ = AudioScoState::CONNECTED;
         stateLock.unlock();
         if (lastScoState == AudioScoState::DISCONNECT_AFTER_CONNECTED) {
-            BluetoothScoManager::HandleScoDisconnect(GetScoCategeryFromMode(currentScoMode_));
+            BluetoothScoManager::HandleScoDisconnect(GetScoCategeryFromMode(currentScoMode_), device);
         } else if (lastScoState == AudioScoState::CONNECT_AFTER_DISCONNECTED) {
-            BluetoothScoManager::HandleScoDisconnect(GetScoCategeryFromMode(lastScoMode_));
-            BluetoothScoManager::HandleScoConnect(GetScoCategeryFromMode(tmpMode));
+            BluetoothScoManager::HandleScoDisconnect(GetScoCategeryFromMode(lastScoMode_), device);
+            BluetoothScoManager::HandleScoConnect(GetScoCategeryFromMode(tmpMode), device);
         }
     } else if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         currentScoState_ = AudioScoState::DISCONNECTED;
         stateLock.unlock();
         if (lastScoState == AudioScoState::CONNECT_AFTER_DISCONNECTED) {
-            BluetoothScoManager::HandleScoConnect(GetScoCategeryFromMode(currentScoMode_));
+            BluetoothScoManager::HandleScoConnect(GetScoCategeryFromMode(currentScoMode_), device);
         } else if (lastScoState == AudioScoState::DISCONNECT_AFTER_CONNECTED) {
-            BluetoothScoManager::HandleScoConnect(GetScoCategeryFromMode(lastScoMode_));
-            BluetoothScoManager::HandleScoDisconnect(GetScoCategeryFromMode(tmpMode));
+            BluetoothScoManager::HandleScoConnect(GetScoCategeryFromMode(lastScoMode_), device);
+            BluetoothScoManager::HandleScoDisconnect(GetScoCategeryFromMode(tmpMode), device);
         }
     }
 }
 
-int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory, BluetoothRemoteDevice *device)
+int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory, const BluetoothRemoteDevice *device)
 {
-    std::lock_guard<std::mutex> stateLock(g_scoStateLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
+    std::lock_guard<std::mutex> stateLock(g_scoStateLock);
     AudioScoState lastScoState = currentScoState_;
     lastScoMode_ = currentScoMode_;
     currentScoMode_ = BluetoothScoManager::GetScoModeFromCategery(scoCategory);
@@ -71,6 +71,7 @@ int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory, Bluetooth
     int32_t ret = ERROR;
     if (lastScoState == AudioScoState::DISCONNECTED) {
         if (currentScoMode_ == AudioScoMode::REC_MODE) {
+            CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "HandleScoConnect failed, device is nullptr");
             ret = ((hfpInstance_->OpenVoiceRecognition(*device) == true) ? SUCCESS : ERROR);
         } else {
             ret = hfpInstance_->ConnectSco(static_cast<uint8_t> (scoCategory));
@@ -87,10 +88,10 @@ int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory, Bluetooth
     return SUCCESS;
 }
 
-int32_t BluetoothScoManager::HandleScoDisconnect(ScoCategory scoCategory, BluetoothRemoteDevice *device)
+int32_t BluetoothScoManager::HandleScoDisconnect(ScoCategory scoCategory, const BluetoothRemoteDevice *device)
 {
-    std::lock_guard<std::mutex> stateLock(g_scoStateLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
+    std::lock_guard<std::mutex> stateLock(g_scoStateLock);
     AudioScoState lastScoState = currentScoState_;
     lastScoMode_ = currentScoMode_;
     currentScoMode_ = BluetoothScoManager::GetScoModeFromCategery(scoCategory);
@@ -99,6 +100,7 @@ int32_t BluetoothScoManager::HandleScoDisconnect(ScoCategory scoCategory, Blueto
     int32_t ret = ERROR;
     if (lastScoState == AudioScoState::CONNECTED) {
         if (currentScoMode_ == AudioScoMode::REC_MODE) {
+            CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "HandleScoDisconnect failed, device is nullptr");
             ret = ((hfpInstance_->CloseVoiceRecognition(*device) == true) ? SUCCESS : ERROR);
         } else {
             ret = hfpInstance_->DisconnectSco(static_cast<uint8_t> (scoCategory));

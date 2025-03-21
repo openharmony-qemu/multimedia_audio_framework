@@ -114,6 +114,7 @@ void PowerStateListener::ControlAudioFocus(bool applyFocus)
         result = audioPolicyServer_->ActivateAudioInterrupt(audioInterrupt);
         if (result == SUCCESS) {
             isAudioFocusApplied_ = true;
+            audioPolicyServer_->CheckConnectedDevice();
         } else {
             AUDIO_WARNING_LOG("Activate audio interrupt failed, err = %{public}d", result);
         }
@@ -121,6 +122,8 @@ void PowerStateListener::ControlAudioFocus(bool applyFocus)
         result = audioPolicyServer_->DeactivateAudioInterrupt(audioInterrupt);
         if (result == SUCCESS) {
             isAudioFocusApplied_ = false;
+            thread switchThread(&AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration, audioPolicyServer_);
+            switchThread.detach();
         } else {
             AUDIO_WARNING_LOG("Deactivate audio interrupt failed, err = %{public}d", result);
         }
@@ -201,11 +204,14 @@ void SyncHibernateListener::ControlAudioFocus(bool isHibernate)
         if (result != SUCCESS) {
             AUDIO_WARNING_LOG("Sync hibernate activate audio interrupt failed, err = %{public}d", result);
         }
+        audioPolicyServer_->CheckConnectedDevice();
     } else {
         result = audioPolicyServer_->DeactivateAudioInterrupt(audioInterrupt);
         if (result != SUCCESS) {
             AUDIO_WARNING_LOG("Sync hibernate deactivate audio interrupt failed, err = %{public}d", result);
         }
+        thread switchThread(&AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration, audioPolicyServer_);
+        switchThread.detach();
     }
 }
 } // namespace AudioStandard

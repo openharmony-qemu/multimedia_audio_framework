@@ -27,6 +27,7 @@
 #include "audio_policy_manager.h"
 
 #include "media_monitor_manager.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,6 +47,19 @@ std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
     {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP},
     {AudioStreamType::STREAM_SOURCE_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_CALL},
+};
+
+static const std::map<uint32_t, IAudioStream::StreamClass> AUDIO_INPUT_FLAG_GROUP_MAP = {
+    {AUDIO_INPUT_FLAG_NORMAL, IAudioStream::StreamClass::PA_STREAM},
+    {AUDIO_INPUT_FLAG_FAST, IAudioStream::StreamClass::FAST_STREAM},
+    {AUDIO_INPUT_FLAG_VOIP_FAST, IAudioStream::StreamClass::VOIP_STREAM},
+    {AUDIO_INPUT_FLAG_WAKEUP, IAudioStream::StreamClass::PA_STREAM},
+};
+
+static const std::map<AudioFlag, int32_t> INPUT_ROUTE_TO_STREAM_MAP = {
+    {AUDIO_OUTPUT_FLAG_NORMAL, AUDIO_FLAG_NORMAL},
+    {AUDIO_OUTPUT_FLAG_DIRECT, AUDIO_FLAG_DIRECT},
+    {AUDIO_OUTPUT_FLAG_FAST, AUDIO_FLAG_MMAP},
 };
 
 AudioCapturer::~AudioCapturer() = default;
@@ -141,6 +155,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
     auto capturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+
     if (capturer == nullptr) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         AUDIO_ERR_LOG("Failed to create capturer object");
@@ -265,19 +280,18 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     std::shared_lock<std::shared_mutex> lockShared(capturerMutex_);
 
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
+    IAudioStream::StreamClass streamClass = SetCaptureInfo(audioStreamParams);
 
-    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
-    if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-#ifdef SUPPORT_LOW_LATENCY
-        streamClass = GetPreferredStreamClass(audioStreamParams);
-#else
-        capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
-        capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
-        streamClass = IAudioStream::PA_STREAM;
-#endif
-    }
-    ActivateAudioConcurrency(streamClass);
+    // Create Client
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
+        streamDesc, flag, audioStreamParams.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
+    AUDIO_INFO_LOG("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
+        audioStreamParams.originalSessionId, flag);
 
+    SetClientInfo(flag, streamClass);
     // check AudioStreamParams for fast stream
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_,
@@ -285,7 +299,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetRecordStream faied.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
     }
-    int32_t ret = InitAudioStream(audioStreamParams);
+    ret = InitAudioStream(audioStreamParams);
     // When the fast stream creation fails, a normal stream is created
     if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
         AUDIO_INFO_LOG("Create fast Stream fail, record by normal stream");
@@ -313,6 +327,58 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init input device change callback failed");
 
     return InitAudioInterruptCallback();
+}
+
+IAudioStream::StreamClass AudioCapturerPrivate::SetCaptureInfo(AudioStreamParams &audioStreamParams)
+{
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+#ifdef SUPPORT_LOW_LATENCY
+        streamClass = GetPreferredStreamClass(audioStreamParams);
+#else
+        capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+        capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+        streamClass = IAudioStream::PA_STREAM;
+#endif
+    }
+    return streamClass;
+}
+
+std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDescriptor(
+    const AudioStreamParams &audioStreamParams)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
+    streamDesc->streamInfo_.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+    streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
+    streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+    streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->capturerInfo_ = capturerInfo_;
+    streamDesc->appInfo_ = appInfo_;
+    streamDesc->callerUid_ = getuid();
+    return streamDesc;
+}
+
+void AudioCapturerPrivate::SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass)
+{
+    if (flag & AUDIO_INPUT_FLAG_FAST) {
+        if (flag & AUDIO_INPUT_FLAG_VOIP) {
+            streamClass = IAudioStream::StreamClass::VOIP_STREAM;
+            capturerInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
+            capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
+            capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
+        } else {
+            streamClass = IAudioStream::StreamClass::FAST_STREAM;
+            capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
+            capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
+        }
+    } else {
+        streamClass = IAudioStream::StreamClass::PA_STREAM;
+            capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+            capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
+    }
 }
 
 int32_t AudioCapturerPrivate::InitInputDeviceChangeCallback()
@@ -564,26 +630,6 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
     currentStream->UnsetCapturerPeriodPositionCallback();
 }
 
-IAudioStream::StreamClass AudioCapturerPrivate::GetTargetStreamClass(int32_t streamFlag)
-{
-    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
-    switch (streamFlag) {
-        case AUDIO_FLAG_NORMAL:
-            capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
-            targetClass = IAudioStream::PA_STREAM;
-            break;
-        case AUDIO_FLAG_MMAP:
-            capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
-            targetClass = IAudioStream::FAST_STREAM;
-            break;
-        case AUDIO_FLAG_VOIP_FAST:
-            capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
-            targetClass = IAudioStream::VOIP_STREAM;
-            break;
-    }
-    return targetClass;
-}
-
 int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFunc)
 {
     std::lock_guard<std::shared_mutex> lock(capturerMutex_);
@@ -602,7 +648,8 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     // Get restore info and target stream class for switching.
     RestoreInfo restoreInfo;
     audioStream_->GetRestoreInfo(restoreInfo);
-    IAudioStream::StreamClass targetClass = GetTargetStreamClass(restoreInfo.targetStreamFlag);
+    IAudioStream::StreamClass targetClass = IAudioStream::StreamClass::PA_STREAM;
+    SetClientInfo(restoreInfo.routeFlag, targetClass);
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioCapturerInterruptCallbackImpl> interruptCbImpl = nullptr;
@@ -989,22 +1036,6 @@ int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
     audioCaptureMode_ = captureMode;
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && captureMode == CAPTURE_MODE_CALLBACK &&
-        AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo_) == AUDIO_FLAG_VOIP_FAST &&
-        firstConcurrencyResult_ == SUCCESS) {
-        AUDIO_INFO_LOG("Switch to fast voip stream");
-        uint32_t sessionId = 0;
-        int32_t ret = currentStream->GetAudioSessionID(sessionId);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get audio session Id failed");
-        RestoreInfo restoreInfo;
-        if (!SwitchToTargetStream(IAudioStream::VOIP_STREAM, restoreInfo)) {
-            AUDIO_ERR_LOG("Switch to target stream failed");
-            return ERROR;
-        }
-        // audioStream_ has been updated by SwitchToTargetStream. Update currentStream before SetRenderMode.
-        currentStream = GetInnerStream();
-    }
-
     return currentStream->SetCaptureMode(captureMode);
 }
 
@@ -1453,6 +1484,7 @@ void AudioCapturerPrivate::HandleAudioInterruptWhenServerDied()
 
 void AudioCapturerPrivate::ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass)
 {
+    AUDIO_INFO_LOG("in");
     capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
     if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;

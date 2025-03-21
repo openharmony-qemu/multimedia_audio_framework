@@ -18,6 +18,25 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t API_VERSION_16 = 16;
+
+static std::function<int32_t()> sGetApiVersion_;
+
+void SetApiVersionGetter(std::function<int32_t()> GetApiVersion)
+{
+    sGetApiVersion_ = GetApiVersion;
+}
+
+static int32_t GetApiVersion()
+{
+    if (sGetApiVersion_ == nullptr) {
+        return API_VERSION_16;
+    }
+    int32_t version = sGetApiVersion_();
+    AUDIO_INFO_LOG("GetApiVersion: version=%{public}d", version);
+    return version;
+}
+
 AudioDeviceDescriptor::AudioDeviceDescriptor(int32_t descriptorType)
     : AudioDeviceDescriptor(DeviceType::DEVICE_TYPE_NONE, DeviceRole::DEVICE_ROLE_NONE)
 {
@@ -362,6 +381,14 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
         (!IsUsb(deviceType_) || deviceDescriptor.deviceRole_ == deviceRole_);
 }
 
+bool AudioDeviceDescriptor::IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const
+{
+    return deviceDescriptor->deviceType_ == deviceType_ &&
+        deviceDescriptor->macAddress_ == macAddress_ &&
+        deviceDescriptor->networkId_ == networkId_ &&
+        (!IsUsb(deviceType_) || deviceDescriptor->deviceRole_ == deviceRole_);
+}
+
 bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const
 {
     return deviceType_ == deviceInfo.deviceType_ &&
@@ -379,12 +406,23 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.networkId_ == networkId_;
 }
 
+void AudioDeviceDescriptor::Dump(std::string &dumpString)
+{
+    dumpString += "deviceName: " + deviceName_ + " deviceRole: ";
+    if (deviceRole_ != INPUT_DEVICE && deviceRole_ != OUTPUT_DEVICE) {
+        dumpString += "INVALID";
+    } else {
+        dumpString += deviceRole_ == INPUT_DEVICE ? "INPUT" : "OUTPUT";
+    }
+    dumpString += " deviceType: " + std::to_string(deviceType_);
+}
+
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType() const
 {
     switch (deviceType_) {
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-            if (!hasPair_) {
+            if (!hasPair_ && GetApiVersion() >= API_VERSION_16) {
 #ifdef DETECT_SOUNDBOX
                 return DEVICE_TYPE_USB_DEVICE;
 #else

@@ -635,6 +635,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_021, TestSize.Level1)
     audioEndpointInner->readTimeModel_.isConfiged = true;
     audioEndpointInner->readTimeModel_.sampleRate_ = 1000;
     audioEndpointInner->posInFrame_.store(13);
+    audioEndpointInner->stopUpdateThread_ = true;
 
     audioEndpointInner->GetPredictNextReadTime(posInFrame);
 }
@@ -1093,7 +1094,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
     info.dupStream = adapterManager->CreateRendererStream(config, stream);
     audioEndpointInner->ProcessToDupStream(audioDataList, dstStreamData, 1);
     AudioSystemManager::GetInstance()->ReleaseCaptureLimit(1);
-    EXPECT_EQ(dstStreamData.bufferDesc.bufLength, audioEndpointInner->dupBufferSize_);
+    EXPECT_EQ(dstStreamData.bufferDesc.bufLength, audioDataList[0].bufferDesc.bufLength);
 }
 #endif
 /*

@@ -29,7 +29,7 @@ namespace AudioStandard {
 template<typename T>
 class DfxCollector {
 public:
-    virtual void FlushDfxMsg(uint32_t index, uint32_t appUid) = 0;
+    virtual void FlushDfxMsg(uint32_t index, int32_t appUid) = 0;
     virtual ~DfxCollector() = default;
 
     void AddDfxMsg(uint32_t index, const T &info)

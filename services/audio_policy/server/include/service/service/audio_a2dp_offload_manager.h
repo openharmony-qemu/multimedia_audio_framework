@@ -42,7 +42,7 @@
 #include "audio_volume_manager.h"
 #include "audio_a2dp_offload_flag.h"
 #include "audio_iohandle_map.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_active_device.h"
 #include "audio_offload_stream.h"
 
@@ -58,7 +58,7 @@ public:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioVolumeManager_(AudioVolumeManager::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioDeviceCommon_(AudioDeviceCommon::GetInstance())
@@ -106,7 +106,7 @@ private:
     AudioRouterCenter& audioRouterCenter_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioActiveDevice& audioActiveDevice_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioVolumeManager& audioVolumeManager_;
     AudioOffloadStream& audioOffloadStream_;
     AudioDeviceCommon& audioDeviceCommon_;

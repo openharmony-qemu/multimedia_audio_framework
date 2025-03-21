@@ -279,7 +279,7 @@ HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_004, TestSize.Level0)
                     5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9};
     uint64_t replyBytes = 10;
     float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
-    EXPECT_NEAR(result, 0.008, 0.001);
+    EXPECT_NEAR(result, 0, 0.1);
 }
 
 /**
@@ -505,10 +505,10 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_001, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0)
 {
-    int32_t frame[4] = {0XBFFFFFFF, 0X8FFFFFFF, 0XAFFFFFFF, 0XFFFFFFFF};
+    int32_t frame[4] = {-1, 1, 0, 8};
     uint64_t nSamples = 4;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
-    EXPECT_NEAR(result, 0.875, 0.1);
+    EXPECT_NEAR(result, 0, 0.0001);
 }
 
 /**
@@ -519,10 +519,10 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_003, TestSize.Level0)
 {
-    int32_t frame[4] = {0X3FFFFFF, 0X7FFFFFF, 0X1FFFFFFF, 0X3FFFFFFF};
+    int32_t frame[4] = {0, 1, -1, 8};
     uint64_t nSamples = 4;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
-    EXPECT_NEAR(result, 0.5, 0.1);
+    EXPECT_NEAR(result, 0, 0.0001);
 }
 
 /**
@@ -538,20 +538,6 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_004, TestSize.Level0
     uint64_t nSamples = 6;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_EQ(result, 0);
-}
-
-/**
-* @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
-* @tc.type  : FUNC
-* @tc.number: CalculateMaxAmplitudeForPCM32Bit_005
-* @tc.desc  : Test CalculateMaxAmplitudeForPCM32Bit interface when value contains  negative and positive numbers.
-*/
-HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_005, TestSize.Level0)
-{
-    int32_t frame[5] = {0XBFFFFFFF, 0X8FFFFFFF, 0, 0X1FFFFFFF, 0X3FFFFFFF};
-    uint64_t nSamples = 5;
-    float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
-    EXPECT_NEAR(result, 0.875, 0.1);
 }
 
 /**

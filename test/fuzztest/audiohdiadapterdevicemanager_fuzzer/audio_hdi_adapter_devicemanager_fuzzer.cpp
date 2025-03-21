@@ -19,7 +19,9 @@
 #include "audio_info.h"
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
+#ifndef MAX_MIX_CHANNELS
 #include "audio_hdiadapter_info.h"
+#endif
 #include "audio_device_info.h"
 #include "i_audio_device_manager.h"
 #include "audio_device_manager_impl.h"

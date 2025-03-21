@@ -49,6 +49,7 @@
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
 #include "app_state_listener.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -61,8 +62,7 @@ class BluetoothEventSubscriber;
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyManagerStub,
-                          public AudioStreamRemovedCallback,
-                          public std::enable_shared_from_this<AudioPolicyServer> {
+                          public AudioStreamRemovedCallback {
     DECLARE_SYSTEM_ABILITY(AudioPolicyServer);
 
 public:
@@ -221,6 +221,8 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
@@ -246,6 +248,12 @@ public:
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
+
+    int32_t CreateRendererClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
+
+    int32_t CreateCapturerClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object) override;
@@ -498,7 +506,6 @@ public:
     int32_t SetHighResolutionExist(bool highResExist) override;
 
     void NotifyAccountsChanged(const int &id);
-    void NotifyAppStateChanged(int32_t pid, int32_t uid, int32_t state);
 
     // for hidump
     void AudioDevicesDump(std::string &dumpString);
@@ -512,12 +519,16 @@ public:
     void EffectManagerInfoDump(std::string &dumpString);
     void MicrophoneMuteInfoDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
+    void AudioPipeManagerDump(std::string &dumpString);
 
     // for hibernate callback
     void CheckHibernateState(bool hibernate);
     // for S4 reboot update safevolume
     void UpdateSafeVolumeByS4();
     AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
+
+    void CheckConnectedDevice();
+    void SetDeviceConnectedFlagFalseAfterDuration();
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -613,6 +624,7 @@ private:
     void HandleKvDataShareEvent();
     void InitMicrophoneMute();
     void InitKVStore();
+    void InitApiVersionGetter();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
@@ -636,6 +648,7 @@ private:
 
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();
+    void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId);
 
     // for updating default device selection state when game audio stream is muted
     void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
@@ -646,6 +659,9 @@ private:
     AudioPolicyUtils &audioPolicyUtils_;
     AudioDeviceManager &audioDeviceManager_;
     std::shared_ptr<AudioInterruptService> interruptService_;
+
+    std::shared_ptr<AudioCoreService> coreService_;
+    std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
 
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
@@ -688,6 +704,7 @@ private:
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
     AudioActiveDevice& audioActiveDevice_;
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

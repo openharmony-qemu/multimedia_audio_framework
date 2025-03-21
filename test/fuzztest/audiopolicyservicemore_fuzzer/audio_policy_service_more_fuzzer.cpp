@@ -231,19 +231,7 @@ void AudioPolicyServiceThirdTest()
     AudioProcessConfig config = InitProcessConfig();
     std::thread t1(ThreadFunctionTest);
     t1.join();
-    StreamPropInfo streamPropInfo;
-    AudioAdapterInfo adapterInfo = {};
-    adapterInfo.adapterName_ = "wakeup_input";
-    adapterInfo.adaptersupportScene_ = "supportScene";
-    std::list<PipeInfo> pipeInfos_;
-    PipeInfo pipeInfo = {};
-    pipeInfo.name_ = "wakeup_input";
-    pipeInfo.streamPropInfos_.push_back(streamPropInfo);
-    pipeInfos_.push_back(pipeInfo);
-    adapterInfo.pipeInfos_ = pipeInfos_;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_ = {};
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.
-        insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.Init(true);
     GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
 
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
@@ -271,22 +259,6 @@ void AudioPolicyServiceThirdTest()
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.CheckWiredActiveMusicTime(safeVolume);
 }
 
-void MakeAdapterInfoMap()
-{
-    AudioAdapterInfo adapterInfo = {};
-    adapterInfo.adapterName_ = "wakeup_input";
-    adapterInfo.adaptersupportScene_ = "supportScene";
-    std::list<PipeInfo> pipeInfos_;
-    PipeInfo pipeInfo = {};
-    pipeInfo.name_ = "primary_input";
-    StreamPropInfo streamPropInfo;
-    pipeInfo.streamPropInfos_.push_back(streamPropInfo);
-    pipeInfos_.push_back(pipeInfo);
-    adapterInfo.pipeInfos_ = pipeInfos_;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.
-        insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
-}
-
 void AudioPolicyServiceTest()
 {
     AudioStreamInfo streamInfo;
@@ -297,7 +269,6 @@ void AudioPolicyServiceTest()
     sessionInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
     sessionInfo.rate = RATE;
     sessionInfo.channels = CHANNELS;
-    MakeAdapterInfoMap();
     GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(SESSIONID, sessionInfo, streamInfo);
 
     uint32_t deviceRoleInt = GetData<uint32_t>();

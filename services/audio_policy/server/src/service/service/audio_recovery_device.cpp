@@ -21,18 +21,12 @@
 #include "parameters.h"
 #include "audio_policy_log.h"
 
-#include "bundle_mgr_interface.h"
-#include "bundle_mgr_proxy.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
-
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
 namespace {
 constexpr int32_t RECOVERY_ATTEMPT_LIMIT = 5;
@@ -230,8 +224,8 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
 void AudioRecoveryDevice::HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason,
     const std::string &caller)
 {
-    audioDeviceCommon_.FetchDevice(true, reason);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     auto currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     auto currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(
@@ -254,7 +248,7 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceForFastInner(sptr<AudioRendererFi
     res = SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
         "AddFastRouteMapInfo failed! fastRouteMap is too large!");
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
     return true;
 }
 
@@ -282,44 +276,13 @@ int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage,
     std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>(**itr);
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
 
-    auto callerUid = IPCSkeleton::GetCallingUid();
     auto callerPid = IPCSkeleton::GetCallingPid();
-    std::string bundleName = GetBundleNameFromUid(callerUid);
-    AUDIO_INFO_LOG("uid: %{public}u, pid: %{public}d, bundle name: %{public}s",
-        callerUid, callerPid, bundleName.c_str());
-    if (audioClientInfoMgrCallback_ != nullptr) {
-        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid);
-    }
-    AUDIO_INFO_LOG("check result pid: %{public}d", callerPid);
     if (preferredType == AUDIO_CALL_RENDER) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor, callerPid);
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor);
     }
     return SUCCESS;
-}
-
-const std::string AudioRecoveryDevice::GetBundleNameFromUid(int32_t uid)
-{
-    AudioXCollie audioXCollie("AudioRecoveryDevice::GetBundleNameFromUid",
-        GET_BUNDLE_TIME_OUT_SECONDS);
-    std::string bundleName {""};
-    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
-    guard.CheckCurrTimeout();
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
-
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
-    bundleMgrProxy->GetNameForUid(uid, bundleName);
-    reguard.CheckCurrTimeout();
-
-    return bundleName;
 }
 
 int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &selectedDesc)
@@ -421,7 +384,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
             "AddFastRouteMapInfo failed! fastRouteMap is too large!");
         AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",
             audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
-        audioDeviceCommon_.FetchDevice(false);
+        AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
         audioCapturerSession_.ReloadSourceForDeviceChange(
             audioActiveDevice_.GetCurrentInputDevice(),
             audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice fast");
@@ -436,7 +399,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectedDesc[0]);
     }
     audioActiveDevice_.DisconnectScoWhenUserSelectInput(selectedDesc[0]);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
     audioDeviceCommon_.OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(),
         audioActiveDevice_.GetCurrentInputDevice().networkId_);
@@ -480,8 +443,8 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         WriteExcludeOutputSysEvents(audioDevUsage, desc);
     }
 
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(
@@ -507,8 +470,8 @@ int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsa
     int32_t ret = UnexcludeOutputDevicesInner(audioDevUsage, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Unexclude devices failed");
 
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(
@@ -622,12 +585,6 @@ void AudioRecoveryDevice::WriteUnexcludeOutputSysEvents(const AudioDeviceUsage a
     bean->Add("DEVICE_NAME", desc->deviceName_);
     bean->Add("BT_TYPE", desc->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-}
-
-int32_t AudioRecoveryDevice::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
-{
-    audioClientInfoMgrCallback_ = callback;
-    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
