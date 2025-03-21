@@ -356,6 +356,5 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_016, TestSiz
     audioConnectedDevice->UpdateSpatializationSupported(encryAddress, spatializationSupported);
     EXPECT_NE(audioConnectedDevice, nullptr);
 }
-//if .*? && .*? &&
 } // namespace AudioStandard
 } // namespace OHOS
