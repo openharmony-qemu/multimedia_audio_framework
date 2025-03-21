@@ -31,7 +31,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
+static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = { 
     // all volume types except STREAM_ALL
     STREAM_RING,
     STREAM_VOICE_CALL,
