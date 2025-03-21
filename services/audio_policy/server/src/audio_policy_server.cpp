@@ -1151,16 +1151,13 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Fail to set stream mute!");
     }
 
-    UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
-
     if (!mute && GetSystemVolumeLevelInternal(streamType) == 0 && !VolumeUtils::IsPCVolumeEnable()) {
         // If mute state is set to false but volume is 0, set volume to 1
         audioPolicyService_.SetSystemVolumeLevel(streamType, 1);
     }
-
     ProcUpdateRingerModeForMute(updateRingerMode, mute);
-
     SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
+    UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
     return SUCCESS;
 }
 
@@ -1356,11 +1353,11 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
     int32_t ret = audioPolicyService_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (ret == SUCCESS) {
-        UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
         if (updateRingerMode) {
             ProcUpdateRingerMode();
         }
         SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
+        UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
     } else if (ret == ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
         SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
         AUDIO_ERR_LOG("fail to set system volume level by safe vol");
