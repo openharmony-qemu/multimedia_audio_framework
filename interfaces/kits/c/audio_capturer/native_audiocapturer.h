@@ -244,7 +244,7 @@ OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer,
  *                                                 2.The param of deviceType is not valid
  *         {@link #AUDIOSTREAM_ERROR_ILLEGAL_STATE} This audioCapturer can not reset the input device
  *         {@link #AUDIOSTREAM_ERROR_SYSTEM} system error when calling this function.
- * @since 12
+ * @since 18
  */
 OH_AudioStream_Result OH_AudioCapturer_SetInputDevice(OH_AudioCapturer* capturer,
     OH_AudioDevice_Type deviceType);
