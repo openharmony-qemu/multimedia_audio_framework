@@ -542,8 +542,8 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
     DeviceType deviceType) const
 {
-    AUDIO_INFO_LOG("SetSystemVolumeWithDevice: volumeType[%{public}d], volumeLevel[%{public}d], deviceType[%{public}d]",
-        volumeType, volumeLevel, deviceType);
+    AUDIO_INFO_LOG("%{public}s: volumeType[%{public}d], volumeLevel[%{public}d], deviceType[%{public}d]",
+        __func__, volumeType, volumeLevel, deviceType);
 
     /* Validate volumeType and return INVALID_PARAMS error */
     switch (volumeType) {
