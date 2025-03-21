@@ -331,6 +331,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.role = pipeInfoPtr->paProp_.role_;
     info.moduleInfo_.name = pipeInfoPtr->paProp_.moduleName_;
     info.moduleInfo_.adapterName = adapterInfoPtr->adapterName;
+    info.moduleInfo_.className = adapterInfoPtr->adapterName;
     info.moduleInfo_.OpenMicSpeaker = configManager_.GetUpdateRouteSupport() ? "1" : "0";
 
     AUDIO_INFO_LOG("Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
