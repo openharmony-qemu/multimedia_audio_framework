@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-module_output_path = "multimedia_audio_framework/pro_renderer_stream_impl"
+module_output_path = "audio_framework/audio_framework_engine/pro_renderer_stream_impl"
 
 ohos_unittest("pro_renderer_stream_impl_unit_test") {
   testonly = true

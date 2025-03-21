@@ -21,7 +21,7 @@ if (!audio_framework_feature_offline_effect) {
   }
 } else {
   ohos_unittest("offline_audio_effect_manager_unit_test") {
-    module_out_path = "multimedia_audio_framework/offline_audio_effect_manager"
+    module_out_path = "audio_framework/audio_framework_engine/offline_audio_effect_manager"
     include_dirs = [
       "../../include",
       "../../../../../interfaces/inner_api/native/offlineaudioeffect/include",
