@@ -189,6 +189,7 @@ private:
     void InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
     void DeactivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
+    void SetInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply);
     void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
     void IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply);

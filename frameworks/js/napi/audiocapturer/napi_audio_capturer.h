@@ -67,6 +67,7 @@ private:
         AudioCapturerInfo capturerInfo;
         AudioStreamInfo streamInfo;
         Timestamp timeStamp;
+        int32_t deviceType;
         uint32_t overflowCount;
     };
 
@@ -100,6 +101,7 @@ private:
     static napi_value GetState(napi_env env, napi_callback_info info);
     static napi_value GetCallback(size_t argc, napi_value *argv);
     static napi_value GetOverflowCount(napi_env env, napi_callback_info info);
+    static napi_value SetInputDeviceToAccessory(napi_env env, napi_callback_info info);
     static napi_value GetOverflowCountSync(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *argv, const std::string &cbName);

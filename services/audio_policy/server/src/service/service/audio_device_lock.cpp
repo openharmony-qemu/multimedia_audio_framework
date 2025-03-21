@@ -325,11 +325,22 @@ void AudioDeviceLock::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
     audioDeviceCommon_.FetchDevice(true);
 }
 
+void AudioDeviceLock::UpdateInputDeviceWhenStopping(int32_t uid)
+{
+    std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
+    for (const auto &sessionID : sessionIDSet) {
+        audioDeviceManager_.UpdateInputDeviceWhenStopping(sessionID);
+        audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
+    }
+    audioDeviceCommon_.FetchDevice(false);
+}
+
 void AudioDeviceLock::RegisteredTrackerClientDied(pid_t uid)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     UpdateDefaultOutputDeviceWhenStopping(static_cast<int32_t>(uid));
+    UpdateInputDeviceWhenStopping(static_cast<int32_t>(uid));
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));

@@ -116,6 +116,7 @@ public:
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
+    void UpdateInputDeviceWhenStopping(int32_t uid);
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);

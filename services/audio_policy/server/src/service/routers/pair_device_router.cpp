@@ -37,7 +37,8 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallRenderDevice(StreamUs
     return make_shared<AudioDeviceDescriptor>();
 }
 
-shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> desc =
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
@@ -59,7 +60,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::GetRingRenderDe
     return descs;
 }
 
-shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }

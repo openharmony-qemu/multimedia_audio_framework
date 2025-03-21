@@ -30,7 +30,8 @@ shared_ptr<AudioDeviceDescriptor> PackageFilterRouter::GetCallRenderDevice(Strea
     return make_shared<AudioDeviceDescriptor>();
 }
 
-shared_ptr<AudioDeviceDescriptor> PackageFilterRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PackageFilterRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }
@@ -42,7 +43,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PackageFilterRouter::GetRingRende
     return descs;
 }
 
-shared_ptr<AudioDeviceDescriptor> PackageFilterRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PackageFilterRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }

@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_device_parser.h"
 #include "audio_policy_utils.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1433,6 +1434,46 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallRenderDevic
         devDesc = make_shared<AudioDeviceDescriptor>(earpiece_);
     } else if (selectedCallDefaultOutputDevice_ == DEVICE_TYPE_SPEAKER) {
         devDesc = make_shared<AudioDeviceDescriptor>(speaker_);
+    }
+    return devDesc;
+}
+
+int32_t AudioDeviceManager::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    selectedInputDeviceInfo_[sessionID] = std::make_pair(deviceType, sourceType);
+    AUDIO_INFO_LOG("stream %{public}u with usage %{public}d selects input device %{public}d",
+        sessionID, sourceType, deviceType);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
+    return SUCCESS;
+}
+
+int32_t AudioDeviceManager::UpdateInputDeviceWhenStopping(const uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("AudioDeviceManager::UpdateInputDeviceWhenStopping");
+    return SUCCESS;
+}
+
+int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("AudioDeviceManager::RemoveSelectedInputDevice");
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    selectedInputDeviceInfo_.erase(sessionID);
+    return SUCCESS;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(const uint32_t sessionID)
+{
+    shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+    if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
+        AUDIO_WARNING_LOG("no need to update input device since current stream has not set");
+        return devDesc;
+    }
+    for (const auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == selectedInputDeviceInfo_[sessionID].first) {
+            return make_shared<AudioDeviceDescriptor>(*desc);
+        }
     }
     return devDesc;
 }

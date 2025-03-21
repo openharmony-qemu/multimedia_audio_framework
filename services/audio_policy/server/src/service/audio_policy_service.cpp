@@ -1991,6 +1991,17 @@ int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, 
     return ret;
 }
 
+int32_t AudioPolicyService::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    int32_t ret = audioDeviceManager_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    if (ret == NEED_TO_FETCH) {
+        audioDeviceCommon_.FetchDevice(false, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_INPUT_DEVICE);
+        return SUCCESS;
+    }
+    return ret;
+}
+
 bool AudioPolicyService::GetAudioEffectOffloadFlag()
 {
     // check if audio effect offload

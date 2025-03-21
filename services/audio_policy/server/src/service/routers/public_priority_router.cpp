@@ -50,7 +50,7 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetCallRenderDevice(Stre
 }
 
 shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetCallCaptureDevice(SourceType sourceType,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }
@@ -114,7 +114,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
 }
 
 shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePublicDevices();
