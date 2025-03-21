@@ -31,7 +31,9 @@ public:
 
     void RegistCallback(uint32_t type, std::shared_ptr<IAudioSinkCallback> cb);
     void RegistCallback(uint32_t type, IAudioSinkCallback *cb);
-    std::shared_ptr<IAudioSinkCallback> GetCallback(uint32_t type);
+    void RegistCallbackGenerator(uint32_t type,
+        std::function<std::shared_ptr<IAudioSinkCallback>(uint32_t)> cbGenerator);
+    std::shared_ptr<IAudioSinkCallback> GetCallback(uint32_t type, uint32_t renderId);
     IAudioSinkCallback *GetRawCallback(uint32_t type);
 
     void OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
@@ -41,8 +43,10 @@ public:
 private:
     std::unordered_map<uint32_t, std::shared_ptr<IAudioSinkCallback> > cbs_;
     std::unordered_map<uint32_t, IAudioSinkCallback *> rawCbs_;
+    std::unordered_map<uint32_t, std::function<std::shared_ptr<IAudioSinkCallback>(uint32_t)> > cbGenerators_;
     std::mutex cbMtx_;
     std::mutex rawCbMtx_;
+    std::mutex cbGeneratorMtx_;
 };
 
 class SourceCallbackWrapper : public IAudioSourceCallback {
@@ -52,7 +56,9 @@ public:
 
     void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> cb);
     void RegistCallback(uint32_t type, IAudioSourceCallback *cb);
-    std::shared_ptr<IAudioSourceCallback> GetCallback(uint32_t type);
+    void RegistCallbackGenerator(uint32_t type,
+        std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> cbGenerator);
+    std::shared_ptr<IAudioSourceCallback> GetCallback(uint32_t type, uint32_t captureId);
     IAudioSourceCallback *GetRawCallback(uint32_t type);
 
     void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
@@ -63,8 +69,10 @@ public:
 private:
     std::unordered_map<uint32_t, std::shared_ptr<IAudioSourceCallback> > cbs_;
     std::unordered_map<uint32_t, IAudioSourceCallback *> rawCbs_;
+    std::unordered_map<uint32_t, std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> > cbGenerators_;
     std::mutex cbMtx_;
     std::mutex rawCbMtx_;
+    std::mutex cbGeneratorMtx_;
 };
 
 } // namespace AudioStandard
