@@ -90,8 +90,8 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             return AUDIO_OK;
         }
         case ON_QUERY_ALLOWED_PLAYBACK: {
-            uint32_t uid = data.ReadInt32();
-            uint32_t pid = data.ReadInt32();
+            int32_t uid = data.ReadInt32();
+            int32_t pid = data.ReadInt32();
             bool ret = OnQueryAllowedPlayback(uid, pid);
             reply.WriteBool(ret);
             return AUDIO_OK;

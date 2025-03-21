@@ -3783,7 +3783,7 @@ int32_t AudioPolicyServer::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObj
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by av_session
     CHECK_AND_RETURN_RET_LOG(callerUid == avSessionUid, ERROR,
-        "UpdateStreamState callerUid is error: not av_session");
+        "SetQueryAllowedPlaybackCallback callerUid is error: not av_session");
     return audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
 }
 
