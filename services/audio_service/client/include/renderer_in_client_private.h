@@ -209,6 +209,8 @@ private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
 
+    void  FlushBeforeStart();
+
     int32_t DeinitIpcStream();
 
     int32_t InitIpcStream();
@@ -337,7 +339,7 @@ private:
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
     
-    bool flushAfterStop_= false;
+    bool flushAfterStop_ = false;
 
     uint64_t clientWrittenBytes_ = 0;
     // ipc stream related

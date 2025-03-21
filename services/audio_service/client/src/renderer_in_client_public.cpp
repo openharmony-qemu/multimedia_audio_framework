@@ -889,11 +889,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
 
-    static std::string selfBundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
-    if (selfBundleName == "yylx.danmaku.bili" && flushAfterStop_) {
-        ResetFramePosition();
-        flushAfterStop_ = false;
-    }
+    FlushBeforeStart();
 
     std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
     if (!isDataLinkConnected_) {
@@ -918,6 +914,15 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
     preWriteEndTime_ = 0;
     return true;
+}
+
+void RendererInClientInner::FlushBeforeStart()
+{
+    if (flushAfterStop_) {
+        ResetFramePosition();
+        AUDIO_INFO_LOG("flush before start");
+        flushAfterStop_ = false;
+    }
 }
 
 bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
