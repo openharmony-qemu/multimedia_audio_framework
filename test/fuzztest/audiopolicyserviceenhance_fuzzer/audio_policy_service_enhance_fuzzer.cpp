@@ -414,7 +414,7 @@ void AudioPolicyServiceEnhanceNineFuzzTest()
     GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleDistributedDeviceUpdate(statusInfo, descForCb);
     GetServerPtr()->audioPolicyDump_.GetEffectManagerInfo();
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
-    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
     std::unordered_map<std::string, std::string> volumeGroupData;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVolumeGroupData(volumeGroupData);

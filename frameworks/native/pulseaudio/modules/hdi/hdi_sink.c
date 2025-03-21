@@ -110,7 +110,6 @@ const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
-const char *SINK_NAME_INNER_CAPTURER = "InnerCapturerSink";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
 const char *MCH_SINK_NAME = "MCH_Speaker";
@@ -2266,7 +2265,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
             frameSize * sizeof(float));
         CHECK_AND_RETURN_LOG(ret == 0, "SinkRenderPrimaryProcess: copy from bufIn to tempBufIn fail!");
         u->bufferAttr->numChanIn = (int32_t)processChannels;
-        u->bufferAttr->frameLen = frameSize / (uint32_t)u->bufferAttr->numChanIn;
+        u->bufferAttr->frameLen = (int32_t)frameSize / u->bufferAttr->numChanIn;
         size_t outBufferLen = byteSize > 0 ? length / byteSize : 0;
         PrimaryEffectProcess(u, sinkSceneType, sceneType, outBufferLen);
         pa_memblock_release(chunkIn->memblock);
@@ -3222,7 +3221,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     corking ? pa_atomic_store(&i->isFirstReaded, 0) : (void)0;
     starting ? pa_atomic_store(&i->isFirstReaded, 1) : (void)0;
 
-    if (!strcmp(i->sink->name, SINK_NAME_INNER_CAPTURER) ||
+    if (!IsInnerCapSinkName(i->sink->name) ||
         !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER) ||
         !strcmp(i->sink->driver, "module_split_stream_sink.c")) {
         ResetFadeoutPause(i, state);
@@ -4509,7 +4508,7 @@ static int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Use
         return -1;
     }
 
-    AUDIO_DEBUG_LOG("Load sink adapter");
+    AUDIO_INFO_LOG("Load sink adapter");
     const char *deviceClass = pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS);
     u->primary.sinkAdapter = GetSinkAdapter(deviceClass, pa_modargs_get_value(ma, "network_id",
         DEFAULT_DEVICE_NETWORKID));
@@ -4639,6 +4638,7 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
+    AUDIO_INFO_LOG("In");
     struct Userdata *u = NULL;
     char *hdiThreadName = NULL;
     char *hdiThreadNameMch = NULL;
@@ -4798,6 +4798,7 @@ static void FreeLimiter(struct Userdata *u)
 
 static void UserdataFree(struct Userdata *u)
 {
+    AUDIO_INFO_LOG("In");
     if (u == NULL) {
         AUDIO_INFO_LOG("Userdata is null, free done");
         return;
@@ -4861,7 +4862,7 @@ static void UserdataFree(struct Userdata *u)
 void PaHdiSinkFree(pa_sink *s)
 {
     AUTO_CTRACE("PaHdiSinkFree");
-    AUDIO_INFO_LOG("PaHdiSinkFree, free userdata");
+    AUDIO_INFO_LOG("In, PaHdiSinkFree, free userdata");
     struct Userdata *u = NULL;
 
     pa_sink_assert_ref(s);

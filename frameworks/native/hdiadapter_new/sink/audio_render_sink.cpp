@@ -237,7 +237,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
         AdjustAudioBalance(&data, len);
     }
     CheckUpdateState(&data, len);
-    if (switchDeviceMute_) {
+    if (switchDeviceMute_ || deviceConnectedFlag_) {
         Trace trace("AudioRenderSink::RenderFrame::renderEmpty");
         if (memset_s(reinterpret_cast<void *>(&data), static_cast<size_t>(len), 0, static_cast<size_t>(len)) != EOK) {
             AUDIO_WARNING_LOG("call memset_s fail");
@@ -438,13 +438,21 @@ int32_t AudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
+int32_t AudioRenderSink::SetDeviceConnectedFlag(bool flag)
+{
+    AUDIO_INFO_LOG("flag %{public}d", flag);
+    deviceConnectedFlag_ = flag;
+    return SUCCESS;
+}
+
 int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
-    AUDIO_INFO_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevices.front());
+    AUDIO_INFO_LOG("scene: %{public}d, current scene %{public}d, device: %{public}d",
+        audioScene, currentAudioScene_, activeDevices.front());
     if (!openSpeaker_) {
         return SUCCESS;
     }
@@ -477,6 +485,8 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
+    AUDIO_INFO_LOG("currentActiveDevice: %{public}d, outputDevices %{public}d",
+        currentActiveDevice_, outputDevices[0]);
     if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() ==
         static_cast<uint32_t>(currentDevicesSize_) && !forceSetRouteFlag_) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
@@ -846,6 +856,7 @@ int32_t AudioRenderSink::CreateRender(void)
 
 int32_t AudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices)
 {
+    AUDIO_INFO_LOG("Adapter name: %{public}s", adapterNameCase_.c_str());
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);

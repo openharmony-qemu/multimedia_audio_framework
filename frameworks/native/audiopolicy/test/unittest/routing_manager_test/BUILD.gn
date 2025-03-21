@@ -17,7 +17,8 @@ import("//build/test.gni")
 import("../../../../../../config.gni")
 import("../../../../../../multimedia_aafwk.gni")
 
-module_output_path = "multimedia_audio_framework/audio_routing_manager"
+module_output_path =
+    "audio_framework/audio_framework_policy/audio_routing_manager"
 
 ohos_unittest("audio_routing_manager_test") {
   module_out_path = module_output_path

@@ -466,8 +466,12 @@ int32_t FastAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
     // Inittialization port information, can fill through mode and other parameters
     int32_t initAllPorts = audioAdapter_->InitAllPorts(audioAdapter_);
     CHECK_AND_RETURN_RET_LOG(initAllPorts == 0, ERR_DEVICE_INIT, "InitAllPorts failed");
-    bool tmp = CreateCapture(audioPort) == SUCCESS && PrepareMmapBuffer() == SUCCESS;
-    CHECK_AND_RETURN_RET_LOG(tmp, ERR_NOT_STARTED, "Create capture failed");
+    CHECK_AND_RETURN_RET_LOG(CreateCapture(audioPort) == SUCCESS, ERR_NOT_STARTED, "Create capture failed");
+    if (PrepareMmapBuffer() != SUCCESS) {
+        AUDIO_ERR_LOG("Prepare mmap buffer failed");
+        audioAdapter_->DestroyCapture(audioAdapter_, captureId_);
+        return ERR_NOT_STARTED;
+    }
     ret = SetInputRoute(static_cast<DeviceType>(attr_.deviceType));
     if (ret < 0) {
         AUDIO_WARNING_LOG("update route FAILED: %{public}d", ret);

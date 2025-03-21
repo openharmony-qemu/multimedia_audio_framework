@@ -90,6 +90,8 @@ int AudioProcessStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return HandleSetSlientModeAndMixWithOther(data, reply);
         case ON_SET_SOURCE_DURATION:
             return HandleSetSourceDuration(data, reply);
+        case ON_SET_UNDERRUN_CNT:
+            return HandleSetUnderrunCount(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -199,6 +201,13 @@ int32_t AudioProcessStub::HandleSetSourceDuration(MessageParcel &data, MessagePa
 {
     int64_t duration = data.ReadInt64();
     reply.WriteInt32(SetSourceDuration(duration));
+    return AUDIO_OK;
+}
+
+int32_t AudioProcessStub::HandleSetUnderrunCount(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t underrunCnt = data.ReadUint32();
+    reply.WriteInt32(SetUnderrunCount(underrunCnt));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

@@ -448,7 +448,7 @@ int32_t AudioEnhanceChainManager::CreateEnhanceChainInner(std::shared_ptr<AudioE
         AUDIO_ERR_LOG("ParseSceneKeyCode failed!!!");
         return ERROR;
     }
-    uint32_t captureId = (sceneKeyCode & CAPTURER_ID_MASK) >> 8;
+    uint32_t captureId = (sceneKeyCode & CAPTURER_ID_MASK) >> CAPTURER_ID_OFFSET;
     std::string deviceName = "";
     GetDeviceNameByCaptureId(captureId, deviceName);
     createFlag = true;
@@ -580,7 +580,7 @@ int32_t AudioEnhanceChainManager::DeleteEnhanceChainInner(std::shared_ptr<AudioE
         AUDIO_ERR_LOG("ParseSceneKeyCode failed!!!");
         return ERROR;
     }
-    uint32_t captureId = (sceneKeyCode & CAPTURER_ID_MASK) >> 8;
+    uint32_t captureId = (sceneKeyCode & CAPTURER_ID_MASK) >> CAPTURER_ID_OFFSET;
     // not prior scene
     if (priorSceneSet_.find(sceneType) == priorSceneSet_.end()) {
         // default chain
@@ -768,7 +768,7 @@ int32_t AudioEnhanceChainManager::SetInputDevice(const uint32_t &captureId, cons
         return ERROR;
     }
     for (auto &[sceneKeyCode, chain] : sceneTypeToEnhanceChainMap_) {
-        uint32_t tempId = (sceneKeyCode & CAPTURER_ID_MASK) >> 8;
+        uint32_t tempId = (sceneKeyCode & CAPTURER_ID_MASK) >> CAPTURER_ID_OFFSET;
         if ((tempId == captureId) && chain) {
             if (chain->SetInputDevice(inputDeviceStr, deviceName) != SUCCESS) {
                 AUDIO_ERR_LOG("chain:%{public}u set input device failed", tempId);

@@ -245,6 +245,7 @@ int pa__get_n_used(pa_module *m)
 
 void pa__done(pa_module *m)
 {
+    AUDIO_INFO_LOG("In");
     CHECK_AND_RETURN_LOG(m != NULL, "pa module is null");
 
     pa_sink *sink = NULL;

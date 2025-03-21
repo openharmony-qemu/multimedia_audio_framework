@@ -873,10 +873,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Start call server failed:%{public}u", ret);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Start call server failed:%{public}u", ret);
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return state_ == RUNNING; // will be false when got notified.

@@ -46,6 +46,7 @@ public:
     int32_t ActivateAudioConcurrency(AudioPipeType incomingPipeType,
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& GetConcurrencyMap();
 private:
     // Inner class for death handler
     class AudioConcurrencyDeathRecipient : public IRemoteObject::DeathRecipient {

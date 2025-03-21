@@ -26,6 +26,7 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_process_proxy.h"
 #include "audio_process_in_client.h"
+#include "fast_audio_stream.h"
 
 using namespace testing::ext;
 
@@ -33,6 +34,7 @@ namespace OHOS {
 namespace AudioStandard {
 std::unique_ptr<AudioManagerProxy> audioManagerProxy;
 std::shared_ptr<AudioProcessInClient> processClient_;
+std::shared_ptr<FastAudioStream> fastAudioStream_;
 const int32_t TEST_RET_NUM = 0;
 const int32_t RENDERER_FLAGS = 0;
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -258,7 +260,9 @@ HWTEST(AudioServiceUnitTest, AudioProcessInClientInner_001, TestSize.Level1)
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_64000;
 
-    processClient_ = AudioProcessInClient::Create(config);
+    fastAudioStream_ = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    processClient_ = AudioProcessInClient::Create(config, fastAudioStream_);
     EXPECT_EQ(processClient_, nullptr);
 }
 

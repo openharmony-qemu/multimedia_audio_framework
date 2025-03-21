@@ -7939,7 +7939,7 @@ HWTEST(AudioRendererUnitTest, PrepareAudioStream_001, TestSize.Level1)
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     audioRendererPrivate->audioStream_ = nullptr;
-    const AudioStreamParams audioStreamParams;
+    AudioStreamParams audioStreamParams;
     const AudioStreamType audioStreamType = STREAM_VOICE_CALL;
     IAudioStream::StreamClass streamClass;
 

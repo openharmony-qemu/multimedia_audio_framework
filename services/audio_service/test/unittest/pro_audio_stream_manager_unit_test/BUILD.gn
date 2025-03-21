@@ -14,7 +14,8 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-module_output_path = "audio_framework/audio_framework_engine/part1/pro_audio_stream_manager"
+module_output_path =
+    "audio_framework/audio_framework_route/part1/pro_audio_stream_manager"
 
 config("module_private_config") {
   visibility = [ ":*" ]

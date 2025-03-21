@@ -62,6 +62,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "UNSET_CALLBACK",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "SET_CLIENT_INFO_MGR_CALLBACK",
+    "SET_QUERY_BUNDLE_NAME_LIST_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
     "SET_INTERRUPT_CALLBACK",
@@ -79,6 +80,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_SINK_LATENCY",
     "GET_PREFERRED_OUTPUT_STREAM_TYPE",
     "GET_PREFERRED_INPUT_STREAM_TYPE",
+    "CREATE_RENDERER_CLIENT",
+    "CREATE_CAPTURER_CLIENT",
     "REGISTER_TRACKER",
     "UPDATE_TRACKER",
     "GET_RENDERER_CHANGE_INFOS",
@@ -646,6 +649,30 @@ void AudioPolicyManagerStub::GetPreferredInputStreamTypeInternal(MessageParcel &
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::CreateRendererClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->Unmarshalling(data);
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    int32_t ret = CreateRendererClient(streamDesc, flag, sessionId);
+    reply.WriteUint32(flag);
+    reply.WriteUint32(sessionId);
+    reply.WriteInt32(ret);
+}
+
+void AudioPolicyManagerStub::CreateCapturerClientInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->Unmarshalling(data);
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    int32_t ret = CreateCapturerClient(streamDesc, flag, sessionId);
+    reply.WriteUint32(flag);
+    reply.WriteUint32(sessionId);
+    reply.WriteInt32(ret);
+}
+
 void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t count = data.ReadUint32();
@@ -1163,6 +1190,28 @@ void AudioPolicyManagerStub::SetAudioClientInfoMgrCallbackInternal(MessageParcel
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "SetQueryBundleNameListCallback is null");
+    int32_t result = SetQueryBundleNameListCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_BUNDLE_NAME_LIST_CALLBACK):
+            SetQueryBundleNameListCallbackInternal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
 void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1210,8 +1259,7 @@ void AudioPolicyManagerStub::OnMiddleTenRemoteRequest(
             SetQueryAllowedPlaybackCallbackInternal(data, reply);
             break;
         default:
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            OnMiddleEleRemoteRequest(code, data, reply, option);
             break;
     }
 }
@@ -1572,6 +1620,12 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INPUT_STREAM_TYPE):
             GetPreferredInputStreamTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_RENDERER_CLIENT):
+            CreateRendererClientInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_CAPTURER_CLIENT):
+            CreateCapturerClientInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_TRACKER):
             RegisterTrackerInternal(data, reply);
@@ -2002,8 +2056,7 @@ void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyInternal(MessageParc
     AudioEffectPropertyArray propertyArray = {};
     int32_t result = GetSupportedAudioEffectProperty(propertyArray);
     int32_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        "get supported audio effect property size invalid.");
+    CHECK_AND_RETURN_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, "size invalid.");
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
@@ -2015,8 +2068,7 @@ void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyInternal(MessageParc
 void AudioPolicyManagerStub::SetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        "set audio effect property size upper limit.");
+    CHECK_AND_RETURN_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, "size upper limit.");
     AudioEffectPropertyArray propertyArray = {};
     for (int i = 0; i < size; i++) {
         AudioEffectProperty prop = {};
@@ -2032,8 +2084,7 @@ void AudioPolicyManagerStub::GetAudioEffectPropertyInternal(MessageParcel &data,
     AudioEffectPropertyArray propertyArray = {};
     int32_t result = GetAudioEffectProperty(propertyArray);
     int32_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        "get audio effect property size invalid.");
+    CHECK_AND_RETURN_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, "size invalid.");
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
@@ -2045,8 +2096,7 @@ void AudioPolicyManagerStub::GetAudioEffectPropertyInternal(MessageParcel &data,
 void AudioPolicyManagerStub::SetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
-        "set audio enhance property size upper limit.");
+    CHECK_AND_RETURN_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, "size upper limit.");
     AudioEnhancePropertyArray propertyArray = {};
     for (int i = 0; i < size; i++) {
         AudioEnhanceProperty prop = {};

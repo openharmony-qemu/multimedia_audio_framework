@@ -22,28 +22,13 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "common/hdi_adapter_info.h"
+#include "hdi_adapter_type.h"
 
 #define SUCCESS_RET { return SUCCESS; }
 #define NOT_SUPPORT_RET { return ERR_NOT_SUPPORTED; }
 
 namespace OHOS {
 namespace AudioStandard {
-typedef struct IAudioSinkAttr {
-    const char *adapterName = "";
-    uint32_t openMicSpeaker = 0;
-    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
-    uint32_t sampleRate = 0;
-    uint32_t channel = 0;
-    float volume = 0.0f;
-    const char *filePath = nullptr;
-    const char *deviceNetworkId = nullptr;
-    int32_t deviceType = 0;
-    uint64_t channelLayout = 0;
-    int32_t audioStreamFlag = 0;
-    std::string address;
-    const char *aux;
-} IAudioSinkAttr;
-
 class IAudioSinkCallback {
 public:
     virtual ~IAudioSinkCallback() = default;
@@ -120,6 +105,9 @@ public:
     // remote extend function
     virtual int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *streamType) \
         NOT_SUPPORT_RET
+        
+    // primary extend function
+    virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
 };
 
 } // namespace AudioStandard

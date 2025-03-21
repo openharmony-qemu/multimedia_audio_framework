@@ -17,6 +17,7 @@
 #define AUDIO_CONNECTED_DEVICE_UNIT_TEST_H
 
 #include "gtest/gtest.h"
+#include "audio_spatialization_service.h"
 #include "audio_connected_device.h"
 
 namespace OHOS {

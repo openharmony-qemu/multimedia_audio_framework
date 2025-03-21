@@ -40,7 +40,7 @@ public:
     bool SetA2dpDeviceMute(const std::string& device, bool mute);
     void SetA2dpDeviceStreamInfo(const std::string& device, const DeviceStreamInfo& streamInfo);
     void AddA2dpDevice(const std::string& device, const A2dpDeviceConfigInfo& config);
-    bool SetA2dpDeviceAbsVolumeSupport(const std::string& device, const bool support);
+    bool SetA2dpDeviceAbsVolumeSupport(const std::string& device, const bool support, int32_t volume, bool mute);
     bool SetA2dpDeviceVolumeLevel(const std::string& device, const int32_t volumeLevel);
     size_t DelA2dpDevice(const std::string& device);
 

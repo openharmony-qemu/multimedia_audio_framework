@@ -201,7 +201,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
-    if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT) {
+    if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
     }

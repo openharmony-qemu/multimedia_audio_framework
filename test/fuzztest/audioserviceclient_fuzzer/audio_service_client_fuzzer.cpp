@@ -25,12 +25,14 @@
 #include "audio_info.h"
 #include "audio_source_type.h"
 #include "audio_process_in_client.h"
+#include "fast_audio_stream.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 shared_ptr<AudioProcessInClient> g_AudioProcessInClient = nullptr;
+shared_ptr<FastAudioStream> g_FastAudioStream = nullptr;
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
@@ -81,7 +83,9 @@ void GetAudioProcessInClient()
     config.streamInfo.encoding = ENCODING_PCM;
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    g_AudioProcessInClient = AudioProcessInClient::Create(config);
+    g_FastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_RECORD, config.appInfo.appUid);
+    g_AudioProcessInClient = AudioProcessInClient::Create(config, g_FastAudioStream);
     if (g_AudioProcessInClient== nullptr) {
         return;
     }
@@ -134,7 +138,9 @@ void AudioClientUpdateLatencyTimestampTest()
     config.streamInfo.encoding = ENCODING_PCM;
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    g_AudioProcessInClient = AudioProcessInClient::Create(config);
+    g_FastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_RECORD, config.appInfo.appUid);
+    g_AudioProcessInClient = AudioProcessInClient::Create(config, g_FastAudioStream);
     if (g_AudioProcessInClient== nullptr) {
         return;
     }

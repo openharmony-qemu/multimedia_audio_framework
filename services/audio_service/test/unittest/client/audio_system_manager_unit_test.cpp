@@ -34,6 +34,12 @@ public:
     void TearDown();
 };
 
+class AudioManagerAppVolumeChangeCallbackTest : public AudioManagerAppVolumeChangeCallback {
+public:
+    void OnAppVolumeChangedForUid(int32_t appUid, const VolumeEvent &event) override {}
+    void OnSelfAppVolumeChanged(const VolumeEvent &event) override {}
+};
+
 /**
  * @tc.name  : Test GetMaxVolume API
  * @tc.type  : FUNC
@@ -298,6 +304,134 @@ HWTEST(AudioSystemManagerUnitTest, GetExcludedDevicesTest_002, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetExcludedDevicesTest_002() audioDeviceDescriptors.size:%{public}zu",
         audioDeviceDescriptors.size());
     EXPECT_EQ(audioDeviceDescriptors.size(), 0);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolume API
+* @tc.number : SetAppVolume_001
+* @tc.desc   : Test SetSelfAppVolume interface
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume_001 start");
+    int volume = 10;
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolume(volume);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume_001 end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test GetSelfAppVolume API
+* @tc.number : GetSelfAppVolume_001
+* @tc.desc   : Test GetSelfAppVolume interface
+*/
+HWTEST(AudioSystemManagerUnitTest, GetSelfAppVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSelfAppVolume_001 start");
+    int volume = 10;
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolume(volume);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetSelfAppVolume();
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSelfAppVolume_001 end result:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolumeCallback API
+* @tc.number : SetSelfAppVolumeCallback_001
+* @tc.desc   : Test SetSelfAppVolumeCallback interface
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback_001 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback = nullptr;
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback end result:%{public}d", result);
+    EXPECT_NE(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetAppVolumeCallback end result:%{public}d", result);
+    EXPECT_NE(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolumeCallback API
+* @tc.number : SetSelfAppVolumeCallback_002
+* @tc.desc   : Test SetSelfAppVolumeCallback interface
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback_002 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback =
+        std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback2 end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolumeCallback API
+* @tc.number : SetSelfAppVolumeCallback_003
+* @tc.desc   : Test SetSelfAppVolumeCallback interface
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback_003 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback1 =
+        std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback2 =
+        std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback1);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback2);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback2 end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(callback2);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolumeCallback API
+* @tc.number : SetSelfAppVolumeCallback_004
+* @tc.desc   : Test SetSelfAppVolumeCallback interface
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback_004 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback =
+        std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test SetSelfAppVolumeCallback API
+* @tc.number : SetSelfAppVolumeCallback_005
+* @tc.desc   : Test SetSelfAppVolumeCallback interface
+*/
+HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback_005 start");
+    std::shared_ptr<AudioManagerAppVolumeChangeCallback> callback =
+        std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
+    int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(nullptr);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
 }
 } // namespace AudioStandard
 } // namespace OHOS

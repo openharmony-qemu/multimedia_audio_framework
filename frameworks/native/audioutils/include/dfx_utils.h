@@ -25,13 +25,15 @@ namespace AudioStandard {
 static const int32_t MIN_DFX_NUMERIC_COUNT = 1;
 static const int32_t MAX_DFX_NUMERIC_PERCENTAGE = 100;
 static const int32_t MAX_DFX_ACTION_SIZE = 100;
+static const int32_t DFX_INVALID_APP_UID = -1;
 
 class DfxUtils {
 public:
     static uint32_t SerializeToUint32(const DfxStatInt32 &data);
     static std::string SerializeToJSONString(const RendererStats &data);
     static std::string SerializeToJSONString(const std::vector<InterruptEffect> &data);
-    static std::string SerializeToJSONString(const std::vector<std::string> &data);
+    template<class T>
+    static std::string SerializeToJSONString(const std::vector<T> &data);
     static std::string SerializeToJSONString(const CapturerStats &data);
 };
 

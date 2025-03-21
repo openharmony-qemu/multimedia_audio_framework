@@ -22,6 +22,8 @@ import("../../../config.gni")
 group("audio_policy_unittest_packages") {
   testonly = true
   deps = [
+    ":audio_a2dp_device_unit_test",
+    ":audio_a2dp_offload_manager_unit_test",
     ":audio_active_device_unit_test",
     ":audio_affinity_manager_unit_test",
     ":audio_affinity_parser_test",
@@ -45,6 +47,7 @@ group("audio_policy_unittest_packages") {
     ":audio_policy_async_action_handler_test",
     ":audio_policy_client_proxy_unit_test",
     ":audio_policy_client_stub_impl_test",
+    ":audio_policy_client_stub_unit_test",
     ":audio_policy_manager_stub_test",
     ":audio_policy_manager_unit_test",
     ":audio_policy_server_handler_unit_test",
@@ -57,10 +60,14 @@ group("audio_policy_unittest_packages") {
     ":audio_recovery_device_unit_test",
     ":audio_router_center_unit_test",
     ":audio_routing_manager_listener_stub_unit_test",
+    ":audio_session_service_unit_test",
     ":audio_session_state_monitor_test",
+    ":audio_session_unit_test",
     ":audio_socket_thread_unit_test",
     ":audio_spatialization_service_unit_test",
     ":audio_stream_collector_unit_test",
+    ":audio_tone_parser_unit_test",
+    ":audio_usb_manager_unit_test",
     ":audio_volume_manager_unit_test",
     ":device_status_listener_unit_test",
     ":power_state_listener_unit_test",
@@ -70,8 +77,9 @@ group("audio_policy_unittest_packages") {
   ]
 }
 
-module_output_path = "multimedia_audio_framework/audio_policy"
-module_output_path1 = "multimedia_audio_framework/service/audio_policy"
+module_output_path = "audio_framework/audio_framework_policy/audio_policy"
+module_output_path1 =
+    "audio_framework/audio_framework_policy/service/audio_policy"
 
 ohos_unittest("audio_interrupt_service_unit_test") {
   module_out_path = module_output_path
@@ -785,6 +793,9 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
   module_out_path = module_output_path1
   include_dirs = [
     "./unittest/audio_policy_service_unit_test/include",
+    "../../common/definitions/include",
+    "../../frameworks/native/audiodefinitions/include",
+    "../../audio_service/common/include/dfx",
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include/service/service",
@@ -2038,6 +2049,7 @@ ohos_unittest("audio_stream_collector_unit_test") {
   sources = [ "./unittest/audio_stream_collector_unit_test/src/audio_stream_collector_unit_test.cpp" ]
 
   deps = [
+    "../../../frameworks/native/audiodefinitions:audio_definitions",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
@@ -2177,7 +2189,6 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
 
 ohos_unittest("audio_policy_async_action_handler_test") {
   module_out_path = module_output_path
-  include_dirs = [ "../../audio_policy/server/include" ]
 
   use_exceptions = true
 
@@ -2189,25 +2200,75 @@ ohos_unittest("audio_policy_async_action_handler_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+  include_dirs = [
+    "../../audio_policy/server/include",
+    "../../../services/audio_service/common/include",
+    "../../../services/audio_service/server/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../frameworks/native/audioinnercall/include",
+    "../../../frameworks/native/audiopolicy/include",
+    "../../../frameworks/native/hdiadapter_new/include",
+  ]
+
+  sources = [
+    "../../../services/audio_policy/server/src/audio_policy_async_action_handler.cpp",
+    "../../../services/audio_service/server/src/audio_manager_listener_proxy.cpp",
+    "./unittest/audio_policy_async_action_handler_test/audio_policy_async_action_handler_test.cpp",
+  ]
+
+  deps = [
+    "../../../frameworks/native/audioeffect:audio_effect",
+    "../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_common",
+    "../../../services/audio_service:audio_process_service",
+    "../../../services/audio_service:audio_service",
+  ]
 
   external_deps = [
+    "ability_base:session_info",
     "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libprivacy_sdk",
     "access_token:libtokenid_sdk",
     "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
-
-  sources = [ "./unittest/audio_policy_async_action_handler_test/audio_policy_async_action_handler_test.cpp" ]
-
-  deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
 
 ohos_unittest("volume_data_maintainer_unit_test") {
@@ -2472,6 +2533,7 @@ ohos_unittest("audio_policy_manager_stub_unit_test") {
 
   external_deps = [
     "ability_base:want",
+    "ability_runtime:app_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libprivacy_sdk",
     "access_token:libtokenid_sdk",
@@ -2487,6 +2549,8 @@ ohos_unittest("audio_policy_manager_stub_unit_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
@@ -2864,6 +2928,134 @@ ohos_unittest("audio_active_device_unit_test") {
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
 
+ohos_unittest("audio_a2dp_offload_manager_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../server/include",
+    "./unittest/audio_a2dp_offload_manager_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  defines = [ "BLUETOOTH_ENABLE" ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bluetooth:btframework",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
+    "googletest:gmock",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/audio_a2dp_offload_manager_unit_test/src/audio_a2dp_offload_manager_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_a2dp_device_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../server/include",
+    "./unittest/audio_a2dp_device_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bluetooth:btframework",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
+    "googletest:gmock",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/audio_a2dp_device_unit_test/src/audio_a2dp_device_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
 ohos_unittest("audio_connected_device_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
@@ -2969,12 +3161,6 @@ ohos_unittest("audio_volume_manager_unit_test") {
 ohos_unittest("audio_client_tracker_callback_proxy_unit_test") {
   module_out_path = module_output_path
 
-  include_dirs = [
-    "./unittest/audio_client_tracker_callback_proxy_unit_test/include",
-    "../../audio_policy/server/include",
-    "../../audio_policy/client/include",
-  ]
-
   use_exceptions = true
 
   cflags = [
@@ -2984,23 +3170,79 @@ ohos_unittest("audio_client_tracker_callback_proxy_unit_test") {
     "-fno-access-control",
   ]
 
+  sources = [
+    "../../../services/audio_policy/client/src/audio_client_tracker_callback_stub.cpp",
+    "../../../services/audio_policy/server/src/audio_client_tracker_callback_proxy.cpp",
+    "./unittest/audio_client_tracker_callback_proxy_unit_test/src/audio_client_tracker_callback_proxy_unit_test.cpp",
+  ]
+
+  include_dirs = [
+    "./unittest/audio_client_tracker_callback_proxy_unit_test/include",
+    "../../audio_policy/client/include",
+    "../../audio_policy/server/include",
+    "../../../services/audio_service/common/include",
+    "../../../services/audio_service/server/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../frameworks/native/audioinnercall/include",
+    "../../../frameworks/native/audiopolicy/include",
+    "../../../frameworks/native/hdiadapter_new/include",
+  ]
+
+  deps = [
+    "../../../frameworks/native/audioeffect:audio_effect",
+    "../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_common",
+    "../../../services/audio_service:audio_process_service",
+    "../../../services/audio_service:audio_service",
+  ]
+
   external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
     "bluetooth:btframework",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "eventhandler:libeventhandler",
     "googletest:gmock",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "init:libbegetutil",
+    "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
-  ]
-
-  sources = [ "./unittest/audio_client_tracker_callback_proxy_unit_test/src/audio_client_tracker_callback_proxy_unit_test.cpp" ]
-
-  deps = [
-    "../../../services/audio_policy:audio_policy_client_static",
-    "../../audio_policy:audio_policy_service_static",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -3158,8 +3400,6 @@ ohos_unittest("audio_device_status_unit_test") {
 ohos_unittest("audio_policy_client_proxy_unit_test") {
   module_out_path = module_output_path
 
-  include_dirs = [ "./unittest/audio_policy_client_proxy_unit_test/include" ]
-
   use_exceptions = true
 
   cflags = [
@@ -3169,25 +3409,76 @@ ohos_unittest("audio_policy_client_proxy_unit_test") {
     "-fno-access-control",
   ]
 
+  sources = [
+    "../../../services/audio_policy/server/src/audio_policy_client_proxy.cpp",
+    "../../../services/audio_policy/server/src/service/device/audio_device_descriptor.cpp",
+    "./unittest/audio_policy_client_proxy_unit_test/src/audio_policy_client_proxy_unit_test.cpp",
+  ]
+
+  include_dirs = [
+    "./unittest/audio_policy_client_proxy_unit_test/include",
+    "../../audio_policy/server/include",
+    "../../../services/audio_service/common/include",
+    "../../../services/audio_service/server/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../frameworks/native/audioinnercall/include",
+    "../../../frameworks/native/audiopolicy/include",
+    "../../../frameworks/native/hdiadapter_new/include",
+  ]
+
+  deps = [
+    "../../../frameworks/native/audioeffect:audio_effect",
+    "../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_common",
+    "../../../services/audio_service:audio_process_service",
+    "../../../services/audio_service:audio_service",
+  ]
+
   external_deps = [
-    "bluetooth:btframework",
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
     "drivers_interface_audio:libaudio_proxy_4.0",
-    "googletest:gmock",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "init:libbegetutil",
-    "kv_store:distributeddata_inner",
+    "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
+    "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
-
-  sources = [ "./unittest/audio_policy_client_proxy_unit_test/src/audio_policy_client_proxy_unit_test.cpp" ]
-
-  deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
 
 ohos_unittest("audio_device_lock_unit_test") {
@@ -3297,4 +3588,231 @@ ohos_unittest("power_state_listener_unit_test") {
   sources = [ "./unittest/power_state_listener_unit_test/src/power_state_listener_unit_test.cpp" ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_usb_manager_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./unittest/audio_usb_manager_unit_test/include",
+    "../../server/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_usb_manager_unit_test/src/audio_usb_manager_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_session_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [ "./unittest/audio_session_unit_test/include" ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources =
+      [ "./unittest/audio_session_unit_test/src/audio_session_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_session_service_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [ "./unittest/audio_session_service_unit_test/include" ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_session_service_unit_test/src/audio_session_service_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+}
+
+ohos_unittest("audio_tone_parser_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./unittest/audio_tone_parser_unit_test/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_tone_parser_unit_test/src/audio_tone_parser_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+
+  defines = [ "FEATURE_DTMF_TONE" ]
+}
+
+ohos_unittest("audio_server_definitions_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./unittest/audio_definition_adapter_info_unit_test/include",
+    "../../audio_policy/common/definitions/include",
+    "../../audio_policy/server/include",
+    "../../audio_policy/server/include/service/common",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "ipc:ipc_single",
+  ]
+
+  public_external_deps = [ "bounds_checking_function:libsec_shared" ]
+
+  sources = [ "./unittest/audio_definition_adapter_info_unit_test/src/audio_definition_adapter_info_unit_test.cpp" ]
+
+  deps = [
+    "../../../frameworks/native/audiodefinitions:audio_definitions",
+    "../../audio_policy:audio_policy_service_static",
+    "../../audio_service:audio_common",
+  ]
+}
+
+ohos_unittest("audio_policy_client_stub_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./unittest/audio_policy_client_stub_unit_test/include",
+    "../../audio_policy/client/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_policy_client_stub_unit_test/src/audio_policy_client_stub_unit_test.cpp" ]
+
+  deps = [ "../../../services/audio_policy:audio_policy_client_static" ]
 }

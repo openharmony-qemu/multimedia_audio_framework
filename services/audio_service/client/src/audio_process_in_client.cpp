@@ -39,6 +39,7 @@
 #include "audio_manager_base.h"
 #include "audio_process_cb_stub.h"
 #include "audio_server_death_recipient.h"
+#include "fast_audio_stream.h"
 #include "i_audio_process.h"
 #include "linear_pos_time_model.h"
 #include "volume_tools.h"
@@ -120,7 +121,7 @@ public:
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     
-    bool Init(const AudioProcessConfig &config);
+    bool Init(const AudioProcessConfig &config, std::weak_ptr<FastAudioStream> weakStream);
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
@@ -170,8 +171,8 @@ private:
     bool ProcessCallbackFuc(uint64_t &curWritePos, int64_t &curTime, int64_t &wakeUpTime, int64_t &clientWriteCost);
     void ProcessCallbackFucIndependent();
     bool RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t &wakeUpTime, int64_t clientReadCost);
-    void InitPlaybackThread();
-    void InitRecordThread();
+    void InitPlaybackThread(std::weak_ptr<FastAudioStream> weakStream);
+    void InitRecordThread(std::weak_ptr<FastAudioStream> weakStream);
     void CopyWithVolume(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void ProcessVolume(const AudioStreamData &targetData) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
@@ -327,7 +328,8 @@ void AudioProcessInClientInner::AudioServerDied(pid_t pid, pid_t uid)
     gAudioServerProxy = nullptr;
 }
 
-std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioProcessConfig &config)
+std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioProcessConfig &config,
+    std::weak_ptr<FastAudioStream> weakStream)
 {
     AUDIO_INFO_LOG("Create with config: render flag %{public}d, capturer flag %{public}d, streamType %{public}d.",
         config.rendererInfo.rendererFlags, config.capturerInfo.capturerFlags, config.streamType);
@@ -362,7 +364,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     CHECK_AND_RETURN_RET_LOG(iProcessProxy != nullptr, nullptr, "Create failed when iface_cast.");
     std::shared_ptr<AudioProcessInClientInner> process =
         std::make_shared<AudioProcessInClientInner>(iProcessProxy, isVoipMmap);
-    if (!process->Init(config)) {
+    if (!process->Init(config, weakStream)) {
         AUDIO_ERR_LOG("Init failed!");
         process = nullptr;
     }
@@ -625,81 +627,83 @@ static size_t GetFormatSize(const AudioStreamInfo &info)
     return result;
 }
 
-void AudioProcessInClientInner::InitPlaybackThread()
+void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream> weakStream)
 {
     logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
-    auto weakRef = weak_from_this();
-    callbackLoop_ = std::thread([weakRef] {
+    auto weakProcess = weak_from_this();
+    callbackLoop_ = std::thread([weakStream, weakProcess] {
         bool keepRunning = true;
         uint64_t curWritePos = 0;
         int64_t curTime = 0;
         int64_t wakeUpTime = ClockTime::GetCurNano();
         int64_t clientWriteCost = 0;
-        std::shared_ptr<AudioProcessInClientInner> strongRef = weakRef.lock();
-        if (strongRef != nullptr) {
-            AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongRef->sessionId_);
-            strongRef->processProxy_->RegisterThreadPriority(gettid(),
-                AudioSystemManager::GetInstance()->GetSelfBundleName(strongRef->processConfig_.appInfo.appUid));
+        std::shared_ptr<AudioProcessInClientInner> strongProcess = weakProcess.lock();
+        std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
+        if (strongProcess != nullptr) {
+            AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
+            strongProcess->processProxy_->RegisterThreadPriority(gettid(),
+                AudioSystemManager::GetInstance()->GetSelfBundleName(strongProcess->processConfig_.appInfo.appUid));
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
         }
-        strongRef = nullptr;
+        strongProcess = nullptr;
         // Callback loop
         while (keepRunning) {
-            strongRef = weakRef.lock();
-            if (strongRef == nullptr) {
-                AUDIO_INFO_LOG("AudioProcessInClientInner destroyed");
-                break;
-            }
+            strongStream = weakStream.lock();
+            strongProcess = weakProcess.lock();
+            // Check if FastAudioStream or AudioProcessInClientInner is already destroyed to avoid use after free.
+            CHECK_AND_BREAK_LOG(strongStream != nullptr, "FastAudioStream destroyed, exit AudioPlayCb");
+            CHECK_AND_BREAK_LOG(strongProcess != nullptr, "AudioProcessInClientInner destroyed, exit AudioPlayCb");
             // Main operation in callback loop
-            keepRunning = strongRef->ProcessCallbackFuc(curWritePos, curTime, wakeUpTime, clientWriteCost);
+            keepRunning = strongProcess->ProcessCallbackFuc(curWritePos, curTime, wakeUpTime, clientWriteCost);
         }
-        if (strongRef != nullptr) {
-            AUDIO_INFO_LOG("Callback loop of session %{public}u end", strongRef->sessionId_);
+        if (strongProcess != nullptr) {
+            AUDIO_INFO_LOG("Callback loop of session %{public}u end", strongProcess->sessionId_);
         }
     });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
 }
 
-void AudioProcessInClientInner::InitRecordThread()
+void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> weakStream)
 {
     logUtilsTag_ = "ProcessRec::" + std::to_string(sessionId_);
-    auto weakRef = weak_from_this();
-    callbackLoop_ = std::thread([weakRef] {
+    auto weakProcess = weak_from_this();
+    callbackLoop_ = std::thread([weakStream, weakProcess] {
         bool keepRunning = true;
         uint64_t curReadPos = 0;
         int64_t wakeUpTime = ClockTime::GetCurNano();
         int64_t clientReadCost = 0;
-        std::shared_ptr<AudioProcessInClientInner> strongRef = weakRef.lock();
-        if (strongRef != nullptr) {
-            AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongRef->sessionId_);
-            strongRef->processProxy_->RegisterThreadPriority(gettid(),
-                AudioSystemManager::GetInstance()->GetSelfBundleName(strongRef->processConfig_.appInfo.appUid));
-            strongRef->WatchingRecordProcessCallbackFuc(); // add watchdog
+        std::shared_ptr<AudioProcessInClientInner> strongProcess = weakProcess.lock();
+        std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
+        if (strongProcess != nullptr) {
+            AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
+            strongProcess->processProxy_->RegisterThreadPriority(gettid(),
+                AudioSystemManager::GetInstance()->GetSelfBundleName(strongProcess->processConfig_.appInfo.appUid));
+            strongProcess->WatchingRecordProcessCallbackFuc(); // add watchdog
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
         }
-        strongRef = nullptr;
+        strongProcess = nullptr;
         // Callback loop
         while (keepRunning) {
-            strongRef = weakRef.lock();
-            if (strongRef == nullptr) {
-                AUDIO_INFO_LOG("AudioProcessInClientInner destroyed");
-                break;
-            }
+            strongStream = weakStream.lock();
+            strongProcess = weakProcess.lock();
+            // Check if FastAudioStream or AudioProcessInClientInner is already destroyed to avoid use after free.
+            CHECK_AND_BREAK_LOG(strongStream != nullptr, "FastAudioStream destroyed, exit AudioPlayCb");
+            CHECK_AND_BREAK_LOG(strongProcess != nullptr, "AudioProcessInClientInner destroyed, exit AudioPlayCb");
             // Main operation in callback loop
-            keepRunning = strongRef->RecordProcessCallbackFuc(curReadPos, wakeUpTime, clientReadCost);
+            keepRunning = strongProcess->RecordProcessCallbackFuc(curReadPos, wakeUpTime, clientReadCost);
         }
-        if (strongRef != nullptr) {
-            strongRef->ProcessRemoveWatchdog("WatchingRecordProcessCallbackFuc",
-                strongRef->sessionId_); // Remove watchdog
-            AUDIO_INFO_LOG("Callback loop of session %{public}u end", strongRef->sessionId_);
+        if (strongProcess != nullptr) {
+            strongProcess->ProcessRemoveWatchdog("WatchingRecordProcessCallbackFuc",
+                strongProcess->sessionId_); // Remove watchdog
+            AUDIO_INFO_LOG("Callback loop of session %{public}u end", strongProcess->sessionId_);
         }
     });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
 }
 
-bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
+bool AudioProcessInClientInner::Init(const AudioProcessConfig &config, std::weak_ptr<FastAudioStream> weakStream)
 {
     AUDIO_INFO_LOG("Call Init.");
     processConfig_ = config;
@@ -725,13 +729,13 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
     AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
     bool isIndependent = bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
     if (config.audioMode == AUDIO_MODE_RECORD) {
-        InitRecordThread();
+        InitRecordThread(weakStream);
     } else if (isIndependent) {
         logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
         callbackLoop_ = std::thread([this] { this->ProcessCallbackFucIndependent(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     } else {
-        InitPlaybackThread();
+        InitPlaybackThread(weakStream);
     }
 
     int waitThreadStartTime = 5; // wait for thread start.
@@ -1173,6 +1177,7 @@ int32_t AudioProcessInClientInner::Stop()
 
     ClockTime::RelativeSleep(MAX_STOP_FADING_DURATION_NANO);
 
+    processProxy_->SetUnderrunCount(underflowCount_);
     if (processProxy_->Stop() != SUCCESS) {
         streamStatus_->store(oldStatus);
         AUDIO_ERR_LOG("Stop failed in server, reset status to %{public}s", GetStatusInfo(oldStatus).c_str());

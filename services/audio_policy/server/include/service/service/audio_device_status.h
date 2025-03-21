@@ -44,7 +44,7 @@
 #include "audio_a2dp_device.h"
 #include "audio_ec_manager.h"
 #include "audio_a2dp_offload_flag.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_router_map.h"
 #include "audio_a2dp_offload_manager.h"
 #include "audio_spatialization_service.h"
@@ -96,7 +96,7 @@ private:
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioEcManager_(AudioEcManager::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()) {}
     ~AudioDeviceStatus() {}
 
@@ -171,7 +171,7 @@ private:
     AudioA2dpDevice& audioA2dpDevice_;
     AudioEcManager& audioEcManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioRouteMap& audioRouteMap_;
 
     bool remoteCapturerSwitch_ = false;
