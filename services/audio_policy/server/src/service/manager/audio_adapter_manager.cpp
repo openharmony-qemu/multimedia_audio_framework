@@ -2422,7 +2422,7 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
         appConfigVolume_.maxVolume = APP_MAX_VOLUME_LEVEL;
         appConfigVolume_.minVolume = APP_MIN_VOLUME_LEVEL;
         isAppConfigVolumeInit = true;
-        AUDIO_DEBUG_LOG("isAppConfigVolumeInit AppConfigVolume default = %{public}d, max = %{public}d, min = %{public}d",
+        AUDIO_DEBUG_LOG("isAppConfigVolumeInit default = %{public}d, max = %{public}d, min = %{public}d",
             appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
         return;
     }
