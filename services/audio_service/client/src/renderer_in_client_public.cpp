@@ -892,7 +892,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     static std::string selfBundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
     if (selfBundleName == "yylx.danmaku.bili" && flushAfterStop_) {
         ResetFramePosition();
-        flushAfterStop_= false;
+        flushAfterStop_ = false;
     }
 
     std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
@@ -1117,8 +1117,8 @@ bool RendererInClientInner::FlushAudioStream()
     ResetFramePosition();
 
     static std::string selfBundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
-    if(selfBundleName == "yylx.danmaku.bili" && state_ == STOPPED){
-        flushAfterStop_= true;
+    if (selfBundleName == "yylx.danmaku.bili" && state_ == STOPPED) {
+        flushAfterStop_ = true;
     }
     
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
