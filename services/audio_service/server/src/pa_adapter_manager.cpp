@@ -436,12 +436,6 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         ReleasePaStream(paStream);
         return nullptr;
     }
-    if (processConfig.audioMode == AUDIO_MODE_RECORD) {
-        ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("capturer set audio enhance mode failed.");
-        }
-    }
     return paStream;
 }
 
@@ -724,29 +718,6 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
             pa_strerror(error), result);
         return ERR_INVALID_OPERATION;
     }
-    return SUCCESS;
-}
-
-int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode)
-{
-    PaLockGuard lock(mainLoop_);
-    pa_proplist *propList = pa_proplist_new();
-    if (propList == nullptr) {
-        AUDIO_ERR_LOG("pa_proplist_new failed.");
-        return ERROR;
-    }
-    std::string upDevice = "DEVICE_TYPE_MIC";
-    std::string downDevice = "DEVICE_TYPE_SPEAKER";
-    std::string upAndDownDevice = upDevice + "_&_" + downDevice;
-    pa_proplist_sets(propList, "device.upAndDown", upAndDownDevice.c_str());
-    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
-        nullptr, nullptr);
-    if (updatePropOperation == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_proplist_update failed.");
-        return ERROR;
-    }
-    pa_proplist_free(propList);
-    pa_operation_unref(updatePropOperation);
     return SUCCESS;
 }
 
