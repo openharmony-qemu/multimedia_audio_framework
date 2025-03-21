@@ -889,6 +889,12 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
 
+    static std::string selfBundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
+    if (selfBundleName == "yylx.danmaku.bili" && flushAfterStop_) {
+        ResetFramePosition();
+        flushAfterStop_= false;
+    }
+
     std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
     if (!isDataLinkConnected_) {
         AUDIO_INFO_LOG("data-connection blocking starts.");
@@ -1109,6 +1115,12 @@ bool RendererInClientInner::FlushAudioStream()
     notifiedOperation_ = MAX_OPERATION_CODE;
     waitLock.unlock();
     ResetFramePosition();
+
+    static std::string selfBundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
+    if(selfBundleName == "yylx.danmaku.bili" && state_ == STOPPED){
+        flushAfterStop_= true;
+    }
+    
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
 }

@@ -336,6 +336,8 @@ private:
     float muteVolume_ = 1.0;
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
+    
+    bool flushAfterStop_= false;
 
     uint64_t clientWrittenBytes_ = 0;
     // ipc stream related
