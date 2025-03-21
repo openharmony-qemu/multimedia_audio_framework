@@ -329,7 +329,6 @@ void AudioDeviceLock::UpdateInputDeviceWhenStopping(int32_t uid)
 {
     std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
     for (const auto &sessionID : sessionIDSet) {
-        audioDeviceManager_.UpdateInputDeviceWhenStopping(sessionID);
         audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
     }
     audioDeviceCommon_.FetchDevice(false);

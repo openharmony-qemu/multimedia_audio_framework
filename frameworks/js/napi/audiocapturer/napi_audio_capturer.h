@@ -67,7 +67,6 @@ private:
         AudioCapturerInfo capturerInfo;
         AudioStreamInfo streamInfo;
         Timestamp timeStamp;
-        int32_t deviceType;
         uint32_t overflowCount;
     };
 

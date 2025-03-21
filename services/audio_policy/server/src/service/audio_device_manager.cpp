@@ -1443,16 +1443,9 @@ int32_t AudioDeviceManager::SetInputDevice(const DeviceType deviceType, const ui
 {
     std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
     selectedInputDeviceInfo_[sessionID] = std::make_pair(deviceType, sourceType);
-    AUDIO_INFO_LOG("stream %{public}u with usage %{public}d selects input device %{public}d",
-        sessionID, sourceType, deviceType);
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
-    return SUCCESS;
-}
-
-int32_t AudioDeviceManager::UpdateInputDeviceWhenStopping(const uint32_t sessionID)
-{
-    AUDIO_INFO_LOG("AudioDeviceManager::UpdateInputDeviceWhenStopping");
-    return SUCCESS;
+    AUDIO_INFO_LOG("stream %{public}u run %{public}d with usage %{public}d selects input device %{public}d",
+        sessionID, isRunning, sourceType, deviceType);
+    return NEED_TO_FETCH;
 }
 
 int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)

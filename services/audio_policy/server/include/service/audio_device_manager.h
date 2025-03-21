@@ -93,7 +93,6 @@ public:
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const SourceType sourceType, bool isRunning);
-    int32_t UpdateInputDeviceWhenStopping(const uint32_t sessionID);
     int32_t RemoveSelectedInputDevice(const uint32_t sessionID);
     shared_ptr<AudioDeviceDescriptor> GetSelectedCaptureDevice(const uint32_t sessionID);
     void Dump(std::string &dumpString);
