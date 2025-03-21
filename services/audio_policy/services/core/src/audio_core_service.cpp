@@ -780,7 +780,7 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
         return ret; // only update tracker in new and prepared
     }
 
-    audioDeviceCommon_.UpdateTracker(mode, streamChangeInfo, rendererState);
+    UpdateTracker(mode, streamChangeInfo, rendererState);
 
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(audioActiveDevice_.GetCurrentOutputDeviceType());
@@ -992,9 +992,12 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
             audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
         AUDIO_INFO_LOG("DeviceType %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
 
+        if (HandleDeviceChangeForFetchOutputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE &&
+            !Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage)) {
+            continue;
+        }
         // handle a2dp
-        std::string encryptMacAddr =
-            GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
+        std::string encryptMacAddr = GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
         int32_t bluetoothFetchResult =
             BluetoothDeviceFetchOutputHandle(streamDesc->newDeviceDescs_.front(), reason, encryptMacAddr);
         if (bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_CONTINUE ||
@@ -1036,6 +1039,10 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
             audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc));
         streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
+
+        if (HandleDeviceChangeForFetchInputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE) {
+            continue;
+        }
         AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
         SetRecordStreamFlag(streamDesc);
         if (needUpdateActiveDevice) {
