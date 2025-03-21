@@ -2417,6 +2417,14 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
     }
     if (isAppConfigVolumeInit) {
         return;
+    } else {
+        appConfigVolume_.defaultVolume = APP_DEFAULT_VOLUME_LEVEL;
+        appConfigVolume_.maxVolume = APP_MAX_VOLUME_LEVEL;
+        appConfigVolume_.minVolume = APP_MIN_VOLUME_LEVEL;
+        isAppConfigVolumeInit = true;
+        AUDIO_DEBUG_LOG("isAppConfigVolumeInit default = %{public}d, max = %{public}d, min = %{public}d",
+            appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
+        return;
     }
     if (minVolumeIndexMap_.find(STREAM_MUSIC) != minVolumeIndexMap_.end() &&
         maxVolumeIndexMap_.find(STREAM_MUSIC) != maxVolumeIndexMap_.end()) {
