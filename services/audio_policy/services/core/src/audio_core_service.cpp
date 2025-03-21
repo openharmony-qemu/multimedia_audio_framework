@@ -1029,7 +1029,8 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_.clear();
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
-            audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc), streamDesc->sessionId_);
+            audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
+                streamDesc->sessionId_);
         streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
         AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
         SetRecordStreamFlag(streamDesc);
