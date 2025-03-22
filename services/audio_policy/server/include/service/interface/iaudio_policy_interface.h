@@ -102,7 +102,7 @@ public:
 
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 
-    virtual void SetVolumeForSwitchDevice(InternalDeviceType deviceType) = 0;
+    virtual void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor) = 0;
 
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
@@ -136,6 +136,8 @@ public:
 
     virtual void ResetRemoteCastDeviceVolume() = 0;
 
+    virtual void SetMaxVolumeForDeviceChange() = 0;
+
     virtual int32_t DoRestoreData() = 0;
 
     virtual SafeStatus GetCurrentDeviceSafeStatus(DeviceType deviceType) = 0;
@@ -156,9 +158,11 @@ public:
 
     virtual void SafeVolumeDump(std::string &dumpString) = 0;
 
-    virtual void SetActiveDevice(DeviceType deviceType) = 0;
+    virtual void SetActiveDeviceDescriptor(AudioDeviceDescriptor deviceDescriptor) = 0;
 
     virtual DeviceType GetActiveDevice() = 0;
+
+    virtual AudioDeviceDescriptor GetActiveDeviceDescriptor() = 0;
 
     virtual void NotifyAccountsChanged(const int &id) = 0;
 

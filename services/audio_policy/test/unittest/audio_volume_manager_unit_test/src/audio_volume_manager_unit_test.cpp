@@ -353,9 +353,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioDeviceDescriptor audioDeviceDescriptor;
 
     audioVolumeManager.UpdateSafeVolumeByS4();
-    audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(DEVICE_TYPE_NONE);
+    audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor);
     EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, true);
 }
 } // namespace AudioStandard

@@ -438,9 +438,9 @@ void AudioA2dpOffloadManager::GetA2dpOffloadCodecAndSendToDsp()
 
 int32_t AudioA2dpOffloadManager::HandleActiveDevice(DeviceType deviceType)
 {
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (GetVolumeGroupType(curOutputDeviceType) != GetVolumeGroupType(deviceType)) {
-        audioVolumeManager_.SetVolumeForSwitchDevice(deviceType);
+    AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    if (GetVolumeGroupType(curOutputDevice.deviceType_) != GetVolumeGroupType(deviceType)) {
+        audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDevice);
     }
     if (audioConfigManager_.GetUpdateRouteSupport()) {
         audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);

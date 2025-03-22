@@ -125,6 +125,8 @@ public:
 
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
+    bool IsDistributedSpeaker() const;
+
     DeviceType MapInternalToExternalDeviceType() const;
 
     void Dump(std::string &dumpString);
