@@ -1121,8 +1121,7 @@ bool RendererInClientInner::FlushAudioStream()
     waitLock.unlock();
     ResetFramePosition();
 
-    static std::string selfBundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
-    if (selfBundleName == "yylx.danmaku.bili" && state_ == STOPPED) {
+    if (state_ == STOPPED) {
         flushAfterStop_ = true;
     }
     
