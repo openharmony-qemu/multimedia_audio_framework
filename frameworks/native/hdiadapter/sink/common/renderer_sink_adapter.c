@@ -55,7 +55,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
 
     struct RendererSinkAdapter *adapter = (struct RendererSinkAdapter *)calloc(1, sizeof(*adapter));
     CHECK_AND_RETURN_RET_LOG(adapter != NULL, ERROR, "alloc sink adapter failed");
-
+    AUDIO_INFO_LOG("adapter: %{public}p", adapter);
     if (FillinSinkWapper(device, deviceNetworkId, adapter) != SUCCESS) {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
         free(adapter);
@@ -103,7 +103,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
 int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter)
 {
     CHECK_AND_RETURN_RET_LOG(sinkAdapter != NULL, ERROR, "Invalid parameter");
-
+    AUDIO_INFO_LOG("%{public}p", sinkAdapter);
     free(sinkAdapter);
     return SUCCESS;
 }
