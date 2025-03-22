@@ -26,6 +26,7 @@ declare_args() {
   audio_framework_feature_input = true
   audio_framework_feature_power_manager = true
   audio_framework_feature_device_manager = true
+  audio_framework_enable_unittest_debug = false
   audio_framework_feature_hiview_enable = true
   audio_framework_feature_offline_effect = true
   audio_telephony_core_service_enable = true

@@ -17,6 +17,9 @@
 #define ST_AUDIO_INTERRUPT_SERVICE_H
 
 #include <mutex>
+#include <list>
+#include <functional>
+#include <unordered_map>
 
 #include "iremote_object.h"
 
@@ -25,12 +28,15 @@
 #include "audio_policy_server_handler.h"
 #include "audio_policy_server.h"
 #include "audio_session_service.h"
-#include "audio_interrupt_zone.h"
 #include "client_type_manager.h"
 #include "audio_interrupt_dfx_collector.h"
+#include "audio_zone_info.h"
+#include "audio_interrupt_zone.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
 class AudioPolicyServerHandler;
 
 class SessionTimeOutCallback;
@@ -80,12 +86,12 @@ public:
     int32_t CreateAudioInterruptZone(const int32_t zoneId, AudioZoneFocusStrategy focusStrategy =
         AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
-    int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
-    int32_t InjectInterruptToAudiotZone(const int32_t zoneId, const AudioFocusList &interrupts);
-    int32_t InjectInterruptToAudiotZone(const int32_t zoneId, const std::string &deviceTag,
+    void MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
+    int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
+    int32_t InjectInterruptToAudioZone(const int32_t zoneId, int32_t deviceId,
         const AudioFocusList &interrupts);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
-    int32_t GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
+    int32_t GetAudioFocusInfoList(const int32_t zoneId, const int32_t deviceId,
         AudioFocusList &focusInfoList);
 
     int32_t SetAudioFocusInfoCallback(const int32_t zoneId, const sptr<IRemoteObject> &object);
@@ -110,6 +116,8 @@ private:
     static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
     std::mutex audioServerProxyMutex_;
     void HandleAppStreamType(AudioInterrupt &audioInterrupt);
+
+    using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
 
     // Inner class for death handler
     class AudioInterruptDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -180,6 +188,7 @@ private:
         &iterActive, AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioFocusInfoList(const int32_t zoneId);
     void ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout = false);
     bool EvaluateWhetherContinue(const AudioInterrupt &incoming, const AudioInterrupt
         &inprocessing, AudioFocusEntry &focusEntry, bool bConcurrency);
@@ -198,7 +207,7 @@ private:
     void RemoveClient(const int32_t zoneId, uint32_t streamId);
     void RemoveFocusInfo(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList,
-    std::shared_ptr<AudioInterruptZone> &zoneInfo,
+    std::shared_ptr<AudioInterruptZone> &zoneDescriptor,
     std::list<int32_t> &removeFocusInfoPidList);
 
     // zone debug interfaces

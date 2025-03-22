@@ -44,6 +44,8 @@ std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> AudioPolicyManager::capturerCB_;
 std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
+std::vector<AudioServerDiedCallBack> AudioPolicyManager::serverDiedCbks_;
+std::mutex AudioPolicyManager::serverDiedCbkMutex_;
 std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> AudioPolicyManager::clientTrackerStubMap_;
 
 static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
@@ -246,6 +248,22 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
             }
         }
     }
+
+    {
+        std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
+        for (auto func : serverDiedCbks_) {
+            if (func != nullptr) {
+                func();
+            }
+        }
+    }
+}
+
+void AudioPolicyManager::RegisterServerDiedCallBack(AudioServerDiedCallBack func)
+{
+    CHECK_AND_RETURN_LOG(func != nullptr, "func is null");
+    std::lock_guard<std::mutex> lock(serverDiedCbkMutex_);
+    serverDiedCbks_.emplace_back(func);
 }
 
 int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
