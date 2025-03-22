@@ -16,7 +16,7 @@
 #ifndef SINK_ADAPTER_MAANGER_H
 #define SINK_ADAPTER_MAANGER_H
 
-#include "i_audio_renderer_sink_intf.h"
+struct RendererSinkAdapter;
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +24,7 @@ extern "C" {
 
 struct RendererSinkAdapter* CreateSinkAdapterAdapter();
 
-int32_t DestorySinkAdapter(struct RendererSinkAdapter* adapter);
+void DestorySinkAdapter(struct RendererSinkAdapter* adapter);
 
 #ifdef __cplusplus
 }
