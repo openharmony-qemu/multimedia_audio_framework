@@ -235,6 +235,19 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_007, TestSize.Level1)
     isConnected = false;
     audioDeviceStatus.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
     EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+
+    devType = DEVICE_TYPE_USB_HEADSET;
+    role = INPUT_DEVICE;
+    isConnected = true;
+    audioDeviceStatus.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+
+    devType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
+    bool isActualConnected = true;
+    audioDeviceStatus.OnDeviceStatusUpdated(deviceDesc, devType, macAddress, deviceName, isActualConnected,
+        streamInfo, isConnected);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 }
 
 /**
@@ -320,6 +333,73 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_010, TestSize.Level1)
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_011
+* @tc.desc  : Test HandleDistributedDeviceUpdate interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_011, TestSize.Level1)
+{
+    DeviceType devType = DEVICE_TYPE_USB_HEADSET;
+    DeviceBlockStatus status = DEVICE_BLOCKED;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.OnMicrophoneBlockedUpdate(devType, status);
+
+    std::vector<shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDescriptor->deviceType_ = devType;
+    audioDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    descForCb.push_back(audioDescriptor);
+    audioDeviceStatus.TriggerMicrophoneBlockedCallback(descForCb, status);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_012
+* @tc.desc  : Test HandleDistributedDeviceUpdate interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_012, TestSize.Level1)
+{
+    DeviceType devType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    std::string macAddress = "00:11:22:33:44:55";
+    std::string deviceName = "testDevice";
+    AudioStreamInfo streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.ReloadA2dpOffloadOnDeviceChanged(devType, macAddress, deviceName, streamInfo);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_013
+* @tc.desc  : Test HandleDistributedDeviceUpdate interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_013, TestSize.Level1)
+{
+    DStatusInfo statusInfo;
+    statusInfo.hdiPin = AUDIO_PIN_IN_DAUDIO_DEFAULT;
+    statusInfo.macAddress = "00:11:22:33:44:55";
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.OnDeviceStatusUpdated(statusInfo, true);
+    audioDeviceStatus.OnDeviceStatusUpdated(statusInfo, false);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_014
+* @tc.desc  : Test HandleDistributedDeviceUpdate interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_014, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.CheckAndActiveHfpDevice(desc);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
