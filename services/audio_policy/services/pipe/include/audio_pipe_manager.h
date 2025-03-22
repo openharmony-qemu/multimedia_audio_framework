@@ -71,9 +71,11 @@ public:
     void AddModemCommunicationId(uint32_t sessionId, int32_t clientUid);
     void RemoveModemCommunicationId(uint32_t sessionId);
     std::unordered_map<uint32_t, int32_t> GetModemCommunicationMap();
+    std::shared_ptr<AudioPipeInfo> GetNormalSourceInfo(bool isEcFeatureEnable);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
+    std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
 
     std::unordered_map<uint32_t, int32_t> modemCommunicationIdMap_{}; // key -> sessionId, value -> clientUid
     std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_{};

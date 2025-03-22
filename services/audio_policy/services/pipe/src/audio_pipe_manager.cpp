@@ -370,5 +370,30 @@ std::unordered_map<uint32_t, int32_t> AudioPipeManager::GetModemCommunicationMap
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     return modemCommunicationIdMap_;
 }
+
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetNormalSourceInfo(bool isEcFeatureEnable)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = GetPipeByModuleAndFlag(PRIMARY_MIC, AUDIO_INPUT_FLAG_NORMAL);
+    CHECK_AND_RETURN_RET(pipeInfo == nullptr, pipeInfo);
+    pipeInfo = GetPipeByModuleAndFlag(BLUETOOTH_MIC, AUDIO_INPUT_FLAG_NORMAL);
+    CHECK_AND_RETURN_RET(pipeInfo == nullptr, pipeInfo);
+    if (isEcFeatureEnable) {
+        pipeInfo = GetPipeByModuleAndFlag(BLUETOOTH_MIC, AUDIO_INPUT_FLAG_NORMAL);
+    }
+    return pipeInfo;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeByModuleAndFlag(const std::string moduleName,
+    const uint32_t routeFlag)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it : curPipeList_) {
+        if (it->moduleInfo_.name == moduleName && it->routeFlag_ == routeFlag) {
+            return it;
+        }
+    }
+    AUDIO_ERR_LOG("Can not find pipe %{public}s", moduleName.c_str());
+    return nullptr;
+}
 } // namespace AudioStandard
 } // namespace OHOS

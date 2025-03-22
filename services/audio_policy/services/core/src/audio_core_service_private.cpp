@@ -38,6 +38,12 @@ static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_REMOTE_CAST
+};
 }
 
 static const std::vector<std::string> SourceNames = {
@@ -1219,6 +1225,7 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     }
     CHECK_AND_RETURN_RET_LOG(id != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED, "OpenAudioPort failed %{public}d", id);
     audioIOHandleMap_.AddIOHandleInfo(pipeInfo->moduleInfo_.name, id);
+    HandleCommonSourceOpened(pipeInfo);
     AUDIO_INFO_LOG("Get HDI id: %{public}u, paIndex %{public}u", id, paIndex);
     return id;
 }
@@ -1615,6 +1622,16 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
             AUDIO_INFO_LOG("disable dual hal tone when ringer/alarm renderer stop/release.");
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
+    }
+}
+
+void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    SourceType sourceType = pipeInfo->streamDescriptors_.front()->capturerInfo_.sourceType;
+    if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT && pipeInfo->streamDescriptors_.size() > 0 &&
+        specialSourceTypeSet_.count(sourceType) == 0) {
+        AUDIO_INFO_LOG("Source type: %{public}d", sourceType);
+        audioEcManager_.SetOpenedNormalSource(sourceType);
     }
 }
 }
