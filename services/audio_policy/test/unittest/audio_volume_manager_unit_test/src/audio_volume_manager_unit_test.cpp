@@ -359,5 +359,119 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
     audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor);
     EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, true);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_016
+* @tc.desc  : Test SetAbsVolumeSceneAsync interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_016, TestSize.Level1)
+{
+    std::string macAddress = "11:22:33:44:55:66";
+    bool support = true;
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_017
+* @tc.desc  : Test CheckMixActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_017, TestSize.Level1)
+{
+    int32_t safeVolume = 0;
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.activeSafeTimeBt_ = 0;
+    audioVolumeManager.activeSafeTime_ = 0;
+    audioVolumeManager.CheckBlueToothActiveMusicTime(safeVolume);
+
+    audioVolumeManager.activeSafeTimeBt_ = 100000;
+    audioVolumeManager.activeSafeTime_ = 100000;
+    audioVolumeManager.CheckBlueToothActiveMusicTime(safeVolume);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_018
+* @tc.desc  : Test CheckMixActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_018, TestSize.Level1)
+{
+    int32_t safeVolume = 0;
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.activeSafeTimeBt_ = 0;
+    audioVolumeManager.activeSafeTime_ = 0;
+    audioVolumeManager.CheckWiredActiveMusicTime(safeVolume);
+    EXPECT_EQ(bRet, false);
+
+    audioVolumeManager.activeSafeTimeBt_ = 100000;
+    audioVolumeManager.activeSafeTime_ = 100000;
+    audioVolumeManager.CheckWiredActiveMusicTime(safeVolume);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_019
+* @tc.desc  : Test CheckMixActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_019, TestSize.Level1)
+{
+    AudioVolumeType streamType = AudioStreamType::STREAM_DEFAULT;
+    bool mute = true;
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    bool bRet;
+
+    bRet = audioVolumeManager.SetStreamMute(streamType, mute);
+    EXPECT_FALSE(bRet);
+
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    bRet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType);
+    EXPECT_FALSE(bRet);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_020
+* @tc.desc  : Test GetSharedVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_020, TestSize.Level1)
+{
+    AudioVolumeType streamType = AudioStreamType::STREAM_ALL;
+    int32_t bRet;
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    bRet = audioVolumeManager.GetMaxVolumeLevel(streamType);
+    EXPECT_EQ(bRet, 15);
+
+    streamType = AudioStreamType::STREAM_MUSIC;
+    bRet = audioVolumeManager.GetMaxVolumeLevel(streamType);
+    EXPECT_EQ(bRet, 15);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_021
+* @tc.desc  : Test GetSharedVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_021, TestSize.Level1)
+{
+    AudioVolumeType streamType = AudioStreamType::STREAM_ALL;
+    int32_t bRet;
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    bRet = audioVolumeManager.GetMinVolumeLevel(streamType);
+    EXPECT_EQ(bRet, 0);
+
+    streamType = AudioStreamType::STREAM_MUSIC;
+    bRet = audioVolumeManager.GetMinVolumeLevel(streamType);
+    EXPECT_EQ(bRet, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
