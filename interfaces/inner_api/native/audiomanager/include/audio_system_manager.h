@@ -1404,8 +1404,7 @@ public:
 
     int32_t SetVirtualCall(const bool isVirtual);
 
-    int32_t OnVoiceWakeupState(bool state);
-    
+    int32_t OnVoiceWakeupState(bool state);    
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:
