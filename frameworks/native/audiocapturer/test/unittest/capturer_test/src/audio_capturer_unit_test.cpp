@@ -2294,5 +2294,20 @@ HWTEST(AudioCapturerUnitTest, RestoreTheadLoop_001, TestSize.Level1)
     capturerPolicyServiceDiedCallback->RestoreTheadLoop();
     EXPECT_EQ(capturerPolicyServiceDiedCallback != nullptr, true);
 }
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

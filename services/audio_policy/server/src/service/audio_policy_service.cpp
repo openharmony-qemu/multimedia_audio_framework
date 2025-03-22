@@ -43,6 +43,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_policy_global_parser.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1986,6 +1987,17 @@ int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, 
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
         audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+        return SUCCESS;
+    }
+    return ret;
+}
+
+int32_t AudioPolicyService::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    int32_t ret = audioDeviceManager_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    if (ret == NEED_TO_FETCH) {
+        AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
         return SUCCESS;
     }
     return ret;

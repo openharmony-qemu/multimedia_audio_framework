@@ -1616,6 +1616,16 @@ int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool a
     return eventEntry_->SetDeviceActive(deviceType, active, pid);
 }
 
+int32_t AudioPolicyServer::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("SetInputDevice: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioPolicyService_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+}
+
 bool AudioPolicyServer::IsDeviceActive(InternalDeviceType deviceType)
 {
     return audioPolicyService_.IsDeviceActive(deviceType);

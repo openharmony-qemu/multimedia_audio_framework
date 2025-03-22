@@ -1859,6 +1859,14 @@ bool AudioPolicyManager::IsAudioSessionActivated()
     return gsp->IsAudioSessionActivated();
 }
 
+int32_t AudioPolicyManager::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+}
+
 int32_t AudioPolicyManager::SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

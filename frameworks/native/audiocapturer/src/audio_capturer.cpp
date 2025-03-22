@@ -404,6 +404,20 @@ int32_t AudioCapturerPrivate::InitInputDeviceChangeCallback()
     return SUCCESS;
 }
 
+int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("AudioCapturerPrivate::SetInputDevice %{public}d", deviceType);
+    if (audioStream_ == NULL) {
+        return SUCCESS;
+    }
+    uint32_t currentSessionID = 0;
+    audioStream_->GetAudioSessionID(currentSessionID);
+    int32_t ret = AudioPolicyManager::GetInstance().SetInputDevice(deviceType, currentSessionID,
+        capturerInfo_.sourceType, GetStatus() == CAPTURER_RUNNING);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select input device failed");
+    return SUCCESS;
+}
+
 int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStreamParams)
 {
     Trace trace("AudioCapturer::InitAudioStream");

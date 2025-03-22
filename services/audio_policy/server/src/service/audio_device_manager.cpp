@@ -1441,6 +1441,40 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallRenderDevic
     return devDesc;
 }
 
+int32_t AudioDeviceManager::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    selectedInputDeviceInfo_[sessionID] = std::make_pair(deviceType, sourceType);
+    AUDIO_INFO_LOG("stream %{public}u run %{public}d with usage %{public}d selects input device %{public}d",
+        sessionID, isRunning, sourceType, deviceType);
+    return NEED_TO_FETCH;
+}
+
+int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("AudioDeviceManager::RemoveSelectedInputDevice %{public}d", sessionID);
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    selectedInputDeviceInfo_.erase(sessionID);
+    return SUCCESS;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(const uint32_t sessionID)
+{
+    shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+    if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
+        AUDIO_WARNING_LOG("no need to update input device since current stream %{public}d has not set",
+            sessionID);
+        return devDesc;
+    }
+    for (const auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == selectedInputDeviceInfo_[sessionID].first) {
+            return make_shared<AudioDeviceDescriptor>(*desc);
+        }
+    }
+    return devDesc;
+}
+
 void AudioDeviceManager::Dump(std::string &dumpString)
 {
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);

@@ -176,7 +176,8 @@ int32_t AudioCoreService::CreateCapturerClient(
     // Select device
     int32_t ret = SUCCESS;
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
-        audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc));
+        audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
+            sessionId);
     streamDesc->newDeviceDescs_.clear();
     streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
     AUDIO_INFO_LOG("New stream device type %{public}d", inputDeviceDesc->deviceType_);
@@ -1037,7 +1038,8 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_.clear();
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
-            audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc));
+            audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
+                streamDesc->sessionId_);
         streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
 
         if (HandleDeviceChangeForFetchInputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE) {
