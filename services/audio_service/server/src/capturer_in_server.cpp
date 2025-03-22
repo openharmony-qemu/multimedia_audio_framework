@@ -223,6 +223,7 @@ void CapturerInServer::HandleOperationFlushed()
 
 BufferDesc CapturerInServer::DequeueBuffer(size_t length)
 {
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "DequeueBuffer failed, stream_ is null");
     return stream_->DequeueBuffer(length);
 }
 
@@ -588,6 +589,8 @@ int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
         AUDIO_WARNING_LOG("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetAudioTime failed, stream_ is null");
+    return stream_->DequeueBuffer(length);
     stream_->GetStreamFramesRead(framePos);
     stream_->GetCurrentTimeStamp(timestamp);
     if (resetTime_) {
@@ -599,6 +602,8 @@ int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 
 int32_t CapturerInServer::GetLatency(uint64_t &latency)
 {
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetLatency failed, stream_ is null");
+    return stream_->DequeueBuffer(length);
     return stream_->GetLatency(latency);
 }
 
