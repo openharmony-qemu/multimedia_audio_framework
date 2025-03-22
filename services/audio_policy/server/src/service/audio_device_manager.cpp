@@ -22,7 +22,6 @@
 #include "audio_errors.h"
 #include "audio_device_parser.h"
 #include "audio_policy_utils.h"
-#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1450,7 +1449,7 @@ int32_t AudioDeviceManager::SetInputDevice(const DeviceType deviceType, const ui
 
 int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)
 {
-    AUDIO_INFO_LOG("AudioDeviceManager::RemoveSelectedInputDevice");
+    AUDIO_INFO_LOG("AudioDeviceManager::RemoveSelectedInputDevice %{public}d", sessionID);
     std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
     selectedInputDeviceInfo_.erase(sessionID);
     return SUCCESS;
@@ -1460,7 +1459,8 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(c
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
     if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
-        AUDIO_WARNING_LOG("no need to update input device since current stream has not set");
+        AUDIO_WARNING_LOG("no need to update input device since current stream %{public}d has not set",
+            sessionID);
         return devDesc;
     }
     for (const auto &desc : connectedDevices_) {
