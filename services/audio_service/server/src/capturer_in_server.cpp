@@ -223,7 +223,6 @@ void CapturerInServer::HandleOperationFlushed()
 
 BufferDesc CapturerInServer::DequeueBuffer(size_t length)
 {
-    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "DequeueBuffer failed, stream_ is null");
     return stream_->DequeueBuffer(length);
 }
 
