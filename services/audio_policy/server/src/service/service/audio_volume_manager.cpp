@@ -196,7 +196,7 @@ int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
     {
         DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
-        if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType != STREAM_VOICE_CALL &&
+        if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
             curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
             A2dpDeviceConfigInfo info;
             bool ret = audioA2dpDevice_.GetA2dpDeviceInfo(btDevice, info);
