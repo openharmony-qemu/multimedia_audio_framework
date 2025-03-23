@@ -22,6 +22,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -628,8 +629,7 @@ void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
     int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
     CHECK_AND_RETURN_LOG(res == SUCCESS, "fetch target source info error");
 
-    CloseNormalSource();
-    PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
+    ReloadNormalSource(sessionInfo, targetInfo, targetSource);
 
     audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(),
         DeviceFlag::INPUT_DEVICES_FLAG);
@@ -742,5 +742,35 @@ std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const D
     return halName;
 }
 
+void AudioEcManager::SetOpenedNormalSource(SourceType targetSource)
+{
+    normalSourceOpened_ = targetSource;
+}
+
+int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,
+    PipeStreamPropInfo &targetInfo, SourceType targetSource)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo =
+        AudioPipeManager::GetPipeManager()->GetNormalSourceInfo(isEcFeatureEnable_);
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERROR, "Get normal source info failed");
+
+    AudioModuleInfo moduleInfo;
+    UpdateEnhanceEffectState(targetSource);
+    UpdateStreamCommonInfo(moduleInfo, targetInfo, targetSource);
+    UpdateStreamEcInfo(moduleInfo, targetSource);
+    UpdateStreamMicRefInfo(moduleInfo, targetSource);
+
+    AUDIO_INFO_LOG("rate: %{public}s, channels: %{public}s, bufferSize: %{public}s format: %{public}s, "
+        "sourceType: %{public}s",
+        moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
+        moduleInfo.format.c_str(), moduleInfo.sourceType.c_str());
+
+    audioIOHandleMap_.ReloadPortAndUpdateIOHandle(pipeInfo, moduleInfo);
+    audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(), moduleInfo.name,
+        true, INPUT_DEVICES_FLAG);
+
+    normalSourceOpened_ = targetSource;
+    return SUCCESS;
+}
 }
 }

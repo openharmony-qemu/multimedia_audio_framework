@@ -67,6 +67,8 @@ public:
     bool GetEcFeatureEnable();
     bool GetMicRefFeatureEnable();
     void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void SetOpenedNormalSource(SourceType targetSource);
+    int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
 private:
     AudioEcManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
