@@ -1023,6 +1023,34 @@ bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
     return true;
 }
 
+void AudioAdapterManager::SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName,
+    std::string invocationTime)
+{
+    RingerModeAdjustInfo ringerModeAdjustInfo;
+    ringerModeAdjustInfo.ringMode = ringMode;
+    ringerModeAdjustInfo.callerName = callerName;
+    ringerModeAdjustInfo.invocationTime = invocationTime;
+    saveRingerModeInfo_->Add(ringerModeAdjustInfo);
+}
+
+void AudioAdapterManager::GetRingerModeInfo(std::vector<RingerModeAdjustInfo> &ringerModeInfo)
+{
+    ringerModeInfo = saveRingerModeInfo_->GetData();
+}
+
+std::shared_ptr<AllDeviceVolumeInfo> AudioAdapterManager::GetAllDeviceVolumeInfo(DeviceType deviceType,
+    AudioStreamType streamType)
+{
+    std::shared_ptr<AllDeviceVolumeInfo> deviceVolumeInfo = nullptr;
+    if (volumeDataMaintainer_.GetVolume(deviceType, streamType)) {
+        deviceVolumeInfo = std::make_shared<AllDeviceVolumeInfo>();
+        deviceVolumeInfo->deviceType = deviceType;
+        deviceVolumeInfo->streamType = streamType;
+        deviceVolumeInfo->volumeValue = volumeDataMaintainer_.GetStreamVolume(streamType);
+    }
+    return deviceVolumeInfo;
+}
+
 // LCOV_EXCL_START
 AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex)
 {
@@ -2660,6 +2688,11 @@ bool AudioAdapterManager::IsVgsVolumeSupported() const
         return false;
     }
     return isVgsVolumeSupported_;
+}
+
+std::vector<AdjustStreamVolumeInfo> AudioAdapterManager::GetStreamVolumeInfo(AdjustStreamVolume volumeType)
+{
+    return AudioVolume::GetInstance()->GetStreamVolumeInfo(volumeType);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

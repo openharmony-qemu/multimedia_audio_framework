@@ -45,6 +45,7 @@ struct AppConfigVolume {
     int32_t minVolume;
 };
 
+const int32_t MAX_CACHE_AMOUNT = 10;
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
     static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
@@ -244,6 +245,14 @@ public:
 
     int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
 
+    void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
+
+    void GetRingerModeInfo(std::vector<RingerModeAdjustInfo> &ringerModeInfo);
+
+    std::shared_ptr<AllDeviceVolumeInfo> GetAllDeviceVolumeInfo(DeviceType deviceType, AudioStreamType streamType);
+
+    std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
+
     void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
 
     void SetRestoreVolumeFlag(const bool safeVolumeCall);
@@ -397,6 +406,8 @@ private:
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
     AppConfigVolume appConfigVolume_;
+    std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
+        std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

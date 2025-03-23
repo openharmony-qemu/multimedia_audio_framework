@@ -51,6 +51,21 @@ namespace AudioStandard {
 
 using InternalDeviceType = DeviceType;
 
+struct AdjustVolumeInfo {
+    DeviceType deviceType;
+    AudioStreamType streamType;
+    int32_t volumeLevel;
+    std::string callerName;
+    std::string invocationTime;
+};
+
+struct VolumeKeyEventRegistration {
+    std::string keyType;  // Volume up or down
+    int32_t subscriptionId;
+    std::string registrationTime;
+    bool registrationResult;
+};
+
 class AudioVolumeManager {
 public:
     static AudioVolumeManager& GetInstance()
@@ -101,6 +116,13 @@ public:
     bool GetLoadFlag();
     void UpdateSafeVolumeByS4();
     void SetMaxVolumeForDeviceChange();
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+        std::string invocationTime);
+    void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
+        bool registrationResult);
+    void GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo> &systemVolumeLevelInfo);
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> GetAllDeviceVolumeInfo();
+    void GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration> &keyRegistrationInfo);
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -174,6 +196,12 @@ private:
 
     std::mutex defaultDeviceLoadMutex_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
+    DeviceType curOutputDeviceType_;
+
+    std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> systemVolumeLevelInfo_ =
+        std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);
+    std::shared_ptr<FixedSizeList<VolumeKeyEventRegistration>> volumeKeyRegistrations_ =
+    std::make_shared<FixedSizeList<VolumeKeyEventRegistration>>(MAX_CACHE_AMOUNT);
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioA2dpDevice& audioA2dpDevice_;
