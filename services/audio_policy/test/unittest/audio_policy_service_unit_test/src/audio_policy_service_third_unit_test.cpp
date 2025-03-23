@@ -444,6 +444,21 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_004, TestSiz
 }
 
 /**
+ * @tc.name  : Test SetDeviceSafeVolumeStatus.
+ * @tc.number: SetDeviceSafeVolumeStatus_005
+ * @tc.desc  : Test SetDeviceSafeVolumeStatus interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_005, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    server->audioPolicyService_.audioVolumeManager_.userSelect_ = true;
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
+}
+
+/**
 * @tc.name  : Test CheckForA2dpSuspend.
 * @tc.number: CheckForA2dpSuspend_001
 * @tc.desc  : Test CheckForA2dpSuspend.
