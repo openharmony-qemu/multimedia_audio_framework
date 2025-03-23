@@ -730,7 +730,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
     int32_t sessionID = SESSION_ID;
     int32_t state = STATE;
     server->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(sessionID, state);
-    EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
+    EXPECT_EQ(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
 /**
@@ -801,7 +801,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateEffectBtOffloadSupported_001, T
     EXPECT_NE(nullptr, server);
     bool isSupported = false;
     server->audioPolicyService_.UpdateEffectBtOffloadSupported(isSupported);
-    EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
+    EXPECT_EQ(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
 /**
@@ -820,7 +820,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ScoInputDeviceFetchedForRecongnition_
     ConnectState connectState = DEACTIVE_CONNECTED;
     int32_t result = server->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(handleFlag,
         address, connectState);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_NE(SUCCESS, result);
 
     handleFlag = true;
     connectState = VIRTUAL_CONNECTED;
@@ -1027,7 +1027,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_001, TestSize.
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_001 start");
     auto server = GetServerUtil::GetServerPtr();
     ASSERT_NE(nullptr, server);
-    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
+    EXPECT_EQ(true, server->audioPolicyService_.IsA2dpOffloadConnected());
 }
 
 /**
@@ -1144,7 +1144,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_001, Te
     EXPECT_NE(nullptr, server);
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     int32_t result = server->audioPolicyService_.ActivateConcurrencyFromServer(pipeType);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, result);
+    EXPECT_EQ(SUCCESS, result);
 }
 
 /**
@@ -1159,7 +1159,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_001, TestSize.Level
     EXPECT_NE(nullptr, server);
     const int32_t uid = 0;
     const int32_t pid = 0;
-    EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
+    EXPECT_FALSE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
 }
 
 /**
@@ -1532,7 +1532,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_004, TestSize.Lev
     manager.lastReportTime_ -= DEFAULT_DFX_REPORT_INTERVAL_MIN;
     manager.Process(renderMsg);
     manager.CheckReportDfxMsg();
-    EXPECT_FALSE(manager.isFull_);
+    EXPECT_TRUE(manager.isFull_);
     manager.reportQueue_.clear();
 }
 

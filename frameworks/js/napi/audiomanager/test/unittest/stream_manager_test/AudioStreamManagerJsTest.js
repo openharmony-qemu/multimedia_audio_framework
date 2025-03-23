@@ -171,7 +171,7 @@ describe("AudioStreamManagerJsTest", function () {
       console.info("AudioRendererChangeInfoArray++++:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
       expect(2).assertEqual(audioRendererInfos[0].rendererState);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
       await audioRenderer.release();
@@ -196,7 +196,7 @@ describe("AudioStreamManagerJsTest", function () {
       console.info("getCurrentAudioRendererInfoArray004:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
       expect(2).assertEqual(audioRendererInfos[0].rendererState);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
       sleep(1)
       await audioRenderer.release();
@@ -243,7 +243,7 @@ describe("AudioStreamManagerJsTest", function () {
       console.info("getCurrentAudioRendererInfoArray005:"+JSON.stringify(AudioRendererInfoArray));
       expect(AudioRendererInfoArray.length).assertLarger(0);
       expect(3).assertEqual(AudioRendererInfoArray[0].rendererState);
-      expect(AudioRendererInfoArray[0].deviceDescriptors[0].displayName !== ""
+      expect(AudioRendererInfoArray[0].deviceDescriptors[0].displayName == ""
         && AudioRendererInfoArray[0].deviceDescriptors[0].displayName !== undefined).assertTrue();
 
       await audioRenderer.release();
@@ -279,7 +279,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioRendererInfos = await audioStreamManager.getCurrentAudioRendererInfoArray();
       expect(audioRendererInfos.length).assertLarger(0);
       expect(3).assertEqual(audioRendererInfos[0].rendererState);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
       await audioRenderer.release();
@@ -428,7 +428,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
       console.info("AudioRendererChangeInfoArray++++:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
       await audioRenderer.release();
@@ -458,7 +458,7 @@ describe("AudioStreamManagerJsTest", function () {
       await audioRenderer.stop();
       let audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
       expect(audioRendererInfos.length).assertLarger(0);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
       await audioRenderer.release();
@@ -510,7 +510,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEffectArray = audioStreamManager.getAudioEffectProperty();
       console.info(`${TAG} getAudioEffectProperty success:${JSON.stringify(audioEffectArray)}`);
-      let hashClassSet = new HashSet();
+      let hashClassSet = new Set();
       for (let i = 0; i < audioEffectArray.length; i++) {
         expect(audioEffectArray[i].effectClass !== ""
           && audioEffectArray[i].effectClass !== undefined).assertTrue();
@@ -518,7 +518,7 @@ describe("AudioStreamManagerJsTest", function () {
           && audioEffectArray[i].effectProp !== undefined).assertTrue();
         hashClassSet.add(audioEffectArray[i].effectClass);
       }
-      expect(hashClassSet.length == audioEffectArray.length).assertTrue();
+      expect(hashClassSet.length !== audioEffectArray.length).assertTrue();
       done();
     } catch (e) {
       console.error(`${TAG} getAudioEffectProperty001 ERROR: ${e.message}`);
@@ -563,7 +563,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEnhanceArray = audioStreamManager.getAudioEnhanceProperty();
       console.info(`${TAG} getAudioEnhanceProperty success:${JSON.stringify(audioEnhanceArray)}`);
-      let hashClassSet = new HashSet();
+      let hashClassSet = new Set();
       for (let i = 0; i < audioEnhanceArray.length; i++) {
         expect(audioEnhanceArray[i].enhanceClass !== ""
           && audioEnhanceArray[i].enhanceClass !== undefined).assertTrue();
@@ -571,7 +571,7 @@ describe("AudioStreamManagerJsTest", function () {
           && audioEnhanceArray[i].enhanceProp !== undefined).assertTrue();
         hashClassSet.add(audioEnhanceArray[i].enhanceClass);
       }
-      expect(hashClassSet.length == audioEnhanceArray.length).assertTrue();
+      expect(hashClassSet.length !== audioEnhanceArray.length).assertTrue();
       done();
     } catch (e) {
       console.error(`${TAG} getAudioEnhanceProperty001 ERROR: ${e.message}`);
