@@ -69,6 +69,20 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALL
 };
 
+static const std::vector<AudioStreamType> AUDIO_STREAMTYPE_VOLUME_LIST = {
+    STREAM_MUSIC,
+    STREAM_RING,
+    STREAM_SYSTEM,
+    STREAM_NOTIFICATION,
+    STREAM_ALARM,
+    STREAM_DTMF,
+    STREAM_VOICE_CALL,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC,
+    STREAM_WAKEUP,
+};
+
 bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler)
 {
     audioPolicyServerHandler_ = audioPolicyServerHandler;
@@ -343,6 +357,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
 {
     int32_t result;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    curOutputDeviceType_ = curOutputDeviceType;
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType !=STREAM_VOICE_CALL &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
@@ -1107,5 +1122,56 @@ void AudioVolumeManager::UpdateSafeVolumeByS4()
     return audioPolicyManager_.UpdateSafeVolumeByS4();
 }
 
+std::vector<std::shared_ptr<AllDeviceVolumeInfo>> AudioVolumeManager::GetAllDeviceVolumeInfo()
+{
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> allDeviceVolumeInfo = {};
+    std::shared_ptr<AllDeviceVolumeInfo> deviceVolumeInfo = std::make_shared<AllDeviceVolumeInfo>();
+    auto deviceList = audioConnectedDevice_.GetDevicesInner(DeviceFlag::ALL_L_D_DEVICES_FLAG);
+    for (auto &device : deviceList) {
+        for (auto &streamType : AUDIO_STREAMTYPE_VOLUME_LIST) {
+            if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
+                continue;
+            }
+            deviceVolumeInfo = audioPolicyManager_.GetAllDeviceVolumeInfo(device->deviceType_, streamType);
+            if (deviceVolumeInfo != nullptr) {
+                allDeviceVolumeInfo.push_back(deviceVolumeInfo);
+            }
+        }
+    }
+    return allDeviceVolumeInfo;
+}
+
+void AudioVolumeManager::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
+    std::string callerName, std::string invocationTime)
+{
+    AdjustVolumeInfo systemVolumeLevelInfo;
+    systemVolumeLevelInfo.deviceType = curOutputDeviceType_;
+    systemVolumeLevelInfo.streamType = streamType;
+    systemVolumeLevelInfo.volumeLevel = volumeLevel;
+    systemVolumeLevelInfo.callerName = callerName;
+    systemVolumeLevelInfo.invocationTime = invocationTime;
+    systemVolumeLevelInfo_->Add(systemVolumeLevelInfo);
+}
+
+void AudioVolumeManager::SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime,
+    int32_t subscriptionId, bool registrationResult)
+{
+    VolumeKeyEventRegistration volumeKeyEventRegistration;
+    volumeKeyEventRegistration.keyType = keyType;
+    volumeKeyEventRegistration.subscriptionId = subscriptionId;
+    volumeKeyEventRegistration.registrationTime = registrationTime;
+    volumeKeyEventRegistration.registrationResult = registrationResult;
+    volumeKeyRegistrations_->Add(volumeKeyEventRegistration);
+}
+
+void AudioVolumeManager::GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo> &systemVolumeLevelInfo)
+{
+    systemVolumeLevelInfo = systemVolumeLevelInfo_->GetData();
+}
+
+void AudioVolumeManager::GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration> &keyRegistrationInfo)
+{
+    keyRegistrationInfo = volumeKeyRegistrations_->GetData();
+}
 }
 }

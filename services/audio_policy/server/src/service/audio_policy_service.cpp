@@ -2103,5 +2103,23 @@ int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteOb
     policyManagerListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
     return SUCCESS;
 }
+
+void AudioPolicyService::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
+    std::string callerName, std::string invocationTime)
+{
+    audioVolumeManager_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, callerName, invocationTime);
+}
+    
+void AudioPolicyService::SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName,
+    std::string invocationTime)
+{
+    audioPolicyManager_.SaveRingerModeInfo(ringMode, callerName, invocationTime);
+}
+    
+void AudioPolicyService::SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime,
+    int32_t subscriptionId, bool registrationResult)
+{
+    audioVolumeManager_.SaveVolumeKeyRegistrationInfo(keyType, registrationTime, subscriptionId, registrationResult);
+}
 } // namespace AudioStandard
 } // namespace OHOS

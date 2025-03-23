@@ -495,6 +495,12 @@ public:
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
+
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+        std::string invocationTime);
+    void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
+    void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
+        bool registrationResult);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
