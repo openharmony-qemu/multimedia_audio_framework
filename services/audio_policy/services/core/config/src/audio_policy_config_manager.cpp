@@ -362,6 +362,7 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
 void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<AdapterPipeInfo> &pipeInfo, std::shared_ptr<PipeStreamPropInfo> &info)
 {
+    //if not match, choose first
     info = pipeInfo->streamPropInfos_.front();
     bool useMatchingPropInfo = false;
     GetTargetSourceTypeAndMatchingFlag(desc->capturerInfo_.sourceType, useMatchingPropInfo);
@@ -391,7 +392,7 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         tempChannel = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
 
-     if (desc->audioMode_ == AUDIO_MODE_RECORD) {
+    if (desc->audioMode_ == AUDIO_MODE_RECORD) {
         HandleGetStreamPropInfoForRecord(desc, pipeIt->second, info);
         return;
     }
