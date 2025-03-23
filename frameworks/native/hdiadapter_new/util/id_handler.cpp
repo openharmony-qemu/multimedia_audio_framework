@@ -125,7 +125,8 @@ void IdHandler::IncInfoIdUseCount(uint32_t id)
     std::lock_guard<std::mutex> lock(infoIdMtx_);
     CHECK_AND_RETURN_LOG(infoIdMap_.count(infoId) != 0, "invalid id %{public}u", id);
     infoIdMap_[infoId].useCount_++;
-    AUDIO_INFO_LOG("id: %{public}u, use count: %{public}u", id, infoIdMap_[infoId].useCount_.load());
+    AUDIO_DEBUG_LOG("info: %{public}s, useCount: %{public}u", infoIdMap_[infoId].info_.c_str(),
+        infoIdMap_[infoId].useCount_.load());
 }
 
 void IdHandler::DecInfoIdUseCount(uint32_t id)
@@ -135,17 +136,15 @@ void IdHandler::DecInfoIdUseCount(uint32_t id)
     CHECK_AND_RETURN_LOG(infoIdMap_.count(infoId) != 0, "invalid id %{public}u", id);
     if (infoIdMap_[infoId].useCount_.load() > 0) {
         infoIdMap_[infoId].useCount_--;
-        AUDIO_WARNING_LOG("id: %{public}u, use count: %{public}u", id, infoIdMap_[infoId].useCount_.load());
+        AUDIO_DEBUG_LOG("info: %{public}s, useCount: %{public}u", infoIdMap_[infoId].info_.c_str(),
+            infoIdMap_[infoId].useCount_.load());
         if (infoIdMap_[infoId].useCount_.load() > 0) {
-            AUDIO_DEBUG_LOG("info: %{public}s, useCount: %{public}u", infoIdMap_[infoId].info_.c_str(),
-                infoIdMap_[infoId].useCount_.load());
             return;
         }
     }
     infoIdMap_.erase(infoId);
     std::lock_guard<std::mutex> freeLock(freeInfoIdMtx_);
     freeInfoIdSet_.emplace(infoId);
-    AUDIO_INFO_LOG("DecInfoIdUseCount reach 0, erase id");
 }
 
 bool IdHandler::CheckId(uint32_t id, HdiIdBase requireBase)
