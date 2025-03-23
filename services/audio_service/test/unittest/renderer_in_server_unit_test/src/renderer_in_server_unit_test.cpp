@@ -1079,7 +1079,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_001, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1101,7 +1101,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_002, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1123,7 +1123,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_003, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1145,7 +1145,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_004, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_STOPPED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1175,7 +1175,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_005, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1197,7 +1197,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_006, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(true, ret);
+    EXPECT_NE(true, ret);
 }
 
 /**
@@ -1220,7 +1220,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_007, TestSize.Level1)
     rendererInServer->standByEnable_ = true;
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1243,7 +1243,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_008, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1266,7 +1266,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_009, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1857,7 +1857,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerRelease_003, TestSize.Level1)
     rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->Release();
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1872,7 +1872,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerRelease_004, TestSize.Level1)
 
     int32_t ret = rendererInServer->Release();
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**

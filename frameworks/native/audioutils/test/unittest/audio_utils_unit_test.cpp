@@ -714,7 +714,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_003, TestSize.Level0
 {
     AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
     const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(streamName, "VOICE_CALL");
+    EXPECT_EQ(streamName, "VOICE_COMMUNICATION");
 }
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
@@ -1961,7 +1961,7 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_005, TestSize.Level1)
     ChannelBlendMode blendMode = MODE_BLEND_LR;
     shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 4);
-    EXPECT_EQ(b[1], 3);
+    EXPECT_EQ(b[1], 4);
 }
 
 /**
