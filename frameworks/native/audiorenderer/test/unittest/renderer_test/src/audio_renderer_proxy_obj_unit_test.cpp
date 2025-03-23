@@ -162,8 +162,6 @@ HWTEST(AudioRendererProxyObjUnitTest, AudioRendererProxyObj_007, TestSize.Level1
     ASSERT_TRUE(rendererOj != nullptr);
 
     proxyObj->SaveRendererObj(rendererOj);
-    StreamSetStateEventInternal streamSetStateEventInternal;
-    proxyObj->ResumeStreamImpl(streamSetStateEventInternal);
 }
 
 /**

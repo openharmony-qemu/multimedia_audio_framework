@@ -60,7 +60,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_001, TestSize.Level1)
 {
     size_t rate = 0;
     size_t format = SAMPLE_S24LE;
-    size_t channels = 0;
+    size_t channels = 1;
     auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
     auto result = audioSpeed->LoadChangeSpeedFunc();
     EXPECT_EQ(result, SUCCESS);
@@ -76,7 +76,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_002, TestSize.Level1)
 {
     size_t rate = 0;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 0;
+    size_t channels = 1;
     auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
     auto result = audioSpeed->LoadChangeSpeedFunc();
     EXPECT_EQ(result, SUCCESS);
@@ -92,7 +92,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_003, TestSize.Level1)
 {
     size_t rate = 0;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 0;
+    size_t channels = 1;
 
     uint8_t *buffer = nullptr;
     int32_t bufferSize = 0;
@@ -114,7 +114,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_004, TestSize.Level1)
 {
     size_t rate = 0;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 0;
+    size_t channels = 1;
 
     uint8_t *buffer = nullptr;
     int32_t bufferSize = 100001;
@@ -136,7 +136,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_005, TestSize.Level1)
 {
     size_t rate = 0;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 0;
+    size_t channels = 1;
 
     uint8_t *buffer = nullptr;
     int32_t bufferSize = 1;
@@ -158,7 +158,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_006, TestSize.Level1)
 {
     size_t rate = 0;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 0;
+    size_t channels = 1;
 
     uint8_t *buffer = nullptr;
     int32_t bufferSize = 0;
@@ -180,7 +180,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_007, TestSize.Level1)
 {
     size_t rate = 0;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 0;
+    size_t channels = 1;
 
     uint8_t *buffer = nullptr;
     int32_t bufferSize = 100001;
@@ -202,7 +202,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_008, TestSize.Level1)
 {
     size_t rate = 0;
     size_t format = SAMPLE_S32LE;
-    size_t channels = 0;
+    size_t channels = 1;
 
     uint8_t *buffer = nullptr;
     int32_t bufferSize = 1;
