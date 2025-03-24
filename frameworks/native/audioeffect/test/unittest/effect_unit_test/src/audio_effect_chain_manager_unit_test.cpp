@@ -155,6 +155,33 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_004, TestS
 }
 
 /**
+* @tc.name   : Test CreateAudioEffectChainDynamic API
+* @tc.number : CreateAudioEffectChainDynamic_004
+* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using correct use case).
+*              Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_004, TestSize.Level1)
+{
+    string sceneType = "SCENE_MOVIE";
+    SessionEffectInfo info = {
+        "EFFECT_DEFAULT",
+        "SCENE_MOVIE",
+        INFOCHANNELS,
+        INFOCHANNELLAYOUT,
+        "0",
+        10,
+    };
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->maxSessionID_ = 123456;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["123456"] = info;
+    int32_t result =  AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
 * @tc.name   : Test CheckAndAddSessionID API
 * @tc.number : CheckAndAddSessionID_001
 * @tc.desc   : Test CheckAndAddSessionID interface.

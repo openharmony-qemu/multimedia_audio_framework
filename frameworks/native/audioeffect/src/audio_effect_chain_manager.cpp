@@ -387,7 +387,7 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetFoldState(foldState_);
     std::string maxSession = std::to_string(maxSessionID_);
     if (sessionIDToEffectInfoMap_.count(maxSession)) {
-        audioEffectChain->SetStreamUsage(sessionIDToEffectInfoMap_[maxSession]);
+        audioEffectChain->SetStreamUsage(sessionIDToEffectInfoMap_[maxSession].streamUsage);
     }
 }
 
