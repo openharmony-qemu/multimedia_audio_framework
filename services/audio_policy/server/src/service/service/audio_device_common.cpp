@@ -1976,7 +1976,7 @@ int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &device
         }
         while (curVoiceRingMixDb > maxMixDbDefault) {
             curRingToneLevel--;
-            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, odeviceType);
+            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
             curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
         }
     }
