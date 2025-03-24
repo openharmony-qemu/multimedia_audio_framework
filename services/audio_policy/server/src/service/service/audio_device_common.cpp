@@ -957,7 +957,7 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
             audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
             audioVolumeManager_.SetRingerModeMute(false);
             int32_t curRingToneLevel = RingToneVoiceControl(outputDevices.front()->getType());
-            audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING, curRingToneLevel);            
+            audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING, curRingToneLevel);
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
         }
