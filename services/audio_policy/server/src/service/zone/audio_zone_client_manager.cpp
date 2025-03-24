@@ -21,6 +21,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
+AudioZoneClientManager& AudioZoneClientManager::GetInstance()
+{
+    static AudioZoneClientManager manager(DelayedSingleton<AudioPolicyServerHandler>::GetInstance());
+    return manager;
+}
+
 AudioZoneClientManager::AudioZoneClientManager(std::shared_ptr<AudioPolicyServerHandler> handler)
     : handler_(handler)
 {
@@ -56,8 +62,8 @@ bool AudioZoneClientManager::IsRegisterAudioZoneClient(pid_t clientPid)
 
 void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event)
 {
-    CHECK_AND_RETURN_LOG(event!= nullptr, "event is null");
-    std::lock_guard<std::mutex> lock(clientMutex_);
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
+    
     if (event->descriptor != nullptr) {
         AUDIO_DEBUG_LOG("dispatch zone %{public}d event %{public}d to client %{public}d",
             event->descriptor->zoneId_, event->type, event->clientPid);
@@ -66,20 +72,21 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
             event->zoneId, event->type, event->clientPid);
     }
 
+    std::lock_guard<std::mutex> lock(clientMutex_);
     if (handler_ == nullptr || clients_.find(event->clientPid) == clients_.end()) {
         return;
     }
 
     switch (event->type) {
         case AudioZoneEventType::AUDIO_ZONE_ADD_EVENT:
-            clients_[event->clientPid]->OnAudioZoneAdd(*(event->descriptor.GetRefPtr()));
+            clients_[event->clientPid]->OnAudioZoneAdd(*(event->descriptor));
             break;
         case AudioZoneEventType::AUDIO_ZONE_REMOVE_EVENT:
             clients_[event->clientPid]->OnAudioZoneRemove(event->zoneId);
             break;
         case AudioZoneEventType::AUDIO_ZONE_CHANGE_EVENT:
             clients_[event->clientPid]->OnAudioZoneChange(event->zoneId,
-                *(event->descriptor.GetRefPtr()), event->zoneChangeReason);
+                *(event->descriptor), event->zoneChangeReason);
             break;
         case AudioZoneEventType::AUDIO_ZONE_INTERRUPT_EVENT:
             if (event->deviceId == -1) {
@@ -95,7 +102,7 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
     }
 }
 
-void AudioZoneClientManager::SendZoneAddEvent(pid_t clientPid, sptr<AudioZoneDescriptor> descriptor)
+void AudioZoneClientManager::SendZoneAddEvent(pid_t clientPid, std::shared_ptr<AudioZoneDescriptor> descriptor)
 {
     CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is null");
     std::lock_guard<std::mutex> lock(clientMutex_);
@@ -104,7 +111,7 @@ void AudioZoneClientManager::SendZoneAddEvent(pid_t clientPid, sptr<AudioZoneDes
     }
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
-    ent->clientPid = clientPid;
+    event->clientPid = clientPid;
     event->zoneId = descriptor->zoneId_;
     event->type = AudioZoneEventType::AUDIO_ZONE_ADD_EVENT;
     event->descriptor = descriptor;
@@ -120,7 +127,7 @@ void AudioZoneClientManager::SendZoneRemoveEvent(pid_t clientPid, int32_t zoneId
         return;
     }
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
-    CHECK_AND_RETURN_LOG(event!= nullptr, "event is null");
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
     event->clientPid = clientPid;
     event->zoneId = zoneId;
     event->type = AudioZoneEventType::AUDIO_ZONE_REMOVE_EVENT;
@@ -129,16 +136,16 @@ void AudioZoneClientManager::SendZoneRemoveEvent(pid_t clientPid, int32_t zoneId
         zoneId, clientPid);
 }
 
-void AudioZoneClientManager::SendZoneChangeEvent(pid_t clientPid, sptr<AudioDeviceDescriptor> descriptor,
+void AudioZoneClientManager::SendZoneChangeEvent(pid_t clientPid, std::shared_ptr<AudioZoneDescriptor> descriptor,
     AudioZoneChangeReason reason)
 {
-    CHECK_AND_RETURN_LOG(descriptor!= nullptr, "descriptor is null");
+    CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is null");
     std::lock_guard<std::mutex> lock(clientMutex_);
     if (handler_ == nullptr || clients_.find(clientPid) == clients_.end()) {
         return;
     }
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
-    CHECK_AND_RETURN_LOG(event!= nullptr, "event is null");
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
     event->clientPid = clientPid;
     event->zoneId = descriptor->zoneId_;
     event->type = AudioZoneEventType::AUDIO_ZONE_CHANGE_EVENT;
@@ -149,16 +156,16 @@ void AudioZoneClientManager::SendZoneChangeEvent(pid_t clientPid, sptr<AudioDevi
         descriptor->zoneId_, clientPid);
 }
 
-void AudioZoneClientManager::SnedZoneInterruptEvent(pid_t clientPid, int32_t zoneId, int32_t deviceId,
+void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zoneId, int32_t deviceId,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
-    AudioInterruptReason reason)
+    AudioZoneInterruptReason reason)
 {
     std::lock_guard<std::mutex> lock(clientMutex_);
     if (handler_ == nullptr || clients_.find(clientPid) == clients_.end()) {
         return;
     }
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
-    CHECK_AND_RETURN_LOG(event!= nullptr, "event is null");
+    CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
     event->clientPid = clientPid;
     event->zoneId = zoneId;
     event->deviceId = deviceId;
@@ -183,10 +190,10 @@ int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, cons
     }
     AUDIO_DEBUG_LOG("set audio zone %{public}d volume %{public}d to client %{public}d",
         zoneId, volumeLevel, clientPid);
-    return client->SetSystemVolumeLevel(zoneId, volumeType, volumeLevel, volumeFlag);
+    return client->SetSystemVolume(zoneId, volumeType, volumeLevel, volumeFlag);
 }
 
-const int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, const pid_t zoneId,
+int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, const pid_t zoneId,
     AudioVolumeType volumeType)
 {
     sptr<IStandardAudioZoneClient> client = nullptr;
@@ -199,7 +206,7 @@ const int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid
     }
     AUDIO_DEBUG_LOG("get audio zone %{public}d volume from client %{public}d",
         zoneId, clientPid);
-    return client->GetSystemVolumeLevel(zoneId, volumeType);
+    return client->GetSystemVolume(zoneId, volumeType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

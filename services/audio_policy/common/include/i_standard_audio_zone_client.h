@@ -54,7 +54,8 @@ public:
         AudioZoneInterruptReason reason) = 0;
 
     virtual void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
-        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts, AudioZoneInterruptReason reason) = 0;
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
+        AudioZoneInterruptReason reason) = 0;
 
     virtual int32_t SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag) = 0;

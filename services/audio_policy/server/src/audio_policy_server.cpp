@@ -2008,7 +2008,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
                 audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
             }
         }
-        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
+        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+        return interruptService_->ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;
 }
@@ -2016,7 +2017,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
-        return interruptService_->DeactivateAudioInterrupt(zoneID, audioInterrupt);
+        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+        return interruptService_->DeactivateAudioInterrupt(zoneId, audioInterrupt);
     }
     return ERR_UNKNOWN;
 }
@@ -2896,7 +2898,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
 
-    if (ret == SUCCESS && audioPolicyServerHandler_!= nullptr && audioPolicyService_.IsCurrentActiveDeviceA2dp()) {
+    if (ret == SUCCESS && audioPolicyServerHandler_ != nullptr && audioPolicyService_.IsCurrentActiveDeviceA2dp()) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
     }
     return ret;
@@ -3336,11 +3338,11 @@ int32_t AudioPolicyServer::ReleaseAudioInterruptZone(const int32_t zoneID)
 
 int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &object)
 {
-    CHECK_AND_RETURN_RET_LOG(object!= nullptr, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "RegisterAudioZoneClient listener object is nullptr");
     
     sptr<IStandardAudioZoneClient> client = iface_cast<IStandardAudioZoneClient>(object);
-    CHECK_AND_RETURN_RET_LOG(client!= nullptr, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(client != nullptr, ERR_INVALID_PARAM,
         "RegisterAudioZoneClient listener obj cast failed");
 
     int32_t clientPid = IPCSkeleton::GetCallingPid();
@@ -3364,22 +3366,24 @@ void AudioPolicyServer::ReleaseAudioZone(int32_t zoneId)
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 
-const std::vector<sptr<AudioZoneDescriptor>> AudioPolicyServer::GetAllAudioZone()
+const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioPolicyServer::GetAllAudioZone()
 {
     return AudioZoneService::GetInstance().GetAllAudioZone();
 }
 
-const sptr<AudioZoneDescriptor> AudioPolicyServer::GetAudioZone(int32_t zoneId)
+const std::shared_ptr<AudioZoneDescriptor> AudioPolicyServer::GetAudioZone(int32_t zoneId)
 {
     return AudioZoneService::GetInstance().GetAudioZone(zoneId);
 }
 
-int32_t AudioPolicyServer::BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
+int32_t AudioPolicyServer::BindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     return AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
 }
 
-int32_t AudioPolicyServer::UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
+int32_t AudioPolicyServer::UnBindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     return AudioZoneService::GetInstance().UnBindDeviceToAudioZone(zoneId, devices);
 }
@@ -3451,7 +3455,6 @@ int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId, int32_t de
 {
     return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, deviceId, interrupts);
 }
-
 
 int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
     const int32_t pid)

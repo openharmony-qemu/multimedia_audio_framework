@@ -1510,12 +1510,12 @@ bool AudioPolicyServerHandler::SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent
 void AudioPolicyServerHandler::HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
-    CHECK_AND_RETURN_LOG(eventContextObj!= nullptr, "EventContextObj get nullptr");
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
     std::unique_lock<std::mutex> lock(handleMapMutex_);
     std::shared_ptr<IAudioZoneEventDispatcher> dispatcher = audioZoneEventDispatcher_.lock();
     lock.unlock();
-    if (dispatcher!= nullptr) {
+    if (dispatcher != nullptr) {
         dispatcher->DispatchEvent(eventContextObj->audioZoneEvent);
     }
 }

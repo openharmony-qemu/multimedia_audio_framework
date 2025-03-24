@@ -22,22 +22,22 @@
 namespace OHOS {
 namespace AudioStandard {
 AudioZoneInterruptReporter::ReportMap AudioZoneInterruptReporter::interruptEnableMaps_;
-std::mutex AudioZoneInterruptReporter::interruptEnableMapsLock_;
+std::mutex AudioZoneInterruptReporter::interruptEnableMutex_;
 
 int32_t AudioZoneInterruptReporter::EnableInterruptReport(pid_t clientPid, int32_t zoneId,
-    int32_t deviceId, bool enable);
+    int32_t deviceId, bool enable)
 {
-    std::lock_guard<std::mutex> lock(interruptEnableMapsLock_);
+    std::lock_guard<std::mutex> lock(interruptEnableMutex_);
     if (enable) {
-        return ResgiterInterruptReport(clientPid, zoneId, deviceId);
+        return RegisterInterruptReport(clientPid, zoneId, deviceId);
     }
-    UnResgiterInterruptReport(clientPid, zoneId, deviceId);
+    UnRegisterInterruptReport(clientPid, zoneId, deviceId);
     return SUCCESS;
 }
 
 void AudioZoneInterruptReporter::DisableInterruptReport(pid_t clientPid)
 {
-    std::lock_guard<std::mutex> lock(interruptEnableMapsLock_);
+    std::lock_guard<std::mutex> lock(interruptEnableMutex_);
     if (interruptEnableMaps_.find(clientPid) == interruptEnableMaps_.end()) {
         return;
     }
@@ -46,11 +46,11 @@ void AudioZoneInterruptReporter::DisableInterruptReport(pid_t clientPid)
 
 void AudioZoneInterruptReporter::DisableAllInterruptReport()
 {
-    std::lock_guard<std::mutex> lock(interruptEnableMapsLock_);
+    std::lock_guard<std::mutex> lock(interruptEnableMutex_);
     interruptEnableMaps_.clear();
 }
 
-int32_t AudioZoneInterruptReporter::ResgiterInterruptReport(pid_t clientPid, int32_t zoneId,
+int32_t AudioZoneInterruptReporter::RegisterInterruptReport(pid_t clientPid, int32_t zoneId,
     int32_t deviceId)
 {
     if (interruptEnableMaps_.find(clientPid) == interruptEnableMaps_.end()) {
@@ -70,7 +70,7 @@ int32_t AudioZoneInterruptReporter::ResgiterInterruptReport(pid_t clientPid, int
     return SUCCESS;
 }
 
-void AudioZoneInterruptReporter::UnResgiterInterruptReport(pid_t clientPid, int32_t zoneId,
+void AudioZoneInterruptReporter::UnRegisterInterruptReport(pid_t clientPid, int32_t zoneId,
     int32_t deviceId)
 {
     AUDIO_INFO_LOG("unregister zone %{public}d, device %{public}d for client %{public}d",
@@ -110,7 +110,7 @@ AudioZoneInterruptReporter::ReporterVector AudioZoneInterruptReporter::CreateRep
         return vec;
     }
     
-    std::lock_guard<std::mutex> lock(interruptEnableMapsLock_);
+    std::lock_guard<std::mutex> lock(interruptEnableMutex_);
     for (auto &item : interruptEnableMaps_) {
         for (auto &it : item.second) {
             if (zoneId != -1 && zoneId != it.first) {
@@ -163,7 +163,7 @@ void AudioZoneInterruptReporter::ReportInterrupt()
     AUDIO_INFO_LOG("report audio zone %{public}d device %{public}d interrupt to"
         " client %{public}d of reason %{public}d ", zoneId_, deviceId_, clientPid_,
         reportReason_);
-    zoneClientManager_->ReportInterrupt(clientPid_, zoneId_, deviceId_,
+    zoneClientManager_->SendZoneInterruptEvent(clientPid_, zoneId_, deviceId_,
         newFocusList, reportReason_);
 }
 
@@ -177,7 +177,7 @@ bool AudioZoneInterruptReporter::IsFocusListEqual(const AudioZoneFocusList &a,
                 p1.first.contentType == p2.first.contentType &&
                 p1.first.audioFocusType.streamType == p2.first.audioFocusType.streamType &&
                 p1.first.audioFocusType.sourceType == p2.first.audioFocusType.sourceType &&
-                p1.first.sessionId == p2.first.sessionId &&
+                p1.first.streamId == p2.first.streamId &&
                 p1.first.pid == p2.first.pid &&
                 p1.first.uid == p2.first.uid &&
                 p1.first.deviceId == p2.first.deviceId &&

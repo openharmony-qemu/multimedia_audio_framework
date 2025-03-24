@@ -37,11 +37,13 @@ public:
     
     int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context);
     void ReleaseAudioZone(int32_t zoneId);
-    const std::vector<sptr<AudioZoneDescriptor>> GetAllAudioZone();
-    const sptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
+    const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
+    const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
     
-    int32_t BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices);
-    int32_t UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices);
+    int32_t BindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
+    int32_t UnBindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
 
     int32_t RegisterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client);
     void UnRegisterAudioZoneClient(pid_t clientPid);
@@ -65,18 +67,18 @@ public:
 
     int32_t ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy = false);
-    int32_t DeactiveAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    int32_t DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     
-    std::vector<sptr<AudioDeviceDescriptor>> FetchOutputDevices(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(int32_t zoneId,
         StreamUsage streamUsage, int32_t clientUid, const RouterType &bypassType);
-    sptr<AudioDeviceDescriptor> FetchInputDevice(int32_t zoneId,
+    std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(int32_t zoneId,
        SourceType sourceType, int32_t clientUid);
     
-    std::string GetZoneStringDescriptor(int32_t zoneId);
+    const std::string GetZoneStringDescriptor(int32_t zoneId);
 
 private:
     AudioZoneService() = default;
@@ -95,7 +97,7 @@ private:
         const std::string &tag);
     int32_t FindAudioZoneByKey(int32_t uid, int32_t deviceId, const std::string &tag);
     bool CheckIsZoneValid(int32_t zoneId);
-    void RemoveDeviceFromGlobal(sptr<AudioDeviceDescriptor> device);
+    void RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device);
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -23,18 +23,21 @@ namespace AudioStandard {
 class AudioZoneClientProxy : public IRemoteProxy<IStandardAudioZoneClient> {
 public:
     explicit AudioZoneClientProxy(const sptr<IRemoteObject> &impl);
-    virtual ~AudioZoneClientProxy() = default;
+    virtual ~AudioZoneClientProxy();
 
-    void OnAudioZoneAdd(const sptr<AudioZoneDescriptor> &zoneDescriptor) override;
+    void OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor) override;
     void OnAudioZoneRemove(int32_t zoneId) override;
     void OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
         AudioZoneChangeReason reason) override;
+    void OnInterruptEvent(int32_t zoneId,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
+        AudioZoneInterruptReason reason) override;
     void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
-        std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
-        AudioInterruptReason reason) override;
-    int32_t SetSystemVolumeLevel(const int32_t zoneId, const AudioVolumeType volumeType,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
+        AudioZoneInterruptReason reason) override;
+    int32_t SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag) override;
-    int32_t GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType) override;
+    int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType) override;
 
 private:
     static inline BrokerDelegator<AudioZoneClientProxy> delegator_;

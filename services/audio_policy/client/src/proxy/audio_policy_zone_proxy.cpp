@@ -67,12 +67,12 @@ void AudioPolicyProxy::ReleaseAudioZone(int32_t zoneId)
     }
 }
 
-const std::vector<sptr<AudioZoneDescriptor>> AudioPolicyProxy::GetAllAudioZone()
+const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioPolicyProxy::GetAllAudioZone()
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<sptr<AudioZoneDescriptor>> zoneDescriptor;
+    std::vector<std::shared_ptr<AudioZoneDescriptor>> zoneDescriptor;
     
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), zoneDescriptor,
         "WriteInterfaceToken failed");
@@ -90,7 +90,7 @@ const std::vector<sptr<AudioZoneDescriptor>> AudioPolicyProxy::GetAllAudioZone()
     return zoneDescriptor;
 }
 
-const sptr<AudioZoneDescriptor> AudioPolicyProxy::GetAudioZone(int32_t zoneId)
+const std::shared_ptr<AudioZoneDescriptor> AudioPolicyProxy::GetAudioZone(int32_t zoneId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -107,7 +107,8 @@ const sptr<AudioZoneDescriptor> AudioPolicyProxy::GetAudioZone(int32_t zoneId)
     return AudioZoneDescriptor::UnmarshallingPtr(reply);
 }
 
-int32_t AudioPolicyProxy::BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
+int32_t AudioPolicyProxy::BindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -125,7 +126,8 @@ int32_t AudioPolicyProxy::BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices)
+int32_t AudioPolicyProxy::UnBindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     MessageParcel data;
     MessageParcel reply;

@@ -36,7 +36,7 @@ AudioZoneService& AudioZoneService::GetInstance()
 void AudioZoneService::Init(std::shared_ptr<AudioPolicyServerHandler> handler,
     std::shared_ptr<AudioInterruptService> interruptService)
 {
-    CHECK_AND_RETURN_LOG(handler!= nullptr && interruptService_ != nullptr,
+    CHECK_AND_RETURN_LOG(handler != nullptr && interruptService_ != nullptr,
         "handler or interruptService is nullptr");
     interruptService_ = interruptService;
     zoneClientManager_ = std::make_shared<AudioZoneClientManager>(handler);
@@ -57,7 +57,7 @@ void AudioZoneService::DeInit()
 int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZoneContext &context)
 {
     std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(zoneClientManager_, name, context);
-    CHECK_AND_RETURN_LOG(zone != nullptr, "zone is nullptr");
+    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone is nullptr");
     int32_t zoneId = zone->GetId();
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
@@ -73,12 +73,12 @@ int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZo
             }
         }
 
-        if (interruptService_!= nullptr) {
-            interruptService_->CreateAudioInterruptZone(zoneId, context.foucusStrategy);
+        if (interruptService_ != nullptr) {
+            interruptService_->CreateAudioInterruptZone(zoneId, context.focusStrategy_);
         }
     }
     AUDIO_INFO_LOG("create zone id %{public}d", zoneId);
-    retrun zoneId;
+    return zoneId;
 }
 
 void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
@@ -90,9 +90,9 @@ void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
     }
     zoneMaps_.erase(zoneId);
 
-    if (interruptService_!= nullptr) {
+    if (interruptService_ != nullptr) {
         auto reporters = AudioZoneInterruptReporter::CreateReporter(interruptService_,
-            zoneClientManager_, AudioZOneInterruptReason::RELEASE_AUDIO_ZONE);
+            zoneClientManager_, AudioZoneInterruptReason::RELEASE_AUDIO_ZONE);
         interruptService_->ReleaseAudioInterruptZone(zoneId,
             [this](int32_t uid, int32_t deviceId, const std::string &tag)->int32_t {
                 return this->FindAudioZoneByKey(uid, deviceId, tag);
@@ -102,7 +102,7 @@ void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
         }
     }
 
-    if (zoneClientManager_!= nullptr) {
+    if (zoneClientManager_ != nullptr) {
         for (auto &pid : zoneReportClientList_) {
             zoneClientManager_->SendZoneRemoveEvent(pid, zoneId);
         }
@@ -110,9 +110,9 @@ void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
     AUDIO_INFO_LOG("release zone id %{public}d", zoneId);
 }
 
-const std::vector<sptr<AudioZoneDescriptor>> AudioZoneService::GetAllAudioZone()
+const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioZoneService::GetAllAudioZone()
 {
-    std::vector<sptr<AudioZoneDescriptor>> zoneDescriptor;
+    std::vector<std::shared_ptr<AudioZoneDescriptor>> zoneDescriptor;
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (const auto &it : zoneMaps_) {
         CHECK_AND_CONTINUE_LOG(it.second != nullptr, "zone is nullptr");
@@ -121,7 +121,7 @@ const std::vector<sptr<AudioZoneDescriptor>> AudioZoneService::GetAllAudioZone()
     return zoneDescriptor;
 }
 
-const sptr<AudioZoneDescriptor> AudioZoneService::GetAudioZone(int32_t zoneId)
+const std::shared_ptr<AudioZoneDescriptor> AudioZoneService::GetAudioZone(int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     auto zone = FindZone(zoneId);
@@ -133,7 +133,7 @@ const sptr<AudioZoneDescriptor> AudioZoneService::GetAudioZone(int32_t zoneId)
 }
 
 int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
-    std::vector<sptr<AudioDeviceDescriptor>> devices)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     auto zone = FindZone(zoneId);
@@ -152,19 +152,19 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
     return SUCCESS;
 }
 
-void AudioZoneService::RemoveDeviceFromGlobal(sptr<AudioDeviceDescriptor> device)
+void AudioZoneService::RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> connectDevices;
-    AudioConnectDevice::GetInstance().GetAllConnectDeviceByType(device->networkId_,
-        device->deviceType_, device->macAddres_, device->deviceRole_, connectDevices);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectDevices;
+    AudioConnectedDevice::GetInstance().GetAllConnectedDeviceByType(device->networkId_,
+        device->deviceType_, device->macAddress_, device->deviceRole_, connectDevices);
     CHECK_AND_RETURN_LOG(connectDevices.size() != 0, "connectDevices is empty.");
-    AudioDeviceLock::GetInstance().OnDeviceStatusUpdate(*(device.GetRefPtr()), false);
+    AudioDeviceLock::GetInstance().OnDeviceStatusUpdated(*device, false);
 }
 
 int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
-    std::vector<sptr<AudioDeviceDescriptor>> devices)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> toGlobalDevices;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> toGlobalDevices;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         auto zone = FindZone(zoneId);
@@ -181,7 +181,7 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
     }
     // maybe whether or not add unbind devices to global is specified by caller
     for (auto it : toGlobalDevices) {
-        AudioDeviceLock::GetInstance().OnDeviceStatusUpdate(*(it.GetRefPtr()), true);
+        AudioDeviceLock::GetInstance().OnDeviceStatusUpdated(*it, true);
     }
     return SUCCESS;
 }
@@ -189,7 +189,7 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
 int32_t AudioZoneService::RegisterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    CHECK_AND_RETURN_RET_LOG(client!= nullptr && zoneClientManager_ != nullptr, ERROR,
+    CHECK_AND_RETURN_RET_LOG(client != nullptr && zoneClientManager_ != nullptr, ERROR,
         "client or zoneClientManager is nullptr");
     zoneClientManager_->RegisterAudioZoneClient(clientPid, client);
     return SUCCESS;
@@ -199,24 +199,24 @@ void AudioZoneService::UnRegisterAudioZoneClient(pid_t clientPid)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     zoneReportClientList_.erase(clientPid);
-    AudioZoneInterruptReporter::DisableClientReport(clientPid);
+    AudioZoneInterruptReporter::DisableInterruptReport(clientPid);
     for (auto &it : zoneMaps_) {
         it.second->EnableChangeReport(clientPid, false);
     }
-    CHECK_AND_RETURN_LOG(zoneClientManager_!= nullptr, "zoneClientManager is nullptr");
+    CHECK_AND_RETURN_LOG(zoneClientManager_ != nullptr, "zoneClientManager is nullptr");
     zoneClientManager_->UnRegisterAudioZoneClient(clientPid);
 }
 
 int32_t AudioZoneService::EnableAudioZoneReport(pid_t clientPid, bool enable)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    CHECK_AND_RETURN_RET_LOG(zoneClientManager_!= nullptr, ERROR, "zoneClientManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr, ERROR, "zoneClientManager is nullptr");
     if (enable) {
         zoneReportClientList_.insert(clientPid);
     } else {
         zoneReportClientList_.erase(clientPid);
     }
-    AUDIO_INFO_LOG("%{public}ds zone event report to client %{public}d",
+    AUDIO_INFO_LOG("%{public}s zone event report to client %{public}d",
         enable ? "enable" : "disable", clientPid);
     return SUCCESS;
 }
@@ -257,9 +257,9 @@ int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
     }
     zone->BindByKey(AudioZoneBindKey(uid, deviceId, tag));
 
-    if (interruptService_!= nullptr) {
+    if (interruptService_ != nullptr) {
         auto reporter = AudioZoneInterruptReporter::CreateReporter(interruptService_,
-            zoneClientManager_, AudioZOneInterruptReason::BIND_APP_TO_ZONE);
+            zoneClientManager_, AudioZoneInterruptReason::BIND_APP_TO_ZONE);
         interruptService_->MigrateAudioInterruptZone(srcZoneId,
             [this](int32_t uid, int32_t deviceId, const std::string &tag)->int32_t {
                 return this->FindAudioZoneByKey(uid, deviceId, tag);
@@ -271,7 +271,7 @@ int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
     return SUCCESS;
 }
 
-int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid)
+int32_t AudioZoneService::FindAudioZoneByUid(int32_t uid)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     return FindAudioZoneByKey(uid, -1, "");
@@ -283,7 +283,7 @@ int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, int32_t deviceId,
     auto keyList = AudioZoneBindKey::GetSupportKeys(uid, deviceId, tag);
     for (const auto &key : keyList) {
         for (const auto &it : zoneMaps_) {
-            CHECK_AND_CONTINUE_LOG(it.second!= nullptr, "zone is nullptr");
+            CHECK_AND_CONTINUE_LOG(it.second != nullptr, "zone is nullptr");
             if (it.second->IsContainKey(key)) {
                 return it.first;
             }
@@ -310,9 +310,9 @@ int32_t AudioZoneService::RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid,
     }
     zone->RemoveKey(AudioZoneBindKey(uid, deviceId, tag));
 
-    if (interruptService_!= nullptr) {
+    if (interruptService_ != nullptr) {
         auto reporter = AudioZoneInterruptReporter::CreateReporter(interruptService_,
-            zoneClientManager_, AudioZOneInterruptReason::UNBIND_APP_FROM_ZONE);
+            zoneClientManager_, AudioZoneInterruptReason::UNBIND_APP_FROM_ZONE);
         interruptService_->MigrateAudioInterruptZone(zoneId,
             [this](int32_t uid, int32_t deviceId, const std::string &tag)->int32_t {
                 return this->FindAudioZoneByKey(uid, deviceId, tag);
@@ -327,7 +327,7 @@ int32_t AudioZoneService::RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid,
 int32_t AudioZoneService::EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    if (zoneClientManager_ == nullptr || zoneClientManager_->IsSystemVolumeProxyEnable(clientPid)) {
+    if (zoneClientManager_ == nullptr || zoneClientManager_->IsRegisterAudioZoneClient(clientPid)) {
         AUDIO_ERR_LOG("client %{public}d for zone id %{public}d is not found", clientPid, zoneId);
         return ERROR;
     }
@@ -348,7 +348,7 @@ int32_t AudioZoneService::SetSystemVolumeLevelForZone(const int32_t zoneId, cons
         AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
         return ERROR;
     }
-    return zone->SetSystemVolumeLevelForZone(volumeType, volumeLebel, volumeFlag);
+    return zone->SetSystemVolumeLevel(volumeType, volumeLebel, volumeFlag);
 }
 
 int32_t AudioZoneService::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
@@ -359,7 +359,7 @@ int32_t AudioZoneService::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolum
         AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
         return ERROR;
     }
-    return zone->GetSystemVolumeLevelForZone(volumeType);
+    return zone->GetSystemVolumeLevel(volumeType);
 }
 
 AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId)
@@ -385,10 +385,10 @@ bool AudioZoneService::CheckIsZoneValid(int32_t zoneId)
     if (zoneId == 0) {
         return true;
     }
-    rteurn FindZone(zoneId)!= nullptr;
+    return FindZone(zoneId) != nullptr;
 }
 
-const AudioZoneFocusList AudioZoneService::GetAudioInterruptForUid(int32_t zoneId, int32_t deviceId)
+AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId, int32_t deviceId)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     AudioZoneFocusList interrupts;
@@ -397,17 +397,17 @@ const AudioZoneFocusList AudioZoneService::GetAudioInterruptForUid(int32_t zoneI
         return interrupts;
     }
 
-    if (interruptService_!= nullptr) {
+    if (interruptService_ != nullptr) {
         interruptService_->GetAudioFocusInfoList(zoneId, deviceId, interrupts);
     }
     return interrupts;
 }
 
-int32_t AudioZoneService::EnableInterruptReport(pid_t clientPid, int32_t zoneId,
+int32_t AudioZoneService::EnableAudioZoneInterruptReport(pid_t clientPid, int32_t zoneId,
     int32_t deviceId, bool enable)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    CHECK_AND_RETURN_RET_LOG(zoneClientManager_!= nullptr && interruptService_ != nullptr, ERROR,
+    CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
         "zoneClientManager or interruptService is nullptr");
     if (!zoneClientManager_->IsRegisterAudioZoneClient(clientPid)) {
         AUDIO_ERR_LOG("no register client %{public}d", clientPid);
@@ -422,7 +422,7 @@ int32_t AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
 {
     AUDIO_INFO_LOG("active interrupt of zone %{public}d", zoneId);
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    CHECK_AND_RETURN_RET_LOG(zoneClientManager_!= nullptr && interruptService_ != nullptr, ERROR,
+    CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
         "zoneClientManager or interruptService is nullptr");
     if (!CheckIsZoneValid(zoneId)) {
         AUDIO_ERR_LOG("zone id %{public}d is not valid", zoneId);
@@ -431,7 +431,7 @@ int32_t AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
 
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         interruptService_, zoneClientManager_,
-        AudioZOneInterruptReason::REMOTE_INJECT);
+        AudioZoneInterruptReason::REMOTE_INJECT);
     int ret = interruptService_->ActivateAudioInterrupt(zoneId, audioInterrupt,
         isUpdatedAudioStrategy);
     for (auto &report : reporters) {
@@ -445,7 +445,7 @@ int32_t AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
 {
     AUDIO_INFO_LOG("deactive interrupt of zone %{public}d", zoneId);
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    CHECK_AND_RETURN_RET_LOG(zoneClientManager_!= nullptr && interruptService_!= nullptr, ERROR,
+    CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
         "zoneClientManager or interruptService is nullptr");
     if (!CheckIsZoneValid(zoneId)) {
         AUDIO_ERR_LOG("zone id %{public}d is not valid", zoneId);
@@ -454,7 +454,7 @@ int32_t AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
 
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         interruptService_, zoneClientManager_,
-        AudioZOneInterruptReason::REMOTE_INJECT);
+        AudioZoneInterruptReason::REMOTE_INJECT);
     int ret = interruptService_->DeactivateAudioInterrupt(zoneId, audioInterrupt);
     for (auto &report : reporters) {
         report->ReportInterrupt();
@@ -463,18 +463,18 @@ int32_t AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
 }
 
 int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId,
-    const AudioInterrupt &interrupts)
+    const AudioZoneFocusList &interrupts)
 {
     return InjectInterruptToAudioZone(zoneId, -1, interrupts);
 }
 
 int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
-    const AudioInterrupt &interrupts)
+    const AudioZoneFocusList &interrupts)
 {
     AUDIO_INFO_LOG("inject interrupt to zone %{public}d, device id %{public}d",
         zoneId, deviceId);
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    CHECK_AND_RETURN_RET_LOG(zoneClientManager_!= nullptr && interruptService_!= nullptr, ERROR,
+    CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
         "zoneClientManager or interruptService is nullptr");
     if (!CheckIsZoneValid(zoneId)) {
         AUDIO_ERR_LOG("zone id %{public}d is not valid", zoneId);
@@ -483,7 +483,7 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, int32_t dev
 
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         interruptService_, zoneClientManager_,
-        AudioZOneInterruptReason::REMOTE_INJECT);
+        AudioZoneInterruptReason::REMOTE_INJECT);
     int32_t ret;
     if (deviceId == -1) {
         ret = interruptService_->InjectInterruptToAudioZone(zoneId, interrupts);
@@ -496,10 +496,10 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, int32_t dev
     return ret;
 }
 
-std::vector<sptr<AudioZoneDescriptor>> AudioZoneService::FetchOutputDevices(int32_t zoneId,
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::FetchOutputDevices(int32_t zoneId,
     StreamUsage streamUsage, int32_t clientUid, const RouterType &bypassType)
 {
-    std::vector<sptr<AudioDeviceDescriptor>> devices;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     std::lock_guard<std::mutex> lock(zoneMutex_);
     auto zone = FindZone(zoneId);
     if (zone == nullptr) {
@@ -509,7 +509,7 @@ std::vector<sptr<AudioZoneDescriptor>> AudioZoneService::FetchOutputDevices(int3
     return zone->FetchOutputDevices(streamUsage, clientUid, bypassType);
 }
 
-sptr<AudioDeviceDescriptor> AudioZoneService::FetchInputDevice(int32_t zoneId,
+std::shared_ptr<AudioDeviceDescriptor> AudioZoneService::FetchInputDevice(int32_t zoneId,
     SourceType sourceType, int32_t clientUid)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);

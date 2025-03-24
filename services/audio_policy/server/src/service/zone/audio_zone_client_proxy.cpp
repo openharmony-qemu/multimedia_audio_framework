@@ -28,9 +28,8 @@ AudioZoneClientProxy::AudioZoneClientProxy(const sptr<IRemoteObject> &impl)
 AudioZoneClientProxy::~AudioZoneClientProxy()
 {}
 
-void AudioZoneClientProxy::OnAudioZoneAdd(const sptr<AudioZoneDescriptor> &zoneDescriptor)
+void AudioZoneClientProxy::OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor)
 {
-    CHECK_AND_RETURN_LOG(zoneDescriptor!= nullptr, "zoneDescriptor is null");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -38,7 +37,7 @@ void AudioZoneClientProxy::OnAudioZoneAdd(const sptr<AudioZoneDescriptor> &zoneD
     
     zoneDescriptor.Marshalling(data);
     int32_t error = Remote()->SendRequest(
-        static_cast<uint_32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_ADD), data, reply, option);
+        static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_ADD), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
@@ -51,14 +50,13 @@ void AudioZoneClientProxy::OnAudioZoneRemove(int32_t zoneId)
 
     data.WriteInt32(zoneId);
     int32_t error = Remote()->SendRequest(
-        static_cast<uint_32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_REMOVE), data, reply, option);
+        static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_REMOVE), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
 void AudioZoneClientProxy::OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
     AudioZoneChangeReason reason)
 {
-    CHECK_AND_RETURN_LOG(zoneDescriptor!= nullptr, "zoneDescriptor is null");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -68,13 +66,13 @@ void AudioZoneClientProxy::OnAudioZoneChange(int32_t zoneId, const AudioZoneDesc
     zoneDescriptor.Marshalling(data);
     data.WriteInt32(static_cast<int32_t>(reason));
     int32_t error = Remote()->SendRequest(
-        static_cast<uint_32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_CHANGE), data, reply, option);
+        static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_CHANGE), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
 void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId,
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
-    AudioInterruptReason reason)
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
+    AudioZoneInterruptReason reason)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -89,13 +87,13 @@ void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId,
     }
     data.WriteInt32(static_cast<int32_t>(reason));
     int32_t error = Remote()->SendRequest(
-        static_cast<uint_32_t>(AudioZoneClientCode::ON_INTERRUPT_EVENT), data, reply, option);
+        static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
 void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId, int32_t deviceId,
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
-    AudioInterruptReason reason)
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
+    AudioZoneInterruptReason reason)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -111,11 +109,11 @@ void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId, int32_t deviceId,
     }
     data.WriteInt32(static_cast<int32_t>(reason));
     int32_t error = Remote()->SendRequest(
-        static_cast<uint_32_t>(AudioZoneClientCode::ON_INTERRUPT_EVENT), data, reply, option);
+        static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_DEVICE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
-int32_t AudioZoneClientProxy::SetSystemVolumeLevel(const int32_t zoneId, const AudioVolumeType volumeType,
+int32_t AudioZoneClientProxy::SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,
     const int32_t volumeLevel, const int32_t volumeFlag)
 {
     MessageParcel data;
@@ -128,12 +126,12 @@ int32_t AudioZoneClientProxy::SetSystemVolumeLevel(const int32_t zoneId, const A
     data.WriteInt32(volumeLevel);
     data.WriteInt32(volumeFlag);
     int32_t error = Remote()->SendRequest(
-        static_cast<uint_32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_SET), data, reply, option);
+        static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_SET), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "send request failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 
-const int32_t AudioZoneClientProxy::GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType)
+int32_t AudioZoneClientProxy::GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -143,7 +141,7 @@ const int32_t AudioZoneClientProxy::GetSystemVolumeLevel(int32_t zoneId, AudioVo
     data.WriteInt32(zoneId);
     data.WriteInt32(static_cast<int32_t>(volumeType));
     int32_t error = Remote()->SendRequest(
-        static_cast<uint_32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_GET), data, reply, option);
+        static_cast<uint32_t>(AudioZoneClientCode::ON_AUDIO_ZONE_SYSTEM_VOLUME_GET), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "send request failed, error: %{public}d", error);
     return reply.ReadInt32();
 }

@@ -13,124 +13,275 @@
  * limitations under the License.
  */
 
-#include "audio_zone_unit_test_base.h"
+#include <condition_variable>
+#include <mutex>
+#include "gtest/gtest.h"
+#include "audio_zone.h"
+#include "audio_zone_client_manager.h"
+#include "audio_policy_server_handler.h"
+#include "audio_zone_service.h"
+#include "audio_interrupt_service.h"
+#include "i_audio_zone_event_dispatcher.h"
 
 using namespace testing::ext;
 
+#define TEST_PID_1000 1000
+
 namespace OHOS {
 namespace AudioStandard {
+class AudioZoneUnitTestClient : public IStandardAudioZoneClient {
+public:
+    sptr<IRemoteObject> AsObject() override
+    {
+        return nullptr;
+    }
 
-class AudioZoneInterruptUnitTest : public AudioZoneUnitTestBase {
+    void OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor) override
+    {
+        recvEvent_.type = AUDIO_ZONE_ADD_EVENT;
+        recvEvent_.zoneId = zoneDescriptor.zoneId_;
+        Notify();
+    }
+
+    void OnAudioZoneRemove(int32_t zoneId) override
+    {
+        recvEvent_.type = AUDIO_ZONE_REMOVE_EVENT;
+        recvEvent_.zoneId = zoneId;
+        Notify();
+    }
+
+    void OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
+        AudioZoneChangeReason reason) override
+    {
+        recvEvent_.type = AUDIO_ZONE_CHANGE_EVENT;
+        recvEvent_.zoneId = zoneId;
+        recvEvent_.zoneChangeReason = reason;
+        Notify();
+    }
+
+    void OnInterruptEvent(int32_t zoneId,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
+        AudioZoneInterruptReason reason) override
+    {
+        recvEvent_.type = AUDIO_ZONE_INTERRUPT_EVENT;
+        recvEvent_.zoneId = zoneId;
+        recvEvent_.interrupts = interrupts;
+        recvEvent_.zoneInterruptReason = reason;
+        Notify();
+    }
+
+    void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
+        AudioZoneInterruptReason reason) override
+    {
+        recvEvent_.type = AUDIO_ZONE_INTERRUPT_EVENT;
+        recvEvent_.zoneId = zoneId;
+        recvEvent_.deviceId = deviceId;
+        recvEvent_.interrupts = interrupts;
+        recvEvent_.zoneInterruptReason = reason;
+        Notify();
+    }
+
+    int32_t SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,
+        const int32_t volumeLevel, const int32_t volumeFlag) override
+    {
+        volumeLevel_ = volumeLevel;
+        Notify();
+        return 0;
+    }
+
+    int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType) override
+    {
+        Notify();
+        return volumeLevel_;
+    }
+
+    int Notify()
+    {
+        std::unique_lock<std::mutex> lock(waitLock_);
+        waitStatus_ = 1;
+        waiter_.notify_one();
+        return 0;
+    }
+
+    void Wait()
+    {
+        std::unique_lock<std::mutex> lock(waitLock_);
+        if (waitStatus_ == 0) {
+            waiter_.wait(lock, [this] {
+                return waitStatus_ != 0;
+            });
+        }
+        waitStatus_ = 0;
+    }
+
+    struct AudioZoneEvent recvEvent_;
+    std::condition_variable waiter_;
+    std::mutex waitLock_;
+    int32_t waitStatus_ = 0;
+    int32_t volumeLevel_ = 0;
 };
 
-static void ActivateInterrupt(int32_t zoneId, StreamUsage usage. AudioStreamType type,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+class AudioZoneInterruptUnitTest : public testing::Test {
+    void SetUp() override
+    {
+        std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+        std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+        AudioZoneService::GetInstance().Init(handler, interruptService);
+        AudioZoneContext context;
+        auto zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+        auto zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
+        sptr<AudioZoneUnitTestClient> client = new AudioZoneUnitTestClient();
+        AudioZoneClientManager::GetInstance().RegisterAudioZoneClient(TEST_PID_1000, client);
+        client1000_ = client;
+    }
+
+    void TearDown() override
+    {
+        zoneId1_ = 0;
+        zoneId2_ = 0;
+        client1000_ = nullptr;
+        AudioZoneService::GetInstance().DeInit();
+    }
+
+    int32_t zoneId1_ = 0;
+    int32_t zoneId2_ = 0;
+    sptr<AudioZoneUnitTestClient> client1000_;
+};
+
+struct InterruptInfo {
+    StreamUsage usage;
+    AudioStreamType type;
+    uint32_t streamId;
+    int32_t pid;
+    int32_t uid;
+    int32_t deviceId;
+};
+
+static void ActivateInterrupt(int32_t zoneId, InterruptInfo info)
 {
     AudioInterrupt interrupt;
-    interrupt.streamUsage = usage;
-    interrupt.audioFocusType.streamType = type;
-    interrupt.sessionId = sessionId;
-    interrupt.pid = pid;
-    interrupt.uid = uid;
-    interrupt.deviceId = deviceId;
-    AudioZoneService::GetInstance().ActivateInterrupt(zoneId, interrupt);
+    interrupt.streamUsage = info.usage;
+    interrupt.audioFocusType.streamType = info.type;
+    interrupt.streamId = info.streamId;
+    interrupt.pid = info.pid;
+    interrupt.uid = info.uid;
+    interrupt.deviceId = info.deviceId;
+    AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, interrupt);
 }
 
-static void DeActivateInterrupt(int32_t zoneId, StreamUsage usage. AudioStreamType type,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void DeActivateInterrupt(int32_t zoneId, InterruptInfo info)
 {
     AudioInterrupt interrupt;
-    interrupt.streamUsage = usage;
-    interrupt.audioFocusType.streamType = type;
-    interrupt.sessionId = sessionId;
-    interrupt.pid = pid;
-    interrupt.uid = uid;
-    interrupt.deviceId = deviceId;
-    AudioZoneService::GetInstance().DeActivateInterrupt(zoneId, interrupt);
+    interrupt.streamUsage = info.usage;
+    interrupt.audioFocusType.streamType = info.type;
+    interrupt.streamId = info.streamId;
+    interrupt.pid = info.pid;
+    interrupt.uid = info.uid;
+    interrupt.deviceId = info.deviceId;
+    AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, interrupt);
 }
 
-static void ActivateMusicInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void ActivateMusicInterrupt(int32_t zoneId, InterruptInfo info)
 {
-    ActivateInterrupt(zoneId, STREAM_USAGE_MUSIC, STREAM_MUSIC, sessionId, pid, uid, deviceId);
+    info.type = STREAM_MUSIC;
+    info.usage = STREAM_USAGE_MUSIC;
+    ActivateInterrupt(zoneId, info);
 }
 
-static void DeActivateMusicInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void DeActivateMusicInterrupt(int32_t zoneId, InterruptInfo info)
 {
-    DeActivateInterrupt(zoneId, STREAM_USAGE_MUSIC, STREAM_MUSIC, sessionId, pid, uid, deviceId);
+    info.type = STREAM_MUSIC;
+    info.usage = STREAM_USAGE_MUSIC;
+    DeActivateInterrupt(zoneId, info);
 }
 
-static void ActivateVoipInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void ActivateVoipInterrupt(int32_t zoneId, InterruptInfo info)
 {
-    ActivateInterrupt(zoneId, STREAM_USAGE_VOICE_COMMUNICATION, STREAM_VOICE_CALL, sessionId, pid, uid, deviceId);
+    info.type = STREAM_VOICE_CALL;
+    info.usage = STREAM_USAGE_VOICE_COMMUNICATION;
+    ActivateInterrupt(zoneId, info);
 }
 
-static void DeActivateVoipInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void DeActivateVoipInterrupt(int32_t zoneId, InterruptInfo info)
 {
-    DeActivateInterrupt(zoneId, STREAM_USAGE_VOICE_COMMUNICATION, STREAM_VOICE_CALL, sessionId, pid, uid, deviceId);
+    info.type = STREAM_VOICE_CALL;
+    info.usage = STREAM_USAGE_VOICE_COMMUNICATION;
+    DeActivateInterrupt(zoneId, info);
 }
 
-static void ActivateMovieInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void ActivateMovieInterrupt(int32_t zoneId, InterruptInfo info)
 {
-    ActivateInterrupt(zoneId, STREAM_USAGE_MOVIE, STREAM_MOVIE, sessionId, pid, uid, deviceId);
+    info.type = STREAM_MOVIE;
+    info.usage = STREAM_USAGE_MOVIE;
+    ActivateInterrupt(zoneId, info);
 }
 
-static void DeActivateMovieInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void DeActivateMovieInterrupt(int32_t zoneId, InterruptInfo info)
 {
-    DeActivateInterrupt(zoneId, STREAM_USAGE_MOVIE, STREAM_MOVIE, sessionId, pid, uid, deviceId);
+    info.type = STREAM_MOVIE;
+    info.usage = STREAM_USAGE_MOVIE;
+    DeActivateInterrupt(zoneId, info);
 }
 
-static void ActivateGamecInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void ActivateGamecInterrupt(int32_t zoneId, InterruptInfo info)
 {
-    ActivateInterrupt(zoneId, STREAM_USAGE_GAME, STREAM_GAME, sessionId, pid, uid, deviceId);
+    info.type = STREAM_GAME;
+    info.usage = STREAM_USAGE_GAME;
+    ActivateInterrupt(zoneId, info);
 }
 
-static void DeActivateGameInterrupt(int32_t zoneId, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId)
+static void DeActivateGameInterrupt(int32_t zoneId, InterruptInfo info)
 {
-    DeActivateInterrupt(zoneId, STREAM_USAGE_GAME, STREAM_GAME, sessionId, pid, uid, deviceId);
+    info.type = STREAM_GAME;
+    info.usage = STREAM_USAGE_GAME;
+    DeActivateInterrupt(zoneId, info);
 }
 
 static void AddInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    StreamUsage usage, AudioStreamType type, uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
-    AudioFocuState state)
+    InterruptInfo info, AudioFocuState state)
 {
     AudioInterrupt interrupt;
-    interrupt.streamUsage = usage;
-    interrupt.audioFocusType.streamType = type;
-    interrupt.sessionId = sessionId;
-    interrupt.pid = pid;
-    interrupt.uid = uid;
-    interrupt.deviceId = deviceId;
+    interrupt.streamUsage = info.usage;
+    interrupt.audioFocusType.streamType = info.type;
+    interrupt.streamId = info.streamId;
+    interrupt.pid = info.pid;
+    interrupt.uid = info.uid;
+    interrupt.deviceId = info.deviceId;
 
     interrupts.emplace_back(std::make_pair(interrupt, state));
 }
 
 static void AddMusicInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
-    AudioFocuState state)
+    InterruptInfo info, AudioFocuState state)
 {
-    AddInterruptToList(interrupts, STREAM_USAGE_MUSIC, STREAM_MUSIC, sessionId, pid, uid, deviceId, state);
+    info.type = STREAM_MUSIC;
+    info.usage = STREAM_USAGE_MUSIC;
+    AddInterruptToList(interrupts, info, state);
 }
 
 static void AddVoipInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
-    AudioFocuState state)
+    InterruptInfo info, AudioFocuState state)
 {
-    AddInterruptToList(interrupts, STREAM_USAGE_VOICE_COMMUNICATION,
-        STREAM_VOICE_CALL, sessionId, pid, uid, deviceId, state);
+    info.type = STREAM_VOICE_CALL;
+    info.usage = STREAM_USAGE_VOICE_COMMUNICATION;
+    AddInterruptToList(interrupts, info, state);
 }
 
 static void AddMovieInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
-    AudioFocuState state)
+    InterruptInfo info, AudioFocuState state)
 {
-    AddInterruptToList(interrupts, STREAM_USAGE_MOVIE, STREAM_MOVIE, sessionId, pid, uid, deviceId, state);
+    info.type = STREAM_MOVIE;
+    info.usage = STREAM_USAGE_MOVIE;
+    AddInterruptToList(interrupts, info, state);
 }
 
 static void AddGameInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-    uint_32_t sessionId, int32_t pid, int32_t uid, int32_t deviceId,
-    AudioFocuState state)
+    InterruptInfo info, AudioFocuState state)
 {
-    AddInterruptToList(interrupts, STREAM_USAGE_GAME, STREAM_GAME, sessionId, pid, uid, deviceId, state);
+    info.type = STREAM_GAME;
+    info.usage = STREAM_USAGE_GAME;
+    AddInterruptToList(interrupts, info, state);
 }
 
 /**
@@ -140,8 +291,16 @@ static void AddGameInterruptToList(std::list<std::pair<AudioInterrupt, AudioFocu
 */
 HWTEST_F(AudioZoneInterruptUnitTest, AudioZoneInterrupt_001, TestSize.Level1)
 {
-    ActivateMusicInterrupt(0, 10, 10, 10, -1);
-    ActivateVoipInterrupt(0, 20, 20, 20, -1);
+    InterruptInfo info;
+    info.streamId = 10;
+    info.pid = 10;
+    info.uid = 10;
+    info.deviceId = -1;
+    ActivateMusicInterrupt(0, info);
+    info.streamId = 20;
+    info.pid = 20;
+    info.uid = 20;
+    ActivateVoipInterrupt(0, info);
     auto interruptList = AudioZoneService::GetInstance().GetAudioInterruptForZone(0);
     EXPECT_EQ(interruptList.size(), 2);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1_, 10);
@@ -156,14 +315,22 @@ HWTEST_F(AudioZoneInterruptUnitTest, AudioZoneInterrupt_001, TestSize.Level1)
 */
 HWTEST_F(AudioZoneInterruptUnitTest, AudioZoneInterrupt_002, TestSize.Level1)
 {
-    ActivateMusicInterrupt(0, 10, 10, 10, -1);
+    InterruptInfo info;
+    info.streamId = 10;
+    info.pid = 10;
+    info.uid = 10;
+    info.deviceId = -1;
+    ActivateMusicInterrupt(0, info);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1_, 20);
-    ActivateVoipInterrupt(zoneId1_, 20, 20, 20, -1);
+    info.streamId = 20;
+    info.pid = 20;
+    info.uid = 20;
+    ActivateVoipInterrupt(zoneId1_, info);
     AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId1_, 20);
-    auto interruptList = AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId1_);
-    EXPECT_EQ(interruptList.size(), 0);
-    auto interruptList = AudioZoneService::GetInstance().GetAudioInterruptForZone(0);
-    EXPECT_EQ(interruptList.size(), 2);
+    auto interruptList1 = AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId1_);
+    EXPECT_EQ(interruptList1.size(), 0);
+    auto interruptList2 = AudioZoneService::GetInstance().GetAudioInterruptForZone(0);
+    EXPECT_EQ(interruptList2.size(), 2);
 }
 
 /**
@@ -173,10 +340,18 @@ HWTEST_F(AudioZoneInterruptUnitTest, AudioZoneInterrupt_002, TestSize.Level1)
 */
 HWTEST_F(AudioZoneInterruptUnitTest, AudioZoneInterrupt_003, TestSize.Level1)
 {
+    InterruptInfo info;
+    info.streamId = 10;
+    info.pid = 10;
+    info.uid = 10;
+    info.deviceId = -1;
     AudioZoneService::GetInstance().EnableAudioZoneInterruptReport(1000, zoneId1_, -1, true);
-    ActivateMusicInterrupt(0, 10, 10, 10, -1);
+    ActivateMusicInterrupt(0, info);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1_, 20);
-    ActivateVoipInterrupt(zoneId1_, 20, 20, 20, -1);
+    info.streamId = 20;
+    info.pid = 20;
+    info.uid = 20;
+    ActivateVoipInterrupt(zoneId1_, info);
     client1000_->Wait();
     EXPECT_EQ(client1000_->recvEvent_.type, AUDIO_ZONE_INTERRUPT_EVENT);
     AudioZoneService::GetInstance().EnableAudioZoneInterruptReport(1000, zoneId1_, -1, false);

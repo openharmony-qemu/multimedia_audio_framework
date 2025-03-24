@@ -315,17 +315,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceDescriptor::UnmarshallingPtr(P
     return audioDeviceDescriptor;
 }
 
-sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::UnmarshallingSptr(Parcel &parcel)
-{
-    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new AudioDeviceDescriptor;
-    if (audioDeviceDescriptor == nullptr) {
-        return nullptr;
-    }
-
-    audioDeviceDescriptor->UnmarshallingToDeviceDescriptor(parcel);
-    return audioDeviceDescriptor;
-}
-
 void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
 {
     deviceType_ = static_cast<DeviceType>(parcel.ReadInt32());

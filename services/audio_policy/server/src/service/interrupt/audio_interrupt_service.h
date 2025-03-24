@@ -83,12 +83,13 @@ public:
     void ResetNonInterruptControl(uint32_t streamId);
 
     // zone debug interfaces
+    int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, AudioZoneFocusStrategy focusStrategy =
         AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
-    void MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
+    int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
-    int32_t InjectInterruptToAudioZone(const int32_t zoneId, int32_t deviceId,
+    int32_t InjectInterruptToAudioZone(const int32_t zoneId, const int32_t deviceId,
         const AudioFocusList &interrupts);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, const int32_t deviceId,
@@ -213,6 +214,11 @@ private:
     // zone debug interfaces
     void WriteFocusMigrateEvent(const int32_t &toZoneId);
     void WriteServiceStartupError();
+    void RemoveAudioZoneInterrupts(int32_t zoneId, const InterruptIterator &interrupts);
+    void TryResumeAudioFocusListForZone(const int32_t zoneId);
+    InterruptIterator QueryAudioZoneInterrupts(int32_t zoneId, int32_t deviceId);
+    void ForceStopAudioInterrupt(int32_t zoneId, const AudioInterrupt &interrupt);
+    void ForceStopAudioInterruptZone(std::shared_ptr<AudioInterruptZone> &zone);
 
     // interfaces about audio session.
     void AddActiveInterruptToSession(const int32_t callerPid);

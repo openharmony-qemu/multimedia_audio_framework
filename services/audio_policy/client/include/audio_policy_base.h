@@ -331,13 +331,15 @@ public:
 
     virtual void ReleaseAudioZone(int32_t zoneId) = 0;
 
-    virtual const std::vector<sptr<AudioZoneDescriptor>> GetAllAudioZone() = 0;
+    virtual const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() = 0;
 
-    virtual const sptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) = 0;
+    virtual const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) = 0;
 
-    virtual int32_t BindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices) = 0;
+    virtual int32_t BindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) = 0;
 
-    virtual int32_t UnBindDeviceToAudioZone(int32_t zoneId, std::vector<sptr<AudioDeviceDescriptor>> devices) = 0;
+    virtual int32_t UnBindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) = 0;
 
     virtual int32_t EnableAudioZoneReport (bool enable) = 0;
 

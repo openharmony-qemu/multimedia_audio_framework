@@ -64,16 +64,16 @@ private:
     AudioZoneFocusList oldFoucsList_;
     AudioZoneInterruptReason reportReason_ = AudioZoneInterruptReason::UNKNOWN;
 
-    static ReportMap interruptEnableMap_;
+    static ReportMap interruptEnableMaps_;
     static std::mutex interruptEnableMutex_;
 
     static int32_t RegisterInterruptReport(pid_t clientPid, int32_t zoneId,
         int32_t deviceId);
-    static int32_t UnregisterInterruptReport(pid_t clientPid, int32_t zoneId,
+    static void UnRegisterInterruptReport(pid_t clientPid, int32_t zoneId,
         int32_t deviceId);
     
-    AudioZOneFoucsList GetFocusList();
-    bool IsFocusListEqual(const AudioZOneFoucsList &a, const AudioZOneFoucsList &b);
+    AudioZoneFocusList GetFocusList();
+    bool IsFocusListEqual(const AudioZoneFocusList &a, const AudioZoneFocusList &b);
 };
 } // namespace AudioStandard
 } // namespace OHOS

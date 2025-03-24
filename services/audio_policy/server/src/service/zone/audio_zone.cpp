@@ -104,7 +104,7 @@ void AudioZoneBindKey::Swap(AudioZoneBindKey &&other)
     this->streamTag_ = std::move(other.streamTag_);
 }
 
-const int32_t AudioZoneBindKey::GetUid() const
+int32_t AudioZoneBindKey::GetUid() const
 {
     return uid_;
 }
@@ -125,7 +125,7 @@ bool AudioZoneBindKey::IsContain(const AudioZoneBindKey &other) const
     std::vector<AudioZoneBindKey> supportKeys = GetSupportKeys(other);
     int32_t index = -1;
     int32_t otherIndex = -1;
-    for (int32_t i = 0; i < supportKeys.size(); i++) {
+    for (size_t i = 0; i < supportKeys.size(); i++) {
         if (supportKeys[i] == *this) {
             index = i;
         }
@@ -144,7 +144,7 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid
     const std::string &streamTag)
 {
     std::vector<AudioZoneBindKey> keys;
-    kesy.push_back(AudioZoneBindKey(uid, deviceId, streamTag));
+    keys.push_back(AudioZoneBindKey(uid, deviceId, streamTag));
     auto pushBack = [&keys](const AudioZoneBindKey &temp) {
         for (auto &key : keys) {
             if (key == temp) {
@@ -175,12 +175,12 @@ AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
 {
 }
 
-const int32_t AudioZone::GetId()
+int32_t AudioZone::GetId()
 {
     return zoneId_;
 }
 
-const sptr<AudioZoneDescriptor> AudioZone::GetDescriptor()
+const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptor()
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     return GetDescriptorNoLock();
@@ -194,7 +194,7 @@ const std::string AudioZone::GetStringDescriptor()
     str += name_;
     str += "\n";
     for (auto &key : keys_) {
-        str+="bing key "
+        str += "bing key ";
         str += key.GetString();
         str += "\n";
     }
@@ -204,18 +204,18 @@ const std::string AudioZone::GetStringDescriptor()
     return str;
 }
 
-const sptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
+const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
 {
-    sptr<AudioZoneDescriptor> descriptor = new AudioZoneDescriptor();
+    std::shared_ptr<AudioZoneDescriptor> descriptor = std::make_shared<AudioZoneDescriptor>();
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, nullptr, "descriptor is nullptr");
 
-    descriptor->zoneId = zoneId_;
-    descriptor->name = name_;
+    descriptor->zoneId_ = zoneId_;
+    descriptor->name_ = name_;
     for (const auto &key : keys_) {
         descriptor->uids_.insert(key.GetUid());
     }
-    for (const auto &device : devices_) {
-        descriptor->devices_.emplace_back(device.first);
+    for (const auto &it : devices_) {
+        descriptor->devices_.emplace_back(it.first);
     }
     return descriptor;
 }
@@ -273,13 +273,13 @@ bool AudioZone::IsContainKey(const AudioZoneBindKey &key)
     return false;
 }
 
-int32_t AudioZone::AddDeviceDescriptor(const std::vector<sptr<AudioDeviceDescriptor>> &devices)
+int32_t AudioZone::AddDeviceDescriptor(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (auto &device : devices) {
         CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is nullptr");
-        auto findDevice = [device] (const std::pair<sptr<AudioDeviceDescriptor>, bool> &item) {
-            return device->IsSameDeviceDesc(item.first);
+        auto findDevice = [device] (const std::pair<std::shared_ptr<AudioDeviceDescriptor>, bool> &item) {
+            return device->IsSameDeviceDesc(*(item.first));
         };
         
         auto itDev = std::find_if(devices_.begin(), devices_.end(), findDevice);
@@ -295,17 +295,17 @@ int32_t AudioZone::AddDeviceDescriptor(const std::vector<sptr<AudioDeviceDescrip
     return SUCCESS;
 }
 
-int32_t AudioZone::RemoveDeviceDescriptor(const std::vector<sptr<AudioDeviceDescriptor>> &devices)
+int32_t AudioZone::RemoveDeviceDescriptor(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (auto &device : devices) {
-        CHECK_AND_RETURN_RET_LOG(device!= nullptr, ERR_INVALID_PARAM, "device is nullptr");
-        auto findDevice = [device] (const std::pair<sptr<AudioDeviceDescriptor>, bool> &item) {
-            return device->IsSameDeviceDesc(item.first);
+        CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is nullptr");
+        auto findDevice = [device] (const std::pair<std::shared_ptr<AudioDeviceDescriptor>, bool> &item) {
+            return device->IsSameDeviceDesc(*(item.first));
         };
 
         auto itDev = std::find_if(devices_.begin(), devices_.end(), findDevice);
-        if (itDev!= devices_.end()) {
+        if (itDev != devices_.end()) {
             devices_.erase(itDev);
             AUDIO_INFO_LOG("remove device %{public}d,%{public}d,%{public}s from zone %{public}d",
                 device->deviceType_, device->deviceId_, device->deviceName_.c_str(), zoneId_);
@@ -314,42 +314,42 @@ int32_t AudioZone::RemoveDeviceDescriptor(const std::vector<sptr<AudioDeviceDesc
     return SUCCESS;
 }
 
-int32_t AudioZone::EnableDeviceDescriptor(sptr<AudioDeviceDescriptor> device)
+int32_t AudioZone::EnableDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device)
 {
     return SetDeviceDescriptorState(device, true);
 }
 
-int32_t AudioZone::DisableDeviceDescriptor(sptr<AudioDeviceDescriptor> device)
+int32_t AudioZone::DisableDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device)
 {
     return SetDeviceDescriptorState(device, false);
 }
 
-int32_t AudioZone::SetDeviceDescriptorState(const sptr<AudioDeviceDescriptor> device, const bool enable)
+int32_t AudioZone::SetDeviceDescriptorState(const std::shared_ptr<AudioDeviceDescriptor> device, const bool enable)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    CHECK_AND_RETURN_RET_LOG(device!= nullptr, ERROR, "device is nullptr");
-    auto findDevice = [device] (const std::pair<sptr<AudioDeviceDescriptor>, bool> &item) {
-        return device->IsSameDeviceDesc(item.first);
-    }
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is nullptr");
+    auto findDevice = [device] (const std::pair<std::shared_ptr<AudioDeviceDescriptor>, bool> &item) {
+        return device->IsSameDeviceDesc(*(item.first));
+    };
 
     auto itDev = std::find_if(devices_.begin(), devices_.end(), findDevice);
     if (itDev == devices_.end()) {
-        AUDIO_ERROR_LOG("device %{public}d,%{public}d,%{public}s not exist for zone %{public}d",
+        AUDIO_ERR_LOG("device %{public}d,%{public}d,%{public}s not exist for zone %{public}d",
             device->deviceType_, device->deviceId_, device->deviceName_.c_str(), zoneId_);
         return ERROR;
     }
     itDev->second = enable;
     AUDIO_INFO_LOG("%{public}s device %{public}d,%{public}d,%{public}s of zone %{public}d",
-        enable ? "enable" : "disable", device->deviceType_, device->deviceId_, device->deviceName_.c_str();
+        enable ? "enable" : "disable", device->deviceType_, device->deviceId_, device->deviceName_.c_str(), zoneId_);
     return SUCCESS;
 }
 
-bool AudioZone::IsDeviceConnect(sptr<AudioDeviceDescriptor> device)
+bool AudioZone::IsDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    CHECK_AND_RETURN_RET_LOG(device!= nullptr, false, "device is nullptr");
-    auto findDevice = [device] (const std::pair<sptr<AudioDeviceDescriptor>, bool> &item) {
-        return device->IsSameDeviceDesc(item.first);
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is nullptr");
+    auto findDevice = [device] (const std::pair<std::shared_ptr<AudioDeviceDescriptor>, bool> &item) {
+        return device->IsSameDeviceDesc(*(item.first));
     };
     auto itDev = std::find_if(devices_.begin(), devices_.end(), findDevice);
     if (itDev == devices_.end()) {
@@ -358,11 +358,11 @@ bool AudioZone::IsDeviceConnect(sptr<AudioDeviceDescriptor> device)
     return itDev->second;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioZone::FetchOutputDevices(StreamUsage streamUsage,
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::FetchOutputDevices(StreamUsage streamUsage,
     int32_t clientUid, const RouterType &bypassType)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    std::vector<sptr<AudioDeviceDescriptor>> descs;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &device : devices_) {
         if (device.second && device.first->deviceRole_ == OUTPUT_DEVICE) {
             descs.emplace_back(device.first);
@@ -372,7 +372,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioZone::FetchOutputDevices(StreamUsa
     return descs;
 }
 
-sptr<AudioDeviceDescriptor> AudioZone::FetchInputDevice(SourceType sourceType, int32_t clientUid)
+std::shared_ptr<AudioDeviceDescriptor> AudioZone::FetchInputDevice(SourceType sourceType, int32_t clientUid)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (const auto &device : devices_) {
@@ -398,10 +398,9 @@ int32_t AudioZone::EnableChangeReport(pid_t clientPid, bool enable)
 
 void AudioZone::SendZoneChangeEvent(AudioZoneChangeReason reason)
 {
-    sptr<AudioZoneDescriptor> descriptor = GetDescriptorNoLock();
-    CHECK_AND_RETURN_LOG(clientManager_!= nullptr, "clientManager is nullptr");woxian
-    for (auto &clientPid : changeReportClientList_) {
-        clientManager_->SendZoneChangeEvent(clientPid, reason, descriptor);
+    CHECK_AND_RETURN_LOG(clientManager_ != nullptr, "clientManager is nullptr");
+    for (auto &pid : changeReportClientList_) {
+        clientManager_->SendZoneChangeEvent(pid, this->GetDescriptorNoLock(), reason);
     }
 }
 
@@ -415,7 +414,7 @@ int32_t AudioZone::EnableSystemVolumeProxy(pid_t clientPid, bool enable)
     return SUCCESS;
 }
 
-const int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,
+int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,
     int32_t volumeLevel, int32_t volumeFlag)
 {
     std::shared_ptr<AudioZoneClientManager> mgr;

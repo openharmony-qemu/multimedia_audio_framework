@@ -108,8 +108,6 @@ public:
 
     static std::shared_ptr<AudioDeviceDescriptor> UnmarshallingPtr(Parcel &parcel);
 
-    static sptr<AudioDeviceDescriptor> UnmarshallingSptr(Parcel &parcel);
-
     void UnmarshallingToDeviceDescriptor(Parcel &parcel);
 
     void UnmarshallingToDeviceInfo(Parcel &parcel);

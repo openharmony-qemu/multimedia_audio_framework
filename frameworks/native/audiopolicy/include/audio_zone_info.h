@@ -38,7 +38,7 @@ enum class AudioZoneInterruptReason {
     REMOTE_INJECT = 2,
     RELEASE_AUDIO_ZONE,
     BIND_APP_TO_ZONE,
-    UNBING_APP_FROM_ZONE,
+    UNBIND_APP_FROM_ZONE,
 };
 
 enum class AudioZoneFocusStrategy {
@@ -68,7 +68,7 @@ public:
     int32_t zoneId_ = -1;
     std::string name_;
     std::set<int32_t> uids_;
-    std::vector<sptr<AudioDeviceDescriptor>> devices_;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices_;
 
     AudioZoneDescriptor() = default;
 
@@ -105,7 +105,7 @@ public:
         }
 
         for (size_t i = 0; i < size; i++) {
-            sptr<AudioDeviceDescriptor> device = sptr<AudioDeviceDescriptor>::MakeSptr();
+            std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
             if (device == nullptr) {
                 devices_.clear();
                 return;
@@ -115,9 +115,9 @@ public:
         }
     }
 
-    static sptr<AudioZoneDescriptor> UnmarshallingPtr(Parcel &parcel)
+    static std::shared_ptr<AudioZoneDescriptor> UnmarshallingPtr(Parcel &parcel)
     {
-        sptr<AudioZoneDescriptor> desc = new(std::nothrow) AudioZoneDescriptor();
+        std::shared_ptr<AudioZoneDescriptor> desc = std::make_shared<AudioZoneDescriptor>();
         if (desc == nullptr) {
             return nullptr;
         }

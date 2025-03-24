@@ -152,9 +152,9 @@ void AudioPolicyManagerStub::HandleBindAudioZoneDevice(MessageParcel &data, Mess
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size > 0, "no device to bind audio zone");
 
-    std::vector<sptr<AudioDeviceDescriptor>> devices;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (int32_t i = 0; i < size; i++) {
-        auto device = AudioDeviceDescriptor::UnmarshallingSptr(data);
+        auto device = AudioDeviceDescriptor::UnmarshallingPtr(data);
         devices.emplace_back(device);
     }
     reply.WriteInt32(BindDeviceToAudioZone(zoneId, devices));
@@ -167,9 +167,9 @@ void AudioPolicyManagerStub::HandleUnBindAudioZoneDevice(MessageParcel &data, Me
     int32_t size = data.ReadInt32();
     CHECK_AND_RETURN_LOG(size > 0, "no device to unbind audio zone");
 
-    std::vector<sptr<AudioDeviceDescriptor>> devices;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (int32_t i = 0; i < size; i++) {
-        auto device = AudioDeviceDescriptor::UnmarshallingSptr(data);
+        auto device = AudioDeviceDescriptor::UnmarshallingPtr(data);
         devices.emplace_back(device);
     }
     reply.WriteInt32(UnBindDeviceToAudioZone(zoneId, devices));

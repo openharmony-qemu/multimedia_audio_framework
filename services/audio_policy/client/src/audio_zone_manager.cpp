@@ -34,15 +34,15 @@ public:
 
     void ReleaseAudioZone(int32_t zoneId) override;
 
-    const std::vector<sptr<AudioZoneDescriptor>> GetAllAudioZone() override;
+    const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() override;
 
-    const sptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) override;
+    const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) override;
 
     int32_t BindDeviceToAudioZone(int32_t zoneId,
-        std::vector<sptr<AudioDeviceDescriptor>> devices) override;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) override;
 
     int32_t UnBindDeviceToAudioZone(int32_t zoneId,
-        std::vector<sptr<AudioDeviceDescriptor>> devices) override;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) override;
 
     int32_t RegisterAudioZoneCallback(const std::shared_ptr<AudioZoneCallback> &callback) override;
 
@@ -105,7 +105,7 @@ AudioZoneManager *AudioZoneManager::GetInstance()
 
 int32_t AudioZoneManagerInner::RegisterAudioZoneClient()
 {
-    CHECK_AND_RETURN_RET_LOG(client_ != nullptr, SUCCESS, "client_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(client_ != nullptr, ERROR, "client_ is nullptr!");
     sptr<AudioZoneClient> temp = new(std::nothrow) AudioZoneClient();
     CHECK_AND_RETURN_RET_LOG(temp != nullptr, ERROR, "temp client is nullptr!");
     sptr<IRemoteObject> object = temp->AsObject();
@@ -133,7 +133,7 @@ int32_t AudioZoneManagerInner::CreateAudioZone(const std::string &name, const Au
 }
 
 int32_t AudioZoneManagerInner::BindDeviceToAudioZone(int32_t zoneId,
-    std::vector<sptr<AudioDeviceDescriptor>> devices)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
@@ -146,7 +146,7 @@ int32_t AudioZoneManagerInner::BindDeviceToAudioZone(int32_t zoneId,
 }
 
 int32_t AudioZoneManagerInner::UnBindDeviceToAudioZone(int32_t zoneId,
-    std::vector<sptr<AudioDeviceDescriptor>> devices)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
@@ -165,13 +165,13 @@ void AudioZoneManagerInner::ReleaseAudioZone(int32_t zoneId)
     AudioPolicyManager::GetInstance().ReleaseAudioZone(zoneId);
 }
 
-const std::vector<sptr<AudioZoneDescriptor>> AudioZoneManagerInner::GetAllAudioZone()
+const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioZoneManagerInner::GetAllAudioZone()
 {
     AUDIO_INFO_LOG("in");
     return AudioPolicyManager::GetInstance().GetAllAudioZone();
 }
 
-const sptr<AudioZoneDescriptor> AudioZoneManagerInner::GetAudioZone(int32_t zoneId)
+const std::shared_ptr<AudioZoneDescriptor> AudioZoneManagerInner::GetAudioZone(int32_t zoneId)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, nullptr, "zoneId is invalid");
@@ -184,7 +184,7 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneCallback(const std::shared_ptr<A
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (RegisterAudioZoneClient() == SUCCESS) {
+    if (RegisterAudioZoneClient() == SUCCESS && client_ != nullptr) {
         client_->AddAudioZoneCallback(callback);
         return SUCCESS;
     }
@@ -195,7 +195,7 @@ int32_t AudioZoneManagerInner::UnRegisterAudioZoneCallback()
 {
     AUDIO_INFO_LOG("in");
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (client_!= nullptr) {
+    if (client_ != nullptr) {
         client_->RemoveAudioZoneCallback();
     }
     return SUCCESS;
@@ -206,10 +206,10 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneChangeCallback(int32_t zoneId,
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
-    CHECK_AND_RETURN_RET_LOG(callback!= nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (RegisterAudioZoneClient() == SUCCESS) {
+    if (RegisterAudioZoneClient() == SUCCESS && client_ != nullptr) {
         client_->AddAudioZoneChangeCallback(zoneId, callback);
         return SUCCESS;
     }
@@ -222,7 +222,7 @@ int32_t AudioZoneManagerInner::UnRegisterAudioZoneChangeCallback(int32_t zoneId)
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (client_!= nullptr) {
+    if (client_ != nullptr) {
         client_->RemoveAudioZoneChangeCallback(zoneId);
     }
     return SUCCESS;
@@ -256,10 +256,10 @@ int32_t AudioZoneManagerInner::RegisterSystemVolumeProxy(int32_t zoneId,
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
-    CHECK_AND_RETURN_RET_LOG(proxy!= nullptr, ERR_INVALID_PARAM, "proxy is nullptr");
+    CHECK_AND_RETURN_RET_LOG(proxy != nullptr, ERR_INVALID_PARAM, "proxy is nullptr");
     
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (RegisterAudioZoneClient() == SUCCESS) {
+    if (RegisterAudioZoneClient() == SUCCESS && client_ != nullptr) {
         client_->AddAudioZoneVolumeProxy(zoneId, proxy);
         return SUCCESS;
     }
@@ -272,7 +272,7 @@ int32_t AudioZoneManagerInner::UnRegisterSystemVolumeProxy(int32_t zoneId)
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (client_!= nullptr) {
+    if (client_ != nullptr) {
         client_->RemoveAudioZoneVolumeProxy(zoneId);
     }
     return SUCCESS;
@@ -324,10 +324,10 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneInterruptCallback(int32_t zoneId
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
-    CHECK_AND_RETURN_RET_LOG(callback!= nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (RegisterAudioZoneClient() == SUCCESS) {
+    if (RegisterAudioZoneClient() == SUCCESS && client_ != nullptr) {
         client_->AddAudioInterruptCallback(zoneId, callback);
         return SUCCESS;
     }
@@ -340,7 +340,7 @@ int32_t AudioZoneManagerInner::UnRegisterAudioZoneInterruptCallback(int32_t zone
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (client_!= nullptr) {
+    if (client_ != nullptr) {
         client_->RemoveAudioInterruptCallback(zoneId);
     }
     return SUCCESS;
@@ -354,7 +354,7 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneInterruptCallback(int32_t zoneId
     CHECK_AND_RETURN_RET_LOG(deviceId > 0, ERR_INVALID_PARAM, "deviceId is invalid");
     
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (RegisterAudioZoneClient() == SUCCESS) {
+    if (RegisterAudioZoneClient() == SUCCESS && client_ != nullptr) {
         client_->AddAudioInterruptCallback(zoneId, deviceId, callback);
         return SUCCESS;
     }
@@ -367,7 +367,7 @@ int32_t AudioZoneManagerInner::UnRegisterAudioZoneInterruptCallback(int32_t zone
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
-    if (client_!= nullptr) {
+    if (client_ != nullptr) {
         client_->RemoveAudioInterruptCallback(zoneId, deviceId);
     }
     return SUCCESS;

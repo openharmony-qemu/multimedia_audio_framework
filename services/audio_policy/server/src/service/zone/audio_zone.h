@@ -42,7 +42,7 @@ public:
     bool operator!=(const AudioZoneBindKey &other) const;
 
     int32_t GetUid() const;
-    std::string GetString() const;
+    const std::string GetString() const;
     bool IsContain(const AudioZoneBindKey &other) const;
     const static std::vector<AudioZoneBindKey> GetSupportKeys(int32_t uid, int32_t deviceId,
         const std::string &streamTag);
@@ -60,25 +60,25 @@ private:
 class AudioZone {
 public:
     AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
-        consta std::string &name, const AudioZoneContext &context);
+        const std::string &name, const AudioZoneContext &context);
     ~AudioZone() = default;
 
     int32_t GetId();
-    sptr<AudioZoneDescriptor> GetDescriptor();
-    std::string GetStringDescriptor();
+    const std::shared_ptr<AudioZoneDescriptor> GetDescriptor();
+    const std::string GetStringDescriptor();
 
     void BindByKey(const AudioZoneBindKey &key);
     void RemoveKey(const AudioZoneBindKey &key);
     bool IsContainKey(const AudioZoneBindKey &key);
     
-    int32_t AddDeviceDescriptor(const std::vector<sptr<AudioDeviceDescriptor>> &devices);
-    int32_t RemoveDeviceDescriptor(const std::vector<sptr<AudioDeviceDescriptor>> &devices);
-    int32_t EnableDeviceDescriptor(sptr<AudioDeviceDescriptor> device);
-    int32_t DisableDeviceDescriptor(sptr<AudioDeviceDescriptor> device);
-    bool IsDeviceConnect(sptr<AudioDeviceDescriptor> device);
-    std::vector<sptr<AudioDeviceDescriptor>> FetchOutputDevices(StreamUsage streamUsage,
+    int32_t AddDeviceDescriptor(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
+    int32_t RemoveDeviceDescriptor(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
+    int32_t EnableDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device);
+    int32_t DisableDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device);
+    bool IsDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(StreamUsage streamUsage,
         int32_t clientUid, const RouterType &bypassType);
-    sptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUid);
+    std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUid);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, bool enable);
     int32_t SetSystemVolumeLevel(const AudioVolumeType volumeType,
@@ -91,16 +91,16 @@ private:
     int32_t zoneId_ = -1;
     std::string name_ = "";
     std::list<AudioZoneBindKey> keys_;
-    std::list<std::pair<sptr<AudioDeviceDescriptor>, bool>> devices_;
+    std::list<std::pair<std::shared_ptr<AudioDeviceDescriptor>, bool>> devices_;
     std::mutex zoneMutex_;
     std::shared_ptr<AudioZoneClientManager> clientManager_;
     std::set<pid_t> changeReportClientList_;
     pid_t volumeProxyClientPid_ = 0;
     bool isVolumeProxyEnabled_ = false;
 
-    int32_t SetDeviceDescriptorState(const sptr<AudioDeviceDescriptor> device, const bool enable);
+    int32_t SetDeviceDescriptorState(const std::shared_ptr<AudioDeviceDescriptor> device, const bool enable);
     void SendZoneChangeEvent(AudioZoneChangeReason reason);
-    const sptr<AudioZoneDescriptor> GetDescriptorNoLock();
+    const std::shared_ptr<AudioZoneDescriptor> GetDescriptorNoLock();
 };
 } // namespace AudioStandard
 } // namespace OHOS
