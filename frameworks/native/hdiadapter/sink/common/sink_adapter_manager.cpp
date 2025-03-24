@@ -39,7 +39,7 @@ std::atomic<uint64_t> g_idCount = 0;
 SafeMap<void*, uint64_t> g_adapterIdMap = {};
 }
 
-struct RendererSinkAdapter* CreateSinkAdapterAdapter()
+struct RendererSinkAdapter* CreateSinkAdapter(void)
 {
     struct RendererSinkAdapter *adapter = (struct RendererSinkAdapter *)calloc(1, sizeof(*adapter));
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, nullptr, "alloc sink adapter failed");
@@ -50,7 +50,7 @@ struct RendererSinkAdapter* CreateSinkAdapterAdapter()
     return adapter;
 }
 
-void DestorySinkAdapter(struct RendererSinkAdapter* adapter)
+void DestorySinkAdapter(struct RendererSinkAdapter *adapter)
 {
     CHECK_AND_RETURN_LOG(adapter != nullptr, "Invalid parameter");
     uint64_t adapterId;
