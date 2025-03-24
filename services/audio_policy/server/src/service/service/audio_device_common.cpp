@@ -956,37 +956,8 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
              outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
             audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
             audioVolumeManager_.SetRingerModeMute(false);
-            int32_t curVoiceCallLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL);
-            float curVoiceCallDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
-                curVoiceCallLevel, outputDevices.front()->getType());
-            int32_t curRingToneLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING);
-            float curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING,
-                curRingToneLevel, outputDevices.front()->getType());
-            int32_t maxVoiceCall = audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL);
-            int32_t maxRingTone = audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING);
-            float curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
-            float minMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
-                maxVoiceCall * VOLUME_LEVEL_MIN_SIZE / VOLUME_LEVEL_MAX_SIZE, outputDevices.front()->getType()) *
-                audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, outputDevices.front()->getType());
-            float maxMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
-                maxVoiceCall * VOLUME_LEVEL_MID_SIZE / VOLUME_LEVEL_MAX_SIZE, outputDevices.front()->getType()) *
-                audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, outputDevices.front()->getType());
-            
-            if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
-                while (curVoiceRingMixDb < minMixDbDefault) {
-                    curRingToneLevel++;
-                    curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, 
-                        curRingToneLevel, outputDevices.front()->getType());
-                    curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
-                }
-                while (curVoiceRingMixDb > minMixDbDefault) {
-                    curRingToneLevel--;
-                    curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, 
-                        curRingToneLevel, outputDevices.front()->getType());
-                    curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
-                }
-                audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING, curRingToneLevel);
-            }
+            int32_t curRingToneLevel = RingToneVoiceControl();
+            audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING, curRingToneLevel);            
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
         }
@@ -1979,6 +1950,41 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
 #endif
     return result;
+}
+
+int32_t AudioDeviceCommon::RingToneVoiceControl()
+{
+    int32_t curVoiceCallLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL);
+    float curVoiceCallDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
+        curVoiceCallLevel, outputDevices.front()->getType());
+    int32_t curRingToneLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING);
+    float curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING,
+        curRingToneLevel, outputDevices.front()->getType());
+    int32_t maxVoiceCall = audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL);
+    int32_t maxRingTone = audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING);
+    float curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+    float minMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
+        maxVoiceCall * VOLUME_LEVEL_MIN_SIZE / VOLUME_LEVEL_MAX_SIZE, outputDevices.front()->getType()) *
+        audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, outputDevices.front()->getType());
+    float maxMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
+        maxVoiceCall * VOLUME_LEVEL_MID_SIZE / VOLUME_LEVEL_MAX_SIZE, outputDevices.front()->getType()) *
+        audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, outputDevices.front()->getType());
+    
+    if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
+        while (curVoiceRingMixDb < minMixDbDefault) {
+            curRingToneLevel++;
+            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, 
+                curRingToneLevel, outputDevices.front()->getType());
+            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+        }
+        while (curVoiceRingMixDb > maxMixDbDefault) {
+            curRingToneLevel--;
+            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, 
+                curRingToneLevel, outputDevices.front()->getType());
+            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+        }
+    }
+    return curRingToneLevel;
 }
 
 void AudioDeviceCommon::SetFirstScreenOn()
