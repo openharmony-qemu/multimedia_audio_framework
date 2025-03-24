@@ -43,6 +43,7 @@ static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+static const int VOLUME_LEVEL_DEFAULT = 5;
 static const int VOLUME_LEVEL_MIN_SIZE = 5;
 static const int VOLUME_LEVEL_MID_SIZE = 12;
 static const int VOLUME_LEVEL_MAX_SIZE = 15;
@@ -971,7 +972,7 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
                 maxVoiceCall * VOLUME_LEVEL_MID_SIZE / VOLUME_LEVEL_MAX_SIZE, outputDevices.front()->getType()) *
                 audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, outputDevices.front()->getType());
             
-            if (curVoiceCallLevel > 5) {
+            if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
                 while (curVoiceRingMixDb < minMixDbDefault) {
                     curRingToneLevel++;
                     curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, 
