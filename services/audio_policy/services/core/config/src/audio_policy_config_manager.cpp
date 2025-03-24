@@ -359,8 +359,9 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
     }
 }
 
-void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> &desc,
-    std::shared_ptr<AdapterPipeInfo> &pipeInfo, std::shared_ptr<PipeStreamPropInfo> &info, AudioChannel &tempChannel)
+void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(
+    std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &pipeInfo,
+    std::shared_ptr<PipeStreamPropInfo> &info, const AudioChannel &tempChannel)
 {
     //if not match, choose first
     info = pipeInfo->streamPropInfos_.front();
