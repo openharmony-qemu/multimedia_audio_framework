@@ -436,6 +436,7 @@ ohos_shared_library("renderer_sink_adapter") {
   sources = [
     "common/i_audio_renderer_sink.cpp",
     "common/renderer_sink_adapter.c",
+    "common/sink_adapter_manager.cpp",
   ]
 
   cflags = [ "-fPIC" ]
