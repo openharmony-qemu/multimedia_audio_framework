@@ -60,6 +60,7 @@ void CjAudioRendererOutputDeviceChangeCallback::OnOutputDeviceChange(const Audio
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     func_(arr);
