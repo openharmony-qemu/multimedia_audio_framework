@@ -417,7 +417,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
         ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
-    if (isScreenOffOrLock_ && !IsStreamActive(VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus()))) {
+    if (isScreenOffOrLock_ && !IsStreamActive(streamInFocus) && !VolumeUtils::IsPCVolumeEnable()) {
         AUDIO_INFO_LOG("screen off or screen lock, this stream is not active, not change volume.");
         return AUDIO_OK;
     }
