@@ -406,9 +406,9 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 int32_t AudioAdapterManager::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel,
     DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("SetSystemVolumeLevelWithDevice: streamType: %{public}d, currentDeviceType: %{public}d, "
-        "volumeLevel:%{public}d, deviceType: %{public}d", streamType, currentActiveDevice_.deviceType_,
-        volumeLevel, deviceType);
+    AUDIO_INFO_LOG("%{public}s: streamType: %{public}d, currentDeviceType: %{public}d, volumeLevel:%{public}d, " 
+        "deviceType: %{public}d",  __func__, streamType, currentActiveDevice_.deviceType_, volumeLevel,
+        deviceType);
     int32_t mimRet = GetMinVolumeLevel(streamType);
     int32_t maxRet = GetMaxVolumeLevel(streamType);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
