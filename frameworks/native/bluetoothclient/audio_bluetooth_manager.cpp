@@ -561,6 +561,10 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
     int8_t lastScoCategory = GetScoCategoryFromScene(scene_);
     int8_t newScoCategory = GetScoCategoryFromScene(scene);
+    if (newScoCategory == ScoCategory::SCO_VIRTUAL && !IsVirtualCall()) {
+        AUDIO_INFO_LOG("Voip change to Call Category");
+        newScoCategory = ScoCategory::SCO_CALLULAR;
+    }
     AUDIO_INFO_LOG("new sco category is %{public}d, last sco category is %{public}d", newScoCategory, lastScoCategory);
 
     int32_t ret = ConnectScoUponDefaultScene(newScoCategory); // default scene need support bluetooth sco
@@ -590,12 +594,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     }
     if (newScoCategory != ScoCategory::SCO_DEFAULT) {
         AUDIO_INFO_LOG("Entered to connectSco for new audioScene category.");
-        if (newScoCategory == ScoCategory::SCO_VIRTUAL && !IsVirtualCall()) {
-            AUDIO_INFO_LOG("voip change to call connect sco.");
-            ret = BluetoothScoManager::HandleScoConnect(ScoCategory::SCO_CALLULAR);
-        } else {
-            ret = BluetoothScoManager::HandleScoConnect(static_cast<ScoCategory> (newScoCategory));
-        }
+        ret = BluetoothScoManager::HandleScoConnect(static_cast<ScoCategory> (newScoCategory));
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "ConnectScoWithAudioScene failed, result: %{public}d", ret);
     }
     scene_ = scene;

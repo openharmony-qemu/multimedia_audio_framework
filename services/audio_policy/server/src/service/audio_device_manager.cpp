@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_device_parser.h"
 #include "audio_policy_utils.h"
+#include "audio_bluetooth_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
