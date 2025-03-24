@@ -126,13 +126,13 @@ void AudioA2dpDevice::SetA2dpDeviceStreamInfo(const std::string& device, const D
 void AudioA2dpDevice::AddA2dpDevice(const std::string& device, const A2dpDeviceConfigInfo& config)
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
-    connectedA2dpDeviceMap_.insert(make_pair(device, config));
+    connectedA2dpDeviceMap_[device] = config;
 }
 
 void AudioA2dpDevice::AddA2dpInDevice(const std::string& device, const A2dpDeviceConfigInfo& config)
 {
     std::lock_guard<std::mutex> lock(a2dpInDeviceMapMutex_);
-    connectedA2dpInDeviceMap_.insert(make_pair(device, config));
+    connectedA2dpInDeviceMap_[device] = config;
 }
 
 size_t AudioA2dpDevice::DelA2dpInDevice(const std::string& device)
