@@ -956,7 +956,7 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
              outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
             audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
             audioVolumeManager_.SetRingerModeMute(false);
-            int32_t curRingToneLevel = RingToneVoiceControl();
+            int32_t curRingToneLevel = RingToneVoiceControl(outputDevices.front()->getType());
             audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING, curRingToneLevel);            
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
@@ -1952,7 +1952,7 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     return result;
 }
 
-int32_t AudioDeviceCommon::RingToneVoiceControl()
+int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &deviceType)
 {
     int32_t curVoiceCallLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL);
     float curVoiceCallDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
