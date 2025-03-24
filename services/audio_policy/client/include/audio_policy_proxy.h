@@ -142,6 +142,9 @@ public:
 
     bool IsAudioSessionActivated() override;
 
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const SourceType sourceType, bool isRunning) override;
+
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const sptr<IRemoteObject> &object, uint32_t clientUid, const int32_t zoneID = 0) override;
 

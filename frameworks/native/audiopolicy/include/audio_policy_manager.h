@@ -560,6 +560,9 @@ public:
 
     int32_t SetVirtualCall(const bool isVirtual);
 
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
+        const SourceType sourceType, bool isRunning);
+
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
 
     int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);

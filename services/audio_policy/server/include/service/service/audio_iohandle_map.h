@@ -26,6 +26,7 @@
 #include "audio_group_handle.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
+#include "audio_pipe_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,6 +50,8 @@ public:
 
     int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName, bool isSync = false);
+    int32_t ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo,
+        bool isSync = false);
 
     void NotifyUnmutePort();
     void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);

@@ -1555,5 +1555,40 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_050, TestSize.Level1)
     int32_t ret = ptrAudioPolicyServer->SetStreamMute(AudioStreamType::STREAM_ALL, false, deviceType);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_051
+* @tc.desc  : Test AudioPolicyServer::SetRingerMode
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_051, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    ptrAudioPolicyServer->coreService_ = std::make_shared<AudioCoreService>();
+    auto ret = ptrAudioPolicyServer->SetRingerMode(AudioRingerMode::RINGER_MODE_NORMAL);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_052
+* @tc.desc  : Test ArgInfoDump.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_052, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    std::string dumpString;
+    std::queue<std::u16string> argQue;
+    server->OnStart();
+    server->ArgInfoDump(dumpString, argQue);
+}
 } // AudioStandard
 } // OHOS

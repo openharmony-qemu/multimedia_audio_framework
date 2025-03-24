@@ -69,6 +69,20 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALL
 };
 
+static const std::vector<AudioStreamType> AUDIO_STREAMTYPE_VOLUME_LIST = {
+    STREAM_MUSIC,
+    STREAM_RING,
+    STREAM_SYSTEM,
+    STREAM_NOTIFICATION,
+    STREAM_ALARM,
+    STREAM_DTMF,
+    STREAM_VOICE_CALL,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC,
+    STREAM_WAKEUP,
+};
+
 bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler)
 {
     audioPolicyServerHandler_ = audioPolicyServerHandler;
@@ -196,7 +210,7 @@ int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
     {
         DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
-        if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType != STREAM_VOICE_CALL &&
+        if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
             curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
             A2dpDeviceConfigInfo info;
             bool ret = audioA2dpDevice_.GetA2dpDeviceInfo(btDevice, info);
@@ -213,11 +227,12 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
     return audioPolicyManager_.GetSystemVolumeLevelNoMuteState(streamType);
 }
 
-void AudioVolumeManager::SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName)
+void AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
+    const std::string &newSinkName)
 {
-    Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceType));
+    Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
     // Load volume from KvStore and set volume for each stream type
-    audioPolicyManager_.SetVolumeForSwitchDevice(deviceType);
+    audioPolicyManager_.SetVolumeForSwitchDevice(deviceDescriptor);
 
     // The volume of voice_call needs to be adjusted separately
     if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
@@ -333,10 +348,16 @@ bool AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned)
     return result;
 }
 
+void AudioVolumeManager::SetMaxVolumeForDeviceChange()
+{
+    audioPolicyManager_.SetMaxVolumeForDeviceChange();
+}
+
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     int32_t result;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    curOutputDeviceType_ = curOutputDeviceType;
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType !=STREAM_VOICE_CALL &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
@@ -1101,5 +1122,56 @@ void AudioVolumeManager::UpdateSafeVolumeByS4()
     return audioPolicyManager_.UpdateSafeVolumeByS4();
 }
 
+std::vector<std::shared_ptr<AllDeviceVolumeInfo>> AudioVolumeManager::GetAllDeviceVolumeInfo()
+{
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> allDeviceVolumeInfo = {};
+    std::shared_ptr<AllDeviceVolumeInfo> deviceVolumeInfo = std::make_shared<AllDeviceVolumeInfo>();
+    auto deviceList = audioConnectedDevice_.GetDevicesInner(DeviceFlag::ALL_L_D_DEVICES_FLAG);
+    for (auto &device : deviceList) {
+        for (auto &streamType : AUDIO_STREAMTYPE_VOLUME_LIST) {
+            if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
+                continue;
+            }
+            deviceVolumeInfo = audioPolicyManager_.GetAllDeviceVolumeInfo(device->deviceType_, streamType);
+            if (deviceVolumeInfo != nullptr) {
+                allDeviceVolumeInfo.push_back(deviceVolumeInfo);
+            }
+        }
+    }
+    return allDeviceVolumeInfo;
+}
+
+void AudioVolumeManager::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
+    std::string callerName, std::string invocationTime)
+{
+    AdjustVolumeInfo systemVolumeLevelInfo;
+    systemVolumeLevelInfo.deviceType = curOutputDeviceType_;
+    systemVolumeLevelInfo.streamType = streamType;
+    systemVolumeLevelInfo.volumeLevel = volumeLevel;
+    systemVolumeLevelInfo.callerName = callerName;
+    systemVolumeLevelInfo.invocationTime = invocationTime;
+    systemVolumeLevelInfo_->Add(systemVolumeLevelInfo);
+}
+
+void AudioVolumeManager::SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime,
+    int32_t subscriptionId, bool registrationResult)
+{
+    VolumeKeyEventRegistration volumeKeyEventRegistration;
+    volumeKeyEventRegistration.keyType = keyType;
+    volumeKeyEventRegistration.subscriptionId = subscriptionId;
+    volumeKeyEventRegistration.registrationTime = registrationTime;
+    volumeKeyEventRegistration.registrationResult = registrationResult;
+    volumeKeyRegistrations_->Add(volumeKeyEventRegistration);
+}
+
+void AudioVolumeManager::GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo> &systemVolumeLevelInfo)
+{
+    systemVolumeLevelInfo = systemVolumeLevelInfo_->GetData();
+}
+
+void AudioVolumeManager::GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration> &keyRegistrationInfo)
+{
+    keyRegistrationInfo = volumeKeyRegistrations_->GetData();
+}
 }
 }

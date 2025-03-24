@@ -1105,6 +1105,12 @@ int32_t RendererInServer::SetLowPowerVolume(float volume)
         AUDIO_ERR_LOG("invalid volume:%{public}f", volume);
         return ERR_INVALID_PARAM;
     }
+    std::string currentTime = GetTime();
+    AUDIO_INFO_LOG("SetLowPowerVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
+        volume, streamIndex_, currentTime.c_str());
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(volume, streamIndex_, currentTime,
+        AdjustStreamVolume::LOW_POWER_VOLUME_INFO);
+
     lowPowerVolume_ = volume;
     AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(streamIndex_, volume);
     for (auto &capInfo : captureInfos_) {
@@ -1434,6 +1440,11 @@ int32_t RendererInServer::SetClientVolume()
         return ERROR;
     }
     float clientVolume = audioServerBuffer_->GetStreamVolume();
+    std::string currentTime = GetTime();
+    AUDIO_INFO_LOG("SetVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
+        clientVolume, streamIndex_, currentTime.c_str());
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(clientVolume, streamIndex_, currentTime,
+        AdjustStreamVolume::STREAM_VOLUME_INFO);
     int32_t ret = stream_->SetClientVolume(clientVolume);
     SetStreamVolumeInfoForEnhanceChain();
     AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, clientVolume);
@@ -1482,6 +1493,13 @@ int32_t RendererInServer::SetDuckFactor(float duckFactor)
         AUDIO_ERR_LOG("invalid duck volume:%{public}f", duckFactor);
         return ERR_INVALID_PARAM;
     }
+
+    std::string currentTime = GetTime();
+    AUDIO_INFO_LOG("SetDuckVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
+        duckFactor, streamIndex_, currentTime.c_str());
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(duckFactor, streamIndex_, currentTime,
+        AdjustStreamVolume::DUCK_VOLUME_INFO);
+
     AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(streamIndex_, duckFactor);
     for (auto &capInfo : captureInfos_) {
         if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {

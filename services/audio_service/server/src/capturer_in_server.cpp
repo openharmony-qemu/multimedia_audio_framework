@@ -77,7 +77,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
         return SUCCESS;
     }
-
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "ConfigServerBuffer failed, stream_ is null");
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     const size_t bufferNum = ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP)
         ? CAPTURER_BUFFER_WAKE_UP_NUM : CAPTURER_BUFFER_DEFAULT_NUM);
@@ -250,6 +250,7 @@ void CapturerInServer::ReadData(size_t length)
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null");
 
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
@@ -588,6 +589,7 @@ int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
         AUDIO_WARNING_LOG("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetAudioTime failed, stream_ is null");
     stream_->GetStreamFramesRead(framePos);
     stream_->GetCurrentTimeStamp(timestamp);
     if (resetTime_) {
@@ -599,6 +601,7 @@ int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 
 int32_t CapturerInServer::GetLatency(uint64_t &latency)
 {
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetLatency failed, stream_ is null");
     return stream_->GetLatency(latency);
 }
 

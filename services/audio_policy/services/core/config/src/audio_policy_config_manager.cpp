@@ -20,7 +20,7 @@
 #include "audio_policy_config_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_policy_service.h"
-
+#include "audio_ec_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -338,6 +338,43 @@ uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescr
     return flag;
 }
 
+void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo)
+{
+    switch (source) {
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            useMatchingPropInfo = true;
+            break;
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+            useMatchingPropInfo = AudioEcManager::GetInstance().GetEcFeatureEnable() ? false : true;
+            break;
+        case SOURCE_TYPE_VOICE_CALL:
+            break;
+        case SOURCE_TYPE_CAMCORDER:
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> &desc,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo, std::shared_ptr<PipeStreamPropInfo> &info)
+{
+    //if not match, choose first
+    info = pipeInfo->streamPropInfos_.front();
+    bool useMatchingPropInfo = false;
+    GetTargetSourceTypeAndMatchingFlag(desc->capturerInfo_.sourceType, useMatchingPropInfo);
+    if (useMatchingPropInfo) {
+        auto streamProp = GetStreamPropInfoFromPipe(pipeInfo, desc->streamInfo_.format,
+            desc->streamInfo_.samplingRate, desc->streamInfo_.channels);
+        if (streamProp != nullptr) {
+            info = streamProp;
+        }
+    }
+}
+
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
@@ -353,6 +390,11 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     if ((desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) ||
         (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST))) {
         tempChannel = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
+    }
+
+    if (desc->audioMode_ == AUDIO_MODE_RECORD) {
+        HandleGetStreamPropInfoForRecord(desc, pipeIt->second, info);
+        return;
     }
 
     auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, desc->streamInfo_.format,

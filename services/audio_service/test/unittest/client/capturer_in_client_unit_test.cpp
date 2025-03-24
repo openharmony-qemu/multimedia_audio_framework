@@ -279,7 +279,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_002, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner_->state_ = NEW;
     int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

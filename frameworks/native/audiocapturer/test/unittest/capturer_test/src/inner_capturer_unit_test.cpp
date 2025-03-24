@@ -34,6 +34,7 @@ namespace {
 const int32_t READ_BUFFERS_MAX_COUNT = 100;
 const int32_t VALID_DATA_COUNT = 20;
 const size_t SHORT_SLEEP_TIME = 100000; // us 100ms
+const size_t NUM2 = 2;
 } // namespace
 
 class InnerCapturerUnitTest : public testing::Test {
@@ -113,7 +114,7 @@ void MockRenderer::OnWriteData(size_t length)
 
 void MockRenderer::InitBuffer()
 {
-    cacheBuffer_ = std::make_unique<uint8_t []>(cacheBufferSize_);
+    cacheBuffer_ = std::make_unique<uint8_t []>(cacheBufferSize_ * NUM2);
     const int channels = 2; // 2 channels
     const int samplePerChannel = cacheBufferSize_ / channels; // 1920 for 20ms
 
@@ -221,7 +222,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_001, TestSize.Level1)
 
     config.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     config.filterOptions.usages.emplace_back(STREAM_USAGE_ALARM);
-    
+
     AudioCapturerOptions capturerOptions = InnerCapturerUnitTest::GetCapturerOptions(config);
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
@@ -240,7 +241,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_002, TestSize.Level1)
 
     config.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     config.filterOptions.usages.emplace_back(STREAM_USAGE_ALARM);
-    
+
     AudioCapturerOptions capturerOptions = InnerCapturerUnitTest::GetCapturerOptions(config);
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
@@ -250,7 +251,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_002, TestSize.Level1)
     ASSERT_EQ(res, true) << "Start failed!";
 
     usleep(SHORT_SLEEP_TIME);
-    
+
     res = audioCapturer->Stop();
     ASSERT_EQ(res, true) << "Stop failed!";
 
@@ -268,7 +269,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_003, TestSize.Level1)
 
     config.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     config.filterOptions.usages.emplace_back(STREAM_USAGE_ALARM);
-    
+
     AudioCapturerOptions capturerOptions = InnerCapturerUnitTest::GetCapturerOptions(config);
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
@@ -284,7 +285,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_003, TestSize.Level1)
     ASSERT_EQ(SUCCESS, ret) << "UpdatePlaybackCaptureConfig failed!";
 
     usleep(SHORT_SLEEP_TIME);
-    
+
     res = audioCapturer->Stop();
     ASSERT_EQ(res, true) << "Stop failed!";
 
@@ -302,7 +303,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_004, TestSize.Level1)
 
     config.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     config.filterOptions.usages.emplace_back(STREAM_USAGE_ALARM);
-    
+
     AudioCapturerOptions capturerOptions = InnerCapturerUnitTest::GetCapturerOptions(config);
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
@@ -340,7 +341,7 @@ static void TestInnerCapturer(StreamUsage targetUsage)
     AudioPlaybackCaptureConfig config = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
 
     config.filterOptions.usages.emplace_back(targetUsage);
-    
+
     AudioCapturerOptions capturerOptions = InnerCapturerUnitTest::GetCapturerOptions(config);
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
@@ -507,7 +508,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0016, TestSize.Level1)
     config.filterOptions.usages.emplace_back(STREAM_USAGE_MUSIC);
     config.filterOptions.pids.emplace_back(getpid());
     config.filterOptions.pidFilterMode = FilterMode::EXCLUDE;
-    
+
     AudioCapturerOptions capturerOptions = InnerCapturerUnitTest::GetCapturerOptions(config);
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);

@@ -45,7 +45,8 @@ shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage
     return desc;
 }
 
-shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
@@ -61,7 +62,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> DefaultRouter::GetRingRenderDevic
     return descs;
 }
 
-shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,

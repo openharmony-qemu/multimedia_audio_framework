@@ -247,9 +247,6 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
                 portName = OFFLOAD_PRIMARY_SPEAKER;
             } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
                 portName = MCH_PRIMARY_SPEAKER;
-            } else if (pipeType == PIPE_TYPE_CALL_OUT) {
-                bool normalVoipFlag = audioConfigManager_.GetNormalVoipFlag();
-                portName = (normalVoipFlag ? PRIMARY_SPEAKER : PRIMARY_DIRECT_VOIP);
             } else {
                 portName = PRIMARY_SPEAKER;
             }

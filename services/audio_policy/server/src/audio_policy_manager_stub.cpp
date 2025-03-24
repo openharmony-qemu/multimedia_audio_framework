@@ -198,6 +198,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "ACTIVATE_AUDIO_SESSION",
     "DEACTIVATE_AUDIO_SESSION",
     "IS_AUDIO_SESSION_ACTIVATED",
+    "SET_INPUT_DEVICE",
     "LOAD_SPLIT_MODULE",
     "SET_DEFAULT_OUTPUT_DEVICE",
     "GET_SYSTEM_ACTIVEVOLUME_TYPE",
@@ -230,7 +231,6 @@ void AudioPolicyManagerStub::ReadStreamChangeInfo(MessageParcel &data, const Aud
 {
     if (mode == AUDIO_MODE_PLAYBACK) {
         streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-        return;
     } else {
         // mode == AUDIO_MODE_RECORDING
         streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
@@ -1852,6 +1852,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_ACTIVEVOLUME_TYPE):
                 GetSystemActiveVolumeTypeInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_INPUT_DEVICE):
+                SetInputDeviceInternal(data, reply);
                 break;
             default:
                 OnMidRemoteRequest(code, data, reply, option);

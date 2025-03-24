@@ -64,7 +64,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(Str
 }
 
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(SourceType sourceType,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePrivacyDevices();
@@ -128,7 +128,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
 }
 
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
     if (Util::IsScoSupportSource(sourceType)) {
         vector<shared_ptr<AudioDeviceDescriptor>> descs =

@@ -417,6 +417,11 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.networkId_ == networkId_;
 }
 
+bool AudioDeviceDescriptor::IsDistributedSpeaker() const
+{
+    return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
+}
+
 void AudioDeviceDescriptor::Dump(std::string &dumpString)
 {
     dumpString += "deviceName: " + deviceName_ + " deviceRole: ";

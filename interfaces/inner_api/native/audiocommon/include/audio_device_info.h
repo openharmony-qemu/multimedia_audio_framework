@@ -159,6 +159,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_DEVICE = 25,
     /**
+     * Indicates a accessory audio device.
+     */
+    DEVICE_TYPE_ACCESSORY = 26,
+    /**
      * Indicates a Distributed virtualization audio device.
      */
     DEVICE_TYPE_REMOTE_DAUDIO = 29,
@@ -450,7 +454,8 @@ public:
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
         SET_DEFAULT_OUTPUT_DEVICE = 1002,
-        DISTRIBUTED_DEVICE = 1003
+        DISTRIBUTED_DEVICE = 1003,
+        SET_INPUT_DEVICE = 1004
     };
 
     operator AudioStreamDeviceChangeReason() const
