@@ -985,6 +985,7 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
                         curRingToneLevel, outputDevices.front()->getType());
                     curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
                 }
+                audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING, curRingToneLevel);
             }
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
