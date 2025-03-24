@@ -385,6 +385,10 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
     audioEffectChain->SetLidState(lidState_);
     audioEffectChain->SetFoldState(foldState_);
+    std::string maxSession = std::to_string(maxSessionID_);
+    if (sessionIDToEffectInfoMap_.count(maxSession)) {
+        audioEffectChain->SetStreamUsage(sessionIDToEffectInfoMap_[maxSession]);
+    }
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)
