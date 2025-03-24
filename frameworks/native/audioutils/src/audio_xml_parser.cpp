@@ -121,7 +121,9 @@ void DlopenUtils::DeInit()
     refCount_.store(refCount_.load() - 1);
     if (refCount_.load() == 0 && xmlFuncHandle_.use_count() == 1) {
         xmlFuncHandle_->xmlCleanupParser();
+#ifndef TEST_COVERAGE
         dlclose(xmlFuncHandle_->libHandle);
+#endif
         xmlFuncHandle_ = nullptr;
         AUDIO_INFO_LOG("Libxml2 close success");
     }
