@@ -360,7 +360,7 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
 }
 
 void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> &desc,
-    std::shared_ptr<AdapterPipeInfo> &pipeInfo, std::shared_ptr<PipeStreamPropInfo> &info)
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo, std::shared_ptr<PipeStreamPropInfo> &info, AudioChannel &tempChannel)
 {
     //if not match, choose first
     info = pipeInfo->streamPropInfos_.front();
@@ -368,7 +368,7 @@ void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(std::shared_ptr<
     GetTargetSourceTypeAndMatchingFlag(desc->capturerInfo_.sourceType, useMatchingPropInfo);
     if (useMatchingPropInfo) {
         auto streamProp = GetStreamPropInfoFromPipe(pipeInfo, desc->streamInfo_.format,
-            desc->streamInfo_.samplingRate, desc->streamInfo_.channels);
+            desc->streamInfo_.samplingRate, tempChannel);
         if (streamProp != nullptr) {
             info = streamProp;
         }
@@ -393,7 +393,7 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     }
 
     if (desc->audioMode_ == AUDIO_MODE_RECORD) {
-        HandleGetStreamPropInfoForRecord(desc, pipeIt->second, info);
+        HandleGetStreamPropInfoForRecord(desc, pipeIt->second, info, tempChannel);
         return;
     }
 
