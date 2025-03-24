@@ -21,7 +21,7 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "common/hdi_adapter_info.h"
-#include "hdi_adapter_type.h"
+#include "common/hdi_adapter_type.h"
 
 #define SUCCESS_RET { return SUCCESS; }
 #define NOT_SUPPORT_RET { return ERR_NOT_SUPPORTED; }

@@ -41,7 +41,6 @@ ohos_shared_library("hdiadapter_new") {
     "../../../services/audio_service/common/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../audioutils/include",
-    "../audiodefinitions/include",
     "../audioeffect/include",
     "../audioschedule/include",
   ]
@@ -127,7 +126,6 @@ ohos_unittest("hdiadapter_unit_test") {
   include_dirs = [
     "include",
     "../../../interfaces/inner_api/native/audiocommon/include",
-    "../audiodefinitions/include",
     "../audioutils/include",
   ]
 

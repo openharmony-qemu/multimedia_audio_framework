@@ -50,12 +50,8 @@ public:
         bool isResident = false);
     uint32_t GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info = HDI_ID_INFO_DEFAULT,
         bool isResident = false);
-    uint32_t GetRenderIdByDeviceClass(HdiIdBase idBase, HdiIdType idType, const std::string &info,
-        bool isResident);
     uint32_t GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
         const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false);
-    uint32_t GetCaptureIdByDeviceClass(HdiIdBase idBase, HdiIdType idType, const SourceType sourceType,
-        const std::string &info, bool isResident);
     void ReleaseId(uint32_t &id);
 
     std::shared_ptr<IAudioRenderSink> GetRenderSink(uint32_t renderId, bool tryCreate = false);
