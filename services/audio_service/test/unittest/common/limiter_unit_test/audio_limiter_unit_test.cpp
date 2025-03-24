@@ -27,8 +27,8 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-const int32_t TEST_MAX_REQUEST_1 = 7680; // buffer size for 20ms 2channel 48000Hz 32bit
-const int32_t TEST_MAX_REQUEST_2 = 3528; // buffer size for 20ms 2channel 44100Hz 16bit
+const int32_t BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT = 7680; // buffer size for 20ms 2channel 48000Hz 32bit
+const int32_t BUFFER_SIZE_20MS_2CH_44100HZ_16_BIT = 3528; // buffer size for 20ms 2channel 44100Hz 16bit
 const int32_t AUDIO_MS_PER_S = 1000;
 const int32_t PROC_COUNT = 4; // process 4 times
 static std::shared_ptr<AudioLimiter> limiter;
@@ -66,7 +66,7 @@ HWTEST_F(AudioLimiterUnitTest, SetConfig_001, TestSize.Level1)
 {
     EXPECT_NE(limiter, nullptr);
 
-    int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST_1, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    int32_t ret = limiter->SetConfig(BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -80,7 +80,7 @@ HWTEST_F(AudioLimiterUnitTest, SetConfig_002, TestSize.Level1)
 {
     EXPECT_NE(limiter, nullptr);
 
-    int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST_1, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    int32_t ret = limiter->SetConfig(BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -94,9 +94,9 @@ HWTEST_F(AudioLimiterUnitTest, Process_001, TestSize.Level1)
 {
     EXPECT_NE(limiter, nullptr);
 
-    int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST_1, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    int32_t ret = limiter->SetConfig(BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    int32_t frameLen = TEST_MAX_REQUEST_1 / SAMPLE_F32LE;
+    int32_t frameLen = BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT / SAMPLE_F32LE;
     std::vector<float> inBufferVector(frameLen, 0);
     std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
@@ -115,9 +115,9 @@ HWTEST_F(AudioLimiterUnitTest, Process_002, TestSize.Level1)
 {
     EXPECT_NE(limiter, nullptr);
 
-    int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST_1, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    int32_t ret = limiter->SetConfig(BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    int32_t frameLen = TEST_MAX_REQUEST_1 / SAMPLE_F32LE;
+    int32_t frameLen = BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT / SAMPLE_F32LE;
     std::vector<float> inBufferVector(frameLen, 0);
     std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
@@ -136,9 +136,9 @@ HWTEST_F(AudioLimiterUnitTest, Process_003, TestSize.Level1)
 {
     EXPECT_NE(limiter, nullptr);
 
-    int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST_2, SAMPLE_S16LE + 1, SAMPLE_RATE_44100, STEREO);
+    int32_t ret = limiter->SetConfig(BUFFER_SIZE_20MS_2CH_44100HZ_16_BIT, SAMPLE_S16LE + 1, SAMPLE_RATE_44100, STEREO);
     EXPECT_EQ(ret, SUCCESS);
-    int32_t frameLen = TEST_MAX_REQUEST_2 / (SAMPLE_S16LE + 1);
+    int32_t frameLen = BUFFER_SIZE_20MS_2CH_44100HZ_16_BIT / (SAMPLE_S16LE + 1);
     std::vector<float> inBufferVector(frameLen, 0);
     std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
@@ -157,10 +157,10 @@ HWTEST_F(AudioLimiterUnitTest, GetLatency_001, TestSize.Level1)
 {
     EXPECT_NE(limiter, nullptr);
 
-    int32_t ret = limiter->SetConfig(TEST_MAX_REQUEST_1, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
+    int32_t ret = limiter->SetConfig(BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
     ret = limiter->GetLatency();
-    EXPECT_EQ(ret, TEST_MAX_REQUEST_1 * AUDIO_MS_PER_S/ (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO * PROC_COUNT));
+    EXPECT_EQ(ret, BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT * AUDIO_MS_PER_S/ (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO * PROC_COUNT));
 }
 } // namespace AudioStandard
 } // namespace OHOS
