@@ -3221,7 +3221,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     corking ? pa_atomic_store(&i->isFirstReaded, 0) : (void)0;
     starting ? pa_atomic_store(&i->isFirstReaded, 1) : (void)0;
 
-    if (!IsInnerCapSinkName(i->sink->name) ||
+    if (IsInnerCapSinkName(i->sink->name) ||
         !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER) ||
         !strcmp(i->sink->driver, "module_split_stream_sink.c")) {
         ResetFadeoutPause(i, state);
