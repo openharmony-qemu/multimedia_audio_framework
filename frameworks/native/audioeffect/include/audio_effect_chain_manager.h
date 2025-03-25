@@ -199,7 +199,7 @@ private:
     void InitHdiStateInner();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
-        const std::string &effectMode);
+        const std::string &effectMode, std::string &sceneType);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> effectChainToEffectsMap_;
