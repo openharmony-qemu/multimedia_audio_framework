@@ -194,7 +194,10 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentage(napi_env env, napi_cal
         auto *napiAudioVolumeManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeManagerStatus(napiAudioVolumeManager, context),
             "audio volume group manager state is error.");
-        context->volLevel = napiAudioVolumeManager->audioSystemMngr_->GetSelfAppVolume();
+        context->intValue = napiAudioVolumeManager->audioSystemMngr_->GetSelfAppVolume(context->volLevel);
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -228,11 +231,14 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentageForUid(napi_env env, na
         auto *napiAudioVolumeManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeManagerStatus(napiAudioVolumeManager, context),
             "audio volume group manager state is error.");
-        context->volLevel = napiAudioVolumeManager->audioSystemMngr_->GetAppVolume(context->appUid);
-        if (context->volLevel == ERR_PERMISSION_DENIED) {
+        context->intValue = napiAudioVolumeManager->audioSystemMngr_->GetAppVolume(context->appUid, context->volLevel);
+        CHECK_AND_RETURN(context->intValue != SUCCESS);
+        if (context->intValue == ERR_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_NO_PERMISSION);
-        } else if (context->volLevel == ERR_SYSTEM_PERMISSION_DENIED) {
+        } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        } else {
+            context->SignError(NAPI_ERR_SYSTEM);
         }
     };
 
@@ -272,8 +278,16 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentageForUid(napi_env env, na
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeManager->audioSystemMngr_->SetAppVolume(
             context->appUid, context->volLevel);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "set appvolume failed",
-            NAPI_ERR_SYSTEM);
+        CHECK_AND_RETURN(context->intValue != SUCCESS);
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        } else if (context->intValue == ERR_INVALID_PARAM) {
+            context->SignError(NAPI_ERROR_INVALID_PARAM);
+        } else {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
     };
 
     auto complete = [env](napi_value &output) {
@@ -309,8 +323,12 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentage(napi_env env, napi_cal
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeManager->audioSystemMngr_->SetSelfAppVolume(
             context->volLevel);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "set appvolume failed",
-            NAPI_ERR_SYSTEM);
+        CHECK_AND_RETURN(context->intValue != SUCCESS);
+        if (context->intValue == ERROR_INVALID_PARAM) {
+            context->SignError(NAPI_ERROR_INVALID_PARAM);
+        } else {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
     };
 
     auto complete = [env](napi_value &output) {
@@ -345,7 +363,14 @@ napi_value NapiAudioVolumeManager::SetAppVolumeMutedForUid(napi_env env, napi_ca
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeManager->audioSystemMngr_->SetAppVolumeMuted(
             context->appUid, context->isMute);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetAppVolumeMuted failed", NAPI_ERR_SYSTEM);
+        CHECK_AND_RETURN(context->intValue != SUCCESS);
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        } else {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
     };
 
     auto complete = [env](napi_value &output) {
@@ -377,8 +402,16 @@ napi_value NapiAudioVolumeManager::IsAppVolumeMutedForUid(napi_env env, napi_cal
         auto *napiAudioVolumeManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeManagerStatus(napiAudioVolumeManager, context),
             "audio volume group manager state is error.");
-        context->isMute = napiAudioVolumeManager->audioSystemMngr_->IsAppVolumeMute(
-            context->appUid, context->isOwned);
+        context->intValue = napiAudioVolumeManager->audioSystemMngr_->IsAppVolumeMute(
+            context->appUid, context->isOwned, context->isMute);
+        CHECK_AND_RETURN(context->intValue != SUCCESS);
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        } else {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
     };
     auto complete = [env, context](napi_value &output) {
         NapiParamUtils::SetValueBoolean(env, context->isMute, output);
@@ -573,11 +606,20 @@ napi_value NapiAudioVolumeManager::RegisterAppVolumeChangeForUidCallback(napi_en
         napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_ =
             std::make_shared<NapiAudioManagerAppVolumeChangeCallback>(env);
     }
-    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_, result,
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_ != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
         "RegisterAppVolumeChangeForUidCallback: Memory Allocation Failed !");
     int32_t ret = napiAudioVolumeManager->audioSystemMngr_->SetAppVolumeCallbackForUid(appUid,
         napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "SetAppVolumeCallbackForUid Failed");
+    if (ret != SUCCESS) {
+        if (ret == ERROR_INVALID_PARAM) {
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Invalid parameter");
+        } else if (ret == ERR_PERMISSION_DENIED) {
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Permission denied");
+        } else {
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error");
+        }
+    }
     std::shared_ptr<NapiAudioManagerAppVolumeChangeCallback> cb =
         std::static_pointer_cast<NapiAudioManagerAppVolumeChangeCallback>(
         napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_);
@@ -597,11 +639,18 @@ napi_value NapiAudioVolumeManager::RegisterSelfAppVolumeChangeCallback(napi_env 
         napiAudioVolumeManager->selfAppVolumeChangeCallbackNapi_ =
             std::make_shared<NapiAudioManagerAppVolumeChangeCallback>(env);
     }
-    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->selfAppVolumeChangeCallbackNapi_, result,
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->selfAppVolumeChangeCallbackNapi_ != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
         "napiAudioVolumeManager: Memory Allocation Failed !");
     int32_t ret = napiAudioVolumeManager->audioSystemMngr_->SetSelfAppVolumeCallback(
         napiAudioVolumeManager->selfAppVolumeChangeCallbackNapi_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "SetSelfAppVolumeCallback Failed");
+    if (ret != SUCCESS) {
+        if (ret == ERROR_INVALID_PARAM) {
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Invalid parameter");
+        } else {
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error");
+        }
+    }
     std::shared_ptr<NapiAudioManagerAppVolumeChangeCallback> cb =
         std::static_pointer_cast<NapiAudioManagerAppVolumeChangeCallback>(
         napiAudioVolumeManager->selfAppVolumeChangeCallbackNapi_);
@@ -729,12 +778,12 @@ napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value j
 void NapiAudioVolumeManager::UnregisterAppVolumeChangeForUidCallback(napi_env env, napi_value callback,
     napi_value *args, size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
-    if (napiAudioVolumeManager == nullptr) {
+    if (napiAudioVolumeManager == nullptr ||
+        napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_ == nullptr) {
+        NapiAudioError::ThrowError(env, "UnregisterAppVolumeChangeForUidCallback failed", NAPI_ERR_SYSTEM);
         AUDIO_ERR_LOG("napiAudioVolumeManager is nullptr");
         return;
     }
-    CHECK_AND_RETURN_LOG(napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_ != nullptr,
-        "UnregisterDeviceChangeCallback: audio manager deviceChangeCallbackNapi_ is null");
     std::shared_ptr<NapiAudioManagerAppVolumeChangeCallback> cb =
         std::static_pointer_cast<NapiAudioManagerAppVolumeChangeCallback>(
         napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_);
@@ -753,12 +802,12 @@ void NapiAudioVolumeManager::UnregisterAppVolumeChangeForUidCallback(napi_env en
 void NapiAudioVolumeManager::UnregisterSelfAppVolumeChangeCallback(napi_env env, napi_value callback,
     size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
-    if (napiAudioVolumeManager == nullptr) {
+    if (napiAudioVolumeManager == nullptr ||
+        napiAudioVolumeManager->selfAppVolumeChangeCallbackNapi_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager is nullptr");
+        NapiAudioError::ThrowError(env, "UnregisterSelfAppVolumeChangeCallback failed", NAPI_ERR_SYSTEM);
         return;
     }
-    CHECK_AND_RETURN_LOG(napiAudioVolumeManager->selfAppVolumeChangeCallbackNapi_ != nullptr,
-        "UnregisterDeviceChangeCallback: audio manager selfAppVolumeChangeCallbackNapi_ is null");
     std::shared_ptr<NapiAudioManagerAppVolumeChangeCallback> cb =
         std::static_pointer_cast<NapiAudioManagerAppVolumeChangeCallback>(
         napiAudioVolumeManager->selfAppVolumeChangeCallbackNapi_);

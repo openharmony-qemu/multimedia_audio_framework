@@ -110,11 +110,11 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
 
-    bool IsAppVolumeMute(int32_t appUid, bool owned);
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
-    int32_t GetAppVolumeLevel(int32_t appUid);
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
