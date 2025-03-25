@@ -100,6 +100,7 @@ public:
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     ClientType GetClientTypeByStreamId(int32_t streamId);
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -163,6 +164,11 @@ private:
     bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,
         const std::vector<SourceType> &existConcurrentSources,
         const std::vector<SourceType> &incomingConcurrentSources);
+    bool IsMediaStream(AudioStreamType audioStreamType);
+    void UpdateAudioFocusStrategy(AudioFocusType existAudioFocusType, AudioFocusType incomingAudioFocusType,
+        AudioFocusEntry &focusEntry);
+    bool FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
+        AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt);
     int32_t ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     void SendInterruptEventToIncomingStream(InterruptEventInternal &interruptEvent,
         const AudioInterrupt &incomingInterrupt);
@@ -266,6 +272,7 @@ private:
     std::mutex mutex_;
     mutable int32_t ownerPid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

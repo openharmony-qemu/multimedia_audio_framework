@@ -170,6 +170,7 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeinfoByNameAndFlag(
 std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("Cur Pipe list size %{public}zu, sessionId %{public}u", curPipeList_.size(), sessionId);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto pipeInfo : curPipeList_) {
         for (auto desc : pipeInfo->streamDescriptors_) {
             if (desc->sessionId_ != sessionId) {
@@ -332,24 +333,67 @@ void AudioPipeManager::Dump(std::string &dumpString)
     dumpString += "\n^^^^^^^^^^AudioPipeManager Infos^^^^^^^^^^\n";
 }
 
-uint32_t AudioPipeManager::GetModemCommunicationId()
+bool AudioPipeManager::IsModemCommunicationIdExist()
 {
-    return modemCommunicationId_.load();
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    return !modemCommunicationIdMap_.empty();
 }
 
-void AudioPipeManager::SetModemCommunicationId(uint32_t id)
+bool AudioPipeManager::IsModemCommunicationIdExist(uint32_t sessionId)
 {
-    if (id < FIRST_SESSIONID || id > MAX_VALID_SESSIONID) {
-        AUDIO_ERR_LOG("Invalid id %{public}u", id);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    return modemCommunicationIdMap_.find(sessionId) != modemCommunicationIdMap_.end();
+}
+
+void AudioPipeManager::AddModemCommunicationId(uint32_t sessionId, int32_t clientUid)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    if (sessionId < FIRST_SESSIONID || sessionId > MAX_VALID_SESSIONID) {
+        AUDIO_ERR_LOG("Invalid id %{public}u", sessionId);
     }
-    modemCommunicationId_.store(id);
+    modemCommunicationIdMap_[sessionId] = clientUid;
 }
 
-void AudioPipeManager::ResetModemCommunicationId()
+void AudioPipeManager::RemoveModemCommunicationId(uint32_t sessionId)
 {
-    AUDIO_INFO_LOG("In");
-    modemCommunicationId_.store(0);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    if (modemCommunicationIdMap_.find(sessionId) != modemCommunicationIdMap_.end()) {
+        modemCommunicationIdMap_.erase(sessionId);
+        AUDIO_INFO_LOG("RemoveModemCommunicationId %{public}u success", sessionId);
+    } else {
+        AUDIO_WARNING_LOG("RemoveModemCommunicationId fail, cannot find id %{public}u", sessionId);
+    }
 }
 
+std::unordered_map<uint32_t, int32_t> AudioPipeManager::GetModemCommunicationMap()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    return modemCommunicationIdMap_;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetNormalSourceInfo(bool isEcFeatureEnable)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = GetPipeByModuleAndFlag(PRIMARY_MIC, AUDIO_INPUT_FLAG_NORMAL);
+    CHECK_AND_RETURN_RET(pipeInfo == nullptr, pipeInfo);
+    pipeInfo = GetPipeByModuleAndFlag(BLUETOOTH_MIC, AUDIO_INPUT_FLAG_NORMAL);
+    CHECK_AND_RETURN_RET(pipeInfo == nullptr, pipeInfo);
+    if (isEcFeatureEnable) {
+        pipeInfo = GetPipeByModuleAndFlag(BLUETOOTH_MIC, AUDIO_INPUT_FLAG_NORMAL);
+    }
+    return pipeInfo;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeByModuleAndFlag(const std::string moduleName,
+    const uint32_t routeFlag)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it : curPipeList_) {
+        if (it->moduleInfo_.name == moduleName && it->routeFlag_ == routeFlag) {
+            return it;
+        }
+    }
+    AUDIO_ERR_LOG("Can not find pipe %{public}s", moduleName.c_str());
+    return nullptr;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -79,7 +79,6 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
 
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)
 {
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetAdapterNameBySessionId(sessionId);
 }
 
@@ -160,7 +159,7 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     serviceLock.unlock();
     if (ret == SUCCESS) {
 #ifdef USB_ENABLE
-        AudioUsbManager::GetInstance().Init(this);
+        AudioUsbManager::GetInstance().Init();
 #endif
         coreService_->audioEffectService_.SetMasterSinkAvailable();
     }

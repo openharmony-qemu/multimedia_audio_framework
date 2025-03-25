@@ -18,6 +18,7 @@
 #include <string>
 #include <mutex>
 #include <shared_mutex>
+#include <set>
 
 #include "audio_stream_descriptor.h"
 #include "audio_module_info.h"
@@ -65,15 +66,19 @@ public:
     uint32_t PcmOffloadSessionCount();
 
     void Dump(std::string &dumpString);
-    uint32_t GetModemCommunicationId();
-    void SetModemCommunicationId(uint32_t id);
-    void ResetModemCommunicationId();
+    bool IsModemCommunicationIdExist();
+    bool IsModemCommunicationIdExist(uint32_t sessionId);
+    void AddModemCommunicationId(uint32_t sessionId, int32_t clientUid);
+    void RemoveModemCommunicationId(uint32_t sessionId);
+    std::unordered_map<uint32_t, int32_t> GetModemCommunicationMap();
+    std::shared_ptr<AudioPipeInfo> GetNormalSourceInfo(bool isEcFeatureEnable);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
+    std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
 
-    std::atomic<uint32_t> modemCommunicationId_ = 0;
-    std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_;
+    std::unordered_map<uint32_t, int32_t> modemCommunicationIdMap_{}; // key -> sessionId, value -> clientUid
+    std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_{};
     std::shared_mutex pipeListLock_;
 };
 } // namespace AudioStandard

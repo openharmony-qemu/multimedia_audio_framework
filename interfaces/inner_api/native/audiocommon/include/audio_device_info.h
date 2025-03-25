@@ -159,7 +159,7 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_DEVICE = 25,
     /**
-     * Indicates a remote control or pencil.
+     * Indicates a accessory audio device.
      */
     DEVICE_TYPE_ACCESSORY = 26,
     /**
@@ -226,7 +226,7 @@ enum DmDeviceType {
     DM_DEVICE_TYPE_DEFAULT = 0,
     DM_DEVICE_TYPE_PENCIL = 0xA07,
     DM_DEVICE_TYPE_UWB = 0x06C,
-}
+};
 
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_EARPIECE,
@@ -461,7 +461,8 @@ public:
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
         SET_DEFAULT_OUTPUT_DEVICE = 1002,
-        DISTRIBUTED_DEVICE = 1003
+        DISTRIBUTED_DEVICE = 1003,
+        SET_INPUT_DEVICE = 1004
     };
 
     operator AudioStreamDeviceChangeReason() const

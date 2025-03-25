@@ -24,6 +24,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+void SetApiVersionGetter(std::function<int32_t()> GetApiVersion);
+
 inline bool IsUsb(DeviceType type)
 {
     return type == DEVICE_TYPE_USB_HEADSET || type == DEVICE_TYPE_USB_ARM_HEADSET;
@@ -122,6 +124,8 @@ public:
     bool IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const;
 
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
+
+    bool IsDistributedSpeaker() const;
 
     DeviceType MapInternalToExternalDeviceType() const;
 

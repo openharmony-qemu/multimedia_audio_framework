@@ -153,7 +153,7 @@ public:
 
     bool GetEffectOffloadEnabled() override;
 
-    void OnCapturerState(bool isActive, int32_t num);
+    void OnCapturerState(bool isActive, size_t preNum, size_t curNum);
 
     // IAudioServerInnerCall
     int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
@@ -306,7 +306,7 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
-    bool isFastControlled_ = true;
+    bool isFastControlled_ = false;
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem

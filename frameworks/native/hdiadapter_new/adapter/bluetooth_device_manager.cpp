@@ -268,10 +268,7 @@ std::shared_ptr<BluetoothAdapterWrapper> BluetoothDeviceManager::GetAdapter(cons
     if (!tryCreate) {
         return nullptr;
     }
-    if (LoadAdapter(adapterName) != SUCCESS) {
-        AUDIO_ERR_LOG("LoadAdapter %{public}s failed", adapterName.c_str());
-        return nullptr;
-    }
+    LoadAdapter(adapterName);
     std::lock_guard<std::mutex> lock(adapterMtx_);
     return adapters_.count(adapterName) == 0 ? nullptr : adapters_[adapterName];
 }

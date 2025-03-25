@@ -961,5 +961,35 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_043, Tes
     const std::string address = "1234";
     ptrAudioSpatializationService->WriteSpatializationStateToDb(operation, address);
 }
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_044
+* @tc.desc  : Test AudioSpatializationService::IsSpatializationEnabledForCurrentDevice
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_044, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    ptrAudioSpatializationService->currentDeviceAddress_ = "test_address";
+    auto result = ptrAudioSpatializationService->IsSpatializationEnabledForCurrentDevice();
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_045
+* @tc.desc  : Test AudioSpatializationService::UpdateSpatializationSupported
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_045, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    std::string testAddress = "test_address";
+    std::string encryptedAddress = ptrAudioSpatializationService->GetSha256EncryptAddress(testAddress);
+    ptrAudioSpatializationService->UpdateSpatializationSupported(encryptedAddress);
+}
 } // namespace AudioStandard
 } // namespace OHOS

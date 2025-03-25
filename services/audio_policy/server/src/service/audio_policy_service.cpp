@@ -43,6 +43,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_policy_global_parser.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1164,10 +1165,10 @@ uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
 
 bool AudioPolicyService::getFastControlParam()
 {
-    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
+    int32_t fastControlFlag = 0; // default 0, set isFastControlled_ false
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
-    if (fastControlFlag == 0) {
-        isFastControlled_ = false;
+    if (fastControlFlag == 1) {
+        isFastControlled_ = true;
     }
     return isFastControlled_;
 }
@@ -1996,6 +1997,17 @@ int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, 
     return ret;
 }
 
+int32_t AudioPolicyService::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    int32_t ret = audioDeviceManager_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    if (ret == NEED_TO_FETCH) {
+        AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
+        return SUCCESS;
+    }
+    return ret;
+}
+
 bool AudioPolicyService::GetAudioEffectOffloadFlag()
 {
     // check if audio effect offload
@@ -2095,6 +2107,24 @@ int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteOb
     lock_guard<mutex> lock(g_policyMgrListenerMutex);
     policyManagerListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
     return SUCCESS;
+}
+
+void AudioPolicyService::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
+    std::string callerName, std::string invocationTime)
+{
+    audioVolumeManager_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, callerName, invocationTime);
+}
+    
+void AudioPolicyService::SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName,
+    std::string invocationTime)
+{
+    audioPolicyManager_.SaveRingerModeInfo(ringMode, callerName, invocationTime);
+}
+    
+void AudioPolicyService::SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime,
+    int32_t subscriptionId, bool registrationResult)
+{
+    audioVolumeManager_.SaveVolumeKeyRegistrationInfo(keyType, registrationTime, subscriptionId, registrationResult);
 }
 } // namespace AudioStandard
 } // namespace OHOS

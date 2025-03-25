@@ -776,6 +776,14 @@ int32_t AudioSystemManager::SetAudioClientInfoMgrCallback(const std::shared_ptr<
     return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
 }
 
+int32_t AudioSystemManager::SetQueryBundleNameListCallback(
+    const std::shared_ptr<AudioQueryBundleNameListCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetQueryBundleNameListCallback(callback);
+}
+
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
                                                   const std::shared_ptr<AudioRingerModeCallback> &callback)
 {
@@ -1427,6 +1435,41 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             pin = AUDIO_PIN_IN_MIC;
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:
+        case OHOS::AudioStandard::DEVICE_TYPE_DP:
+        case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
+        case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
+        case OHOS::AudioStandard::DEVICE_TYPE_ACCESSORY:
+            pin = GetPinValueForPeripherals(deviceType, deviceRole, dmDeviceType);
+            break;
+        default:
+            OtherDeviceTypeCases(deviceType);
+            break;
+    }
+    return pin;
+}
+
+void AudioSystemManager::OtherDeviceTypeCases(DeviceType deviceType) const
+{
+    switch (deviceType) {
+        case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
+        case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
+        case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:
+        case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case OHOS::AudioStandard::DEVICE_TYPE_MAX:
+            AUDIO_INFO_LOG("don't supported the device type");
+            break;
+        default:
+            AUDIO_INFO_LOG("invalid input parameter");
+            break;
+    }
+}
+
+AudioPin AudioSystemManager::GetPinValueForPeripherals(DeviceType deviceType, DeviceRole deviceRole,
+    uint16_t dmDeviceType) const
+{
+    AudioPin pin = AUDIO_PIN_NONE;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:
             if (deviceRole == DeviceRole::INPUT_DEVICE) {
                 pin = AUDIO_PIN_IN_HS_MIC;
             } else {
@@ -1455,26 +1498,9 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             }
             break;
         default:
-            OtherDeviceTypeCases(deviceType);
-            break;
+            AUDIO_INFO_LOG("other case");
     }
     return pin;
-}
-
-void AudioSystemManager::OtherDeviceTypeCases(DeviceType deviceType) const
-{
-    switch (deviceType) {
-        case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
-        case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
-        case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:
-        case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case OHOS::AudioStandard::DEVICE_TYPE_MAX:
-            AUDIO_INFO_LOG("don't supported the device type");
-            break;
-        default:
-            AUDIO_INFO_LOG("invalid input parameter");
-            break;
-    }
 }
 
 DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const

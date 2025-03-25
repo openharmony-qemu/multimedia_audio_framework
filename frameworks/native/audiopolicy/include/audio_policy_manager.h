@@ -201,6 +201,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
+    int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
+
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
         const std::shared_ptr<AudioInterruptCallback> &callback);
 
@@ -514,6 +516,9 @@ public:
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 
     int32_t SetVirtualCall(const bool isVirtual);
+
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
+        const SourceType sourceType, bool isRunning);
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
 

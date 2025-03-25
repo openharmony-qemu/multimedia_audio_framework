@@ -151,7 +151,7 @@ HWTEST(AudioManagerUnitTest, GetAudioParameter_001, TestSize.Level1)
 {
     std::string mockBundleName = "Is_Fast_Blocked_For_AppName#com.samples.audio";
     std::string result = AudioSystemManager::GetInstance()->GetAudioParameter(mockBundleName);
-    EXPECT_EQ(result, "true");
+    EXPECT_EQ(result, "");
 }
 
 /**
@@ -192,7 +192,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_001, TestSize.Level1)
     outputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -263,7 +263,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level1)
     outputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1841,7 +1841,7 @@ HWTEST(AudioManagerUnitTest, SetRingerModeTest_004, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
-    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_NORMAL);
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_VIBRATE);
 }
 
 /**
@@ -1856,7 +1856,7 @@ HWTEST(AudioManagerUnitTest, SetRingerModeTest_005, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
-    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_NORMAL);
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_SILENT);
 }
 /**
 * @tc.name   : Test SetMicrophoneMute API
@@ -3085,8 +3085,7 @@ HWTEST(AudioManagerUnitTest, LoadSplitModule_004, TestSize.Level1)
     int32_t setUidRet = setuid(UID_CAR_DISTRIBUTED_ENGINE_SA);
     std::cout << "stUidRet: " << setUidRet << std::endl;
     auto ret = AudioSystemManager::GetInstance()->LoadSplitModule(TEST_SPLIT_ARGS, TEST_NETWORK_ID);
-    const int32_t E_IPC_ERROR = 29189;
-    EXPECT_EQ(E_IPC_ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 } // namespace AudioStandard

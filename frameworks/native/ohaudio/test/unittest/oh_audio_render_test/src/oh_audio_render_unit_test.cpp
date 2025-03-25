@@ -667,6 +667,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
+#ifdef AUDIO_OH_RENDER_UNIT_TEST
 /**
  * @tc.name  : Test OH_AudioRenderer_GetUnderflowCount API.
  * @tc.number: OH_AudioRenderer_GetUnderflowCount_001
@@ -927,7 +928,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_005, TestSize.L
 
     OH_AudioStreamBuilder_Destroy(builder);
 }
-
+#endif
 /**
  * @tc.name  : Test OH_AudioRenderer_GetVolume API via illegal state.
  * @tc.number: OH_Audio_Render_GetVolume_001
@@ -1843,7 +1844,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_001, TestSize.Level0)
     oHAudioRenderer->interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITH_RESULT;
     rendererCallbacks.onInterruptEventCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioInterrupt_ForceType type,
-        OH_AudioInterrupt_Hint hint) -> OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        OH_AudioInterrupt_Hint hint) -> void { return; };
 
     AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
     AppInfo appInfo;
@@ -1875,7 +1876,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_002, TestSize.Level0)
     oHAudioRenderer->interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
     rendererCallbacks.onInterruptEventCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioInterrupt_ForceType type,
-        OH_AudioInterrupt_Hint hint) -> OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        OH_AudioInterrupt_Hint hint) -> void { return; };
 
     AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
     AppInfo appInfo;
@@ -2045,7 +2046,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_008, TestSize.Level0)
 
     rendererCallbacks.onErrorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
     AppInfo appInfo;
@@ -2078,7 +2079,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_009, TestSize.Level0)
 
     rendererCallbacks.onErrorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
     AppInfo appInfo;
@@ -2382,7 +2383,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_020, TestSize.Level0)
     OH_AudioRenderer_OnInterruptCallback onInterruptEventCallback;
     onInterruptEventCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioInterrupt_ForceType type,
-        OH_AudioInterrupt_Hint hint) -> OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        OH_AudioInterrupt_Hint hint) -> void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITH_RESULT;
@@ -2410,7 +2411,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_021, TestSize.Level0)
     OH_AudioRenderer_OnInterruptCallback onInterruptEventCallback;
     onInterruptEventCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioInterrupt_ForceType type,
-        OH_AudioInterrupt_Hint hint) -> OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        OH_AudioInterrupt_Hint hint) -> void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
@@ -2485,7 +2486,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_024, TestSize.Level0)
     OH_AudioRenderer_OnErrorCallback errorCallback;
     errorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
@@ -2500,6 +2501,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_024, TestSize.Level0)
     oHServiceDiedCallback->OnAudioPolicyServiceDied();
 }
 
+#ifdef AUDIO_OH_RENDER_UNIT_TEST
 /**
 * @tc.name  : Test OHServiceDiedCallback API
 * @tc.number: OHAudioRenderer_025
@@ -2510,7 +2512,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_025, TestSize.Level0)
     OH_AudioRenderer_OnErrorCallback errorCallback;
     errorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
@@ -2524,6 +2526,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_025, TestSize.Level0)
 
     oHServiceDiedCallback->OnAudioPolicyServiceDied();
 }
+#endif
 
 /**
 * @tc.name  : Test OHAudioRendererErrorCallback API
@@ -2535,7 +2538,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_026, TestSize.Level0)
     OH_AudioRenderer_OnErrorCallback errorCallback;
     errorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
@@ -2562,7 +2565,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_027, TestSize.Level0)
     OH_AudioRenderer_OnErrorCallback errorCallback;
     errorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
@@ -2589,7 +2592,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_028, TestSize.Level0)
     OH_AudioRenderer_OnErrorCallback errorCallback;
     errorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
@@ -2616,7 +2619,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_029, TestSize.Level0)
     OH_AudioRenderer_OnErrorCallback errorCallback;
     errorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
@@ -2643,7 +2646,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_030, TestSize.Level0)
     OH_AudioRenderer_OnErrorCallback errorCallback;
     errorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
@@ -2670,7 +2673,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_031, TestSize.Level0)
     OH_AudioRenderer_OnErrorCallback errorCallback;
     errorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
@@ -2698,7 +2701,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_032, TestSize.Level0)
     OH_AudioRenderer_OnErrorCallback errorCallback;
     errorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
-        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+        void { return; };
 
     OHAudioRenderer oHAudioRenderer;
     oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;

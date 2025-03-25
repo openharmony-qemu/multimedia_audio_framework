@@ -199,21 +199,11 @@ void AudioPolicyServiceEnhanceThreeFuzzTest()
     GetServerPtr()->audioPolicyService_.SetNormalVoipFlag(true);
 
     std::vector<AudioPin> audioPin = {
-        AUDIO_PIN_NONE,
-        AUDIO_PIN_OUT_SPEAKER,
-        AUDIO_PIN_OUT_HEADSET,
-        AUDIO_PIN_OUT_LINEOUT,
-        AUDIO_PIN_OUT_HDMI,
-        AUDIO_PIN_OUT_USB,
-        AUDIO_PIN_OUT_USB_EXT,
-        AUDIO_PIN_OUT_DAUDIO_DEFAULT,
-        AUDIO_PIN_IN_MIC,
-        AUDIO_PIN_IN_HS_MIC,
-        AUDIO_PIN_IN_LINEIN,
-        AUDIO_PIN_IN_PENCIL,
-        AUDIO_PIN_IN_UWB,
-        AUDIO_PIN_IN_USB_EXT,
-        AUDIO_PIN_IN_DAUDIO_DEFAULT,
+        AUDIO_PIN_NONE, AUDIO_PIN_OUT_SPEAKER, AUDIO_PIN_OUT_HEADSET,
+        AUDIO_PIN_OUT_LINEOUT, AUDIO_PIN_OUT_HDMI, AUDIO_PIN_OUT_USB,
+        AUDIO_PIN_OUT_USB_EXT, AUDIO_PIN_OUT_DAUDIO_DEFAULT, AUDIO_PIN_IN_MIC,
+        AUDIO_PIN_IN_HS_MIC, AUDIO_PIN_IN_LINEIN, AUDIO_PIN_IN_PENCIL,
+        AUDIO_PIN_IN_UWB, AUDIO_PIN_IN_USB_EXT, AUDIO_PIN_IN_DAUDIO_DEFAULT,
         AUDIO_PIN_OUT_DP,
     };
     uint32_t audioPinInt = GetData<uint32_t>() % audioPin.size();
@@ -418,7 +408,7 @@ void AudioPolicyServiceEnhanceNineFuzzTest()
     GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleDistributedDeviceUpdate(statusInfo, descForCb);
     GetServerPtr()->audioPolicyDump_.GetEffectManagerInfo();
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
-    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
     std::unordered_map<std::string, std::string> volumeGroupData;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVolumeGroupData(volumeGroupData);

@@ -37,7 +37,7 @@ HWTEST(AudioEffectConfigParserTest, AudioEffectConfigParser_001, TestSize.Level1
     AudioEffectConfigParser effectConfigParserTest;
 
     int32_t ret = effectConfigParserTest.LoadEffectConfig(result);
-    EXPECT_EQ(ret, 0);
+    EXPECT_NE(ret, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

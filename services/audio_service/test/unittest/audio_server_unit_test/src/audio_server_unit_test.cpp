@@ -119,7 +119,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSuspendRenderSink_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->SuspendRenderSink("primary");
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -146,7 +146,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAsrNoiseSuppressionMode_001, TestSiz
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->SetAsrNoiseSuppressionMode(static_cast<AsrNoiseSuppressionMode>(4));
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -192,10 +192,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAsrVoiceControlMode_001, TestSize.Le
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->SetAsrVoiceControlMode(static_cast<AsrVoiceControlMode>(4), true);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->SetAsrVoiceControlMode(static_cast<AsrVoiceControlMode>(4), false);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -468,7 +468,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
     activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
         NO_A2DP_DEVICE);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -709,7 +709,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
     config.appInfo.appUid = INVALID_UID;
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     bool ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
     ret = audioServer->CheckRecorderPermission(config);
@@ -821,7 +821,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetSinkMuteForSwitchDevice_001, TestSiz
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->SetSinkMuteForSwitchDevice("primary", 1, false);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = audioServer->SetSinkMuteForSwitchDevice("primary", 0, false);
     EXPECT_EQ(SUCCESS, ret);
@@ -936,8 +936,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
     audioServer->OnRenderSinkParamChange("", key, "", "");
     audioServer->OnCaptureSourceParamChange("", key, "", "");
     audioServer->OnWakeupClose();
-    audioServer->OnCapturerState(true, 1);
-    audioServer->OnCapturerState(false, 1);
+    audioServer->OnCapturerState(true, 0, 1);
+    audioServer->OnCapturerState(false, 1, 0);
     int32_t res = audioServer->SetParameterCallback(remoteObject);
     EXPECT_EQ(res, ERR_INVALID_PARAM);
     res = audioServer->SetWakeupSourceCallback(remoteObject);

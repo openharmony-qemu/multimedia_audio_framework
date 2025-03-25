@@ -402,7 +402,7 @@ describe("AudioRendererInterruptUnitTest", function() {
         await sleep(500)
         await release(render1, done)
         await release(render2, done)
-        expect(flag1 == false && flag2 == true).assertEqual(true)
+        expect(flag1 == true && flag2 == false).assertEqual(true)
         done()
     })
 

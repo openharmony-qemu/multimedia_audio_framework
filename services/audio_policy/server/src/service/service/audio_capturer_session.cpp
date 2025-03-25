@@ -153,14 +153,15 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
         int32_t res = audioEcManager_.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "fetch target source info error");
 
+        AUDIO_INFO_LOG("Current source: %{public}d, target: %{public}d",
+            audioEcManager_.GetSourceOpened(), targetSource);
         if (audioEcManager_.GetSourceOpened() == SOURCE_TYPE_INVALID) {
             // normal source is not opened before
             audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
         } else if (IsHigherPrioritySource(targetSource, audioEcManager_.GetSourceOpened())) {
             // reload if higher source come
-            audioEcManager_.CloseNormalSource();
-            audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
+            audioEcManager_.ReloadNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
         }
         sessionWithNormalSourceType_[sessionID] = sessionInfo;
@@ -345,6 +346,10 @@ bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inpu
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
     if (outputDesc.size() > 0 && outputDesc.front() != nullptr) {
         realOutputDevice = *outputDesc.front();
+    }
+    if (!inputDevice.IsSameDeviceDesc(realInputDevice) || !outputDevice.IsSameDeviceDesc(realOutputDevice)) {
+        AUDIO_INFO_LOG("target device is not ready, so ignore reload");
+        return false;
     }
     AudioEcInfo lastEcInfo = audioEcManager_.GetAudioEcInfo();
     if (!lastEcInfo.inputDevice.IsSameDeviceDesc(realInputDevice) ||

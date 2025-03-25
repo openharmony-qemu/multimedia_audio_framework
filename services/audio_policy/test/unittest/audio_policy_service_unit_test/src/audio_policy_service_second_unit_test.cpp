@@ -882,7 +882,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcSamplingRate_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     std::string halName;
-    std::shared_ptr<PipeStreamPropInfo> outModuleInfo;
+    std::shared_ptr<PipeStreamPropInfo> outModuleInfo = std::make_shared<PipeStreamPropInfo>();
     std::string ecSamplingRate;
 
     halName = DP_CLASS;
@@ -917,7 +917,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcFormat_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     std::string halName;
-    std::shared_ptr<PipeStreamPropInfo> outModuleInfo;
+    std::shared_ptr<PipeStreamPropInfo> outModuleInfo = std::make_shared<PipeStreamPropInfo>();
     std::string ecFormat;
 
     halName = DP_CLASS;
@@ -953,7 +953,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcChannels_001, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     std::string halName;
     std::string ecChannels;
-    std::shared_ptr<PipeStreamPropInfo> outModuleInfo;
+    std::shared_ptr<PipeStreamPropInfo> outModuleInfo = std::make_shared<PipeStreamPropInfo>();
 
     halName = DP_CLASS;
     server->audioPolicyService_.audioEcManager_.dpSinkModuleInfo_.channels = "666";

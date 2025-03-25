@@ -298,6 +298,18 @@ enum CallbackChange : int32_t {
     CALLBACK_MAX,
 };
 
+enum AdjustStreamVolume {
+    STREAM_VOLUME_INFO = 0,
+    LOW_POWER_VOLUME_INFO,
+    DUCK_VOLUME_INFO,
+};
+
+struct AdjustStreamVolumeInfo {
+    float volume;
+    uint32_t sessionId;
+    std::string invocationTime;
+};
+
 constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_UNKNOWN,
     CALLBACK_FOCUS_INFO_CHANGE,

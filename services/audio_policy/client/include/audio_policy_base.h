@@ -153,6 +153,8 @@ public:
 
     virtual int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) = 0;
 
+    virtual int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) = 0;
+
     virtual int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
     virtual int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
@@ -374,6 +376,9 @@ public:
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
 
     virtual int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) = 0;
+
+    virtual int32_t SetInputDevice(const DeviceType deviceType, const uint32_t session_ID,
+        const SourceType sourceType, bool isRunning) = 0;
 
     virtual bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) = 0;
 

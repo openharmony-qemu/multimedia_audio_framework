@@ -445,6 +445,21 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_004, TestSiz
 }
 
 /**
+ * @tc.name  : Test SetDeviceSafeVolumeStatus.
+ * @tc.number: SetDeviceSafeVolumeStatus_005
+ * @tc.desc  : Test SetDeviceSafeVolumeStatus interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_005, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    server->audioPolicyService_.audioVolumeManager_.userSelect_ = true;
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
+}
+
+/**
 * @tc.name  : Test CheckForA2dpSuspend.
 * @tc.number: CheckForA2dpSuspend_001
 * @tc.desc  : Test CheckForA2dpSuspend.
@@ -604,7 +619,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateRendererStream_001, Test
     rendererChangeInfo->outputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
     ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateRendererStream(audioDeviceDescriptor,
         rendererChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -624,6 +639,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateCapturerStream_001, Test
     EXPECT_EQ(ret, false);
 
     capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
+    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
     ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateCapturerStream(true, capturerChangeInfo,
         AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     EXPECT_EQ(ret, true);

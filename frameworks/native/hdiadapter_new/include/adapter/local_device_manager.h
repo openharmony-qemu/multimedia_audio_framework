@@ -95,6 +95,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<LocalAdapterWrapper> > adapters_;
     std::mutex adapterMtx_;
     std::vector<LocalParameter> reSetParams_;
+    uint16_t dmDeviceType_ = 0;
 };
 
 } // namespace AudioStandard

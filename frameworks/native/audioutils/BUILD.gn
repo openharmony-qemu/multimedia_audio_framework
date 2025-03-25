@@ -111,6 +111,11 @@ ohos_shared_library("audio_xml_utils") {
 
   external_deps = [ "hilog:libhilog" ]
 
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"

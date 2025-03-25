@@ -696,6 +696,8 @@ public:
 
     virtual uint32_t GetOverflowCount() const = 0;
 
+    virtual int32_t SetInputDevice([[maybe_unused]] DeviceType deviceType) { return 0; };
+
     virtual int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) = 0;
 
     virtual ~AudioCapturer();

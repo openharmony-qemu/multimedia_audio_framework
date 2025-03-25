@@ -41,7 +41,6 @@ ohos_shared_library("hdiadapter_new") {
     "../../../services/audio_service/common/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../audioutils/include",
-    "../audiodefinitions/include",
     "../audioeffect/include",
     "../audioschedule/include",
   ]
@@ -116,7 +115,7 @@ ohos_shared_library("hdiadapter_new") {
 }
 
 ohos_unittest("hdiadapter_unit_test") {
-  module_out_path = "multimedia_audio_framework/hdiadapter_new"
+  module_out_path = "audio_framework/audio_framework_route/hdiadapter_new"
 
   cflags = [
     "-Wall",
@@ -127,7 +126,6 @@ ohos_unittest("hdiadapter_unit_test") {
   include_dirs = [
     "include",
     "../../../interfaces/inner_api/native/audiocommon/include",
-    "../audiodefinitions/include",
     "../audioutils/include",
   ]
 

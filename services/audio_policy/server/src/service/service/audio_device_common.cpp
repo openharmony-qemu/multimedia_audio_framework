@@ -43,7 +43,10 @@ static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
-static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
+static const int VOLUME_LEVEL_DEFAULT = 5;
+static const int VOLUME_LEVEL_MIN_SIZE = 5;
+static const int VOLUME_LEVEL_MID_SIZE = 12;
+static const int VOLUME_LEVEL_MAX_SIZE = 15;
 static const int32_t DISTRIBUTED_DEVICE = 1003;
 
 static std::string GetEncryptAddr(const std::string &addr)
@@ -617,7 +620,7 @@ void AudioDeviceCommon::FetchOutputDeviceWhenNoRunningStream()
     }
     audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
     AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
-    audioVolumeManager_.SetVolumeForSwitchDevice(descs.front()->deviceType_);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
     }
@@ -638,9 +641,9 @@ int32_t AudioDeviceCommon::HandleDeviceChangeForFetchOutputDevice(std::shared_pt
             && desc->deviceType_ != preferredDesc->deviceType_)
             || ((preferredDesc->deviceType_ == DEVICE_TYPE_NONE) && !IsSameDevice(desc, tmpOutputDeviceDesc))) {
             audioActiveDevice_.SetCurrentOutputDevice(*desc);
-            DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-            audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDeviceType);
-            audioActiveDevice_.UpdateActiveDeviceRoute(curOutputDeviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+            audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDevice);
+            audioActiveDevice_.UpdateActiveDeviceRoute(curOutputDevice.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
             OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
         }
         return ERR_NEED_NOT_SWITCH_DEVICE;
@@ -672,10 +675,6 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
         rendererChangeInfo->sessionId);
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
         rendererChangeInfo->sessionId);
-    if (rendererChangeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST) {
-        oldSinkName = (oldSinkName == PRIMARY_DIRECT_VOIP ? PRIMARY_MMAP_VOIP : oldSinkName);
-        newSinkName = (newSinkName == PRIMARY_DIRECT_VOIP ? PRIMARY_MMAP_VOIP : newSinkName);
-    }
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
@@ -849,7 +848,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
 
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
         rendererChangeInfo->sessionId);
-    audioVolumeManager_.SetVolumeForSwitchDevice(outputDevices.front()->deviceType_, newSinkName);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*outputDevices.front(), newSinkName);
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
@@ -957,11 +956,8 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
              outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
             audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
             audioVolumeManager_.SetRingerModeMute(false);
-            if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
-                audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
-                audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
-                    audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
-            }
+            int32_t curRingToneLevel = RingToneVoiceControl(outputDevices.front()->getType());
+            audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING, curRingToneLevel);
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
         }
@@ -1183,7 +1179,8 @@ void AudioDeviceCommon::FetchInputDeviceInner(
             continue;
         }
         runningStreamCount++;
-        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType, clientUID);
+        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType, clientUID,
+            capturerChangeInfo->sessionId);
         AudioDeviceDescriptor inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
         if (HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE) {
             continue;
@@ -1704,6 +1701,10 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
     }
+    const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
+    if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
+        audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
+    }
 
     if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
         && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
@@ -1920,8 +1921,9 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
     std::string lastActiveA2dpDevice = audioActiveDevice_.GetActiveBtDeviceMac();
     audioActiveDevice_.SetActiveBtDeviceMac(deviceDescriptor->macAddress_);
-    DeviceType lastDevice = audioPolicyManager_.GetActiveDevice();
-    audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
+    AudioDeviceDescriptor lastDevice = audioPolicyManager_.GetActiveDeviceDescriptor();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioPolicyManager_.SetActiveDeviceDescriptor(*deviceDescriptor);
 
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
         audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
@@ -1933,7 +1935,7 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
     if (result != SUCCESS) {
         audioActiveDevice_.SetActiveBtDeviceMac(lastActiveA2dpDevice);
-        audioPolicyManager_.SetActiveDevice(lastDevice);
+        audioPolicyManager_.SetActiveDeviceDescriptor(lastDevice);
         AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
             GetEncryptAddr(audioActiveDevice_.GetActiveBtDeviceMac()).c_str(),
             GetEncryptAddr(lastActiveA2dpDevice).c_str());
@@ -1949,6 +1951,37 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
 #endif
     return result;
+}
+
+int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &deviceType)
+{
+    int32_t curVoiceCallLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL);
+    float curVoiceCallDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL, curVoiceCallLevel, deviceType);
+    int32_t curRingToneLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING);
+    float curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+    int32_t maxVoiceCall = audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL);
+    int32_t maxRingTone = audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING);
+    float curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+    float minMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
+        maxVoiceCall * VOLUME_LEVEL_MIN_SIZE / VOLUME_LEVEL_MAX_SIZE, deviceType) *
+        audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
+    float maxMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
+        maxVoiceCall * VOLUME_LEVEL_MID_SIZE / VOLUME_LEVEL_MAX_SIZE, deviceType) *
+        audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
+    
+    if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
+        while (curVoiceRingMixDb < minMixDbDefault) {
+            curRingToneLevel++;
+            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+        }
+        while (curVoiceRingMixDb > maxMixDbDefault) {
+            curRingToneLevel--;
+            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+        }
+    }
+    return curRingToneLevel;
 }
 
 void AudioDeviceCommon::SetFirstScreenOn()

@@ -47,7 +47,7 @@ AudioCaptureSource::~AudioCaptureSource()
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("In, attr's adapter name: %{public}s", adapterNameCase_.c_str());
+    AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(statusMutex_);
     if (attr.sourceType == SOURCE_TYPE_MIC_REF || attr.sourceType == SOURCE_TYPE_EC) {
         InitEcOrMicRefAttr(attr);

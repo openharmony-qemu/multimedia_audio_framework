@@ -50,12 +50,8 @@ public:
         bool isResident = false);
     uint32_t GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info = HDI_ID_INFO_DEFAULT,
         bool isResident = false);
-    uint32_t GetRenderIdByDeviceClass(HdiIdBase idBase, HdiIdType idType, const std::string &info,
-        bool isResident);
     uint32_t GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
         const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false);
-    uint32_t GetCaptureIdByDeviceClass(HdiIdBase idBase, HdiIdType idType, const SourceType sourceType,
-        const std::string &info, bool isResident);
     void ReleaseId(uint32_t &id);
 
     std::shared_ptr<IAudioRenderSink> GetRenderSink(uint32_t renderId, bool tryCreate = false);
@@ -71,9 +67,15 @@ public:
         const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
     void RegistSinkCallback(HdiAdapterCallbackType type, IAudioSinkCallback *cb,
         const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
+    void RegistSinkCallbackGenerator(HdiAdapterCallbackType type,
+        const std::function<std::shared_ptr<IAudioSinkCallback>(uint32_t)> cbGenerator,
+        const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
     void RegistSourceCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSourceCallback> cb,
         const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
     void RegistSourceCallback(HdiAdapterCallbackType type, IAudioSourceCallback *cb,
+        const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
+    void RegistSourceCallbackGenerator(HdiAdapterCallbackType type,
+        const std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> cbGenerator,
         const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
 
     void DumpInfo(std::string &dumpString);

@@ -1467,6 +1467,18 @@ std::vector<uint32_t> AudioStreamCollector::GetAllRendererSessionIDForUID(int32_
     return sessionIDSet;
 }
 
+std::vector<uint32_t> AudioStreamCollector::GetAllCapturerSessionIDForUID(int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    std::vector<uint32_t> sessionIDSet;
+    for (const auto &changeInfo : audioCapturerChangeInfos_) {
+        if (changeInfo->clientUID == uid) {
+            sessionIDSet.push_back(changeInfo->sessionId);
+        }
+    }
+    return sessionIDSet;
+}
+
 bool AudioStreamCollector::ChangeVoipCapturerStreamToNormal()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

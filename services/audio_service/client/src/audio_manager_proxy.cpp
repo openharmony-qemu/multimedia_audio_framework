@@ -551,7 +551,7 @@ int32_t AudioManagerProxy::UpdateDualToneState(bool enable, int32_t sessionId)
     return result;
 }
 
-int32_t AudioManagerProxy::SetDmDeviceType(uint16_t dmDeviceType)
+void AudioManagerProxy::SetDmDeviceType(uint16_t dmDeviceType)
 {
     MessageParcel data;
     MessageParcel reply;

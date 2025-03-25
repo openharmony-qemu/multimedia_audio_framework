@@ -296,5 +296,37 @@ void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &por
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
     }
 }
+
+int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    const AudioModuleInfo &moduleInfo, bool isSync)
+{
+    std::string oldModuleName = pipeInfo->moduleInfo_.name;
+    AudioIOHandle ioHandle;
+    CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(oldModuleName, ioHandle), ERROR,
+        "can not find %{public}s in io map", oldModuleName.c_str());
+    DelIOHandleInfo(oldModuleName);
+
+    AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        oldModuleName.c_str(), ioHandle, pipeInfo->paIndex_);
+    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle,
+        pipeInfo->paIndex_, isSync);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
+
+    uint32_t paIndex = 0;
+    ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
+        "OpenAudioPort failed %{public}d", ioHandle);
+    AUDIO_INFO_LOG("[open-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        moduleInfo.name.c_str(), ioHandle, paIndex);
+
+    pipeInfo->id_ = ioHandle;
+    pipeInfo->paIndex_ = paIndex;
+    pipeInfo->adapterName_ = moduleInfo.adapterName;
+    pipeInfo->moduleInfo_ = moduleInfo;
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+
+    AddIOHandleInfo(moduleInfo.name, ioHandle);
+    return SUCCESS;
+}
 }
 }

@@ -97,6 +97,7 @@ void CjAudioCapturerReadCallback::OnReadData(size_t length)
     arr.size = std::min(length, buf.bufLength);
     int32_t mallocSize = static_cast<int32_t>(sizeof(uint8_t)) * static_cast<int32_t>(arr.size);
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(uint8_t) * MAX_MEM_MALLOC_SIZE)) {
+        FreeBufferDesc(buf);
         return;
     }
     arr.head = static_cast<uint8_t *>(malloc(mallocSize));

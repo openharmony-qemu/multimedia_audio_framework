@@ -223,6 +223,8 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
@@ -448,6 +450,9 @@ public:
 
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) override;
 
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const SourceType sourceType, bool isRunning) override;
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) override;
@@ -624,6 +629,7 @@ private:
     void HandleKvDataShareEvent();
     void InitMicrophoneMute();
     void InitKVStore();
+    void InitApiVersionGetter();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
@@ -703,6 +709,7 @@ private:
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
     AudioActiveDevice& audioActiveDevice_;
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

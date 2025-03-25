@@ -20,7 +20,7 @@
 #include "audio_policy_config_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_policy_service.h"
-
+#include "audio_ec_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,13 +33,11 @@ const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
 const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
 
-static bool g_xmlHasLoaded = false;
-
-bool AudioPolicyConfigManager::Init()
+bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
-    if (g_xmlHasLoaded) {
-        AUDIO_WARNING_LOG("Audio Policy Config Load Configuration Retry!");
-        return true;
+    if (xmlHasLoaded_ && !isRefresh) {
+        AUDIO_WARNING_LOG("Unexpected Duplicate Load AudioPolicyConfig!");
+        return false;
     }
     std::unique_ptr<AudioPolicyConfigParser> audioPolicyConfigParser = make_unique<AudioPolicyConfigParser>(this);
     CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser != nullptr, false, "AudioPolicyConfigParser create failed");
@@ -49,7 +47,7 @@ bool AudioPolicyConfigManager::Init()
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
-    g_xmlHasLoaded = true;
+    xmlHasLoaded_ = true;
     return ret;
 }
 
@@ -149,6 +147,12 @@ void AudioPolicyConfigManager::OnHasEarpiece()
 void AudioPolicyConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
 {
     normalVoipFlag_ = normalVoipFlag;
+}
+
+
+bool AudioPolicyConfigManager::GetNormalVoipFlag()
+{
+    return normalVoipFlag_;
 }
 
 bool AudioPolicyConfigManager::GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList)
@@ -334,6 +338,44 @@ uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescr
     return flag;
 }
 
+void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo)
+{
+    switch (source) {
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            useMatchingPropInfo = true;
+            break;
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+            useMatchingPropInfo = AudioEcManager::GetInstance().GetEcFeatureEnable() ? false : true;
+            break;
+        case SOURCE_TYPE_VOICE_CALL:
+            break;
+        case SOURCE_TYPE_CAMCORDER:
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(
+    std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &pipeInfo,
+    std::shared_ptr<PipeStreamPropInfo> &info, const AudioChannel &tempChannel)
+{
+    //if not match, choose first
+    info = pipeInfo->streamPropInfos_.front();
+    bool useMatchingPropInfo = false;
+    GetTargetSourceTypeAndMatchingFlag(desc->capturerInfo_.sourceType, useMatchingPropInfo);
+    if (useMatchingPropInfo) {
+        auto streamProp = GetStreamPropInfoFromPipe(pipeInfo, desc->streamInfo_.format,
+            desc->streamInfo_.samplingRate, tempChannel);
+        if (streamProp != nullptr) {
+            info = streamProp;
+        }
+    }
+}
+
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
@@ -349,6 +391,11 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     if ((desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) ||
         (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST))) {
         tempChannel = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
+    }
+
+    if (desc->audioMode_ == AUDIO_MODE_RECORD) {
+        HandleGetStreamPropInfoForRecord(desc, pipeIt->second, info, tempChannel);
+        return;
     }
 
     auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, desc->streamInfo_.format,

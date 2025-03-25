@@ -479,6 +479,9 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const SourceType sourceType, bool isRunning);
+
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
 
     int32_t UnsetAudioDeviceAnahsCallback();
@@ -494,6 +497,12 @@ public:
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
+
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+        std::string invocationTime);
+    void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
+    void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
+        bool registrationResult);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -569,6 +578,8 @@ private:
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
+    void UpdateInputDeviceWhenStopping(const bool &isSupported);
+
     bool IsA2dpOffloadConnected();
 
     void SetDefaultDeviceLoadFlag(bool isLoad);
@@ -593,7 +604,7 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
-    bool isFastControlled_ = true;
+    bool isFastControlled_ = false;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;

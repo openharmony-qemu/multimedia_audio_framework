@@ -18,6 +18,25 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t API_VERSION_16 = 16;
+
+static std::function<int32_t()> sGetApiVersion_;
+
+void SetApiVersionGetter(std::function<int32_t()> GetApiVersion)
+{
+    sGetApiVersion_ = GetApiVersion;
+}
+
+static int32_t GetApiVersion()
+{
+    if (sGetApiVersion_ == nullptr) {
+        return API_VERSION_16;
+    }
+    int32_t version = sGetApiVersion_();
+    AUDIO_INFO_LOG("GetApiVersion: version=%{public}d", version);
+    return version;
+}
+
 AudioDeviceDescriptor::AudioDeviceDescriptor(int32_t descriptorType)
     : AudioDeviceDescriptor(DeviceType::DEVICE_TYPE_NONE, DeviceRole::DEVICE_ROLE_NONE)
 {
@@ -387,6 +406,11 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.networkId_ == networkId_;
 }
 
+bool AudioDeviceDescriptor::IsDistributedSpeaker() const
+{
+    return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
+}
+
 void AudioDeviceDescriptor::Dump(std::string &dumpString)
 {
     dumpString += "deviceName: " + deviceName_ + " deviceRole: ";
@@ -403,7 +427,7 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType() const
     switch (deviceType_) {
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-            if (!hasPair_) {
+            if (!hasPair_ && GetApiVersion() >= API_VERSION_16) {
 #ifdef DETECT_SOUNDBOX
                 return DEVICE_TYPE_USB_DEVICE;
 #else

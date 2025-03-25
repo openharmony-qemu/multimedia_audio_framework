@@ -250,16 +250,13 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
                 portName = OFFLOAD_PRIMARY_SPEAKER;
             } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
                 portName = MCH_PRIMARY_SPEAKER;
-            } else if (pipeType == PIPE_TYPE_CALL_OUT) {
-                bool normalVoipFlag = audioConfigManager_.GetNormalVoipFlag();
-                portName = (normalVoipFlag ? PRIMARY_SPEAKER : PRIMARY_DIRECT_VOIP);
             } else {
                 portName = PRIMARY_SPEAKER;
             }
             break;
         case DeviceType::DEVICE_TYPE_HDMI:
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
-            portName = AudioConfigManager::GetInstance().GetDefaultAdapterEnable() ? DP_SINK : PRIMARY_SPEAKER;
+            portName = AudioPolicyConfigManager::GetInstance().GetDefaultAdapterEnable() ? DP_SINK : PRIMARY_SPEAKER;
             break;
         default:
             portName = GetNewSinkPortName(deviceType);

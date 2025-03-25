@@ -126,7 +126,7 @@ HWTEST_F(UtilUnitTest, UtilUnitTest_004, TestSize.Level1)
 
     sinkCbWrapper.RegistCallback(100, nullptr); // 100: test
 
-    auto sinkCb = sinkCbWrapper.GetCallback(100);
+    auto sinkCb = sinkCbWrapper.GetCallback(100, HDI_INVALID_ID);
     EXPECT_EQ(sinkCb, nullptr);
 
     auto sinkRawCb = sinkCbWrapper.GetRawCallback(100);
@@ -136,7 +136,7 @@ HWTEST_F(UtilUnitTest, UtilUnitTest_004, TestSize.Level1)
 
     sourceCbWrapper.RegistCallback(100, nullptr); // 100: test
 
-    auto sourceCb = sourceCbWrapper.GetCallback(100);
+    auto sourceCb = sourceCbWrapper.GetCallback(100, HDI_INVALID_ID);
     EXPECT_EQ(sourceCb, nullptr);
 
     auto sourceRawCb = sourceCbWrapper.GetRawCallback(100);

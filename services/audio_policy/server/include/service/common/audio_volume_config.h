@@ -29,6 +29,18 @@ struct DeviceVolumeInfo {
     std::vector<VolumePoint> volumePoints;
 };
 
+struct RingerModeAdjustInfo {
+    AudioRingerMode ringMode;
+    std::string callerName;
+    std::string invocationTime;
+};
+
+struct AllDeviceVolumeInfo {
+    DeviceType deviceType;
+    AudioStreamType streamType;
+    int32_t volumeValue;
+};
+
 typedef std::map<DeviceVolumeType, std::shared_ptr<DeviceVolumeInfo>> DeviceVolumeInfoMap;
 
 struct StreamVolumeInfo {

@@ -144,6 +144,25 @@ int32_t AudioPolicyProxy::SetAudioClientInfoMgrCallback(const sptr<IRemoteObject
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT,
+        "SetQueryClientTypeCallback object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_BUNDLE_NAME_LIST_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "set callback failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
     const sptr<IRemoteObject> &object)
 {

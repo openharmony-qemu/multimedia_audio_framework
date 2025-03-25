@@ -889,6 +889,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
 
+    FlushBeforeStart();
+
     std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
     if (!isDataLinkConnected_) {
         AUDIO_INFO_LOG("data-connection blocking starts.");
@@ -912,6 +914,15 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
     preWriteEndTime_ = 0;
     return true;
+}
+
+void RendererInClientInner::FlushBeforeStart()
+{
+    if (flushAfterStop_) {
+        ResetFramePosition();
+        AUDIO_INFO_LOG("flush before start");
+        flushAfterStop_ = false;
+    }
 }
 
 bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
@@ -1109,6 +1120,11 @@ bool RendererInClientInner::FlushAudioStream()
     notifiedOperation_ = MAX_OPERATION_CODE;
     waitLock.unlock();
     ResetFramePosition();
+
+    if (state_ == STOPPED) {
+        flushAfterStop_ = true;
+    }
+    
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
 }

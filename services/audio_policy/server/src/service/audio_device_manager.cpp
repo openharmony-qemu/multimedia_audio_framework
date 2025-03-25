@@ -422,7 +422,9 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
 
 void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && devDesc->deviceCategory_ == CATEGORY_DEFAULT &&
+    if (devDesc->connectState_ != VIRTUAL_CONNECTED &&
+        devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        devDesc->deviceCategory_ == CATEGORY_DEFAULT &&
         devDesc->isEnable_) {
         if (devDesc->deviceRole_ == INPUT_DEVICE) {
             commCapturePrivacyDevices_.push_back(devDesc);
@@ -954,8 +956,10 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
 bool AudioDeviceManager::GetScoState()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
     for (const auto &desc : connectedDevices_) {
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED &&
+            isScoStateConnect) {
             return true;
         }
     }
@@ -1435,6 +1439,40 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCallRenderDevic
         devDesc = make_shared<AudioDeviceDescriptor>(earpiece_);
     } else if (selectedCallDefaultOutputDevice_ == DEVICE_TYPE_SPEAKER) {
         devDesc = make_shared<AudioDeviceDescriptor>(speaker_);
+    }
+    return devDesc;
+}
+
+int32_t AudioDeviceManager::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    selectedInputDeviceInfo_[sessionID] = std::make_pair(deviceType, sourceType);
+    AUDIO_INFO_LOG("stream %{public}u run %{public}d with usage %{public}d selects input device %{public}d",
+        sessionID, isRunning, sourceType, deviceType);
+    return NEED_TO_FETCH;
+}
+
+int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("AudioDeviceManager::RemoveSelectedInputDevice %{public}d", sessionID);
+    std::lock_guard<std::mutex> lock(selectInputDeviceMutex_);
+    selectedInputDeviceInfo_.erase(sessionID);
+    return SUCCESS;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(const uint32_t sessionID)
+{
+    shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+    if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
+        AUDIO_WARNING_LOG("no need to update input device since current stream %{public}d has not set",
+            sessionID);
+        return devDesc;
+    }
+    for (const auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == selectedInputDeviceInfo_[sessionID].first) {
+            return make_shared<AudioDeviceDescriptor>(*desc);
+        }
     }
     return devDesc;
 }

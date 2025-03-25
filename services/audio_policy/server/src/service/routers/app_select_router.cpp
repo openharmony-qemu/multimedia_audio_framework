@@ -36,10 +36,14 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallRenderDevice(StreamUsa
     return device;
 }
 
-shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> device =
-        AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
+        AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
+    if (device == nullptr) {
+        device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
+    }
     return device;
 }
 
@@ -50,10 +54,14 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> AppSelectRouter::GetRingRenderDev
     return descs;
 }
 
-shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> device =
-        AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
+        AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
+    if (device == nullptr) {
+        device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
+    }
     return device;
 }
 
