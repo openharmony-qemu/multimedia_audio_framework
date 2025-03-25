@@ -43,7 +43,10 @@ static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
-static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
+static const int VOLUME_LEVEL_DEFAULT = 5;
+static const int VOLUME_LEVEL_MIN_SIZE = 5;
+static const int VOLUME_LEVEL_MID_SIZE = 12;
+static const int VOLUME_LEVEL_MAX_SIZE = 15;
 static const int32_t DISTRIBUTED_DEVICE = 1003;
 
 static std::string GetEncryptAddr(const std::string &addr)
@@ -953,11 +956,8 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
              outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
             audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
             audioVolumeManager_.SetRingerModeMute(false);
-            if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
-                audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
-                audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
-                    audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
-            }
+            int32_t curRingToneLevel = RingToneVoiceControl(outputDevices.front()->getType());
+            audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING, curRingToneLevel);
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
         }
@@ -1950,6 +1950,37 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
 #endif
     return result;
+}
+
+int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &deviceType)
+{
+    int32_t curVoiceCallLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL);
+    float curVoiceCallDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL, curVoiceCallLevel, deviceType);
+    int32_t curRingToneLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING);
+    float curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+    int32_t maxVoiceCall = audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL);
+    int32_t maxRingTone = audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING);
+    float curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+    float minMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
+        maxVoiceCall * VOLUME_LEVEL_MIN_SIZE / VOLUME_LEVEL_MAX_SIZE, deviceType) *
+        audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
+    float maxMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
+        maxVoiceCall * VOLUME_LEVEL_MID_SIZE / VOLUME_LEVEL_MAX_SIZE, deviceType) *
+        audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
+    
+    if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
+        while (curVoiceRingMixDb < minMixDbDefault) {
+            curRingToneLevel++;
+            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+        }
+        while (curVoiceRingMixDb > maxMixDbDefault) {
+            curRingToneLevel--;
+            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+        }
+    }
+    return curRingToneLevel;
 }
 
 void AudioDeviceCommon::SetFirstScreenOn()
