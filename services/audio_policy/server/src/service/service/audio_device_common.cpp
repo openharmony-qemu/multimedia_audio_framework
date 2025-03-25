@@ -48,7 +48,7 @@ static const int VOLUME_LEVEL_MIN_SIZE = 5;
 static const int VOLUME_LEVEL_MID_SIZE = 12;
 static const int VOLUME_LEVEL_MAX_SIZE = 15;
 static const int32_t DISTRIBUTED_DEVICE = 1003;
-static const int DEFAULT_ADIUST_TIMES = 10;
+static const int DEFAULT_ADJUST_TIMES = 10;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -1970,7 +1970,7 @@ int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &device
         audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
     
     if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
-        for (int i = 0; i < DEFAULT_ADIUST_TIMES; i++) {
+        for (int i = 0; i < DEFAULT_ADJUST_TIMES; i++) {
             if (curVoiceRingMixDb < minMixDbDefault) {
                 curRingToneLevel++;
                 curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
