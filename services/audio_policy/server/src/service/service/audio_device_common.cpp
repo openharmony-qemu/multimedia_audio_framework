@@ -1969,15 +1969,18 @@ int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &device
         audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
     
     if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
-        while (curVoiceRingMixDb < minMixDbDefault) {
-            curRingToneLevel++;
-            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
-            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
-        }
-        while (curVoiceRingMixDb > maxMixDbDefault) {
-            curRingToneLevel--;
-            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
-            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+        for (int i = 0; i < DEFAULT_ADIUST_TIMES; i++) {
+            if (curVoiceRingMixDb < minMixDbDefault) {
+                curRingToneLevel++;
+                curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+                curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+            } else if (curVoiceRingMixDb > maxMixDbDefault) {
+                curRingToneLevel--;
+                curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+                curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+            } else {
+                break;
+            }
         }
     }
     return curRingToneLevel;
