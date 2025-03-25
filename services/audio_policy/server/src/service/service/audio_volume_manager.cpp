@@ -880,7 +880,7 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
         audioPolicyManager_.SetAbsVolumeScene(support);
         SetSharedAbsVolumeScene(support);
         int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
-        SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
+        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
     }
 }
 
