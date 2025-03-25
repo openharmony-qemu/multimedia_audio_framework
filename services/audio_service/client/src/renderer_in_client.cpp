@@ -440,7 +440,8 @@ bool RendererInClientInner::WriteCallbackFunc()
         // call write here.
         int32_t result = ProcessWriteInner(temp);
         // only run in pause scene, do not repush audiovivid buffer cause metadata error
-        if (result > 0 && static_cast<size_t>(result) < temp.dataLength && curStreamParams_.encoding != ENCODING_AUDIOVIVID) {
+        if (result > 0 && static_cast<size_t>(result) < temp.dataLength &&
+            curStreamParams_.encoding == ENCODING_PCM) {
             BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
                 temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
             cbBufferQueue_.Push(tmp);
