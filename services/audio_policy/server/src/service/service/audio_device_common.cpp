@@ -1971,11 +1971,11 @@ int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &device
     
     if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
         for (int i = 0; i < DEFAULT_ADJUST_TIMES; i++) {
-            if (curVoiceRingMixDb < minMixDbDefault) {
+            if (curVoiceRingMixDb < minMixDbDefault && curRingToneLevel <= VOLUME_LEVEL_MAX_SIZE) {
                 curRingToneLevel++;
                 curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
                 curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
-            } else if (curVoiceRingMixDb > maxMixDbDefault) {
+            } else if (curVoiceRingMixDb > maxMixDbDefault && curRingToneLevel >= 0) {
                 curRingToneLevel--;
                 curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
                 curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
