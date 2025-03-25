@@ -156,11 +156,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_004, TestS
 
 /**
 * @tc.name   : Test CreateAudioEffectChainDynamic API
-* @tc.number : CreateAudioEffectChainDynamic_004
+* @tc.number : CreateAudioEffectChainDynamic_005
 * @tc.desc   : Test CreateAudioEffectChainDynamic interface(using correct use case).
 *              Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
 */
-HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_004, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_005, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
     SessionEffectInfo info = {
