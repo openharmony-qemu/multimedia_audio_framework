@@ -417,7 +417,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
         ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
-    if (isScreenOffOrLock_ && !IsStreamActive(streamInFocus)) {
+    if (isScreenOffOrLock_ && !IsStreamActive(streamInFocus) && !VolumeUtils::IsPCVolumeEnable()) {
         AUDIO_INFO_LOG("screen off or screen lock, this stream is not active, not change volume.");
         return AUDIO_OK;
     }
@@ -825,7 +825,7 @@ int32_t AudioPolicyServer::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel
         return ERR_PERMISSION_DENIED;
     }
     if (!IsVolumeLevelValid(STREAM_APP, volumeLevel)) {
-        return ERR_NOT_SUPPORTED;
+        return ERR_INVALID_PARAM;
     }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetAppVolumeLevelInternal(appUid, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
@@ -889,21 +889,21 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32
     return streamInFocus;
 }
 
-int32_t AudioPolicyServer::GetAppVolumeLevel(int32_t appUid)
+int32_t AudioPolicyServer::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
     AUDIO_INFO_LOG("GetAppVolumeLevel appUid : %{public}d", appUid);
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("only for system app");
         return ERR_PERMISSION_DENIED;
     }
-    return GetAppVolumeLevelInternal(appUid);
+    return GetAppVolumeLevelInternal(appUid, volumeLevel);
 }
 
-int32_t AudioPolicyServer::GetSelfAppVolumeLevel()
+int32_t AudioPolicyServer::GetSelfAppVolumeLevel(int32_t &volumeLevel)
 {
     AUDIO_INFO_LOG("GetSelfAppVolumeLevel enter");
     int32_t appUid = IPCSkeleton::GetCallingUid();
-    return GetAppVolumeLevelInternal(appUid);
+    return GetAppVolumeLevelInternal(appUid, volumeLevel);
 }
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
@@ -932,11 +932,11 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamTy
     return volumeLevel;
 }
 
-int32_t AudioPolicyServer::GetAppVolumeLevelInternal(int32_t appUid)
+int32_t AudioPolicyServer::GetAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel)
 {
-    int32_t volumeLevel = audioPolicyService_.GetAppVolumeLevel(appUid);
+    int32_t ret = audioPolicyService_.GetAppVolumeLevel(appUid, volumeLevel);
     AUDIO_DEBUG_LOG("GetAppVolume appUid[%{public}d],volumeLevel[%{public}d]", appUid, volumeLevel);
-    return volumeLevel;
+    return ret;
 }
 
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
@@ -1202,7 +1202,7 @@ int32_t AudioPolicyServer::SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t vo
     AUDIO_INFO_LOG("SetSelfAppVolumeLevel volumeLevel: %{public}d, volumeFlag: %{public}d",
         volumeLevel, volumeFlag);
     if (!IsVolumeLevelValid(STREAM_APP, volumeLevel)) {
-        return ERR_NOT_SUPPORTED;
+        return ERR_INVALID_PARAM;
     }
     int32_t appUid = IPCSkeleton::GetCallingUid();
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
@@ -1225,14 +1225,14 @@ int32_t AudioPolicyServer::SetAppVolumeMutedInternal(int32_t appUid, bool muted,
     return ret;
 }
 
-bool AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned)
+int32_t AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("IsAppVolumeMute appUid: %{public}d, owned: %{public}d", appUid, owned);
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("only for system app");
         return ERR_PERMISSION_DENIED;
     }
-    bool ret = audioPolicyService_.IsAppVolumeMute(appUid, owned);
+    int32_t ret = audioPolicyService_.IsAppVolumeMute(appUid, owned, isMute);
     return ret;
 }
 
@@ -2317,7 +2317,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
     auto callerUid = IPCSkeleton::GetCallingUid();
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
     streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
-    int appVolume = GetAppVolumeLevel(callerUid);
+    int appVolume = 0;
+    GetAppVolumeLevel(callerUid, appVolume);
     streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     AUDIO_DEBUG_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
@@ -2360,7 +2361,8 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
     }
-    int appVolume = GetAppVolumeLevel(streamChangeInfo.audioRendererChangeInfo.clientUID);
+    int appVolume = 0;
+    GetAppVolumeLevel(streamChangeInfo.audioRendererChangeInfo.clientUID, appVolume);
     streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     int32_t ret = eventEntry_->UpdateTracker(mode, streamChangeInfo);
     if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||

@@ -190,31 +190,32 @@ void VolumeDataMaintainer::SetAppVolumeMuted(int32_t appUid, bool muted)
     appMuteStatusMap_[appUid][ownedAppUid] = muted;
 }
 
-bool VolumeDataMaintainer::GetAppMute(int32_t appUid)
+void VolumeDataMaintainer::GetAppMute(int32_t appUid, bool &isMute)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     auto iter = appMuteStatusMap_.find(appUid);
     if (iter == appMuteStatusMap_.end()) {
-        return false;
+        isMute = false;
     } else {
         for (auto subIter : iter->second) {
             if (subIter.second) {
-                return true;
+                isMute = true;
+                return;
             }
         }
+        isMute = false;
     }
-    return false;
 }
 
-bool VolumeDataMaintainer::GetAppMuteOwned(int32_t appUid)
+void VolumeDataMaintainer::GetAppMuteOwned(int32_t appUid, bool &isMute)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     int ownedAppUid = IPCSkeleton::GetCallingUid();
     auto iter = appMuteStatusMap_.find(appUid);
     if (iter == appMuteStatusMap_.end()) {
-        return false;
+        isMute = false;
     } else {
-        return iter->second[ownedAppUid];
+        isMute = iter->second[ownedAppUid];
     }
 }
 

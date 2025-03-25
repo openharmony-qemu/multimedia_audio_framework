@@ -22,9 +22,9 @@ struct RendererSinkAdapter;
 extern "C" {
 #endif
 
-struct RendererSinkAdapter* CreateSinkAdapterAdapter();
+struct RendererSinkAdapter* CreateSinkAdapter(void);
 
-void DestorySinkAdapter(struct RendererSinkAdapter* adapter);
+void DestorySinkAdapter(struct RendererSinkAdapter *adapter);
 
 #ifdef __cplusplus
 }

@@ -44,13 +44,13 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) override;
 
-    bool IsAppVolumeMute(int32_t appUid, bool owned) override;
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) override;
 
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
-    int32_t GetAppVolumeLevel(int32_t appUid) override;
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) override;
 
-    int32_t GetSelfAppVolumeLevel() override;
+    int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel) override;
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) override;
 

@@ -304,9 +304,9 @@ int32_t AudioPolicyService::SetAppVolumeMuted(int32_t appUid, bool muted)
     return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
 }
 
-bool AudioPolicyService::IsAppVolumeMute(int32_t appUid, bool owned)
+int32_t AudioPolicyService::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
-    return audioVolumeManager_.IsAppVolumeMute(appUid, owned);
+    return audioVolumeManager_.IsAppVolumeMute(appUid, owned, isMute);
 }
 
 int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
@@ -319,9 +319,9 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
     return audioVolumeManager_.GetSystemVolumeLevel(streamType);
 }
 
-int32_t AudioPolicyService::GetAppVolumeLevel(int32_t appUid)
+int32_t AudioPolicyService::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
-    return audioVolumeManager_.GetAppVolumeLevel(appUid);
+    return audioVolumeManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
 int32_t AudioPolicyService::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)

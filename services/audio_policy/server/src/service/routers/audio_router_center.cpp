@@ -224,13 +224,13 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
         return AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     }
     if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT) {
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
             desc = FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
         } else {
             desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
         }
     } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT) {
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
             desc = FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
         } else {
             desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);

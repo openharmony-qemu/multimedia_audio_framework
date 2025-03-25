@@ -229,6 +229,9 @@ void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
     AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_WARNING_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
+        "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
+        desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     coreService_->OnDeviceInfoUpdated(desc, command);
 }
 

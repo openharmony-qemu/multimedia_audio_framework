@@ -856,7 +856,6 @@ int32_t AudioRenderSink::CreateRender(void)
 
 int32_t AudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices)
 {
-    AUDIO_INFO_LOG("Adapter name: %{public}s", adapterNameCase_.c_str());
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);

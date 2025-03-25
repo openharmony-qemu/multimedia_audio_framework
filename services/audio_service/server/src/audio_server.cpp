@@ -2330,7 +2330,7 @@ uint32_t AudioServer::CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const s
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), 0, "refused for %{public}d", callingUid);
 
     AUDIO_INFO_LOG("In, idBase: %{public}u, idType: %{public}u, info: %{public}s", idBase, idType, idInfo.c_str());
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(idBase, idType, idInfo, true);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(idBase, idType, idInfo, true);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
     if (idInfo.find("InnerCapturerSink") != string::npos) {
         AUDIO_INFO_LOG("Inner-cap stream return");
@@ -2354,8 +2354,7 @@ uint32_t AudioServer::CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), HDI_INVALID_ID, "refused for %{public}d", callingUid);
     AUDIO_INFO_LOG("In, idBase: %{public}u, idType: %{public}u, info: %{public}s", idBase, idType, idInfo.c_str());
-    uint32_t id = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(idBase, idType,
-        static_cast<SourceType>(attr.sourceType), idInfo, true);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(idBase, idType, idInfo, true);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(id, true);
     if (source == nullptr) {

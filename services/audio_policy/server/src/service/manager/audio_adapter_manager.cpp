@@ -334,17 +334,16 @@ int32_t AudioAdapterManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     return SetAppVolumeMutedDB(appUid, muted);
 }
 
-bool AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned)
+int32_t AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("IsAppVolumeMute: appUid: %{public}d, deviceType: %{public}d, owned:%{public}d",
         appUid, currentActiveDevice_.deviceType_, owned);
-    bool isMute = false;
     if (owned) {
-        isMute = volumeDataMaintainer_.GetAppMuteOwned(appUid);
+        volumeDataMaintainer_.GetAppMuteOwned(appUid, isMute);
     } else {
-        isMute = volumeDataMaintainer_.GetAppMute(appUid);
+        volumeDataMaintainer_.GetAppMute(appUid, isMute);
     }
-    return isMute;
+    return SUCCESS;
 }
 
 bool AudioAdapterManager::IsCurDeviceNeedSaveVolumeToDatabase()
@@ -682,13 +681,14 @@ int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
     return volumeDataMaintainer_.GetStreamVolume(streamType);
 }
 
-int32_t AudioAdapterManager::GetAppVolumeLevel(int32_t appUid)
+int32_t AudioAdapterManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
     if (volumeDataMaintainer_.IsSetAppVolume(appUid)) {
-        return volumeDataMaintainer_.GetAppVolume(appUid);
+        volumeLevel = volumeDataMaintainer_.GetAppVolume(appUid);
     } else {
-        return appConfigVolume_.defaultVolume;
+        volumeLevel = appConfigVolume_.defaultVolume;
     }
+    return SUCCESS;
 }
 
 int32_t AudioAdapterManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
@@ -768,7 +768,9 @@ bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 
 bool AudioAdapterManager::GetAppMute(int32_t appUid)
 {
-    return volumeDataMaintainer_.GetAppMute(appUid);
+    bool isMute = false;
+    volumeDataMaintainer_.GetAppMute(appUid, isMute);
+    return isMute;
 }
 
 int32_t AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
@@ -1779,7 +1781,7 @@ void AudioAdapterManager::UpdateSafeVolume()
                 isWiredBoot_ = false;
                 return;
             }
-            if (isWiredBoot_) {
+            if (isWiredBoot_ || safeStatus_) {
                 AUDIO_INFO_LOG("1st connect wired device:%{public}d after boot, update current volume to safevolume",
                     currentActiveDevice_.deviceType_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
@@ -1802,7 +1804,7 @@ void AudioAdapterManager::UpdateSafeVolume()
                     return;
                 }
             }
-            if (isBtBoot_) {
+            if (isBtBoot_ || safeStatusBt_) {
                 AUDIO_INFO_LOG("1st connect bt device:%{public}d after boot, update current volume to safevolume",
                     currentActiveDevice_.deviceType_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
