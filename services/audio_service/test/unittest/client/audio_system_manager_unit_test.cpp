@@ -332,9 +332,9 @@ HWTEST(AudioSystemManagerUnitTest, GetSelfAppVolume_001, TestSize.Level1)
     int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolume(volume);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume end result:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_NUM);
-    result = AudioSystemManager::GetInstance()->GetSelfAppVolume();
+    result = AudioSystemManager::GetInstance()->GetSelfAppVolume(volume);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSelfAppVolume_001 end result:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_EQ(result, TEST_RET_NUM);
 }
 
 /**

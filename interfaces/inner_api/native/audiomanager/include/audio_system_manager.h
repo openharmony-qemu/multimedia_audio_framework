@@ -402,9 +402,10 @@ public:
      * @brief Get uid app volume.
      *
      * @param appUid App uid.
-     * @return uid app volume level
+     * @param volumeLevel App volume level.
+     * @return Get app volume result
      */
-    int32_t GetAppVolume(int32_t appUid) const;
+    int32_t GetAppVolume(int32_t appUid, int32_t &volumeLevel) const;
 
     /**
      * @brief Get the uid app volume.
@@ -412,7 +413,7 @@ public:
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-    int32_t GetSelfAppVolume() const;
+    int32_t GetSelfAppVolume(int32_t &volumeLevel) const;
 
     /**
      * @brief Set self app volume change callback.
@@ -468,9 +469,10 @@ public:
      * @param appUid app uid
      * @param owned If true is passed, the result will be indicated your owned muted statesettings to
      * this app. Otherwise if false is passed, the result will be indicated the real muted state.
+     *  @param isMute App mute state has seted
      * @return the app uid muted status
      */
-    bool IsAppVolumeMute(const int32_t appUid, const bool owned);
+    int32_t IsAppVolumeMute(const int32_t appUid, const bool owned, bool &isMute);
     /**
      * @brief Obtains the current stream volume.
      *

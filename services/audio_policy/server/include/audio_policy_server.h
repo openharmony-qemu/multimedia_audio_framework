@@ -97,7 +97,7 @@ public:
 
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
-    bool IsAppVolumeMute(int32_t appUid, bool owned) override;
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) override;
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) override;
 
@@ -107,9 +107,9 @@ public:
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
-    int32_t GetAppVolumeLevel(int32_t appUid) override;
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) override;
 
-    int32_t GetSelfAppVolumeLevel() override;
+    int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
@@ -589,7 +589,7 @@ private:
         bool mute, DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
-    int32_t GetAppVolumeLevelInternal(int32_t appUid);
+    int32_t GetAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,

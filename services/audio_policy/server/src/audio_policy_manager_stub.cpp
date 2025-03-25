@@ -280,7 +280,9 @@ void AudioPolicyManagerStub::GetAppVolumeIsMuteInternal(MessageParcel &data, Mes
 {
     int32_t appUid = data.ReadInt32();
     bool owned = data.ReadBool();
-    int result = IsAppVolumeMute(appUid, owned);
+    bool isMute = false;
+    int result = IsAppVolumeMute(appUid, owned, isMute);
+    reply.WriteBool(isMute);
     reply.WriteInt32(result);
 }
 
@@ -392,14 +394,18 @@ void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, M
 void AudioPolicyManagerStub::GetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t appUid = data.ReadInt32();
-    int32_t volumeLevel = GetAppVolumeLevel(appUid);
+    int32_t volumeLevel = 0;
+    int32_t ret = GetAppVolumeLevel(appUid, volumeLevel);
     reply.WriteInt32(volumeLevel);
+    reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::GetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t volumeLevel = GetSelfAppVolumeLevel();
+    int32_t volumeLevel = 0;
+    int32_t ret = GetSelfAppVolumeLevel(volumeLevel);
     reply.WriteInt32(volumeLevel);
+    reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)

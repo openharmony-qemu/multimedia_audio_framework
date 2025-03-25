@@ -195,9 +195,9 @@ void AudioVolumeManager::SetSharedAbsVolumeScene(const bool support)
     *sharedAbsVolumeScene_ = support;
 }
 
-int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid)
+int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
-    return audioPolicyManager_.GetAppVolumeLevel(appUid);
+    return audioPolicyManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
 int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
@@ -341,10 +341,10 @@ int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     return result;
 }
 
-bool AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned)
+int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppVolumeMute");
-    bool result = audioPolicyManager_.IsAppVolumeMute(appUid, owned);
+    int32_t result = audioPolicyManager_.IsAppVolumeMute(appUid, owned, isMute);
     return result;
 }
 

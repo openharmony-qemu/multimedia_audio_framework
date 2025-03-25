@@ -443,20 +443,20 @@ int32_t AudioSystemManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t
     return AudioPolicyManager::GetInstance().SetAppVolumeLevel(appUid, volume);
 }
 
-int32_t AudioSystemManager::GetAppVolume(int32_t appUid) const
+int32_t AudioSystemManager::GetAppVolume(int32_t appUid, int32_t &volumeLevel) const
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::GetAppVolume");
     bool ret = PermissionUtil::VerifyIsSystemApp();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "GetAppVolume: No system permission");
     ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "GetAppVolume: No system permission");
-    return AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid);
+    return AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid, volumeLevel);
 }
 
-int32_t AudioSystemManager::GetSelfAppVolume() const
+int32_t AudioSystemManager::GetSelfAppVolume(int32_t &volumeLevel) const
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::GetSelfAppVolume");
-    return AudioPolicyManager::GetInstance().GetSelfAppVolumeLevel();
+    return AudioPolicyManager::GetInstance().GetSelfAppVolumeLevel(volumeLevel);
 }
 
 int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
@@ -498,14 +498,14 @@ int32_t AudioSystemManager::UnsetAppVolumeCallbackForUid(
     return AudioPolicyManager::GetInstance().UnsetAppVolumeCallbackForUid(callback);
 }
 
-bool AudioSystemManager::IsAppVolumeMute(int32_t appUid, bool owned)
+int32_t AudioSystemManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("IsAppVolumeMute: appUid[%{public}d], muted[%{public}d]", appUid, owned);
     bool ret = PermissionUtil::VerifyIsSystemApp();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
     ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
-    return AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, owned);
+    return AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, owned, isMute);
 }
 
 int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel) const
