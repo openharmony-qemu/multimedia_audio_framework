@@ -317,7 +317,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
     return CreateAudioEffectChainDynamicInner(sceneType);
 }
 
-int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode)
+int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey), ERROR,
@@ -342,7 +342,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
         effectChain = effectNone;
     }
 
-    ConfigureAudioEffectChain(audioEffectChain, effectMode);
+    ConfigureAudioEffectChain(audioEffectChain, effectMode, sceneType);
     bool exists = std::find(AUDIO_PERSISTENCE_SCENE.begin(), AUDIO_PERSISTENCE_SCENE.end(), sceneType) !=
         AUDIO_PERSISTENCE_SCENE.end();
     if (exists && !hasLoadedEffectProperties_) {
@@ -376,7 +376,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
 }
 
 void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
-    const std::string &effectMode)
+    const std::string &effectMode, std::string sceneType);
 {
     audioEffectChain->SetEffectMode(effectMode);
     audioEffectChain->SetExtraSceneType(extraSceneType_);
@@ -387,6 +387,7 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetFoldState(foldState_);
     std::string maxSession = std::to_string(maxSessionID_);
     if (sessionIDToEffectInfoMap_.count(maxSession)) {
+        sceneType = sessionIDToEffectInfoMap_[maxSession].sceneType;
         audioEffectChain->SetStreamUsage(sessionIDToEffectInfoMap_[maxSession].streamUsage);
     }
 }
