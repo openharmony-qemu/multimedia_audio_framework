@@ -947,7 +947,8 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
     AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
-        if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
+        if (!IsSameDevice(outputDevices.front(), rendererChangeInfo->outputDeviceInfo) &&
+            !SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
             audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
 
