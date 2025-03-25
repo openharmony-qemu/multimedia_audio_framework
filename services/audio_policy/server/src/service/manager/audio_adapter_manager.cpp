@@ -1779,7 +1779,7 @@ void AudioAdapterManager::UpdateSafeVolume()
                 isWiredBoot_ = false;
                 return;
             }
-            if (isWiredBoot_) {
+            if (isWiredBoot_ || safeStatus_) {
                 AUDIO_INFO_LOG("1st connect wired device:%{public}d after boot, update current volume to safevolume",
                     currentActiveDevice_.deviceType_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
@@ -1802,7 +1802,7 @@ void AudioAdapterManager::UpdateSafeVolume()
                     return;
                 }
             }
-            if (isBtBoot_) {
+            if (isBtBoot_ || safeStatusBt_) {
                 AUDIO_INFO_LOG("1st connect bt device:%{public}d after boot, update current volume to safevolume",
                     currentActiveDevice_.deviceType_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
