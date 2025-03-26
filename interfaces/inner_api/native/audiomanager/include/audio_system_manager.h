@@ -1407,6 +1407,8 @@ public:
     int32_t SetVirtualCall(const bool isVirtual);
 
     int32_t OnVoiceWakeupState(bool state);
+
+    uint16_t GetDmDeviceType() const;
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:
@@ -1447,6 +1449,7 @@ private:
 
     int32_t RegisterWakeupSourceCallback();
     void OtherDeviceTypeCases(DeviceType deviceType) const;
+    AudioPin GetPinValueForPeripherals(DeviceType deviceType, DeviceRole deviceRole, uint16_t dmDeviceType) const;
 
     int32_t cbClientId_ = -1;
     int32_t volumeChangeClientPid_ = -1;

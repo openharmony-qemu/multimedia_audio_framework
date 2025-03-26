@@ -73,6 +73,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
+
 private:
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
     static uint64_t GetChannelLayoutByChannelCount(uint32_t channelCount);
@@ -165,6 +167,7 @@ private:
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     std::atomic<bool> muteState_ = false;
     std::string address_ = "";
+    uint16_t dmDeviceType_ = 0;
 };
 
 } // namespace AudioStandard

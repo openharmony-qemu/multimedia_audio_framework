@@ -175,6 +175,13 @@ DeviceType AudioPolicyManager::GetActiveOutputDevice()
     return gsp->GetActiveOutputDevice();
 }
 
+uint16_t AudioPolicyManager::GetDmDeviceType()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DEVICE_TYPE_INVALID, "audio policy manager proxy is NULL.");
+    return gsp->GetDmDeviceType();
+}
+
 DeviceType AudioPolicyManager::GetActiveInputDevice()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

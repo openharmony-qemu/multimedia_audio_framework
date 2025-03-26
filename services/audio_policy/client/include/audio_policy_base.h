@@ -94,6 +94,8 @@ public:
 
     virtual DeviceType GetActiveOutputDevice() = 0;
 
+    virtual uint16_t GetDmDeviceType() = 0;
+
     virtual DeviceType GetActiveInputDevice() = 0;
 
 #ifdef FEATURE_DTMF_TONE

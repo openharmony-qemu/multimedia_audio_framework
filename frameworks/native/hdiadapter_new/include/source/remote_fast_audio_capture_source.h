@@ -74,6 +74,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
+
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
 

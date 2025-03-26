@@ -303,6 +303,7 @@ private:
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
     std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
+    std::string GetMuteKeyForDeviceType(DeviceType deviceType, std::string &type);
     void InitSystemSoundUriMap();
     void InitVolumeMapIndex();
     void InitBootAnimationVolume();

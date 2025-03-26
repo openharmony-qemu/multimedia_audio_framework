@@ -650,6 +650,11 @@ DeviceType AudioPolicyService::GetActiveInputDevice()
     return audioActiveDevice_.GetCurrentInputDeviceType();
 }
 
+uint16_t AudioPolicyService::GetDmDeviceType()
+{
+    return audioDeviceStatus_.GetDmDeviceType();
+}
+
 int32_t AudioPolicyService::SetRingerMode(AudioRingerMode ringMode)
 {
     int32_t result = audioPolicyManager_.SetRingerMode(ringMode);

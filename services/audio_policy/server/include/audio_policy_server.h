@@ -165,6 +165,8 @@ public:
 
     InternalDeviceType GetActiveOutputDevice() override;
 
+    uint16_t GetDmDeviceType() override;
+
     InternalDeviceType GetActiveInputDevice() override;
 
     int32_t SetRingerModeLegacy(AudioRingerMode ringMode) override;

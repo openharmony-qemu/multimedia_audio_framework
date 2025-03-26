@@ -199,19 +199,11 @@ void AudioPolicyServiceEnhanceThreeFuzzTest()
     GetServerPtr()->audioPolicyService_.SetNormalVoipFlag(true);
 
     std::vector<AudioPin> audioPin = {
-        AUDIO_PIN_NONE,
-        AUDIO_PIN_OUT_SPEAKER,
-        AUDIO_PIN_OUT_HEADSET,
-        AUDIO_PIN_OUT_LINEOUT,
-        AUDIO_PIN_OUT_HDMI,
-        AUDIO_PIN_OUT_USB,
-        AUDIO_PIN_OUT_USB_EXT,
-        AUDIO_PIN_OUT_DAUDIO_DEFAULT,
-        AUDIO_PIN_IN_MIC,
-        AUDIO_PIN_IN_HS_MIC,
-        AUDIO_PIN_IN_LINEIN,
-        AUDIO_PIN_IN_USB_EXT,
-        AUDIO_PIN_IN_DAUDIO_DEFAULT,
+        AUDIO_PIN_NONE, AUDIO_PIN_OUT_SPEAKER, AUDIO_PIN_OUT_HEADSET,
+        AUDIO_PIN_OUT_LINEOUT, AUDIO_PIN_OUT_HDMI, AUDIO_PIN_OUT_USB,
+        AUDIO_PIN_OUT_USB_EXT, AUDIO_PIN_OUT_DAUDIO_DEFAULT, AUDIO_PIN_IN_MIC,
+        AUDIO_PIN_IN_HS_MIC, AUDIO_PIN_IN_LINEIN, AUDIO_PIN_IN_PENCIL,
+        AUDIO_PIN_IN_UWB, AUDIO_PIN_IN_USB_EXT, AUDIO_PIN_IN_DAUDIO_DEFAULT,
         AUDIO_PIN_OUT_DP,
     };
     uint32_t audioPinInt = GetData<uint32_t>() % audioPin.size();
@@ -255,6 +247,8 @@ void AudioPolicyServiceEnhanceFourFuzzTest()
         AUDIO_PIN_OUT_USB_EXT,
         AUDIO_PIN_OUT_USB_HEADSET,
         AUDIO_PIN_IN_USB_HEADSET,
+        AUDIO_PIN_IN_PENCIL,
+        AUDIO_PIN_IN_UWB,
         AUDIO_PIN_IN_MIC,
         AUDIO_PIN_IN_DAUDIO_DEFAULT,
         AUDIO_PIN_IN_HS_MIC,

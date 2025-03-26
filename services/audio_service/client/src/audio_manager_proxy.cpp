@@ -551,6 +551,21 @@ int32_t AudioManagerProxy::UpdateDualToneState(bool enable, int32_t sessionId)
     return result;
 }
 
+void AudioManagerProxy::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
+    data.WriteUint16(dmDeviceType);
+    auto error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_DM_DEVICE_TYPE), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetDmDeviceType failed, error: %{public}d", error);
+}
+
 int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
     MessageParcel data;

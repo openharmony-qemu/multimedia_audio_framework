@@ -212,6 +212,9 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
             portName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
             break;
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
+            portName = ACCESSORY_SOURCE;
+            break;
         default:
             portName = PORT_NONE;
             break;
@@ -319,6 +322,9 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
             break;
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             portName = BLUETOOTH_MIC;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_ACCESSORY:
+            portName = ACCESSORY_SOURCE;
             break;
         default:
             portName = PORT_NONE;
@@ -549,6 +555,7 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
             return DeviceRole::INPUT_DEVICE;
         default:
             return DeviceRole::DEVICE_ROLE_NONE;
@@ -583,6 +590,8 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(AudioPin pin) const
         case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
         case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
         case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_PENCIL:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_UWB:
         case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
             return DeviceRole::INPUT_DEVICE;
         default:

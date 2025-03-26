@@ -35,6 +35,7 @@ static const char* PIPE_PRIMARY_INPUT = "primary_input";
 static const char* PIPE_USB_ARM_OUTPUT = "usb_arm_output";
 static const char* PIPE_USB_ARM_INPUT = "usb_arm_input";
 static const char* PIPE_DP_OUTPUT = "dp_output";
+static const char* PIPE_ACCESSORY_INPUT = "accessory_input";
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 
 static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
@@ -372,6 +373,8 @@ std::string AudioEcManager::GetPipeNameByDeviceForEc(const std::string &role, co
             return PIPE_USB_ARM_OUTPUT;
         case DEVICE_TYPE_DP:
             return PIPE_DP_OUTPUT;
+        case DEVICE_TYPE_ACCESSORY:
+            return PIPE_ACCESSORY_INPUT;
         default:
             AUDIO_ERR_LOG("invalid device type %{public}d for role %{public}s", deviceType, role.c_str());
             return PIPE_PRIMARY_OUTPUT;

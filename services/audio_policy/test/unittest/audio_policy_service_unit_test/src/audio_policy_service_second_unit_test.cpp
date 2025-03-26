@@ -41,6 +41,7 @@ static const std::string PIPE_PRIMARY_OUTPUT_UNITTEST = "primary_output";
 static const std::string PIPE_PRIMARY_INPUT_UNITTEST = "primary_input";
 static const std::string PIPE_USB_ARM_OUTPUT_UNITTEST = "usb_arm_output";
 static const std::string PIPE_DP_OUTPUT_UNITTEST = "dp_output";
+static const std::string PIPE_ACCESSORY_INPUT_UNITTEST = "accessory_input";
 static const std::string PIPE_USB_ARM_INPUT_UNITTEST = "usb_arm_input";
 
 void AudioPolicyServiceExtUnitTest::SetUpTestCase(void)
@@ -833,6 +834,10 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetPipeNameByDeviceForEc_001, TestSize.L
     deviceType = DeviceType::DEVICE_TYPE_DP;
     pipeNameByDeviceForEc = server->audioPolicyService_.audioEcManager_.GetPipeNameByDeviceForEc(role, deviceType);
     EXPECT_EQ(pipeNameByDeviceForEc, PIPE_DP_OUTPUT_UNITTEST);
+
+    deviceType = DeviceType::DEVICE_TYPE_ACCESSORY;
+    pipeNameByDeviceForEc = server->audioPolicyService_.audioEcManager_.GetPipeNameByDeviceForEc(role, deviceType);
+    EXPECT_EQ(pipeNameByDeviceForEc, PIPE_ACCESSORY_INPUT_UNITTEST);
 
     deviceType = DeviceType::DEVICE_TYPE_MAX;
     pipeNameByDeviceForEc = server->audioPolicyService_.audioEcManager_.GetPipeNameByDeviceForEc(role, deviceType);

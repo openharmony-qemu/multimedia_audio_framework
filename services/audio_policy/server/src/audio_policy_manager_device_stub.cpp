@@ -99,6 +99,12 @@ void AudioPolicyManagerStub::GetActiveOutputDeviceInternal(MessageParcel &data, 
     reply.WriteInt32(static_cast<int>(deviceType));
 }
 
+void AudioPolicyManagerStub::GetDmDeviceTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint16_t dmDeviceType = GetDmDeviceType();
+    reply.WriteUint16(static_cast<uint16_t>(dmDeviceType));
+}
+
 void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     InternalDeviceType deviceType = GetActiveInputDevice();

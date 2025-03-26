@@ -80,6 +80,8 @@ public:
 
     virtual void DumpInfo(std::string &dumpString) {}
 
+    virtual void SetDmDeviceType(uint16_t dmDeviceType) {}
+
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) NOT_SUPPORT_RET

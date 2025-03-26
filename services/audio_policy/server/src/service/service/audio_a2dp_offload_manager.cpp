@@ -526,6 +526,7 @@ std::string AudioA2dpOffloadManager::GetVolumeGroupType(DeviceType deviceType)
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_ACCESSORY:
             volumeGroupType = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:

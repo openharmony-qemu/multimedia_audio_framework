@@ -190,5 +190,10 @@ void FileAudioCaptureSource::DumpInfo(std::string &dumpString)
     dumpString += "type: FileSource\n";
 }
 
+void FileAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

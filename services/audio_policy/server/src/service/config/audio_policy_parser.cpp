@@ -190,8 +190,10 @@ ClassType AudioPolicyParser::GetClassTypeByAdapterType(AdaptersType adapterType)
         return ClassType::TYPE_FILE_IO;
     } else if (adapterType == AdaptersType::TYPE_USB) {
         return ClassType::TYPE_USB;
-    }  else if (adapterType == AdaptersType::TYPE_DP) {
+    } else if (adapterType == AdaptersType::TYPE_DP) {
         return ClassType::TYPE_DP;
+    } else if (adapterType == AdaptersType::TYPE_ACCESSORY) {
+        return ClassType::TYPE_ACCESSORY;
     } else {
         return ClassType::TYPE_INVALID;
     }
@@ -770,6 +772,8 @@ AdaptersType AudioPolicyParser::GetAdaptersType(const std::string &adapterName)
         return AdaptersType::TYPE_USB;
     else if (adapterName == ADAPTER_DP_TYPE)
         return AdaptersType::TYPE_DP;
+    else if (adapterName == ADAPTER_ACCESSORY_TYPE)
+        return AdaptersType::TYPE_ACCESSORY;
     else
         return AdaptersType::TYPE_INVALID;
 }

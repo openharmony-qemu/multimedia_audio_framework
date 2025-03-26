@@ -73,6 +73,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
+
 private:
     void InitAudioManager(void);
     std::shared_ptr<LocalAdapterWrapper> GetAdapter(const std::string &adapterName, bool tryCreate = false);
@@ -93,6 +95,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<LocalAdapterWrapper> > adapters_;
     std::mutex adapterMtx_;
     std::vector<LocalParameter> reSetParams_;
+    uint16_t dmDeviceType_ = 0;
 };
 
 } // namespace AudioStandard
