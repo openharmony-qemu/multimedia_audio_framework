@@ -518,10 +518,7 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
             if (audioEffectChain->GetFinalVolumeState() == true) {
                 audioEffectChain->SetFinalVolume(volumeMax);
                 int32_t ret = audioEffectChain->UpdateEffectParam();
-                if (ret != 0) {
-                    AUDIO_ERR_LOG("set ap volume failed, ret: %{public}d", ret);
-                    continue;
-                }
+                CHECK_AND_CONTINUE_LOG(ret == 0, "set ap volume failed, ret: %{public}d", ret);
                 AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}f",
                     it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
                 audioEffectChain->SetFinalVolumeState(false);
