@@ -153,14 +153,15 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
         int32_t res = audioEcManager_.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "fetch target source info error");
 
+        AUDIO_INFO_LOG("Current source: %{public}d, target: %{public}d",
+            audioEcManager_.GetSourceOpened(), targetSource);
         if (audioEcManager_.GetSourceOpened() == SOURCE_TYPE_INVALID) {
             // normal source is not opened before
             audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
         } else if (IsHigherPrioritySource(targetSource, audioEcManager_.GetSourceOpened())) {
             // reload if higher source come
-            audioEcManager_.CloseNormalSource();
-            audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
+            audioEcManager_.ReloadNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
         }
         sessionWithNormalSourceType_[sessionID] = sessionInfo;

@@ -511,7 +511,7 @@ HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_001, TestSize.Level1)
     fastAudioStream->streamInfo_ = info;
     fastAudioStream->state_ = RUNNING;
     result = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(result, true);
     fastAudioStream->state_ = PAUSED;
     result = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(result, true);

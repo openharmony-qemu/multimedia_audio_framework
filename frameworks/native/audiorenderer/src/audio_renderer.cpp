@@ -1921,9 +1921,17 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
     AUDIO_INFO_LOG("Get new stream success!");
 
-    // set new stream info
+    // set new stream info. When switch to fast stream failed, call SetSwitchInfo again
+    // and switch to normal ipc stream to avoid silence.
     switchResult = SetSwitchInfo(switchInfo, newAudioStream);
-    CHECK_AND_RETURN_RET_LOG(switchResult, false, "Init target stream failed");
+    if (!switchResult && switchInfo.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
+        AUDIO_ERR_LOG("Re-create stream failed, create normal ipc stream");
+        newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, switchInfo.params,
+            switchInfo.eStreamType, appInfo_.appPid);
+        CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
+        switchResult = SetSwitchInfo(switchInfo, newAudioStream);
+        CHECK_AND_RETURN_RET_LOG(switchResult, false, "Init ipc stream failed");
+    }
 
     // Start new stream if old stream was in running state.
     // When restoring for audio server died, no need for restart.

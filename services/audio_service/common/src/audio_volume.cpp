@@ -283,6 +283,42 @@ void AudioVolume::SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPow
     }
 }
 
+void AudioVolume::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+    AdjustStreamVolume volumeType)
+{
+    AdjustStreamVolumeInfo adjustStreamVolumeInfo;
+    adjustStreamVolumeInfo.volume = volume;
+    adjustStreamVolumeInfo.sessionId = sessionId;
+    adjustStreamVolumeInfo.invocationTime = invocationTime;
+    switch (volumeType) {
+        case AdjustStreamVolume::STREAM_VOLUME_INFO:
+            setStreamVolumeInfo_->Add(adjustStreamVolumeInfo);
+            break;
+        case AdjustStreamVolume::LOW_POWER_VOLUME_INFO:
+            setLowPowerVolumeInfo_->Add(adjustStreamVolumeInfo);
+            break;
+        case AdjustStreamVolume::DUCK_VOLUME_INFO:
+            setDuckVolumeInfo_->Add(adjustStreamVolumeInfo);
+            break;
+        default:
+            break;
+    };
+}
+
+std::vector<AdjustStreamVolumeInfo> AudioVolume::GetStreamVolumeInfo(AdjustStreamVolume volumeType)
+{
+    switch (volumeType) {
+        case AdjustStreamVolume::STREAM_VOLUME_INFO:
+            return setStreamVolumeInfo_->GetData();
+        case AdjustStreamVolume::LOW_POWER_VOLUME_INFO:
+            return setLowPowerVolumeInfo_->GetData();
+        case AdjustStreamVolume::DUCK_VOLUME_INFO:
+            return setDuckVolumeInfo_->GetData();
+        default:
+            return {};
+    };
+}
+
 void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
 {
     AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, isMuted:%{public}d", sessionId, isMuted);

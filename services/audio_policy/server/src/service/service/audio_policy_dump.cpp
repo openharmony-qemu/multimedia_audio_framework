@@ -98,6 +98,25 @@ void AudioPolicyDump::DevicesInfoDump(std::string &dumpString)
     audioDeviceManager_.Dump(dumpString);
     GetMicrophoneDescriptorsDump(dumpString);
     GetOffloadStatusDump(dumpString);
+    AllDeviceVolumeInfoDump(dumpString);
+}
+
+void AudioPolicyDump::AllDeviceVolumeInfoDump(std::string &dumpString)
+{
+    dumpString += "\nVolume Info for all devices:\n";
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> deviceVolumeInfo =
+        audioVolumeManager_.GetAllDeviceVolumeInfo();
+    if (deviceVolumeInfo.size() > 0) {
+        for (auto it = deviceVolumeInfo.begin(); it != deviceVolumeInfo.end(); ++it) {
+            AppendFormat(dumpString, " - DeviceType: %s\t",
+                AudioInfoDumpUtils::GetDeviceTypeName((*it)->deviceType).c_str());
+            AppendFormat(dumpString, "AudioStreamType: %s\t",
+                AudioInfoDumpUtils::GetStreamName((*it)->streamType).c_str());
+            AppendFormat(dumpString, "VolumeValue: %d\n", (*it)->volumeValue);
+        }
+    } else {
+        AppendFormat(dumpString, "nothing Info to hidumper\n");
+    }
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyDump::GetDumpDeviceInfo(std::string &dumpString,
@@ -212,6 +231,7 @@ void AudioPolicyDump::AudioModeDump(std::string &dumpString)
 {
     GetCallStatusDump(dumpString);
     GetRingerModeDump(dumpString);
+    GetRingerModeInfoDump(dumpString);
 }
 
 void AudioPolicyDump::GetCallStatusDump(std::string &dumpString)
@@ -258,6 +278,22 @@ void AudioPolicyDump::GetRingerModeDump(std::string &dumpString)
     dumpString += "\n\n";
 }
 
+void AudioPolicyDump::GetRingerModeInfoDump(std::string &dumpString)
+{
+    dumpString += "\nSetRingerMode Info:\n";
+    std::vector<RingerModeAdjustInfo> ringerModeInfo;
+    audioPolicyManager_.GetRingerModeInfo(ringerModeInfo);
+    if (ringerModeInfo.size() > 0) {
+        for (const auto &item : ringerModeInfo) {
+            AppendFormat(dumpString, " - RingerMode: %s  ", GetRingerModeType(item.ringMode).c_str());
+            AppendFormat(dumpString, "CallerName: %s  ", item.callerName.c_str());
+            AppendFormat(dumpString, "InvocationTime: %s\n", item.invocationTime.c_str());
+        }
+    } else {
+        AppendFormat(dumpString, "nothing Info to hidumper\n");
+    }
+}
+
 void AudioPolicyDump::StreamVolumesDump(std::string &dumpString)
 {
     dumpString += "\nStream Volumes:\n";
@@ -283,6 +319,21 @@ void AudioPolicyDump::StreamVolumesDump(std::string &dumpString)
     GetVolumeConfigDump(dumpString);
     GetGroupInfoDump(dumpString);
     audioPolicyManager_.SafeVolumeDump(dumpString);
+    GetAdjustVolumeDump(dumpString);
+
+    std::vector<VolumeKeyEventRegistration> volumeKeyRegistrations;
+    audioVolumeManager_.GetVolumeKeyRegistrationInfo(volumeKeyRegistrations);
+    AppendFormat(dumpString, "\nVolume Key Event Registrations:\n");
+    if (volumeKeyRegistrations.size() > 0) {
+        for (const auto &registration : volumeKeyRegistrations) {
+            AppendFormat(dumpString, " - KeyType: %s\t\t", registration.keyType.c_str());
+            AppendFormat(dumpString, "SubscriptionId: %d\t ", registration.subscriptionId);
+            AppendFormat(dumpString, "InvocationTime: %s\t", registration.registrationTime.c_str());
+            AppendFormat(dumpString, "Regist Success: %s\n", registration.registrationResult ? "Yes" : "No");
+        }
+    } else {
+        AppendFormat(dumpString, "\nnothing Info to hidumper\n");
+    }
 }
 
 void AudioPolicyDump::GetVolumeConfigDump(std::string &dumpString)
@@ -385,6 +436,52 @@ void AudioPolicyDump::AudioPolicyParserDumpPipeInfo(std::string &dumpString,
             AppendFormat(dumpString, "         - attribute : -- name=%s, value=%s\n", attributeInfo->name_.c_str(),
                 attributeInfo->value_.c_str());
         }
+    }
+}
+
+void AudioPolicyDump::GetAdjustVolumeDump(std::string &dumpString)
+{
+    dumpString += "\nSystemVolumeLevel Info:\n";
+    std::vector<AdjustVolumeInfo> systemVolumeLevelInfo;
+    audioVolumeManager_.GetSystemVolumeLevelInfo(systemVolumeLevelInfo);
+    if (systemVolumeLevelInfo.size() > 0) {
+        for (const auto &item : systemVolumeLevelInfo) {
+            AppendFormat(dumpString, " - DeviceType: %s",
+                AudioInfoDumpUtils::GetDeviceTypeName(item.deviceType).c_str());
+            AppendFormat(dumpString, "\tStreamType: %s     ",
+                AudioInfoDumpUtils::GetStreamName(item.streamType).c_str());
+            AppendFormat(dumpString, "\tVolumeLevel: %d\n", item.volumeLevel);
+            AppendFormat(dumpString, "\tCallerName: %s", item.callerName.c_str());
+            AppendFormat(dumpString, "\tInvocationTime: %s\n", item.invocationTime.c_str());
+        }
+    } else {
+        AppendFormat(dumpString, "nothing Info to hidumper\n");
+    }
+
+    std::vector<AdjustStreamVolumeInfo> adjustStreamVolumeInfo;
+    dumpString += "\nSetStreamVolume Info:\n";
+    adjustStreamVolumeInfo = audioPolicyManager_.GetStreamVolumeInfo(AdjustStreamVolume::STREAM_VOLUME_INFO);
+    AdjustVolumeAppend(adjustStreamVolumeInfo, dumpString);
+
+    dumpString += "\nSetLowPowerVolume Info:\n";
+    adjustStreamVolumeInfo = audioPolicyManager_.GetStreamVolumeInfo(AdjustStreamVolume::LOW_POWER_VOLUME_INFO);
+    AdjustVolumeAppend(adjustStreamVolumeInfo, dumpString);
+
+    dumpString += "\nSetDuckVolume Info:\n";
+    adjustStreamVolumeInfo = audioPolicyManager_.GetStreamVolumeInfo(AdjustStreamVolume::DUCK_VOLUME_INFO);
+    AdjustVolumeAppend(adjustStreamVolumeInfo, dumpString);
+}
+
+void AudioPolicyDump::AdjustVolumeAppend(std::vector<AdjustStreamVolumeInfo> adjustInfo, std::string &dumpString)
+{
+    if (adjustInfo.size() > 0) {
+        for (const auto &item : adjustInfo) {
+            AppendFormat(dumpString, " - VolumeValue: %f  ", item.volume);
+            AppendFormat(dumpString, "SessionId: %u  ", item.sessionId);
+            AppendFormat(dumpString, "InvocationTime: %s\n", item.invocationTime.c_str());
+        }
+    } else {
+        AppendFormat(dumpString, "nothing Info to hidumper\n");
     }
 }
 
@@ -604,5 +701,24 @@ void AudioPolicyDump::MicrophoneMuteInfoDump(string &dumpString)
     dumpString += "\n";
 }
 
+std::string AudioPolicyDump::GetRingerModeType(AudioRingerMode ringerMode)
+{
+    std::string audioRingerMode = "";
+    switch (ringerMode) {
+        case RINGER_MODE_SILENT:
+            audioRingerMode = "RINGER_MODE_SILENT";
+            break;
+        case RINGER_MODE_VIBRATE:
+            audioRingerMode = "RINGER_MODE_VIBRATE";
+            break;
+        case RINGER_MODE_NORMAL:
+            audioRingerMode = "RINGER_MODE_NORMAL";
+            break;
+        default:
+            audioRingerMode = "UNKNOWMTYPE";
+            break;
+    }
+    return audioRingerMode;
+}
 }
 }

@@ -162,6 +162,7 @@ class OHAudioCapturer {
         int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
+        int32_t SetInputDevice(DeviceType deviceType);
         uint32_t GetOverflowCount() const;
 
         void SetInterruptCallback(CapturerCallback capturerCallbacks, void *userData);

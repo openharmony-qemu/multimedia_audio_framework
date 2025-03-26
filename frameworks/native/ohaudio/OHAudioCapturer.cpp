@@ -80,6 +80,22 @@ OH_AudioStream_Result OH_AudioCapturer_Stop(OH_AudioCapturer* capturer)
     }
 }
 
+OH_AudioStream_Result OH_AudioCapturer_SetInputDevice(
+    OH_AudioCapturer* capturer, OH_AudioDevice_Type deviceType)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert Capturer failed");
+    int32_t ret = audioCapturer->SetInputDevice((OHOS::AudioStandard::DeviceType)deviceType);
+    if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
+        AUDIO_ERR_LOG("This audioCapturer can not reset the input device");
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    } else if (ret != AUDIOSTREAM_SUCCESS) {
+        AUDIO_ERR_LOG("system error when calling this function");
+        return AUDIOSTREAM_ERROR_SYSTEM;
+    }
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OH_AudioCapturer_Flush(OH_AudioCapturer* capturer)
 {
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
@@ -362,6 +378,12 @@ int32_t OHAudioCapturer::GetFrameSizeInCallback()
     uint32_t frameSize;
     audioCapturer_->GetFrameCount(frameSize);
     return static_cast<int32_t>(frameSize);
+}
+
+int32_t OHAudioCapturer::SetInputDevice(DeviceType deviceType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->SetInputDevice(deviceType);
 }
 
 int32_t OHAudioCapturer::GetBufferDesc(BufferDesc &bufDesc) const

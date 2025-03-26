@@ -1883,23 +1883,27 @@ int32_t AudioProcessInClientInner::SetSilentModeAndMixWithOthers(bool on)
 
 void AudioProcessInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     audioBuffer_->GetRestoreInfo(restoreInfo);
     return;
 }
 
 void AudioProcessInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     audioBuffer_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus AudioProcessInClientInner::CheckRestoreStatus()
 {
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->CheckRestoreStatus();
 }
 
 RestoreStatus AudioProcessInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->SetRestoreStatus(restoreStatus);
 }
 } // namespace AudioStandard

@@ -1554,6 +1554,9 @@ const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_INVALID:
             device = "INVALID";
             break;
+        case DEVICE_TYPE_REMOTE_CAST:
+            device = "REMOTE_CAST";
+            break;
         default:
             device = "UNKNOWN";
     }

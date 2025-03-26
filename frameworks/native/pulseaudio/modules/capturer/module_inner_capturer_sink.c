@@ -228,7 +228,7 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
         const char *sessionIDStr = SafeProplistGets(input->proplist, "stream.sessionID", "NULL");
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volumeFloat = 1.0f;
-        if (!IsInnerCapSinkName(s->name)) { // inner capturer only stream volume
+        if (IsInnerCapSinkName(s->name)) { // inner capturer only stream volume
             volumeFloat = GetStreamVolume(sessionID);
         } else {
             struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};

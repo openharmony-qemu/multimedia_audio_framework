@@ -46,13 +46,13 @@ public:
     virtual int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
         DeviceType deviceType, int32_t volumeFlag = 0) = 0;
 
-    virtual int32_t GetAppVolumeLevel(int32_t appUid) = 0;
+    virtual int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
-    virtual int32_t GetSelfAppVolumeLevel() = 0;
+    virtual int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel) = 0;
 
     virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
-    virtual bool IsAppVolumeMute(int32_t appUid, bool muted) = 0;
+    virtual int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute) = 0;
 
     virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) = 0;
 
@@ -374,6 +374,9 @@ public:
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
 
     virtual int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) = 0;
+
+    virtual int32_t SetInputDevice(const DeviceType deviceType, const uint32_t session_ID,
+        const SourceType sourceType, bool isRunning) = 0;
 
     virtual bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) = 0;
 

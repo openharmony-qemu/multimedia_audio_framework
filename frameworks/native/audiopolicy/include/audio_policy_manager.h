@@ -68,7 +68,7 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
 
-    bool IsAppVolumeMute(int32_t appUid, bool muted);
+    int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute);
 
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0);
 
@@ -76,9 +76,9 @@ public:
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t GetAppVolumeLevel(int32_t appUid);
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     
-    int32_t GetSelfAppVolumeLevel();
+    int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel);
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
 
@@ -514,6 +514,9 @@ public:
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 
     int32_t SetVirtualCall(const bool isVirtual);
+
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
+        const SourceType sourceType, bool isRunning);
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
 

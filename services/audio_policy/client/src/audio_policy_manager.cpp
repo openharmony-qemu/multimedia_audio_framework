@@ -285,11 +285,11 @@ int32_t AudioPolicyManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     return gsp->SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
-bool AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool muted)
+int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->IsAppVolumeMute(appUid, muted);
+    return gsp->IsAppVolumeMute(appUid, muted, isMute);
 }
 
 int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy,
@@ -406,18 +406,18 @@ AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType(const int32_t clie
     return gsp->GetSystemActiveVolumeType(clientUid);
 }
 
-int32_t AudioPolicyManager::GetSelfAppVolumeLevel()
+int32_t AudioPolicyManager::GetSelfAppVolumeLevel(int32_t &volumeLevel)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->GetSelfAppVolumeLevel();
+    return gsp->GetSelfAppVolumeLevel(volumeLevel);
 }
 
-int32_t AudioPolicyManager::GetAppVolumeLevel(int32_t appUid)
+int32_t AudioPolicyManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->GetAppVolumeLevel(appUid);
+    return gsp->GetAppVolumeLevel(appUid, volumeLevel);
 }
 
 int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
@@ -1857,6 +1857,14 @@ bool AudioPolicyManager::IsAudioSessionActivated()
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     return gsp->IsAudioSessionActivated();
+}
+
+int32_t AudioPolicyManager::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetInputDevice(deviceType, sessionID, sourceType, isRunning);
 }
 
 int32_t AudioPolicyManager::SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)

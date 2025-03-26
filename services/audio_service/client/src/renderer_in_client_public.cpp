@@ -889,6 +889,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
 
+    FlushBeforeStart();
+
     std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
     if (!isDataLinkConnected_) {
         AUDIO_INFO_LOG("data-connection blocking starts.");
@@ -912,6 +914,15 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
     preWriteEndTime_ = 0;
     return true;
+}
+
+void RendererInClientInner::FlushBeforeStart()
+{
+    if (flushAfterStop_) {
+        ResetFramePosition();
+        AUDIO_INFO_LOG("flush before start");
+        flushAfterStop_ = false;
+    }
 }
 
 bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
@@ -1109,6 +1120,11 @@ bool RendererInClientInner::FlushAudioStream()
     notifiedOperation_ = MAX_OPERATION_CODE;
     waitLock.unlock();
     ResetFramePosition();
+
+    if (state_ == STOPPED) {
+        flushAfterStop_ = true;
+    }
+    
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
 }
@@ -1709,6 +1725,7 @@ void RendererInClientInner::SetSwitchingStatus(bool isSwitching)
 
 void RendererInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->GetRestoreInfo(restoreInfo);
     return;
 }
@@ -1718,17 +1735,20 @@ void RendererInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
     if (restoreInfo.restoreReason == SERVER_DIED) {
         cbThreadReleased_ = true;
     }
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus RendererInClientInner::CheckRestoreStatus()
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->CheckRestoreStatus();
 }
 
 RestoreStatus RendererInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->SetRestoreStatus(restoreStatus);
 }
 

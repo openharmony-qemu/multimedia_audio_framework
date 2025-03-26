@@ -667,6 +667,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
+#ifdef AUDIO_OH_RENDER_UNIT_TEST
 /**
  * @tc.name  : Test OH_AudioRenderer_GetUnderflowCount API.
  * @tc.number: OH_AudioRenderer_GetUnderflowCount_001
@@ -927,7 +928,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_005, TestSize.L
 
     OH_AudioStreamBuilder_Destroy(builder);
 }
-
+#endif
 /**
  * @tc.name  : Test OH_AudioRenderer_GetVolume API via illegal state.
  * @tc.number: OH_Audio_Render_GetVolume_001
@@ -2500,6 +2501,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_024, TestSize.Level0)
     oHServiceDiedCallback->OnAudioPolicyServiceDied();
 }
 
+#ifdef AUDIO_OH_RENDER_UNIT_TEST
 /**
 * @tc.name  : Test OHServiceDiedCallback API
 * @tc.number: OHAudioRenderer_025
@@ -2524,6 +2526,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_025, TestSize.Level0)
 
     oHServiceDiedCallback->OnAudioPolicyServiceDied();
 }
+#endif
 
 /**
 * @tc.name  : Test OHAudioRendererErrorCallback API

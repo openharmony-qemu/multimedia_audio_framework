@@ -45,6 +45,7 @@ struct AppConfigVolume {
     int32_t minVolume;
 };
 
+const int32_t MAX_CACHE_AMOUNT = 10;
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
     static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
@@ -92,11 +93,11 @@ public:
 
     int32_t SetAppVolumeMutedDB(int32_t appUid, bool muted);
 
-    bool IsAppVolumeMute(int32_t appUid, bool owned);
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
-    int32_t GetAppVolumeLevel(int32_t appUid);
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
@@ -128,7 +129,7 @@ public:
     int32_t SetDeviceActive(InternalDeviceType deviceType, std::string name, bool active,
         DeviceFlag flag = ALL_DEVICES_FLAG);
 
-    void SetVolumeForSwitchDevice(InternalDeviceType deviceType);
+    void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor);
 
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
@@ -162,9 +163,11 @@ public:
 
     DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
 
-    void SetActiveDevice(DeviceType deviceType);
+    void SetActiveDeviceDescriptor(AudioDeviceDescriptor deviceDescriptor);
 
     DeviceType GetActiveDevice();
+
+    AudioDeviceDescriptor GetActiveDeviceDescriptor();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
@@ -193,6 +196,8 @@ public:
     IAudioSourceAttr GetAudioSourceAttr(const AudioModuleInfo &audioModuleInfo) const;
 
     void ResetRemoteCastDeviceVolume();
+
+    void SetMaxVolumeForDeviceChange();
 
     int32_t GetStreamVolume(AudioStreamType streamType);
 
@@ -239,6 +244,14 @@ public:
     void ResetOffloadSessionId();
 
     int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
+
+    void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
+
+    void GetRingerModeInfo(std::vector<RingerModeAdjustInfo> &ringerModeInfo);
+
+    std::shared_ptr<AllDeviceVolumeInfo> GetAllDeviceVolumeInfo(DeviceType deviceType, AudioStreamType streamType);
+
+    std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
 
     void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
 
@@ -326,6 +339,8 @@ private:
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
+    bool CheckAndUpdateVolumeForDeviceChange(AudioDeviceDescriptor deviceDescriptor);
+    bool IsCurDeviceNeedSaveVolumeToDatabase();
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -351,7 +366,7 @@ private:
     std::mutex systemSoundMutex_;
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
-    DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioDeviceDescriptor currentActiveDevice_;
     AudioRingerMode ringerMode_;
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
@@ -391,6 +406,8 @@ private:
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
     AppConfigVolume appConfigVolume_;
+    std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
+        std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

@@ -192,6 +192,7 @@ private:
         const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName,
         SourceType sourceType);
     int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    int32_t RingToneVoiceControl(const InternalDeviceType &deviceType);
 
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);

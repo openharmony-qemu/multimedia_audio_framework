@@ -298,6 +298,18 @@ enum CallbackChange : int32_t {
     CALLBACK_MAX,
 };
 
+enum AdjustStreamVolume {
+    STREAM_VOLUME_INFO = 0,
+    LOW_POWER_VOLUME_INFO,
+    DUCK_VOLUME_INFO,
+};
+
+struct AdjustStreamVolumeInfo {
+    float volume;
+    uint32_t sessionId;
+    std::string invocationTime;
+};
+
 constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_UNKNOWN,
     CALLBACK_FOCUS_INFO_CHANGE,
@@ -333,7 +345,7 @@ struct VolumeEvent {
     bool updateUi;
     int32_t volumeGroupId;
     std::string networkId;
-    AudioVolumeMode volumeMode;
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))

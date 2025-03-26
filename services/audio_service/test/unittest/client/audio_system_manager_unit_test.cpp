@@ -206,7 +206,7 @@ HWTEST(AudioSystemManagerUnitTest, ExcludeOutputDevicesTest_001, TestSize.Level1
     audioDeviceDescriptors.push_back(audioDevDesc);
     int32_t result = AudioSystemManager::GetInstance()->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest ExcludeOutputDevicesTest_001() result:%{public}d", result);
-    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -227,7 +227,7 @@ HWTEST(AudioSystemManagerUnitTest, ExcludeOutputDevicesTest_002, TestSize.Level1
     audioDeviceDescriptors.push_back(audioDevDesc);
     int32_t result = AudioSystemManager::GetInstance()->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest ExcludeOutputDevicesTest_001() result:%{public}d", result);
-    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -249,7 +249,7 @@ HWTEST(AudioSystemManagerUnitTest, UnexcludeOutputDevicesTest_001, TestSize.Leve
     AudioSystemManager::GetInstance()->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     int32_t result = AudioSystemManager::GetInstance()->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnexcludeOutputDevicesTest_001() result:%{public}d", result);
-    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -332,9 +332,9 @@ HWTEST(AudioSystemManagerUnitTest, GetSelfAppVolume_001, TestSize.Level1)
     int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolume(volume);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume end result:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_NUM);
-    result = AudioSystemManager::GetInstance()->GetSelfAppVolume();
+    result = AudioSystemManager::GetInstance()->GetSelfAppVolume(volume);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSelfAppVolume_001 end result:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_EQ(result, TEST_RET_NUM);
 }
 
 /**
