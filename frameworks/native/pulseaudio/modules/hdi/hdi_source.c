@@ -72,6 +72,7 @@
 #define HDI_POST 100
 #define MAX_SEND_COMMAND_LATANCY 10000
 #define RTPOLL_RUN_WAKEUP_INTERVAL_USEC 500000
+#define DOMAIN_ID 0xD002B89
 
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -239,7 +240,7 @@ static void FreeThread(struct Userdata *u)
 
     pa_thread_mq_done(&u->threadMq);
     if (u->eventFd != 0) {
-        close(u->eventFd);
+        fdsan_close_with_tag(u->eventFd, DOMAIN_ID);
         u->eventFd = 0;
     }
     if (u->rtpollItem) {
@@ -1236,6 +1237,7 @@ int32_t CreateCaptureDataThread(pa_module *m, struct Userdata *u)
     }
 
     u->eventFd = eventfd(0, EFD_NONBLOCK);
+    fdsan_exchange_owner_tag(u->eventFd, 0, DOMAIN_ID);
     u->rtpollItem = pa_rtpoll_item_new(u->rtpoll, PA_RTPOLL_NEVER, 1);
     struct pollfd *pollFd = pa_rtpoll_item_get_pollfd(u->rtpollItem, NULL);
     CHECK_AND_RETURN_RET_LOG(pollFd != NULL, -1, "get pollfd failed");
