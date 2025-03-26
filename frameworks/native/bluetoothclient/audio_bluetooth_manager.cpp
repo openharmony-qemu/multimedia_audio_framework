@@ -133,7 +133,7 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSink()
         if (a2dpListener_ != nullptr) {
             a2dpListener_->OnConnectionStateChanged(device, connectionState,
                 static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
-        } 
+        }
     }
 
     auto virtualDevices = MediaBluetoothDeviceManager::GetA2dpVirtualDeviceList();
