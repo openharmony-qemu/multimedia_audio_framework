@@ -72,7 +72,8 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_001, TestSize.Level1)
     uint32_t sessionId = 1;
     int32_t volumeType = STREAM_MUSIC_TEST;
     std::string deviceClass = "speaker";
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
     EXPECT_EQ(volume, 1.0f);
 }
 
@@ -88,7 +89,8 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_002, TestSize.Level1)
     int32_t volumeType = STREAM_VOICE_TEST;
     std::string deviceClass = "speaker";
     AudioVolume::GetInstance()->SetVgsVolumeSupported(true);
-    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
     EXPECT_EQ(volume, 1.0f);
 }
 

@@ -1367,7 +1367,8 @@ int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, 
 int32_t RendererInServer::OffloadSetVolumeInner()
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
-    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload", &volumes);
     AUDIO_INFO_LOG("sessionID %{public}u [volumeType:%{public}d volume: %{public}f]",
         streamIndex_, volumeType, volume);
     float volumeHistory = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
