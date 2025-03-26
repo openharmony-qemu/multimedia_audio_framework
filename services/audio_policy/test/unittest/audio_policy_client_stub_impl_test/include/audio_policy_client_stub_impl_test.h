@@ -116,6 +116,10 @@ class ConcreteAudioHeadTrackingEnabledChangeCallback : public AudioHeadTrackingE
     void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override {}
 };
+
+class ConcreteSpatialEnabledChangeForCurrentDeviceCb : public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
+    void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override {}
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_CLIENT_STUB_IMPL_TEST_H
