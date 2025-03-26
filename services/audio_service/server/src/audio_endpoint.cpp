@@ -802,8 +802,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
         return false;
     }
     isStarted_ = true;
-    zeroVolumeStopDevice_ = false;
-    isVolumeAlreadyZero_ = false;
+    zeroVolumeStartTime_ = INT64_MAX;
 
     Trace trace("AudioEndpointInner::StartDupStream");
     {
@@ -1241,7 +1240,6 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
         dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
     ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart + channelVolumes.channel, 0) /
         channelVolumes.channel);
-    HandleZeroVolumeCheckEvent();
 }
 
 void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData,
@@ -1297,7 +1295,6 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
-    HandleZeroVolumeCheckEvent();
 }
 
 // call with listLock_ hold

@@ -133,7 +133,8 @@ private:
     void InitAudiobuffer(bool resetReadWritePos);
     void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
     void ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol);
-    void HandleZeroVolumeCheckEvent();
+    void HandleZeroVolumeStartEvent();
+    void HandleZeroVolumeStopEvent();
     void HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol = true);
     int32_t HandleCapturerDataParams(const BufferDesc &writeBuf, const BufferDesc &readBuf,
         const BufferDesc &convertedBuffer);
@@ -263,8 +264,8 @@ private:
 
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
     bool isStarted_ = false;
-    int64_t delayStopTime_ = INT64_MAX;
-    int64_t delayStopTimeForZeroVolume_ = INT64_MAX;
+    int64_t zeroVolumeStartTime_ = INT64_MAX;
+    bool zeroVolumeFlag = false;
 
     std::atomic<ThreadStatus> threadStatus_ = WAITTING;
     std::thread endpointWorkThread_;
@@ -298,8 +299,6 @@ private:
     bool latencyMeasEnabled_ = false;
     size_t detectedTime_ = 0;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
-    bool zeroVolumeStopDevice_ = false;
-    bool isVolumeAlreadyZero_ = false;
     std::atomic_bool endpointWorkLoopFucThreadStatus_ { false };
     std::atomic_bool recordEndpointWorkLoopFucThreadStatus_ { false };
     std::unordered_map<int32_t, CaptureInfo> fastCaptureInfos_;
