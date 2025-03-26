@@ -3109,5 +3109,138 @@ HWTEST(AudioUtilsUnitTest, AudioScopeExit_002, TestSize.Level1)
     });
     scopeExit.Relase();
 }
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_001
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_001, TestSize.Level1)
+{
+    AudioSampleFormat format = SAMPLE_U8;
+
+    uint32_t ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 1);
+
+    format = SAMPLE_S16LE;
+    ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 2);
+
+    format = SAMPLE_S24LE;
+    ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 3);
+
+    format = SAMPLE_S32LE;
+    ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 4);
+
+    format = INVALID_WIDTH;
+    ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 2);
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_002
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_002, TestSize.Level1)
+{
+    std::string funcName = "AudioUtilsUnitTest_002";
+    WatchTimeout watchTimeout(funcName);
+
+        watchTimeout.CheckCurrTimeout();
+        EXPECT_EQ(watchTimeout.isChecked_, true);
+
+        watchTimeout.timeoutNs_ = 0;
+        watchTimeout.CheckCurrTimeout();
+        EXPECT_EQ(watchTimeout.isChecked_, true);
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_003
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_003, TestSize.Level1)
+{
+    int32_t uid = 1003;
+    bool ret = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    EXPECT_EQ(ret, true);
+
+    uid = 1;
+    ret = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_004
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_004, TestSize.Level1)
+{
+    int64_t nanoTime = 0;
+    std::string ret = ClockTime::NanoTimeToString(nanoTime);
+    EXPECT_EQ(ret, "08:00:00");
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_005
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_005, TestSize.Level1)
+{
+    std::string tag = "";
+    uint32_t timeoutSeconds = 0;
+    AudioXCollie audioXCollie(tag, timeoutSeconds);
+    audioXCollie.isCanceled_ = false;
+    audioXCollie.CancelXCollieTimer();
+    EXPECT_EQ(audioXCollie.isCanceled_, true);
+
+    audioXCollie.CancelXCollieTimer();
+    EXPECT_EQ(audioXCollie.isCanceled_, true);
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_006
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_006, TestSize.Level1)
+{
+    bool ret = PermissionUtil::VerifyIsShell();
+    EXPECT_EQ(ret, true);
+
+    ret = PermissionUtil::VerifyIsAudio();
+    EXPECT_EQ(ret, true);
+
+    int32_t callingUid = 6699;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    ret = PermissionUtil::NeedVerifyBackgroundCapture(callingUid, sourceType);
+    EXPECT_EQ(ret, false);
+
+    callingUid = 1000;
+    sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    ret = PermissionUtil::NeedVerifyBackgroundCapture(callingUid, sourceType);
+    EXPECT_EQ(ret, false);
+
+    callingUid = 1000;
+    sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    ret = PermissionUtil::NeedVerifyBackgroundCapture(callingUid, sourceType);
+    EXPECT_EQ(ret, true);
+
+    uint32_t tokenId = 1;
+    uint64_t fullTokenId = 1;
+    ret = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
