@@ -36,7 +36,6 @@ static std::map<std::string, DeviceType> deviceTypeMap_ = {
     {"DEVICE_TYPE_LINE_DIGITAL", DEVICE_TYPE_LINE_DIGITAL},
     {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
     {"DEVICE_TYPE_ACCESSORY", DEVICE_TYPE_ACCESSORY},
-    {"DEVICE_TYPE_HDMI", DEVICE_TYPE_HDMI},
 };
 }
 bool AudioDeviceParser::LoadConfiguration()

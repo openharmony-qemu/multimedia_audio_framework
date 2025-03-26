@@ -491,7 +491,8 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-        case DeviceType::DEVICE_TYPE_HDMI: {
+        case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL: {
             std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
             AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
             break;
@@ -552,6 +553,7 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
         case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
