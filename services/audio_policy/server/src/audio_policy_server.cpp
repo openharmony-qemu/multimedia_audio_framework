@@ -1290,7 +1290,7 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
 }
 
 void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
-    bool mute)
+    bool mute, const bool& isUpdateUi)
 {
     bool muteStatus = mute;
     if (volumeLevel == 0 && !mute) {
@@ -1300,7 +1300,7 @@ void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType strea
         muteStatus = false;
         audioPolicyService_.SetStreamMute(streamType, false);
     }
-
+    SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
     if (VolumeUtils::IsPCVolumeEnable()) {
         // system mute status should be aligned with music mute status.
         if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
@@ -1379,8 +1379,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
         if (updateRingerMode) {
             ProcUpdateRingerMode();
         }
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
-        UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
+        UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute, isUpdateUi);
     } else if (ret == ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
         SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
         AUDIO_ERR_LOG("fail to set system volume level by safe vol");

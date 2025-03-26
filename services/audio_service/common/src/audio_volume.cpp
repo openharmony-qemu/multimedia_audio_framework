@@ -80,6 +80,7 @@ AudioVolume::~AudioVolume()
 float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass)
 {
     Trace trace("AudioVolume::GetVolume");
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     int32_t volumeLevel = 0;
     int32_t appUid = -1;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
@@ -101,7 +102,6 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
 
 bool AudioVolume::IsChangeVolume(uint32_t sessionId, float volumeFloat, int32_t volumeLevel)
 {
-    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     bool isChange = false;
     if (monitorVolume_.find(sessionId) != monitorVolume_.end()) {
         if (monitorVolume_[sessionId].first != volumeFloat) {
@@ -115,7 +115,6 @@ bool AudioVolume::IsChangeVolume(uint32_t sessionId, float volumeFloat, int32_t 
 float AudioVolume::GetStreamVolume(uint32_t sessionId, int32_t& volumeType,
     int32_t& appUid, AudioVolumeMode& volumeMode)
 {
-    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(volumeType));
     float volumeStream = 1.0f;
     auto it = streamVolume_.find(sessionId);
