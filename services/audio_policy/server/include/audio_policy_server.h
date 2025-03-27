@@ -463,7 +463,7 @@ public:
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const bool isConnected) override;
-        
+
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
@@ -541,6 +541,7 @@ protected:
     void RegisterParamCallback();
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+    int32_t GetApiTargetVersion() override;
 
 private:
     friend class AudioInterruptService;
@@ -612,8 +613,6 @@ private:
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
 
-    int32_t GetApiTargerVersion();
-
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
@@ -630,7 +629,6 @@ private:
     void HandleKvDataShareEvent();
     void InitMicrophoneMute();
     void InitKVStore();
-    void InitApiVersionGetter();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
