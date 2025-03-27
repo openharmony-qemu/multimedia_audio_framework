@@ -90,8 +90,9 @@ public:
         AdjustStreamVolume volumeType);
 private:
     AudioVolume();
-    float GetStreamVolume(uint32_t sessionId, int32_t& volumeType, int32_t& appUid, AudioVolumeMode& volumeMode);
-    float GetSystemVolume(int32_t volumeType, const std::string &deviceClass, int32_t &volumeLevel);
+    float GetStreamVolumeInternal(uint32_t sessionId, int32_t& volumeType,
+        int32_t& appUid, AudioVolumeMode& volumeMode);
+    float GetSystemVolumeInternal(int32_t volumeType, const std::string &deviceClass, int32_t &volumeLevel);
     bool IsChangeVolume(uint32_t sessionId, float volumeFloat, int32_t volumeLevel);
 private:
     std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};
