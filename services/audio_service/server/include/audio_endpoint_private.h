@@ -264,6 +264,7 @@ private:
 
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
     bool isStarted_ = false;
+    int64_t delayStopTime_ = INT64_MAX;
     int64_t zeroVolumeStartTime_ = INT64_MAX;
     bool zeroVolumeFlag = false;
 
