@@ -625,7 +625,8 @@ private:
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_SPEAKER,
-        DEVICE_TYPE_HDMI
+        DEVICE_TYPE_HDMI,
+        DEVICE_TYPE_LINE_DIGITAL
     };
     std::vector<DeviceType> inputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
