@@ -133,6 +133,7 @@ private:
     void InitAudiobuffer(bool resetReadWritePos);
     void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
     void ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol);
+    void ResetZeroVolumeState();
     void HandleZeroVolumeStartEvent();
     void HandleZeroVolumeStopEvent();
     void HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol = true);

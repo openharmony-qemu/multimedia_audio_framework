@@ -109,9 +109,8 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
     }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
         if (zeroVolumeStartTime_ == INT64_MAX) {
-            zeroVolumeFlag = false;
             zeroVolumeStartTime_ = ClockTime::GetCurNano();
-            AUDIO_INFO_LOG("Begin zero volume, will stop device in 4s.");
+            AUDIO_INFO_LOG("Begin zero volume, will stop fastSink in 4s.");
             return;
         }
 
@@ -121,9 +120,8 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
             HandleZeroVolumeStopEvent();
         }
     } else {
-        zeroVolumeStartTime_ = INT64_MAX;
-        if (zeroVolumeFlag) {
-            zeroVolumeFlag = false;
+        if (zeroVolumeStartTime_ != INT64_MAX) {
+            ResetZeroVolumeState();
             HandleZeroVolumeStartEvent();
         }
     }
@@ -134,15 +132,15 @@ void AudioEndpointInner::HandleZeroVolumeStartEvent()
     if (!isStarted_) {
         std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
         if (sink == nullptr || sink->Start() != SUCCESS) {
-            AUDIO_INFO_LOG("Volume from zero to none-zero, start device failed.");
+            AUDIO_INFO_LOG("Volume from zero to none-zero, start fastSink failed.");
             isStarted_ = false;
         } else {
-            AUDIO_INFO_LOG("Volume from zero to none-zero, start device success.");
+            AUDIO_INFO_LOG("Volume from zero to none-zero, start fastSink success.");
             isStarted_ = true;
             needReSyncPosition_ = true;
         }
     } else {
-        AUDIO_INFO_LOG("device is already started");
+        AUDIO_INFO_LOG("fastSink already started");
     }
 }
 
@@ -151,15 +149,21 @@ void AudioEndpointInner::HandleZeroVolumeStopEvent()
     if (isStarted_) {
         std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
         if (sink != nullptr && sink->Stop() == SUCCESS) {
-            AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device success.");
+            AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop fastSink success.");
             isStarted_ = false;
         } else {
-            AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device failed.");
+            AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop fastSink failed.");
             isStarted_ = true;
         }
     } else {
-        AUDIO_INFO_LOG("device is already stopped");
+        AUDIO_INFO_LOG("fastSink already stopped");
     }
+}
+
+void AudioEndpointInner::ResetZeroVolumeState()
+{
+    zeroVolumeStartTime_ = INT64_MAX;
+    zeroVolumeFlag = false;
 }
 
 void AudioEndpointInner::CheckStandBy()
