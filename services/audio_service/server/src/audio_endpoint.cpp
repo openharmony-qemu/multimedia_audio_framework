@@ -1288,7 +1288,6 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
         int32_t vol = 1 << VOLUME_SHIFT_NUMBER;
         int16_t *srcPtr = reinterpret_cast<int16_t *>(srcData.bufferDesc.buffer) + offset;
         int32_t sum = applyVol ? (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER : *srcPtr; // 1/65536
-        ZeroVolumeCheck(vol);
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
