@@ -33,10 +33,10 @@ static OHOS::AudioStandard::OHAudioSessionManager *convertManager(OH_AudioSessio
 
 OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(OH_AudioSessionManager **audioSessionManager)
 {
-    if (audioSessionManager == nullptr) {
-        AUDIO_ERR_LOG("OH_AudioManager_GetAudioSessionManager input param is nullptr!");
-    }
     OHAudioSessionManager* ohAudioSessionManager = OHAudioSessionManager::GetInstance();
+    if (audioSessionManager == nullptr) {
+        AUDIO_ERR_LOG("audioSessionManager is nullptr");
+    }
     *audioSessionManager = reinterpret_cast<OH_AudioSessionManager*>(ohAudioSessionManager);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -67,6 +67,8 @@ OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(strategy != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "strategy is nullptr");
     OHOS::AudioStandard::AudioSessionStrategy audioStrategy;
     audioStrategy.concurrencyMode =
         static_cast<OHOS::AudioStandard::AudioConcurrencyMode>(strategy->concurrencyMode);
