@@ -313,5 +313,15 @@ bool AudioRouterCenter::isCallRenderRouter(StreamUsage streamUsage)
 {
     return renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS;
 }
+
+int32_t AudioRouterCenter::GetSplitInfo(std::string &splitInfo)
+{
+    if (audioDeviceRefinerCb_ == nullptr) {
+        AUDIO_INFO_LOG("nullptr");
+        return ERROR;
+    }
+
+    return audioDeviceRefinerCb_->GetSplitInfoRefined(splitInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

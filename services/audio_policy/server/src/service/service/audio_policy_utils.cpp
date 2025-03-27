@@ -535,6 +535,14 @@ AudioModuleInfo AudioPolicyUtils::ConstructRemoteAudioModuleInfo(std::string net
     audioModuleInfo.rate = "48000";
     audioModuleInfo.bufferSize = "3840";
 
+    if (deviceType == DEVICE_TYPE_SPEAKER) {
+        std::string splitInfo = "";
+        if ((AudioRouterCenter::GetAudioRouterCenter().GetSplitInfo(splitInfo) == SUCCESS) && (splitInfo != "")) {
+            audioModuleInfo.lib = "libmodule-split-stream-sink.z.so";
+            audioModuleInfo.extra = splitInfo;
+        }
+    }
+
     return audioModuleInfo;
 }
 

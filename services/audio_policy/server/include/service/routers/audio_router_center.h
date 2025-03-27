@@ -47,6 +47,8 @@ public:
     bool isCallRenderRouter(StreamUsage streamUsage);
     void SetAlarmFollowRingRouter(const bool flag);
 
+    int32_t GetSplitInfo(std::string &splitInfo);
+
 private:
     AudioRouterCenter()
     {
