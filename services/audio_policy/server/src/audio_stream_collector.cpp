@@ -1494,17 +1494,17 @@ bool AudioStreamCollector::ChangeVoipCapturerStreamToNormal()
     return count > 1;
 }
 
-bool AudioStreamCollector::HasVoipRendererStream()
+bool AudioStreamCollector::HasVoipRendererStream(bool isFirstCreate)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     // judge stream original flage is AUDIO_FLAG_VOIP_FAST
-    bool hasVoip = std::any_of(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+    int count = std::count_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
         [](const auto &changeInfo) {
             return changeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST;
         });
 
-    AUDIO_INFO_LOG("Has Fast Voip stream : %{public}d", hasVoip);
-    return hasVoip;
+    AUDIO_INFO_LOG("Has Fast Voip stream count : %{public}d", count);
+    return isFirstCreate ? count > 0 : count > 1;
 }
 
 bool AudioStreamCollector::HasRunningRendererStream()
