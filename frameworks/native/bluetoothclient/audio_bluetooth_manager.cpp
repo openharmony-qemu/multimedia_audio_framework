@@ -130,14 +130,18 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSink()
     int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
     auto a2dpList = MediaBluetoothDeviceManager::GetAllA2dpBluetoothDevice();
     for (const auto &device : a2dpList) {
-        a2dpListener_->OnConnectionStateChanged(device, connectionState,
-            static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+        if (a2dpListener_ != nullptr) {
+            a2dpListener_->OnConnectionStateChanged(device, connectionState,
+                static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+        }
     }
 
     auto virtualDevices = MediaBluetoothDeviceManager::GetA2dpVirtualDeviceList();
     for (const auto &virtualDevice : virtualDevices) {
-        a2dpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_REMOVE),
-            virtualDevice.GetDeviceAddr());
+        if (a2dpListener_ != nullptr) {
+            a2dpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_REMOVE),
+                virtualDevice.GetDeviceAddr());
+        }
     }
 
     MediaBluetoothDeviceManager::ClearAllA2dpBluetoothDevice();
