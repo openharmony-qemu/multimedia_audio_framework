@@ -655,13 +655,6 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
-    if (outputDevices.size() != 1) {
-        // mute primary when play music and ring
-        if (audioSceneManager_.IsStreamActive(STREAM_MUSIC)) {
-            audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
-        }
-        return;
-    }
     if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
 
     audioIOHandleMap_.SetMoveFinish(false);

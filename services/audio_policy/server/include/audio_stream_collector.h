@@ -93,6 +93,7 @@ public:
     int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
+    bool IsMediaPlaying();
     void UpdateAppVolume(int32_t appUid, int32_t volume);
 
 private:
