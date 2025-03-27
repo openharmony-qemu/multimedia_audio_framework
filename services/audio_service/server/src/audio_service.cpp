@@ -1103,8 +1103,12 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
         }
     }
     processListLock.unlock();
-    AUDIO_INFO_LOG("Cannot find sessionId");
 #endif
+    AUDIO_INFO_LOG("Cannot find sessionId");
+    // when set unmute but cannot find sessionid, remove it from mutedSessions_
+    if (mutedSessions_.count(sessionId) && !muteFlag) {
+        mutedSessions_.erase(sessionId);
+    }
 }
 
 int32_t AudioService::SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack)
