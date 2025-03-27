@@ -183,7 +183,7 @@ void AudioPolicyServer::OnStart()
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
     audioPolicyService_.Init();
-    InitApiVersionGetter();
+
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
@@ -763,13 +763,6 @@ void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateCh
 void AudioPolicyServer::InitKVStore()
 {
     audioPolicyService_.InitKVStore();
-}
-
-void AudioPolicyServer::InitApiVersionGetter()
-{
-    SetApiVersionGetter([this] {
-        return GetApiTargerVersion();
-    });
 }
 
 void AudioPolicyServer::ConnectServiceAdapter()
@@ -2345,7 +2338,7 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
         }
     }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
-    int32_t apiVersion = GetApiTargerVersion();
+    int32_t apiVersion = GetApiTargetVersion();
     return eventEntry_->RegisterTracker(mode, streamChangeInfo, object, apiVersion);
 }
 
@@ -3308,7 +3301,7 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     bool hasSysPermission = PermissionUtil::VerifySystemPermission();
     callback->hasBTPermission_ = hasBTPermission;
     callback->hasSystemPermission_ = hasSysPermission;
-    callback->apiVersion_ = GetApiTargerVersion();
+    callback->apiVersion_ = GetApiTargetVersion();
     audioPolicyService_.AddAudioPolicyClientProxyMap(clientPid, callback);
 
     RegisterClientDeathRecipient(object, LISTENER_CLIENT);
@@ -3452,7 +3445,7 @@ AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid(int32_t callingUi
     return bundleInfo;
 }
 
-int32_t AudioPolicyServer::GetApiTargerVersion()
+int32_t AudioPolicyServer::GetApiTargetVersion()
 {
     AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
 

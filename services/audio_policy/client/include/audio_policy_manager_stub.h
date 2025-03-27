@@ -26,7 +26,8 @@ public:
         MessageParcel &reply, MessageOption &option) override;
     virtual bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) = 0;
     virtual void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc) = 0;
-
+protected:
+    virtual int32_t GetApiTargetVersion() = 0;
 private:
     void GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
