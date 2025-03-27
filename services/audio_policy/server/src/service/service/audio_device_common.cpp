@@ -843,7 +843,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
     }
 
     if (audioConfigManager_.GetUpdateRouteSupport() && !reason.isSetAudioScene()) {
-        UpdateRoute(rendererChangeInfo, outputDevices);
+        UpdateRoute(oldRendererChangeInfo, outputDevices);
     }
 
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
