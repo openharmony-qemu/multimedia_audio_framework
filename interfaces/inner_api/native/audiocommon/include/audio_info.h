@@ -1330,6 +1330,12 @@ enum RestoreReason : int32_t {
     SERVER_DIED,
 };
 
+enum CheckPosTimeRes : int32_t {
+    CHECK_SUCCESS = 0,
+    CHECK_FAILED,
+    NEED_MODIFY,
+};
+
 struct RestoreInfo {
     RestoreReason restoreReason = DEFAULT_REASON;
     int32_t deviceChangeReason = 0;
