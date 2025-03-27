@@ -48,6 +48,7 @@ static const int VOLUME_LEVEL_MIN_SIZE = 5;
 static const int VOLUME_LEVEL_MID_SIZE = 12;
 static const int VOLUME_LEVEL_MAX_SIZE = 15;
 static const int32_t DISTRIBUTED_DEVICE = 1003;
+static const int DEFAULT_ADJUST_TIMES = 10;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -1971,15 +1972,18 @@ int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &device
         audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
     
     if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
-        while (curVoiceRingMixDb < minMixDbDefault) {
-            curRingToneLevel++;
-            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
-            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
-        }
-        while (curVoiceRingMixDb > maxMixDbDefault) {
-            curRingToneLevel--;
-            curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
-            curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+        for (int i = 0; i < DEFAULT_ADJUST_TIMES; i++) {
+            if (curVoiceRingMixDb < minMixDbDefault && curRingToneLevel <= VOLUME_LEVEL_MAX_SIZE) {
+                curRingToneLevel++;
+                curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+                curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+            } else if (curVoiceRingMixDb > maxMixDbDefault && curRingToneLevel > 0) {
+                curRingToneLevel--;
+                curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+                curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+            } else {
+                break;
+            }
         }
     }
     return curRingToneLevel;
