@@ -644,5 +644,51 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateCapturerStream_001, Test
         AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     EXPECT_EQ(ret, true);
 }
+
+/**
+ * @tc.name  : Test OnDeviceStatusUpdated.
+ * @tc.number: OnDeviceStatusUpdated_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioDeviceDescriptor audioDeviceDescriptor;
+    audioDeviceDescriptor.deviceName_ = "dummyName";
+    audioDeviceDescriptor.macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    audioDeviceDescriptor.connectState_ = VIRTUAL_CONNECTED;
+
+    server->audioPolicyService_.OnDeviceStatusUpdated(audioDeviceDescriptor, true);
+    EXPECT_EQ(audioDeviceDescriptor.spatializationSupported_, false);
+
+    server->audioPolicyService_.OnDeviceStatusUpdated(audioDeviceDescriptor, false);
+}
+
+/**
+ * @tc.name  : Test OnDeviceStatusUpdated.
+ * @tc.number: OnDeviceStatusUpdated_002
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_002, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioDeviceDescriptor audioDeviceDescriptor;
+    audioDeviceDescriptor.deviceName_ = "dummyName";
+    audioDeviceDescriptor.macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    audioDeviceDescriptor.connectState_ = CONNECTED;
+
+    server->audioPolicyService_.OnDeviceStatusUpdated(audioDeviceDescriptor, true);
+    EXPECT_EQ(audioDeviceDescriptor.spatializationSupported_, false);
+
+    server->audioPolicyService_.OnDeviceStatusUpdated(audioDeviceDescriptor, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
