@@ -68,6 +68,11 @@ bool AudioSceneManager::IsStreamActive(AudioStreamType streamType) const
     return streamCollector_.IsStreamActive(streamType);
 }
 
+bool AudioSceneManager::CheckVoiceCallActive(int32_t sessionId) const
+{
+    return streamCollector_.CheckVoiceCallActive(sessionId);
+}
+
 int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOffloadState state)
 {
     std::vector<DeviceType> activeOutputDevices;
