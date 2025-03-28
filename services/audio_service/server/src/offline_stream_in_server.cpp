@@ -19,6 +19,7 @@
 #include "offline_stream_in_server.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
