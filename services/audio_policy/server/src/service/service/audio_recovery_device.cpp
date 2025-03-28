@@ -438,7 +438,7 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
         if (userSelectedDevice != nullptr && desc->IsSameDeviceDesc(*userSelectedDevice)) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType,
-                make_shared<AudioDeviceDescriptor>());
+                make_shared<AudioDeviceDescriptor>(), CLEAR_PID);
         }
         WriteExcludeOutputSysEvents(audioDevUsage, desc);
     }
