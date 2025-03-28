@@ -51,6 +51,8 @@ int32_t OfflineStreamInServer::CreateOfflineEffectChain(const std::string &chain
 int32_t OfflineStreamInServer::ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo,
     const AudioStreamInfo &outInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(CheckSupportedParams(inInfo) == SUCCESS, ERR_INVALID_PARAM, "inInfo do not support");
+    CHECK_AND_RETURN_RET_LOG(CheckSupportedParams(outInfo) == SUCCESS, ERR_INVALID_PARAM, "outInfo do not support");
     CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     return effectChain_->SetParam(inInfo, outInfo);
 }
