@@ -668,7 +668,8 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
     audioIOHandleMap_.SetMoveFinish(false);
 
     if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL &&
-        rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        audioSceneManager_.CheckVoiceCallActive(rendererChangeInfo->sessionId)) {
         return SetVoiceCallMuteForSwitchDevice();
     }
 

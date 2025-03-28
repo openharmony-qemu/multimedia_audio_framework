@@ -1068,6 +1068,22 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
     return result;
 }
 
+bool AudioStreamCollector::CheckVoiceCallActive(int32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo->rendererState != RENDERER_PREPARED) {
+            continue;
+        }
+        if ((changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+            changeInfo->sessionId != sessionId) {
+            AUDIO_INFO_LOG("Find VoiceCall Stream : sessionid: %{public}d , No need mute", changeInfo->sessionId);
+            return false;
+        }
+    }
+    return true;
+}
+
 int32_t AudioStreamCollector::GetRunningStream(AudioStreamType certainType, int32_t certainChannelCount)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
