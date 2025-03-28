@@ -32,6 +32,13 @@ enum DfxPlayerType {
     DFX_PLAYER_TYPE_TONEPLAYER,
 };
 
+enum DfxRecorderType {
+    DFX_RECORDER_TYPE_ARKTS = 0,
+    DFX_RECORDER_TYPE_NATIVE,
+    DFX_RECORDER_TYPE_OPENSL_ES,
+    DFX_RECORDER_TYPE_AV_RECORDER,
+};
+
 enum DfxAppState {
     DFX_APP_STATE_UNKNOWN = -1,
     DFX_APP_STATE_START = 0,
@@ -66,15 +73,15 @@ struct InterruptEffect {
 };
 
 struct RendererStats {
-    uint16_t samplingRate{};
+    uint32_t samplingRate{};
     uint64_t duration{};
-    uint16_t underrunCnt{};
+    uint32_t underrunCnt{};
     uint16_t originalFlag{};
     uint16_t zeroDataPercent{};
 };
 
 struct CapturerStats {
-    uint16_t samplingRate{};
+    uint32_t samplingRate{};
     uint64_t duration{};
 };
 

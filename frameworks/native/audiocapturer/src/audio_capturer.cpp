@@ -145,10 +145,8 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
     params.samplingRate = capturerOptions.streamInfo.samplingRate;
-    bool isChange = false;
     if (AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels) {
         params.audioChannel = AudioChannel::STEREO;
-        isChange = true;
     } else {
         params.audioChannel = capturerOptions.streamInfo.channels;
     }
@@ -169,13 +167,14 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         (capturerOptions.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP)) ?
         AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
+    capturer->capturerInfo_.recorderType = capturerOptions.capturerInfo.recorderType;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
     capturer->strategy_ = capturerOptions.strategy;
     if (capturer->SetParams(params) != SUCCESS) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         capturer = nullptr;
     }
-    if (capturer != nullptr && isChange) {
+    if (capturer != nullptr && AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels) {
         capturer->isChannelChange_ = true;
     }
     return capturer;
@@ -495,6 +494,7 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
     }
     audioInterrupt_.streamId = sessionID_;
     audioInterrupt_.pid = appInfo_.appPid;
+    audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
     audioInterrupt_.sessionStrategy = strategy_;
     if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
@@ -804,6 +804,7 @@ bool AudioCapturerPrivate::Release()
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(isValid_, false, "Release when capturer invalid");
 
+    audioInterrupt_.state = State::RELEASED;
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
     // Unregister the callaback in policy server

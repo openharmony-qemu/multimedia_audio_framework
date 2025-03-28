@@ -266,7 +266,10 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         playerDfx_->WriteDfxActionMsg(sessionId_, RENDERER_STAGE_PAUSE_OK);
     } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
-        recorderDfx_->WriteDfxActionMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK);
+        lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK,
+            GetLastAudioDuration(), processConfig_);
     }
 
     AUDIO_PRERELEASE_LOGI("Pause in server success!");

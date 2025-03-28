@@ -404,6 +404,17 @@ enum PlayerType : int32_t {
     PLAYER_TYPE_TONE_PLAYER = 1003,
 };
 
+enum RecorderType : int32_t {
+    RECORDER_TYPE_DEFAULT = 0,
+
+    // AudioFramework internal type.
+    RECORDER_TYPE_ARKTS_AUDIO_RECORDER = 100,
+    RECORDER_TYPE_OPENSL_ES = 101,
+
+    // Indicates a type from the system internals, but not from the AudioFramework.
+    RECORDER_TYPE_AV_RECORDER = 1000,
+};
+
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -479,6 +490,7 @@ public:
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
     std::string sceneType = "";
+    RecorderType recorderType = RECORDER_TYPE_DEFAULT;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -497,7 +509,8 @@ public:
             parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
             parcel.WriteUint8(encodingType) &&
             parcel.WriteUint64(channelLayout) &&
-            parcel.WriteString(sceneType);
+            parcel.WriteString(sceneType) &&
+            parcel.WriteInt32(static_cast<int32_t>(recorderType));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -509,6 +522,7 @@ public:
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
         sceneType = parcel.ReadString();
+        recorderType = static_cast<RecorderType>(parcel.ReadInt32());
     }
 };
 

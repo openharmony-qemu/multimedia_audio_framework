@@ -1696,5 +1696,57 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSiz
     }
 }
 
+/**
+* @tc.name  : Test DFX_MSG_MANAGER
+* @tc.number: DfxMsgManagerActionTest_001
+* @tc.desc  : Test DFX_MSG_MANAGER interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerActionTest_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    auto &manager = DfxMsgManager::GetInstance();
+    const int DFX_MSG_ACTION_LOOP_TIMES_1 = 50;
+    const int DFX_MSG_ACTION_LOOP_TIMES_2 = 60;
+    const int DFX_MSG_ACTION_SPLIT_NUM = 2;
+    std::list<RenderDfxInfo> renderInfo{};
+    int infoIndex = 0;
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_1; i++) {
+        DfxStatAction rendererAction{};
+        if (i % DFX_MSG_ACTION_SPLIT_NUM == 0) {
+            rendererAction.fourthByte = RendererStage::RENDERER_STAGE_START_OK;
+            rendererAction.firstByte = ++infoIndex;
+        }
+        renderInfo.push_back({.rendererAction = rendererAction});
+    }
+
+    std::list<RenderDfxInfo> renderInfo2{};
+    infoIndex = 0;
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_2; i++) {
+        DfxStatAction rendererAction{};
+        if (i % DFX_MSG_ACTION_SPLIT_NUM == 0) {
+            rendererAction.fourthByte = RendererStage::RENDERER_STAGE_START_FAIL;
+            rendererAction.firstByte = ++infoIndex;
+        }
+        renderInfo2.push_back({.rendererAction = rendererAction});
+    }
+
+    DfxMessage renderMsg = {.appUid = TEST_APP_UID, .renderInfo = renderInfo};
+    DfxMessage renderMsg2 = {.appUid = TEST_APP_UID, .renderInfo = renderInfo2};
+    manager.Process(renderMsg);
+    manager.Process(renderMsg2);
+
+    int8_t checkValue = 0;
+    for (auto &item : manager.reportQueue_) {
+        manager.UpdateAction(TEST_APP_UID, item.second.renderInfo);
+        checkValue = manager.GetDfxIndexByType(TEST_APP_UID, DfxMsgIndexType::DFX_MSG_IDX_TYPE_RENDER_INFO);
+    }
+
+    EXPECT_EQ(checkValue, (DFX_MSG_ACTION_LOOP_TIMES_1 / DFX_MSG_ACTION_SPLIT_NUM) +
+        (DFX_MSG_ACTION_LOOP_TIMES_2 / DFX_MSG_ACTION_SPLIT_NUM));
+    manager.reportQueue_.clear();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -29,10 +29,14 @@ namespace AudioStandard {
 static constexpr int32_t DEFAULT_DFX_REPORT_INTERVAL_MIN = 24 * 60;
 static constexpr int32_t DFX_MSG_QUEUE_CAPACITY = 100;
 static constexpr int32_t MAX_DFX_MSG_MEMBER_SIZE = 100;
-static constexpr int32_t MAX_DFX_REPORT_APP_COUNT = 20;
+static constexpr int32_t MAX_DFX_REPORT_APP_COUNT = 10;
 static constexpr int64_t DFX_CHECK_REPORT_MSG_TIME_MS = 60 * 1000;
 static constexpr uint32_t BIT_2_OFFSET = 1;
 static constexpr uint32_t BIT_3_OFFSET = 2;
+static constexpr int8_t INDEXES_TUPLE_INDEX_RENDER_INFO = 0;
+static constexpr int8_t INDEXES_TUPLE_INDEX_CAPTURE_INFO = 1;
+static constexpr int8_t INDEXES_TUPLE_INDEX_INTERRUPT_INFO = 2;
+static constexpr int8_t INDEXES_TUPLE_INDEX_INTERRUPT_EFFECT = 3;
 
 DfxMsgHandler::DfxMsgHandler(IHandler* handler) : handler_(handler) {}
 
@@ -74,7 +78,7 @@ void DfxMsgManager::SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int6
 void DfxMsgManager::CheckReportDfxMsg()
 {
     Trace trace("DfxMsgManager::CheckReportDfxMsg");
-    AUDIO_INFO_LOG("entering CheckReportDfxMsg");
+    AUDIO_INFO_LOG("entering CheckReportDfxMsg, reported msg size=%{public}d", reportedCnt_.load());
     SafeSendCallBackEvent(DFX_CHECK_REPORT_MSG, 0, DFX_CHECK_REPORT_MSG_TIME_MS);
 
     std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -93,6 +97,7 @@ void DfxMsgManager::CheckReportDfxMsg()
         lastReportTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         cvReachLimit_.notify_all();
         appInfo_.clear();
+        indexesInfo_.clear();
     }
 
     for (auto it = reportQueue_.begin(); it != reportQueue_.end();) {
@@ -102,7 +107,6 @@ void DfxMsgManager::CheckReportDfxMsg()
         }
         if (IsMsgReady(it->second)) {
             HandleToHiSysEvent(it->second);
-            reportedCnt_++;
             it = reportQueue_.erase(it);
         } else {
             ++it;
@@ -239,7 +243,26 @@ void DfxMsgManager::InsertReportQueue(const DfxMessage &msg)
         Trace trace("reportQueue_ reach maximum size, can not insert");
         return;
     }
-    reportQueue_.insert(std::make_pair(msg.appUid, msg));
+
+    if (reportQueue_.count(msg.appUid) == 0) {
+        reportQueue_.insert(std::make_pair(msg.appUid, msg));
+        return;
+    }
+
+    auto upper = reportQueue_.upper_bound(msg.appUid);
+    auto lastIt = --upper;
+    if (lastIt->second.renderInfo.empty() && !msg.renderInfo.empty()) {
+        std::copy(msg.renderInfo.begin(), msg.renderInfo.end(), std::back_inserter(lastIt->second.renderInfo));
+    }
+
+    if (lastIt->second.interruptInfo.empty() && !msg.interruptInfo.empty()) {
+        std::copy(msg.interruptInfo.begin(), msg.interruptInfo.end(),
+            std::back_inserter(lastIt->second.interruptInfo));
+    }
+
+    if (lastIt->second.captureInfo.empty() && !msg.captureInfo.empty()) {
+        std::copy(msg.captureInfo.begin(), msg.captureInfo.end(), std::back_inserter(lastIt->second.captureInfo));
+    }
 }
 
 bool DfxMsgManager::ProcessInner(int32_t index,
@@ -339,6 +362,11 @@ bool DfxMsgManager::Enqueue(const DfxMessage &msg)
 
 void DfxMsgManager::HandleToHiSysEvent(DfxMessage &msg)
 {
+    if (reportedCnt_ >= MAX_DFX_REPORT_APP_COUNT) {
+        AUDIO_WARNING_LOG("dfx report reach maximum size");
+        return;
+    }
+    reportedCnt_++;
     auto dfxResult = std::make_unique<DfxReportResult>();
     Trace trace("renderInfoSize=" + std::to_string(msg.renderInfo.size()) +
         ", interruptInfoSize=" + std::to_string(msg.interruptInfo.size()) +
@@ -396,10 +424,7 @@ void DfxMsgManager::WriteRenderMsg(DfxMessage &msg, const std::unique_ptr<DfxRep
     std::vector<uint64_t> timestamps{};
     std::vector<std::string> rendererStatVec{};
 
-    msg.renderInfo.sort([](const auto &item1, const auto &item2) {
-        return item1.rendererAction.timestamp < item2.rendererAction.timestamp;
-    });
-
+    UpdateAction(msg.appUid, msg.renderInfo);
     for (auto &item : msg.renderInfo) {
         auto rendererAction = DfxUtils::SerializeToUint32(item.rendererAction);
 
@@ -424,6 +449,91 @@ void DfxMsgManager::WriteRenderMsg(DfxMessage &msg, const std::unique_ptr<DfxRep
     result->rendererStats = std::move(rendererStatVec);
 }
 
+void DfxMsgManager::UpdateAction(int32_t appUid, std::list<RenderDfxInfo> &renderInfo)
+{
+    uint8_t &infoIdx = GetDfxIndexByType(appUid, DfxMsgIndexType::DFX_MSG_IDX_TYPE_RENDER_INFO);
+    for (auto &item : renderInfo) {
+        if (static_cast<RendererStage>(item.rendererAction.fourthByte) == RendererStage::RENDERER_STAGE_START_OK ||
+            static_cast<RendererStage>(item.rendererAction.fourthByte) == RendererStage::RENDERER_STAGE_START_FAIL) {
+            infoIdx++;
+        }
+        if (item.rendererAction.firstByte != 0 && item.rendererAction.firstByte < infoIdx) {
+            item.rendererAction.firstByte = infoIdx;
+        }
+    }
+
+    renderInfo.sort([](const auto &item1, const auto &item2) {
+        return item1.rendererAction.timestamp < item2.rendererAction.timestamp;
+    });
+}
+
+void DfxMsgManager::UpdateAction(int32_t appUid, std::list<CapturerDfxInfo> &capturerInfo)
+{
+    uint8_t &infoIdx = GetDfxIndexByType(appUid, DfxMsgIndexType::DFX_MSG_IDX_TYPE_CAPTURE_INFO);
+    for (auto &item : capturerInfo) {
+        if (static_cast<CapturerStage>(item.capturerAction.fourthByte) == CapturerStage::CAPTURER_STAGE_START_OK ||
+            static_cast<CapturerStage>(item.capturerAction.fourthByte) == CapturerStage::CAPTURER_STAGE_START_FAIL) {
+            infoIdx++;
+        }
+        if (item.capturerAction.firstByte != 0 && item.capturerAction.firstByte < infoIdx) {
+            item.capturerAction.firstByte = infoIdx;
+        }
+    }
+
+    capturerInfo.sort([](const auto &item1, const auto &item2) {
+        return item1.capturerAction.timestamp < item2.capturerAction.timestamp;
+    });
+}
+
+void DfxMsgManager::UpdateAction(int32_t appUid, std::list<InterruptDfxInfo> &interruptInfo)
+{
+    uint8_t &infoIdx = GetDfxIndexByType(appUid, DfxMsgIndexType::DFX_MSG_IDX_TYPE_INTERRUPT_INFO);
+    uint8_t &effectIdx = GetDfxIndexByType(appUid, DfxMsgIndexType::DFX_MSG_IDX_TYPE_INTERRUPT_EFFECT);
+    for (auto &item : interruptInfo) {
+        if (!item.interruptEffectVec.empty()) {
+            effectIdx++;
+        }
+
+        auto stage = static_cast<InterruptStage>(item.interruptAction.fourthByte);
+        if (stage == InterruptStage::INTERRUPT_STAGE_START ||
+            stage == InterruptStage::INTERRUPT_STAGE_RESTART) {
+            infoIdx++;
+        }
+
+        if (item.interruptAction.firstByte != 0 && item.interruptAction.firstByte < infoIdx) {
+            item.interruptAction.firstByte = infoIdx;
+        }
+
+        if (item.interruptAction.secondByte != 0 && item.interruptAction.secondByte < effectIdx) {
+            item.interruptAction.secondByte = effectIdx;
+        }
+    }
+
+    interruptInfo.sort([](const auto &item1, const auto &item2) {
+        return item1.interruptAction.timestamp < item2.interruptAction.timestamp;
+    });
+}
+
+uint8_t& DfxMsgManager::GetDfxIndexByType(int32_t appUid, DfxMsgIndexType type)
+{
+    auto iter = indexesInfo_.find(appUid);
+    if (iter == indexesInfo_.end()) {
+        indexesInfo_.insert({appUid, {0, 0, 0, 0}});
+    }
+    auto &indexes = indexesInfo_[appUid];
+    if (type == DfxMsgIndexType::DFX_MSG_IDX_TYPE_RENDER_INFO) {
+        return std::get<INDEXES_TUPLE_INDEX_RENDER_INFO>(indexes);
+    } else if (type == DfxMsgIndexType::DFX_MSG_IDX_TYPE_CAPTURE_INFO) {
+        return std::get<INDEXES_TUPLE_INDEX_CAPTURE_INFO>(indexes);
+    } else if (type == DfxMsgIndexType::DFX_MSG_IDX_TYPE_INTERRUPT_INFO) {
+        return std::get<INDEXES_TUPLE_INDEX_INTERRUPT_INFO>(indexes);
+    } else if (type == DfxMsgIndexType::DFX_MSG_IDX_TYPE_INTERRUPT_EFFECT) {
+        return std::get<INDEXES_TUPLE_INDEX_INTERRUPT_EFFECT>(indexes);
+    }
+
+    return std::get<INDEXES_TUPLE_INDEX_RENDER_INFO>(indexes);
+}
+
 void DfxMsgManager::WriteInterruptMsg(DfxMessage &msg, const std::unique_ptr<DfxReportResult> &result)
 {
     CHECK_AND_RETURN_LOG(result != nullptr, "result is null");
@@ -434,10 +544,8 @@ void DfxMsgManager::WriteInterruptMsg(DfxMessage &msg, const std::unique_ptr<Dfx
 
     uint8_t interruptOthersFlag = 0;
     uint8_t interruptedFlag = 0;
-    msg.interruptInfo.sort([](const auto &item1, const auto &item2) {
-        return item1.interruptAction.timestamp < item2.interruptAction.timestamp;
-    });
 
+    UpdateAction(msg.appUid, msg.interruptInfo);
     for (auto &item : msg.interruptInfo) {
         auto interruptAction = DfxUtils::SerializeToUint32(item.interruptAction);
         interruptActions.push_back(interruptAction);
@@ -448,7 +556,7 @@ void DfxMsgManager::WriteInterruptMsg(DfxMessage &msg, const std::unique_ptr<Dfx
             interruptEffectVec.push_back(interruptEffect);
             interruptOthersFlag = 1;
         }
-        interruptedFlag = stage == InterruptStage::INTERRUPT_STAGE_STOPPED ?  1 : interruptedFlag;
+        interruptedFlag = CheckIsInterrupted(stage) ?  1 : interruptedFlag;
 
         if (stage == InterruptStage::INTERRUPT_STAGE_START ||
             stage == InterruptStage::INTERRUPT_STAGE_RESTART) {
@@ -472,8 +580,8 @@ void DfxMsgManager::WriteInterruptMsg(DfxMessage &msg, const std::unique_ptr<Dfx
     result->interruptTimestamp = std::move(timestamps);
     result->interruptInfo = std::move(interruptInfoVec);
     result->interruptEffect = std::move(interruptEffectVec);
-    uint8_t summaryInt = (interruptOthersFlag << BIT_3_OFFSET) | (interruptedFlag << BIT_2_OFFSET) |
-        interruptBackgroundFlag;
+    uint8_t summaryInt = (interruptBackgroundFlag << BIT_3_OFFSET) | (interruptedFlag << BIT_2_OFFSET) |
+            interruptOthersFlag;
     result->summary = DfxUtils::SerializeToUint32({0, 0, 0, summaryInt});
 }
 
@@ -485,16 +593,14 @@ void DfxMsgManager::WriteCapturerMsg(DfxMessage &msg, const std::unique_ptr<DfxR
     std::vector<uint64_t> timestamps{};
     std::vector<std::string> capturerStatVec{};
 
-    msg.captureInfo.sort([](const auto &item1, const auto &item2) {
-        return item1.capturerAction.timestamp < item2.capturerAction.timestamp;
-    });
-
+    UpdateAction(msg.appUid, msg.captureInfo);
     for (auto &item : msg.captureInfo) {
         auto capturerAction = DfxUtils::SerializeToUint32(item.capturerAction);
 
         capturerActions.push_back(static_cast<uint32_t>(capturerAction));
         timestamps.push_back(item.capturerAction.timestamp);
-        if (static_cast<CapturerStage>(item.capturerAction.fourthByte) == CapturerStage::CAPTURER_STAGE_STOP_OK) {
+        if (static_cast<CapturerStage>(item.capturerAction.fourthByte) == CapturerStage::CAPTURER_STAGE_STOP_OK ||
+            static_cast<CapturerStage>(item.capturerAction.fourthByte) == CapturerStage::CAPTURER_STAGE_PAUSE_OK) {
             auto capturerStat = DfxUtils::SerializeToJSONString(item.capturerStat);
             capturerStatVec.push_back(capturerStat);
         }
@@ -602,5 +708,14 @@ void DfxMsgManager::UpdateAppState(int32_t appUid, DfxAppState appState, bool fo
     }
 }
 
+bool DfxMsgManager::CheckIsInterrupted(InterruptStage stage)
+{
+    bool ret = (stage == INTERRUPT_STAGE_STOPPED ||
+        stage == INTERRUPT_STAGE_DUCK_BEGIN ||
+        stage == INTERRUPT_STAGE_PAUSED ||
+        stage == INTERRUPT_STAGE_RESUMED ||
+        stage == INTERRUPT_STAGE_DUCK_END);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

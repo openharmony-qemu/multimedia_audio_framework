@@ -44,7 +44,8 @@ void AudioRenderDfxCollector::FlushDfxMsg(uint32_t index, int32_t appUid)
     }
 
     for (auto &item : dfxInfos_) {
-        AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d", item.first, appUid);
+        AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d, size=%{public}d", item.first, appUid,
+            static_cast<int32_t>(item.second.size()));
         DfxMsgManager::GetInstance().Enqueue({.appUid = appUid, .renderInfo = item.second});
     }
 
@@ -61,9 +62,7 @@ RenderDfxBuilder& RenderDfxBuilder::WriteInfoMsg(int64_t sourceDuration, const A
 {
     std::chrono::milliseconds durationMs(sourceDuration);
     auto durationSec = std::chrono::duration_cast<std::chrono::duration<int64_t, std::deci>>(durationMs).count();
-    auto dfxDurationSec = static_cast<uint16_t>(std::clamp(
-        durationSec, static_cast<int64_t>(MIN_DFX_NUMERIC_COUNT),
-            static_cast<int64_t>(std::numeric_limits<uint16_t>::max())));
+    auto dfxDurationSec = static_cast<uint16_t>(durationSec);
     AUDIO_INFO_LOG("[Start] duration=%{public}" PRId16, dfxDurationSec);
 
     auto pos = DFX_PLAYER_TYPE_MAP.find(rendererInfo.playerType);
@@ -74,16 +73,16 @@ RenderDfxBuilder& RenderDfxBuilder::WriteInfoMsg(int64_t sourceDuration, const A
     return *this;
 }
 
-RenderDfxBuilder& RenderDfxBuilder::WriteStatMsg(const AudioRendererInfo &rendererInfo, const PlayStat &playStat)
+RenderDfxBuilder& RenderDfxBuilder::WriteStatMsg(const AudioProcessConfig &processConfig, const PlayStat &playStat)
 {
     auto writeFrame = playStat.frameCnt;
     auto muteWriteFrame = playStat.muteFrameCnt;
     auto lastPlayduration = playStat.playDuration;
 
     uint16_t dfxZerodataPercent{0};
-    if (muteWriteFrame != 0) {
+    if (writeFrame != 0) {
         auto zerodataPercent = static_cast<int32_t>(
-            static_cast<double>(writeFrame) / (muteWriteFrame * MAX_DFX_NUMERIC_PERCENTAGE));
+            static_cast<double>(muteWriteFrame * MAX_DFX_NUMERIC_PERCENTAGE) / writeFrame);
         dfxZerodataPercent = std::clamp(zerodataPercent, MIN_DFX_NUMERIC_COUNT, MAX_DFX_NUMERIC_PERCENTAGE);
     }
     AUDIO_INFO_LOG("[WritePlayingAudioStatMsg] writeFrame=%{public}" PRId64 \
@@ -91,8 +90,8 @@ RenderDfxBuilder& RenderDfxBuilder::WriteStatMsg(const AudioRendererInfo &render
         "lastPlayduration=%{public}" PRId64,
         writeFrame, muteWriteFrame, dfxZerodataPercent, lastPlayduration);
 
-    dfxInfo_.rendererStat = {rendererInfo.samplingRate, lastPlayduration, playStat.underFlowCnt,
-        rendererInfo.originalFlag, dfxZerodataPercent};
+    dfxInfo_.rendererStat = {processConfig.streamInfo.samplingRate, lastPlayduration, playStat.underFlowCnt,
+        processConfig.rendererInfo.originalFlag, dfxZerodataPercent};
     return *this;
 }
 

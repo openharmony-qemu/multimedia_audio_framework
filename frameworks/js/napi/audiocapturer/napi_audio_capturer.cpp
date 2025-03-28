@@ -135,6 +135,7 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
     if (capturerOptions.capturerInfo.capturerFlags != 0) {
         capturerOptions.capturerInfo.capturerFlags = 0;
     }
+    capturerOptions.capturerInfo.recorderType = RECORDER_TYPE_ARKTS_AUDIO_RECORDER;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     napiCapturer->audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
 #else

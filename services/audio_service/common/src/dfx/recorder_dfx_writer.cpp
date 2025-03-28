@@ -46,7 +46,7 @@ void RecorderDfxWriter::WriteDfxStartMsg(uint32_t index, CapturerStage stage, co
 
     CapturerDfxBuilder dfxBuilder;
     auto dfxInfo = dfxBuilder.WriteActionMsg(++dfxCollector_->dfxIndex_, stage).WriteInfoMsg(
-        processConfig.capturerInfo.sourceType).GetResult();
+        processConfig.capturerInfo).GetResult();
     dfxCollector_->AddDfxMsg(index, dfxInfo);
 }
 
@@ -54,13 +54,14 @@ void RecorderDfxWriter::WriteDfxStopMsg(uint32_t index, CapturerStage stage,
     int64_t duration, const AudioProcessConfig &processConfig)
 {
     CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "nullptr");
-    if (stage != CAPTURER_STAGE_STOP_OK) {
+    if (stage != CAPTURER_STAGE_STOP_OK &&
+        stage != CAPTURER_STAGE_PAUSE_OK) {
         return;
     }
 
     CapturerDfxBuilder dfxBuilder;
     dfxBuilder.WriteActionMsg(dfxCollector_->dfxIndex_, stage);
-    dfxBuilder.WriteStatMsg(processConfig.capturerInfo, {duration});
+    dfxBuilder.WriteStatMsg(processConfig, {duration});
     dfxCollector_->AddDfxMsg(index, dfxBuilder.GetResult());
 }
 

@@ -188,7 +188,10 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
-            recorderDfx_->WriteDfxActionMsg(streamIndex_, CAPTURER_STAGE_PAUSE_OK);
+            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+            recorderDfx_->WriteDfxStopMsg(streamIndex_, CAPTURER_STAGE_PAUSE_OK,
+                GetLastAudioDuration(), processConfig_);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;

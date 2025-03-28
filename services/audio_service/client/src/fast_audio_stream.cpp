@@ -101,6 +101,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
         config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
         config.capturerInfo.originalFlag = capturerInfo_.originalFlag;
+        config.capturerInfo.recorderType = capturerInfo_.recorderType;
     } else {
         return ERR_INVALID_OPERATION;
     }
