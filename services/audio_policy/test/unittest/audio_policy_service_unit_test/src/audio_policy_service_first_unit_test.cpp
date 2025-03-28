@@ -1308,7 +1308,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetDeviceRole_002, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     DeviceRole ret = AudioPolicyUtils::GetInstance().GetDeviceRole(ROLE_SINK);
     EXPECT_EQ(OUTPUT_DEVICE, ret);
-    
+
     ret = AudioPolicyUtils::GetInstance().GetDeviceRole(ROLE_SOURCE);
     EXPECT_EQ(INPUT_DEVICE, ret);
 
@@ -1740,7 +1740,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, AddAudioCapturerMicrophoneDescriptor_001, T
 {
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest AddAudioCapturerMicrophoneDescriptor_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
-    
+
     GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
     // clear data
     GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.connectedMicrophones_.clear();
@@ -2120,7 +2120,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, NotifyUserSelectionEventToBt_001, TestSize.
     ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
     std::vector<DeviceType> deviceTypesTmp = {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_A2DP,
         DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_EARPIECE};
-    
+
     // call api when descriptor is not nullptr
     for (const auto& deviceType : deviceTypesTmp) {
         audioDeviceDescriptor->deviceType_ = deviceType;
@@ -2366,7 +2366,17 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetDisplayName_001, TestSize.Level1)
     isLocalDevice = false;
     GetServerPtr()->audioPolicyService_.SetDisplayName("deviceY", isLocalDevice);
     GetServerPtr()->audioPolicyService_.SetDisplayName("deviceZ", isLocalDevice);
-    GetServerPtr()->audioPolicyService_.SetDmDeviceType(1);
+
+    DmDevice dmDev = {
+        "HiCar",
+        audioDeviceDescriptor3->networkId_,
+        1,
+    };
+    DmDevice dmDev2 = dmDev;
+    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.UpdateDmDeviceMap(std::move(dmDev), true);
+    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.UpdateDeviceDesc4DmDevice(*audioDeviceDescriptor3);
+    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.UpdateDmDeviceMap(std::move(dmDev2), false);
+    ASSERT_EQ(dmDev.dmDeviceType_, dmDev2.dmDeviceType_);
 }
 
 /**
@@ -2635,7 +2645,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, MoveToNewOutputDevice_001, TestSize.Level1)
     deviceDescs.push_back(deviceDesc);
     std::vector<SinkInput> sinkInputs;
     AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-   
+
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.MoveToNewOutputDevice(rendererChangeInfo, deviceDescs,
         sinkInputs, reason);
     EXPECT_EQ(DEVICE_TYPE_SPEAKER, rendererChangeInfo->outputDeviceInfo.deviceType_);

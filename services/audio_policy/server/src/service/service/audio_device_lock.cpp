@@ -654,12 +654,6 @@ void AudioDeviceLock::UpdateSpatializationSupported(const std::string macAddress
     audioConnectedDevice_.UpdateSpatializationSupported(macAddress, support);
 }
 
-void AudioDeviceLock::SetDmDeviceType(const uint16_t dmDeviceType)
-{
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    audioConnectedDevice_.SetDmDeviceType(dmDeviceType);
-}
-
 int32_t AudioDeviceLock::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);

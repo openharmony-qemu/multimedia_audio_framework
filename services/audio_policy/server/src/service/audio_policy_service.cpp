@@ -763,19 +763,15 @@ void AudioPolicyService::SetDisplayName(const std::string &deviceName, bool isLo
     audioDeviceLock_.SetDisplayName(deviceName, isLocalDevice);
 }
 
-void AudioPolicyService::SetDmDeviceType(const uint16_t dmDeviceType)
-{
-    audioDeviceLock_.SetDmDeviceType(dmDeviceType);
-}
-
 void AudioPolicyService::RegisterRemoteDevStatusCallback()
 {
 #ifdef FEATURE_DEVICE_MANAGER
     std::shared_ptr<DistributedHardware::DmInitCallback> initCallback = std::make_shared<DeviceInitCallBack>();
     int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, initCallback);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init device manage failed");
-    std::shared_ptr<DistributedHardware::DeviceStatusCallback> callback = std::make_shared<DeviceStatusCallbackImpl>();
+    auto callback = std::make_shared<DeviceStatusCallbackImpl>();
     DistributedHardware::DeviceManager::GetInstance().RegisterDevStatusCallback(AUDIO_SERVICE_PKG, "", callback);
+    DistributedHardware::DeviceManager::GetInstance().RegisterDevStateCallback(AUDIO_SERVICE_PKG, "", callback);
     AUDIO_INFO_LOG("Done");
 #endif
 }

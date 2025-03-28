@@ -197,6 +197,7 @@ void AudioConnectedDevice::DelConnectedDevice(std::string networkId, DeviceType 
 
 void AudioConnectedDevice::AddConnectedDevice(std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
+    UpdateDeviceDesc4DmDevice(*remoteDeviceDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), remoteDeviceDescriptor);
     return;
 }
@@ -222,11 +223,35 @@ void AudioConnectedDevice::SetDisplayName(const std::string &deviceName, bool is
     }
 }
 
-void AudioConnectedDevice::SetDmDeviceType(const uint16_t dmDeviceType)
+void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect)
 {
-    for (const auto& deviceInfo : connectedDevices_) {
-        if (deviceInfo->networkId_ != LOCAL_NETWORK_ID) {
-            deviceInfo->dmDeviceType_ = dmDeviceType;
+    AUDIO_INFO_LOG("Entry. deviceName_=%{public}s, dmDeviceType_=%{public}d",
+        dmDevice.deviceName_.c_str(), dmDevice.dmDeviceType_);
+    lock_guard<mutex> lg(dmDeviceMtx_);
+    if (isConnect) {
+        dmDeviceMap_[dmDevice.networkId_] = dmDevice;
+        auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), [&dmDevice](auto &item) {
+            return item->networkId_ == dmDevice.networkId_;
+        });
+        if (it != connectedDevices_.end()) {
+            (*it)->displayName_ = dmDevice.deviceName_;
+            (*it)->deviceName_ = dmDevice.deviceName_;
+            (*it)->dmDeviceType_ = dmDevice.dmDeviceType_;
+        }
+    } else {
+        dmDeviceMap_.erase(dmDevice.networkId_);
+    }
+}
+
+void AudioConnectedDevice::UpdateDeviceDesc4DmDevice(AudioDeviceDescriptor &deviceDesc)
+{
+    if (deviceDesc.deviceType_ == DEVICE_TYPE_SPEAKER && deviceDesc.networkId_ != LOCAL_NETWORK_ID) {
+        lock_guard<mutex> lg(dmDeviceMtx_);
+        auto it = dmDeviceMap_.find(deviceDesc.networkId_);
+        if (it != dmDeviceMap_.end()) {
+            deviceDesc.dmDeviceType_ = it->second.dmDeviceType_;
+            deviceDesc.deviceName_ = it->second.deviceName_;
+            deviceDesc.displayName_ = it->second.deviceName_;
         }
     }
 }
