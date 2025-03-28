@@ -108,47 +108,66 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
         return;
     }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
-        if (!zeroVolumeStopDevice_ && !isVolumeAlreadyZero_) {
-            AUDIO_INFO_LOG("Begin zero volume, will stop device.");
-            delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS;
-            isVolumeAlreadyZero_ = true;
+        if (zeroVolumeState_ == INACTIVE) {
+            zeroVolumeStartTime_ = ClockTime::GetCurNano();
+            zeroVolumeState_ = IN_TIMING;
+            AUDIO_INFO_LOG("Begin zero volume, will stop fastSink in 4s.");
+            return;
+        }
+
+        if (zeroVolumeState_ == IN_TIMING &&
+            ClockTime::GetCurNano() - zeroVolumeStartTime_ > DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS) {
+            zeroVolumeState_ = ACTIVE;
+            HandleZeroVolumeStopEvent();
         }
     } else {
-        if (zeroVolumeStopDevice_ && !isStarted_) {
-            std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
-            if (sink == nullptr || sink->Start() != SUCCESS) {
-                AUDIO_INFO_LOG("Volume from zero to none-zero, start device failed.");
-                isStarted_ = false;
-            } else {
-                AUDIO_INFO_LOG("Volume from zero to none-zero, start device success.");
-                isStarted_ = true;
-                needReSyncPosition_ = true;
-            }
-            zeroVolumeStopDevice_ = false;
+        if (zeroVolumeState_ == INACTIVE) {
+            return;
         }
-        isVolumeAlreadyZero_ = false;
-        delayStopTimeForZeroVolume_ = INT64_MAX;
+        if (zeroVolumeState_ == ACTIVE) {
+            HandleZeroVolumeStartEvent();
+        }
+        ResetZeroVolumeState();
     }
 }
 
-void AudioEndpointInner::HandleZeroVolumeCheckEvent()
+void AudioEndpointInner::HandleZeroVolumeStartEvent()
 {
-    if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
-        return;
-    }
-    if (!zeroVolumeStopDevice_ && (ClockTime::GetCurNano() >= delayStopTimeForZeroVolume_)) {
-        if (isStarted_) {
-            std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
-            if (sink != nullptr && sink->Stop() == SUCCESS) {
-                AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device success.");
-                isStarted_ = false;
-            } else {
-                AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device failed.");
-                isStarted_ = true;
-            }
+    if (!isStarted_) {
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+        if (sink == nullptr || sink->Start() != SUCCESS) {
+            AUDIO_INFO_LOG("Volume from zero to none-zero, start fastSink failed.");
+            isStarted_ = false;
+        } else {
+            AUDIO_INFO_LOG("Volume from zero to none-zero, start fastSink success.");
+            isStarted_ = true;
+            needReSyncPosition_ = true;
         }
-        zeroVolumeStopDevice_ = true;
+    } else {
+        AUDIO_INFO_LOG("fastSink already started");
     }
+}
+
+void AudioEndpointInner::HandleZeroVolumeStopEvent()
+{
+    if (isStarted_) {
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+        if (sink != nullptr && sink->Stop() == SUCCESS) {
+            AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop fastSink success.");
+            isStarted_ = false;
+        } else {
+            AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop fastSink failed.");
+            isStarted_ = true;
+        }
+    } else {
+        AUDIO_INFO_LOG("fastSink already stopped");
+    }
+}
+
+void AudioEndpointInner::ResetZeroVolumeState()
+{
+    zeroVolumeStartTime_ = INT64_MAX;
+    zeroVolumeState_ = INACTIVE;
 }
 
 void AudioEndpointInner::CheckStandBy()
