@@ -221,7 +221,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
 }
 
 int32_t AudioDeviceCommon::GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType,
-    int32_t flags, std::string &networkId, AudioSamplingRate &samplingRate)
+    int32_t flags, std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate)
 {
     AUDIO_INFO_LOG("Not support, should use AudioPipeSelector");
     return flags;
