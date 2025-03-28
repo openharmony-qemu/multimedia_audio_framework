@@ -60,8 +60,9 @@ public:
     std::string GetActiveBtDeviceMac();
     void SetActiveBtDeviceMac(const std::string macAddress);
     void SetActiveBtInDeviceMac(const std::string macAddress);
-    int32_t SetDeviceActive(DeviceType deviceType, bool active, const int32_t pid = -1);
-    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address, const int32_t pid = -1);
+    int32_t SetDeviceActive(DeviceType deviceType, bool active, const int32_t pid = INVALID_PID);
+    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address,
+        const int32_t pid = INVALID_PID);
     bool GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
 
     void SetCurrentInputDevice(const AudioDeviceDescriptor &desc);
