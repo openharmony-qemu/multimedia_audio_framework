@@ -61,6 +61,8 @@ int32_t OfflineAudioEffectChainImpl::CreateEffectChain()
 
 int32_t OfflineAudioEffectChainImpl::Configure(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(CheckSupportedParams(inInfo) == SUCCESS, ERR_INVALID_PARAM, "inInfo do not support");
+    CHECK_AND_RETURN_RET_LOG(CheckSupportedParams(outInfo) == SUCCESS, ERR_INVALID_PARAM, "outInfo do not support");
     std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
     return offlineStreamInClient_->ConfigureOfflineEffectChain(inInfo, outInfo);

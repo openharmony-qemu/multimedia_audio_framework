@@ -1782,6 +1782,21 @@ std::string AudioDump::GetVersionType()
 {
     return versionType_;
 }
+
+int32_t CheckSupportedParams(const AudioStreamInfo &info)
+{
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_SAMPLING_RATES, info.samplingRate),
+        ERR_INVALID_PARAM, "samplingRate not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(RENDERER_SUPPORTED_CHANNELS, info.channels),
+        ERR_INVALID_PARAM, "channels not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_FORMATS, info.format),
+        ERR_INVALID_PARAM, "format not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_ENCODING_TYPES, info.encoding),
+        ERR_INVALID_PARAM, "encoding not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(RENDERER_SUPPORTED_CHANNELLAYOUTS, info.channelLayout),
+        ERR_INVALID_PARAM, "channelLayout not supported");
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
