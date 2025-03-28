@@ -34,7 +34,8 @@ public:
 #endif
 
 #ifdef FEATURE_DEVICE_MANAGER
-class DeviceStatusCallbackImpl : public DistributedHardware::DeviceStatusCallback {
+class DeviceStatusCallbackImpl : public DistributedHardware::DeviceStatusCallback,
+    public DistributedHardware::DeviceStateCallback {
 public:
     explicit DeviceStatusCallbackImpl();
     ~DeviceStatusCallbackImpl() override {};
@@ -42,6 +43,10 @@ public:
     void OnDeviceOnline(const DistributedHardware::DmDeviceBasicInfo &deviceBasicInfo) override {};
     void OnDeviceOffline(const DistributedHardware::DmDeviceBasicInfo &deviceBasicInfo) override {};
     void OnDeviceReady(const DistributedHardware::DmDeviceBasicInfo &deviceBasicInfo) override {};
+    void OnDeviceChanged(const DistributedHardware::DmDeviceInfo &dmDeviceInfo) override;
+    void OnDeviceOnline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo) override;
+    void OnDeviceOffline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo) override;
+    void OnDeviceReady(const DistributedHardware::DmDeviceInfo &dmDeviceInfo) override {};
 
 private:
     AudioPolicyService& audioPolicyService_;
