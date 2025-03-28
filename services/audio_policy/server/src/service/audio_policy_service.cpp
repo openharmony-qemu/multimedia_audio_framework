@@ -2765,6 +2765,8 @@ void AudioPolicyService::FetchStreamForA2dpOffload(const bool &requireReset)
                 int32_t ret = ActivateA2dpDevice(descs.front(), rendererChangeInfos);
                 CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
                     GetEncryptAddr(descs.front()->macAddress_).c_str());
+                std::string activePort = BLUETOOTH_SPEAKER;
+                audioPolicyManager_.SuspendAudioDevice(activePort, true);
             }
             if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
                 const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -7669,9 +7671,6 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload(BluetoothOffloadState a2dp
         AUDIO_INFO_LOG("A2dpOffload has been connected, Fetch stream");
         FetchStreamForA2dpOffload(true);
     }
-
-    std::string activePort = BLUETOOTH_SPEAKER;
-    audioPolicyManager_.SuspendAudioDevice(activePort, true);
     return SUCCESS;
 #else
     return ERROR;
