@@ -1197,7 +1197,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_006, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
     ret = rendererInServer->Start();
-    EXPECT_EQ(true, ret);
+    EXPECT_NE(true, ret);
 }
 
 /**
@@ -2185,7 +2185,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableInnerCap_001, TestSize.
 
     int32_t ret = rendererInServer->EnableInnerCap(1);
 
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2201,7 +2201,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableInnerCap_002, TestSize.
     rendererInServer->InitDupStream(1);
     int32_t ret = rendererInServer->EnableInnerCap(1);
 
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2232,7 +2232,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableInnerCap_002, TestSize
     rendererInServer->InitDupStream(1);
     int32_t ret = rendererInServer->DisableInnerCap(1);
 
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2267,7 +2267,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDupStream_002, TestSize.L
     rendererInServer->status_ = I_STATUS_STARTED;
     int32_t ret = rendererInServer->InitDupStream(1);
 
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

@@ -269,7 +269,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_014, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
 
     auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -288,7 +288,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_015, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
 
     auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

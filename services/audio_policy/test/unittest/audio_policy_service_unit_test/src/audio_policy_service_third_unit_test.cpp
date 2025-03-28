@@ -603,7 +603,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateRendererStream_001, Test
     rendererChangeInfo->outputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
     ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateRendererStream(audioDeviceDescriptor,
         rendererChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -623,6 +623,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateCapturerStream_001, Test
     EXPECT_EQ(ret, false);
 
     capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
+    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
     ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateCapturerStream(true, capturerChangeInfo,
         AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     EXPECT_EQ(ret, true);

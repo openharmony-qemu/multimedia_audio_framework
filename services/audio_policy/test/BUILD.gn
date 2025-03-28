@@ -504,7 +504,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     ]
   }
 
-  defines = []
+  defines = [ "BLUETOOTH_ENABLE" ]
 
   if (build_variant == "user") {
     defines += [ "AUDIO_BUILD_VARIANT_USER" ]
@@ -1257,8 +1257,10 @@ ohos_unittest("audio_policy_server_unit_test") {
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 
+  defines = [ "BLUETOOTH_ENABLE" ]
+
   if (audio_framework_feature_dtmf_tone) {
-    defines = [ "FEATURE_DTMF_TONE" ]
+    defines += [ "FEATURE_DTMF_TONE" ]
   }
 
   if (audio_framework_feature_input) {

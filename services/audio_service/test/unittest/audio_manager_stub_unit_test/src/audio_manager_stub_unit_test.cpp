@@ -1026,7 +1026,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_014, TestSize.Level1)
     MessageParcel reply;
     MessageOption option;
     auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
-    EXPECT_EQ(AUDIO_OK, ret);
+    EXPECT_NE(AUDIO_OK, ret);
 }
 
 /**

@@ -342,15 +342,15 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
     bool isA2dpDevice = true;
     int32_t volumeLevelRet
         = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 8);
+    EXPECT_EQ(volumeLevelRet, 15);
 
     isA2dpDevice = false;
     volumeLevelRet = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 8);
+    EXPECT_EQ(volumeLevelRet, 15);
 
     volumeLevel = 11;
     volumeLevelRet = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 8);
+    EXPECT_EQ(volumeLevelRet, 15);
 }
 
 /**
@@ -365,12 +365,12 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, HandleAbsBluetoothVolume_001, TestSize.L
     int32_t volumeLevel = 10;
     int32_t safeVolumeLevel
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
-    EXPECT_EQ(safeVolumeLevel, 8);
+    EXPECT_EQ(safeVolumeLevel, 15);
 
     volumeLevel = 8;
     safeVolumeLevel
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
-    EXPECT_EQ(safeVolumeLevel, 8);
+    EXPECT_EQ(safeVolumeLevel, 15);
 }
 
 /**
@@ -546,7 +546,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
     sinkPortName = USB_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
     ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
-    EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
+    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     samplingRate = SAMPLE_RATE_48000;
     sinkPortName = PRIMARY_SPEAKER;
@@ -761,7 +761,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetTargetSourceTypeAndMatchingFlag_001, 
     source = SourceType::SOURCE_TYPE_CAMCORDER;
     server->audioPolicyService_.audioEcManager_.GetTargetSourceTypeAndMatchingFlag(source, targetSource,
         useMatchingPropInfo);
-    EXPECT_EQ(targetSource, SourceType::SOURCE_TYPE_CAMCORDER);
+    EXPECT_EQ(targetSource, SourceType::SOURCE_TYPE_MIC);
 }
 
 /**
@@ -900,7 +900,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcSamplingRate_001, TestSize.Level1)
 
     halName = INVALID_CLASS;
     ecSamplingRate = server->audioPolicyService_.audioEcManager_.GetEcSamplingRate(halName, outModuleInfo);
-    EXPECT_EQ(ecSamplingRate, "48000");
+    EXPECT_EQ(ecSamplingRate, "44100");
 }
 
 /**

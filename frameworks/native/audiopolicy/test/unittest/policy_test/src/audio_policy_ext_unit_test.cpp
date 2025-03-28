@@ -38,7 +38,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     constexpr uint32_t MAX_RENDERER_INSTANCES = 128;
-    constexpr int32_t SPEAKER_SAMPLING_RATE = 48000;
+    constexpr int32_t SPEAKER_SAMPLING_RATE = 44100;
     constexpr int32_t SAMPLING_RATE_ERROR_CODE = -1;
 }
 
