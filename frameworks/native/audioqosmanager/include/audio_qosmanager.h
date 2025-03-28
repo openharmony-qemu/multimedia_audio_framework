@@ -22,7 +22,7 @@ extern "C" {
 
 void SetThreadQosLevel(void);
 void SetThreadQosLevelAsync(void);
-void ReSetThreadQosLevel(void);
+void ResetThreadQosLevel(void);
 
 #ifdef __cplusplus
 }

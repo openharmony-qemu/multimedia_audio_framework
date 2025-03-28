@@ -1936,7 +1936,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         ClockTime::AbsoluteSleep(wakeUpTime);
         recordEndpointWorkLoopFucThreadStatus_ = true;
     }
-    ReSetThreadQosLevel();
+    ResetThreadQosLevel();
     // stop watchdog
     EndPointRemoveWatchdog("WatchingRecordEndpointWorkLoopFuc", GetEndpointName());
 }
@@ -1980,10 +1980,28 @@ void AudioEndpointInner::BindCore()
     coreBinded_ = true;
 }
 
+void AudioEndpointInner::CheckTimeAndBufferReady(uint64_t &curWritePos, int64_t &wakeUpTime, int64_t &curTime)
+{
+    int64_t deltaTime = curTime - wakeUpTime;
+    if (deltaTime > THREE_MILLISECOND_DURATION) {
+        AUDIO_WARNING_LOG("Wake up cost %{public}" PRId64" ms!", deltaTime / AUDIO_US_PER_SECOND);
+    } else if (deltaTime > ONE_MILLISECOND_DURATION) {
+        AUDIO_DEBUG_LOG("Wake up cost %{public}" PRId64" ms!", deltaTime / AUDIO_US_PER_SECOND);
+    }
+
+    // First, wake up at client may-write-done time, and check if all process write done.
+    // If not, do another sleep to the possible latest write time.
+    curWritePos = dstAudioBuffer_->GetCurWriteFrame();
+    if (!CheckAllBufferReady(wakeUpTime, curWritePos)) { curTime = ClockTime::GetCurNano(); }
+}
+
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
     BindCore();
-    SetThreadQosLevel();
+    bool setPriorityResult = SetEndpointThreadPriority();
+    if (!setPriorityResult) {
+        SetThreadQosLevel();
+    }
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
@@ -2005,16 +2023,8 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             endpointWorkLoopFucThreadStatus_ = true;
             continue;
         }
-        if (curTime - wakeUpTime > THREE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("Wake up cost %{public}" PRId64" ms!", (curTime - wakeUpTime) / AUDIO_US_PER_SECOND);
-        } else if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
-            AUDIO_DEBUG_LOG("Wake up cost %{public}" PRId64" ms!", (curTime - wakeUpTime) / AUDIO_US_PER_SECOND);
-        }
 
-        // First, wake up at client may-write-done time, and check if all process write done.
-        // If not, do another sleep to the possible latest write time.
-        curWritePos = dstAudioBuffer_->GetCurWriteFrame();
-        if (!CheckAllBufferReady(wakeUpTime, curWritePos)) { curTime = ClockTime::GetCurNano(); }
+        CheckTimeAndBufferReady(curWritePos, wakeUpTime, curTime);
 
         // then do mix & write to hdi buffer and prepare next loop
         if (!ProcessToEndpointDataHandle(curWritePos)) {
@@ -2038,7 +2048,11 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         endpointWorkLoopFucThreadStatus_ = true;
     }
     AUDIO_DEBUG_LOG("Endpoint work loop fuc end");
-    ReSetThreadQosLevel();
+    if (setPriorityResult) {
+        ResetEndpointThreadPriority();
+    } else {
+        ResetThreadQosLevel();
+    }
     // stop watchdog
     EndPointRemoveWatchdog("WatchingEndpointWorkLoopFuc", GetEndpointName());
 }

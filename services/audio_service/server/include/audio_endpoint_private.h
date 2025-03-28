@@ -126,6 +126,7 @@ public:
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
+    void CheckTimeAndBufferReady(uint64_t &curWritePos, int64_t &wakeUpTime, int64_t &curTime);
     void MixToDupStream(const std::vector<AudioStreamData> &srcDataList, int32_t innerCapId);
     bool ConfigInputPoint(const AudioDeviceDescriptor &deviceInfo);
     int32_t PrepareDeviceBuffer(const AudioDeviceDescriptor &deviceInfo);
