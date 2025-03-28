@@ -3544,7 +3544,7 @@ void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType 
     }
     if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), -1);
+            std::make_shared<AudioDeviceDescriptor>(), SYSTEM_PID);
     }
     audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }

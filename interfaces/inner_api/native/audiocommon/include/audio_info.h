@@ -37,6 +37,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+constexpr int32_t INVALID_PID = -1;
+constexpr int32_t CLEAR_PID = 0;
+constexpr int32_t SYSTEM_PID = 1;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
