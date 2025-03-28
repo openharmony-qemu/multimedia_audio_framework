@@ -108,22 +108,26 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
         return;
     }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
-        if (zeroVolumeStartTime_ == INT64_MAX) {
+        if (zeroVolumeState_ == INACTIVE) {
             zeroVolumeStartTime_ = ClockTime::GetCurNano();
+            zeroVolumeState_ = IN_TIMING;
             AUDIO_INFO_LOG("Begin zero volume, will stop fastSink in 4s.");
             return;
         }
 
-        if (!zeroVolumeFlag &&
+        if (zeroVolumeState_ == IN_TIMING &&
             ClockTime::GetCurNano() - zeroVolumeStartTime_ > DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS) {
-            zeroVolumeFlag = true;
+            zeroVolumeState_ = ACTIVE;
             HandleZeroVolumeStopEvent();
         }
     } else {
-        if (zeroVolumeStartTime_ != INT64_MAX) {
-            ResetZeroVolumeState();
+        if (zeroVolumeState_ == INACTIVE) {
+            return;
+        }
+        if (zeroVolumeState_ == ACTIVE) {
             HandleZeroVolumeStartEvent();
         }
+        ResetZeroVolumeState();
     }
 }
 
@@ -163,7 +167,7 @@ void AudioEndpointInner::HandleZeroVolumeStopEvent()
 void AudioEndpointInner::ResetZeroVolumeState()
 {
     zeroVolumeStartTime_ = INT64_MAX;
-    zeroVolumeFlag = false;
+    zeroVolumeState_ = INACTIVE;
 }
 
 void AudioEndpointInner::CheckStandBy()

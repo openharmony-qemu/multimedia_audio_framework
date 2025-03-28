@@ -227,6 +227,11 @@ private:
         FAST_SOURCE_TYPE_REMOTE,
         FAST_SOURCE_TYPE_VOIP
     };
+    enum ZeroVolumeState : uint32_t {
+        INACTIVE = 0,
+        ACTIVE,
+        IN_TIMING
+    };
     // SamplingRate EncodingType SampleFormat Channel
     AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamInfo dstStreamInfo_;
@@ -267,7 +272,7 @@ private:
     bool isStarted_ = false;
     int64_t delayStopTime_ = INT64_MAX;
     int64_t zeroVolumeStartTime_ = INT64_MAX;
-    bool zeroVolumeFlag = false;
+    ZeroVolumeState zeroVolumeState_ = INACTIVE;
 
     std::atomic<ThreadStatus> threadStatus_ = WAITTING;
     std::thread endpointWorkThread_;
