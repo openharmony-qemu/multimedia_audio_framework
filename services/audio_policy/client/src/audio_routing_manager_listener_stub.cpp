@@ -56,6 +56,10 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
             OnAudioInputDeviceRefinedInternal(data, reply);
             return AUDIO_OK;
         }
+        case GET_SPLIT_INFO_REFINED: {
+            GetSplitInfoRefinedInternal(data, reply);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -139,6 +143,15 @@ void AudioRoutingManagerListenerStub::OnAudioInputDeviceRefinedInternal(MessageP
     }
 }
 
+void AudioRoutingManagerListenerStub::GetSplitInfoRefinedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string splitInfo = "";
+
+    int32_t result = GetSplitInfoRefined(splitInfo);
+    reply.WriteInt32(result);
+    reply.WriteString(splitInfo);
+}
+
 int32_t AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefined(
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
     int32_t clientUid, AudioPipeType audioPipeType)
@@ -165,6 +178,17 @@ int32_t AudioRoutingManagerListenerStub::OnAudioInputDeviceRefined(
 
     return audioDeviceRefinerCallback->OnAudioInputDeviceRefined(descs, routerType,
         sourceType, clientUid, audioPipeType);
+}
+
+int32_t AudioRoutingManagerListenerStub::GetSplitInfoRefined(std::string &splitInfo)
+{
+    std::unique_lock lock(deviceRefinerCallbackMutex_);
+    std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr,
+        ERR_CALLBACK_NOT_REGISTERED, "audioDeviceRefinerCallback_ is nullptr");
+    lock.unlock();
+
+    return audioDeviceRefinerCallback->GetSplitInfoRefined(splitInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS
