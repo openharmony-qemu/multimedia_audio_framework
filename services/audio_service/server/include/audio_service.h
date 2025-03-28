@@ -70,7 +70,7 @@ public:
     int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
-    void CheckBeforeVoipEndpointCreate();
+    void CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord);
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
         const AudioProcessConfig &clientConfig, bool isVoipStream);
