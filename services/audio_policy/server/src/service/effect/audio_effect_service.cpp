@@ -739,6 +739,11 @@ void AudioEffectService::ConstructEnhanceChainManagerParam(EffectChainManagerPar
         for (auto &mode: scene.streamEffectMode) {
             sceneMode = mode.mode;
             for (auto &device: mode.devicePort) {
+                if (device.type == "DEVICE_TYPE_MIC") {
+                    key = sceneType + "_&_" + sceneMode;
+                } else {
+                    key = sceneType + "_&_" + sceneMode + device.type;
+                }
                 key = sceneType + "_&_" + sceneMode;
                 AddKeyValueIntoMap(map, key, device.chain);
                 ConstructDefaultEffectProperty(device.chain, enhanceDefaultProperty);
