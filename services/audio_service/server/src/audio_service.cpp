@@ -1105,6 +1105,11 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
         return;
     }
     capturerLock.unlock();
+    SetNonInterruptMuteForProcess(sessionId, muteFlag);
+}
+
+void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const bool muteFlag)
+{
 #ifdef SUPPORT_LOW_LATENCY
     std::unique_lock<std::mutex> processListLock(processListMutex_);
     for (auto paired : linkedPairedList_) {
@@ -1121,7 +1126,9 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
     processListLock.unlock();
 #endif
     AUDIO_INFO_LOG("Cannot find sessionId");
-    // when set unmute but cannot find sessionid, remove it from mutedSessions_
+    // when old stream already released and new stream not create yet
+    // set muteflag 0 but cannot find sessionId in allRendererMap_, allCapturerMap_ and linkedPairedList_
+    // need erase it from mutedSessions_ to avoid new stream cannot be set unmute
     if (mutedSessions_.count(sessionId) && !muteFlag) {
         mutedSessions_.erase(sessionId);
     }
