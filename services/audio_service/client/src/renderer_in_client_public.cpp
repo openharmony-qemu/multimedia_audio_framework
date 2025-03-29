@@ -1712,6 +1712,7 @@ void RendererInClientInner::SetSwitchingStatus(bool isSwitching)
 
 void RendererInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->GetRestoreInfo(restoreInfo);
     return;
 }
@@ -1721,17 +1722,20 @@ void RendererInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
     if (restoreInfo.restoreReason == SERVER_DIED) {
         cbThreadReleased_ = true;
     }
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus RendererInClientInner::CheckRestoreStatus()
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->CheckRestoreStatus();
 }
 
 RestoreStatus RendererInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->SetRestoreStatus(restoreStatus);
 }
 
