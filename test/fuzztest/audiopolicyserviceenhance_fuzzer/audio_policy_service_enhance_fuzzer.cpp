@@ -294,7 +294,8 @@ void AudioPolicyServiceEnhanceFiveFuzzTest()
     uint64_t sessionID = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(sessionID);
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemainingSource();
-    AudioDeviceDescriptor inputDevice, outputDevice;
+    AudioDeviceDescriptor inputDevice;
+    AudioDeviceDescriptor outputDevice;
     inputDevice.deviceType_ = DEVICE_TYPE_DEFAULT;
     outputDevice.deviceType_ = deviceType;
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.ReloadSourceForDeviceChange(

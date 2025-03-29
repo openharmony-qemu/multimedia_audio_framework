@@ -118,7 +118,8 @@ static UsbAddr GetUsbAddr(const SoundCard &card)
 {
     size_t pos = card.usbBus_.find('/');
     CHECK_AND_RETURN_RET_LOG(pos != string::npos, {}, "Error Parameter: card.usbbus");
-    int busNum, devAddr;
+    int busNum;
+    int devAddr;
     string busNumStr = Trim(card.usbBus_.substr(0, pos));
     string devAddrStr = Trim(card.usbBus_.substr(pos + 1));
     CHECK_AND_RETURN_RET_LOG(StrToInt(busNumStr, busNum) && StrToInt(devAddrStr, devAddr), {}, "StrToInt ERROR");

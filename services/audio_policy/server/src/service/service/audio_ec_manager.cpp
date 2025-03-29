@@ -154,7 +154,8 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
     }
 
     if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
-        uint32_t rateValue, channelValue = 0;
+        uint32_t rateValue = 0;
+        uint32_t channelValue = 0;
         CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
             "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
         CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
@@ -584,7 +585,8 @@ void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         if (isEcFeatureEnable_) {
-            uint32_t rateValue, channelValue = 0;
+            uint32_t rateValue = 0;
+            uint32_t channelValue = 0;
             CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
                 "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
             CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
