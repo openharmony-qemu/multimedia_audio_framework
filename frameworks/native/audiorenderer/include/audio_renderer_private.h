@@ -34,6 +34,7 @@ namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
+class AudioFormatUnsupportedErrorCallback;
 
 class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
 public:
@@ -142,6 +143,8 @@ public:
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+        const StreamUsage &streamUsage) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
@@ -216,6 +219,7 @@ private:
     uint32_t GetUnderflowCountInner() const;
     int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
+    int32_t InitFormatUnsupportedErrorCallback();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -227,6 +231,7 @@ private:
     FILE *dumpFile_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
     std::mutex audioRendererErrCallbackMutex_;
+    std::shared_ptr<AudioFormatUnsupportedErrorCallback> formatUnsupportedErrorCallback_ = nullptr;
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     std::atomic<bool> isFastRenderer_ = false;
@@ -358,6 +363,15 @@ private:
     void RestoreTheadLoop();
 
     std::atomic<int32_t> taskCount_ = 0;
+};
+
+class AudioFormatUnsupportedErrorCallback : public FormatUnsupportedErrorCallback {
+public:
+    AudioFormatUnsupportedErrorCallback() = default;
+    virtual ~AudioFormatUnsupportedErrorCallback() = default;
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
+private:
+    std::weak_ptr<AudioRendererErrorCallback> callback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

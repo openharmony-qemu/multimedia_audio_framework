@@ -62,6 +62,7 @@ ohos_shared_library("ohaudio") {
     "./OHAudioRoutingManager.cpp",
     "./OHAudioSessionManager.cpp",
     "./OHAudioStreamBuilder.cpp",
+    "./OHAudioStreamManager.cpp",
   ]
 
   deps = [

@@ -596,6 +596,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     ret = InitOutputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");
 
+    ret = InitFormatUnsupportedErrorCallback();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitFormatUnsupportedErrorCallback Failed");
+
     return InitAudioInterruptCallback();
 }
 
@@ -1150,6 +1153,8 @@ bool AudioRendererPrivate::Release()
 
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
+
+    (void)AudioPolicyManager::GetInstance().UnsetFormatUnsupportedErrorCallback();
 
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
@@ -2480,6 +2485,31 @@ int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timest
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetAudioTimestampInfo(timestamp, base);
+}
+
+DirectPlaybackMode AudioRendererPrivate::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    return AudioPolicyManager::GetInstance().GetDirectPlaybackSupport(streamInfo, streamUsage);
+}
+
+int32_t AudioRendererPrivate::InitFormatUnsupportedErrorCallback()
+{
+    if (!formatUnsupportedErrorCallback_) {
+        formatUnsupportedErrorCallback_ = std::make_shared<AudioFormatUnsupportedErrorCallback>();
+        CHECK_AND_RETURN_RET_LOG(formatUnsupportedErrorCallback_ != nullptr, ERROR, "Memory allocation failed");
+    }
+    int32_t ret = AudioPolicyManager::GetInstance().SetFormatUnsupportedErrorCallback(
+        formatUnsupportedErrorCallback_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register failed");
+    return SUCCESS;
+}
+
+void AudioFormatUnsupportedErrorCallback::OnFormatUnsupportedError(const AudioErrors &errorCode)
+{
+    std::shared_ptr<AudioRendererErrorCallback> cb = callback_.lock();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
+    cb->OnError(errorCode);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

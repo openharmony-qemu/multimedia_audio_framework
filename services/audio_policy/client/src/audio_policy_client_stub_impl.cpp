@@ -1001,5 +1001,34 @@ void AudioPolicyClientStubImpl::OnNnStateChange(const int32_t &nnState)
         callback->OnNnStateChange(nnState);
     }
 }
+
+int32_t AudioPolicyClientStubImpl::AddFormatUnsupportedErrorCallback(
+    const std::shared_ptr<FormatUnsupportedErrorCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(formatUnsupportedErrorMutex_);
+    formatUnsupportedErrorCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveFormatUnsupportedErrorCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(formatUnsupportedErrorMutex_);
+    formatUnsupportedErrorCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetFormatUnsupportedErrorCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(formatUnsupportedErrorMutex_);
+    return formatUnsupportedErrorCallbackList_.size();
+}
+
+void AudioPolicyClientStubImpl::OnFormatUnsupportedError(const AudioErrors &errorCode)
+{
+    std::lock_guard<std::mutex> lockCbMap(formatUnsupportedErrorMutex_);
+    for (const auto &callback : formatUnsupportedErrorCallbackList_) {
+        callback->OnFormatUnsupportedError(errorCode);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

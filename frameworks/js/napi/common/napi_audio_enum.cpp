@@ -40,6 +40,7 @@ unique_ptr<AudioParameters> NapiAudioEnum::sAudioParameters_ = nullptr;
 napi_ref NapiAudioEnum::audioChannel_ = nullptr;
 napi_ref NapiAudioEnum::samplingRate_ = nullptr;
 napi_ref NapiAudioEnum::encodingType_ = nullptr;
+napi_ref NapiAudioEnum::directPlaybackMode_ = nullptr;
 napi_ref NapiAudioEnum::contentType_ = nullptr;
 napi_ref NapiAudioEnum::streamUsage_ = nullptr;
 napi_ref NapiAudioEnum::audioVolumeMode_ = nullptr;
@@ -123,7 +124,14 @@ const std::map<std::string, int32_t> NapiAudioEnum::samplingRateMap = {
 
 const std::map<std::string, int32_t> NapiAudioEnum::encodingTypeMap = {
     {"ENCODING_TYPE_INVALID", ENCODING_INVALID},
-    {"ENCODING_TYPE_RAW", ENCODING_PCM}
+    {"ENCODING_TYPE_RAW", ENCODING_PCM},
+    {"ENCODING_TYPE_E_AC3", ENCODING_EAC3}
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::directPlaybackModeMap = {
+    {"DIRECT_PLAYBACK_NOT_SUPPORTED", DIRECT_PLAYBACK_NOT_SUPPORTED},
+    {"DIRECT_PLAYBACK_BITSTREAM_SUPPORTED", DIRECT_PLAYBACK_BITSTREAM_SUPPORTED},
+    {"DIRECT_PLAYBACK_PCM_SUPPORTED", DIRECT_PLAYBACK_PCM_SUPPORTED}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::contentTypeMap = {
@@ -324,6 +332,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioErrorsMap = {
     {"ERROR_ILLEGAL_STATE", ERROR_ILLEGAL_STATE},
     {"ERROR_UNSUPPORTED", ERROR_UNSUPPORTED},
     {"ERROR_TIMEOUT", ERROR_TIMEOUT},
+    {"ERROR_UNSUPPORTED_FORMAT", ERROR_UNSUPPORTED_FORMAT},
     {"ERROR_STREAM_LIMIT", ERROR_STREAM_LIMIT},
     {"ERROR_SYSTEM", ERROR_SYSTEM}
 };
@@ -671,6 +680,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioChannel", CreateEnumObject(env, audioChannelMap, audioChannel_)),
         DECLARE_NAPI_PROPERTY("AudioSamplingRate", CreateEnumObject(env, samplingRateMap, samplingRate_)),
         DECLARE_NAPI_PROPERTY("AudioEncodingType", CreateEnumObject(env, encodingTypeMap, encodingType_)),
+        DECLARE_NAPI_PROPERTY("DirectPlaybackMode", CreateEnumObject(env, directPlaybackModeMap, directPlaybackMode_)),
         DECLARE_NAPI_PROPERTY("ContentType", CreateEnumObject(env, contentTypeMap, contentType_)),
         DECLARE_NAPI_PROPERTY("StreamUsage", CreateEnumObject(env, streamUsageMap, streamUsage_)),
         DECLARE_NAPI_PROPERTY("AudioVolumeMode", CreateEnumObject(env, audioVolumeModeMap, audioVolumeMode_)),

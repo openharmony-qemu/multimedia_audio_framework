@@ -287,7 +287,14 @@ enum AudioSamplingRate {
 enum AudioEncodingType {
     ENCODING_INVALID = -1,
     ENCODING_PCM = 0,
-    ENCODING_AUDIOVIVID = 1
+    ENCODING_AUDIOVIVID = 1,
+    ENCODING_EAC3 = 2
+};
+
+enum DirectPlaybackMode {
+    DIRECT_PLAYBACK_NOT_SUPPORTED = 0,
+    DIRECT_PLAYBACK_BITSTREAM_SUPPORTED = 1,
+    DIRECT_PLAYBACK_PCM_SUPPORTED = 2
 };
 
 

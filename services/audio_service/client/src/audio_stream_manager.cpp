@@ -207,6 +207,12 @@ int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioD
     return result;
 }
 
+DirectPlaybackMode AudioStreamManager::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &sreamUsage)
+{
+    return AudioPolicyManager::GetInstance().GetDirectPlaybackSupport(streamInfo, sreamUsage);
+}
+
 int32_t AudioStreamManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     return AudioPolicyManager::GetInstance().GetSupportedAudioEffectProperty(propertyArray);

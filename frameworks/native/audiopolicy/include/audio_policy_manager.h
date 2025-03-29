@@ -575,6 +575,12 @@ public:
 
     int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
 
+    int32_t SetFormatUnsupportedErrorCallback(const std::shared_ptr<FormatUnsupportedErrorCallback> &callback);
+
+    int32_t UnsetFormatUnsupportedErrorCallback();
+
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
+
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);

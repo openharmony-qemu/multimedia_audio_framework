@@ -837,6 +837,8 @@ OH_AudioStream_Result OHAudioRendererErrorCallback::GetErrorResult(AudioErrors e
             return AUDIOSTREAM_ERROR_INVALID_PARAM;
         case ERROR_SYSTEM:
             return AUDIOSTREAM_ERROR_SYSTEM;
+        case ERROR_UNSUPPORTED_FORMAT:
+            return AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT;
         default:
             return AUDIOSTREAM_ERROR_SYSTEM;
     }

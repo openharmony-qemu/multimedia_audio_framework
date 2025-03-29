@@ -35,6 +35,13 @@ public:
         const AudioStreamDeviceChangeReasonExt reason) = 0;
 };
 
+class FormatUnsupportedErrorCallback {
+public:
+    virtual ~FormatUnsupportedErrorCallback() = default;
+
+    virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) = 0;
+};
+
 class AudioClientTracker {
 public:
     virtual ~AudioClientTracker() = default;
@@ -283,6 +290,16 @@ public:
      * @since 11
      */
     int32_t GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc);
+
+    /**
+     * @brief Judges whether the playback is supported by the renderer.
+     *
+     * @param streamInfo
+     * @param sreamUsage
+     * @return Returns direct playback mode.
+     * @since 19
+     */
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &sreamUsage);
 
 private:
     std::mutex rendererStateChangeCallbacksMutex_;

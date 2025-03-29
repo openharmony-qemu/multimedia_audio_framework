@@ -624,5 +624,25 @@ void AudioPolicyClientProxy::OnAudioSessionDeactive(const AudioSessionDeactiveEv
     }
     reply.ReadInt32();
 }
+
+void AudioPolicyClientProxy::OnFormatUnsupportedError(const AudioErrors &errorCode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_FORMAT_UNSUPPORTED_ERROR));
+    data.WriteInt32(static_cast<int32_t>(errorCode));
+
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending enabled info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

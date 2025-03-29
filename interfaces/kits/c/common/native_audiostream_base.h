@@ -80,7 +80,14 @@ typedef enum {
      *
      * @since 10
      */
-    AUDIOSTREAM_ERROR_SYSTEM = 3
+    AUDIOSTREAM_ERROR_SYSTEM = 3,
+
+    /**
+     * @error Unsupported audio format, such as unsupported encoding type, sample format etc.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT = 4
 } OH_AudioStream_Result;
 
 /**
@@ -160,6 +167,12 @@ typedef enum {
      * @since 12
      */
     AUDIOSTREAM_ENCODING_TYPE_AUDIOVIVID = 1,
+    /**
+     * E_AC3 encoding type.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_ENCODING_TYPE_E_AC3 = 2,
 } OH_AudioStream_EncodingType;
 
 /**
@@ -275,6 +288,32 @@ typedef enum {
      */
     AUDIOSTREAM_LATENCY_MODE_FAST = 1
 } OH_AudioStream_LatencyMode;
+
+/**
+ * @brief Enumerates audio direct playback modes.
+ *
+ * @since 19
+ */
+typedef enum {
+    /**
+     * Direct playback is not supported.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_DIRECT_PLAYBACK_NOT_SUPPORTED = 0,
+    /**
+     * Direct playback mode which is bitstream pass-through such as compressed pass-through.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_DIRECT_PLAYBACK_BITSTREAM_SUPPORTED = 1,
+    /**
+     * Direct playback mode which is pcm pass-through, without any process such as resampling.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_DIRECT_PLAYBACK_PCM_SUPPORTED= 2
+} OH_AudioStream_DirectPlaybackMode;
 
 /**
  * @brief Define the audio stream volume mode.

@@ -2356,5 +2356,25 @@ int32_t AudioPolicyProxy::SetDeviceConnectionStatus(const std::shared_ptr<AudioD
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
     return reply.ReadInt32();
 }
+
+DirectPlaybackMode AudioPolicyProxy::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, DIRECT_PLAYBACK_NOT_SUPPORTED, "WriteInterfaceToken failed");
+
+    bool res = streamInfo.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(res, DIRECT_PLAYBACK_NOT_SUPPORTED, "streamInfo Marshalling() failed");
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DIRECT_PLAYBACK_SUPPORT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, DIRECT_PLAYBACK_NOT_SUPPORTED, "SendRequest failed, error: %d", error);
+    return static_cast<DirectPlaybackMode>(reply.ReadInt32());
+}
 } // namespace AudioStandard
 } // namespace OHOS

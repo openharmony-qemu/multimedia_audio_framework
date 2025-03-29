@@ -2298,6 +2298,50 @@ int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
     return gsp->SetQueryAllowedPlaybackCallback(object);
 }
 
+int32_t AudioPolicyManager::SetFormatUnsupportedErrorCallback(
+    const std::shared_ptr<FormatUnsupportedErrorCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Start to register");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].mutex);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
+    audioPolicyClientStubCB_->AddFormatUnsupportedErrorCallback(callback);
+    if (audioPolicyClientStubCB_->GetFormatUnsupportedErrorCallbackSize() == 1) {
+        callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].isEnable = true;
+        SetClientCallbacksEnable(CALLBACK_FORMAT_UNSUPPORTED_ERROR, true);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetFormatUnsupportedErrorCallback()
+{
+    AUDIO_DEBUG_LOG("Start to unregister");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].mutex);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
+    audioPolicyClientStubCB_->RemoveFormatUnsupportedErrorCallback();
+    if (audioPolicyClientStubCB_->GetFormatUnsupportedErrorCallbackSize() == 0) {
+        callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_FORMAT_UNSUPPORTED_ERROR, false);
+    }
+    return SUCCESS;
+}
+
+DirectPlaybackMode AudioPolicyManager::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED, "audio policy manager proxy is NULL.");
+    return gsp->GetDirectPlaybackSupport(streamInfo, streamUsage);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

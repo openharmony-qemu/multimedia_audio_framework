@@ -22,6 +22,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static const char* ENCODING_EAC3_NAME = "eac3";
+
 // LCOV_EXCL_START
 bool AudioPolicyConfigParser::LoadConfiguration()
 {
@@ -220,6 +222,7 @@ void AudioPolicyConfigParser::ParseStreamProps(std::shared_ptr<AudioXmlNode> cur
             streamPropInfo.pipeInfo_ = pipeInfo;
             std::string formatStr;
             curNode->GetProp("format", formatStr);
+            HandleEncodingEac3SupportParsed(pipeInfo, formatStr);
             streamPropInfo.format_ = AudioDefinitionPolicyUtils::formatStrToEnum[formatStr];
             std::string sampleRateStr;
             curNode->GetProp("sampleRates", sampleRateStr);
@@ -498,6 +501,15 @@ void AudioPolicyConfigParser::HandleDefaultAdapterSupportParsed(std::string &val
     } else {
         configManager_->OnUpdateDefaultAdapter(false);
         shouldSetDefaultAdapter_ = false;
+    }
+}
+
+void AudioPolicyConfigParser::HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> &pipeInfo,
+    std::string &value)
+{
+    if (value == ENCODING_EAC3_NAME) {
+        pipeInfo->supportEncodingEac3_ = true;
+        configManager_->OnUpdateEac3Support(true);
     }
 }
 
