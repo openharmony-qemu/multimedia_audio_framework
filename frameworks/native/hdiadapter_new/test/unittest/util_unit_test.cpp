@@ -38,11 +38,11 @@ public:
 };
 
 /**
- * @tc.name   : Test Util API
- * @tc.number : UtilUnitTest_001
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_001
  * @tc.desc   : Test IdHandler action
  */
-HWTEST_F(UtilUnitTest, UtilUnitTest_001, TestSize.Level1)
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_001, TestSize.Level1)
 {
     IdHandler &idHandler = IdHandler::GetInstance();
     uint32_t id = idHandler.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
@@ -71,11 +71,11 @@ HWTEST_F(UtilUnitTest, UtilUnitTest_001, TestSize.Level1)
 }
 
 /**
- * @tc.name   : Test Util API
- * @tc.number : UtilUnitTest_002
+ * @tc.name   : Test AudioRunningLock API
+ * @tc.number : AudioRunningLockUnitTest_001
  * @tc.desc   : Test AudioRunningLock action
  */
-HWTEST_F(UtilUnitTest, UtilUnitTest_002, TestSize.Level1)
+HWTEST_F(UtilUnitTest, AudioRunningLockUnitTest_001, TestSize.Level1)
 {
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock = std::make_shared<AudioRunningLock>("test");
@@ -91,11 +91,11 @@ HWTEST_F(UtilUnitTest, UtilUnitTest_002, TestSize.Level1)
 }
 
 /**
- * @tc.name   : Test Util API
- * @tc.number : UtilUnitTest_003
+ * @tc.name   : Test RingBufferHandler API
+ * @tc.number : RingBufferHandlerUnitTest_001
  * @tc.desc   : Test RingBufferHandler action
  */
-HWTEST_F(UtilUnitTest, UtilUnitTest_003, TestSize.Level1)
+HWTEST_F(UtilUnitTest, RingBufferHandlerUnitTest_001, TestSize.Level1)
 {
     std::shared_ptr<RingBufferHandler> handler = std::make_shared<RingBufferHandler>();
     ASSERT_NE(handler, nullptr);
@@ -116,31 +116,56 @@ HWTEST_F(UtilUnitTest, UtilUnitTest_003, TestSize.Level1)
 }
 
 /**
- * @tc.name   : Test Util API
- * @tc.number : UtilUnitTest_004
- * @tc.desc   : Test CallbackWrapper action
+ * @tc.name   : Test CallbackWrapper API
+ * @tc.number : CallbackWrapperUnitTest_001
+ * @tc.desc   : Test SinkCallbackWrapper action
  */
-HWTEST_F(UtilUnitTest, UtilUnitTest_004, TestSize.Level1)
+HWTEST_F(UtilUnitTest, CallbackWrapperUnitTest_001, TestSize.Level1)
 {
     SinkCallbackWrapper sinkCbWrapper;
 
-    sinkCbWrapper.RegistCallback(100, nullptr); // 100: test
-
-    auto sinkCb = sinkCbWrapper.GetCallback(100, HDI_INVALID_ID);
+    std::shared_ptr<IAudioSinkCallback> sinkCb = nullptr;
+    sinkCbWrapper.RegistCallback(HDI_CB_RENDER_STATE, sinkCb);
+    IAudioSinkCallback *sinkRawCb = nullptr;
+    sinkCbWrapper.RegistCallback(HDI_CB_RENDER_STATE, sinkRawCb);
+    std::function<std::shared_ptr<IAudioSinkCallback>(uint32_t)> cbGenerator = [](uint32_t renderId) {
+        return nullptr;
+    };
+    sinkCbWrapper.RegistCallbackGenerator(HDI_CB_RENDER_STATE, cbGenerator);
+    sinkCb = sinkCbWrapper.GetCallback(HDI_CB_RENDER_STATE, HDI_INVALID_ID);
     EXPECT_EQ(sinkCb, nullptr);
-
-    auto sinkRawCb = sinkCbWrapper.GetRawCallback(100);
+    sinkRawCb = sinkCbWrapper.GetRawCallback(HDI_CB_RENDER_STATE);
     EXPECT_EQ(sinkRawCb, nullptr);
 
+    sinkCbWrapper.OnRenderSinkParamChange("", NONE, "", "");
+    sinkCbWrapper.OnRenderSinkStateChange(0, false);
+}
+
+/**
+ * @tc.name   : Test CallbackWrapper API
+ * @tc.number : CallbackWrapperUnitTest_002
+ * @tc.desc   : Test SourceCallbackWrapper action
+ */
+HWTEST_F(UtilUnitTest, CallbackWrapperUnitTest_002, TestSize.Level1)
+{
     SourceCallbackWrapper sourceCbWrapper;
 
-    sourceCbWrapper.RegistCallback(100, nullptr); // 100: test
-
-    auto sourceCb = sourceCbWrapper.GetCallback(100, HDI_INVALID_ID);
+    std::shared_ptr<IAudioSourceCallback> sourceCb = nullptr;
+    sourceCbWrapper.RegistCallback(HDI_CB_CAPTURE_STATE, sourceCb);
+    IAudioSourceCallback *sourceRawCb = nullptr;
+    sourceCbWrapper.RegistCallback(HDI_CB_CAPTURE_STATE, sourceRawCb);
+    std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> cbGenerator = [](uint32_t captureId) {
+        return nullptr;
+    };
+    sourceCbWrapper.RegistCallbackGenerator(HDI_CB_CAPTURE_STATE, cbGenerator);
+    sourceCb = sourceCbWrapper.GetCallback(HDI_CB_CAPTURE_STATE, HDI_INVALID_ID);
     EXPECT_EQ(sourceCb, nullptr);
-
-    auto sourceRawCb = sourceCbWrapper.GetRawCallback(100);
+    sourceRawCb = sourceCbWrapper.GetRawCallback(HDI_CB_CAPTURE_STATE);
     EXPECT_EQ(sourceRawCb, nullptr);
+
+    sourceCbWrapper.OnCaptureSourceParamChange("", NONE, "", "");
+    sourceCbWrapper.OnCaptureState(false);
+    sourceCbWrapper.OnWakeupClose();
 }
 
 } // namespace AudioStandard
