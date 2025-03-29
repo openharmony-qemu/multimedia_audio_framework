@@ -69,6 +69,7 @@ constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
+constexpr int32_t UID_DMSDP_SA = 7071;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
@@ -104,7 +105,8 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
     UID_THPEXTRA_SA,
-    UID_TELEPHONY_SA // used in distributed communication call
+    UID_TELEPHONY_SA, // used in distributed communication call
+    UID_DMSDP_SA
 };
 
 const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
