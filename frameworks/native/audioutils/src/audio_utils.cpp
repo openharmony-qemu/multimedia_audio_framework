@@ -400,6 +400,9 @@ bool PermissionUtil::VerifyIsAudio()
 
 bool PermissionUtil::VerifyIsSystemApp()
 {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    return true;
+#endif
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
@@ -410,6 +413,9 @@ bool PermissionUtil::VerifyIsSystemApp()
 
 bool PermissionUtil::VerifySelfPermission()
 {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    return true;
+#endif
     Security::AccessToken::FullTokenID selfToken = IPCSkeleton::GetSelfTokenID();
 
     auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(selfToken));

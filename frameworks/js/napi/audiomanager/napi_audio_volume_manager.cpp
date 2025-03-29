@@ -764,8 +764,6 @@ napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value j
     } else if (!cbName.compare(APP_VOLUME_CHANGE_CALLBACK_NAME)) {
         UnregisterSelfAppVolumeChangeCallback(env, args[PARAM1], argc, napiVolumeManager);
     } else if (!cbName.compare(APP_VOLUME_CHANGE_CALLBACK_NAME_FOR_UID)) {
-        CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-            "INPUT ERROR PARAMETER"), "parameter error");
         UnregisterAppVolumeChangeForUidCallback(env, args[PARAM1], args, argc, napiVolumeManager);
     } else {
         AUDIO_ERR_LOG("No such callback supported");
@@ -791,7 +789,7 @@ void NapiAudioVolumeManager::UnregisterAppVolumeChangeForUidCallback(napi_env en
         cb->RemoveAudioVolumeChangeForUidCbRef(env, callback);
     }
 
-    if (cb->GetAppVolumeChangeForUidListSize() == 0) {
+    if (argc == ARGS_ONE || cb->GetAppVolumeChangeForUidListSize() == 0) {
         napiAudioVolumeManager->audioSystemMngr_->UnsetAppVolumeCallbackForUid();
         napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_.reset();
         napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_ = nullptr;
