@@ -332,7 +332,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode)
+int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey), ERROR,
@@ -357,11 +357,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
         effectChain = effectNone;
     }
 
-    audioEffectChain->SetEffectMode(effectMode);
-    audioEffectChain->SetExtraSceneType(extraSceneType_);
-    audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
-    audioEffectChain->SetSpatializationSceneType(spatializationSceneType_);
-    audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
+    ConfigureAudioEffectChain(audioEffectChain, effectMode, sceneType);
     std::string tSceneType = (sceneType == DEFAULT_SCENE_TYPE ? DEFAULT_PRESET_SCENE :sceneType);
     for (std::string effect: effectChainToEffectsMap_[effectChain]) {
         AudioEffectHandle handle = nullptr;
@@ -386,6 +382,21 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
 
     AUDIO_INFO_LOG("SceneType %{public}s delay %{public}u", sceneType.c_str(), audioEffectChain->GetLatency());
     return SUCCESS;
+}
+
+void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
+    const std::string &effectMode, std::string &sceneType)
+{
+    audioEffectChain->SetEffectMode(effectMode);
+    audioEffectChain->SetExtraSceneType(extraSceneType_);
+    audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
+    audioEffectChain->SetSpatializationSceneType(spatializationSceneType_);
+    audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
+    std::string maxSession = std::to_string(maxSessionID_);
+    if (sessionIDToEffectInfoMap_.count(maxSession)) {
+        sceneType = sessionIDToEffectInfoMap_[maxSession].sceneType;
+        audioEffectChain->SetStreamUsage(sessionIDToEffectInfoMap_[maxSession].streamUsage);
+    }
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)

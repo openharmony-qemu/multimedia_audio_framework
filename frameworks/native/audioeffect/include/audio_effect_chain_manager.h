@@ -143,7 +143,7 @@ public:
     int32_t InitEffectBuffer(const std::string &sessionID);
 
 private:
-    int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
+    int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
@@ -166,6 +166,8 @@ private:
     bool IsEffectChainStop(const std::string &sceneType, const std::string &sessionID);
     int32_t InitEffectBufferInner(const std::string &sessionID);
     int32_t InitAudioEffectChainDynamicInner(const std::string &sceneType);
+    void ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
+        const std::string &effectMode, std::string &sceneType);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);

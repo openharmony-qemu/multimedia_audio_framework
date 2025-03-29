@@ -123,6 +123,62 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_003, TestS
 }
 
 /**
+* @tc.name   : Test CreateAudioEffectChainDynamic API
+* @tc.number : CreateAudioEffectChainDynamic_004
+* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using correct use case).
+*              Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_004, TestSize.Level1)
+{
+    string sceneType = "COMMON_SCENE_TYPE";
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    std::string sceneTypeAndDeviceKey = "COMMON_SCENE_TYPE_&_DEVICE_TYPE_SPEAKER";
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+    int32_t result =  AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 3;
+    result =  AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
+    result =  AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test CreateAudioEffectChainDynamic API
+* @tc.number : CreateAudioEffectChainDynamic_005
+* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using correct use case).
+*              Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_005, TestSize.Level1)
+{
+    string sceneType = "SCENE_MOVIE";
+    SessionEffectInfo info = {
+        "EFFECT_DEFAULT",
+        "SCENE_MOVIE",
+        INFOCHANNELS,
+        INFOCHANNELLAYOUT,
+        "0",
+        10,
+    };
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->maxSessionID_ = 123456;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["123456"] = info;
+    int32_t result =  AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
 * @tc.name   : Test CheckAndAddSessionID API
 * @tc.number : CheckAndAddSessionID_001
 * @tc.desc   : Test CheckAndAddSessionID interface.
