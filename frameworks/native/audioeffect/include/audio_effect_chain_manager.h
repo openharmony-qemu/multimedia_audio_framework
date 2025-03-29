@@ -142,7 +142,7 @@ public:
     void UpdateStreamUsage();
 
 private:
-    int32_t SetAudioEffectChainDynamic(const std::string &sceneType, std::string &effectMode);
+    int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
