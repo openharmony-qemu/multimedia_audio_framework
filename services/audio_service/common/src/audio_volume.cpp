@@ -21,6 +21,7 @@
 #include "audio_volume_c.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
+#include "audio_utils_c.h"
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
 #include "event_bean.h"
@@ -75,7 +76,8 @@ AudioVolume::~AudioVolume()
     monitorVolume_.clear();
 }
 
-float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass)
+float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass,
+    VolumeValues *volumes)
 {
     Trace trace("AudioVolume::GetVolume sessionId:" + std::to_string(sessionId));
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
@@ -117,8 +119,8 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
         }
         monitorVolume_[sessionId] = {volumeFloat, volumeLevel};
     }
-    Trace traceVolume("Volume, sessionId:" + std::to_string(sessionId) + ", volume:" + std::to_string(volumeFloat) +
-        ", stream volume:" + std::to_string(volumeStream) + ", system volume:" + std::to_string(volumeSystem));
+    volumes->volumeStream = volumeStream;
+    volumes->volumeSystem = volumeSystem;
     return volumeFloat;
 }
 
@@ -469,7 +471,8 @@ extern "C" {
 #endif
 using namespace OHOS::AudioStandard;
 
-float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass)
+float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass,
+    VolumeValues *volumes)
 {
     CHECK_AND_RETURN_RET_LOG(streamType != nullptr, 1.0f, "streamType is nullptr");
     CHECK_AND_RETURN_RET_LOG(deviceClass != nullptr, 1.0f, "deviceClass is nullptr");
@@ -480,7 +483,7 @@ float GetCurVolume(uint32_t sessionId, const char *streamType, const char *devic
     }
     int32_t stream = AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(stream));
-    return AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass);
+    return AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, volumes);
 }
 
 float GetStreamVolume(uint32_t sessionId)

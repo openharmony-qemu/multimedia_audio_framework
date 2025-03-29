@@ -650,7 +650,8 @@ void ProRendererStreamImpl::GetStreamVolume()
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     bufferInfo_.volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
-    bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+    bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME, &volumes);
     if (bufferInfo_.volumeBg != bufferInfo_.volumeEd) {
         AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, bufferInfo_.volumeEd);
         AudioVolume::GetInstance()->Monitor(streamIndex_, true);

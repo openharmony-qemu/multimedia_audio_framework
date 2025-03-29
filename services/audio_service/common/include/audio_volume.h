@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <shared_mutex>
 
+#include "audio_volume_c.h"
+
 namespace OHOS {
 namespace AudioStandard {
 class StreamVolume;
@@ -36,7 +38,8 @@ public:
     static AudioVolume *GetInstance();
     ~AudioVolume();
 
-    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass); // all volume
+    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass,
+        VolumeValues *volumes); // all volume
     float GetStreamVolume(uint32_t sessionId); // only stream volume
 
     // history volume
