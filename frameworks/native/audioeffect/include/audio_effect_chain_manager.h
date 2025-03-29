@@ -142,7 +142,7 @@ public:
     void UpdateStreamUsage();
 
 private:
-    int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
+    int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
@@ -162,6 +162,8 @@ private:
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
     void UpdateCurrSceneTypeAndStreamUsageForDsp();
+    void ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
+        const std::string &effectMode, std::string &sceneType);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
