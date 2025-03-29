@@ -1146,7 +1146,7 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
         userSelectDeviceMap[CALL_RENDER_ID]->macAddress_ == desc.macAddress_) {
         if (userSelectDeviceMap[CALL_RENDER_ID]->connectState_ != VIRTUAL_CONNECTED) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(selectDesc), CLEAR_PID);
+                std::make_shared<AudioDeviceDescriptor>(selectDesc), SYSTEM_PID);
         } else {
             audioStateManager_.UpdatePreferredCallRenderDeviceConnectState(desc.connectState_);
         }
