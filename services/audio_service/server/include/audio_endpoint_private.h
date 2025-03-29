@@ -121,8 +121,6 @@ public:
     AudioMode GetAudioMode() const final;
 
     void BindCore();
-
-    void CheckWakeUpTime(int64_t &wakeUpTime);
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);

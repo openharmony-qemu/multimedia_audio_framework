@@ -1461,21 +1461,6 @@ AudioMode AudioEndpointInner::GetAudioMode() const
     return clientConfig_.audioMode;
 }
 
-void AudioEndpointInner::CheckWakeUpTime(int64_t &wakeUpTime)
-{
-    int64_t curTime = ClockTime::GetCurNano();
-    int64_t wakeupCost = wakeUpTime - curTime;
-    if (wakeupCost > ONE_MILLISECOND_DURATION) {
-        if (wakeupCost > TWO_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
-        }
-        if (wakeUpTime > MAX_WAKEUP_TIME_NS) {
-            wakeUpTime = endpointType_ == TYPE_VOIP_MMAP ?
-                curTime + WAKEUPTIME_FOR_VOIP_MMAP_NS : curTime + WAKEUPTIME_FOR_MMAP_NS;
-        }
-    }
-}
-
 int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
 {
     Trace trace("AudioEndpoint::GetPredictNextRead");
@@ -1925,7 +1910,6 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 
         loopTrace.End();
         threadStatus_ = SLEEPING;
-        CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         recordEndpointWorkLoopFucThreadStatus_ = true;
     }
@@ -2026,7 +2010,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         loopTrace.End();
         // start sleep
         threadStatus_ = SLEEPING;
-        CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         endpointWorkLoopFucThreadStatus_ = true;
     }
