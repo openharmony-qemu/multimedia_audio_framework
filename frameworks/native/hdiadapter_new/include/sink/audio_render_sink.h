@@ -176,7 +176,7 @@ private:
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     int32_t currentDevicesSize_ = 0;
     bool forceSetRouteFlag_ = false;
-    int32_t paStatus_ = 0;
+    int32_t paStatus_ = 1;
     std::string address_ = "";
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
     std::mutex sinkMutex_;

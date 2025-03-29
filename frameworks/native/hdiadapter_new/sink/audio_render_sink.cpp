@@ -519,8 +519,10 @@ int32_t AudioRenderSink::SetPaPower(int32_t flag)
     std::string param;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    AUDIO_INFO_LOG("flag: %{public}d, paStatus: %{public}d", flag, paStatus_);
     if (flag == 0 && paStatus_ == 1) {
         param = "zero_volume=true;routing=0";
+        AUDIO_INFO_LOG("param: %{public}s", param.c_str());
         int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
         if (ret == SUCCESS) {
             paStatus_ = 0;
