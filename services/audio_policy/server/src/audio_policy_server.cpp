@@ -3516,15 +3516,14 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
 }
 
 int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    auto callerPid = IPCSkeleton::GetCallingPid();
     if (callerUid != UID_AUDIO) {
         AUDIO_ERR_LOG("No permission");
         return ERROR;
     }
-    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc, callerPid);
+    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc, pid);
 }
 
 void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
@@ -3539,12 +3538,11 @@ void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType 
     std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, ROUTER_TYPE_USER_SELECT).front();
     if (networkId == newMediaDescriptor->networkId_ && deviceType == newMediaDescriptor->deviceType_) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
+        audioPolicyUtils_.SetPreferredDevice(AUDIO_MEDIA_RENDER, std::make_shared<AudioDeviceDescriptor>());
     }
     if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), SYSTEM_PID);
+        audioPolicyUtils_.SetPreferredDevice(AUDIO_CALL_RENDER, std::make_shared<AudioDeviceDescriptor>(),
+            SYSTEM_PID);
     }
     audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }

@@ -432,7 +432,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
 
     int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID) override;
 
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) override;
 

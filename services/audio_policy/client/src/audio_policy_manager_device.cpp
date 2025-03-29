@@ -494,11 +494,11 @@ int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt 
 }
 
 int32_t AudioPolicyManager::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->SetPreferredDevice(preferredType, desc);
+    return gsp->SetPreferredDevice(preferredType, desc, pid);
 }
 
 int32_t AudioPolicyManager::SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback)
