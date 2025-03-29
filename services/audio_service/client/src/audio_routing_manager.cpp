@@ -130,9 +130,9 @@ int32_t AudioRoutingManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt
 }
 
 int32_t AudioRoutingManager::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
 {
-    return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc);
+    return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, pid);
 }
 
 void AudioRoutingManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)

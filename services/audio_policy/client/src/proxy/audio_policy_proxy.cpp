@@ -1964,7 +1964,7 @@ int32_t AudioPolicyProxy::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt re
 }
 
 int32_t AudioPolicyProxy::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1974,6 +1974,7 @@ int32_t AudioPolicyProxy::SetPreferredDevice(const PreferredType preferredType,
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(preferredType));
+    data.WriteInt32(static_cast<int32_t>(pid));
     bool result = desc->Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(result, -1, "Desc Marshalling() faild");
 
