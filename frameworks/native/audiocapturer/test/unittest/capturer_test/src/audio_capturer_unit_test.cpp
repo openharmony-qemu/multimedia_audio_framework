@@ -2328,5 +2328,80 @@ HWTEST(AudioCapturerUnitTest, SetInputDevice_001, TestSize.Level1)
     int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_MIC);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_WIRED_HEADSET);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_ACCESSORY);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_005, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_USB_ARM_HEADSET);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_006, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    unique_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_unique<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_FILE_SOURCE);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
