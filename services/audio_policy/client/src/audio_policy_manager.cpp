@@ -627,7 +627,11 @@ int32_t AudioPolicyManager::UnsetAppVolumeCallbackForUid(
         AUDIO_ERR_LOG("audioPolicyClientStubCB_ is error");
         return ERR_NULL_POINTER;
     }
-    audioPolicyClientStubCB_->RemoveAppVolumeChangeForUidCallback(callback);
+    if (callback != nullptr) {
+        audioPolicyClientStubCB_->RemoveAppVolumeChangeForUidCallback(callback);
+    } else {
+        audioPolicyClientStubCB_->RemoveAllAppVolumeChangeForUidCallback();
+    }
     if (audioPolicyClientStubCB_->GetAppVolumeChangeCallbackForUidSize() == 0) {
         callbackChangeInfos_[CALLBACK_APP_VOLUME_CHANGE].isEnable = false;
         SetClientCallbacksEnable(CALLBACK_APP_VOLUME_CHANGE, false);
