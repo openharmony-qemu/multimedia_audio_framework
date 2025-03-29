@@ -84,14 +84,14 @@ void SetThreadQosLevelAsync(void)
     setThreadQosLevelThread.detach();
 }
 
-void ReSetThreadQosLevel(void)
+void ResetThreadQosLevel(void)
 {
     OHOS::QOS::ResetThreadQos();
 }
 #else
 void SetThreadQosLevel(void) {};
 void SetThreadQosLevelAsync(void) {};
-void ReSetThreadQosLevel(void) {};
+void ResetThreadQosLevel(void) {};
 #endif
 
 

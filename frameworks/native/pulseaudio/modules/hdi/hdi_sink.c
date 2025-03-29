@@ -3632,7 +3632,7 @@ static void UnsetThreadPriority(char *sinkName)
     }
 
     // primary case
-    ReSetThreadQosLevel();
+    ResetThreadQosLevel();
 }
 
 static void ThreadFuncRendererTimerBus(void *userdata)
