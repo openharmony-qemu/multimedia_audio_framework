@@ -50,6 +50,17 @@ const std::set<std::string> STREAM_USAGE_SET = {
     "STREAM_USAGE_VOICE_MODEM_COMMUNICATION",
     "STREAM_USAGE_VOICE_RINGTONE"
 };
+
+static void GetEnhancePropertyKey(const std::string &deviceType, const std::string &sceneType,
+    const std::string &sceneMode, std::string &key)
+{
+    if (deviceType == "DEVICE_TYPE_MIC") {
+        key = sceneType + "_&_" + sceneMode;
+    } else {
+        key = sceneType + "_&_" + sceneMode + deviceType;
+    }
+}
+
 AudioEffectService::AudioEffectService()
 {
     AUDIO_INFO_LOG("AudioEffectService ctor");
@@ -739,12 +750,7 @@ void AudioEffectService::ConstructEnhanceChainManagerParam(EffectChainManagerPar
         for (auto &mode: scene.streamEffectMode) {
             sceneMode = mode.mode;
             for (auto &device: mode.devicePort) {
-                if (device.type == "DEVICE_TYPE_MIC") {
-                    key = sceneType + "_&_" + sceneMode;
-                } else {
-                    key = sceneType + "_&_" + sceneMode + device.type;
-                }
-                key = sceneType + "_&_" + sceneMode;
+                GetEnhancePropertyKey(device.type, sceneType, sceneMode, key);
                 AddKeyValueIntoMap(map, key, device.chain);
                 ConstructDefaultEffectProperty(device.chain, enhanceDefaultProperty);
             }
