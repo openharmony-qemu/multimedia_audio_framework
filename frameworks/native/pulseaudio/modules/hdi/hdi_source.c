@@ -636,7 +636,8 @@ static void PostDataDefault(pa_source *source, pa_memchunk *chunk, struct Userda
     }
     if (!hasDefaultStream) { return; }
 
-    pa_memchunk enhanceChunk, rChunk;
+    pa_memchunk enhanceChunk;
+    pa_memchunk rChunk;
     enhanceChunk.length = chunk->length;
     enhanceChunk.memblock = pa_memblock_new(u->core->mempool, enhanceChunk.length);
     pa_memchunk_memcpy(&enhanceChunk, chunk);
@@ -673,7 +674,8 @@ static int32_t EcResample(const char *sceneKey, struct Userdata *u)
     CHECK_AND_RETURN_RET_LOG(u->bufferEc != NULL, ERROR, "bufferEc is null");
     CHECK_AND_RETURN_RET_LOG(u->requestBytesEc != 0, ERROR, "requestBytesEc is 0");
     if (ecResampler != NULL) {
-        pa_memchunk ecChunk, rEcChunk;
+        pa_memchunk ecChunk;
+        pa_memchunk rEcChunk;
         ecChunk.length = u->requestBytesEc;
         ecChunk.memblock = pa_memblock_new_fixed(u->core->mempool, u->bufferEc, ecChunk.length, 1);
         pa_resampler_run(ecResampler, &ecChunk, &rEcChunk);
@@ -696,7 +698,8 @@ static int32_t MicRefResample(const char *sceneKey, struct Userdata *u)
     CHECK_AND_RETURN_RET_LOG(u->bufferMicRef != NULL, ERROR, "bufferMicRef is null");
     CHECK_AND_RETURN_RET_LOG(u->requestBytesMicRef != 0, ERROR, "requestBytesMicRef is 0");
     if (micRefResampler != NULL) {
-        pa_memchunk micRefChunk, rMicRefChunk;
+        pa_memchunk micRefChunk;
+        pa_memchunk rMicRefChunk;
         micRefChunk.length = u->requestBytesMicRef;
         micRefChunk.memblock = pa_memblock_new_fixed(u->core->mempool, u->bufferMicRef, micRefChunk.length, 1);
         pa_resampler_run(micRefResampler, &micRefChunk, &rMicRefChunk);
@@ -733,7 +736,8 @@ static int32_t AudioEnhanceExistAndProcess(pa_memchunk *chunk, struct Userdata *
         uint64_t sceneKeyCode = (uint64_t)strtoul((char *)sceneKey, NULL, BASE_TEN);
         AUDIO_DEBUG_LOG("Now sceneKeyCode is : %{public}" PRIu64, sceneKeyCode);
 
-        pa_memchunk enhanceChunk, rChunk;
+        pa_memchunk enhanceChunk;
+        pa_memchunk rChunk;
         enhanceChunk.length = chunk->length;
         enhanceChunk.memblock = pa_memblock_new(u->core->mempool, enhanceChunk.length);
         pa_memchunk_memcpy(&enhanceChunk, chunk);
@@ -755,7 +759,8 @@ static int32_t AudioEnhanceExistAndProcess(pa_memchunk *chunk, struct Userdata *
 
 static void ThreadCaptureSleep(pa_usec_t sleepTime)
 {
-    struct timespec req, rem;
+    struct timespec req;
+    struct timespec rem;
     req.tv_sec = 0;
     req.tv_nsec = (int64_t)(sleepTime * MILLISECOND_PER_SECOND);
     clock_nanosleep(CLOCK_REALTIME, 0, &req, &rem);

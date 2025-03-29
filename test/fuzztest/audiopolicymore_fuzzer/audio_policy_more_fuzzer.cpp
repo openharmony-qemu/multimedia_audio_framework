@@ -254,7 +254,8 @@ void SendInterruptEventFuzzTest()
 void IsSameAppInShareModeFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    AudioInterrupt incomingInterrupt, activateInterrupt;
+    AudioInterrupt incomingInterrupt;
+    AudioInterrupt activateInterrupt;
     incomingInterrupt.contentType = GetData<ContentType>();
     incomingInterrupt.streamUsage = GetData<StreamUsage>();
     incomingInterrupt.audioFocusType.streamType = GetData<AudioStreamType>();
