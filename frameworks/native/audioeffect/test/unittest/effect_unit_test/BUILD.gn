@@ -32,6 +32,7 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-fno-access-control",
   ]
 
   sources = [ "src/audio_effect_chain_manager_unit_test.cpp" ]
