@@ -159,7 +159,8 @@ int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
     return SUCCESS;
 }
 
-bool AudioProcessInServer::TurnOnMicLight(CapturerState capturerState) {
+bool AudioProcessInServer::TurnOnMicLight(CapturerState capturerState)
+{
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
     SwitchStreamInfo info = {
@@ -189,7 +190,8 @@ bool AudioProcessInServer::TurnOnMicLight(CapturerState capturerState) {
     return isMicLightOn_;
 }
 
-bool AudioProcessInServer::TurnOffMicLight(CapturerState capturerState) {
+bool AudioProcessInServer::TurnOffMicLight(CapturerState capturerState)
+{
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     SwitchStreamInfo info = {
         sessionId_,
