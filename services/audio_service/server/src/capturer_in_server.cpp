@@ -315,7 +315,8 @@ int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
-bool CapturerInServer::TurnOnMicLight(CapturerState capturerState) {
+bool CapturerInServer::TurnOnMicLight(CapturerState capturerState)
+{
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
     SwitchStreamInfo info = {
@@ -336,7 +337,7 @@ bool CapturerInServer::TurnOnMicLight(CapturerState capturerState) {
         AUDIO_WARNING_LOG("MicLight of stream:%{public}d is already on."
             "No need to call NotifyPrivacyStart!", streamIndex_);
     } else {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
         AUDIO_INFO_LOG("Turn on micLight of stream:%{public}d from off"
             "after NotifyPrivacyStart success!", streamIndex_);
@@ -345,7 +346,8 @@ bool CapturerInServer::TurnOnMicLight(CapturerState capturerState) {
     return isMicLightOn_;
 }
 
-bool CapturerInServer::TurnOffMicLight(CapturerState capturerState) {
+bool CapturerInServer::TurnOffMicLight(CapturerState capturerState)
+{
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     SwitchStreamInfo info = {
         streamIndex_,
