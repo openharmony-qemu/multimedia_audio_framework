@@ -119,6 +119,9 @@ public:
     void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
 
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
+    
+    bool TurnOnMicLight(CapturerState capturerState);
+    bool TurnOffMicLight(CapturerState capturerState);
 public:
     const AudioProcessConfig processConfig_;
 
@@ -139,6 +142,7 @@ private:
     sptr<ProcessDeathRecipient> deathRecipient_ = nullptr;
 
     bool needCheckBackground_ = false;
+    bool isMicLightOn_ = false;
 
     uint32_t sessionId_ = 0;
     bool isInited_ = false;
