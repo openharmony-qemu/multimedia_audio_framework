@@ -80,17 +80,7 @@ AudioProcessInServer::~AudioProcessInServer()
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_INVALID,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicLight(CAPTURER_INVALID);
     }
 }
 
@@ -168,6 +158,59 @@ int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
     return SUCCESS;
 }
 
+bool AudioProcessInServer::TurnOnMicLight(CapturerState capturerState) {
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
+    uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
+    SwitchStreamInfo info = {
+        sessionId_,
+        processConfig_.callerUid,
+        processConfig_.appInfo.appUid,
+        processConfig_.appInfo.appPid,
+        tokenId,
+        capturerState,
+    };
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
+            false, "VerifyBackgroundCapture failed!");
+    }
+    SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
+
+    if (isMicLightOn_) {
+        AUDIO_WARNING_LOG("MicLight of stream:%{public}d is already on."
+            "No need to call NotifyPrivacyStart!", sessionId_);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
+            false, "NotifyPrivacyStart failed!");
+        AUDIO_INFO_LOG("Turn on micLight of stream:%{public}d from off"
+            "after NotifyPrivacyStart success!", sessionId_);
+        isMicLightOn_ = true;
+    }
+    return isMicLightOn_;
+}
+
+bool AudioProcessInServer::TurnOffMicLight(CapturerState capturerState) {
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
+    SwitchStreamInfo info = {
+        sessionId_,
+        processConfig_.callerUid,
+        processConfig_.appInfo.appUid,
+        processConfig_.appInfo.appPid,
+        tokenId,
+        capturerState,
+    };
+    SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+
+    if (isMicLightOn_) {
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+        AUDIO_INFO_LOG("Turn off micLight of stream:%{public}d from on after NotifyPrivacyStop!", sessionId_);
+        isMicLightOn_ = false;
+    } else {
+        AUDIO_WARNING_LOG("MicLight of stream:%{public}d is already off."
+            "No need to call NotifyPrivacyStop!", sessionId_);
+    }
+    return !isMicLightOn_;
+}
+
 int32_t AudioProcessInServer::Start()
 {
     int32_t ret = StartInner();
@@ -201,22 +244,10 @@ int32_t AudioProcessInServer::StartInner()
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
+
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_RUNNING,
-        };
-        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
-                processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
-        }
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(processConfig_.appInfo.appTokenId, sessionId_),
-            ERR_PERMISSION_DENIED, "NotifyPrivacyStart failed!");
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
+        CHECK_AND_RETURENRET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            "Turn on micLight failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -243,19 +274,11 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_PAUSING,
         ERR_ILLEGAL_STATE, "Pause failed, invalid status.");
+
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_PAUSED,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicLight(CAPTURER_PAUSED);
     }
+
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
     }
@@ -281,24 +304,10 @@ int32_t AudioProcessInServer::Resume()
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
+
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_RUNNING,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
-                ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
-        }
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_), ERR_PERMISSION_DENIED,
-            "NotifyPrivacyStart failed!");
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
+        CHECK_AND_RETURENRET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            "Turn on micLight failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -316,19 +325,11 @@ int32_t AudioProcessInServer::Stop()
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STOPPING,
         ERR_ILLEGAL_STATE, "Stop failed, invalid status.");
+
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_STOPPED,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicLight(CAPTURER_STOPPED);
     }
+
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
     }
@@ -360,18 +361,9 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_RELEASED,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicLight(CAPTURER_RELEASED);
     }
+
     int32_t ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
