@@ -591,7 +591,6 @@ void RendererInClientInner::InitCallbackLoop()
         std::shared_ptr<RendererInClientInner> strongRef = weakRef.lock();
         if (strongRef != nullptr) {
             strongRef->cbThreadCv_.notify_one();
-            strongRef->WatchingWriteCallbackFunc(); // add watchdog
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
@@ -608,7 +607,6 @@ void RendererInClientInner::InitCallbackLoop()
         }
         if (strongRef != nullptr) {
             AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", strongRef->sessionId_);
-            strongRef->RendererRemoveWatchdog("WatchingWriteCallbackFunc", strongRef->sessionId_); // Remove watchdog
         }
     });
     pthread_setname_np(callbackLoop.native_handle(), "OS_AudioWriteCB");
