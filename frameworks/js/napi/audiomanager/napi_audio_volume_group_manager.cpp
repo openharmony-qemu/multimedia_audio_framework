@@ -1299,6 +1299,7 @@ void NapiAudioVolumeGroupManager::UnregisterRingerModeCallback(
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetRingerModeCallback failed");
     cb->RemoveCallbackReference(callback);
     napiAudioVolumeGroupManager->ringerModecallbackNapi_ = nullptr;
+    AUDIO_INFO_LOG("UnregisterRingerModeCallback success");
 }
 
 void NapiAudioVolumeGroupManager::UnregisterMicStateChangeCallback(
@@ -1321,6 +1322,7 @@ void NapiAudioVolumeGroupManager::UnregisterMicStateChangeCallback(
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterMicStateChangeCallback failed");
     cb->RemoveCallbackReference(callback);
     napiAudioVolumeGroupManager->micStateChangeCallbackNapi_ = nullptr;
+    AUDIO_INFO_LOG("UnregisterMicStateChangeCallback success");
 }
 
 napi_value NapiAudioVolumeGroupManager::On(napi_env env, napi_callback_info info)
