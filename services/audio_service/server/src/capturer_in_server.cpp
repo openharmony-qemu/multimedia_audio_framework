@@ -399,7 +399,7 @@ int32_t CapturerInServer::StartInner()
         needCheckBackground_ = true;
     }
     if (needCheckBackground_) {
-        CHECK_AND_RETURENRET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micLight failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
 
