@@ -614,23 +614,6 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_028, TestSize.Le
 }
 
 /**
-* @tc.name  : Test AudioPolicyClientStubImpl.
-* @tc.number: AudioPolicyClientStubImpl_029
-* @tc.desc  : Test OnSpatializationEnabledChangeForCurrentDevice.
-*/
-HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_029, TestSize.Level1)
-{
-    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
-    auto cb = std::make_shared<ConcreteSpatialEnabledChangeForCurrentDeviceCb>();
-    int32_t result = audioPolicyClient->AddSpatializationEnabledChangeForCurrentDeviceCallback(cb);
-    EXPECT_EQ(result, SUCCESS);
-
-    bool enabled = true;
-    audioPolicyClient->OnSpatializationEnabledChangeForCurrentDevice(enabled);
-    EXPECT_NE(audioPolicyClient, nullptr);
-}
-
-/**
 * @tc.name  : Test AudioDeviceDescriptor.
 * @tc.number: AudioDeviceDescriptor_001
 * @tc.desc  : Test AudioDeviceDescriptor/MapInternalToExternalDeviceType.
@@ -1280,6 +1263,23 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_060, TestSize.Le
 
     auto ret = audioPolicyClient->RemoveAudioSceneChangedCallback(cb);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_061
+* @tc.desc  : Test OnSpatializationEnabledChangeForCurrentDevice.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_061, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteSpatialEnabledChangeForCurrentDeviceCb>();
+    int32_t result = audioPolicyClient->AddSpatializationEnabledChangeForCurrentDeviceCallback(cb);
+    EXPECT_EQ(result, SUCCESS);
+
+    bool enabled = true;
+    audioPolicyClient->OnSpatializationEnabledChangeForCurrentDevice(enabled);
+    EXPECT_NE(audioPolicyClient, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
