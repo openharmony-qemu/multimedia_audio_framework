@@ -168,6 +168,18 @@ class AudioQueryAllowedPlaybackCallback {
         virtual ~AudioQueryAllowedPlaybackCallback() = default;
         virtual bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) = 0;
 };
+
+class AudioManagerAudioSceneChangedCallback {
+public:
+    virtual ~AudioManagerAudioSceneChangedCallback() = default;
+    /**
+     * Called when AudioScene changed.
+     *
+     * @param AudioScene audio scene
+     * @since 16
+     */
+    virtual void OnAudioSceneChange(const AudioScene audioScene) = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_INTERFACE_H

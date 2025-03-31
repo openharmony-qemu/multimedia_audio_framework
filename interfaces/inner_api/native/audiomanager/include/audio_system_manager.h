@@ -222,18 +222,6 @@ public:
     virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
 };
 
-class AudioManagerAudioSceneChangedCallback {
-public:
-    virtual ~AudioManagerAudioSceneChangedCallback() = default;
-    /**
-     * Called when AudioScene changed.
-     *
-     * @param AudioScene audio scene
-     * @since 16
-     */
-    virtual void OnAudioSceneChange(const AudioScene audioScene) = 0;
-};
-
 class AudioParameterCallback {
 public:
     virtual ~AudioParameterCallback() = default;
