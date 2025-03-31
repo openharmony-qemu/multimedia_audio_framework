@@ -56,7 +56,7 @@ CapturerInServer::~CapturerInServer()
     }
     DumpFileUtil::CloseDumpFile(&dumpS2C_);
     if (needCheckBackground_) {
-        TurnOffMicLight(CAPTURER_INVALID);
+        TurnOffMicIndicator(CAPTURER_INVALID);
     }
 }
 
@@ -315,7 +315,7 @@ int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
-bool CapturerInServer::TurnOnMicLight(CapturerState capturerState)
+bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
@@ -333,20 +333,20 @@ bool CapturerInServer::TurnOnMicLight(CapturerState capturerState)
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
-    if (isMicLightOn_) {
-        AUDIO_WARNING_LOG("MicLight of stream:%{public}d is already on."
+    if (isMicIndicatorOn_) {
+        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already on."
             "No need to call NotifyPrivacyStart!", streamIndex_);
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micLight of stream:%{public}d from off"
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
             "after NotifyPrivacyStart success!", streamIndex_);
-        isMicLightOn_ = true;
+        isMicIndicatorOn_ = true;
     }
-    return isMicLightOn_;
+    return true;
 }
 
-bool CapturerInServer::TurnOffMicLight(CapturerState capturerState)
+bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     SwitchStreamInfo info = {
@@ -359,15 +359,15 @@ bool CapturerInServer::TurnOffMicLight(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
 
-    if (isMicLightOn_) {
+    if (isMicIndicatorOn_) {
         PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
-        AUDIO_INFO_LOG("Turn off micLight of stream:%{public}d from on after NotifyPrivacyStop!", streamIndex_);
-        isMicLightOn_ = false;
+        AUDIO_INFO_LOG("Turn off micIndicator of stream:%{public}d from on after NotifyPrivacyStop!", streamIndex_);
+        isMicIndicatorOn_ = false;
     } else {
-        AUDIO_WARNING_LOG("MicLight of stream:%{public}d is already off."
+        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already off."
             "No need to call NotifyPrivacyStop!", streamIndex_);
     }
-    return !isMicLightOn_;
+    return true;
 }
 
 int32_t CapturerInServer::Start()
@@ -396,8 +396,8 @@ int32_t CapturerInServer::StartInner()
         needCheckBackground_ = true;
     }
     if (needCheckBackground_) {
-        CHECK_AND_RETURN_RET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
-            "Turn on micLight failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
 
     AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
@@ -417,7 +417,7 @@ int32_t CapturerInServer::Pause()
         return ERR_ILLEGAL_STATE;
     }
     if (needCheckBackground_) {
-        TurnOffMicLight(CAPTURER_PAUSED);
+        TurnOffMicIndicator(CAPTURER_PAUSED);
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
@@ -476,7 +476,7 @@ int32_t CapturerInServer::Stop()
     status_ = I_STATUS_STOPPING;
 
     if (needCheckBackground_) {
-        TurnOffMicLight(CAPTURER_STOPPED);
+        TurnOffMicIndicator(CAPTURER_STOPPED);
     }
 
     int ret = stream_->Stop();
@@ -518,7 +518,7 @@ int32_t CapturerInServer::Release()
     }
 #endif
     if (needCheckBackground_) {
-        TurnOffMicLight(CAPTURER_RELEASED);
+        TurnOffMicIndicator(CAPTURER_RELEASED);
     }
     return SUCCESS;
 }
