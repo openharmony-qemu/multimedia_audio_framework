@@ -130,9 +130,12 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,
     int32_t clientUID, const uint32_t sessionID)
 {
+    vector<shared_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
     if (Util::IsScoSupportSource(sourceType)) {
-        vector<shared_ptr<AudioDeviceDescriptor>> descs =
+        vector<shared_ptr<AudioDeviceDescriptor>> recgDescs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
+        descs.insert(descs.end(), std::make_move_iterator(recgDescs.begin()), std::make_move_iterator(recgDescs.end()));
         shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_INPUT_DEVICES, descs);
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             AUDIO_DEBUG_LOG("Recognition sourceType %{public}d clientUID %{public}d fetch device %{public}d",
@@ -140,8 +143,6 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
             return desc;
         }
     }
-    vector<shared_ptr<AudioDeviceDescriptor>> descs =
-        AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
