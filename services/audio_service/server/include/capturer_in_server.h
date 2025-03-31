@@ -60,8 +60,8 @@ public:
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
 
-    bool TurnOnMicLight(CapturerState capturerState);
-    bool TurnOffMicLight(CapturerState capturerState);
+    bool TurnOnMicIndicator(CapturerState capturerState);
+    bool TurnOffMicIndicator(CapturerState capturerState);
 
 private:
     int32_t InitCacheBuffer(size_t targetSize);
@@ -79,7 +79,7 @@ private:
     IStatus status_ = I_STATUS_IDLE;
 
     bool needCheckBackground_ = false;
-    bool isMicLightOn_ = false;
+    bool isMicIndicatorOn_ = false;
 
     AudioPlaybackCaptureConfig filterConfig_;
     std::weak_ptr<IStreamListener> streamListener_;
