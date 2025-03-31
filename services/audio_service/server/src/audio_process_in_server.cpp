@@ -186,7 +186,7 @@ bool AudioProcessInServer::TurnOnMicLight(CapturerState capturerState)
             "after NotifyPrivacyStart success!", sessionId_);
         isMicLightOn_ = true;
     }
-    return isMicLightOn_;
+    return true;
 }
 
 bool AudioProcessInServer::TurnOffMicLight(CapturerState capturerState)
@@ -210,7 +210,7 @@ bool AudioProcessInServer::TurnOffMicLight(CapturerState capturerState)
         AUDIO_WARNING_LOG("MicLight of stream:%{public}d is already off."
             "No need to call NotifyPrivacyStop!", sessionId_);
     }
-    return !isMicLightOn_;
+    return true;
 }
 
 int32_t AudioProcessInServer::Start()
@@ -248,7 +248,7 @@ int32_t AudioProcessInServer::StartInner()
     }
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        CHECK_AND_RETURENRET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micLight failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
@@ -308,7 +308,7 @@ int32_t AudioProcessInServer::Resume()
     }
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        CHECK_AND_RETURENRET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micLight failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
