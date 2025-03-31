@@ -71,10 +71,10 @@ static OHOS::AudioStandard::OHAudioRoutingManager *convertManager(OH_AudioRoutin
 
 OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingManager **audioRoutingManager)
 {
-    if (audioRoutingManager == nullptr) {
-        AUDIO_ERR_LOG("OH_AudioManager_GetAudioRoutingManager input param is nullptr!");
-    }
     OHAudioRoutingManager* ohAudioRoutingManager = OHAudioRoutingManager::GetInstance();
+    if (audioRoutingManager == nullptr) {
+        AUDIO_ERR_LOG("audioRoutingManager is nullptr!");
+    }
     *audioRoutingManager = (OH_AudioRoutingManager*)ohAudioRoutingManager;
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
