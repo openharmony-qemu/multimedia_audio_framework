@@ -298,7 +298,6 @@ void AudioEffectChainManager::ConstructEffectChainMgrMaps(std::vector<EffectChai
     // Construct effectPropertyMap_ that stores effect's property
     effectPropertyMap_ = effectChainManagerParam.effectDefaultProperty;
     defaultPropertyMap_ = effectChainManagerParam.effectDefaultProperty;
-    LoadEffectProperties();
 }
 
 bool AudioEffectChainManager::CheckAndAddSessionID(const std::string &sessionID)

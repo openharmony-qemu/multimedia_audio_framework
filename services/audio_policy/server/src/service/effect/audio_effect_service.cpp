@@ -57,7 +57,7 @@ static void GetEnhancePropertyKey(const std::string &deviceType, const std::stri
     if (deviceType == "DEVICE_TYPE_MIC") {
         key = sceneType + "_&_" + sceneMode;
     } else {
-        key = sceneType + "_&_" + sceneMode + deviceType;
+        key = sceneType + "_&_" + sceneMode + "_&_" + deviceType;
     }
 }
 
