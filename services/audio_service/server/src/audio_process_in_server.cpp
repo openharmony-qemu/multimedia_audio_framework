@@ -249,7 +249,7 @@ int32_t AudioProcessInServer::StartInner()
     }
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        CHECK_AND_RETURENRET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micLight failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
@@ -313,7 +313,7 @@ int32_t AudioProcessInServer::Resume()
         needCheckBackground_ = true;
     }
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        CHECK_AND_RETURENRET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicLight(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micLight failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
