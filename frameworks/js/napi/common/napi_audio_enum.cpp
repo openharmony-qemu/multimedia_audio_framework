@@ -1232,7 +1232,7 @@ bool NapiAudioEnum::IsLegalInputArgumentVolumeAdjustType(int32_t adjustType)
 
 bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
 {
-    return deviceType > DeviceType::DEVICE_TYPE_NONE &&
+    return deviceType > DeviceType::DEVICE_TYPE_INVALID &&
         deviceType < DeviceType::DEVICE_TYPE_MAX;
 }
 
