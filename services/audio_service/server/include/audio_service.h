@@ -72,6 +72,7 @@ public:
     int32_t DisableDualToneList(uint32_t sessionId);
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
+    void SetNonInterruptMuteForProcess(const uint32_t SessionId, const bool muteFlag);
     void UpdateMuteControlSet(uint32_t sessionId, bool muteFlag);
 
     int32_t UpdateSourceType(SourceType sourceType);
