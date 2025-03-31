@@ -507,6 +507,7 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
                 source.ext.device.type = PIN_IN_UWB;
                 source.ext.device.desc = (char *)"pin_in_uwb";
             }
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
