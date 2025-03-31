@@ -347,5 +347,37 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_017, TestSize.
     std::string typeRet = "";
     EXPECT_EQ(ret, typeRet);
 }
+
+/**
+* @tc.name  : Test VolumeDataMaintainer SaveMuteStatusInternal when muteKey is empty.
+* @tc.number: VolumeDataMaintainer_SaveMuteStatusInternal_001.
+* @tc.desc  : Test VolumeDataMaintainer API when GetMuteKeyForDataShare returns empty string.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SaveMuteStatusInternal_001, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    bool muteStatus = true;
+    bool result = volumeDataMaintainer.SaveMuteStatusInternal(deviceType, streamType, muteStatus);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test VolumeDataMaintainer SaveMuteStatusInternal when muteKey is valid.
+* @tc.number: VolumeDataMaintainer_SaveMuteStatusInternal_002.
+* @tc.desc  : Test VolumeDataMaintainer API when GetMuteKeyForDataShare returns valid string and save succeeds.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SaveMuteStatusInternal_002, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
+    bool muteStatus = true;
+    bool result = volumeDataMaintainer.SaveMuteStatusInternal(deviceType, streamType, muteStatus);
+    EXPECT_TRUE(result);
+}
+
+
 } // AudioStandardnamespace
 } // OHOSnamespace
