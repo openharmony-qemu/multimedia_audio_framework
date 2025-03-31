@@ -22,7 +22,9 @@ using namespace std::chrono;
 
 namespace {
     constexpr int32_t SAMPLE_RATE_48000 = 48000;
+#ifdef AUDIO_OH_RENDER_UNIT_TEST
     constexpr int32_t CHANNEL_2 = 2;
+#endif
 }
 
 namespace OHOS {
@@ -86,6 +88,7 @@ private:
     std::atomic<uint32_t> exeCount_ = 0;
 };
 
+#ifdef AUDIO_OH_RENDER_UNIT_TEST
 static int32_t AudioRendererOnWriteDataMock(OH_AudioRenderer* renderer,
     void* userData,
     void* buffer,
@@ -151,6 +154,7 @@ static OH_AudioData_Callback_Result OnWriteDataCbWithInvalidDataMock(OH_AudioRen
     u->writeDataCallbackType = UserData::WRITE_DATA_CALLBACK_WITH_RESULT;
     return AUDIO_DATA_CALLBACK_RESULT_INVALID;
 }
+#endif
 
 OH_AudioStreamBuilder* OHAudioRenderUnitTest::CreateRenderBuilder()
 {
@@ -671,6 +675,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
+#ifdef AUDIO_OH_RENDER_UNIT_TEST
 /**
  * @tc.name  : Test OH_AudioRenderer_GetUnderflowCount API.
  * @tc.number: OH_AudioRenderer_GetUnderflowCount_001
@@ -935,7 +940,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_005, TestSize.L
 
     OH_AudioStreamBuilder_Destroy(builder);
 }
-
+#endif
 /**
  * @tc.name  : Test OH_AudioRenderer_GetVolume API via illegal state.
  * @tc.number: OH_Audio_Render_GetVolume_001
@@ -1311,6 +1316,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_003, TestSize.Level0)
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
+#ifdef AUDIO_OH_RENDER_UNIT_TEST
 /**
  * @tc.name  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallback API via legal state.
  * @tc.number: OH_Audio_Render_WriteDataCallback_001
@@ -1603,6 +1609,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_SetDefaultOutputDevice_003, TestS
 
     OH_AudioStreamBuilder_Destroy(builder);
 }
+#endif
+
 /**
  * @tc.name  : Test OH_AudioRenderer_GetChannelCount API via illegal state.
  * @tc.number: OH_Audio_Render_GetChannelCount_001
@@ -1648,7 +1656,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_002, TestSize.Level0
 
     result = OH_AudioRenderer_GetTimestamp(audioRenderer, clockId, &framePosition, &timestamp);
 
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 /**

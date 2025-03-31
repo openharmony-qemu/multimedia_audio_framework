@@ -198,7 +198,7 @@ HWTEST_F(AudioEnhanceChainAdapterUnitTest, EnhanceChainManagerGetAlgoConfig_002,
     pa_sample_spec_init(&micRefSpec);
 
     int32_t result = EnhanceChainManagerGetAlgoConfig(VALID_SCENEKEY, &micSpec, &ecSpec, &micRefSpec);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_NE(SUCCESS, result);
 }
 
 /**

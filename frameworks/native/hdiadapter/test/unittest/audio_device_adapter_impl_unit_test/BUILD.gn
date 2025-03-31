@@ -32,11 +32,14 @@ ohos_unittest("audio_device_adapter_impl_unit_test") {
   ]
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
-  sources = [ "src/audio_device_adapter_impl_unit_test.cpp" ]
+  sources = [
+    "../../../../../../frameworks/native/hdiadapter/devicemanager/src/audio_device_adapter_impl.cpp",
+    "src/audio_device_adapter_impl_unit_test.cpp",
+  ]
 
   deps = [
     "../../../../audioutils:audio_utils",
-    "../../../devicemanager:audio_device_manager_static",
+    "../../../devicemanager:audio_device_manager",
   ]
 
   defines = []

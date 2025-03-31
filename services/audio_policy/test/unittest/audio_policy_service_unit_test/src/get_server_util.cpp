@@ -23,11 +23,20 @@ const bool RUN_ON_CREATE = false;
 bool g_hasServerInit = false;
 const int32_t DEFAULT_SYSTEM_ABILITY_ID = -1000;
 
+void InitA2dpOffloadManager(AudioPolicyServer* server)
+{
+    server->audioPolicyService_.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    if (server->audioPolicyService_.audioA2dpOffloadManager_) {
+        server->audioPolicyService_.audioA2dpOffloadManager_->Init();
+    }
+}
+
 AudioPolicyServer* GetServerUtil::GetServerPtr()
 {
     static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit) {
         AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::GetServerPtr  server.OnStart()");
+        InitA2dpOffloadManager(&server);
         server.OnStart();
         server.OnDump();
         server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");

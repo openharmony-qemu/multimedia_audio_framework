@@ -504,7 +504,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     ]
   }
 
-  defines = []
+  defines = [ "BLUETOOTH_ENABLE" ]
 
   if (build_variant == "user") {
     defines += [ "AUDIO_BUILD_VARIANT_USER" ]
@@ -1061,10 +1061,12 @@ ohos_unittest("audio_pnp_server_unit_test") {
   ]
 
   sources = [
+    "../../audio_policy/server/src/service/manager/pnp_server/audio_pnp_server.cpp",
+    "../../audio_policy/server/src/service/manager/pnp_server/audio_socket_thread.cpp",
     "./unittest/audio_pnp_server_unit_test/src/audio_pnp_server_unit_test.cpp",
   ]
 
-  deps = [ "../../audio_policy:audio_policy_service_static" ]
+  deps = [ "../../audio_policy:audio_policy_service" ]
 }
 
 ohos_unittest("audio_socket_thread_unit_test") {
@@ -1257,8 +1259,10 @@ ohos_unittest("audio_policy_server_unit_test") {
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 
+  defines = [ "BLUETOOTH_ENABLE" ]
+
   if (audio_framework_feature_dtmf_tone) {
-    defines = [ "FEATURE_DTMF_TONE" ]
+    defines += [ "FEATURE_DTMF_TONE" ]
   }
 
   if (audio_framework_feature_input) {
@@ -3116,11 +3120,15 @@ ohos_unittest("audio_client_tracker_callback_proxy_unit_test") {
     "os_account:os_account_innerkits",
   ]
 
-  sources = [ "./unittest/audio_client_tracker_callback_proxy_unit_test/src/audio_client_tracker_callback_proxy_unit_test.cpp" ]
+  sources = [
+    "../../audio_policy/client/src/audio_client_tracker_callback_stub.cpp",
+    "../../audio_policy/server/src/audio_client_tracker_callback_proxy.cpp",
+    "./unittest/audio_client_tracker_callback_proxy_unit_test/src/audio_client_tracker_callback_proxy_unit_test.cpp",
+  ]
 
   deps = [
-    "../../../services/audio_policy:audio_policy_client_static",
-    "../../audio_policy:audio_policy_service_static",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../audio_policy:audio_policy_service",
   ]
 }
 
@@ -3474,6 +3482,8 @@ ohos_unittest("audio_usb_manager_unit_test") {
   include_dirs = [
     "./unittest/audio_usb_manager_unit_test/include",
     "../../server/include",
+    "../../../services/audio_policy/server/include/service/manager",
+    "../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
   use_exceptions = true
@@ -3486,9 +3496,28 @@ ohos_unittest("audio_usb_manager_unit_test") {
   ]
 
   external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
     "bluetooth:btframework",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
     "data_share:datashare_consumer",
     "drivers_interface_audio:libaudio_proxy_4.0",
     "googletest:gmock",
@@ -3504,11 +3533,32 @@ ohos_unittest("audio_usb_manager_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "safwk:system_ability_fwk",
   ]
 
-  sources = [ "./unittest/audio_usb_manager_unit_test/src/audio_usb_manager_unit_test.cpp" ]
+  sources = [
+    "../../../services/audio_policy/server/src/audio_policy_client_proxy.cpp",
+    "../../../services/audio_policy/server/src/service/device/audio_device_descriptor.cpp",
+    "../../../services/audio_policy/server/src/service/manager/audio_usb_manager.cpp",
+    "./unittest/audio_usb_manager_unit_test/src/audio_usb_manager_unit_test.cpp",
+  ]
 
-  deps = [ "../../audio_policy:audio_policy_service_static" ]
+  deps = [
+    "../../../frameworks/native/audioeffect:audio_effect",
+    "../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_common",
+    "../../../services/audio_service:audio_process_service",
+    "../../../services/audio_service:audio_service",
+  ]
+  defines = []
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+  }
 }
 
 ohos_unittest("audio_session_unit_test") {

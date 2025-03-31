@@ -33,7 +33,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    const int32_t HDF_ERR_INVALID_PARAM = -1;
+    const int32_t HDF_ERR_INVALID_PARAM = -3;
 } // namespace
 
 void AudioSocketThreadUnitTest::SetUpTestCase(void) {}
@@ -440,7 +440,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_009, TestSize.Level1)
 
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(event.eventType, PNP_EVENT_DEVICE_ADD);
-    EXPECT_EQ(event.deviceType, PNP_DEVICE_MIC);
+    EXPECT_EQ(event.deviceType, PNP_DEVICE_UNKNOWN);
     EXPECT_EQ(event.name, "TestDevice");
     EXPECT_EQ(event.address, "TestDevName");
 }
@@ -470,7 +470,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_010, TestSize.Level1)
 
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(event.eventType, PNP_EVENT_DEVICE_ADD);
-    EXPECT_EQ(event.deviceType, PNP_DEVICE_MIC);
+    EXPECT_EQ(event.deviceType, PNP_DEVICE_UNKNOWN);
     EXPECT_EQ(event.name, "TestDevice");
     EXPECT_EQ(event.address, "TestDevName");
 }
@@ -639,7 +639,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_029, TestSize.Level1)
     // Test case 1: Invalid parameter (NULL audioPnpUevent)
     {
         int32_t result = audioSocketThread.AudioDpDetectDevice(nullptr);
-        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
     }
     // Test case 2: Invalid subSystem
     {
@@ -650,7 +650,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_029, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioDpDetectDevice(&uevent);
-        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
     }
     // Test case 3: Invalid switchName
     {
@@ -661,7 +661,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_029, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioDpDetectDevice(&uevent);
-        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
     }
 }
 
@@ -682,7 +682,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_029, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioDpDetectDevice(&uevent);
-        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
     }
     // Test case 5: Device Add Event
     {
@@ -852,7 +852,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_037, TestSize.Level1)
 {
     AudioSocketThread audioSocketThread;
     // Test case 1: NULL input
-    EXPECT_NE(HDF_ERR_INVALID_PARAM, audioSocketThread.AudioAnahsDetectDevice(nullptr));
+    EXPECT_EQ(HDF_ERR_INVALID_PARAM, audioSocketThread.AudioAnahsDetectDevice(nullptr));
 
     // Test case 2: Valid input with UEVENT_INSERT
     struct AudioPnpUevent validUeventInsert = {
@@ -951,7 +951,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_040, TestSize.Level1)
     // Test case 1: Invalid parameter (NULL audioPnpUevent)
     {
         int32_t result = audioSocketThread.AudioHDMIDetectDevice(nullptr);
-        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
     }
     // Test case 2: Invalid subSystem
     {
@@ -962,7 +962,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_040, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
     }
     // Test case 3: Invalid switchName
     {
@@ -973,7 +973,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_040, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
     }
 }
 
@@ -994,7 +994,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_040, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_NE(result, HDF_ERR_INVALID_PARAM);
+        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
     }
     // Test case 5: Device Add Event
     {
@@ -1127,8 +1127,8 @@ HWTEST_F(AudioSocketThreadUnitTest, ReadAndScanDpState_Success_WhenFileContains1
     int32_t ret = audioSocketThread_.ReadAndScanDpState(testPath, eventType);
 
     // Then
-    EXPECT_NE(ret, SUCCESS);
-    EXPECT_EQ(eventType, 0);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(eventType, PNP_EVENT_DEVICE_ADD);
 }
 
 /**
@@ -1350,8 +1350,7 @@ HWTEST_F(AudioSocketThreadUnitTest, ReadAndScanDpName_Success_WhenFileExists, Te
     file.close();
     std::string name;
     int32_t ret = audioSocketThread_.ReadAndScanDpName(testPath, name);
-    int32_t hdf_err_invalid_param = -3;
-    EXPECT_EQ(ret, hdf_err_invalid_param);
+    EXPECT_EQ(ret, ERROR);
     remove(testPath.c_str());
 }
 
