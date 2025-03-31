@@ -116,6 +116,16 @@ class ConcreteAudioHeadTrackingEnabledChangeCallback : public AudioHeadTrackingE
     void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override {}
 };
+
+class ConcreteAudioManagerAppVolumeChangeCallback : public AudioManagerAppVolumeChangeCallback {
+    void OnAppVolumeChangedForUid(int32_t appUid, const VolumeEvent &event) override {};
+
+    void OnSelfAppVolumeChanged(const VolumeEvent &event) override {};
+};
+
+class ConcreteAudioManagerAudioSceneChangedCallback : public AudioManagerAudioSceneChangedCallback {
+    void OnAudioSceneChange(const AudioScene audioScene) override {};
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_CLIENT_STUB_IMPL_TEST_H
