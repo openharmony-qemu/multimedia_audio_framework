@@ -49,6 +49,7 @@
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
 #include "app_state_listener.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -96,7 +97,7 @@ public:
 
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
-    bool IsAppVolumeMute(int32_t appUid, bool owned) override;
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) override;
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) override;
 
@@ -106,9 +107,9 @@ public:
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
-    int32_t GetAppVolumeLevel(int32_t appUid) override;
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) override;
 
-    int32_t GetSelfAppVolumeLevel() override;
+    int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
@@ -158,11 +159,13 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1) override;
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
 
     InternalDeviceType GetActiveOutputDevice() override;
+
+    uint16_t GetDmDeviceType() override;
 
     InternalDeviceType GetActiveInputDevice() override;
 
@@ -220,6 +223,8 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
@@ -245,6 +250,12 @@ public:
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
+
+    int32_t CreateRendererClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
+
+    int32_t CreateCapturerClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) override;
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object) override;
@@ -392,7 +403,7 @@ public:
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId) override;
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = -1) override;
+        const int32_t pid = INVALID_PID) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
 
@@ -421,7 +432,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
 
     int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID) override;
 
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) override;
 
@@ -439,6 +450,9 @@ public:
 
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) override;
 
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const SourceType sourceType, bool isRunning) override;
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) override;
@@ -449,14 +463,15 @@ public:
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const bool isConnected) override;
-        
+
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
-    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel, bool mute);
+    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
+        bool mute, const bool& isUpdateUi = false);
 
     void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);
@@ -510,6 +525,7 @@ public:
     void EffectManagerInfoDump(std::string &dumpString);
     void MicrophoneMuteInfoDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
+    void AudioPipeManagerDump(std::string &dumpString);
 
     // for hibernate callback
     void CheckHibernateState(bool hibernate);
@@ -525,6 +541,7 @@ protected:
     void RegisterParamCallback();
 
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+    int32_t GetApiTargetVersion() override;
 
 private:
     friend class AudioInterruptService;
@@ -576,7 +593,7 @@ private:
         bool mute, DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
-    int32_t GetAppVolumeLevelInternal(int32_t appUid);
+    int32_t GetAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
@@ -595,8 +612,6 @@ private:
     bool VerifyBluetoothPermission();
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
-
-    int32_t GetApiTargerVersion();
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -649,6 +664,9 @@ private:
     AudioDeviceManager &audioDeviceManager_;
     std::shared_ptr<AudioInterruptService> interruptService_;
 
+    std::shared_ptr<AudioCoreService> coreService_;
+    std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
+
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
     std::atomic<bool> isInitMuteState_ = false;
@@ -690,6 +708,7 @@ private:
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;
     AudioActiveDevice& audioActiveDevice_;
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

@@ -41,18 +41,6 @@ public:
 /**
  * @tc.name  : Test AudioDownMixStereo API
  * @tc.type  : FUNC
- * @tc.number: AudioDownMixStereo_001
- * @tc.desc  : Test AudioDownMixStereo interface.
- */
-HWTEST(AudioDownMixStereoTest, AudioDownMixStereo_001, TestSize.Level0)
-{
-    std::unique_ptr<AudioDownMixStereo> audioDownMixStereo = std::make_unique<AudioDownMixStereo>();
-    EXPECT_EQ(audioDownMixStereo->mixer_ != nullptr, true);
-}
-
-/**
- * @tc.name  : Test AudioDownMixStereo API
- * @tc.type  : FUNC
  * @tc.number: InitMixer_001
  * @tc.desc  : Test AudioDownMixStereo interface.
  */

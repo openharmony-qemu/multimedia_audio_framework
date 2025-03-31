@@ -110,7 +110,6 @@ const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
-const char *SINK_NAME_INNER_CAPTURER = "InnerCapturerSink";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
 const char *MCH_SINK_NAME = "MCH_Speaker";
@@ -429,7 +428,8 @@ static void OffloadSetHdiVolume(pa_sink_input *i)
     const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
     const char *deviceClass = u->offload.sinkAdapter->deviceClass;
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
     float volumeBeg = GetPreVolume(sessionID);
     float fadeBeg = 1.0f;
     float fadeEnd = 1.0f;
@@ -1263,6 +1263,19 @@ static bool GetExistFlag(pa_sink_input *sinkIn, const char *sinkSceneType, const
     return existFlag;
 }
 
+static void ProcessVolumeChange(float volumeBeg, float volumeEnd, float fadeBeg, float fadeEnd, uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f"
+        ", fadeBeg:%{public}f, fadeEnd:%{public}f", sessionID, volumeBeg, volumeEnd, fadeBeg, fadeEnd);
+    if (volumeBeg != volumeEnd) {
+        SetPreVolume(sessionID, volumeEnd);
+        MonitorVolume(sessionID, true);
+    }
+    if (fadeBeg != fadeEnd) {
+        SetStreamVolumeFade(sessionID, fadeEnd, fadeEnd);
+    }
+}
+
 static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk *pchunk, pa_sink *si)
 {
     AUTO_CTRACE("hdi_sink::ProcessAudioVolume: len:%zu", length);
@@ -1275,8 +1288,14 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
     const char *deviceClass = u->primary.sinkAdapter->deviceClass;
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
     float volumeBeg = GetPreVolume(sessionID);
+
+    AUTO_CTRACE("Volume, sessionId: %u, devClass: %s, volume: %.3f,"
+        "volumeSystem: %.3f, volumeStream: %.3f, volumeApp: %.3f",
+        sessionID, deviceClass, volumeEnd, volumes.volumeSystem, volumes.volumeStream, volumes.volumeApp);
+
     float fadeBeg = 1.0f;
     float fadeEnd = 1.0f;
     if (!pa_safe_streq(streamType, "ultrasonic")) {
@@ -1303,16 +1322,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
         pa_memblock_release(pchunk->memblock);
     }
     if (volumeBeg != volumeEnd || fadeBeg != fadeEnd) {
-        AUDIO_INFO_LOG("sessionID:%{public}s, length:%{public}zu, volumeBeg:%{public}f, volumeEnd:%{public}f"
-            ", fadeBeg:%{public}f, fadeEnd:%{public}f",
-            sessionIDStr, length, volumeBeg, volumeEnd, fadeBeg, fadeEnd);
-        if (volumeBeg != volumeEnd) {
-            SetPreVolume(sessionID, volumeEnd);
-            MonitorVolume(sessionID, true);
-        }
-        if (fadeBeg != fadeEnd) {
-            SetStreamVolumeFade(sessionID, fadeEnd, fadeEnd);
-        }
+        ProcessVolumeChange(volumeBeg, volumeEnd, fadeBeg, fadeEnd, sessionID);
     }
 }
 
@@ -1775,7 +1785,8 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = u->primary.sinkAdapter->deviceClass;
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        float volume = GetCurVolume(sessionID, streamType, deviceClass);
+        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+        float volume = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
         bool isZeroVolume = IsSameVolume(volume, 0.0f);
         if (EffectChainManagerSceneCheck(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
             g_effectAllStreamVolumeZeroMap[i] = false;
@@ -1872,7 +1883,8 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = u->primary.sinkAdapter->deviceClass;
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        float volume = GetCurVolume(sessionID, streamType, deviceClass);
+        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+        float volume = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
         bool isZeroVolume = IsSameVolume(volume, 0.0f);
         if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
             u->primary.speakerPaAllStreamVolumeZero = false;
@@ -2266,7 +2278,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
             frameSize * sizeof(float));
         CHECK_AND_RETURN_LOG(ret == 0, "SinkRenderPrimaryProcess: copy from bufIn to tempBufIn fail!");
         u->bufferAttr->numChanIn = (int32_t)processChannels;
-        u->bufferAttr->frameLen = frameSize / (uint32_t)u->bufferAttr->numChanIn;
+        u->bufferAttr->frameLen = (int32_t)frameSize / u->bufferAttr->numChanIn;
         size_t outBufferLen = byteSize > 0 ? length / byteSize : 0;
         PrimaryEffectProcess(u, sinkSceneType, sceneType, outBufferLen);
         pa_memblock_release(chunkIn->memblock);
@@ -2327,7 +2339,8 @@ static void SetSinkVolumeByDeviceClass(pa_sink *s, const char *deviceClass)
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
+        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+        float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
         float volumeBeg = GetPreVolume(sessionID);
         if (volumeBeg != volumeEnd) {
             AUDIO_INFO_LOG("sessionID:%{public}s, volumeBeg:%{public}f, volumeEnd:%{public}f",
@@ -3197,7 +3210,8 @@ static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t st
         const char *sessionIDStr = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
         const char *deviceClass = u->primary.sinkAdapter->deviceClass;
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-        float volume = GetCurVolume(sessionID, streamType, deviceClass);
+        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+        float volume = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
         bool isZeroVolume = IsSameVolume(volume, 0.0f);
         AUDIO_INFO_LOG(
             "session %{public}u, stream %{public}s, zerovol %{public}d", sessionID, streamType, isZeroVolume);
@@ -3222,7 +3236,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     corking ? pa_atomic_store(&i->isFirstReaded, 0) : (void)0;
     starting ? pa_atomic_store(&i->isFirstReaded, 1) : (void)0;
 
-    if (!strcmp(i->sink->name, SINK_NAME_INNER_CAPTURER) ||
+    if (IsInnerCapSinkName(i->sink->name) ||
         !strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER) ||
         !strcmp(i->sink->driver, "module_split_stream_sink.c")) {
         ResetFadeoutPause(i, state);
@@ -3618,7 +3632,7 @@ static void UnsetThreadPriority(char *sinkName)
     }
 
     // primary case
-    ReSetThreadQosLevel();
+    ResetThreadQosLevel();
 }
 
 static void ThreadFuncRendererTimerBus(void *userdata)
@@ -4509,7 +4523,7 @@ static int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Use
         return -1;
     }
 
-    AUDIO_DEBUG_LOG("Load sink adapter");
+    AUDIO_INFO_LOG("Load sink adapter");
     const char *deviceClass = pa_modargs_get_value(ma, "device_class", DEFAULT_DEVICE_CLASS);
     u->primary.sinkAdapter = GetSinkAdapter(deviceClass, pa_modargs_get_value(ma, "network_id",
         DEFAULT_DEVICE_NETWORKID));
@@ -4639,6 +4653,7 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
 {
+    AUDIO_INFO_LOG("In");
     struct Userdata *u = NULL;
     char *hdiThreadName = NULL;
     char *hdiThreadNameMch = NULL;
@@ -4798,6 +4813,7 @@ static void FreeLimiter(struct Userdata *u)
 
 static void UserdataFree(struct Userdata *u)
 {
+    AUDIO_INFO_LOG("In");
     if (u == NULL) {
         AUDIO_INFO_LOG("Userdata is null, free done");
         return;
@@ -4861,7 +4877,7 @@ static void UserdataFree(struct Userdata *u)
 void PaHdiSinkFree(pa_sink *s)
 {
     AUTO_CTRACE("PaHdiSinkFree");
-    AUDIO_INFO_LOG("PaHdiSinkFree, free userdata");
+    AUDIO_INFO_LOG("In, PaHdiSinkFree, free userdata");
     struct Userdata *u = NULL;
 
     pa_sink_assert_ref(s);

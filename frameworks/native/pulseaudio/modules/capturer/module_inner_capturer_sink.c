@@ -65,7 +65,6 @@ PA_MODULE_USAGE(
 #define DEFAULT_SINK_NAME "InnerCapturer"
 #define DEFAULT_BUFFER_SIZE 8192  // same as HDI Sink
 #define PA_ERR (-1)
-const char *SINK_NAME_INNER_CAPTURER = "InnerCapturerSink";
 
 struct userdata {
     pa_core *core;
@@ -229,10 +228,11 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
         const char *sessionIDStr = SafeProplistGets(input->proplist, "stream.sessionID", "NULL");
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volumeFloat = 1.0f;
-        if (!strcmp(s->name, SINK_NAME_INNER_CAPTURER)) { // inner capturer only stream volume
+        if (IsInnerCapSinkName(s->name)) { // inner capturer only stream volume
             volumeFloat = GetStreamVolume(sessionID);
         } else {
-            volumeFloat = GetCurVolume(sessionID, streamType, s->name);
+            struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+            volumeFloat = GetCurVolume(sessionID, streamType, s->name, &volumes);
         }
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);

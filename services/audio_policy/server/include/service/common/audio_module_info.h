@@ -31,6 +31,7 @@ static const char* PRIMARY_CLASS = "primary";
 static const char* A2DP_CLASS = "a2dp";
 static const char* USB_CLASS = "usb";
 static const char* DP_CLASS = "dp";
+static const char* ACCESSORY_CLASS = "accessory";
 static const char* FILE_CLASS = "file_io";
 static const char* REMOTE_CLASS = "remote";
 static const char* OFFLOAD_CLASS = "offload";
@@ -58,6 +59,7 @@ static const char* ROLE_SINK = "sink";
 static const char* PORT_NONE = "none";
 static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
 static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
+static const char* ACCESSORY_SOURCE = "accessory_mic";
 }
 
 enum NodeName {
@@ -82,7 +84,14 @@ enum ClassType {
     TYPE_FILE_IO,
     TYPE_REMOTE_AUDIO,
     TYPE_DP,
+    TYPE_ACCESSORY,
     TYPE_INVALID
+};
+
+enum AudioPipeRole {
+    PIPE_ROLE_OUTPUT = 0,
+    PIPE_ROLE_INPUT,
+    PIPE_ROLE_NONE,
 };
 
 struct AudioModuleInfo {
@@ -125,6 +134,7 @@ struct AudioModuleInfo {
 
     std::list<AudioModuleInfo> ports;
     std::string extra;
+    AudioPipeRole pipeRole;
 };
 
 } // namespace AudioStandard

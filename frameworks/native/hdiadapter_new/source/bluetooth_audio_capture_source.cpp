@@ -528,5 +528,10 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
     return SUCCESS;
 }
 
+void BluetoothAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

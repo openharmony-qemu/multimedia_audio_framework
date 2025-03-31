@@ -30,6 +30,8 @@
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
 #include "audio_utils.h"
+#include "common/hdi_adapter_info.h"
+#include "hdi_adapter_type.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,6 +45,7 @@ struct AppConfigVolume {
     int32_t minVolume;
 };
 
+const int32_t MAX_CACHE_AMOUNT = 10;
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
     static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
@@ -58,6 +61,11 @@ public:
     static constexpr uint32_t KVSTORE_CONNECT_RETRY_DELAY_TIME = 200000;
     static constexpr float MIN_VOLUME = 0.0f;
     static constexpr uint32_t NUMBER_TWO = 2;
+    static constexpr float HDI_MAX_SINK_VOLUME_LEVEL = 1.0f;
+    static constexpr uint32_t HDI_DEFAULT_MULTICHANNEL_CHANNELLAYOUT = 1551;
+    static constexpr uint32_t HDI_EC_SAME_ADAPTER = 1;
+    static constexpr std::string_view HDI_AUDIO_PORT_SINK_ROLE = "sink";
+    static constexpr std::string_view HDI_AUDIO_PORT_SOURCE_ROLE = "source";
     bool Init();
     void Deinit(void);
     void InitKVStore();
@@ -85,11 +93,11 @@ public:
 
     int32_t SetAppVolumeMutedDB(int32_t appUid, bool muted);
 
-    bool IsAppVolumeMute(int32_t appUid, bool owned);
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
-    int32_t GetAppVolumeLevel(int32_t appUid);
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
@@ -110,16 +118,18 @@ public:
 
     std::vector<SourceOutput> GetAllSourceOutputs();
 
-    AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioModuleInfo);
+    AudioIOHandle OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
 
-    int32_t CloseAudioPort(AudioIOHandle ioHandle, bool isSync = false);
+    AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
+
+    int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID, bool isSync = false);
 
     int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, std::string name, bool active,
         DeviceFlag flag = ALL_DEVICES_FLAG);
 
-    void SetVolumeForSwitchDevice(InternalDeviceType deviceType);
+    void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor);
 
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
@@ -153,9 +163,11 @@ public:
 
     DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
 
-    void SetActiveDevice(DeviceType deviceType);
+    void SetActiveDeviceDescriptor(AudioDeviceDescriptor deviceDescriptor);
 
     DeviceType GetActiveDevice();
+
+    AudioDeviceDescriptor GetActiveDeviceDescriptor();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
@@ -173,7 +185,19 @@ public:
 
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
 
+    std::string GetHdiSinkIdInfo(const AudioModuleInfo &audioModuleInfo) const;
+
+    std::string GetSinkIdInfo(std::shared_ptr<AudioPipeInfo> pipeInfo) const;
+
+    std::string GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const;
+
+    IAudioSinkAttr GetAudioSinkAttr(const AudioModuleInfo &audioModuleInfo) const;
+
+    IAudioSourceAttr GetAudioSourceAttr(const AudioModuleInfo &audioModuleInfo) const;
+
     void ResetRemoteCastDeviceVolume();
+
+    void SetMaxVolumeForDeviceChange();
 
     int32_t GetStreamVolume(AudioStreamType streamType);
 
@@ -221,6 +245,14 @@ public:
 
     int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
 
+    void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
+
+    void GetRingerModeInfo(std::vector<RingerModeAdjustInfo> &ringerModeInfo);
+
+    std::shared_ptr<AllDeviceVolumeInfo> GetAllDeviceVolumeInfo(DeviceType deviceType, AudioStreamType streamType);
+
+    std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
+
     void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
 
     void SetRestoreVolumeFlag(const bool safeVolumeCall);
@@ -234,6 +266,9 @@ private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t DEFAULT_VOLUME_LEVEL = 7;
+    static constexpr int32_t APP_MAX_VOLUME_LEVEL = 100;
+    static constexpr int32_t APP_MIN_VOLUME_LEVEL = 0;
+    static constexpr int32_t APP_DEFAULT_VOLUME_LEVEL = 100;
     static constexpr int32_t CONST_FACTOR = 100;
     static constexpr int32_t DEFAULT_SAFE_VOLUME_TIMEOUT = 1140;
     static constexpr int32_t CONVERT_FROM_MS_TO_SECONDS = 1000;
@@ -268,6 +303,7 @@ private:
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
     std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
+    std::string GetMuteKeyForDeviceType(DeviceType deviceType, std::string &type);
     void InitSystemSoundUriMap();
     void InitVolumeMapIndex();
     void InitBootAnimationVolume();
@@ -297,8 +333,16 @@ private:
     void UpdateSafeVolume();
     void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     void SetVolumeCallbackAfterClone();
-    void SetFirstBoot();
+    void SetFirstBoot(bool isFirst);
     void MaximizeVoiceAssistantVolume(InternalDeviceType deviceType);
+    bool IsPaRoute(uint32_t routeFlag);
+    AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
+    AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
+    void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
+    void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
+    bool CheckAndUpdateVolumeForDeviceChange(AudioDeviceDescriptor deviceDescriptor);
+    bool IsCurDeviceNeedSaveVolumeToDatabase();
+
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -323,7 +367,7 @@ private:
     std::mutex systemSoundMutex_;
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
-    DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioDeviceDescriptor currentActiveDevice_;
     AudioRingerMode ringerMode_;
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
@@ -363,6 +407,8 @@ private:
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
     AppConfigVolume appConfigVolume_;
+    std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
+        std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

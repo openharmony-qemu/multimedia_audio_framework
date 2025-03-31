@@ -95,9 +95,9 @@ int32_t AudioGeneralManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt
 }
 
 int32_t AudioGeneralManager::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
 {
-    return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc);
+    return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, pid);
 }
 
 int32_t AudioGeneralManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
@@ -240,6 +240,15 @@ DeviceType AudioGeneralManager::GetActiveOutputDevice()
 AudioScene AudioGeneralManager::GetAudioScene() const
 {
     return AudioPolicyManager::GetInstance().GetAudioScene();
+}
+
+int32_t AudioGeneralManager::SetAudioSceneChangeCallback(
+    const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    int32_t clientId = GetCallingPid();
+    return AudioPolicyManager::GetInstance().SetAudioSceneChangeCallback(clientId, callback);
 }
 
 int32_t AudioGeneralManager::GetMaxVolume(AudioVolumeType volumeType)

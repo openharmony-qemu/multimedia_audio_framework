@@ -43,8 +43,12 @@ static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
-static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
+static const int VOLUME_LEVEL_DEFAULT = 5;
+static const int VOLUME_LEVEL_MIN_SIZE = 5;
+static const int VOLUME_LEVEL_MID_SIZE = 12;
+static const int VOLUME_LEVEL_MAX_SIZE = 15;
 static const int32_t DISTRIBUTED_DEVICE = 1003;
+static const int DEFAULT_ADJUST_TIMES = 10;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -217,105 +221,17 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
 }
 
 int32_t AudioDeviceCommon::GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType,
-    int32_t flags, std::string &networkId, AudioSamplingRate &samplingRate)
+    int32_t flags, std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate)
 {
-    AUDIO_INFO_LOG("Device type: %{public}d, stream usage: %{public}d, flag: %{public}d",
-        deviceType, streamUsage, flags);
-    std::string sinkPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
-    if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-        // Avoid two voip stream existing
-        if (streamCollector_.HasVoipRendererStream()) {
-            AUDIO_WARNING_LOG("Voip Change To Normal");
-            return AUDIO_FLAG_NORMAL;
-        }
-
-        // VoIP stream. Need to judge whether it is fast or direct mode.
-        int32_t flag = audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
-        if (flag == AUDIO_FLAG_VOIP_FAST || flag == AUDIO_FLAG_VOIP_DIRECT) {
-            return flag;
-        }
-    }
-    if (!audioConfigManager_.GetAdapterInfoFlag()) {
-        return AUDIO_FLAG_NORMAL;
-    }
-    AudioAdapterInfo adapterInfo;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(
-        AudioPolicyUtils::portStrToEnum[sinkPortName]), adapterInfo);
-    if (!ret) {
-        AUDIO_ERR_LOG("Invalid adapter");
-        return AUDIO_FLAG_NORMAL;
-    }
-
-    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
-    for (auto &supportPipe : deviceInfo->supportPipes_) {
-        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
-        if (pipeInfo == nullptr) {
-            continue;
-        }
-        if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            return AUDIO_FLAG_MMAP;
-        }
-        if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
-            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            return AUDIO_FLAG_VOIP_FAST;
-        }
-    }
-    return AUDIO_FLAG_NORMAL;
+    AUDIO_INFO_LOG("Not support, should use AudioPipeSelector");
+    return flags;
 }
 
 int32_t AudioDeviceCommon::GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType,
     int32_t flags, const std::string &networkId, const AudioSamplingRate &samplingRate)
 {
-    AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
-        deviceType, sourceType, flags);
-
-    std::string sourcePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
-    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
-        (sourcePortName == PRIMARY_MIC && networkId == LOCAL_NETWORK_ID)) {
-        if (audioConfigManager_.GetVoipConfig() && (samplingRate == SAMPLE_RATE_48000
-            || samplingRate == SAMPLE_RATE_16000)) {
-            // Avoid voip stream existing with other
-            if (streamCollector_.ChangeVoipCapturerStreamToNormal()) {
-                AUDIO_WARNING_LOG("Voip Change To Normal");
-                return AUDIO_FLAG_NORMAL;
-            }
-            return AUDIO_FLAG_VOIP_FAST;
-        }
-        return AUDIO_FLAG_NORMAL;
-    }
-    if (!audioConfigManager_.GetAdapterInfoFlag()) {
-        return AUDIO_FLAG_NORMAL;
-    }
-    AudioAdapterInfo adapterInfo;
-    bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AdaptersType>(
-        AudioPolicyUtils::portStrToEnum[sourcePortName]), adapterInfo);
-    if (!ret) {
-        AUDIO_ERR_LOG("Invalid adapter");
-        return AUDIO_FLAG_NORMAL;
-    }
-
-    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(deviceType);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_NORMAL, "Device type is not supported");
-    for (auto &supportPipe : deviceInfo->supportPipes_) {
-        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
-        if (pipeInfo == nullptr) {
-            continue;
-        }
-        if (flags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            return AUDIO_FLAG_MMAP;
-        }
-        if (flags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
-            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
-            // Avoid voip stream existing with other
-            if (streamCollector_.ChangeVoipCapturerStreamToNormal()) {
-                AUDIO_WARNING_LOG("Voip Change To Normal By DeviceInfo");
-                return AUDIO_FLAG_NORMAL;
-            }
-            return AUDIO_FLAG_VOIP_FAST;
-        }
-    }
-    return AUDIO_FLAG_NORMAL;
+    AUDIO_INFO_LOG("Not support, should use AudioPipeSelector");
+    return flags;
 }
 
 void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
@@ -425,7 +341,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         if (audioStateManager_.GetPreferredCallRenderDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallRenderDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), 0);
+                std::make_shared<AudioDeviceDescriptor>(), CLEAR_PID);
         }
         if (audioStateManager_.GetPreferredCallCaptureDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallCaptureDevice())) {
@@ -500,7 +416,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
         ROUTER_TYPE_USER_SELECT).front()) && (usage & VOICE) == VOICE) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), 0);
+            std::make_shared<AudioDeviceDescriptor>(), CLEAR_PID);
     }
     AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
 }
@@ -573,7 +489,7 @@ bool AudioDeviceCommon::IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDe
         rendererChangeInfo->rendererInfo.originalFlag == AUDIO_FLAG_MMAP &&
         rendererChangeInfo->outputDeviceInfo.deviceId_ != desc->deviceId_) {
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
-            AUDIO_FLAG_MMAP, reason);
+            AUDIO_OUTPUT_FLAG_FAST, reason);
         AUDIO_INFO_LOG("Switch fast stream from a2dp to a2dp");
         return true;
     }
@@ -592,7 +508,7 @@ bool AudioDeviceCommon::NotifyRecreateDirectStream(std::shared_ptr<AudioRenderer
         }
         AUDIO_DEBUG_LOG("direct stream changed to normal.");
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
-            AUDIO_FLAG_DIRECT, reason);
+            AUDIO_OUTPUT_FLAG_NORMAL, reason);
         return true;
     } else if (audioActiveDevice_.IsDirectSupportedDevice() &&
         rendererChangeInfo->rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
@@ -601,7 +517,7 @@ bool AudioDeviceCommon::NotifyRecreateDirectStream(std::shared_ptr<AudioRenderer
             info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
             AUDIO_DEBUG_LOG("stream change to direct.");
             TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
-                AUDIO_FLAG_DIRECT, reason);
+                AUDIO_OUTPUT_FLAG_DIRECT, reason);
             return true;
         }
     }
@@ -705,7 +621,7 @@ void AudioDeviceCommon::FetchOutputDeviceWhenNoRunningStream()
     }
     audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
     AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
-    audioVolumeManager_.SetVolumeForSwitchDevice(descs.front()->deviceType_);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
     }
@@ -726,9 +642,9 @@ int32_t AudioDeviceCommon::HandleDeviceChangeForFetchOutputDevice(std::shared_pt
             && desc->deviceType_ != preferredDesc->deviceType_)
             || ((preferredDesc->deviceType_ == DEVICE_TYPE_NONE) && !IsSameDevice(desc, tmpOutputDeviceDesc))) {
             audioActiveDevice_.SetCurrentOutputDevice(*desc);
-            DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-            audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDeviceType);
-            audioActiveDevice_.UpdateActiveDeviceRoute(curOutputDeviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+            audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDevice);
+            audioActiveDevice_.UpdateActiveDeviceRoute(curOutputDevice.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
             OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
         }
         return ERR_NEED_NOT_SWITCH_DEVICE;
@@ -740,19 +656,13 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
     std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
-    if (outputDevices.size() != 1) {
-        // mute primary when play music and ring
-        if (audioSceneManager_.IsStreamActive(STREAM_MUSIC)) {
-            audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
-        }
-        return;
-    }
     if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
 
     audioIOHandleMap_.SetMoveFinish(false);
 
     if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL &&
-        rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        audioSceneManager_.CheckVoiceCallActive(rendererChangeInfo->sessionId)) {
         return SetVoiceCallMuteForSwitchDevice();
     }
 
@@ -760,10 +670,6 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
         rendererChangeInfo->sessionId);
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
         rendererChangeInfo->sessionId);
-    if (rendererChangeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST) {
-        oldSinkName = (oldSinkName == PRIMARY_DIRECT_VOIP ? PRIMARY_MMAP_VOIP : oldSinkName);
-        newSinkName = (newSinkName == PRIMARY_DIRECT_VOIP ? PRIMARY_MMAP_VOIP : newSinkName);
-    }
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
@@ -873,38 +779,7 @@ int32_t AudioDeviceCommon::HandleScoOutputDeviceFetched(std::shared_ptr<AudioDev
 bool AudioDeviceCommon::NotifyRecreateRendererStream(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("New device type: %{public}d, current rendererFlag: %{public}d, origianl flag: %{public}d",
-        desc->deviceType_, rendererChangeInfo->rendererInfo.rendererFlags,
-        rendererChangeInfo->rendererInfo.originalFlag);
-    CHECK_AND_RETURN_RET_LOG((rendererChangeInfo->outputDeviceInfo.deviceType_ != DEVICE_TYPE_INVALID &&
-        desc->deviceType_ != DEVICE_TYPE_INVALID) || desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST,
-        false, "isUpdateActiveDevice is false");
-    CHECK_AND_RETURN_RET_LOG(desc->deviceType_ != DEVICE_TYPE_REMOTE_CAST ||
-        (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST &&
-        rendererChangeInfo->rendererInfo.rendererFlags != AUDIO_FLAG_NORMAL),
-        false, "new device is remote cast and current renderer flag is normal");
-    // Switch between old and new stream as they have different hals
-    std::string oldDevicePortName
-        = AudioPolicyUtils::GetInstance().GetSinkPortName(rendererChangeInfo->outputDeviceInfo.deviceType_);
-    bool isOldDeviceLocal = rendererChangeInfo->outputDeviceInfo.networkId_ == "" ||
-        rendererChangeInfo->outputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
-    bool isNewDeviceLocal = desc->networkId_ == "" || desc->networkId_ == LOCAL_NETWORK_ID;
-    AudioScene scene = audioSceneManager_.GetAudioScene(true);
-    if (!(isOldDeviceLocal ^ isNewDeviceLocal) || scene == AUDIO_SCENE_PHONE_CALL) {
-        CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_NORMAL &&
-            rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_FORCED_NORMAL, false,
-            "original flag is normal");
-    }
-    if ((strcmp(oldDevicePortName.c_str(),
-        AudioPolicyUtils::GetInstance().GetSinkPortName(desc->deviceType_).c_str())) ||
-        (isOldDeviceLocal ^ isNewDeviceLocal)) {
-        int32_t streamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
-            desc->deviceType_, rendererChangeInfo->rendererInfo.originalFlag, desc->networkId_,
-            rendererChangeInfo->rendererInfo.samplingRate);
-        TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid,
-            rendererChangeInfo->sessionId, streamClass, reason);
-        return true;
-    }
+    AUDIO_INFO_LOG("Not support, should use AudioPipeSelector");
     return false;
 }
 
@@ -963,12 +838,12 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
     }
 
     if (audioConfigManager_.GetUpdateRouteSupport() && !reason.isSetAudioScene()) {
-        UpdateRoute(rendererChangeInfo, outputDevices);
+        UpdateRoute(oldRendererChangeInfo, outputDevices);
     }
 
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
         rendererChangeInfo->sessionId);
-    audioVolumeManager_.SetVolumeForSwitchDevice(outputDevices.front()->deviceType_, newSinkName);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*outputDevices.front(), newSinkName);
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
@@ -1067,7 +942,8 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
     AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
-        if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
+        if (!IsSameDevice(outputDevices.front(), rendererChangeInfo->outputDeviceInfo) &&
+            !SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
             audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
 
@@ -1076,11 +952,8 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
              outputDevices.front()->getType() != DEVICE_TYPE_SPEAKER) {
             audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
             audioVolumeManager_.SetRingerModeMute(false);
-            if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
-                audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
-                audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
-                    audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
-            }
+            int32_t curRingToneLevel = RingToneVoiceControl(outputDevices.front()->getType());
+            audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING, curRingToneLevel);
         } else {
             audioVolumeManager_.SetRingerModeMute(true);
         }
@@ -1302,7 +1175,8 @@ void AudioDeviceCommon::FetchInputDeviceInner(
             continue;
         }
         runningStreamCount++;
-        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType, clientUID);
+        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType, clientUID,
+            capturerChangeInfo->sessionId);
         AudioDeviceDescriptor inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
         if (HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE) {
             continue;
@@ -1762,6 +1636,7 @@ bool AudioDeviceCommon::HasLowLatencyCapability(DeviceType deviceType, bool isRe
         case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_DP:
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
             return true;
 
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
@@ -1821,7 +1696,10 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
-        FetchDevice(true);
+    }
+    const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
+    if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
+        audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
     }
 
     if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
@@ -1836,7 +1714,6 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer stop/release.");
         isRingDualToneOnPrimarySpeaker_ = false;
-        FetchDevice(true);
         for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
             audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
         }
@@ -1984,7 +1861,8 @@ int32_t AudioDeviceCommon::LoadA2dpModule(DeviceType deviceType, const AudioStre
         if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
             // a2dp device connects for the first time
             GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
-            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+            uint32_t temp = 0;
+            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, temp);
             CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
                 "OpenAudioPort failed %{public}d", ioHandle);
             audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
@@ -2022,7 +1900,8 @@ int32_t AudioDeviceCommon::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devi
 
     // Load a2dp sink or source module again with the configuration of active a2dp device.
     GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
-    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    uint32_t temp = 0;
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, temp);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
     audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
@@ -2038,8 +1917,9 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
     std::string lastActiveA2dpDevice = audioActiveDevice_.GetActiveBtDeviceMac();
     audioActiveDevice_.SetActiveBtDeviceMac(deviceDescriptor->macAddress_);
-    DeviceType lastDevice = audioPolicyManager_.GetActiveDevice();
-    audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
+    AudioDeviceDescriptor lastDevice = audioPolicyManager_.GetActiveDeviceDescriptor();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioPolicyManager_.SetActiveDeviceDescriptor(*deviceDescriptor);
 
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
         audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
@@ -2051,7 +1931,7 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
     if (result != SUCCESS) {
         audioActiveDevice_.SetActiveBtDeviceMac(lastActiveA2dpDevice);
-        audioPolicyManager_.SetActiveDevice(lastDevice);
+        audioPolicyManager_.SetActiveDeviceDescriptor(lastDevice);
         AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
             GetEncryptAddr(audioActiveDevice_.GetActiveBtDeviceMac()).c_str(),
             GetEncryptAddr(lastActiveA2dpDevice).c_str());
@@ -2067,6 +1947,40 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
 #endif
     return result;
+}
+
+int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &deviceType)
+{
+    int32_t curVoiceCallLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL);
+    float curVoiceCallDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL, curVoiceCallLevel, deviceType);
+    int32_t curRingToneLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING);
+    float curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+    int32_t maxVoiceCall = audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL);
+    int32_t maxRingTone = audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING);
+    float curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+    float minMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
+        maxVoiceCall * VOLUME_LEVEL_MIN_SIZE / VOLUME_LEVEL_MAX_SIZE, deviceType) *
+        audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
+    float maxMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
+        maxVoiceCall * VOLUME_LEVEL_MID_SIZE / VOLUME_LEVEL_MAX_SIZE, deviceType) *
+        audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
+    
+    if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
+        for (int i = 0; i < DEFAULT_ADJUST_TIMES; i++) {
+            if (curVoiceRingMixDb < minMixDbDefault && curRingToneLevel <= VOLUME_LEVEL_MAX_SIZE) {
+                curRingToneLevel++;
+                curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+                curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+            } else if (curVoiceRingMixDb > maxMixDbDefault && curRingToneLevel > 0) {
+                curRingToneLevel--;
+                curRingToneDb = audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, curRingToneLevel, deviceType);
+                curVoiceRingMixDb = curVoiceCallDb * curRingToneDb;
+            } else {
+                break;
+            }
+        }
+    }
+    return curRingToneLevel;
 }
 
 void AudioDeviceCommon::SetFirstScreenOn()

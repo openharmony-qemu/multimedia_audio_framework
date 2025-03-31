@@ -18,6 +18,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t API_VERSION_18 = 18;
+
 AudioDeviceDescriptor::AudioDeviceDescriptor(int32_t descriptorType)
     : AudioDeviceDescriptor(DeviceType::DEVICE_TYPE_NONE, DeviceRole::DEVICE_ROLE_NONE)
 {
@@ -176,16 +178,21 @@ bool AudioDeviceDescriptor::IsAudioDeviceDescriptor() const
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
+    return Marshalling(parcel, 0);
+}
+
+bool AudioDeviceDescriptor::Marshalling(Parcel &parcel, int32_t apiVersion) const
+{
     if (IsAudioDeviceDescriptor()) {
-        return MarshallingToDeviceDescriptor(parcel);
+        return MarshallingToDeviceDescriptor(parcel, apiVersion);
     }
 
     return MarshallingToDeviceInfo(parcel);
 }
 
-bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel) const
+bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel, int32_t apiVersion) const
 {
-    parcel.WriteInt32(MapInternalToExternalDeviceType());
+    parcel.WriteInt32(MapInternalToExternalDeviceType(apiVersion));
     parcel.WriteInt32(deviceRole_);
     parcel.WriteInt32(deviceId_);
     audioStreamInfo_.Marshalling(parcel);
@@ -362,6 +369,14 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
         (!IsUsb(deviceType_) || deviceDescriptor.deviceRole_ == deviceRole_);
 }
 
+bool AudioDeviceDescriptor::IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const
+{
+    return deviceDescriptor->deviceType_ == deviceType_ &&
+        deviceDescriptor->macAddress_ == macAddress_ &&
+        deviceDescriptor->networkId_ == networkId_ &&
+        (!IsUsb(deviceType_) || deviceDescriptor->deviceRole_ == deviceRole_);
+}
+
 bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const
 {
     return deviceType_ == deviceInfo.deviceType_ &&
@@ -379,12 +394,28 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.networkId_ == networkId_;
 }
 
-DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType() const
+bool AudioDeviceDescriptor::IsDistributedSpeaker() const
+{
+    return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
+}
+
+void AudioDeviceDescriptor::Dump(std::string &dumpString)
+{
+    dumpString += "deviceName: " + deviceName_ + " deviceRole: ";
+    if (deviceRole_ != INPUT_DEVICE && deviceRole_ != OUTPUT_DEVICE) {
+        dumpString += "INVALID";
+    } else {
+        dumpString += deviceRole_ == INPUT_DEVICE ? "INPUT" : "OUTPUT";
+    }
+    dumpString += " deviceType: " + std::to_string(deviceType_);
+}
+
+DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVersion) const
 {
     switch (deviceType_) {
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-            if (!hasPair_) {
+            if (!hasPair_ && apiVersion >= API_VERSION_18) {
 #ifdef DETECT_SOUNDBOX
                 return DEVICE_TYPE_USB_DEVICE;
 #else

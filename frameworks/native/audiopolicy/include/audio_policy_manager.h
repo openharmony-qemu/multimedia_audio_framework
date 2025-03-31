@@ -38,6 +38,7 @@
 #include "audio_spatialization_state_change_listener_stub.h"
 #include "i_standard_spatialization_state_change_listener.h"
 #include "audio_combine_denoising_manager.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,7 +68,7 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
 
-    bool IsAppVolumeMute(int32_t appUid, bool muted);
+    int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute);
 
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0);
 
@@ -75,9 +76,9 @@ public:
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t GetAppVolumeLevel(int32_t appUid);
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     
-    int32_t GetSelfAppVolumeLevel();
+    int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel);
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
 
@@ -119,11 +120,13 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter);
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
     DeviceType GetActiveOutputDevice();
+
+    uint16_t GetDmDeviceType();
 
     DeviceType GetActiveInputDevice();
 
@@ -198,6 +201,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
+    int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
+
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
         const std::shared_ptr<AudioInterruptCallback> &callback);
 
@@ -235,6 +240,12 @@ public:
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
+
+    int32_t CreateRendererClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
+
+    int32_t CreateCapturerClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
 
     int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
@@ -422,7 +433,7 @@ public:
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID);
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = -1);
+        const int32_t pid = INVALID_PID);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -460,8 +471,8 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
-    int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        const int32_t pid = INVALID_PID);
 
     int32_t SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback);
 
@@ -505,6 +516,9 @@ public:
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
 
     int32_t SetVirtualCall(const bool isVirtual);
+
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
+        const SourceType sourceType, bool isRunning);
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
 

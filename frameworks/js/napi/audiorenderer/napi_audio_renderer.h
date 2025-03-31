@@ -49,6 +49,7 @@ public:
 #endif
     std::mutex writeCallbackMutex_;
     std::condition_variable writeCallbackCv_;
+    bool enqueued_ = false;
     std::list<std::shared_ptr<NapiAudioRendererCallbackInner>> audioRendererCallbacks_;
 
 private:

@@ -90,6 +90,7 @@ ohos_shared_library("hdiadapter_new") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
   ]
 
   defines = []
@@ -115,7 +116,7 @@ ohos_shared_library("hdiadapter_new") {
 }
 
 ohos_unittest("hdiadapter_unit_test") {
-  module_out_path = "multimedia_audio_framework/hdiadapter_new"
+  module_out_path = "audio_framework/audio_framework_route/hdiadapter_new"
 
   cflags = [
     "-Wall",

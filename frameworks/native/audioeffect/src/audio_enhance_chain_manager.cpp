@@ -306,7 +306,6 @@ int32_t AudioEnhanceChainManager::ParseSceneKeyCode(const uint64_t sceneKeyCode,
     std::string &capturerDeviceStr, std::string &rendererDeviceStr)
 {
     uint32_t sceneCode = (sceneKeyCode & SCENE_TYPE_MASK) >> SCENE_TYPE_OFFSET;
-    AUDIO_INFO_LOG("sceneKeyCode = %{public}" PRIu64 ", sceneCode = %{public}u", sceneKeyCode, sceneCode);
     AudioEnhanceScene scene = static_cast<AudioEnhanceScene>(sceneCode);
     DeviceType capturerDevice = DEVICE_TYPE_INVALID;
     const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
@@ -328,7 +327,8 @@ int32_t AudioEnhanceChainManager::ParseSceneKeyCode(const uint64_t sceneKeyCode,
         AUDIO_ERR_LOG("can't find captureId[%{public}u] in captureIdToDeviceMap_", captureId);
         return ERROR;
     }
-
+    AUDIO_INFO_LOG("sceneKeyCode = %{public}" PRIu64 ", sceneCode = %{public}u , capturerDevice = %{public}d",
+        sceneKeyCode, sceneCode, capturerDevice);
     DeviceType rendererDevice = renderIdToDeviceMap_[renderId];
 
     auto deviceItem = supportDeviceType.find(capturerDevice);
@@ -448,7 +448,7 @@ int32_t AudioEnhanceChainManager::CreateEnhanceChainInner(std::shared_ptr<AudioE
         AUDIO_ERR_LOG("ParseSceneKeyCode failed!!!");
         return ERROR;
     }
-    uint32_t captureId = (sceneKeyCode & CAPTURER_ID_MASK) >> 8;
+    uint32_t captureId = (sceneKeyCode & CAPTURER_ID_MASK) >> CAPTURER_ID_OFFSET;
     std::string deviceName = "";
     GetDeviceNameByCaptureId(captureId, deviceName);
     createFlag = true;
@@ -580,7 +580,7 @@ int32_t AudioEnhanceChainManager::DeleteEnhanceChainInner(std::shared_ptr<AudioE
         AUDIO_ERR_LOG("ParseSceneKeyCode failed!!!");
         return ERROR;
     }
-    uint32_t captureId = (sceneKeyCode & CAPTURER_ID_MASK) >> 8;
+    uint32_t captureId = (sceneKeyCode & CAPTURER_ID_MASK) >> CAPTURER_ID_OFFSET;
     // not prior scene
     if (priorSceneSet_.find(sceneType) == priorSceneSet_.end()) {
         // default chain
@@ -768,7 +768,7 @@ int32_t AudioEnhanceChainManager::SetInputDevice(const uint32_t &captureId, cons
         return ERROR;
     }
     for (auto &[sceneKeyCode, chain] : sceneTypeToEnhanceChainMap_) {
-        uint32_t tempId = (sceneKeyCode & CAPTURER_ID_MASK) >> 8;
+        uint32_t tempId = (sceneKeyCode & CAPTURER_ID_MASK) >> CAPTURER_ID_OFFSET;
         if ((tempId == captureId) && chain) {
             if (chain->SetInputDevice(inputDeviceStr, deviceName) != SUCCESS) {
                 AUDIO_ERR_LOG("chain:%{public}u set input device failed", tempId);

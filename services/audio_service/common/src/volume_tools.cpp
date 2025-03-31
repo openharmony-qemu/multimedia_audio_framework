@@ -524,6 +524,7 @@ void VolumeTools::DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, s
     size_t byteSizePerData = GetByteSize(streamInfo.format);
     size_t frameLen = byteSizePerData * static_cast<size_t>(streamInfo.channels) *
         static_cast<size_t>(streamInfo.samplingRate) * 0.02; // 0.02s
+    CHECK_AND_RETURN_LOG(frameLen > 0, "frameLen is invalid");
     int64_t minVolume = INT_32_MAX;
     for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
         BufferDesc temp = {buffer.buffer + frameLen * index, std::min(buffer.bufLength - frameLen * index, frameLen),

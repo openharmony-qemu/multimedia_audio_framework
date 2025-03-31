@@ -145,7 +145,7 @@ void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChan
     data.WriteInt32(deviceChangeAction.flag);
     data.WriteInt32(static_cast<int32_t>(size));
     for (size_t i = 0; i < size; i++) {
-        devices[i]->Marshalling(data);
+        devices[i]->Marshalling(data, apiVersion_);
     }
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
@@ -169,7 +169,7 @@ void AudioPolicyClientProxy::OnMicrophoneBlocked(const MicrophoneBlockedInfo &mi
     data.WriteInt32(microphoneBlockedInfo.blockStatus);
     data.WriteInt32(static_cast<int32_t>(size));
     for (size_t i = 0; i < size; i++) {
-        microphoneBlockedInfo.devices[i]->Marshalling(data);
+        microphoneBlockedInfo.devices[i]->Marshalling(data, apiVersion_);
     }
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
@@ -232,7 +232,7 @@ void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const AudioRendererI
     int32_t size = static_cast<int32_t>(desc.size());
     data.WriteInt32(size);
     for (int i = 0; i < size; i++) {
-        desc[i]->Marshalling(data);
+        desc[i]->Marshalling(data, apiVersion_);
     }
 
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
@@ -258,7 +258,7 @@ void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const AudioCapturerIn
     int32_t size = static_cast<int32_t>(desc.size());
     data.WriteInt32(size);
     for (int i = 0; i < size; i++) {
-        desc[i]->Marshalling(data);
+        desc[i]->Marshalling(data, apiVersion_);
     }
 
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
@@ -339,7 +339,7 @@ void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RENDERER_DEVICE_CHANGE));
 
     data.WriteUint32(sessionId);
-    deviceInfo.Marshalling(data);
+    deviceInfo.Marshalling(data, apiVersion_);
     data.WriteInt32(static_cast<int32_t>(reason));
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
@@ -360,7 +360,7 @@ void AudioPolicyClientProxy::OnDistribuitedOutputChange(const AudioDeviceDescrip
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_DISTRIBUTED_OUTPUT_CHANGE));
 
-    deviceDesc.Marshalling(data);
+    deviceDesc.Marshalling(data, apiVersion_);
     data.WriteBool(isRemote);
     auto error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
@@ -481,7 +481,7 @@ void AudioPolicyClientProxy::OnSpatializationEnabledChangeForAnyDevice(const std
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE));
 
     if (hasSystemPermission_) {
-        deviceDescriptor->Marshalling(data);
+        deviceDescriptor->Marshalling(data, apiVersion_);
         data.WriteBool(enabled);
     } else {
         data.WriteBool(false);
@@ -574,7 +574,7 @@ void AudioPolicyClientProxy::OnHeadTrackingEnabledChangeForAnyDevice(const std::
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE));
 
     if (hasSystemPermission_) {
-        deviceDescriptor->Marshalling(data);
+        deviceDescriptor->Marshalling(data, apiVersion_);
         data.WriteBool(enabled);
     } else {
         data.WriteBool(false);

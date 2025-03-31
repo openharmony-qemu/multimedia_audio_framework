@@ -93,7 +93,9 @@ public:
 
     bool Marshalling(Parcel &parcel) const override;
 
-    bool MarshallingToDeviceDescriptor(Parcel &parcel) const;
+    bool Marshalling(Parcel &parcel, int32_t apiVersion) const;
+
+    bool MarshallingToDeviceDescriptor(Parcel &parcel, int32_t apiVersion) const;
 
     bool MarshallingToDeviceInfo(Parcel &parcel) const;
 
@@ -117,11 +119,17 @@ public:
 
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
+    bool IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
+
     bool IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const;
 
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
-    DeviceType MapInternalToExternalDeviceType() const;
+    bool IsDistributedSpeaker() const;
+
+    DeviceType MapInternalToExternalDeviceType(int32_t apiVersion) const;
+
+    void Dump(std::string &dumpString);
 
     struct AudioDeviceDescriptorHash {
         size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const

@@ -54,7 +54,6 @@
 #include "volume_tools.h"
 
 #include "media_monitor_manager.h"
-#include "xcollie/watchdog.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -73,8 +72,6 @@ static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const uint32_t WAIT_FOR_NEXT_CB = 5000; // 5ms
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
-constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
-constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 } // namespace
@@ -201,7 +198,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
-    if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT) {
+    if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
     }
@@ -388,31 +386,6 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     return result;
 }
 
-void RendererInClientInner::RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
-{
-    std::string watchDogMessage = message;
-    watchDogMessage += std::to_string(sessionId);
-    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
-    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
-}
-
-void RendererInClientInner::WatchingWriteCallbackFunc()
-{
-    writeCallbackFuncThreadStatusFlag_ = true;
-    auto taskFunc = [this]() {
-        if (writeCallbackFuncThreadStatusFlag_) {
-            AUDIO_DEBUG_LOG("Set writeCallbackFuncThreadStatusFlag_ to false");
-            writeCallbackFuncThreadStatusFlag_ = false;
-        } else {
-            AUDIO_INFO_LOG("watchdog happened");
-        }
-    };
-    std::string watchDogMessage = "WatchingWriteCallbackFunc" + std::to_string(sessionId_);
-    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
-    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
-        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
-}
-
 bool RendererInClientInner::WriteCallbackFunc()
 {
     if (cbThreadReleased_) {
@@ -421,7 +394,6 @@ bool RendererInClientInner::WriteCallbackFunc()
     }
     Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
     if (!WaitForRunning()) {
-        writeCallbackFuncThreadStatusFlag_ = true;
         return true;
     }
     if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
@@ -438,8 +410,9 @@ bool RendererInClientInner::WriteCallbackFunc()
         traceQueuePop.End();
         // call write here.
         int32_t result = ProcessWriteInner(temp);
-        // only run in pause scene
-        if (result > 0 && static_cast<size_t>(result) < temp.dataLength) {
+        // only run in pause scene, do not repush audiovivid buffer cause metadata error
+        if (result > 0 && static_cast<size_t>(result) < temp.dataLength &&
+            curStreamParams_.encoding == ENCODING_PCM) {
             BufferDesc tmp = {temp.buffer + static_cast<size_t>(result),
                 temp.bufLength - static_cast<size_t>(result), temp.dataLength - static_cast<size_t>(result)};
             cbBufferQueue_.Push(tmp);
@@ -448,7 +421,6 @@ bool RendererInClientInner::WriteCallbackFunc()
         }
     }
     if (state_ != RUNNING) {
-        writeCallbackFuncThreadStatusFlag_ = true;
         return true;
     }
     // call client write
@@ -462,7 +434,6 @@ bool RendererInClientInner::WriteCallbackFunc()
     Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
     std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
     cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
-    writeCallbackFuncThreadStatusFlag_ = true;
     return true;
 }
 

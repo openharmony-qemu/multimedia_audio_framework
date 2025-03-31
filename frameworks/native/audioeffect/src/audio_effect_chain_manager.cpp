@@ -511,18 +511,18 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
         }
         auto audioEffectChain = it->second;
         float volumeMax = audioEffectChain->GetCurrVolume();
-        if ((static_cast<int32_t>(audioEffectChain->GetFinalVolume() * MAX_UINT_VOLUME_NUM) !=
-            static_cast<int32_t>(volumeMax * MAX_UINT_VOLUME_NUM)) &&
-            audioEffectChain->GetFinalVolumeState() == true) {
-            audioEffectChain->SetFinalVolume(volumeMax);
-            int32_t ret = audioEffectChain->UpdateEffectParam();
-            if (ret != 0) {
-                AUDIO_ERR_LOG("set ap volume failed, ret: %{public}d", ret);
-                continue;
-            }
-            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}f",
-                it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
+        if (static_cast<int32_t>(audioEffectChain->GetFinalVolume() * MAX_UINT_VOLUME_NUM) ==
+            static_cast<int32_t>(volumeMax * MAX_UINT_VOLUME_NUM)) {
             audioEffectChain->SetFinalVolumeState(false);
+        } else {
+            if (audioEffectChain->GetFinalVolumeState() == true) {
+                audioEffectChain->SetFinalVolume(volumeMax);
+                int32_t ret = audioEffectChain->UpdateEffectParam();
+                CHECK_AND_CONTINUE_LOG(ret == 0, "set ap volume failed, ret: %{public}d", ret);
+                AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}f",
+                    it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
+                audioEffectChain->SetFinalVolumeState(false);
+            }
         }
     }
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
@@ -783,6 +783,9 @@ int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     uint32_t tmpChannelCount = DEFAULT_NUM_CHANNEL;
     uint64_t tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    if (sceneTypeToSessionIDMap_.size() == 0) {
+        return SUCCESS;
+    }
     for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
         std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); ++s) {

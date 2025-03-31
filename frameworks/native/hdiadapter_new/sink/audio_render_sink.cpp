@@ -451,7 +451,8 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
         "invalid scene");
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
-    AUDIO_INFO_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevices.front());
+    AUDIO_INFO_LOG("scene: %{public}d, current scene %{public}d, device: %{public}d",
+        audioScene, currentAudioScene_, activeDevices.front());
     if (!openSpeaker_) {
         return SUCCESS;
     }
@@ -484,6 +485,8 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
+    AUDIO_INFO_LOG("currentActiveDevice: %{public}d, outputDevices %{public}d",
+        currentActiveDevice_, outputDevices[0]);
     if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() ==
         static_cast<uint32_t>(currentDevicesSize_) && !forceSetRouteFlag_) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
@@ -516,8 +519,10 @@ int32_t AudioRenderSink::SetPaPower(int32_t flag)
     std::string param;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    AUDIO_INFO_LOG("flag: %{public}d, paStatus: %{public}d", flag, paStatus_);
     if (flag == 0 && paStatus_ == 1) {
         param = "zero_volume=true;routing=0";
+        AUDIO_INFO_LOG("param: %{public}s", param.c_str());
         int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
         if (ret == SUCCESS) {
             paStatus_ = 0;

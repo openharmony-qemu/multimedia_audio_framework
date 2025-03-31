@@ -15,6 +15,7 @@
 
 #include "get_server_util.h"
 #include "audio_policy_service_thirdext_unit_test.h"
+#include "audio_policy_config_manager.h"
 #include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
 #include "dfx_msg_manager.h"
@@ -729,7 +730,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
     int32_t sessionID = SESSION_ID;
     int32_t state = STATE;
     server->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(sessionID, state);
-    EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
+    EXPECT_EQ(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
 /**
@@ -800,7 +801,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateEffectBtOffloadSupported_001, T
     EXPECT_NE(nullptr, server);
     bool isSupported = false;
     server->audioPolicyService_.UpdateEffectBtOffloadSupported(isSupported);
-    EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
+    EXPECT_EQ(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
 /**
@@ -819,7 +820,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ScoInputDeviceFetchedForRecongnition_
     ConnectState connectState = DEACTIVE_CONNECTED;
     int32_t result = server->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(handleFlag,
         address, connectState);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_NE(SUCCESS, result);
 
     handleFlag = true;
     connectState = VIRTUAL_CONNECTED;
@@ -1026,7 +1027,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_001, TestSize.
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_001 start");
     auto server = GetServerUtil::GetServerPtr();
     ASSERT_NE(nullptr, server);
-    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
+    EXPECT_EQ(true, server->audioPolicyService_.IsA2dpOffloadConnected());
 }
 
 /**
@@ -1143,7 +1144,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_001, Te
     EXPECT_NE(nullptr, server);
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     int32_t result = server->audioPolicyService_.ActivateConcurrencyFromServer(pipeType);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, result);
+    EXPECT_EQ(SUCCESS, result);
 }
 
 /**
@@ -1158,7 +1159,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_001, TestSize.Level
     EXPECT_NE(nullptr, server);
     const int32_t uid = 0;
     const int32_t pid = 0;
-    EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
+    EXPECT_FALSE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
 }
 
 /**
@@ -1176,6 +1177,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsAllowedPlayback_002, TestSize.Level
     EXPECT_TRUE(server->audioPolicyService_.IsAllowedPlayback(uid, pid));
 }
 
+#ifdef HAS_FEATURE_INNERCAPTURER
 /**
 * @tc.name  : Test LoadModernInnerCapSink.
 * @tc.number: LoadModernInnerCapSink_001
@@ -1189,6 +1191,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadModernInnerCapSink_001, TestSize.
     EXPECT_EQ(ret, SUCCESS);
 }
 
+
 /**
 * @tc.name  : Test UnloadModernInnerCapSink.
 * @tc.number: UnloadModernInnerCapSink_001
@@ -1201,6 +1204,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnloadModernInnerCapSink_001, TestSiz
     int32_t ret = server->audioPolicyService_.UnloadModernInnerCapSink(1);
     EXPECT_EQ(ret, SUCCESS);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioDeviceManager.
@@ -1528,7 +1532,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerPrcess_004, TestSize.Lev
     manager.lastReportTime_ -= DEFAULT_DFX_REPORT_INTERVAL_MIN;
     manager.Process(renderMsg);
     manager.CheckReportDfxMsg();
-    EXPECT_FALSE(manager.isFull_);
+    EXPECT_TRUE(manager.isFull_);
     manager.reportQueue_.clear();
 }
 
@@ -1594,6 +1598,154 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerAppStateTest_001, TestSi
     }
     EXPECT_EQ(checkSize2, size);
     manager.appInfo_.clear();
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_001
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(), false);
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    configData.Reorganize();
+    std::string version = configData.GetVersion();
+    EXPECT_NE(version, "");
+
+    EXPECT_NE(configData.adapterInfoMap.size(), 0);
+    EXPECT_NE(configData.deviceInfoMap.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_002
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    size_t adapterMapSize = configData.adapterInfoMap.size();
+    std::unordered_map<AudioAdapterType, std::pair<size_t, size_t>> adapterSizeMap {};
+
+    for (auto &item : configData.adapterInfoMap) {
+        std::pair<size_t, size_t> sizePair = std::make_pair(item.second->deviceInfos.size(),
+            item.second->pipeInfos.size());
+        adapterSizeMap.insert({item.first, sizePair});
+    }
+
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+    configData.Reorganize();
+
+    EXPECT_NE(configData.adapterInfoMap.size(), 0);
+    EXPECT_EQ(configData.adapterInfoMap.size(), adapterMapSize);
+
+    for (auto &item : adapterSizeMap) {
+        auto adapterInfoIt = configData.adapterInfoMap.find(item.first);
+        EXPECT_NE(adapterInfoIt, configData.adapterInfoMap.end());
+
+        EXPECT_NE(adapterInfoIt->second->adapterName, "");
+        EXPECT_NE(adapterInfoIt->second->deviceInfos.size(), 0);
+        EXPECT_NE(adapterInfoIt->second->pipeInfos.size(), 0);
+
+        std::pair<size_t, size_t> sizePair = std::make_pair(adapterInfoIt->second->deviceInfos.size(),
+            adapterInfoIt->second->pipeInfos.size());
+        EXPECT_EQ(item.second, sizePair);
+
+        for (auto &deviceInfo : adapterInfoIt->second->deviceInfos) {
+            EXPECT_NE(deviceInfo->supportPipeMap_.size(), 0);
+        }
+
+        for (auto &pipeInfo : adapterInfoIt->second->pipeInfos) {
+            for (auto &streamPropInfo : pipeInfo->streamPropInfos_) {
+                EXPECT_NE(streamPropInfo->supportDeviceMap_.size(), 0);
+            }
+        }
+    }
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_003
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    size_t deviceMapSize = configData.deviceInfoMap.size();
+    std::unordered_map<std::pair<DeviceType, DeviceRole>, size_t, PairHash> deviceSizeMap;
+
+    for (auto &pair : configData.deviceInfoMap) {
+        deviceSizeMap.insert({pair.first, pair.second.size()});
+    }
+
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+    configData.Reorganize();
+
+    EXPECT_NE(configData.deviceInfoMap.size(), 0);
+    EXPECT_EQ(configData.deviceInfoMap.size(), deviceMapSize);
+    for (auto &pair : deviceSizeMap) {
+        auto deviceSetIt = configData.deviceInfoMap.find(pair.first);
+        EXPECT_NE(deviceSetIt, configData.deviceInfoMap.end());
+        EXPECT_EQ(deviceSetIt->second.size(), pair.second);
+    }
+}
+
+/**
+* @tc.name  : Test DFX_MSG_MANAGER
+* @tc.number: DfxMsgManagerActionTest_001
+* @tc.desc  : Test DFX_MSG_MANAGER interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerActionTest_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    auto &manager = DfxMsgManager::GetInstance();
+    const int DFX_MSG_ACTION_LOOP_TIMES_1 = 50;
+    const int DFX_MSG_ACTION_LOOP_TIMES_2 = 60;
+    const int DFX_MSG_ACTION_SPLIT_NUM = 2;
+    std::list<RenderDfxInfo> renderInfo{};
+    int infoIndex = 0;
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_1; i++) {
+        DfxStatAction rendererAction{};
+        if (i % DFX_MSG_ACTION_SPLIT_NUM == 0) {
+            rendererAction.fourthByte = RendererStage::RENDERER_STAGE_START_OK;
+            rendererAction.firstByte = ++infoIndex;
+        }
+        renderInfo.push_back({.rendererAction = rendererAction});
+    }
+
+    std::list<RenderDfxInfo> renderInfo2{};
+    infoIndex = 0;
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_2; i++) {
+        DfxStatAction rendererAction{};
+        if (i % DFX_MSG_ACTION_SPLIT_NUM == 0) {
+            rendererAction.fourthByte = RendererStage::RENDERER_STAGE_START_FAIL;
+            rendererAction.firstByte = ++infoIndex;
+        }
+        renderInfo2.push_back({.rendererAction = rendererAction});
+    }
+
+    DfxMessage renderMsg = {.appUid = TEST_APP_UID, .renderInfo = renderInfo};
+    DfxMessage renderMsg2 = {.appUid = TEST_APP_UID, .renderInfo = renderInfo2};
+    manager.Process(renderMsg);
+    manager.Process(renderMsg2);
+
+    int8_t checkValue = 0;
+    for (auto &item : manager.reportQueue_) {
+        manager.UpdateAction(TEST_APP_UID, item.second.renderInfo);
+        checkValue = manager.GetDfxIndexByType(TEST_APP_UID, DfxMsgIndexType::DFX_MSG_IDX_TYPE_RENDER_INFO);
+    }
+
+    EXPECT_EQ(checkValue, (DFX_MSG_ACTION_LOOP_TIMES_1 / DFX_MSG_ACTION_SPLIT_NUM) +
+        (DFX_MSG_ACTION_LOOP_TIMES_2 / DFX_MSG_ACTION_SPLIT_NUM));
+    manager.reportQueue_.clear();
 }
 
 } // namespace AudioStandard

@@ -47,6 +47,7 @@ AudioCaptureSource::~AudioCaptureSource()
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
+    AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(statusMutex_);
     if (attr.sourceType == SOURCE_TYPE_MIC_REF || attr.sourceType == SOURCE_TYPE_EC) {
         InitEcOrMicRefAttr(attr);
@@ -421,10 +422,8 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType acti
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    AUDIO_INFO_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevice);
-    if (!openMic_) {
-        return SUCCESS;
-    }
+    AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, device: %{public}d",
+        audioScene, currentAudioScene_, activeDevice);
 
     if (audioScene != currentAudioScene_) {
         struct AudioSceneDescriptor sceneDesc;
@@ -670,6 +669,8 @@ uint32_t AudioCaptureSource::GetUniqueId(void) const
 {
     if (halName_ == HDI_ID_INFO_USB) {
         return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_USB);
+    } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_ACCESSORY);
     }
     return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
 }
@@ -735,7 +736,7 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
 
-    if (attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) {
+    if ((attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) && attr_.channelEc != 0) {
         param.ecSampleAttributes.ecInterleaved = true;
         param.ecSampleAttributes.ecFormat = ConvertToHdiFormat(attr_.formatEc);
         param.ecSampleAttributes.ecSampleRate = attr_.sampleRateEc;
@@ -757,6 +758,12 @@ void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc
     deviceDesc.pins = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
+    } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+            deviceDesc.pins = PIN_IN_PENCIL;
+        } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+            deviceDesc.pins = PIN_IN_UWB;
+        }
     }
     deviceDesc.desc = const_cast<char *>(address_.c_str());
 }
@@ -768,6 +775,12 @@ void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, A
     AudioPortPin pin = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
         pin = PIN_IN_USB_HEADSET;
+    } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+            pin = PIN_IN_PENCIL;
+        } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+            pin = PIN_IN_UWB;
+        }
     }
     AUDIO_DEBUG_LOG("pin: %{public}d", pin);
     sceneDesc.desc.pins = pin;
@@ -825,6 +838,8 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     int32_t streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
+        attr_.adapterName, inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(adapterNameCase_, inputDevice, streamId, inputType);
     return ret;
 }
@@ -835,7 +850,7 @@ int32_t AudioCaptureSource::InitCapture(void)
         AUDIO_INFO_LOG("capture already inited");
         return SUCCESS;
     }
-
+    AUDIO_INFO_LOG("In, openMicL %{public}u, halName: %{public}s", openMic_, halName_.c_str());
     int32_t ret = CreateCapture();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
     if (openMic_) {
@@ -1019,6 +1034,7 @@ void AudioCaptureSource::CaptureThreadLoop(void)
 
 int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice)
 {
+    AUDIO_INFO_LOG("current active device: %{public}d, inputDevice: %{public}d", currentActiveDevice_, inputDevice);
     if (currentActiveDevice_ == inputDevice) {
         AUDIO_INFO_LOG("input device not change, device: %{public}d, sourceType: %{public}d", inputDevice,
             attr_.sourceType);
@@ -1068,6 +1084,15 @@ void AudioCaptureSource::DumpData(char *frame, uint64_t &replyBytes)
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void*>(frame), replyBytes);
     }
+}
+
+void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    dmDeviceType_ = dmDeviceType;
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    deviceManager->SetDmDeviceType(dmDeviceType);
 }
 
 } // namespace AudioStandard

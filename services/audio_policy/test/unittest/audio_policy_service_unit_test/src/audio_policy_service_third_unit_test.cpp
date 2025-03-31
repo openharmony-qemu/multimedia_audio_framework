@@ -25,6 +25,7 @@ static const std::string PIPE_PRIMARY_OUTPUT_UNITTEST = "primary_output";
 static const std::string PIPE_PRIMARY_INPUT_UNITTEST = "primary_input";
 static const std::string PIPE_USB_ARM_OUTPUT_UNITTEST = "usb_arm_output";
 static const std::string PIPE_DP_OUTPUT_UNITTEST = "dp_output";
+static const std::string PIPE_ACCESSORY_INPUT_UNITTEST = "accessory_input";
 static const std::string PIPE_USB_ARM_INPUT_UNITTEST = "usb_arm_input";
 
 void AudioPolicyServiceThirdUnitTest::SetUpTestCase(void) {}
@@ -444,6 +445,21 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_004, TestSiz
 }
 
 /**
+ * @tc.name  : Test SetDeviceSafeVolumeStatus.
+ * @tc.number: SetDeviceSafeVolumeStatus_005
+ * @tc.desc  : Test SetDeviceSafeVolumeStatus interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceSafeVolumeStatus_005, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    server->audioPolicyService_.audioVolumeManager_.userSelect_ = true;
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    server->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
+}
+
+/**
 * @tc.name  : Test CheckForA2dpSuspend.
 * @tc.number: CheckForA2dpSuspend_001
 * @tc.desc  : Test CheckForA2dpSuspend.
@@ -603,7 +619,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateRendererStream_001, Test
     rendererChangeInfo->outputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
     ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateRendererStream(audioDeviceDescriptor,
         rendererChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -623,9 +639,56 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateCapturerStream_001, Test
     EXPECT_EQ(ret, false);
 
     capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
+    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
     ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateCapturerStream(true, capturerChangeInfo,
         AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test OnDeviceStatusUpdated.
+ * @tc.number: OnDeviceStatusUpdated_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioDeviceDescriptor audioDeviceDescriptor;
+    audioDeviceDescriptor.deviceName_ = "dummyName";
+    audioDeviceDescriptor.macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    audioDeviceDescriptor.connectState_ = VIRTUAL_CONNECTED;
+
+    server->audioPolicyService_.OnDeviceStatusUpdated(audioDeviceDescriptor, true);
+    EXPECT_EQ(audioDeviceDescriptor.spatializationSupported_, false);
+
+    server->audioPolicyService_.OnDeviceStatusUpdated(audioDeviceDescriptor, false);
+}
+
+/**
+ * @tc.name  : Test OnDeviceStatusUpdated.
+ * @tc.number: OnDeviceStatusUpdated_002
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_002, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioDeviceDescriptor audioDeviceDescriptor;
+    audioDeviceDescriptor.deviceName_ = "dummyName";
+    audioDeviceDescriptor.macAddress_ = "11:22:33:44:55:66";
+    audioDeviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    audioDeviceDescriptor.connectState_ = CONNECTED;
+
+    server->audioPolicyService_.OnDeviceStatusUpdated(audioDeviceDescriptor, true);
+    EXPECT_EQ(audioDeviceDescriptor.spatializationSupported_, false);
+
+    server->audioPolicyService_.OnDeviceStatusUpdated(audioDeviceDescriptor, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

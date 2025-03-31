@@ -100,6 +100,7 @@ enum PnpDeviceType {
     PNP_DEVICE_ADAPTER_DEVICE = 1 << 11,
     PNP_DEVICE_DP_DEVICE = 1 << 12,
     PNP_DEVICE_MIC = 1 << 13,
+    PNP_DEVICE_ACCESSORY = 1 << 14,
     PNP_DEVICE_UNKNOWN,
 };
 

@@ -37,6 +37,8 @@
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
 #include "audio_volume_c.h"
+#include "core_service_handler.h"
+#include "audio_service_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -158,6 +160,8 @@ int32_t RendererInServer::Init()
             AUDIO_WARNING_LOG("One VoIP direct stream has been created! Use normal mode.");
         }
     }
+    streamIndex_ = processConfig_.originalSessionId;
+    AUDIO_INFO_LOG("Stream index: %{public}u", streamIndex_);
 
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
     if (ret != SUCCESS && (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK)) {
@@ -168,7 +172,6 @@ int32_t RendererInServer::Init()
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
-    streamIndex_ = stream_->GetStreamIndex();
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
     AudioVolume::GetInstance()->AddStreamVolume(streamIndex_, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
@@ -300,6 +303,7 @@ void RendererInServer::HandleOperationStarted()
 void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
     switch (operation) {
         case OPERATION_RELEASED:
             stateListener->OnOperationHandled(RELEASE_STREAM, 0);
@@ -745,14 +749,16 @@ int32_t RendererInServer::Start()
 int32_t RendererInServer::StartInner()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
+    int32_t ret = 0;
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
-            ERR_OPERATION_FAILED, "stream status is nullptr");
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
         standByCounter_ = 0;
         startedTime_ = ClockTime::GetCurNano();
         audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
-        int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+        ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+        ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
             IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
         return ret;
     }
@@ -763,12 +769,13 @@ int32_t RendererInServer::StartInner()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STARTING;
-    {
-        std::lock_guard<std::mutex> lock(fadeoutLock_);
-        AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
-        fadeoutFlag_ = NO_FADING;
-    }
-    int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+    std::unique_lock<std::mutex> fadeLock(fadeoutLock_);
+    AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
+    fadeoutFlag_ = NO_FADING;
+    fadeLock.unlock();
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+    ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
@@ -779,14 +786,13 @@ int32_t RendererInServer::StartInner()
     AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time%{public} " PRId64".", currentReadFrame, tempTime);
     resetTime_ = true;
 
-    {
-        std::lock_guard<std::mutex> lock(dupMutex_);
-        for (auto &capInfo : captureInfos_) {
-            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-                capInfo.second.dupStream->Start();
-            }
+    std::unique_lock<std::mutex> dupLock(dupMutex_);
+    for (auto &capInfo : captureInfos_) {
+        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+            capInfo.second.dupStream->Start();
         }
     }
+    dupLock.unlock();
     enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
@@ -1026,7 +1032,10 @@ int32_t RendererInServer::Release()
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
     }
 
-    int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+    ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
+
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
     AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     if (ret < 0) {
@@ -1096,6 +1105,12 @@ int32_t RendererInServer::SetLowPowerVolume(float volume)
         AUDIO_ERR_LOG("invalid volume:%{public}f", volume);
         return ERR_INVALID_PARAM;
     }
+    std::string currentTime = GetTime();
+    AUDIO_INFO_LOG("SetLowPowerVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
+        volume, streamIndex_, currentTime.c_str());
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(volume, streamIndex_, currentTime,
+        AdjustStreamVolume::LOW_POWER_VOLUME_INFO);
+
     lowPowerVolume_ = volume;
     AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(streamIndex_, volume);
     for (auto &capInfo : captureInfos_) {
@@ -1352,7 +1367,8 @@ int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, 
 int32_t RendererInServer::OffloadSetVolumeInner()
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
-    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload");
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, "offload", &volumes);
     AUDIO_INFO_LOG("sessionID %{public}u [volumeType:%{public}d volume: %{public}f]",
         streamIndex_, volumeType, volume);
     float volumeHistory = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
@@ -1382,8 +1398,7 @@ bool RendererInServer::IsHighResolution() const noexcept
         return false;
     }
     if (processConfig_.streamType != STREAM_MUSIC || processConfig_.streamInfo.samplingRate < SAMPLE_RATE_48000 ||
-        processConfig_.streamInfo.format < SAMPLE_S24LE ||
-        processConfig_.rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
+        processConfig_.streamInfo.format < SAMPLE_S24LE) {
         AUDIO_INFO_LOG("normal stream because stream info");
         return false;
     }
@@ -1426,6 +1441,11 @@ int32_t RendererInServer::SetClientVolume()
         return ERROR;
     }
     float clientVolume = audioServerBuffer_->GetStreamVolume();
+    std::string currentTime = GetTime();
+    AUDIO_INFO_LOG("SetVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
+        clientVolume, streamIndex_, currentTime.c_str());
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(clientVolume, streamIndex_, currentTime,
+        AdjustStreamVolume::STREAM_VOLUME_INFO);
     int32_t ret = stream_->SetClientVolume(clientVolume);
     SetStreamVolumeInfoForEnhanceChain();
     AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, clientVolume);
@@ -1474,6 +1494,13 @@ int32_t RendererInServer::SetDuckFactor(float duckFactor)
         AUDIO_ERR_LOG("invalid duck volume:%{public}f", duckFactor);
         return ERR_INVALID_PARAM;
     }
+
+    std::string currentTime = GetTime();
+    AUDIO_INFO_LOG("SetDuckVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
+        duckFactor, streamIndex_, currentTime.c_str());
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(duckFactor, streamIndex_, currentTime,
+        AdjustStreamVolume::DUCK_VOLUME_INFO);
+
     AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(streamIndex_, duckFactor);
     for (auto &capInfo : captureInfos_) {
         if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
@@ -1645,7 +1672,7 @@ RestoreStatus RendererInServer::RestoreSession(RestoreInfo restoreInfo)
 
 int32_t RendererInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
 {
-    return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, streamIndex_,
+    return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, streamIndex_,
         processConfig_.rendererInfo.streamUsage, status_ == I_STATUS_STARTED);
 }
 

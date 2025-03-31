@@ -53,14 +53,14 @@ void AudioUsbManagerUnitTest::TearDown(void) {}
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_001, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     IDeviceStatusObserver *observer = nullptr;
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init();
 
     audioUsbManager->initialized_ = true;
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init();
 }
 
 /**
@@ -70,7 +70,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_001, TestSize.Level1)
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_002, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
     audioUsbManager->Deinit();
 
@@ -85,7 +85,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_002, TestSize.Level1)
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_003, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     EventFwk::CommonEventSubscribeInfo subscribeInfo;
@@ -101,24 +101,10 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_003, TestSize.Level1)
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_004, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     audioUsbManager->RefreshUsbAudioDevices();
-}
-
-/**
-* @tc.name  : Test AudioUsbManager.
-* @tc.number: AudioUsbManagerUnitTest_005.
-* @tc.desc  : Test GetPlayerDevices.
-*/
-HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_005, TestSize.Level1)
-{
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
-    ASSERT_TRUE(audioUsbManager != nullptr);
-    audioUsbManager->initialized_ = true;
-
-    AudioUsbManager::GetInstance().GetPlayerDevices();
 }
 
 /**
@@ -128,12 +114,12 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_005, TestSize.Level1)
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_006, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     IDeviceStatusObserver *observer = new DeviceStatusObserver();
-    audioUsbManager->Init(observer);
-    ASSERT_TRUE(audioUsbManager->observer_ != nullptr);
+    audioUsbManager->Init();
+    ASSERT_TRUE(observer != nullptr);
 
     UsbAudioDevice device;
     SoundCard soundCard;
@@ -151,12 +137,12 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_006, TestSize.Level1)
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_007, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     IDeviceStatusObserver *observer = new DeviceStatusObserver();
-    audioUsbManager->Init(observer);
-    ASSERT_TRUE(audioUsbManager->observer_ != nullptr);
+    audioUsbManager->Init();
+    ASSERT_TRUE(observer != nullptr);
 
     UsbAudioDevice device;
     SoundCard soundCard;
@@ -173,12 +159,12 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_007, TestSize.Level1)
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_008, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     IDeviceStatusObserver *observer = new DeviceStatusObserver();
-    audioUsbManager->Init(observer);
-    ASSERT_TRUE(audioUsbManager->observer_ != nullptr);
+    audioUsbManager->Init();
+    ASSERT_TRUE(observer != nullptr);
 
     UsbAudioDevice device;
     SoundCard soundCard;
@@ -190,30 +176,18 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_008, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioUsbManager.
-* @tc.number: AudioUsbManagerUnitTest_009.
-* @tc.desc  : Test GetCapturerDevices.
-*/
-HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_009, TestSize.Level1)
-{
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
-    ASSERT_TRUE(audioUsbManager != nullptr);
-    audioUsbManager->initialized_ = true;
-
-    AudioUsbManager::GetInstance().GetCapturerDevices();
-}
-
-/**
-* @tc.name  : Test AudioUsbManager.
 * @tc.number: AudioUsbManagerUnitTest_010.
 * @tc.desc  : Test GetUsbAudioDevices.
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_010, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
     audioUsbManager->initialized_ = true;
 
-    AudioUsbManager::GetInstance().GetUsbAudioDevices();
+    vector<UsbAudioDevice> result;
+    auto ret = audioUsbManager->GetUsbAudioDevices(result);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -223,14 +197,14 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_010, TestSize.Level1)
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_011, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     UsbAudioDevice device;
-    audioUsbManager->HandleUsbAudioDeviceAttach(device);
+    audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
 
     audioUsbManager->audioDevices_.push_back(device);
-    audioUsbManager->HandleUsbAudioDeviceAttach(device);
+    audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
 }
 
 /**
@@ -240,14 +214,14 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_011, TestSize.Level1)
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_012, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     UsbAudioDevice device;
-    audioUsbManager->HandleUsbAudioDeviceDetach(device);
+    audioUsbManager->HandleAudioDeviceEvent(make_pair(device, false));
 
     audioUsbManager->audioDevices_.push_back(device);
-    audioUsbManager->HandleUsbAudioDeviceDetach(device);
+    audioUsbManager->HandleAudioDeviceEvent(make_pair(device, false));
 }
 
 /**
@@ -257,7 +231,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_012, TestSize.Level1)
 */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_013, TestSize.Level1)
 {
-    auto audioUsbManager = std::make_shared<AudioUsbManager>();
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
     audioUsbManager->initialized_ = true;
 

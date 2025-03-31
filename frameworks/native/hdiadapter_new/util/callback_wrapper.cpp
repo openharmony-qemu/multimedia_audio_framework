@@ -41,12 +41,27 @@ void SinkCallbackWrapper::RegistCallback(uint32_t type, IAudioSinkCallback *cb)
     rawCbs_[type] = cb;
 }
 
-std::shared_ptr<IAudioSinkCallback> SinkCallbackWrapper::GetCallback(uint32_t type)
+void SinkCallbackWrapper::RegistCallbackGenerator(uint32_t type,
+    std::function<std::shared_ptr<IAudioSinkCallback>(uint32_t)> cbGenerator)
+{
+    CHECK_AND_RETURN_LOG(type < HDI_CB_TYPE_NUM, "invalid type %{public}u", type);
+    CHECK_AND_RETURN_LOG(cbGenerator, "callback generator is nullptr");
+    std::lock_guard<std::mutex> lock(cbGeneratorMtx_);
+    cbGenerators_[type] = cbGenerator;
+}
+
+std::shared_ptr<IAudioSinkCallback> SinkCallbackWrapper::GetCallback(uint32_t type, uint32_t renderId)
 {
     CHECK_AND_RETURN_RET_LOG(type < HDI_CB_TYPE_NUM, nullptr, "invalid type %{public}u", type);
-    CHECK_AND_RETURN_RET(cbs_.count(type), nullptr);
-    std::lock_guard<std::mutex> lock(cbMtx_);
-    return cbs_[type];
+    std::lock_guard<std::mutex> cbLock(cbMtx_);
+    if (cbs_.count(type)) {
+        return cbs_[type];
+    }
+    std::lock_guard<std::mutex> cbGeneratorLock(cbGeneratorMtx_);
+    if (cbGenerators_.count(type) && cbGenerators_[type]) {
+        return cbGenerators_[type](renderId);
+    }
+    return nullptr;
 }
 
 IAudioSinkCallback *SinkCallbackWrapper::GetRawCallback(uint32_t type)
@@ -106,12 +121,27 @@ void SourceCallbackWrapper::RegistCallback(uint32_t type, IAudioSourceCallback *
     rawCbs_[type] = cb;
 }
 
-std::shared_ptr<IAudioSourceCallback> SourceCallbackWrapper::GetCallback(uint32_t type)
+void SourceCallbackWrapper::RegistCallbackGenerator(uint32_t type,
+    std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> cbGenerator)
+{
+    CHECK_AND_RETURN_LOG(type < HDI_CB_TYPE_NUM, "invalid type %{public}u", type);
+    CHECK_AND_RETURN_LOG(cbGenerator, "callback generator is nullptr");
+    std::lock_guard<std::mutex> lock(cbGeneratorMtx_);
+    cbGenerators_[type] = cbGenerator;
+}
+
+std::shared_ptr<IAudioSourceCallback> SourceCallbackWrapper::GetCallback(uint32_t type, uint32_t captureId)
 {
     CHECK_AND_RETURN_RET_LOG(type < HDI_CB_TYPE_NUM, nullptr, "invalid type %{public}u", type);
-    CHECK_AND_RETURN_RET(cbs_.count(type), nullptr);
-    std::lock_guard<std::mutex> lock(cbMtx_);
-    return cbs_[type];
+    std::lock_guard<std::mutex> cbLock(cbMtx_);
+    if (cbs_.count(type)) {
+        return cbs_[type];
+    }
+    std::lock_guard<std::mutex> cbGeneratorLock(cbGeneratorMtx_);
+    if (cbGenerators_.count(type) && cbGenerators_[type]) {
+        return cbGenerators_[type](captureId);
+    }
+    return nullptr;
 }
 
 IAudioSourceCallback *SourceCallbackWrapper::GetRawCallback(uint32_t type)

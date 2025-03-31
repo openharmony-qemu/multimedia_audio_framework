@@ -124,6 +124,7 @@ public:
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
+    void CheckTimeAndBufferReady(uint64_t &curWritePos, int64_t &wakeUpTime, int64_t &curTime);
     void MixToDupStream(const std::vector<AudioStreamData> &srcDataList, int32_t innerCapId);
     bool ConfigInputPoint(const AudioDeviceDescriptor &deviceInfo);
     int32_t PrepareDeviceBuffer(const AudioDeviceDescriptor &deviceInfo);
@@ -133,7 +134,9 @@ private:
     void InitAudiobuffer(bool resetReadWritePos);
     void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
     void ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol);
-    void HandleZeroVolumeCheckEvent();
+    void ResetZeroVolumeState();
+    void HandleZeroVolumeStartEvent();
+    void HandleZeroVolumeStopEvent();
     void HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol = true);
     int32_t HandleCapturerDataParams(const BufferDesc &writeBuf, const BufferDesc &readBuf,
         const BufferDesc &convertedBuffer);
@@ -203,10 +206,14 @@ private:
     void HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
+    static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
     static constexpr int32_t UPDATE_THREAD_TIMEOUT = 1000; // 1000ms
     static constexpr int32_t CPU_INDEX = 2;
+    static constexpr int64_t MAX_WAKEUP_TIME_NS = 3000000; // 3ms
+    static constexpr int64_t WAKEUPTIME_FOR_VOIP_MMAP_NS = 40000000; // 40ms
+    static constexpr int64_t WAKEUPTIME_FOR_MMAP_NS = 10000000; // 10ms
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -224,6 +231,11 @@ private:
         FAST_SOURCE_TYPE_NORMAL,
         FAST_SOURCE_TYPE_REMOTE,
         FAST_SOURCE_TYPE_VOIP
+    };
+    enum ZeroVolumeState : uint32_t {
+        INACTIVE = 0,
+        ACTIVE,
+        IN_TIMING
     };
     // SamplingRate EncodingType SampleFormat Channel
     AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
@@ -264,7 +276,8 @@ private:
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
     bool isStarted_ = false;
     int64_t delayStopTime_ = INT64_MAX;
-    int64_t delayStopTimeForZeroVolume_ = INT64_MAX;
+    int64_t zeroVolumeStartTime_ = INT64_MAX;
+    ZeroVolumeState zeroVolumeState_ = INACTIVE;
 
     std::atomic<ThreadStatus> threadStatus_ = WAITTING;
     std::thread endpointWorkThread_;
@@ -298,8 +311,6 @@ private:
     bool latencyMeasEnabled_ = false;
     size_t detectedTime_ = 0;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
-    bool zeroVolumeStopDevice_ = false;
-    bool isVolumeAlreadyZero_ = false;
     std::atomic_bool endpointWorkLoopFucThreadStatus_ { false };
     std::atomic_bool recordEndpointWorkLoopFucThreadStatus_ { false };
     std::unordered_map<int32_t, CaptureInfo> fastCaptureInfos_;

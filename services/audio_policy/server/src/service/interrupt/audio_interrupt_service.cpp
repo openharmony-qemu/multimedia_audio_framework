@@ -355,85 +355,77 @@ bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInter
 bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
-    if (sessionService_ == nullptr) {
-        AUDIO_ERR_LOG("sessionService_ is nullptr!");
-        return false;
-    }
-    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SILENT) {
-        AUDIO_INFO_LOG("incoming stream is explicitly SILENT");
-        return true;
-    }
-    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
-        AUDIO_INFO_LOG("incoming stream is explicitly MIX_WITH_OTHERS");
-        return true;
-    }
-    if (!sessionService_->IsAudioSessionActivated(incomingInterrupt.pid)) {
-        AUDIO_INFO_LOG("No active audio session for the pid of incomming stream");
-        return false;
-    }
-
-    std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
-    if (incomingSession == nullptr) {
-        AUDIO_ERR_LOG("incomingSession is nullptr!");
-        return false;
-    }
-    AudioConcurrencyMode concurrencyMode = (incomingSession->GetSessionStrategy()).concurrencyMode;
-    if (concurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
-        AUDIO_INFO_LOG("The concurrency mode of incoming session is not MIX_WITH_OTHERS");
-        return false;
-    }
-
-    if (IsIncomingStreamLowPriority(focusEntry)) {
-        bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
-            incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
-        AUDIO_INFO_LOG("The incoming stream is low priority. isSameType: %{public}d.", isSameType);
-        return isSameType;
-    } else {
+    if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(incomingInterrupt.pid)) {
+        // The strategy of activated AudioSession is the one with the highest priority.
+        std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(incomingInterrupt.pid);
+        if (incomingSession == nullptr) {
+            AUDIO_ERR_LOG("incomingSession is nullptr!");
+            return false;
+        }
+        AudioConcurrencyMode concurrencyMode = (incomingSession->GetSessionStrategy()).concurrencyMode;
+        if (concurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            AUDIO_INFO_LOG("The concurrency mode of incoming session is %{public}d",
+                static_cast<int32_t>(concurrencyMode));
+            return false;
+        }
+        // The concurrencyMode of incoming session is MIX_WITH_OTHERS. Need to check the priority.
+        if (IsIncomingStreamLowPriority(focusEntry)) {
+            bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
+                incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
+            AUDIO_INFO_LOG("The incoming stream is low priority. isSameType: %{public}d.", isSameType);
+            return isSameType;
+        }
         AUDIO_INFO_LOG("The concurrency mode of incoming session is MIX_WITH_OTHERS. Skip the interrupt operation");
         return true;
+    } else {
+        // There is no activated AudioSession for incoming stream. Check the strategy of AudioInterrupt.
+        AudioConcurrencyMode concurrencyMode = incomingInterrupt.sessionStrategy.concurrencyMode;
+        AUDIO_INFO_LOG("The concurrency mode of incoming interrupt: %{public}d", static_cast<int32_t>(concurrencyMode));
+        if (concurrencyMode == AudioConcurrencyMode::SILENT ||
+            concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            AUDIO_INFO_LOG("incoming stream is explicitly SILENT or MIX_WITH_OTHERS.");
+            return true;
+        }
     }
+    return false;
 }
 
 bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
-    if (sessionService_ == nullptr) {
-        AUDIO_ERR_LOG("sessionService_ is nullptr!");
-        return false;
-    }
-    if (activeInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SILENT) {
-        AUDIO_INFO_LOG("The concurrency mode of active session is SILENT");
-        return true;
-    }
-    if (activeInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
-        AUDIO_INFO_LOG("active stream is explicitly MIX_WITH_OTHERS");
-        return true;
-    }
-    if (!sessionService_->IsAudioSessionActivated(activeInterrupt.pid)) {
-        AUDIO_INFO_LOG("No active audio session for the pid of active stream");
-        return false;
-    }
-
-    std::shared_ptr<AudioSession> activeSession = sessionService_->GetAudioSessionByPid(activeInterrupt.pid);
-    if (activeSession == nullptr) {
-        AUDIO_ERR_LOG("activeSession is nullptr!");
-        return false;
-    }
-    AudioConcurrencyMode concurrencyMode = (activeSession->GetSessionStrategy()).concurrencyMode;
-    if (concurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
-        AUDIO_INFO_LOG("The concurrency mode of active session is not MIX_WITH_OTHERS");
-        return false;
-    }
-
-    if (IsActiveStreamLowPriority(focusEntry)) {
-        bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
-            incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
-        AUDIO_INFO_LOG("The active stream is low priority. isSameType: %{public}d.", isSameType);
-        return isSameType;
-    } else {
+    if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(activeInterrupt.pid)) {
+        // The strategy of activated AudioSession is the one with the highest priority.
+        std::shared_ptr<AudioSession> activeSession = sessionService_->GetAudioSessionByPid(activeInterrupt.pid);
+        if (activeSession == nullptr) {
+            AUDIO_ERR_LOG("activeSession is nullptr!");
+            return false;
+        }
+        AudioConcurrencyMode concurrencyMode = (activeSession->GetSessionStrategy()).concurrencyMode;
+        if (concurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            AUDIO_INFO_LOG("The concurrency mode of active session is %{public}d",
+                static_cast<int32_t>(concurrencyMode));
+            return false;
+        }
+        // The concurrencyMode of active session is MIX_WITH_OTHERS. Need to check the priority.
+        if (IsActiveStreamLowPriority(focusEntry)) {
+            bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
+                incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
+            AUDIO_INFO_LOG("The active stream is low priority. isSameType: %{public}d.", isSameType);
+            return isSameType;
+        }
         AUDIO_INFO_LOG("The concurrency mode of active session is MIX_WITH_OTHERS. Skip the interrupt operation");
         return true;
+    } else {
+        // There is no active AudioSession for active stream. Check the strategy of AudioInterrupt.
+        AudioConcurrencyMode concurrencyMode = activeInterrupt.sessionStrategy.concurrencyMode;
+        AUDIO_INFO_LOG("The concurrency mode of active interrupt: %{public}d", static_cast<int32_t>(concurrencyMode));
+        if (concurrencyMode == AudioConcurrencyMode::SILENT ||
+            concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            AUDIO_INFO_LOG("active stream is explicitly SILENT or MIX_WITH_OTHERS.");
+            return true;
+        }
     }
+    return false;
 }
 
 bool AudioInterruptService::IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry)
@@ -1181,6 +1173,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
         AudioFocusEntry focusEntry =
             focusCfgMap_[std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType)];
+        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry);
         if (focusEntry.actionOn != CURRENT || IsSameAppInShareMode(incomingInterrupt, iterActive->first) ||
             iterActive->second == PLACEHOLDER || CanMixForSession(incomingInterrupt, iterActive->first, focusEntry) ||
             // incomming peeling should not stop/pause/duck other playing instances
@@ -1370,6 +1363,60 @@ bool AudioInterruptService::IsAudioSourceConcurrency(const SourceType &existSour
     return false;
 }
 
+bool AudioInterruptService::IsMediaStream(AudioStreamType audioStreamType)
+{
+    if (audioStreamType == STREAM_MUSIC || audioStreamType == STREAM_MOVIE || audioStreamType == STREAM_SPEECH) {
+        return true;
+    }
+    return false;
+}
+
+int32_t AudioInterruptService::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
+{
+    AUDIO_INFO_LOG("Set query bundle name list callback");
+    queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    if (queryBundleNameListCallback_ == nullptr) {
+        AUDIO_ERR_LOG("Client type callback is null");
+        return ERR_CALLBACK_NOT_REGISTERED;
+    }
+    return SUCCESS;
+}
+
+void AudioInterruptService::UpdateAudioFocusStrategy(AudioFocusType existAudioFocusType,
+    AudioFocusType incomingAudioFocusType, AudioFocusEntry &focusEntry)
+{
+    CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
+    std::string bundleName = policyServer_->GetBundleName();
+    AudioStreamType existStreamType = existAudioFocusType.streamType;
+    AudioStreamType incomingStreamType = incomingAudioFocusType.streamType;
+    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType)
+        && queryBundleNameListCallback_ != nullptr
+        && queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName)
+        && focusEntry.hintType == INTERRUPT_HINT_STOP) {
+        focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+        AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
+    }
+}
+
+bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
+    &iterActive, AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt)
+{
+    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
+    std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
+    if (focusEntry.actionOn == CURRENT || iterActive->second == PLACEHOLDER ||
+            CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) {
+        return true;
+    }
+    if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject)
+        && (IsAudioSourceConcurrency((iterActive->first).audioFocusType.sourceType, incomingSourceType,
+        (iterActive->first).currencySources.sourcesTypes, incomingConcurrentSources)
+        // if the rejection is caused by the existing peeling recording, just ignore it
+        || IsLowestPriorityRecording(iterActive->first))) {
+        return true;
+    }
+    return false;
+}
+
 int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
 {
     AudioFocuState incomingState = ACTIVE;
@@ -1379,8 +1426,6 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end()) { audioFocusInfoList = itZone->second->audioFocusInfoList; }
 
-    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
-    std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
     for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
         if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) { continue; }
         // if peeling is the incomming interrupt while at the momount there are already some existing recordings
@@ -1395,16 +1440,9 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
         CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM, "no focus cfg");
         AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
-        CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingConcurrentSources);
-        if (focusEntry.actionOn == CURRENT || iterActive->second == PLACEHOLDER ||
-            CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) { continue; }
-        if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject)
-            && (IsAudioSourceConcurrency((iterActive->first).audioFocusType.sourceType, incomingSourceType,
-            (iterActive->first).currencySources.sourcesTypes, incomingConcurrentSources)
-            // if the rejection is caused by the existing peeling recording, just ignore it
-            || IsLowestPriorityRecording(iterActive->first))) {
-            continue;
-        }
+        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry);
+        CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
+        if (FocusEntryContinue(iterActive, focusEntry, incomingInterrupt)) { continue; }
         if (focusEntry.isReject) {
             if (GetClientTypeByStreamId((iterActive->first).streamId) == CLIENT_TYPE_GAME) {
                 incomingState = PAUSE;
@@ -1675,6 +1713,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
                 break;
             }
             AudioFocusEntry focusEntry = focusCfgMap_[audioFocusTypePair];
+            UpdateAudioFocusStrategy(inprocessing.audioFocusType, incoming.audioFocusType, focusEntry);
             SourceType existSourceType = inprocessing.audioFocusType.sourceType;
             std::vector<SourceType> existConcurrentSources = inprocessing.currencySources.sourcesTypes;
             bool bConcurrency = IsAudioSourceConcurrency(existSourceType, incomingSourceType,
@@ -2003,7 +2042,7 @@ uint8_t AudioInterruptService::GetAppState(int32_t appPid)
     appManager.GetRunningProcessInfoByPid(appPid, infos);
     state = static_cast<uint8_t>(infos.state_);
     if (state == 0) {
-        AUDIO_WARNING_LOG("GetAppState failed");
+        AUDIO_WARNING_LOG("GetAppState failed, appPid=%{public}d", appPid);
     }
     return state;
 }
@@ -2027,7 +2066,16 @@ void AudioInterruptService::WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, co
 
     InterruptStage stage = dfxCollector_->IsExist(audioInterrupt.streamId) ?
         INTERRUPT_STAGE_RESTART : INTERRUPT_STAGE_START;
-    dfxBuilder.WriteActionMsg(++infoIdx, effectIdx, stage).WriteInfoMsg(audioInterrupt);
+
+    AudioSessionStrategy strategy = audioInterrupt.sessionStrategy;
+    auto audioSession = sessionService_->GetAudioSessionByPid(audioInterrupt.pid);
+    InterruptStrategyType interruptType = InterruptStrategyType::INTERRUPT_TYPE_DEFAULT;
+    if (audioSession != nullptr) {
+        strategy = audioSession->GetSessionStrategy();
+        interruptType = INTERRUPT_TYPE_AUDIO_SESSION;
+    }
+
+    dfxBuilder.WriteActionMsg(++infoIdx, effectIdx, stage).WriteInfoMsg(audioInterrupt, strategy, interruptType);
     dfxCollector_->AddDfxMsg(audioInterrupt.streamId, dfxBuilder.GetResult());
 }
 

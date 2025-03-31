@@ -398,16 +398,16 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_008, TestSize.Level1
     // Test cases where sourceType is directly cast to AudioStreamType
     EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_RECOGNITION),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VOICE_RECOGNITION));
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_PLAYBACK_CAPTURE),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_PLAYBACK_CAPTURE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_PLAYBACK_CAPTURE));
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_REMOTE_CAST),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_REMOTE_CAST),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_REMOTE_CAST));
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_VIRTUAL_CAPTURE),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VIRTUAL_CAPTURE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VIRTUAL_CAPTURE));
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_MESSAGE),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_MESSAGE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VOICE_MESSAGE));
     // Test an invalid source type (should fall into default case)
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_INVALID),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_INVALID),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_INVALID));
 }
 
@@ -1213,5 +1213,91 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_044, TestSize.Level1
     bool ret = collector.HasVoipRendererStream();
     EXPECT_TRUE(ret);
 }
+
+/**
+* @tc.name  : IsMediaPlaying_Test01
+* @tc.number: AudioStreamCollectorUnitTest_IsMediaPlaying_Test01
+* @tc.desc  : Test IsMediaPlaying function when there is at least one media renderer running.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, IsMediaPlaying_Test01, TestSize.Level1)
+{
+    std::unique_ptr<AudioStreamCollector> collector = std::make_unique<AudioStreamCollector>();
+    AudioRendererInfo rendererInfo1 = {
+        .contentType = CONTENT_TYPE_MUSIC, .streamUsage = STREAM_USAGE_MEDIA
+    };
+    std::unique_ptr<AudioRendererChangeInfo> info1 = std::make_unique<AudioRendererChangeInfo>();
+    info1->sessionId = 1;
+    info1->rendererState = RENDERER_PAUSED;
+    info1->rendererInfo = rendererInfo1;
+    info1->channelCount = 2;
+    collector->audioRendererChangeInfos_.push_back(std::move(info1));
+    bool result = collector->IsMediaPlaying();
+    EXPECT_FALSE(result);
+
+    AudioRendererInfo rendererInfo2 = {
+        .contentType = CONTENT_TYPE_SPEECH, .streamUsage = STREAM_USAGE_VOICE_COMMUNICATION
+    };
+    std::unique_ptr<AudioRendererChangeInfo> info2 = std::make_unique<AudioRendererChangeInfo>();
+    info2->sessionId = 2;
+    info2->rendererState = RENDERER_RUNNING;
+    info2->rendererInfo = rendererInfo2;
+    info2->channelCount = 1;
+    collector->audioRendererChangeInfos_.push_back(std::move(info2));
+    result = collector->IsMediaPlaying();
+    EXPECT_FALSE(result);
+
+    AudioRendererInfo rendererInfo3 = {
+        .contentType = CONTENT_TYPE_MOVIE, .streamUsage = STREAM_USAGE_MEDIA
+    };
+    std::unique_ptr<AudioRendererChangeInfo> info3 = std::make_unique<AudioRendererChangeInfo>();
+    info3->sessionId = 3;
+    info3->rendererState = RENDERER_RUNNING;
+    info3->rendererInfo = rendererInfo3;
+    info3->channelCount = 2;
+    collector->audioRendererChangeInfos_.push_back(std::move(info3));
+    result = collector->IsMediaPlaying();
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateRenderDeviceInfo_001
+* @tc.desc  : Test UpdateRenderDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateRendererDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    int32_t ret = collector.UpdateRendererDeviceInfo(outputDeviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateRenderDeviceInfo_001
+* @tc.desc  : Test UpdateRenderDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateCapturerDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor iutputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    captureChangeInfo->clientUID = 1001;
+    captureChangeInfo->createrUID = 1001;
+    captureChangeInfo->sessionId = 2001;
+    captureChangeInfo->inputDeviceInfo = iutputDeviceInfo;
+    collector.audioCapturerChangeInfos_.push_back(move(captureChangeInfo));
+
+    int32_t ret = collector.UpdateCapturerDeviceInfo(iutputDeviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

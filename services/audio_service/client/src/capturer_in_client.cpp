@@ -48,7 +48,6 @@
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
-#include "xcollie/watchdog.h"
 #include "audio_safe_block_queue.h"
 
 namespace OHOS {
@@ -65,8 +64,6 @@ const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t INVALID_FRAME_SIZE = -1;
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
-constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
-constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 }
@@ -245,8 +242,6 @@ private:
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     bool ReadCallbackFunc();
-    void WatchingReadData();
-    void CapturerRemoveWatchdog(const std::string &message, const std::int32_t sessionId);
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
 
@@ -349,7 +344,6 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
     bool paramsIsSet_ = false;
-    std::atomic_bool threadStatusFlag_ { false };
     int32_t innerCapId_ = 0;
 
     enum {
@@ -1077,7 +1071,6 @@ void CapturerInClientInner::InitCallbackLoop()
         std::shared_ptr<CapturerInClientInner> strongRef = weakRef.lock();
         if (strongRef != nullptr) {
             strongRef->cbThreadCv_.notify_one();
-            strongRef->WatchingReadData(); // add watchdog
             AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", strongRef->sessionId_);
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
@@ -1094,7 +1087,6 @@ void CapturerInClientInner::InitCallbackLoop()
         }
         if (strongRef != nullptr) {
             AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", strongRef->sessionId_);
-            strongRef->CapturerRemoveWatchdog("WatchingReadCallbackFunc", strongRef->sessionId_); // stop watchdog
         }
     });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioReadCb");
@@ -1176,32 +1168,6 @@ bool CapturerInClientInner::WaitForRunning()
     return true;
 }
 
-void CapturerInClientInner::CapturerRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
-{
-    std::string watchDogMessage = message;
-    watchDogMessage += std::to_string(sessionId);
-    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
-    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
-}
-
-void CapturerInClientInner::WatchingReadData()
-{
-    threadStatusFlag_ = true;
-    auto taskFunc = [this]() {
-        if (threadStatusFlag_) {
-            AUDIO_DEBUG_LOG("Set threadStatusFlag_ to false");
-            threadStatusFlag_ = false;
-        } else {
-            AUDIO_INFO_LOG("watchdog happened");
-        }
-    };
-    std::string watchDogMessage = "WatchingCaptureInClientReadData";
-    watchDogMessage += std::to_string(sessionId_);
-    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
-    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
-        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
-}
-
 bool CapturerInClientInner::ReadCallbackFunc()
 {
     if (cbThreadReleased_) {
@@ -1209,7 +1175,6 @@ bool CapturerInClientInner::ReadCallbackFunc()
     }
     Trace traceLoop("CapturerInClientInner::WriteCallbackFunc");
     if (!WaitForRunning()) {
-        threadStatusFlag_ = true;
         return true;
     }
 
@@ -1227,7 +1192,6 @@ bool CapturerInClientInner::ReadCallbackFunc()
         AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
     }
     if (state_ != RUNNING) {
-        threadStatusFlag_ = true;
         return true;
     }
     lockBuffer.unlock();
@@ -1238,7 +1202,6 @@ bool CapturerInClientInner::ReadCallbackFunc()
     if (readCb_ != nullptr) {
         readCb_->OnReadData(cbBufferSize_);
     }
-    threadStatusFlag_ = true;
     lockCb.unlock();
     traceCb.End();
     return true;
@@ -2055,7 +2018,7 @@ DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 // diffrence from GetAudioPosition only when set speed
 int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    return GetAudioTime(timestamp, base);
+    return GetAudioTime(timestamp, base) ? SUCCESS : ERROR;
 }
 
 void CapturerInClientInner::SetSwitchingStatus(bool isSwitching)
@@ -2065,23 +2028,27 @@ void CapturerInClientInner::SetSwitchingStatus(bool isSwitching)
 
 void CapturerInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->GetRestoreInfo(restoreInfo);
     return;
 }
 
 void CapturerInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus CapturerInClientInner::CheckRestoreStatus()
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->CheckRestoreStatus();
 }
 
 RestoreStatus CapturerInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->SetRestoreStatus(restoreStatus);
 }
 

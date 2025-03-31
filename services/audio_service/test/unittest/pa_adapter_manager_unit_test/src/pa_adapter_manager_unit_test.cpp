@@ -1001,5 +1001,145 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_051, TestSize.Level1)
     ReleasePaPort();
 #endif
 }
+
+/**
+* @tc.name   : Test ReleaseCapturer API
+* @tc.number : PaAdapterManager_053
+* @tc.desc   : Test ReleaseCapturer interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_053, TestSize.Level1)
+{
+    uint32_t streamIndex = 0;
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    std::shared_ptr<ICapturerStream> capturerStream = nullptr;
+    adapterManager->capturerStreamMap_.insert({streamIndex, capturerStream});
+    auto ret = adapterManager->ReleaseCapturer(streamIndex);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name   : Test ReleaseCapturer API
+* @tc.number : PaAdapterManager_054
+* @tc.desc   : Test ReleaseCapturer interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_054, TestSize.Level1)
+{
+    uint32_t streamIndex0 = 0;
+    uint32_t streamIndex1 = 1;
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    std::shared_ptr<ICapturerStream> capturerStream = nullptr;
+    adapterManager->capturerStreamMap_.insert({streamIndex0, capturerStream});
+    adapterManager->capturerStreamMap_.insert({streamIndex1, capturerStream});
+
+    auto ret = adapterManager->ReleaseCapturer(streamIndex1);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name   : Test ReleaseCapturer API
+* @tc.number : PaAdapterManager_055
+* @tc.desc   : Test ReleaseCapturer interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_055, TestSize.Level1)
+{
+    uint32_t streamIndex0 = 0;
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    adapterManager->InitPaContext();
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    uint32_t sessionId = SESSIONID;
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    std::shared_ptr<ICapturerStream> capturerStream = adapterManager->CreateCapturerStream(processConfig, stream);
+    ASSERT_TRUE(capturerStream != nullptr);
+    adapterManager->capturerStreamMap_.insert({streamIndex0, capturerStream});
+
+    auto ret = adapterManager->ReleaseCapturer(streamIndex0);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name   : Test ResetPaContext API
+* @tc.number : PaAdapterManager_056
+* @tc.desc   : Test ResetPaContext interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_056, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    pa_mainloop_api *mainloop = new pa_mainloop_api();
+    char *name = nullptr;
+    adapterManager->context_ = pa_context_new(mainloop, name);
+    adapterManager->isContextConnected_ = true;
+    adapterManager->mainLoop_ = pa_threaded_mainloop_new();
+
+    int result = adapterManager->ResetPaContext();
+    EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name   : Test ConvertToPAAudioParams API
+* @tc.number : PaAdapterManager_057
+* @tc.desc   : Test ConvertToPAAudioParams interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_057, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = SAMPLE_U8;
+    adapterManager->ConvertToPAAudioParams(processConfig);
+}
+
+/**
+* @tc.name   : Test ConvertToPAAudioParams API
+* @tc.number : PaAdapterManager_058
+* @tc.desc   : Test ConvertToPAAudioParams interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_058, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    adapterManager->ConvertToPAAudioParams(processConfig);
+}
+
+/**
+* @tc.name   : Test ConvertToPAAudioParams API
+* @tc.number : PaAdapterManager_059
+* @tc.desc   : Test ConvertToPAAudioParams interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_059, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = SAMPLE_F32LE;
+    adapterManager->ConvertToPAAudioParams(processConfig);
+}
+
+/**
+* @tc.name   : Test GetEnhanceSceneName API
+* @tc.number : PaAdapterManager_060
+* @tc.desc   : Test GetEnhanceSceneName interface.
+*/
+HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_060, TestSize.Level1)
+{
+    PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
+    adapterManager->GetEnhanceSceneName(SOURCE_TYPE_CAMCORDER);
+    EXPECT_NE(nullptr, adapterManager);
+
+    adapterManager->GetEnhanceSceneName(SOURCE_TYPE_VOICE_COMMUNICATION);
+    EXPECT_NE(nullptr, adapterManager);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -448,6 +448,74 @@ bool CasWithCompare(std::atomic<T> &atomicVar, T newValue, Compare compare)
     return true;
 }
 
+template <typename T>
+class FixedSizeList {
+public:
+    FixedSizeList(size_t size) : maxSize_(size), currentSize_(0), index_(0)
+    {
+        data_.resize(size);
+    }
+
+    void Add(T value)
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        data_[index_] = value;
+        index_ = (index_ + 1) % maxSize_;
+        if (currentSize_ < maxSize_) {
+            ++currentSize_;
+        }
+    }
+
+    std::optional<T> FindIf(const std::function<bool(const T&)>& predicate)
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        for (size_t i = 0; i < currentSize_; ++i) {
+            if (predicate(data_[i])) {
+                T result = data_[i];
+                RemoveAt(i);
+                return result;
+            }
+        }
+        return std::nullopt;
+    }
+
+    void Clear()
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        data_.clear();
+        data_.resize(maxSize_);
+        currentSize_ = 0;
+        index_ = 0;
+    }
+
+    std::vector<T> GetData()
+    {
+        std::vector<T> dataInfo;
+        for (size_t i = 0; i < currentSize_; ++i) {
+            dataInfo.push_back(data_[i]);
+        }
+        return dataInfo;
+    }
+
+private:
+    void RemoveAt(size_t position)
+    {
+        if (position < currentSize_) {
+            for (size_t i = position; i < currentSize_ - 1; ++i) {
+                data_[i] = data_[i + 1];
+            }
+            --currentSize_;
+            index_ = (index_ - 1 + maxSize_) % maxSize_;
+        }
+    }
+
+    std::vector<T> data_;
+    size_t maxSize_;
+    size_t currentSize_;
+    size_t index_;
+    mutable std::mutex mtx_;  // mutable to allow const methods to lock the mutex
+};
+
 enum AudioHdiUniqueIDBase : uint32_t {
     // 0-4 is reserved for other modules
     AUDIO_HDI_RENDER_ID_BASE = 5,
@@ -464,6 +532,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_MIC_REF = 7,
     HDI_CAPTURE_OFFSET_WAKEUP = 8,
     HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
+    HDI_CAPTURE_OFFSET_ACCESSORY = 10,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -484,6 +553,8 @@ enum HdiRenderOffset : uint32_t {
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 
 void CloseFd(int fd);
+
+int32_t CheckSupportedParams(const AudioStreamInfo &info);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

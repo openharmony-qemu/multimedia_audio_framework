@@ -33,7 +33,7 @@
 #include "audio_stream_collector.h"
 
 #include "audio_a2dp_offload_flag.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -59,7 +59,8 @@ public:
     std::string GetNewSinkPortName(DeviceType deviceType);
     std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
     string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
-    std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
+    std::string GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId);
+    std::string GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId);
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
     std::string GetSourcePortName(DeviceType deviceType);
     void UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
@@ -88,7 +89,7 @@ private:
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()) {}
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()) {}
     ~AudioPolicyUtils() {}
     int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
 public:
@@ -102,7 +103,7 @@ private:
     AudioStateManager &audioStateManager_;
     AudioDeviceManager &audioDeviceManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
 };
 
 }

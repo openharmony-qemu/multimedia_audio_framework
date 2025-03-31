@@ -452,5 +452,10 @@ void RemoteAudioCaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
     }
 }
 
+void RemoteAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

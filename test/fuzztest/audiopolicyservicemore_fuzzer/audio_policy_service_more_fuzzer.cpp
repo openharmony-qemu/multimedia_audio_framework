@@ -83,22 +83,22 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-AudioPolicyServer *GetServerPtr()
+sptr<AudioPolicyServer> GetServerPtr()
 {
-    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit) {
-        server.OnStart();
-        server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-        server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
         g_hasServerInit = true;
     }
-    return &server;
+    return server;
 }
 
 static AudioProcessConfig InitProcessConfig()
@@ -231,19 +231,7 @@ void AudioPolicyServiceThirdTest()
     AudioProcessConfig config = InitProcessConfig();
     std::thread t1(ThreadFunctionTest);
     t1.join();
-    StreamPropInfo streamPropInfo;
-    AudioAdapterInfo adapterInfo = {};
-    adapterInfo.adapterName_ = "wakeup_input";
-    adapterInfo.adaptersupportScene_ = "supportScene";
-    std::list<PipeInfo> pipeInfos_;
-    PipeInfo pipeInfo = {};
-    pipeInfo.name_ = "wakeup_input";
-    pipeInfo.streamPropInfos_.push_back(streamPropInfo);
-    pipeInfos_.push_back(pipeInfo);
-    adapterInfo.pipeInfos_ = pipeInfos_;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_ = {};
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.
-        insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
+    GetServerPtr()->audioPolicyService_.audioConfigManager_.Init(true);
     GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
 
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
@@ -271,22 +259,6 @@ void AudioPolicyServiceThirdTest()
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.CheckWiredActiveMusicTime(safeVolume);
 }
 
-void MakeAdapterInfoMap()
-{
-    AudioAdapterInfo adapterInfo = {};
-    adapterInfo.adapterName_ = "wakeup_input";
-    adapterInfo.adaptersupportScene_ = "supportScene";
-    std::list<PipeInfo> pipeInfos_;
-    PipeInfo pipeInfo = {};
-    pipeInfo.name_ = "primary_input";
-    StreamPropInfo streamPropInfo;
-    pipeInfo.streamPropInfos_.push_back(streamPropInfo);
-    pipeInfos_.push_back(pipeInfo);
-    adapterInfo.pipeInfos_ = pipeInfos_;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.adapterInfoMap_.
-        insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
-}
-
 void AudioPolicyServiceTest()
 {
     AudioStreamInfo streamInfo;
@@ -297,7 +269,6 @@ void AudioPolicyServiceTest()
     sessionInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
     sessionInfo.rate = RATE;
     sessionInfo.channels = CHANNELS;
-    MakeAdapterInfoMap();
     GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(SESSIONID, sessionInfo, streamInfo);
 
     uint32_t deviceRoleInt = GetData<uint32_t>();

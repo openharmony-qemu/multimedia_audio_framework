@@ -21,38 +21,13 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "common/hdi_adapter_info.h"
+#include "common/hdi_adapter_type.h"
 
 #define SUCCESS_RET { return SUCCESS; }
 #define NOT_SUPPORT_RET { return ERR_NOT_SUPPORTED; }
 
 namespace OHOS {
 namespace AudioStandard {
-typedef struct IAudioSourceAttr {
-    const char *adapterName = "";
-    uint32_t openMicSpeaker = 0;
-    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
-    uint32_t sampleRate = 0;
-    uint32_t channel = 0;
-    float volume = 0.0f;
-    uint32_t bufferSize = 0;
-    bool isBigEndian = false;
-    const char *filePath = nullptr;
-    const char *deviceNetworkId = nullptr;
-    int32_t deviceType = 0;
-    int32_t sourceType = 0;
-    uint64_t channelLayout = 0;
-    int32_t audioStreamFlag = 0;
-    bool hasEcConfig = false;
-    AudioSampleFormat formatEc = AudioSampleFormat::INVALID_WIDTH;
-    uint32_t sampleRateEc = 0;
-    uint32_t channelEc = 0;
-} IAudioSourceAttr;
-
-typedef struct FrameDesc {
-    char *frame;
-    uint64_t frameLen;
-} FrameDesc;
-
 class IAudioSourceCallback {
 public:
     virtual ~IAudioSourceCallback() = default;
@@ -104,6 +79,8 @@ public:
     virtual void SetAddress(const std::string &address) {}
 
     virtual void DumpInfo(std::string &dumpString) {}
+
+    virtual void SetDmDeviceType(uint16_t dmDeviceType) {}
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,

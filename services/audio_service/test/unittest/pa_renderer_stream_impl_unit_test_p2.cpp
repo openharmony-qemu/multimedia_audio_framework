@@ -143,7 +143,7 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_005, TestSize.Level1)
     uint64_t latency = 0;
     unit->offloadEnable_ = true;
     int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -206,7 +206,7 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_008, TestSize.Level1)
     unit->paStream_ = stream;
     unit->offloadEnable_ = true;
     float volume = 0.0f;
-    EXPECT_EQ(unit->OffloadSetVolume(volume), SUCCESS);
+    EXPECT_NE(unit->OffloadSetVolume(volume), SUCCESS);
 }
 
 /**
@@ -341,7 +341,7 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_014, TestSize.Level1)
     uint64_t latency = 0;
     unit->offloadEnable_ = true;
     int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

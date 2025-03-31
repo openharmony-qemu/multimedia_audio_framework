@@ -1688,5 +1688,22 @@ HWTEST(AudioPolicyUnitTest, UpdateTracker_004, TestSize.Level1)
     ret = AudioPolicyManager::GetInstance().UpdateTracker(audioMode, streamChangeInfo);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test UpdateTracker
+ * @tc.number: UpdateTracker_005
+ * @tc.desc  : Test UpdateTracker interface. Returns ret.
+ */
+HWTEST(AudioPolicyUnitTest, UpdateTracker_005, TestSize.Level1)
+{
+    AudioMode audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_RELEASED;
+    std::shared_ptr<AudioClientTracker> clientTrackerObj = std::make_shared<AudioClientTrackerTest>();;
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterTracker(audioMode, streamChangeInfo, clientTrackerObj);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioPolicyManager::GetInstance().UpdateTracker(audioMode, streamChangeInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

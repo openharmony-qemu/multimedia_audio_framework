@@ -37,6 +37,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+constexpr int32_t INVALID_PID = -1;
+constexpr int32_t CLEAR_PID = 0;
+constexpr int32_t SYSTEM_PID = 1;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
@@ -298,6 +301,18 @@ enum CallbackChange : int32_t {
     CALLBACK_MAX,
 };
 
+enum AdjustStreamVolume {
+    STREAM_VOLUME_INFO = 0,
+    LOW_POWER_VOLUME_INFO,
+    DUCK_VOLUME_INFO,
+};
+
+struct AdjustStreamVolumeInfo {
+    float volume;
+    uint32_t sessionId;
+    std::string invocationTime;
+};
+
 constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_UNKNOWN,
     CALLBACK_FOCUS_INFO_CHANGE,
@@ -333,7 +348,7 @@ struct VolumeEvent {
     bool updateUi;
     int32_t volumeGroupId;
     std::string networkId;
-    AudioVolumeMode volumeMode;
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
@@ -387,6 +402,17 @@ enum PlayerType : int32_t {
     PLAYER_TYPE_AV_PLAYER = 1001,
     PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
     PLAYER_TYPE_TONE_PLAYER = 1003,
+};
+
+enum RecorderType : int32_t {
+    RECORDER_TYPE_DEFAULT = 0,
+
+    // AudioFramework internal type.
+    RECORDER_TYPE_ARKTS_AUDIO_RECORDER = 100,
+    RECORDER_TYPE_OPENSL_ES = 101,
+
+    // Indicates a type from the system internals, but not from the AudioFramework.
+    RECORDER_TYPE_AV_RECORDER = 1000,
 };
 
 struct AudioRendererInfo {
@@ -464,6 +490,7 @@ public:
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
     std::string sceneType = "";
+    RecorderType recorderType = RECORDER_TYPE_DEFAULT;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -482,7 +509,8 @@ public:
             parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
             parcel.WriteUint8(encodingType) &&
             parcel.WriteUint64(channelLayout) &&
-            parcel.WriteString(sceneType);
+            parcel.WriteString(sceneType) &&
+            parcel.WriteInt32(static_cast<int32_t>(recorderType));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -494,6 +522,7 @@ public:
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
         sceneType = parcel.ReadString();
+        recorderType = static_cast<RecorderType>(parcel.ReadInt32());
     }
 };
 
@@ -941,10 +970,12 @@ enum AudioPin {
     AUDIO_PIN_OUT_HDMI = 1 << 3, // HDMI output pin
     AUDIO_PIN_OUT_USB = 1 << 4, // USB output pin
     AUDIO_PIN_OUT_USB_EXT = 1 << 5, // Extended USB output pin
+    AUDIO_PIN_OUT_EARPIECE = 1 << 5 | 1 << 4, // Earpiece output pin
     AUDIO_PIN_OUT_BLUETOOTH_SCO = 1 << 6, // Bluetooth SCO output pin
     AUDIO_PIN_OUT_DAUDIO_DEFAULT = 1 << 7, // Daudio default output pin
     AUDIO_PIN_OUT_HEADPHONE = 1 << 8, // Wired headphone output pin
     AUDIO_PIN_OUT_USB_HEADSET = 1 << 9,  // Arm usb output pin
+    AUDIO_PIN_OUT_BLUETOOTH_A2DP = 1 << 10,  // Bluetooth A2dp output pin
     AUDIO_PIN_OUT_DP = 1 << 11,
     AUDIO_PIN_IN_MIC = 1 << 27 | 1 << 0, // Microphone input pin
     AUDIO_PIN_IN_HS_MIC = 1 << 27 | 1 << 1, // Wired headset microphone pin for input
@@ -953,6 +984,8 @@ enum AudioPin {
     AUDIO_PIN_IN_BLUETOOTH_SCO_HEADSET = 1 << 27 | 1 << 4, // Bluetooth SCO headset input pin
     AUDIO_PIN_IN_DAUDIO_DEFAULT = 1 << 27 | 1 << 5, // Daudio default input pin
     AUDIO_PIN_IN_USB_HEADSET = 1 << 27 | 1 << 6,  // Arm usb input pin
+    AUDIO_PIN_IN_PENCIL = 1 << 27 | 1 << 7,  // Pencil input pin
+    AUDIO_PIN_IN_UWB = 1 << 27 | 1 << 8,  // Remote control input pin
 };
 
 enum AudioParamKey {
@@ -965,6 +998,8 @@ enum AudioParamKey {
     BT_WBS = 8,
     A2DP_OFFLOAD_STATE = 9, // for a2dp offload
     GET_DP_DEVICE_INFO = 10, // for dp sink
+    GET_PENCIL_INFO = 11, // for pencil source
+    GET_UWB_INFO = 12, // for remote control source
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,
@@ -1102,6 +1137,7 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
         {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
         {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
         {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST}, {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN},
+        {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
     };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
@@ -1311,10 +1347,17 @@ enum RestoreReason : int32_t {
     SERVER_DIED,
 };
 
+enum CheckPosTimeRes : int32_t {
+    CHECK_SUCCESS = 0,
+    CHECK_FAILED,
+    NEED_MODIFY,
+};
+
 struct RestoreInfo {
     RestoreReason restoreReason = DEFAULT_REASON;
     int32_t deviceChangeReason = 0;
     int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
+    uint32_t routeFlag = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

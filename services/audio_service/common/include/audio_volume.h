@@ -20,6 +20,9 @@
 #include <unordered_map>
 #include <shared_mutex>
 #include "audio_stream_info.h"
+#include "audio_volume_c.h"
+#include "audio_utils.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,13 +35,15 @@ enum FadePauseState {
     DONE_FADE,
     INVALID_STATE
 };
+const int32_t MAX_STREAM_CACHE_AMOUNT = 10;
 
 class AudioVolume {
 public:
     static AudioVolume *GetInstance();
     ~AudioVolume();
 
-    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass); // all volume
+    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass,
+        VolumeValues *volumes); // all volume
     float GetStreamVolume(uint32_t sessionId); // only stream volume
     float GetAppVolume(int32_t appUid, AudioVolumeMode mode);
     // history volume
@@ -80,10 +85,15 @@ public:
     void SetDefaultAppVolume(int32_t level);
     void SetVgsVolumeSupported(bool isVgsSupported);
     bool IsVgsVolumeSupported() const;
+    std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
+    void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
+        AdjustStreamVolume volumeType);
 private:
     AudioVolume();
-    float GetStreamVolume(uint32_t sessionId, int32_t& volumeType, int32_t& appUid, AudioVolumeMode& volumeMode);
-    float GetSystemVolume(int32_t volumeType, const std::string &deviceClass, int32_t &volumeLevel);
+    float GetStreamVolumeInternal(uint32_t sessionId, int32_t& volumeType,
+        int32_t& appUid, AudioVolumeMode& volumeMode);
+    float GetSystemVolumeInternal(int32_t volumeType, const std::string &deviceClass, int32_t &volumeLevel);
+    bool IsChangeVolume(uint32_t sessionId, float volumeFloat, int32_t volumeLevel);
 private:
     std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};
     std::unordered_map<std::string, SystemVolume> systemVolume_ {};
@@ -98,6 +108,13 @@ private:
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
     std::unordered_map<uint32_t, uint32_t> stopFadeoutState_{};
     int32_t defaultAppVolume_ = 0;
+
+    std::shared_ptr<FixedSizeList<AdjustStreamVolumeInfo>> setStreamVolumeInfo_ =
+        std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
+    std::shared_ptr<FixedSizeList<AdjustStreamVolumeInfo>> setLowPowerVolumeInfo_ =
+        std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
+    std::shared_ptr<FixedSizeList<AdjustStreamVolumeInfo>> setDuckVolumeInfo_ =
+        std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
 };
 
 class StreamVolume {

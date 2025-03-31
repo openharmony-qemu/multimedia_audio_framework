@@ -438,9 +438,9 @@ void AudioA2dpOffloadManager::GetA2dpOffloadCodecAndSendToDsp()
 
 int32_t AudioA2dpOffloadManager::HandleActiveDevice(DeviceType deviceType)
 {
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (GetVolumeGroupType(curOutputDeviceType) != GetVolumeGroupType(deviceType)) {
-        audioVolumeManager_.SetVolumeForSwitchDevice(deviceType);
+    AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    if (GetVolumeGroupType(curOutputDevice.deviceType_) != GetVolumeGroupType(deviceType)) {
+        audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDevice);
     }
     if (audioConfigManager_.GetUpdateRouteSupport()) {
         audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
@@ -526,6 +526,7 @@ std::string AudioA2dpOffloadManager::GetVolumeGroupType(DeviceType deviceType)
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_ACCESSORY:
             volumeGroupType = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:

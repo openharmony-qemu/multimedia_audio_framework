@@ -190,5 +190,10 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
         "Existing call in concede incoming call in");
     return SUCCESS;
 }
+
+std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& AudioConcurrencyService::GetConcurrencyMap()
+{
+    return concurrencyCfgMap_;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -443,20 +443,20 @@ int32_t AudioSystemManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t
     return AudioPolicyManager::GetInstance().SetAppVolumeLevel(appUid, volume);
 }
 
-int32_t AudioSystemManager::GetAppVolume(int32_t appUid) const
+int32_t AudioSystemManager::GetAppVolume(int32_t appUid, int32_t &volumeLevel) const
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::GetAppVolume");
     bool ret = PermissionUtil::VerifyIsSystemApp();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "GetAppVolume: No system permission");
     ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "GetAppVolume: No system permission");
-    return AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid);
+    return AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid, volumeLevel);
 }
 
-int32_t AudioSystemManager::GetSelfAppVolume() const
+int32_t AudioSystemManager::GetSelfAppVolume(int32_t &volumeLevel) const
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::GetSelfAppVolume");
-    return AudioPolicyManager::GetInstance().GetSelfAppVolumeLevel();
+    return AudioPolicyManager::GetInstance().GetSelfAppVolumeLevel(volumeLevel);
 }
 
 int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
@@ -498,14 +498,14 @@ int32_t AudioSystemManager::UnsetAppVolumeCallbackForUid(
     return AudioPolicyManager::GetInstance().UnsetAppVolumeCallbackForUid(callback);
 }
 
-bool AudioSystemManager::IsAppVolumeMute(int32_t appUid, bool owned)
+int32_t AudioSystemManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("IsAppVolumeMute: appUid[%{public}d], muted[%{public}d]", appUid, owned);
     bool ret = PermissionUtil::VerifyIsSystemApp();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
     ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "IsAppVolumeMute: No system permission");
-    return AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, owned);
+    return AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, owned, isMute);
 }
 
 int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel) const
@@ -542,8 +542,8 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
     DeviceType deviceType) const
 {
-    AUDIO_INFO_LOG("SetSystemVolumeWithDevice: volumeType[%{public}d], volumeLevel[%{public}d], deviceType[%{public}d]",
-        volumeType, volumeLevel, deviceType);
+    AUDIO_INFO_LOG("%{public}s: volumeType[%{public}d], volumeLevel[%{public}d], deviceType[%{public}d]",
+        __func__, volumeType, volumeLevel, deviceType);
 
     /* Validate volumeType and return INVALID_PARAMS error */
     switch (volumeType) {
@@ -774,6 +774,14 @@ int32_t AudioSystemManager::SetAudioClientInfoMgrCallback(const std::shared_ptr<
     AUDIO_INFO_LOG("In");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
+}
+
+int32_t AudioSystemManager::SetQueryBundleNameListCallback(
+    const std::shared_ptr<AudioQueryBundleNameListCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetQueryBundleNameListCallback(callback);
 }
 
 int32_t AudioSystemManager::SetRingerModeCallback(const int32_t clientId,
@@ -1406,6 +1414,7 @@ int32_t AudioSystemManager::SetA2dpDeviceVolume(const std::string &macAddress, c
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
 {
     AudioPin pin = AUDIO_PIN_NONE;
+    uint16_t dmDeviceType = 0;
     switch (deviceType) {
         case OHOS::AudioStandard::DEVICE_TYPE_NONE:
         case OHOS::AudioStandard::DEVICE_TYPE_INVALID:
@@ -1426,24 +1435,11 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             pin = AUDIO_PIN_IN_MIC;
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:
-            if (deviceRole == DeviceRole::INPUT_DEVICE) {
-                pin = AUDIO_PIN_IN_HS_MIC;
-            } else {
-                pin = AUDIO_PIN_OUT_HEADSET;
-            }
-            break;
         case OHOS::AudioStandard::DEVICE_TYPE_DP:
-            pin = AUDIO_PIN_OUT_DP;
-            break;
         case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
-            if (deviceRole == DeviceRole::INPUT_DEVICE) {
-                pin = AUDIO_PIN_IN_USB_HEADSET;
-            } else {
-                pin = AUDIO_PIN_OUT_USB_HEADSET;
-            }
-            break;
         case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
-            pin = AUDIO_PIN_OUT_HDMI;
+        case OHOS::AudioStandard::DEVICE_TYPE_ACCESSORY:
+            pin = GetPinValueForPeripherals(deviceType, deviceRole, dmDeviceType);
             break;
         default:
             OtherDeviceTypeCases(deviceType);
@@ -1466,6 +1462,45 @@ void AudioSystemManager::OtherDeviceTypeCases(DeviceType deviceType) const
             AUDIO_INFO_LOG("invalid input parameter");
             break;
     }
+}
+
+AudioPin AudioSystemManager::GetPinValueForPeripherals(DeviceType deviceType, DeviceRole deviceRole,
+    uint16_t dmDeviceType) const
+{
+    AudioPin pin = AUDIO_PIN_NONE;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:
+            if (deviceRole == DeviceRole::INPUT_DEVICE) {
+                pin = AUDIO_PIN_IN_HS_MIC;
+            } else {
+                pin = AUDIO_PIN_OUT_HEADSET;
+            }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_DP:
+            pin = AUDIO_PIN_OUT_DP;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
+            if (deviceRole == DeviceRole::INPUT_DEVICE) {
+                pin = AUDIO_PIN_IN_USB_HEADSET;
+            } else {
+                pin = AUDIO_PIN_OUT_USB_HEADSET;
+            }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
+            pin = AUDIO_PIN_OUT_HDMI;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_ACCESSORY:
+            dmDeviceType = GetDmDeviceType();
+            if (dmDeviceType == DM_DEVICE_TYPE_PENCIL) {
+                pin = AUDIO_PIN_IN_PENCIL;
+            } else if (dmDeviceType == DM_DEVICE_TYPE_UWB) {
+                pin = AUDIO_PIN_IN_UWB;
+            }
+            break;
+        default:
+            AUDIO_INFO_LOG("other case");
+    }
+    return pin;
 }
 
 DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const
@@ -1503,6 +1538,10 @@ DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const
             break;
         case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
             type = DEVICE_TYPE_DEFAULT;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_PENCIL:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_UWB:
+            type = DEVICE_TYPE_ACCESSORY;
             break;
         default:
             AUDIO_INFO_LOG("invalid input parameter");
@@ -1737,6 +1776,11 @@ int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
 {
     AUDIO_INFO_LOG("%{public}d", state);
     return SUCCESS;
+}
+
+uint16_t AudioSystemManager::GetDmDeviceType() const
+{
+    return AudioPolicyManager::GetInstance().GetDmDeviceType();
 }
 } // namespace AudioStandard
 } // namespace OHOS

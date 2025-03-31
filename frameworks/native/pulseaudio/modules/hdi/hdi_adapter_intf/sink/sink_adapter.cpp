@@ -39,6 +39,7 @@ static inline std::shared_ptr<IAudioRenderSink> GetRenderSink(uint32_t renderId)
 
 int32_t InitSinkAdapter(struct SinkAdapter *adapter, const char *deviceClass, const char *info)
 {
+    AUDIO_INFO_LOG("In, deviceClass: %{public}s, info: %{public}s", deviceClass, info);
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "adapter is nullptr");
 
     adapter->renderId = HDI_INVALID_ID;
@@ -73,6 +74,7 @@ void DeInitSinkAdapter(struct SinkAdapter *adapter)
 
 int32_t SinkAdapterInit(struct SinkAdapter *adapter, const struct SinkAdapterAttr *attr)
 {
+    AUDIO_INFO_LOG("In");
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
         "invalid adapter");
     CHECK_AND_RETURN_RET_LOG(attr != nullptr, ERR_INVALID_PARAM, "attr is nullptr");
@@ -100,6 +102,7 @@ int32_t SinkAdapterInit(struct SinkAdapter *adapter, const struct SinkAdapterAtt
 
 void SinkAdapterDeInit(struct SinkAdapter *adapter)
 {
+    AUDIO_INFO_LOG("In");
     CHECK_AND_RETURN_LOG(adapter != nullptr && adapter->renderId != HDI_INVALID_ID, "invalid adapter");
     std::shared_ptr<IAudioRenderSink> sink = GetRenderSink(adapter->renderId);
     CHECK_AND_RETURN_LOG(sink != nullptr, "get sink fail");

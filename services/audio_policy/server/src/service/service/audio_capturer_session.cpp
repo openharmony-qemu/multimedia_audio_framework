@@ -24,6 +24,7 @@
 #include "audio_policy_log.h"
 
 #include "audio_policy_utils.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -105,6 +106,7 @@ void AudioCapturerSession::UnloadInnerCapturerSink(std::string moduleName)
 void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo)
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
+    AUDIO_INFO_LOG("Is connected: %{public}d", isConnected);
     AudioDeviceDescriptor updatedDesc = AudioDeviceDescriptor(DEVICE_TYPE_REMOTE_CAST,
         AudioPolicyUtils::GetInstance().GetDeviceRole(DEVICE_TYPE_REMOTE_CAST));
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
@@ -117,11 +119,12 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
         audioPolicyManager_.ResetRemoteCastDeviceVolume();
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
-        audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
+            AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
         UnloadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     }
-    audioDeviceCommon_.FetchDevice(true);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
     // update a2dp offload
     if (audioA2dpOffloadManager_) {
@@ -133,6 +136,7 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
 int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,
     AudioStreamInfo streamInfo)
 {
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " source: %{public}d", sessionID, sessionInfo.sourceType);
     CHECK_AND_RETURN_RET_LOG(isPolicyConfigParsered_ && audioVolumeManager_.GetLoadFlag(), ERROR,
         "policyConfig not loaded");
@@ -144,20 +148,20 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
         // normal source types, dynamic open
-        StreamPropInfo targetInfo;
+        PipeStreamPropInfo targetInfo;
         SourceType targetSource;
         int32_t res = audioEcManager_.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
-        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
-            "fetch target source info error");
+        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "fetch target source info error");
 
+        AUDIO_INFO_LOG("Current source: %{public}d, target: %{public}d",
+            audioEcManager_.GetSourceOpened(), targetSource);
         if (audioEcManager_.GetSourceOpened() == SOURCE_TYPE_INVALID) {
             // normal source is not opened before
             audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
         } else if (IsHigherPrioritySource(targetSource, audioEcManager_.GetSourceOpened())) {
             // reload if higher source come
-            audioEcManager_.CloseNormalSource();
-            audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
+            audioEcManager_.ReloadNormalSource(sessionInfo, targetInfo, targetSource);
             sessionIdUsedToOpenSource_ = sessionID;
         }
         sessionWithNormalSourceType_[sessionID] = sessionInfo;
@@ -172,6 +176,7 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
 
 void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
 {
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     AUDIO_INFO_LOG("sessionid:%{public}" PRIu64, sessionID);
     if (sessionWithSpecialSourceType_.count(sessionID) > 0) {
         if (sessionWithSpecialSourceType_[sessionID].sourceType == SOURCE_TYPE_REMOTE_CAST) {
@@ -199,6 +204,7 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
     sessionIdisRemovedSet_.insert(sessionID);
 }
 
+// HandleRemainingSource must be called with onCapturerSessionChangedMutex_ held
 void AudioCapturerSession::HandleRemainingSource()
 {
     SourceType highestSource = SOURCE_TYPE_INVALID;
@@ -233,15 +239,15 @@ bool AudioCapturerSession::ConstructWakeupAudioModuleInfo(const AudioStreamInfo 
         return false;
     }
 
-    AudioAdapterInfo info;
-    AdaptersType type = static_cast<AdaptersType>(AudioPolicyUtils::portStrToEnum[std::string(PRIMARY_WAKEUP)]);
+    std::shared_ptr<PolicyAdapterInfo> info;
+    AudioAdapterType type = static_cast<AudioAdapterType>(AudioPolicyUtils::portStrToEnum[std::string(PRIMARY_WAKEUP)]);
     bool ret = audioConfigManager_.GetAdapterInfoByType(type, info);
     if (!ret) {
         AUDIO_ERR_LOG("can not find adapter info");
         return false;
     }
 
-    auto pipeInfo = info.GetPipeByName(PIPE_WAKEUP_INPUT);
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = info->GetPipeInfoByName(PIPE_WAKEUP_INPUT);
     if (pipeInfo == nullptr) {
         AUDIO_ERR_LOG("wakeup pipe info is nullptr");
         return false;
@@ -252,9 +258,9 @@ bool AudioCapturerSession::ConstructWakeupAudioModuleInfo(const AudioStreamInfo 
         return false;
     }
 
-    audioModuleInfo.adapterName = info.adapterName_;
-    audioModuleInfo.name = pipeInfo->moduleName_;
-    audioModuleInfo.lib = pipeInfo->lib_;
+    audioModuleInfo.adapterName = info->adapterName;
+    audioModuleInfo.name = pipeInfo->paProp_.moduleName_;
+    audioModuleInfo.lib = pipeInfo->paProp_.lib_;
     audioModuleInfo.networkId = "LocalDevice";
     audioModuleInfo.className = "primary";
     audioModuleInfo.fileName = "";
@@ -294,8 +300,8 @@ int32_t AudioCapturerSession::CloseWakeUpAudioCapturer()
 }
 
 // private method
-bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, PipeInfo *pipeInfo,
-    AudioModuleInfo &audioModuleInfo)
+bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo,
+    std::shared_ptr<AdapterPipeInfo> pipeInfo, AudioModuleInfo &audioModuleInfo)
 {
     if (pipeInfo == nullptr) {
         AUDIO_ERR_LOG("wakeup pipe info is nullptr");
@@ -307,16 +313,16 @@ bool AudioCapturerSession::FillWakeupStreamPropInfo(const AudioStreamInfo &strea
         return false;
     }
 
-    auto targetIt = pipeInfo->streamPropInfos_.begin();
-    for (auto it = pipeInfo->streamPropInfos_.begin(); it != pipeInfo->streamPropInfos_.end(); ++it) {
-        if (it -> channelLayout_ == static_cast<uint32_t>(streamInfo.channels)) {
+    auto targetIt = *pipeInfo->streamPropInfos_.begin();
+    for (auto it : pipeInfo->streamPropInfos_) {
+        if (it -> channels_ == static_cast<uint32_t>(streamInfo.channels)) {
             targetIt = it;
             break;
         }
     }
 
-    audioModuleInfo.format = targetIt->format_;
-    audioModuleInfo.channels = std::to_string(targetIt->channelLayout_);
+    audioModuleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetIt->format_];
+    audioModuleInfo.channels = std::to_string(targetIt->channels_);
     audioModuleInfo.rate = std::to_string(targetIt->sampleRate_);
     audioModuleInfo.bufferSize =  std::to_string(targetIt->bufferSize_);
 
@@ -341,6 +347,10 @@ bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inpu
     if (outputDesc.size() > 0 && outputDesc.front() != nullptr) {
         realOutputDevice = *outputDesc.front();
     }
+    if (!inputDevice.IsSameDeviceDesc(realInputDevice) || !outputDevice.IsSameDeviceDesc(realOutputDevice)) {
+        AUDIO_INFO_LOG("target device is not ready, so ignore reload");
+        return false;
+    }
     AudioEcInfo lastEcInfo = audioEcManager_.GetAudioEcInfo();
     if (!lastEcInfo.inputDevice.IsSameDeviceDesc(realInputDevice) ||
         !lastEcInfo.outputDevice.IsSameDeviceDesc(realOutputDevice)) {
@@ -353,6 +363,7 @@ bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inpu
 void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
     const AudioDeviceDescriptor &outputDevice, const std::string &caller)
 {
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     AUDIO_INFO_LOG("form caller: %{public}s", caller.c_str());
     if (!audioEcManager_.GetEcFeatureEnable()) {
         AUDIO_INFO_LOG("reload ignore for feature not enable");
@@ -427,6 +438,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV
     std::string oldVoipUpProp = GetEnhancePropByNameV3(oldPropertyArray, "voip_up");
     std::string newRecordProp = GetEnhancePropByNameV3(newPropertyArray, "record");
     std::string newVoipUpProp = GetEnhancePropByNameV3(newPropertyArray, "voip_up");
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
         (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
@@ -463,6 +475,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray
     std::string oldVoipUpProp = GetEnhancePropByName(oldPropertyArray, "voip_up");
     std::string newRecordProp = GetEnhancePropByName(newPropertyArray, "record");
     std::string newVoipUpProp = GetEnhancePropByName(newPropertyArray, "voip_up");
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
         (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);

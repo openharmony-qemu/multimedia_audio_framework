@@ -23,6 +23,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_async_action_handler.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -165,6 +166,9 @@ AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             ioHandle = IOHandles_[BLUETOOTH_MIC];
             break;
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
+            ioHandle = IOHandles_[ACCESSORY_SOURCE];
+            break;
         default:
             ioHandle = IOHandles_[PRIMARY_MIC];
             break;
@@ -175,9 +179,27 @@ AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
 int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleName,
     const AudioModuleInfo &moduleInfo)
 {
-    AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo);
+    AUDIO_INFO_LOG("In, name: %{public}s", moduleName.c_str());
+    uint32_t paIndex = 0;
+    AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
         "OpenAudioPort failed %{public}d", ioHandle);
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
+    pipeInfo_->id_ = ioHandle;
+    pipeInfo_->paIndex_ = paIndex;
+    if (moduleInfo.role == "sink") {
+        pipeInfo_->pipeRole_ = PIPE_ROLE_OUTPUT;
+        pipeInfo_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    } else {
+        pipeInfo_->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    }
+    pipeInfo_->adapterName_ = moduleInfo.adapterName;
+    pipeInfo_->moduleInfo_ = moduleInfo;
+    pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
+    
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo_);
 
     AddIOHandleInfo(moduleName, ioHandle);
     return SUCCESS;
@@ -190,8 +212,13 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
         "can not find %{public}s in io map", moduleName.c_str());
     DelIOHandleInfo(moduleName);
 
-    AUDIO_INFO_LOG("[close-module] %{public}s,id:%{public}d", moduleName.c_str(), ioHandle);
-    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, isSync);
+    std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t paIndex = pipeManager->GetPaIndexByIoHandle(ioHandle);
+    pipeManager->RemoveAudioPipeInfo(ioHandle);
+
+    AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        moduleName.c_str(), ioHandle, paIndex);
+    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, paIndex, isSync);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     return SUCCESS;
 }
@@ -268,6 +295,38 @@ void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &por
     } else {
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
     }
+}
+
+int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    const AudioModuleInfo &moduleInfo, bool isSync)
+{
+    std::string oldModuleName = pipeInfo->moduleInfo_.name;
+    AudioIOHandle ioHandle;
+    CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(oldModuleName, ioHandle), ERROR,
+        "can not find %{public}s in io map", oldModuleName.c_str());
+    DelIOHandleInfo(oldModuleName);
+
+    AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        oldModuleName.c_str(), ioHandle, pipeInfo->paIndex_);
+    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle,
+        pipeInfo->paIndex_, isSync);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
+
+    uint32_t paIndex = 0;
+    ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
+        "OpenAudioPort failed %{public}d", ioHandle);
+    AUDIO_INFO_LOG("[open-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        moduleInfo.name.c_str(), ioHandle, paIndex);
+
+    pipeInfo->id_ = ioHandle;
+    pipeInfo->paIndex_ = paIndex;
+    pipeInfo->adapterName_ = moduleInfo.adapterName;
+    pipeInfo->moduleInfo_ = moduleInfo;
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+
+    AddIOHandleInfo(moduleInfo.name, ioHandle);
+    return SUCCESS;
 }
 }
 }

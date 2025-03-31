@@ -45,13 +45,16 @@ public:
     int32_t UpdateTrackerInternal(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, AudioDeviceDescriptor &outputDeviceInfo);
+    int32_t UpdateRendererDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> outputDeviceInfo);
     int32_t UpdateRendererPipeInfo(const int32_t sessionId, const AudioPipeType pipeType);
     int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, AudioDeviceDescriptor &inputDeviceInfo);
+    int32_t UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     bool IsStreamActive(AudioStreamType volumeType);
+    bool CheckVoiceCallActive(int32_t sessionId);
     int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT, int32_t certainChannelCount = 0);
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
@@ -73,14 +76,16 @@ public:
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
+    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& GetConcurrencyMap();
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     StreamUsage GetRunningStreamUsageNoUltrasonic();
     SourceType GetRunningSourceTypeNoUltrasonic();
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
+    std::vector<uint32_t> GetAllCapturerSessionIDForUID(int32_t uid);
     int32_t ResumeStreamState();
-    bool HasVoipRendererStream();
+    bool HasVoipRendererStream(bool isFirstCreate = true);
     bool ChangeVoipCapturerStreamToNormal();
     bool IsCallStreamUsage(StreamUsage usage);
     std::set<int32_t> GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage streamUsage);
@@ -89,6 +94,7 @@ public:
     int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
+    bool IsMediaPlaying();
     void UpdateAppVolume(int32_t appUid, int32_t volume);
 
 private:

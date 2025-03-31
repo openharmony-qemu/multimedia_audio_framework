@@ -61,7 +61,7 @@
 #include "audio_a2dp_offload_manager.h"
 #include "audio_iohandle_map.h"
 #include "audio_router_map.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_connected_device.h"
 #include "audio_tone_manager.h"
 #include "audio_microphone_descriptor.h"
@@ -110,11 +110,11 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
 
-    bool IsAppVolumeMute(int32_t appUid, bool owned);
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
-    int32_t GetAppVolumeLevel(int32_t appUid);
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
@@ -176,11 +176,13 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
     DeviceType GetActiveOutputDevice();
+
+    uint16_t GetDmDeviceType();
 
     shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
 
@@ -223,8 +225,6 @@ public:
     int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
 
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
-
-    void SetDmDeviceType(const uint16_t dmDeviceType);
 
     bool IsDataShareReady();
 
@@ -405,7 +405,7 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = -1);
+        const int32_t pid = INVALID_PID);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -477,6 +477,9 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
 
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const SourceType sourceType, bool isRunning);
+
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
 
     int32_t UnsetAudioDeviceAnahsCallback();
@@ -492,6 +495,12 @@ public:
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
+
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+        std::string invocationTime);
+    void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
+    void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
+        bool registrationResult);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -508,7 +517,7 @@ private:
         audioGlobalConfigManager_(AudioGlobalConfigManager::GetAudioGlobalConfigManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioToneManager_(AudioToneManager::GetInstance()),
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
@@ -567,6 +576,8 @@ private:
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
 
+    void UpdateInputDeviceWhenStopping(const bool &isSupported);
+
     bool IsA2dpOffloadConnected();
 
     void SetDefaultDeviceLoadFlag(bool isLoad);
@@ -591,7 +602,7 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
-    bool isFastControlled_ = true;
+    bool isFastControlled_ = false;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -612,7 +623,8 @@ private:
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_SPEAKER,
-        DEVICE_TYPE_HDMI
+        DEVICE_TYPE_HDMI,
+        DEVICE_TYPE_LINE_DIGITAL
     };
     std::vector<DeviceType> inputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
@@ -620,7 +632,8 @@ private:
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_WAKEUP,
-        DEVICE_TYPE_MIC
+        DEVICE_TYPE_MIC,
+        DEVICE_TYPE_ACCESSORY
     };
 
     AudioEffectService& audioEffectService_;
@@ -655,7 +668,7 @@ private:
 
     AudioIOHandleMap& audioIOHandleMap_;
     AudioRouteMap& audioRouteMap_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioToneManager& audioToneManager_;
     AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;

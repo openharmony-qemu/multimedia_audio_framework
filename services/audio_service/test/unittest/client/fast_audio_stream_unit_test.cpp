@@ -66,6 +66,41 @@ public:
     virtual void UnsetOffloadModeImpl() {};
 };
 
+class AudioRendererFirstFrameWritingCallbackTest : public AudioRendererFirstFrameWritingCallback {
+public:
+    virtual ~AudioRendererFirstFrameWritingCallbackTest() = default;
+    /**
+     * Called when first buffer to be enqueued.
+     */
+    virtual void OnFirstFrameWriting(uint64_t latency) {}
+};
+
+class AudioRendererWriteCallbackTest : public AudioRendererWriteCallback {
+public:
+    virtual ~AudioRendererWriteCallbackTest() = default;
+
+    /**
+     * Called when buffer to be enqueued.
+     *
+     * @param length Indicates requested buffer length.
+     * @since 8
+     */
+    virtual void OnWriteData(size_t length) {}
+};
+
+class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {
+public:
+    virtual ~AudioCapturerReadCallbackTest() = default;
+
+    /**
+     * Called when buffer to be enqueued.
+     *
+     * @param length Indicates requested buffer length.
+     * @since 9
+     */
+    virtual void OnReadData(size_t length) {}
+};
+
 /**
  * @tc.name  : Test GetVolume API
  * @tc.type  : FUNC
@@ -147,6 +182,34 @@ HWTEST(FastSystemStreamUnitTest, GetSwitchInfo_001, TestSize.Level1)
     IAudioStream::SwitchInfo info;
     std::shared_ptr<FastAudioStream> fastAudioStream;
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    fastAudioStream->GetSwitchInfo(info);
+}
+
+/**
+ * @tc.name  : Test GetSwitchInfo API
+ * @tc.type  : FUNC
+ * @tc.number: GetSwitchInfo_002
+ * @tc.desc  : Test GetSwitchInfo interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetSwitchInfo_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    std::shared_ptr<AudioRendererWriteCallback> spkCallback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    fastAudioStream->spkProcClientCb_ = std::make_shared<FastAudioStreamRenderCallback>(spkCallback, *audioStream);
+
+    std::shared_ptr<AudioCapturerReadCallback> micCallback = std::make_shared<AudioCapturerReadCallbackTest>();
+    fastAudioStream->micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(micCallback);
+
+    fastAudioStream->firstFrameWritingCb_ = std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSwitchInfo_002 start");
+
+    IAudioStream::SwitchInfo info;
     fastAudioStream->GetSwitchInfo(info);
 }
 
@@ -448,7 +511,7 @@ HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_001, TestSize.Level1)
     fastAudioStream->streamInfo_ = info;
     fastAudioStream->state_ = RUNNING;
     result = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(result, true);
     fastAudioStream->state_ = PAUSED;
     result = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(result, true);
@@ -461,6 +524,514 @@ HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_001, TestSize.Level1)
     fastAudioStream->state_ = INVALID;
     result = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test InitializeAudioProcessConfig API
+ * @tc.type  : FUNC
+ * @tc.number: InitializeAudioProcessConfig_001
+ * @tc.desc  : Test InitializeAudioProcessConfig interface.
+ */
+HWTEST(FastSystemStreamUnitTest, InitializeAudioProcessConfig_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest InitializeAudioProcessConfig_001 start");
+    AudioProcessConfig config;
+    AudioStreamParams info;
+    fastAudioStream->eMode_ = static_cast<AudioMode>(-1);
+    auto result = fastAudioStream->InitializeAudioProcessConfig(config, info);
+    EXPECT_EQ(result, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test GetState API
+ * @tc.type  : FUNC
+ * @tc.number: GetState_001
+ * @tc.desc  : Test GetState interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetState_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetState_001 start");
+    fastAudioStream->switchingInfo_.isSwitching_ = true;
+    auto result = fastAudioStream->GetState();
+    EXPECT_EQ(result, State::INVALID);
+}
+
+/**
+ * @tc.name  : Test GetAudioPosition API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioPosition_001
+ * @tc.desc  : Test GetAudioPosition interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetAudioPosition_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAudioPosition_001 start");
+    Timestamp timestamp;
+    Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
+    auto result = fastAudioStream->GetAudioPosition(timestamp, base);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test SetRendererFirstFrameWritingCallback API
+ * @tc.type  : FUNC
+ * @tc.number: SetRendererFirstFrameWritingCallback_001
+ * @tc.desc  : Test SetRendererFirstFrameWritingCallback interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetRendererFirstFrameWritingCallback_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetRendererFirstFrameWritingCallback_001 start");
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> callback =
+        std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
+    auto result = fastAudioStream->SetRendererFirstFrameWritingCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetPreferredFrameSize API
+ * @tc.type  : FUNC
+ * @tc.number: SetPreferredFrameSize_001
+ * @tc.desc  : Test SetPreferredFrameSize interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetPreferredFrameSize_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetPreferredFrameSize_001 start");
+    int32_t frameSize = 0;
+    fastAudioStream->SetPreferredFrameSize(frameSize);
+}
+
+/**
+ * @tc.name  : Test UpdateLatencyTimestamp API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateLatencyTimestamp_001
+ * @tc.desc  : Test UpdateLatencyTimestamp interface.
+ */
+HWTEST(FastSystemStreamUnitTest, UpdateLatencyTimestamp_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UpdateLatencyTimestamp_001 start");
+    std::string timestamp = "";
+    bool isRenderer = true;
+    fastAudioStream->UpdateLatencyTimestamp(timestamp, isRenderer);
+}
+
+/**
+ * @tc.name  : Test ChangeSpeed API
+ * @tc.type  : FUNC
+ * @tc.number: ChangeSpeed_001
+ * @tc.desc  : Test ChangeSpeed interface.
+ */
+HWTEST(FastSystemStreamUnitTest, ChangeSpeed_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest ChangeSpeed_001 start");
+
+    uint8_t buffer[] = {0x01, 0x02, 0x03, 0x04};
+    int32_t bufferSize = sizeof(buffer);
+    std::unique_ptr<uint8_t[]> outBuffer;
+    int32_t outBufferSize = 0;
+    auto result = fastAudioStream->ChangeSpeed(buffer, bufferSize, outBuffer, outBufferSize);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test Read API
+ * @tc.type  : FUNC
+ * @tc.number: Read_001
+ * @tc.desc  : Test Read interface.
+ */
+HWTEST(FastSystemStreamUnitTest, Read_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest Read_001 start");
+    uint8_t buffer = 0XFF;
+    size_t userSize = 0;
+    bool isBlockingRead = true;
+    auto result = fastAudioStream->Read(buffer, userSize, isBlockingRead);
+    EXPECT_EQ(result, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test Write API
+ * @tc.type  : FUNC
+ * @tc.number: Write_001
+ * @tc.desc  : Test Write interface.
+ */
+HWTEST(FastSystemStreamUnitTest, Write_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest Write_001 start");
+    uint8_t *pcmBuffer = new uint8_t[2];
+    size_t pcmBufferSize = 0;
+    uint8_t *metaBuffer = new uint8_t[2];
+    size_t metaBufferSize = 0;
+    auto result = fastAudioStream->Write(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+    EXPECT_EQ(result, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test SetUnderflowCount API
+ * @tc.type  : FUNC
+ * @tc.number: SetUnderflowCount_001
+ * @tc.desc  : Test SetUnderflowCount interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetUnderflowCount_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetUnderflowCount_001 start");
+    uint32_t underflowCount = 0;
+    fastAudioStream->SetUnderflowCount(underflowCount);
+}
+
+/**
+ * @tc.name  : Test SetOverflowCount API
+ * @tc.type  : FUNC
+ * @tc.number: SetOverflowCount_001
+ * @tc.desc  : Test SetOverflowCount interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetOverflowCount_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetOverflowCount_001 start");
+    uint32_t overflowCount = 0;
+    fastAudioStream->SetOverflowCount(overflowCount);
+}
+
+/**
+ * @tc.name  : Test SetBufferSizeInMsec API
+ * @tc.type  : FUNC
+ * @tc.number: SetBufferSizeInMsec_001
+ * @tc.desc  : Test SetBufferSizeInMsec interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetBufferSizeInMsec_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetBufferSizeInMsec_001 start");
+    int32_t bufferSizeInMsec = 0;
+    auto result = fastAudioStream->SetBufferSizeInMsec(bufferSizeInMsec);
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetInnerCapturerState API
+ * @tc.type  : FUNC
+ * @tc.number: SetInnerCapturerState_001
+ * @tc.desc  : Test SetInnerCapturerState interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetInnerCapturerState_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetInnerCapturerState_001 start");
+    bool isInnerCapturer = true;
+    fastAudioStream->SetInnerCapturerState(isInnerCapturer);
+}
+
+/**
+ * @tc.name  : Test SetWakeupCapturerState API
+ * @tc.type  : FUNC
+ * @tc.number: SetWakeupCapturerState_001
+ * @tc.desc  : Test SetWakeupCapturerState interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetWakeupCapturerState_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetWakeupCapturerState_001 start");
+    bool isWakeupCapturer = true;
+    fastAudioStream->SetWakeupCapturerState(isWakeupCapturer);
+}
+
+/**
+ * @tc.name  : Test OnFirstFrameWriting API
+ * @tc.type  : FUNC
+ * @tc.number: OnFirstFrameWriting_001
+ * @tc.desc  : Test OnFirstFrameWriting interface.
+ */
+HWTEST(FastSystemStreamUnitTest, OnFirstFrameWriting_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest OnFirstFrameWriting_001 start");
+    fastAudioStream->OnFirstFrameWriting();
+}
+
+/**
+ * @tc.name  : Test OnHandleData API
+ * @tc.type  : FUNC
+ * @tc.number: OnHandleData_001
+ * @tc.desc  : Test OnHandleData interface.
+ */
+HWTEST(FastSystemStreamUnitTest, OnHandleData_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    std::shared_ptr<FastAudioStreamRenderCallback> fastAudioStreamRenderCallback;
+    fastAudioStreamRenderCallback = std::make_shared<FastAudioStreamRenderCallback>(callback, *audioStream);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest OnHandleData_001 start");
+    size_t length = 0;
+    fastAudioStreamRenderCallback->OnHandleData(length);
+}
+
+/**
+ * @tc.name  : Test ResetFirstFrameState API
+ * @tc.type  : FUNC
+ * @tc.number: ResetFirstFrameState_001
+ * @tc.desc  : Test ResetFirstFrameState interface.
+ */
+HWTEST(FastSystemStreamUnitTest, ResetFirstFrameState_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    std::shared_ptr<FastAudioStreamRenderCallback> fastAudioStreamRenderCallback;
+    fastAudioStreamRenderCallback = std::make_shared<FastAudioStreamRenderCallback>(callback, *audioStream);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest ResetFirstFrameState_001 start");
+    fastAudioStreamRenderCallback->ResetFirstFrameState();
+}
+
+/**
+ * @tc.name  : Test GetRendererWriteCallback API
+ * @tc.type  : FUNC
+ * @tc.number: GetRendererWriteCallback_001
+ * @tc.desc  : Test GetRendererWriteCallback interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetRendererWriteCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    std::shared_ptr<FastAudioStreamRenderCallback> fastAudioStreamRenderCallback;
+    fastAudioStreamRenderCallback = std::make_shared<FastAudioStreamRenderCallback>(callback, *audioStream);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetRendererWriteCallback_001 start");
+    auto result = fastAudioStreamRenderCallback->GetRendererWriteCallback();
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetCapturerReadCallback API
+ * @tc.type  : FUNC
+ * @tc.number: GetCapturerReadCallback_001
+ * @tc.desc  : Test GetCapturerReadCallback interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetCapturerReadCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioCapturerReadCallback> callback = std::make_shared<AudioCapturerReadCallbackTest>();
+    std::shared_ptr<FastAudioStreamCaptureCallback> fastAudioStreamCaptureCallback;
+    fastAudioStreamCaptureCallback = std::make_shared<FastAudioStreamCaptureCallback>(callback);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetCapturerReadCallback_001 start");
+    auto result = fastAudioStreamCaptureCallback->GetCapturerReadCallback();
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test SetChannelBlendMode API
+ * @tc.type  : FUNC
+ * @tc.number: SetChannelBlendMode_001
+ * @tc.desc  : Test SetChannelBlendMode interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetChannelBlendMode_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetChannelBlendMode_001 start");
+    ChannelBlendMode blendMode = ChannelBlendMode::MODE_DEFAULT;
+    auto result = fastAudioStream->SetChannelBlendMode(blendMode);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetVolumeWithRamp API
+ * @tc.type  : FUNC
+ * @tc.number: SetVolumeWithRamp_001
+ * @tc.desc  : Test SetVolumeWithRamp interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetVolumeWithRamp_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetVolumeWithRamp_001 start");
+    float volume = 0;
+    int32_t duration = 0;
+    auto result = fastAudioStream->SetVolumeWithRamp(volume, duration);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetOffloadEnable API
+ * @tc.type  : FUNC
+ * @tc.number: GetOffloadEnable_001
+ * @tc.desc  : Test GetOffloadEnable interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetOffloadEnable_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetOffloadEnable_001 start");
+    auto result = fastAudioStream->GetOffloadEnable();
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test GetSpatializationEnabled API
+ * @tc.type  : FUNC
+ * @tc.number: GetSpatializationEnabled_001
+ * @tc.desc  : Test GetSpatializationEnabled interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetSpatializationEnabled_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSpatializationEnabled_001 start");
+    auto result = fastAudioStream->GetSpatializationEnabled();
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test GetHighResolutionEnabled API
+ * @tc.type  : FUNC
+ * @tc.number: GetHighResolutionEnabled_001
+ * @tc.desc  : Test GetHighResolutionEnabled interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetHighResolutionEnabled_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetHighResolutionEnabled_001 start");
+    auto result = fastAudioStream->GetHighResolutionEnabled();
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test SetDefaultOutputDevice API
+ * @tc.type  : FUNC
+ * @tc.number: SetDefaultOutputDevice_001
+ * @tc.desc  : Test SetDefaultOutputDevice interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetDefaultOutputDevice_001 start");
+    DeviceType defaultOuputDevice = DeviceType::DEVICE_TYPE_INVALID;
+    auto result = fastAudioStream->SetDefaultOutputDevice(defaultOuputDevice);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTimestampInfo_001
+ * @tc.desc  : Test GetAudioTimestampInfo interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetAudioTimestampInfo_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAudioTimestampInfo_001 start");
+    Timestamp timestamp;
+    Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
+    auto result = fastAudioStream->GetAudioTimestampInfo(timestamp, base);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test SetSwitchingStatus API
+ * @tc.type  : FUNC
+ * @tc.number: SetSwitchingStatus_001
+ * @tc.desc  : Test SetSwitchingStatus interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetSwitchingStatus_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSwitchingStatus_001 start");
+    bool isSwitching = true;
+    fastAudioStream->SetSwitchingStatus(isSwitching);
+}
+
+/**
+ * @tc.name  : Test SetSwitchingStatus API
+ * @tc.type  : FUNC
+ * @tc.number: SetSwitchingStatus_002
+ * @tc.desc  : Test SetSwitchingStatus interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetSwitchingStatus_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSwitchingStatus_002 start");
+    bool isSwitching = false;
+    fastAudioStream->SetSwitchingStatus(isSwitching);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -46,7 +46,7 @@ public:
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID);
 
     int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback);
@@ -74,6 +74,8 @@ public:
     DeviceType GetActiveOutputDevice();
 
     AudioScene GetAudioScene() const;
+
+    int32_t SetAudioSceneChangeCallback(const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
 
     int32_t GetMaxVolume(AudioVolumeType volumeType);
 

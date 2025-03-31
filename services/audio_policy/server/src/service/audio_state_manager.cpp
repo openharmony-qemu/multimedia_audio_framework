@@ -15,11 +15,20 @@
 
 #include "audio_state_manager.h"
 #include "audio_policy_log.h"
+#include "audio_utils.h"
+
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+#include "ipc_skeleton.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
 void AudioStateManager::SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
@@ -32,25 +41,36 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("deviceType: %{public}d, pid: %{public}d", deviceDescriptor->deviceType_, pid);
+    
+    int32_t callerPid = pid;
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    std::string bundleName = GetBundleNameFromUid(callerUid);
+    AUDIO_INFO_LOG("uid: %{public}u, callerPid: %{public}d, bundle name: %{public}s",
+        callerUid, callerPid, bundleName.c_str());
+    if (audioClientInfoMgrCallback_ != nullptr) {
+        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid);
+    }
+    AUDIO_INFO_LOG("check result pid: %{public}d", callerPid);
     if (deviceDescriptor->deviceType_ == DEVICE_TYPE_NONE) {
-        if (pid == 0) {
+        if (callerPid == CLEAR_PID) {
             // clear all
             forcedDeviceMapList_.clear();
-        } else if (pid == -1) {
-            // clear equal ownerPid_
+        } else if (callerPid == SYSTEM_PID) {
+            // clear equal ownerPid_ and SYSTEM_PID
             RemoveForcedDeviceMapData(ownerPid_);
+            RemoveForcedDeviceMapData(SYSTEM_PID);
         } else {
             // clear equal pid
-            RemoveForcedDeviceMapData(pid);
+            RemoveForcedDeviceMapData(callerPid);
         }
     } else {
         std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> currentDeviceMap;
-        if (pid == -1) {
+        if (callerPid == SYSTEM_PID && ownerPid_ != 0) {
             RemoveForcedDeviceMapData(ownerPid_);
             currentDeviceMap = {{ownerPid_, deviceDescriptor}};
         } else {
-            RemoveForcedDeviceMapData(pid);
-            currentDeviceMap = {{pid, deviceDescriptor}};
+            RemoveForcedDeviceMapData(callerPid);
+            currentDeviceMap = {{callerPid, deviceDescriptor}};
         }
         forcedDeviceMapList_.push_back(currentDeviceMap);
     }
@@ -147,7 +167,7 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
             }
         }
         for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
-            if (1 == it->begin()->first) {
+            if (SYSTEM_PID == it->begin()->first) {
                 AUDIO_INFO_LOG("bluetooth already force selected, deviceType: %{public}d",
                     it->begin()->second->deviceType_);
                 return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
@@ -253,6 +273,35 @@ void AudioStateManager::SetAudioSceneOwnerPid(const int32_t pid)
 {
     AUDIO_INFO_LOG("ownerPid_: %{public}d, pid: %{public}d", ownerPid_, pid);
     ownerPid_ = pid;
+}
+
+int32_t AudioStateManager::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
+{
+    audioClientInfoMgrCallback_ = callback;
+    return 0;
+}
+
+const std::string AudioStateManager::GetBundleNameFromUid(int32_t uid)
+{
+    AudioXCollie audioXCollie("AudioRecoveryDevice::GetBundleNameFromUid",
+        GET_BUNDLE_TIME_OUT_SECONDS);
+    std::string bundleName {""};
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
+    guard.CheckCurrTimeout();
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
+
+    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
+    bundleMgrProxy->GetNameForUid(uid, bundleName);
+    reguard.CheckCurrTimeout();
+
+    return bundleName;
 }
 
 void AudioStateManager::RemoveForcedDeviceMapData(int32_t pid)

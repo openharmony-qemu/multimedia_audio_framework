@@ -161,7 +161,8 @@ void SetVolumeFuzzTest()
 
 void GetVolumeFuzzTest()
 {
-    float left, right;
+    float left;
+    float right;
     if (g_dataSize >= sizeof(left)) {
         left = GetData<float>();
     } else {

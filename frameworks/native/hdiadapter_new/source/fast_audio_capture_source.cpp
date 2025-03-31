@@ -34,7 +34,7 @@ FastAudioCaptureSource::~FastAudioCaptureSource()
 
 int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("in, flag: %{public}d", attr.audioStreamFlag);
+    AUDIO_INFO_LOG("In, flag: %{public}d", attr.audioStreamFlag);
     attr_ = attr;
 
     int32_t ret = CreateCapture();
@@ -517,6 +517,8 @@ int32_t FastAudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     int32_t streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, input :%{public}d",
+        attr_.adapterName, inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(attr_.adapterName, inputDevice, streamId, inputType);
     return ret;
 }
@@ -587,6 +589,11 @@ int32_t FastAudioCaptureSource::CheckPositionTime(void)
     int32_t ret = audioCapture_->Stop(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "stop fail, ret: %{public}d", ret);
     return ERR_OPERATION_FAILED;
+}
+
+void FastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 } // namespace AudioStandard

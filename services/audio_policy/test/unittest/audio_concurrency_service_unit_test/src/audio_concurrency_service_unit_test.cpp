@@ -371,5 +371,17 @@ HWTEST_F(AudioConcurrencyServiceUnitTest, AudioConcurrencyService_015, TestSize.
         audioRendererChangeInfos, audioCapturerChangeInfos);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioInputThread.
+* @tc.number: AudioConcurrencyService_015.
+* @tc.desc  : Test ActivateAudioConcurrency.
+*/
+HWTEST_F(AudioConcurrencyServiceUnitTest, AudioConcurrencyService_016, TestSize.Level1)
+{
+    auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
+    auto result = audioConcurrencyService->GetConcurrencyMap();
+    EXPECT_EQ(result.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

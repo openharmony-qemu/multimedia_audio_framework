@@ -32,6 +32,7 @@
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
+#include "core_service_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,7 +77,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
         return SUCCESS;
     }
-
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "ConfigServerBuffer failed, stream_ is null");
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     const size_t bufferNum = ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP)
         ? CAPTURER_BUFFER_WAKE_UP_NUM : CAPTURER_BUFFER_DEFAULT_NUM);
@@ -187,7 +188,10 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
-            recorderDfx_->WriteDfxActionMsg(streamIndex_, CAPTURER_STAGE_PAUSE_OK);
+            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+            recorderDfx_->WriteDfxStopMsg(streamIndex_, CAPTURER_STAGE_PAUSE_OK,
+                GetLastAudioDuration(), processConfig_);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
@@ -249,6 +253,7 @@ void CapturerInServer::ReadData(size_t length)
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null");
 
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
@@ -367,10 +372,14 @@ int32_t CapturerInServer::StartInner()
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
 
+    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+    }
+
     AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
 
     status_ = I_STATUS_STARTING;
-    int ret = stream_->Start();
+    int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
     return SUCCESS;
@@ -472,14 +481,19 @@ int32_t CapturerInServer::Stop()
 int32_t CapturerInServer::Release()
 {
     AudioService::GetInstance()->RemoveCapturer(streamIndex_);
-    {
-        std::unique_lock<std::mutex> lock(statusLock_);
-        if (status_ == I_STATUS_RELEASED) {
-            AUDIO_INFO_LOG("Already released");
-            return SUCCESS;
-        }
+    std::unique_lock<std::mutex> lock(statusLock_);
+    if (status_ == I_STATUS_RELEASED) {
+        AUDIO_INFO_LOG("Already released");
+        return SUCCESS;
     }
+    lock.unlock();
     AUDIO_INFO_LOG("Start release capturer");
+
+    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        int32_t result =
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
+    }
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
@@ -489,7 +503,7 @@ int32_t CapturerInServer::Release()
     status_ = I_STATUS_RELEASED;
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        AUDIO_INFO_LOG("Disable inner capturer for %{public}u， innerCapId :%{public}d, innerCapMode:%{public}d",
+        AUDIO_INFO_LOG("Disable inner capturer for %{public}u, innerCapId :%{public}d, innerCapMode:%{public}d",
             streamIndex_, innerCapId_, processConfig_.innerCapMode);
         if (processConfig_.innerCapMode == MODERN_INNER_CAP) {
             PlaybackCapturerManager::GetInstance()->RemovePlaybackCapturerFilterInfo(streamIndex_, innerCapId_);
@@ -578,6 +592,7 @@ int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
         AUDIO_WARNING_LOG("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetAudioTime failed, stream_ is null");
     stream_->GetStreamFramesRead(framePos);
     stream_->GetCurrentTimeStamp(timestamp);
     if (resetTime_) {
@@ -589,6 +604,7 @@ int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 
 int32_t CapturerInServer::GetLatency(uint64_t &latency)
 {
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetLatency failed, stream_ is null");
     return stream_->GetLatency(latency);
 }
 

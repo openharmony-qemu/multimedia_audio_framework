@@ -90,8 +90,8 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             return AUDIO_OK;
         }
         case ON_QUERY_ALLOWED_PLAYBACK: {
-            uint32_t uid = data.ReadInt32();
-            uint32_t pid = data.ReadInt32();
+            int32_t uid = data.ReadInt32();
+            int32_t pid = data.ReadInt32();
             bool ret = OnQueryAllowedPlayback(uid, pid);
             reply.WriteBool(ret);
             return AUDIO_OK;
@@ -101,6 +101,11 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             uint32_t uid = data.ReadUint32();
             int32_t pid = data.ReadInt32();
             OnCheckClientInfo(bundleName, uid, pid);
+            return AUDIO_OK;
+        }
+        case ON_QUERY_BUNDLE_NAME_LIST: {
+            std::string bundleName = data.ReadString();
+            OnQueryBundleNameIsInList(bundleName);
             return AUDIO_OK;
         }
         default: {
@@ -163,6 +168,17 @@ bool AudioPolicyManagerListenerStub::OnQueryAllowedPlayback(int32_t uid, int32_t
     return audioQueryAllowedPlaybackCallback->OnQueryAllowedPlayback(uid, pid);
 }
 
+bool AudioPolicyManagerListenerStub::OnQueryBundleNameIsInList(const std::string &bundleName)
+{
+    std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
+        audioQueryBundleNameListCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioQueryBundleNameListCallback != nullptr, false,
+        "audioQueryBundleNameListCallback_ is nullptr");
+
+    return audioQueryBundleNameListCallback->OnQueryBundleNameIsInList(bundleName);
+}
+
 void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
 {
     callback_ = callback;
@@ -188,6 +204,12 @@ void AudioPolicyManagerListenerStub::SetQueryAllowedPlaybackCallback(
     const std::weak_ptr<AudioQueryAllowedPlaybackCallback> &cb)
 {
     audioQueryAllowedPlaybackCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStub::SetQueryBundleNameListCallback(
+    const std::weak_ptr<AudioQueryBundleNameListCallback> &cb)
+{
+    audioQueryBundleNameListCallback_ = cb;
 }
 } // namespace AudioStandard
 } // namespace OHOS

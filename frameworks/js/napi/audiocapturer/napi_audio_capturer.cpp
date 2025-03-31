@@ -83,6 +83,7 @@ napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &const
         DECLARE_NAPI_FUNCTION("getCurrentAudioCapturerChangeInfo", GetCurrentAudioCapturerChangeInfo),
         DECLARE_NAPI_FUNCTION("getCurrentMicrophones", GetCurrentMicrophones),
         DECLARE_NAPI_FUNCTION("getOverflowCount", GetOverflowCount),
+        DECLARE_NAPI_FUNCTION("setInputDeviceToAccessory", SetInputDeviceToAccessory),
         DECLARE_NAPI_FUNCTION("getOverflowCountSync", GetOverflowCountSync),
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfo", GetAudioTimestampInfo),
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfoSync", GetAudioTimestampInfoSync),
@@ -134,6 +135,7 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
     if (capturerOptions.capturerInfo.capturerFlags != 0) {
         capturerOptions.capturerInfo.capturerFlags = 0;
     }
+    capturerOptions.capturerInfo.recorderType = RECORDER_TYPE_ARKTS_AUDIO_RECORDER;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     napiCapturer->audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
 #else
@@ -540,6 +542,38 @@ napi_status NapiAudioCapturer::ReadFromNative(shared_ptr<AudioCapturerAsyncConte
     context->buffer = buffer;
     status = napi_ok;
     return status;
+}
+
+napi_value NapiAudioCapturer::SetInputDeviceToAccessory(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, "SetInputDeviceToAccessory failed : no memory",
+            NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            "context object state is error.");
+        context->intValue = napiAudioCapturer->audioCapturer_->SetInputDevice(DEVICE_TYPE_ACCESSORY);
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetInputDeviceToAccessory", executor, complete);
 }
 
 napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)

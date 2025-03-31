@@ -41,6 +41,7 @@ group("audio_policy_packages") {
 config("audio_policy_public_config") {
   include_dirs = [
     "util/include",
+    "common/definitions/include",
     "common/include",
     "client/include",
     "server/include",
@@ -59,6 +60,9 @@ config("audio_policy_public_config") {
     "server/src/service/concurrency",
     "server/src/service/interrupt",
     "server/src/service/session",
+    "services/core/config/include",
+    "services/core/include",
+    "services/pipe/include",
     "safe_volume_notification/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
@@ -66,10 +70,12 @@ config("audio_policy_public_config") {
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiorenderer/include",
     "../../frameworks/native/audioadapter/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/bluetoothclient",
     "../../frameworks/native/hdiadapter_new/include",
+    "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
@@ -156,10 +162,13 @@ audio_ohos_library("audio_policy_service") {
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/audio_manager_listener_stub.cpp",
+    "../audio_service/client/src/core_service_provider_stub.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "../audio_service/client/src/policy_provider_stub.cpp",
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
+    "common/definitions/src/audio_definition_adapter_info.cpp",
+    "common/definitions/src/audio_definition_policy_utils.cpp",
     "server/src/app_state_listener.cpp",
     "server/src/audio_anahs_manager_listener_proxy.cpp",
     "server/src/audio_client_tracker_callback_proxy.cpp",
@@ -244,6 +253,13 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/session/audio_session_service.cpp",
     "server/src/service/session/audio_session_state_monitor.cpp",
     "server/src/service/spatialization/audio_spatialization_service.cpp",
+    "services/core/config/src/audio_policy_config_manager.cpp",
+    "services/core/config/src/audio_policy_config_parser.cpp",
+    "services/core/src/audio_core_service.cpp",
+    "services/core/src/audio_core_service_entry.cpp",
+    "services/core/src/audio_core_service_private.cpp",
+    "services/pipe/src/audio_pipe_manager.cpp",
+    "services/pipe/src/audio_pipe_selector.cpp",
     "util/src/audio_ability_manager.cpp",
   ]
 
@@ -288,6 +304,7 @@ audio_ohos_library("audio_policy_service") {
 
   deps = [
     "../../frameworks/native/audioadapter:pulse_audio_service_adapter",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioutils:audio_xml_utils",
@@ -482,6 +499,7 @@ config("audio_policy_client_config") {
     "server/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiopolicy/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
@@ -531,7 +549,10 @@ audio_ohos_library("audio_policy_client") {
     "client/src/proxy/audio_policy_volume_proxy.cpp",
   ]
 
-  deps = [ "../../frameworks/native/audioutils:audio_utils" ]
+  deps = [
+    "../../frameworks/native/audiodefinitions:audio_definitions",
+    "../../frameworks/native/audioutils:audio_utils",
+  ]
 
   public_configs = [ ":audio_policy_client_config" ]
 
@@ -669,13 +690,23 @@ ohos_shared_library("audio_foundation") {
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
+  defines = []
+  if (audio_framework_feature_detect_soundbox) {
+    defines += [ "DETECT_SOUNDBOX" ]
+  }
+
   innerapi_tags = [ "platformsdk" ]
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }
 
 config("audio_manager_client_public_config") {
-  include_dirs = [ "util/include" ]
+  include_dirs = [
+    "util/include",
+    "../../frameworks/native/audiodefinitions/include",
+    "../../frameworks/native/audiodefinitions/include/common",
+    "../../frameworks/native/hdiadapter_new/include/common",
+  ]
 }
 
 ohos_shared_library("audio_manager_client") {

@@ -51,7 +51,8 @@ shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallRenderDevice(Stream
     return desc;
 }
 
-shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePublicDevices();
@@ -107,7 +108,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRender
     return descs;
 }
 
-shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }

@@ -63,6 +63,7 @@ public:
         RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) = 0;
     virtual int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
+    virtual int32_t GetSplitInfoRefined(std::string &splitInfo) = 0;
 };
 
 class AudioClientInfoMgrCallback {
@@ -166,6 +167,18 @@ class AudioQueryAllowedPlaybackCallback {
     public:
         virtual ~AudioQueryAllowedPlaybackCallback() = default;
         virtual bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) = 0;
+};
+
+class AudioManagerAudioSceneChangedCallback {
+public:
+    virtual ~AudioManagerAudioSceneChangedCallback() = default;
+    /**
+     * Called when AudioScene changed.
+     *
+     * @param AudioScene audio scene
+     * @since 16
+     */
+    virtual void OnAudioSceneChange(const AudioScene audioScene) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

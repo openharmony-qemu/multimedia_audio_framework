@@ -48,10 +48,11 @@ int32_t LocalDeviceManager::LoadAdapter(const std::string &adapterName)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && adapter != nullptr, ERR_NOT_STARTED, "load adapter fail");
     ret = adapter->InitAllPorts(adapter);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "init all ports fail");
-    std::lock_guard<std::mutex> lock(adapterMtx_);
+    adapterMtx_.lock();
     adapters_[adapterName] = std::make_shared<LocalAdapterWrapper>();
     adapters_[adapterName]->adapterDesc_ = descs[index];
     adapters_[adapterName]->adapter_ = adapter;
+    adapterMtx_.unlock();
     // LCOV_EXCL_START
     for (auto it = reSetParams_.begin(); it != reSetParams_.end();) {
         if (it->adapterName_ == adapterName) {
@@ -171,7 +172,8 @@ int32_t LocalDeviceManager::SetOutputRoute(const std::string &adapterName, const
         sinks[i] = {};
         int32_t ret = SetOutputPortPin(devices[i], sinks[i]);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-        AUDIO_INFO_LOG("output[%{public}zu], pin: 0x%{public}X", i, sinks[i].ext.device.type);
+        AUDIO_INFO_LOG("output[%{public}zu], device: %{public}d, pin: 0x%{public}X", i, devices[i],
+            sinks[i].ext.device.type);
         sinks[i].portId = static_cast<int32_t>(GetPortId(adapterName, PORT_OUT));
         sinks[i].role = AUDIO_PORT_SINK_ROLE;
         sinks[i].type = AUDIO_PORT_DEVICE_TYPE;
@@ -191,7 +193,8 @@ int32_t LocalDeviceManager::SetOutputRoute(const std::string &adapterName, const
         "adapter %{public}s is nullptr", adapterName.c_str());
     int32_t ret = wrapper->adapter_->UpdateAudioRoute(wrapper->adapter_, &route, &(wrapper->routeHandle_));
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("update route, device: %{public}d, cost: [%{public}" PRId64 "]ms", devices[0], stamp);
+    AUDIO_INFO_LOG("update route, adapterName: %{public}s, device: %{public}d, cost: [%{public}" PRId64 "]ms",
+        adapterName.c_str(), devices[0], stamp);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "update route fail");
     return SUCCESS;
@@ -203,7 +206,7 @@ int32_t LocalDeviceManager::SetInputRoute(const std::string &adapterName, Device
     AudioRouteNode source = {};
     int32_t ret = SetInputPortPin(device, source);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-    AUDIO_INFO_LOG("input, pin: 0x%{public}X", source.ext.device.type);
+    AUDIO_INFO_LOG("input, device: %{public}d, pin: 0x%{public}X", device, source.ext.device.type);
     source.portId = static_cast<int32_t>(GetPortId(adapterName, PORT_IN));
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_DEVICE_TYPE;
@@ -231,7 +234,8 @@ int32_t LocalDeviceManager::SetInputRoute(const std::string &adapterName, Device
         "adapter %{public}s is nullptr", adapterName.c_str());
     ret = wrapper->adapter_->UpdateAudioRoute(wrapper->adapter_, &route, &(wrapper->routeHandle_));
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("update route, device: %{public}d, cost: [%{public}" PRId64 "]ms", device, stamp);
+    AUDIO_INFO_LOG("update route, adapterName: %{public}s, device: %{public}d, cost: [%{public}" PRId64 "]ms",
+        adapterName.c_str(), device, stamp);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "update route fail");
     return SUCCESS;
@@ -471,7 +475,6 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
 int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 {
     int32_t ret = SUCCESS;
-
     switch (inputDevice) {
         case DEVICE_TYPE_MIC:
         case DEVICE_TYPE_EARPIECE:
@@ -496,6 +499,15 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
             source.ext.device.type = PIN_IN_BLUETOOTH_SCO_HEADSET;
             source.ext.device.desc = (char *)"pin_in_bluetooth_sco_headset";
             break;
+        case DEVICE_TYPE_ACCESSORY:
+            if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+                source.ext.device.type = PIN_IN_PENCIL;
+                source.ext.device.desc = (char *)"pin_in_pencil";
+            } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+                source.ext.device.type = PIN_IN_UWB;
+                source.ext.device.desc = (char *)"pin_in_uwb";
+            }
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -513,6 +525,11 @@ void LocalDeviceManager::SaveSetParameter(const std::string &adapterName, const 
         AUDIO_INFO_LOG("save bt_wbs param when adapter is nullptr");
         reSetParams_.push_back({ adapterName, key, condition, value });
     }
+}
+
+void LocalDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    dmDeviceType_ = dmDeviceType;
 }
 
 } // namespace AudioStandard

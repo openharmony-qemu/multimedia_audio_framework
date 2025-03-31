@@ -45,8 +45,9 @@ ohos_shared_library("audio_common") {
   include_dirs = [
     "common/include",
     "common/include/limiter",
-    "../audio_policy/server/include",
     "common/include/dfx",
+    "../audio_policy/server/include",
+    "../audio_policy/services/pipe/include",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -133,9 +134,12 @@ config("audio_client_public_config") {
     "../audio_policy/common/include",
     "../audio_policy/util/include",
     "../audio_policy/server/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audiostream/include",
     "../../frameworks/native/audioutils/include",
+    "../../frameworks/native/hdiadapter_new/include",
+    "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocapturer/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
@@ -303,7 +307,11 @@ config("audio_service_config") {
     "client/include",
     "server/include",
     "server/include/config",
+    "../audio_policy/common/definitions/include",
+    "../audio_policy/server/include/service/common",
     "../audio_policy/server/include/service/effect",
+    "../audio_policy/services/pipe/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audioeffect/include",
     "../../frameworks/native/offlineaudioeffect/include",
     "../../frameworks/native/audioinnercall/include",
@@ -313,6 +321,7 @@ config("audio_service_config") {
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/playbackcapturer/include",
     "../../frameworks/native/hdiadapter_new/include",
+    "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
@@ -350,6 +359,8 @@ audio_ohos_library("audio_process_service") {
     "server/src/audio_process_stub.cpp",
     "server/src/audio_service.cpp",
     "server/src/capturer_in_server.cpp",
+    "server/src/core_service_handler.cpp",
+    "server/src/core_service_provider_proxy.cpp",
     "server/src/i_stream_manager.cpp",
     "server/src/ipc_offline_stream_stub.cpp",
     "server/src/ipc_stream_in_server.cpp",
@@ -370,6 +381,7 @@ audio_ohos_library("audio_process_service") {
   if (audio_framework_feature_low_latency) {
     sources += [
       "server/src/audio_endpoint.cpp",
+      "server/src/audio_endpoint_performance.cpp",
       "server/src/audio_endpoint_separate.cpp",
       "server/src/audio_process_in_server.cpp",
     ]
@@ -568,12 +580,14 @@ ohos_shared_library("audio_sasdk") {
   include_dirs = [
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiosasdk/include",
+    "../../frameworks/native/audiodefinitions/include",
   ]
 
   public_configs = [ ":audio_sasdk_public_config" ]
 
   deps = [
     ":audio_common",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../audio_policy:audio_policy_client",
   ]
 

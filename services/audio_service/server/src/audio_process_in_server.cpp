@@ -29,6 +29,7 @@
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
+#include "core_service_handler.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
@@ -219,6 +220,8 @@ int32_t AudioProcessInServer::StartInner()
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     }
 
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
@@ -263,7 +266,10 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         playerDfx_->WriteDfxActionMsg(sessionId_, RENDERER_STAGE_PAUSE_OK);
     } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
-        recorderDfx_->WriteDfxActionMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK);
+        lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK,
+            GetLastAudioDuration(), processConfig_);
     }
 
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
@@ -372,7 +378,9 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
         PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     }
-    int32_t ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+    ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
 }
@@ -664,7 +672,7 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 
 int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
 {
-    return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
+    return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
         processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
 }
 

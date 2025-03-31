@@ -38,7 +38,7 @@
 
 #include "audio_a2dp_device.h"
 #include "audio_a2dp_offload_flag.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_active_device.h"
 #include "audio_iohandle_map.h"
 #include "audio_router_map.h"
@@ -69,7 +69,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
-        std::string &networkId, AudioSamplingRate &samplingRate);
+        std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate = true);
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
         const std::string &networkId, const AudioSamplingRate &samplingRate);
     void UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
@@ -127,7 +127,7 @@ private:
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioSceneManager_(AudioSceneManager::GetInstance()),
         audioVolumeManager_(AudioVolumeManager::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
@@ -192,6 +192,7 @@ private:
         const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName,
         SourceType sourceType);
     int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    int32_t RingToneVoiceControl(const InternalDeviceType &deviceType);
 
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
@@ -270,7 +271,7 @@ private:
     AudioAffinityManager &audioAffinityManager_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioActiveDevice& audioActiveDevice_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioSceneManager& audioSceneManager_;
     AudioVolumeManager& audioVolumeManager_;
     AudioRouteMap& audioRouteMap_;

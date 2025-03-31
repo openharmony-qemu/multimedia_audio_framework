@@ -112,6 +112,8 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
     } else if (deviceClass == "remote") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_REMOTE, info);
 #endif
+    } else if (deviceClass == "accessory") {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
     }
 
     AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, sourceType: %{public}d, info: %{public}s",
@@ -122,21 +124,23 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
 void IdHandler::IncInfoIdUseCount(uint32_t id)
 {
     uint32_t infoId = id & HDI_ID_INFO_MASK;
-    CHECK_AND_RETURN_LOG(infoIdMap_.count(infoId) != 0, "invalid id %{public}u", id);
     std::lock_guard<std::mutex> lock(infoIdMtx_);
+    CHECK_AND_RETURN_LOG(infoIdMap_.count(infoId) != 0, "invalid id %{public}u", id);
     infoIdMap_[infoId].useCount_++;
+    AUDIO_DEBUG_LOG("info: %{public}s, useCount: %{public}u", infoIdMap_[infoId].info_.c_str(),
+        infoIdMap_[infoId].useCount_.load());
 }
 
 void IdHandler::DecInfoIdUseCount(uint32_t id)
 {
     uint32_t infoId = id & HDI_ID_INFO_MASK;
-    CHECK_AND_RETURN_LOG(infoIdMap_.count(infoId) != 0, "invalid id %{public}u", id);
     std::lock_guard<std::mutex> lock(infoIdMtx_);
+    CHECK_AND_RETURN_LOG(infoIdMap_.count(infoId) != 0, "invalid id %{public}u", id);
     if (infoIdMap_[infoId].useCount_.load() > 0) {
         infoIdMap_[infoId].useCount_--;
+        AUDIO_DEBUG_LOG("info: %{public}s, useCount: %{public}u", infoIdMap_[infoId].info_.c_str(),
+            infoIdMap_[infoId].useCount_.load());
         if (infoIdMap_[infoId].useCount_.load() > 0) {
-            AUDIO_DEBUG_LOG("info: %{public}s, useCount: %{public}u", infoIdMap_[infoId].info_.c_str(),
-                infoIdMap_[infoId].useCount_.load());
             return;
         }
     }

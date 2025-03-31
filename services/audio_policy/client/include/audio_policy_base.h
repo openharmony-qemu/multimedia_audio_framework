@@ -25,6 +25,7 @@
 #include "audio_system_manager.h"
 #include "audio_effect.h"
 #include "microphone_descriptor.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,13 +46,13 @@ public:
     virtual int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
         DeviceType deviceType, int32_t volumeFlag = 0) = 0;
 
-    virtual int32_t GetAppVolumeLevel(int32_t appUid) = 0;
+    virtual int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
-    virtual int32_t GetSelfAppVolumeLevel() = 0;
+    virtual int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel) = 0;
 
     virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
-    virtual bool IsAppVolumeMute(int32_t appUid, bool muted) = 0;
+    virtual int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute) = 0;
 
     virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) = 0;
 
@@ -87,11 +88,13 @@ public:
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter) = 0;
 
-    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1) = 0;
+    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID) = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
     virtual DeviceType GetActiveOutputDevice() = 0;
+
+    virtual uint16_t GetDmDeviceType() = 0;
 
     virtual DeviceType GetActiveInputDevice() = 0;
 
@@ -150,6 +153,8 @@ public:
 
     virtual int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) = 0;
 
+    virtual int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) = 0;
+
     virtual int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
     virtual int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
@@ -167,6 +172,12 @@ public:
     virtual int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) = 0;
 
     virtual int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) = 0;
+
+    virtual int32_t CreateRendererClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) = 0;
+
+    virtual int32_t CreateCapturerClient(
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId) = 0;
 
     virtual int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) = 0;
@@ -316,7 +327,7 @@ public:
     virtual int32_t ReleaseAudioInterruptZone(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = -1) = 0;
+        const int32_t pid = INVALID_PID) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() = 0;
 
@@ -348,7 +359,7 @@ public:
     virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
     virtual int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID) = 0;
 
     virtual int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) = 0;
 
@@ -365,6 +376,9 @@ public:
     virtual int32_t InjectInterruption(const std::string networkId, InterruptEvent &event) = 0;
 
     virtual int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) = 0;
+
+    virtual int32_t SetInputDevice(const DeviceType deviceType, const uint32_t session_ID,
+        const SourceType sourceType, bool isRunning) = 0;
 
     virtual bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid) = 0;
 

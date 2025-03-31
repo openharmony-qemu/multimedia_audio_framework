@@ -34,11 +34,11 @@ void AudioEcManagerUnitTest::TearDown(void) {}
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_001, TestSize.Level1)
 {
     std::string halName = DP_CLASS;
-    StreamPropInfo outModuleInfo;
+    std::shared_ptr<PipeStreamPropInfo> outModuleInfo = std::make_shared<PipeStreamPropInfo>();
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     std::string sRet;
 
-    outModuleInfo.sampleRate_ = 41000;
+    outModuleInfo->sampleRate_ = 41000;
     sRet = ecManager.GetEcSamplingRate(halName, outModuleInfo);
     EXPECT_EQ(sRet, "41000");
 
@@ -68,21 +68,23 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_001, TestSize.Level1)
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_002, TestSize.Level1)
 {
     std::string halName = DP_CLASS;
-    StreamPropInfo outModuleInfo;
+    std::shared_ptr<PipeStreamPropInfo> outModuleInfo = std::make_shared<PipeStreamPropInfo>();
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     std::string sRet;
 
-    outModuleInfo.channelLayout_ = 3;
+    outModuleInfo->channelLayout_ = CH_LAYOUT_STEREO;
+    ecManager.dpSinkModuleInfo_.channels = "";
+    sRet = ecManager.GetEcChannels(halName, outModuleInfo);
+    EXPECT_EQ(sRet, "0");
+
+    ecManager.dpSinkModuleInfo_.channels = "3";
     sRet = ecManager.GetEcChannels(halName, outModuleInfo);
     EXPECT_EQ(sRet, "3");
-
-    ecManager.dpSinkModuleInfo_.channels = "4";
-    sRet = ecManager.GetEcChannels(halName, outModuleInfo);
-    EXPECT_EQ(sRet, "4");
 
     halName = USB_CLASS;
+    ecManager.usbSinkModuleInfo_.channels = "";
     sRet = ecManager.GetEcChannels(halName, outModuleInfo);
-    EXPECT_EQ(sRet, "3");
+    EXPECT_EQ(sRet, "0");
 
     ecManager.usbSinkModuleInfo_.channels = "5";
     sRet = ecManager.GetEcChannels(halName, outModuleInfo);
@@ -101,21 +103,23 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_002, TestSize.Level1)
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_003, TestSize.Level1)
 {
     std::string halName = DP_CLASS;
-    StreamPropInfo outModuleInfo;
+    std::shared_ptr<PipeStreamPropInfo> outModuleInfo = std::make_shared<PipeStreamPropInfo>();
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     std::string sRet;
 
-    outModuleInfo.format_ = "3";
+    outModuleInfo->format_ = SAMPLE_S32LE;
+    ecManager.dpSinkModuleInfo_.format = "";
     sRet = ecManager.GetEcFormat(halName, outModuleInfo);
-    EXPECT_EQ(sRet, "3");
+    EXPECT_EQ(sRet, "s32le");
 
     ecManager.dpSinkModuleInfo_.format = "4";
     sRet = ecManager.GetEcFormat(halName, outModuleInfo);
     EXPECT_EQ(sRet, "4");
 
     halName = USB_CLASS;
+    ecManager.usbSinkModuleInfo_.format = "";
     sRet = ecManager.GetEcFormat(halName, outModuleInfo);
-    EXPECT_EQ(sRet, "3");
+    EXPECT_EQ(sRet, "s32le");
 
     ecManager.usbSinkModuleInfo_.format = "5";
     sRet = ecManager.GetEcFormat(halName, outModuleInfo);
@@ -197,7 +201,7 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_005, TestSize.Level1)
 {
     std::string role = ROLE_SOURCE;
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    PipeInfo pipeInfo;
+    std::shared_ptr<AdapterPipeInfo> pipeInfo;
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     int32_t ret;
 
@@ -324,7 +328,7 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_010, TestSize.Level1)
 /**
 * @tc.name  : Test AudioEcManager.
 * @tc.number: AudioEcManager_011
-* @tc.desc  : Test GetAudioEcInfo interface.
+* @tc.desc  : Test GetAudioEcInfo & ResetAudioEcInfo interface.
 */
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_011, TestSize.Level1)
 {
@@ -334,6 +338,11 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_011, TestSize.Level1)
     ecManager.audioEcInfo_.channels = "3";
     ecInfo = ecManager.GetAudioEcInfo();
     EXPECT_EQ(ecInfo.channels, "3");
+
+    ecManager.ResetAudioEcInfo();
+    ecInfo = ecManager.GetAudioEcInfo();
+    EXPECT_EQ(ecInfo.inputDevice.deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ecInfo.outputDevice.deviceType_, DEVICE_TYPE_NONE);
 }
 
 /**
@@ -414,6 +423,112 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_016, TestSize.Level1)
     role = ROLE_SINK;
     sRet = ecManager.GetHalNameForDevice(role, deviceType);
     EXPECT_EQ(sRet, "");
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_017
+* @tc.desc  : Test Init & GetEcFeatureEnable & GetMicRefFeatureEnable interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_017, TestSize.Level1)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+
+    ecManager.Init(0, 1);
+    EXPECT_EQ(ecManager.GetEcFeatureEnable(), false);
+    EXPECT_EQ(ecManager.GetMicRefFeatureEnable(), true);
+
+    ecManager.Init(1, 0);
+    EXPECT_EQ(ecManager.GetEcFeatureEnable(), true);
+    EXPECT_EQ(ecManager.GetMicRefFeatureEnable(), false);
+
+    ecManager.Init(1, 1);
+    EXPECT_EQ(ecManager.GetEcFeatureEnable(), true);
+    EXPECT_EQ(ecManager.GetMicRefFeatureEnable(), true);
+
+    ecManager.Init(0, 0);
+    EXPECT_EQ(ecManager.GetEcFeatureEnable(), false);
+    EXPECT_EQ(ecManager.GetMicRefFeatureEnable(), false);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_018
+* @tc.desc  : Test PrepareAndOpenNormalSource & CloseNormalSource & GetSourceOpened interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_018, TestSize.Level1)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+
+    SessionInfo sessionInfo;
+    PipeStreamPropInfo propInfo;
+    ecManager.PrepareAndOpenNormalSource(sessionInfo, propInfo, SOURCE_TYPE_MIC);
+    EXPECT_EQ(ecManager.GetSourceOpened(), SOURCE_TYPE_MIC);
+
+    ecManager.Init(1, 0);
+    ecManager.CloseNormalSource();
+    EXPECT_EQ(ecManager.GetSourceOpened(), SOURCE_TYPE_INVALID);
+    ecManager.Init(0, 0);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_019
+* @tc.desc  : Test PrepareAndOpenNormalSource interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_019, TestSize.Level1)
+{
+    EXPECT_EQ(ParseAudioFormat("AUDIO_FORMAT_PCM_16_BIT"), "s16le");
+    EXPECT_EQ(ParseAudioFormat("AUDIO_FORMAT_PCM_24_BIT"), "s24le");
+    EXPECT_EQ(ParseAudioFormat("AUDIO_FORMAT_PCM_32_BIT"), "s32le");
+    EXPECT_EQ(ParseAudioFormat(""), "s16le");
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_020
+* @tc.desc  : Test GetUsbModuleInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_020, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+
+    moduleInfo.role = "sink";
+    string deviceInfo = "sink_rate:1;sink_format:AUDIO_FORMAT_PCM_16_BIT";
+    GetUsbModuleInfo(deviceInfo, moduleInfo);
+    EXPECT_EQ(moduleInfo.role, "sink");
+
+    moduleInfo.channels = "2";
+    GetUsbModuleInfo(deviceInfo, moduleInfo);
+    EXPECT_EQ(moduleInfo.role, "sink");
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_021
+* @tc.desc  : Test GetTargetSourceTypeAndMatchingFlag interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_021, TestSize.Level1)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+
+    SourceType targetSource;
+    bool useMatchingPropInfo;
+
+    ecManager.GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_VOICE_RECOGNITION, targetSource, useMatchingPropInfo);
+    EXPECT_EQ(targetSource, SOURCE_TYPE_VOICE_RECOGNITION);
+
+    ecManager.GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_VOICE_COMMUNICATION, targetSource, useMatchingPropInfo);
+    EXPECT_EQ(targetSource, SOURCE_TYPE_VOICE_COMMUNICATION);
+
+    ecManager.GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_VOICE_CALL, targetSource, useMatchingPropInfo);
+    EXPECT_EQ(targetSource, SOURCE_TYPE_VOICE_CALL);
+
+    ecManager.GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_UNPROCESSED, targetSource, useMatchingPropInfo);
+    EXPECT_EQ(targetSource, SOURCE_TYPE_UNPROCESSED);
+
+    ecManager.GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_MIC, targetSource, useMatchingPropInfo);
+    EXPECT_EQ(targetSource, SOURCE_TYPE_MIC);
 }
 } // namespace AudioStandard
 } // namespace OHOS

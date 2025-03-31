@@ -591,7 +591,6 @@ void RendererInClientInner::InitCallbackLoop()
         std::shared_ptr<RendererInClientInner> strongRef = weakRef.lock();
         if (strongRef != nullptr) {
             strongRef->cbThreadCv_.notify_one();
-            strongRef->WatchingWriteCallbackFunc(); // add watchdog
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
@@ -608,7 +607,6 @@ void RendererInClientInner::InitCallbackLoop()
         }
         if (strongRef != nullptr) {
             AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", strongRef->sessionId_);
-            strongRef->RendererRemoveWatchdog("WatchingWriteCallbackFunc", strongRef->sessionId_); // Remove watchdog
         }
     });
     pthread_setname_np(callbackLoop.native_handle(), "OS_AudioWriteCB");
@@ -873,10 +871,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Start call server failed:%{public}u", ret);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Start call server failed:%{public}u", ret);
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return state_ == RUNNING; // will be false when got notified.
@@ -891,6 +886,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
+
+    FlushBeforeStart();
 
     std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
     if (!isDataLinkConnected_) {
@@ -915,6 +912,15 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
     preWriteEndTime_ = 0;
     return true;
+}
+
+void RendererInClientInner::FlushBeforeStart()
+{
+    if (flushAfterStop_) {
+        ResetFramePosition();
+        AUDIO_INFO_LOG("flush before start");
+        flushAfterStop_ = false;
+    }
 }
 
 bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
@@ -1112,6 +1118,11 @@ bool RendererInClientInner::FlushAudioStream()
     notifiedOperation_ = MAX_OPERATION_CODE;
     waitLock.unlock();
     ResetFramePosition();
+
+    if (state_ == STOPPED) {
+        flushAfterStop_ = true;
+    }
+    
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
 }
@@ -1712,6 +1723,7 @@ void RendererInClientInner::SetSwitchingStatus(bool isSwitching)
 
 void RendererInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->GetRestoreInfo(restoreInfo);
     return;
 }
@@ -1721,17 +1733,20 @@ void RendererInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
     if (restoreInfo.restoreReason == SERVER_DIED) {
         cbThreadReleased_ = true;
     }
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus RendererInClientInner::CheckRestoreStatus()
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->CheckRestoreStatus();
 }
 
 RestoreStatus RendererInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->SetRestoreStatus(restoreStatus);
 }
 
