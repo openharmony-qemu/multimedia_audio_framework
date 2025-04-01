@@ -56,8 +56,14 @@ ohos_prebuilt_etc("pa_daemon_config") {
 }
 
 ohos_prebuilt_etc("pa_default_config") {
-  source = "../conf/default.pa"
+  if (audio_framework_feature_optimization_timeout) {
+    source = "../conf/default.pa"
+  } else {
+    source = "../conf/default.pa"
+  }
+
   module_install_dir = "etc/pulse"
+  symlink_target_name = ["default.pa"]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
