@@ -84,11 +84,11 @@ bool LinearPosTimeModel::IsReasonable(uint64_t frame, int64_t nanoTime)
     return false;
 }
 
-bool LinearPosTimeModel::CheckReasonable(uint64_t frame, int64_t nanoTime)
+CheckPosTimeRes LinearPosTimeModel::CheckReasonable(uint64_t frame, int64_t nanoTime)
 {
     posTimeVec_.push_back(std::make_pair(frame, nanoTime));
     if (posTimeVec_.size() < MAX_STATISTICS_COUNT) {
-        return false;
+        return CHECK_FAILED;
     }
 
     for (size_t i = 0; i < posTimeVec_.size() - 1; i++) {
@@ -96,17 +96,14 @@ bool LinearPosTimeModel::CheckReasonable(uint64_t frame, int64_t nanoTime)
             Trace trace("LinearPosTimeModel::CheckReasonable Fail");
             AUDIO_WARNING_LOG("Unreasonable data pos: %{public}zu", i);
             posTimeVec_.clear();
-            return false;
+            return CHECK_FAILED;
         }
     }
 
-    stampFrame_ = frame;
-    stampNanoTime_ = nanoTime;
-    posTimeVec_.clear();
     // todo: add DFX
     Trace trace("LinearPosTimeModel::CheckReasonable Success");
     AUDIO_ERR_LOG("Updata new frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
-    return true;
+    return NEED_MODIFY;
 }
 
 bool LinearPosTimeModel::CheckPosTimeReasonable(std::pair<uint64_t, int64_t> &pre, std::pair<uint64_t, int64_t> &next)
@@ -121,14 +118,14 @@ bool LinearPosTimeModel::CheckPosTimeReasonable(std::pair<uint64_t, int64_t> &pr
     return std::abs(deltaTime) < REASONABLE_DELTA_BOUND_IN_NANO;
 }
 
-bool LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
+CheckPosTimeRes LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
 {
     if (IsReasonable(frame, nanoTime)) {
         AUDIO_DEBUG_LOG("Updata frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
         stampFrame_ = frame;
         stampNanoTime_ = nanoTime;
         posTimeVec_.clear();
-        return true;
+        return CHECK_SUCCESS;
     }
 
     AUDIO_WARNING_LOG("Unreasonable pos-time[ %{public}" PRIu64" %{public}" PRId64"] "
