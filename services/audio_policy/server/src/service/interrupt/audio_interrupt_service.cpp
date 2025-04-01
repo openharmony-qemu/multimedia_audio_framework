@@ -780,11 +780,12 @@ int32_t ActivatePreemptMode(const int32_t zoneId)
     AUDIO_INFO_LOG("start ActivatePreemptMode");
     isPreemptMode_ = true;
     AUDIO_INFO_LOG("setPreemptMode = %{public}d", isPreemptMode_);
-    // Use local Variable to record target focus info list, can be optimized
+    // Use local variable to record target focus info list, can be optimized
     auto targetZoneIt = zonesMap_.find(zoneId);
     if (targetZoneIt == zonesMap_.end()) {
         AUDIO_ERR_LOG("can not find zone id");
         isPreemptMode_ = false;
+        return ERROR;
     }
     std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList {};
     if (targetZoneIt != zonesMap_.end()) {
@@ -799,8 +800,8 @@ int32_t ActivatePreemptMode(const int32_t zoneId)
             return ERROR;
         }
         uint32_t activeSessionId = (iterActive->first).sessionId;
-        handler_->SendInterruptEventWithSessionIdCallback(InterruptEvent, activeSessionId);
-        iterActive = audioInterruptZone->audioFocusInfoList.erase(iterActive);
+        handler_->SendInterruptEventWithSessionIdCallback(interruptEvent, activeSessionId);
+        iterActive = tmpFocusInfoList.erase(iterActive);
     }
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
     zonesMap_[zoneId] = targetZoneIt->second;
