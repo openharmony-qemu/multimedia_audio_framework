@@ -2049,8 +2049,12 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
 
 void AudioPolicyService::CheckConnectedDevice()
 {
-    bool flag = audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_USB_ARM_HEADSET ||
-        audioPolicyManager_.GetActiveDevice() ==  DEVICE_TYPE_USB_HEADSET;
+    auto isUsbHeadsetConnected =
+        audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_USB_HEADSET);
+    auto isUsbArmHeadsetConnected =
+        audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_USB_ARM_HEADSET);
+    
+    bool flag = (isUsbHeadsetConnected != nullptr || isUsbArmHeadsetConnected != nullptr) ? true : false;
     AudioServerProxy::GetInstance().SetDeviceConnectedFlag(flag);
 }
 
