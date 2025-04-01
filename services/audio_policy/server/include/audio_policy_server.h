@@ -629,7 +629,7 @@ private:
     void HandleKvDataShareEvent();
     void InitMicrophoneMute();
     void InitKVStore();
-    void SettingsDataReady();
+    void NotifySettingsDataReady();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();

@@ -94,7 +94,7 @@ public:
     bool Init(void);
     void Deinit(void);
     void InitKVStore();
-    void SettingsDataReady();
+    void NotifySettingsDataReady();
     bool ConnectServiceAdapter();
 
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
