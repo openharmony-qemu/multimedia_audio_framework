@@ -25,8 +25,6 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-const int32_t INVALID_PID = -2;
-
 class AudioStateManager {
 public:
     static AudioStateManager& GetAudioStateManager()
