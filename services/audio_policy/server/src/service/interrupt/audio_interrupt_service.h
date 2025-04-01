@@ -76,6 +76,10 @@ public:
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
     void ResetNonInterruptControl(uint32_t streamId);
 
+    // preempt audio focus interfaces
+    int32_t ActivatePreemptMode(const int32_t zoneId);
+    int32_t DeactivatePreemptMode(const int32_t zoneId);
+
     // zone debug interfaces
     int32_t CreateAudioInterruptZone(const int32_t zoneId, AudioZoneFocusStrategy focusStrategy =
         AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
@@ -268,6 +272,9 @@ private:
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
     int32_t clientOnFocus_ = 0;
+
+    // preempt audio focus mode flag
+    bool isPreemptMode_ = false;
 
     std::mutex mutex_;
     mutable int32_t ownerPid_ = 0;

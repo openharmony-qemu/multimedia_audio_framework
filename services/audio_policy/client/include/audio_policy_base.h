@@ -145,6 +145,10 @@ public:
     virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
+    virtual int32_t ActivatePreemptMode(const int32_t zoneID /* default value: 0 -- local device */) = 0;
+
+    virtual int32_t DeactivatePreemptMode(const int32_t zoneID /* default value: 0 -- local device */) = 0;
+
     virtual int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAudioManagerInterruptCallback(const int32_t clientId) = 0;

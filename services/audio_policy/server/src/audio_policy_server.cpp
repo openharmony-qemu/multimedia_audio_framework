@@ -2021,6 +2021,22 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     return ERR_UNKNOWN;
 }
 
+int32_t AudioPolicyServer::ActivatePreemptMode(const int32_t zoneID)
+{
+    if (interruptService_ != nullptr) {
+        return interruptService_->ActivatePreemptMode(zoneID);
+    }
+    return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::DeactivatePreemptMode(const int32_t zoneID)
+{
+    if (interruptService_ != nullptr) {
+        return interruptService_->DeactivatePreemptMode(zoneID);
+    }
+    return ERR_UNKNOWN;
+}
+
 void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
