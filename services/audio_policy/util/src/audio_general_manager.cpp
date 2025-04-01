@@ -242,6 +242,15 @@ AudioScene AudioGeneralManager::GetAudioScene() const
     return AudioPolicyManager::GetInstance().GetAudioScene();
 }
 
+int32_t AudioGeneralManager::SetAudioSceneChangeCallback(
+    const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    int32_t clientId = GetCallingPid();
+    return AudioPolicyManager::GetInstance().SetAudioSceneChangeCallback(clientId, callback);
+}
+
 int32_t AudioGeneralManager::GetMaxVolume(AudioVolumeType volumeType)
 {
     if (volumeType == STREAM_ALL) {

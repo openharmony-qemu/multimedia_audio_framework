@@ -75,6 +75,8 @@ public:
 
     AudioScene GetAudioScene() const;
 
+    int32_t SetAudioSceneChangeCallback(const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+
     int32_t GetMaxVolume(AudioVolumeType volumeType);
 
     int32_t UnregisterFocusInfoChangeCallback(
