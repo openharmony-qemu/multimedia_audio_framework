@@ -32,8 +32,8 @@ void NapiAudioCapturerCallbackInner::SaveCallbackReferenceInner(const std::strin
     napi_status status = napi_create_reference(env, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr, "Creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
     if (successed != nullptr) {
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
         successed(cb);
     }
 };
