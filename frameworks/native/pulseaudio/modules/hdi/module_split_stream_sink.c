@@ -518,11 +518,6 @@ static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, 
 
             ProcessAudioVolume(i, mixlength, &info->chunk, s);
 
-            if (pa_memblock_is_silence(info->chunk.memblock)) {
-                pa_memblock_unref(info->chunk.memblock);
-                continue;
-            }
-
             info->userdata = pa_sink_input_ref(i);
             pa_assert(info->chunk.memblock);
             pa_assert(info->chunk.length > 0);
