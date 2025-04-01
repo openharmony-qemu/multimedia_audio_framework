@@ -268,7 +268,7 @@ uint32_t AudioPipeManager::GetPaIndexByIoHandle(AudioIOHandle id)
 
 void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> tempList;
     for (auto pipeInfo : curPipeList_) {
         if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
@@ -282,7 +282,7 @@ void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<Audio
 
 void AudioPipeManager::UpdateCapturerPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)
 {
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> tempList;
     for (auto pipeInfo : curPipeList_) {
         if (pipeInfo->pipeRole_ == PIPE_ROLE_OUTPUT) {
