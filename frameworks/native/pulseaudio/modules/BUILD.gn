@@ -63,7 +63,7 @@ ohos_prebuilt_etc("pa_default_config") {
   }
 
   module_install_dir = "etc/pulse"
-  symlink_target_name = ["default.pa"]
+  symlink_target_name = [ "default.pa" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
