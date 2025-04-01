@@ -175,7 +175,7 @@ void AudioPolicyService::InitKVStore()
 
 void AudioPolicyService::SettingsDataReady()
 {
-   AudioServerProxy::GetInstance().NotifySettingsDataReady();
+    AudioServerProxy::GetInstance().NotifySettingsDataReady();
 }
 
 bool AudioPolicyService::ConnectServiceAdapter()

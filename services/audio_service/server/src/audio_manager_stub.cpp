@@ -802,7 +802,7 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
         case static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG):
             return HandleDeviceConnectedFlag(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY):
-            return HandleNotifySettingsDataReady(data, reply);   
+            return HandleNotifySettingsDataReady(data, reply);
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }

@@ -498,7 +498,7 @@ void AudioServerProxy::NotifyAccountsChanged()
 
 void AudioServerProxy::NotifySettingsDataReady()
 {
-   const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->NotifySettingsDataReady();
