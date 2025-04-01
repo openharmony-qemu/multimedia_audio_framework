@@ -3161,9 +3161,14 @@ ohos_unittest("audio_volume_manager_unit_test") {
     "power_manager:powermgr_client",
   ]
 
-  sources = [ "./unittest/audio_volume_manager_unit_test/src/audio_volume_manager_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_volume_manager_unit_test/src/audio_volume_manager_unit_test.cpp",
+    "./unittest/audio_volume_manager_unit_test/src/audio_volume_manager_unit_test_plus.cpp",
+  ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
+
+  defines = [ "BLUETOOTH_ENABLE" ]
 }
 
 ohos_unittest("audio_pipe_selector_unit_test") {
