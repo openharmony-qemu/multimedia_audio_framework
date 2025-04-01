@@ -66,6 +66,8 @@ private:
     void UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
     void DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
+    void ActivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply);
+    void DeactivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply);
     void SetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply);
     void RequestAudioFocusInternal(MessageParcel &data, MessageParcel &reply);

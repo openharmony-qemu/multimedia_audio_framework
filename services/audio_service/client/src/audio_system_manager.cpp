@@ -1142,6 +1142,18 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
     return AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
 }
 
+int32_t AudioSystemManager::ActivatePreemptMode() const
+{
+    AUDIO_DEBUG_LOG("stub implementation");
+    return AudioPolicyManager::GetInstance().ActivatePreemptMode();
+}
+
+int32_t AudioSystemManager::DeactivatePreemptMode() const
+{
+    AUDIO_DEBUG_LOG("stub implementation");
+    return AudioPolicyManager::GetInstance().DeactivatePreemptMode();
+}
+
 int32_t AudioSystemManager::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();

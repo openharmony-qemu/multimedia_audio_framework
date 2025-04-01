@@ -873,6 +873,40 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::ActivatePreemptMode(const int32_t zoneID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(zoneID);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_PREEMPT_MODE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate preemptMode failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::DeactivatePreemptMode(const int32_t zoneID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(zoneID);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_PREEMPT_MODE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate preemptMode failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     MessageParcel data;
