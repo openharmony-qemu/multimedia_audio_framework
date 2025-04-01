@@ -71,16 +71,12 @@ AudioCapturerPrivate::~AudioCapturerPrivate()
     if (inputDeviceChangeCallback != nullptr) {
         inputDeviceChangeCallback->UnsetAudioCapturerObj();
     }
+    AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
     CapturerState state = GetStatus();
     if (state != CAPTURER_RELEASED && state != CAPTURER_NEW) {
         Release();
     }
-    AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
-    if (audioStream_ != nullptr) {
-        audioStream_->GetAudioSessionID(sessionID_);
-        audioStream_ = nullptr;
-        AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionID_);
-    }
+    AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionID_);
     if (audioStateChangeCallback_ != nullptr) {
         audioStateChangeCallback_->HandleCapturerDestructor();
     }
