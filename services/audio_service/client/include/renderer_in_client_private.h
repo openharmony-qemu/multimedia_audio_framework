@@ -85,8 +85,6 @@ public:
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
-        int32_t &outBufferSize) override;
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
@@ -375,6 +373,8 @@ private:
     std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
+    std::atomic<bool> speedEnable_ = false;
+    std::mutex speedMutex_;
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 

@@ -398,14 +398,9 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_008, TestSize.Level1
     ptrRendererInClientInner->audioSpeed_ = std::make_unique<AudioSpeed>(rate, format, channels);
     ASSERT_TRUE(ptrRendererInClientInner->audioSpeed_ != nullptr);
 
-    ptrRendererInClientInner->audioSpeed_->LoadChangeSpeedFunc();
+    auto ret = ptrRendererInClientInner->audioSpeed_->LoadChangeSpeedFunc();
 
-    uint8_t *buffer = nullptr;
-    int32_t bufferSize = 100001;
-    std::unique_ptr<uint8_t []> outBuffer = nullptr;
-    int32_t outBufferSize;
-    auto ret = ptrRendererInClientInner->ChangeSpeed(buffer, bufferSize, outBuffer, outBufferSize);
-    EXPECT_EQ(ret, ERR_MEMORY_ALLOC_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

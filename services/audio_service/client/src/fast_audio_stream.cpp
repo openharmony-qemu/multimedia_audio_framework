@@ -568,13 +568,6 @@ float FastAudioStream::GetSpeed()
     return static_cast<float>(ERROR);
 }
 
-int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
-    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
-{
-    AUDIO_ERR_LOG("ChangeSpeed is not supported");
-    return ERR_OPERATION_FAILED;
-}
-
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
