@@ -246,11 +246,27 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_013, TestSize.Level1)
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_014, TestSize.Level1)
 {
     EventFwk::CommonEventSubscribeInfo subscribeInfo;
-    auto audioUsbManager = std::make_shared<AudioUsbManager::EventSubscriber>(subscribeInfo);
-    ASSERT_TRUE(audioUsbManager != nullptr);
+    auto subscriber = std::make_shared<AudioUsbManager::EventSubscriber>(subscribeInfo);
+    ASSERT_TRUE(subscriber != nullptr);
 
     EventFwk::CommonEventData data;
-    audioUsbManager->OnReceiveEvent(data);
+    subscriber->OnReceiveEvent(data);
+
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.hardware.usb.action.USB_DEVICE_ATTACHED");
+    data.SetWant(want);
+    subscriber->OnReceiveEvent(data);
+    want.SetAction("usual.event.hardware.usb.action.USB_DEVICE_DETACHED");
+    data.SetWant(want);
+    subscriber->OnReceiveEvent(data);
+    string s = "{\"busNum\":1,\"devAddress\":1,\"configs\":[{\"interfaces\":[{\"clazz\":1,\"subClass\":1}]}]}";
+    data.SetData(s);
+    want.SetAction("usual.event.hardware.usb.action.USB_DEVICE_ATTACHED");
+    data.SetWant(want);
+    subscriber->OnReceiveEvent(data);
+    want.SetAction("usual.event.hardware.usb.action.USB_DEVICE_DETACHED");
+    data.SetWant(want);
+    subscriber->OnReceiveEvent(data);
 }
 } // namespace AudioStandard
 } // namespace OHOS
