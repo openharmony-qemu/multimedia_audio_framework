@@ -519,7 +519,6 @@ void AudioPolicyManagerStub::WriteAudioFocusInfo(MessageParcel &reply,
 
 void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_ERR_LOG("Add this log for TDD Test");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
     int32_t zoneID = data.ReadInt32();
     int32_t result = GetAudioFocusInfoList(focusInfoList, zoneID);
