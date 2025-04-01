@@ -793,7 +793,7 @@ int32_t ActivatePreemptMode(const int32_t zoneId)
     }
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive < tmpFocusInfoList.end();) {
-        if (hander_ == nullptr) {
+        if (handler_ == nullptr) {
             AUDIO_ERR_LOG("handler is nullptr");
             isPreemptMode_ = false;
             return ERROR;
