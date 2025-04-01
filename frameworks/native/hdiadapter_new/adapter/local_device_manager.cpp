@@ -368,6 +368,7 @@ void LocalDeviceManager::InitAudioManager(void)
     hdfRemoteService_ = audioManager_->AsObject(audioManager_);
     // Don't need to free, existing with process
     hdfDeathRecipient_ = (struct HdfDeathRecipient *)calloc(1, sizeof(*hdfDeathRecipient_));
+    CHECK_AND_RETURN_LOG(hdfDeathRecipient_ != nullptr, "create hdf death recipient fail");
     hdfDeathRecipient_->OnRemoteDied = AudioHostOnRemoteDied;
     HdfRemoteServiceAddDeathRecipient(hdfRemoteService_, hdfDeathRecipient_);
 
