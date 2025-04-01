@@ -496,6 +496,8 @@ public:
 
     virtual void NotifyAccountsChanged() = 0;
 
+    virtual void NotifySettingsDataReady() = 0;
+
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
     virtual void SetDefaultAdapterEnable(bool isEnable) = 0;
@@ -685,6 +687,7 @@ private:
     int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifySettingsDataReady(MessageParcel &data, MessageParcel &reply);
     int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
     int HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);

@@ -336,5 +336,14 @@ void AudioServer::NotifyAccountsChanged()
     audioEffectChainManager->LoadEffectProperties();
 }
 
+void AudioServer::NotifySettingsDataReady()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->LoadEffectProperties();
+}
 } // namespace AudioStandard
 } // namespace OHOS

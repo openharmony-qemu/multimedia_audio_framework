@@ -190,6 +190,8 @@ public:
     
     void NotifyAccountsChanged() override;
 
+    void NotifySettingsDataReady() override;
+
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 
     void SetDefaultAdapterEnable(bool isEnable) override;

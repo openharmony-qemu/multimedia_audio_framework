@@ -104,7 +104,8 @@ namespace AudioStandard {
         DESTROY_HDI_PORT,
         DEVICE_CONNECTED_FLAG,
         SET_DM_DEVICE_TYPE,
-        AUDIO_SERVER_CODE_MAX = SET_DM_DEVICE_TYPE,
+        NOTIFY_SETTINGS_DATA_READY,
+        AUDIO_SERVER_CODE_MAX = NOTIFY_SETTINGS_DATA_READY,
     };
 } // namespace AudioStandard
 } // namespace OHOS

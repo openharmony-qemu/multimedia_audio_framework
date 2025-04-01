@@ -173,6 +173,11 @@ void AudioPolicyService::InitKVStore()
     audioVolumeManager_.InitKVStore();
 }
 
+void AudioPolicyService::NotifySettingsDataReady()
+{
+    AudioServerProxy::GetInstance().NotifySettingsDataReady();
+}
+
 bool AudioPolicyService::ConnectServiceAdapter()
 {
     bool ret = audioPolicyManager_.ConnectServiceAdapter();
