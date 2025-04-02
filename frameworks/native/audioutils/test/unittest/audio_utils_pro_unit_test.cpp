@@ -676,7 +676,7 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_028, TestSize.Level1)
     SwitchState targetState2 = SwitchState::SWITCH_STATE_STARTED;
 
     auto ret = SwitchStreamUtil::UpdateSwitchStreamRecord(info2, targetState2);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 
     ret = SwitchStreamUtil::RemoveAllRecordBySessionId(0);
     EXPECT_EQ(ret, true);

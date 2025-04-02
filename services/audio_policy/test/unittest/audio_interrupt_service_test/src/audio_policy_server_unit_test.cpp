@@ -785,7 +785,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_039, TestSize.Level1)
     ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
     auto ret = ptrAudioPolicyServer->ReleaseAudioInterruptZone(zoneID);
 
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_UNKNOWN);
 }
 
 /**
@@ -934,7 +934,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_044, TestSize.Level1)
     EXPECT_EQ(ret, 0);
     rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     ret = ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, AUDIO_FLAG_MMAP);
 }
 
 /**

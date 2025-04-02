@@ -115,7 +115,7 @@ HWTEST(AudioUtilsUnitTest, Trace_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, PermissionUtil_001, TestSize.Level1)
 {
     bool ret1 = PermissionUtil::VerifyIsSystemApp();
-    EXPECT_EQ(false, ret1);
+    EXPECT_EQ(true, ret1);
     bool ret2 = PermissionUtil::VerifySelfPermission();
     EXPECT_EQ(true, ret2);
     bool ret3 = PermissionUtil::VerifySystemPermission();

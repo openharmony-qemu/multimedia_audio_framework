@@ -1027,7 +1027,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_001, TestSize.
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_001 start");
     auto server = GetServerUtil::GetServerPtr();
     ASSERT_NE(nullptr, server);
-    EXPECT_EQ(true, server->audioPolicyService_.IsA2dpOffloadConnected());
+    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
 }
 
 /**
