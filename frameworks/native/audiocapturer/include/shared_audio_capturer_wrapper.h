@@ -244,6 +244,11 @@ public:
         return sharedAudioCapturer_->SetAudioSourceConcurrency(targetSources);
     }
 
+    int32_t SetInputDevice(DeviceType deviceType) const override
+    {
+        return sharedAudioCapturer_->SetInputDevice(deviceType);
+    }
+
     void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override
     {
         return sharedAudioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
