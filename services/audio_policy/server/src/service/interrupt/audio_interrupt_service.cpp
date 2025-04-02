@@ -774,7 +774,7 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
     }
 }
 
-int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
+int32_t ActivatePreemptMode(const int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("start ActivatePreemptMode");
@@ -793,8 +793,7 @@ int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
         targetZoneIt->second->zoneId = zoneId;
     }
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
-    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive = tmpFocusInfoList.begin();
-    while (iterActive != tmpFocusInfoList.end()) {
+    for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
         if (handler_ == nullptr) {
             AUDIO_ERR_LOG("handler is nullptr");
             isPreemptMode_ = false;
@@ -808,7 +807,7 @@ int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
     zonesMap_[zoneId] = targetZoneIt->second;
     return SUCCESS;
 }
-int32_t AudioInterruptService::DeactivatePreemptMode(const int32_t zoneId)
+int32_t DeactivatePreemptMode(const int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("start DeactivatePreemptMode");
