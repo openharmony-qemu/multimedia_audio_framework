@@ -477,8 +477,8 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
 {
     speedCached = false;
 #ifdef SONIC_ENABLE
-    if (!isEqual(speed_, 1.0f)) {
-        Trace trace(traceTag_ + " ProcessSpeed");
+    if (speedEnable_.load()) {
+        Trace trace(traceTag_ + " ProcessSpeed" + std::to_string(speed_));
         if (audioSpeed_ == nullptr) {
             AUDIO_ERR_LOG("audioSpeed_ is nullptr, use speed default 1.0");
             return true;

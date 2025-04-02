@@ -638,28 +638,6 @@ HWTEST(FastSystemStreamUnitTest, UpdateLatencyTimestamp_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ChangeSpeed API
- * @tc.type  : FUNC
- * @tc.number: ChangeSpeed_001
- * @tc.desc  : Test ChangeSpeed interface.
- */
-HWTEST(FastSystemStreamUnitTest, ChangeSpeed_001, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream;
-    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest ChangeSpeed_001 start");
-
-    uint8_t buffer[] = {0x01, 0x02, 0x03, 0x04};
-    int32_t bufferSize = sizeof(buffer);
-    std::unique_ptr<uint8_t[]> outBuffer;
-    int32_t outBufferSize = 0;
-    auto result = fastAudioStream->ChangeSpeed(buffer, bufferSize, outBuffer, outBufferSize);
-    EXPECT_EQ(result, ERR_OPERATION_FAILED);
-}
-
-/**
  * @tc.name  : Test Read API
  * @tc.type  : FUNC
  * @tc.number: Read_001

@@ -558,6 +558,7 @@ void RendererInClientInner::OnFirstFrameWriting()
 
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
+    std::lock_guard lock(speedMutex_);
     if (audioSpeed_ == nullptr) {
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
             curStreamParams_.channels);
@@ -566,19 +567,15 @@ int32_t RendererInClientInner::SetSpeed(float speed)
     }
     audioSpeed_->SetSpeed(speed);
     speed_ = speed;
+    speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
 }
 
 float RendererInClientInner::GetSpeed()
 {
+    std::lock_guard lock(speedMutex_);
     return speed_;
-}
-
-int32_t RendererInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
-    int32_t &outBufferSize)
-{
-    return audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, outBuffer, outBufferSize);
 }
 
 void RendererInClientInner::InitCallbackLoop()

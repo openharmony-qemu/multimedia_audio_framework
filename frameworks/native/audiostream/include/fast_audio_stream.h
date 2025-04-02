@@ -143,8 +143,6 @@ public:
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
-        int32_t &outBufferSize) override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
