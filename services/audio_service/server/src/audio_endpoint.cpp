@@ -1910,6 +1910,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 
         loopTrace.End();
         threadStatus_ = SLEEPING;
+        CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         recordEndpointWorkLoopFucThreadStatus_ = true;
     }
@@ -1972,6 +1973,14 @@ void AudioEndpointInner::CheckTimeAndBufferReady(uint64_t &curWritePos, int64_t 
     if (!CheckAllBufferReady(wakeUpTime, curWritePos)) { curTime = ClockTime::GetCurNano(); }
 }
 
+void AudioEndpointInner::CheckWakeUpTime(int64_t &wakeUpTime)
+{
+    int64_t curTime = ClockTime::GetCurNano();
+    if (wakeUpTime - curTime > MAX_WAKEUP_TIME_NS) {
+        wakeUpTime = curTime + RELATIVE_SLEEP_TIME_NS;
+    }
+}
+
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
     BindCore();
@@ -2020,6 +2029,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         loopTrace.End();
         // start sleep
         threadStatus_ = SLEEPING;
+        CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         endpointWorkLoopFucThreadStatus_ = true;
     }
