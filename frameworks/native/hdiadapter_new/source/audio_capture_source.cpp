@@ -841,6 +841,9 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
         attr_.adapterName, inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(adapterNameCase_, inputDevice, streamId, inputType);
+    if (inputDevice == DEVICE_TYPE_ACCESSORY) {
+        SetAudioRouteInfoForEnhanceChain();
+    }
     return ret;
 }
 

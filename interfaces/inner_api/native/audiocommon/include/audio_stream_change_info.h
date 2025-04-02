@@ -121,6 +121,7 @@ public:
     AudioCapturerInfo capturerInfo;
     CapturerState capturerState;
     AudioDeviceDescriptor inputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
+    bool prerunningState = false;
     bool muted;
     uint32_t appTokenId;
 

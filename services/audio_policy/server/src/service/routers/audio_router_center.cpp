@@ -271,6 +271,9 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchRecordCaptureDevice(So
 {
     for (auto &router : recordCaptureRouters_) {
         shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+        if (desc == nullptr) {
+            continue;
+        }
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
             routerType = router->GetRouterType();
             return desc;

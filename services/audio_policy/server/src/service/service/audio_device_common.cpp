@@ -1170,7 +1170,8 @@ void AudioDeviceCommon::FetchInputDeviceInner(
         int32_t clientUID = capturerChangeInfo->clientUID;
         if ((sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE &&
             audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL) ||
-            (sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE && capturerChangeInfo->capturerState != CAPTURER_RUNNING)) {
+            (sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE && capturerChangeInfo->capturerState != CAPTURER_RUNNING &&
+                !capturerChangeInfo->prerunningState)) {
             AUDIO_WARNING_LOG("stream %{public}d not running, no need fetch device", capturerChangeInfo->sessionId);
             continue;
         }

@@ -508,6 +508,7 @@ int32_t AudioDeviceStatus::LoadAccessoryModule(std::string deviceInfo)
         if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
             AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
             GetDPModuleInfo(moduleInfo, deviceInfo);
+            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_ACCESSORY));
             return audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         }
     }
