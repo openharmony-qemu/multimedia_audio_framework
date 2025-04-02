@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -171,7 +171,7 @@ describe("AudioStreamManagerJsTest", function () {
       console.info("AudioRendererChangeInfoArray++++:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
       expect(2).assertEqual(audioRendererInfos[0].rendererState);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
       await audioRenderer.release();
@@ -196,7 +196,7 @@ describe("AudioStreamManagerJsTest", function () {
       console.info("getCurrentAudioRendererInfoArray004:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
       expect(2).assertEqual(audioRendererInfos[0].rendererState);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
       sleep(1)
       await audioRenderer.release();
@@ -243,7 +243,7 @@ describe("AudioStreamManagerJsTest", function () {
       console.info("getCurrentAudioRendererInfoArray005:"+JSON.stringify(AudioRendererInfoArray));
       expect(AudioRendererInfoArray.length).assertLarger(0);
       expect(3).assertEqual(AudioRendererInfoArray[0].rendererState);
-      expect(AudioRendererInfoArray[0].deviceDescriptors[0].displayName == ""
+      expect(AudioRendererInfoArray[0].deviceDescriptors[0].displayName !== ""
         && AudioRendererInfoArray[0].deviceDescriptors[0].displayName !== undefined).assertTrue();
 
       await audioRenderer.release();
@@ -279,7 +279,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioRendererInfos = await audioStreamManager.getCurrentAudioRendererInfoArray();
       expect(audioRendererInfos.length).assertLarger(0);
       expect(3).assertEqual(audioRendererInfos[0].rendererState);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
       await audioRenderer.release();
@@ -428,7 +428,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
       console.info("AudioRendererChangeInfoArray++++:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
       await audioRenderer.release();
@@ -458,7 +458,7 @@ describe("AudioStreamManagerJsTest", function () {
       await audioRenderer.stop();
       let audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
       expect(audioRendererInfos.length).assertLarger(0);
-      expect(audioRendererInfos[0].deviceDescriptors[0].displayName==""
+      expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
       await audioRenderer.release();
