@@ -3362,5 +3362,73 @@ HWTEST_F(RendererInServerUnitTest, SetAudioEffectMode_002, TestSize.Level1)
 
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: GetLastAudioDuration_001
+ * @tc.desc  : Test GetLastAudioDuration API
+ */
+HWTEST_F(RendererInServerUnitTest, GetLastAudioDuration_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    rendererInServer->lastStopTime_ = 1;
+    rendererInServer->lastStartTime_ = 2;
+    int64_t result = rendererInServer->GetLastAudioDuration();
+    EXPECT_EQ(result, -1);
+
+    rendererInServer->lastStopTime_ = 3;
+    result = rendererInServer->GetLastAudioDuration();
+    EXPECT_EQ(result, 1);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: HandleOperationStarted_001
+ * @tc.desc  : Test HandleOperationStarted API
+ */
+HWTEST_F(RendererInServerUnitTest, HandleOperationStarted_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    rendererInServer->standByEnable_ = true;
+    rendererInServer->HandleOperationStarted();
+    EXPECT_EQ(rendererInServer->status_, I_STATUS_STARTED);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: SetSourceDuration_001
+ * @tc.desc  : Test SetSourceDuration API
+ */
+HWTEST_F(RendererInServerUnitTest, SetSourceDuration_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    int64_t duration = 0;
+
+    int32_t ret = rendererInServer->SetSourceDuration(duration);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
