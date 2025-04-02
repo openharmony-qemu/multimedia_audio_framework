@@ -523,10 +523,6 @@ int32_t AudioOffloadStream::ActivateConcurrencyFromServer(AudioPipeType incoming
 void AudioOffloadStream::ResetOffloadStatus(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("Reset offload session: %{public}u", sessionId);
-    if (!GetOffloadAvailableFromXml()) {
-        AUDIO_INFO_LOG("Offload not available, skipped for release");
-        return;
-    }
     std::lock_guard<std::mutex> lock(offloadMutex_);
     AudioServerProxy::GetInstance().UnsetOffloadModeProxy(sessionId);
     AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
@@ -548,6 +544,8 @@ void AudioOffloadStream::SetOffloadStatus(uint32_t sessionId)
         audioPolicyManager_.SetOffloadSessionId(sessionId);
         AUDIO_DEBUG_LOG("sessionId[%{public}d] try get offload stream", sessionId);
         SetOffloadMode();
+        AudioPipeType offloadPipe = PIPE_TYPE_OFFLOAD;
+        streamCollector_.UpdateRendererPipeInfo(sessionId, offloadPipe);
     } else {
         if (sessionId == *(offloadSessionID_)) {
             AUDIO_DEBUG_LOG("sessionId[%{public}d] is already get offload stream", sessionId);
