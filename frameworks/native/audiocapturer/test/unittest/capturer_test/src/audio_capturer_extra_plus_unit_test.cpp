@@ -92,7 +92,7 @@ public:
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
 
     AudioStreamParams tempParams = {};
 
@@ -155,7 +155,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_002, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
 
     AudioStreamParams tempParams = {};
     capturer->audioStream_ = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM,
@@ -191,7 +191,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_002, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_003, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
 
     // AudioStreamParams tempParams = {};
     capturer->audioStream_ = std::make_shared<TestAudioStremStub>();
@@ -233,7 +233,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_003, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_004, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
 
     IAudioStream::SwitchInfo info;
     auto audioStream = std::make_shared<TestAudioStremStub>();
@@ -257,7 +257,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_004, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_005, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
 
     IAudioStream::SwitchInfo info;
     auto audioStream = std::make_shared<TestAudioStremStub>();
@@ -281,7 +281,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_005, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_006, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
 
     IAudioStream::SwitchInfo info;
     auto audioStream = std::make_shared<TestAudioStremStub>();

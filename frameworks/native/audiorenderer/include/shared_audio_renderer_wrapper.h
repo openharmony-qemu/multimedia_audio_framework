@@ -16,15 +16,6 @@
 #ifndef SHARED_AUDIO_RENDERER_WRAPPER_H
 #define SHARED_AUDIO_RENDERER_WRAPPER_H
 
-#include <vector>
-#include <stddef.h>
-#include <stdint.h>
-#include <memory>
-#include <cstring>
-#include <timestamp.h>
-#include <mutex>
-#include "audio_effect.h"
-#include "audio_stream_change_info.h"
 #include "audio_renderer.h"
 
 namespace OHOS {
