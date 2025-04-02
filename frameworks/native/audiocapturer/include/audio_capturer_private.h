@@ -92,7 +92,7 @@ public:
     std::vector<sptr<MicrophoneDescriptor>> GetCurrentMicrophones() const override;
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
-    int32_t SetInputDevice(DeviceType deviceType) override;
+    int32_t SetInputDevice(DeviceType deviceType) const override;
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
     uint32_t GetOverflowCount() const override;

@@ -402,7 +402,7 @@ int32_t AudioCapturerPrivate::InitInputDeviceChangeCallback()
     return SUCCESS;
 }
 
-int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType)
+int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
 {
     AUDIO_INFO_LOG("AudioCapturerPrivate::SetInputDevice %{public}d", deviceType);
     if (audioStream_ == NULL) {
