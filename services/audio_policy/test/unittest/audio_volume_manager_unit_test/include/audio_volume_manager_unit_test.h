@@ -17,6 +17,7 @@
 #define AUDIO_VOLUME_MANAGER_UNIT_TEST_H
 #include "gtest/gtest.h"
 #include "audio_volume_manager.h"
+#include "audio_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
