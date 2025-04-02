@@ -340,7 +340,7 @@ private:
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
-    bool CheckAndUpdateVolumeForDeviceChange(AudioDeviceDescriptor deviceDescriptor);
+    bool CheckAndUpdateRemoteDeviceVolume(AudioDeviceDescriptor deviceDescriptor);
     bool IsCurDeviceNeedSaveVolumeToDatabase();
 
     template<typename T>
