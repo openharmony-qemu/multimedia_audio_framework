@@ -996,6 +996,10 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
     int32_t volumeLevelInInt = 0;
     if (GetStreamMuteInternal(streamInFocus)) {
         SetStreamMuteInternal(streamInFocus, false, false);
+        if (!VolumeUtils::IsPCVolumeEnable()) {
+            AUDIO_DEBUG_LOG("phone need return");
+            return SUCCESS;
+        }
     }
     volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
     int32_t minRet = GetMinVolumeLevel(streamInFocus);
@@ -1031,6 +1035,13 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
     }
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    if (GetStreamMuteInternal(volumeType)) {
+        SetStreamMuteInternal(volumeType, false, false);
+        if (!VolumeUtils::IsPCVolumeEnable()) {
+            AUDIO_DEBUG_LOG("phone need return");
+            return SUCCESS;
+        }
+    }
     int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(volumeType);
     int32_t minRet = GetMinVolumeLevel(volumeType);
     int32_t maxRet = GetMaxVolumeLevel(volumeType);
