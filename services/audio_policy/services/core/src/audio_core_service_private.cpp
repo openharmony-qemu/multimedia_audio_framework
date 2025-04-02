@@ -708,21 +708,23 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     Trace trace("AudioCoreService::MoveToNewOutputDevice");
     DeviceType oldDeviceType = DEVICE_TYPE_NONE;
     bool isNeedTriggerCallback = true;
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = streamDesc->newDeviceDescs_.front();
+    std::string oldSinkName = "";
     if (streamDesc->oldDeviceDescs_.size() == 0) {
-        AUDIO_INFO_LOG("Move session, [][]->[%{public}d][%{public}s], reason %{public}d",
-            streamDesc->newDeviceDescs_.front()->deviceType_,
-            GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_).c_str(), static_cast<int32_t>(reason));
+        AUDIO_INFO_LOG("Move session, [][]->[%{public}d][%{public}s], reason %{public}d", newDeviceDesc->deviceType_,
+            GetEncryptAddr(newDeviceDesc->macAddress_).c_str(), static_cast<int32_t>(reason));
     } else {
         oldDeviceType = streamDesc->oldDeviceDescs_.front()->deviceType_;
-        if (streamDesc->oldDeviceDescs_.front()->IsSameDeviceDesc(streamDesc->newDeviceDescs_.front())) {
+        if (streamDesc->oldDeviceDescs_.front()->IsSameDeviceDesc(newDeviceDesc)) {
             isNeedTriggerCallback = false;
         }
+        oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->oldDeviceDescs_.front(),
+            streamDesc->sessionId_);
 
         AUDIO_INFO_LOG("Move session %{public}u, [%{public}d][%{public}s]->[%{public}d][%{public}s], reason %{public}d",
             streamDesc->sessionId_, streamDesc->oldDeviceDescs_.front()->deviceType_,
-            GetEncryptAddr(streamDesc->oldDeviceDescs_.front()->macAddress_).c_str(),
-            streamDesc->newDeviceDescs_.front()->deviceType_,
-            GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_).c_str(), static_cast<int32_t>(reason));
+            GetEncryptAddr(streamDesc->oldDeviceDescs_.front()->macAddress_).c_str(), newDeviceDesc->deviceType_,
+            GetEncryptAddr(newDeviceDesc->macAddress_).c_str(), static_cast<int32_t>(reason));
     }
 
     std::vector<SinkInput> sinkInputs;
@@ -731,31 +733,31 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     
     if (isNeedTriggerCallback && audioPolicyServerHandler_) {
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(streamDesc->appInfo_.appPid,
-            streamDesc->sessionId_, streamDesc->newDeviceDescs_.front(), reason);
+            streamDesc->sessionId_, newDeviceDesc, reason);
     }
 
-    AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(streamDesc->newDeviceDescs_.front()->deviceType_);
+    AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(newDeviceDesc->deviceType_);
 
-    auto ret = (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID)
-        ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, streamDesc->newDeviceDescs_.front())
-        : MoveToRemoteOutputDevice(targetSinkInputs, streamDesc->newDeviceDescs_.front());
+    auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
+        ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
+        : MoveToRemoteOutputDevice(targetSinkInputs, newDeviceDesc);
     if (ret != SUCCESS) {
         AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(oldDeviceType);
         AUDIO_ERR_LOG("Move sink input %{public}d to device %{public}d failed!",
-            streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
+            streamDesc->sessionId_, newDeviceDesc->deviceType_);
         return;
     }
 
     if (policyConfigMananger_.GetUpdateRouteSupport() &&
-        streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID && !reason.isSetAudioScene()) {
+        newDeviceDesc->networkId_ == LOCAL_NETWORK_ID && !reason.isSetAudioScene()) {
         UpdateOutputRoute(streamDesc);
     }
 
-    std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
-        streamDesc->sessionId_);
-    audioVolumeManager_.SetVolumeForSwitchDevice(*(streamDesc->newDeviceDescs_.front()), newSinkName);
+    std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(newDeviceDesc, streamDesc->sessionId_);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*(newDeviceDesc), newSinkName);
 
-    streamCollector_.UpdateRendererDeviceInfo(streamDesc->newDeviceDescs_.front());
+    streamCollector_.UpdateRendererDeviceInfo(newDeviceDesc);
+    ReConfigOffloadStatus(streamDesc->sessionId_, pipeInfo, oldSinkName);
 }
 
 void AudioCoreService::OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status)
@@ -1633,6 +1635,37 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> p
         specialSourceTypeSet_.count(sourceType) == 0) {
         AUDIO_INFO_LOG("Source type: %{public}d", sourceType);
         audioEcManager_.SetOpenedNormalSource(sourceType);
+    }
+}
+
+void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo)
+{
+    std::string adapterName = GetAdapterNameBySessionId(streamChangeInfo.audioRendererChangeInfo.sessionId);
+    AUDIO_INFO_LOG("session: %{public}u, adapter name: %{public}s",
+        streamChangeInfo.audioRendererChangeInfo.sessionId, adapterName.c_str());
+    if (adapterName != OFFLOAD_PRIMARY_SPEAKER) {
+        return;
+    }
+
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
+        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
+        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
+        audioOffloadStream_.ResetOffloadStatus(streamChangeInfo.audioRendererChangeInfo.sessionId);
+    }
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
+        audioOffloadStream_.SetOffloadStatus(streamChangeInfo.audioRendererChangeInfo.sessionId);
+    }
+}
+
+void AudioCoreService::ReConfigOffloadStatus(uint32_t sessionId,
+    std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName)
+{
+    AUDIO_INFO_LOG("new sink: %{public}s, old sink: %{public}s, sessionId: %{public}u",
+        pipeInfo->moduleInfo_.name.c_str(), oldSinkName.c_str(), sessionId);
+    if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER) {
+        audioOffloadStream_.SetOffloadStatus(sessionId);
+    } else if (oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
+        audioOffloadStream_.ResetOffloadStatus(sessionId);
     }
 }
 }
