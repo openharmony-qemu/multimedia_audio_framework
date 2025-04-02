@@ -788,6 +788,10 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     }
 
     SendA2dpConnectedWhileRunning(rendererState, streamChangeInfo.audioRendererChangeInfo.sessionId);
+
+    if (mode == AUDIO_MODE_PLAYBACK) {
+        CheckOffloadStream(streamChangeInfo);
+    }
     return ret;
 }
 
