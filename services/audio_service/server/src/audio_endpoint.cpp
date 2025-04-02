@@ -70,6 +70,8 @@ namespace {
     constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
     constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
     static const int32_t ONE_MINUTE = 60;
+    static constexpr int64_t MAX_WAKEUP_TIME_NS = 2000000000; // 2s
+    static constexpr int64_t RELATIVE_SLEEP_TIME_NS = 5000000; // 5ms
 }
 
 AudioSampleFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
@@ -1561,8 +1563,10 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
     int64_t readtime = 0;
     if (readTimeModel_.GetFrameStamp(readFrame, readtime)) {
         if (readFrame != posInFrame_) {
-            if (!readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_)) {
+            if (readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == CHECK_FAILED) {
                 updateThreadCV_.notify_all();
+            } else if (readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == NEED_MODIFY) {
+                needReSyncPosition_ = true;
             }
         }
     }
@@ -1583,8 +1587,10 @@ int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
     int64_t writetime = 0;
     if (writeTimeModel_.GetFrameStamp(writeFrame, writetime)) {
         if (writeFrame != posInFrame_) {
-            if (!writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_)) {
+            if (writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == CHECK_FAILED) {
                 updateThreadCV_.notify_all();
+            } else if (writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == NEED_MODIFY) {
+                needReSyncPosition_ = true;
             }
         }
     }
@@ -1993,6 +1999,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 
         loopTrace.End();
         threadStatus_ = SLEEPING;
+        CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         recordEndpointWorkLoopFucThreadStatus_ = true;
     }
@@ -2040,6 +2047,14 @@ void AudioEndpointInner::BindCore()
     coreBinded_ = true;
 }
 
+void AudioEndpointInner::CheckWakeUpTime(int64_t &wakeUpTime)
+{
+    int64_t curTime = ClockTime::GetCurNano();
+    if (wakeUpTime - curTime > MAX_WAKEUP_TIME_NS) {
+        wakeUpTime = curTime + RELATIVE_SLEEP_TIME_NS;
+    }
+}
+
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
     BindCore();
@@ -2048,7 +2063,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Endpoint work loop fuc start");
-    int32_t ret = 0;
     // add watchdog
     WatchingEndpointWorkLoopFuc();
     while (isInited_.load()) {
@@ -2056,7 +2070,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             endpointWorkLoopFucThreadStatus_ = true;
             continue;
         }
-        ret = 0;
         threadStatus_ = INRUNNING;
         curTime = ClockTime::GetCurNano();
         Trace loopTrace("AudioEndpoint::loop_trace");
@@ -2095,10 +2108,11 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         loopTrace.End();
         // start sleep
         threadStatus_ = SLEEPING;
+        CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
         endpointWorkLoopFucThreadStatus_ = true;
     }
-    AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
+    AUDIO_DEBUG_LOG("Endpoint work loop fuc end");
     ReSetThreadQosLevel();
     // stop watchdog
     EndPointRemoveWatchdog("WatchingEndpointWorkLoopFuc", GetEndpointName());
