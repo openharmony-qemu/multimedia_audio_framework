@@ -799,8 +799,7 @@ int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
             isPreemptMode_ = false;
             return ERROR;
         }
-        uint32_t activeSessionId = (iterActive->first).sessionId;
-        handler_->SendInterruptEventWithSessionIdCallback(interruptEvent, activeSessionId);
+        SendInterruptEventCallback(interruptEvent, (*iterActive).first.streamId, (*iterActive).first);
         iterActive = tmpFocusInfoList.erase(iterActive);
     }
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
