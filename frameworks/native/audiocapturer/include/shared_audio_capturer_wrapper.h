@@ -78,6 +78,11 @@ public:
         return sharedAudioCapturer_->GetAudioTime(timestamp, base);
     }
 
+    bool GetFirstPkgTimeStampInfo(int64_t &firstTs) const override
+    {
+        return sharedAudioCapturer_->GetFirstPkgTimeStampInfo(firstTs);
+    }
+
     bool Pause() const override
     {
         return sharedAudioCapturer_->Pause();
