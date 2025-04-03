@@ -198,6 +198,7 @@ int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioD
 
     if (desc == nullptr) {
         std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "GetHardwareOutputSamplingRate fail");
         desc->deviceType_ = DEVICE_TYPE_SPEAKER;
         desc->deviceRole_ = OUTPUT_DEVICE;
     }

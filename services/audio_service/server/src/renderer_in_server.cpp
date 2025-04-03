@@ -664,6 +664,9 @@ int32_t RendererInServer::OnWriteData(size_t length)
     bool mayNeedForceWrite = false;
     if (writeLock_.try_lock()) {
         // length unit is bytes, using spanSizeInByte_
+        if (spanSizeInByte_ <= 0) {
+            return ERR_WRITE_FAILED;
+        }
         for (size_t i = 0; i < length / spanSizeInByte_; i++) {
             mayNeedForceWrite = WriteData() != SUCCESS || mayNeedForceWrite;
         }
