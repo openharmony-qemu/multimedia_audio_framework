@@ -848,5 +848,56 @@ HWTEST_F(CapturerInServerUnitTest, OnReadData_001, TestSize.Level1)
     int32_t result = capturerInServer_->OnReadData(length);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: HandleOperationFlushed_001.
+ * @tc.desc  : Test HandleOperationFlushed interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, HandleOperationFlushed_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+
+    capturerInServer_->status_ = I_STATUS_FLUSHING_WHEN_STARTED;
+    capturerInServer_->HandleOperationFlushed();
+    EXPECT_EQ(capturerInServer_->status_, I_STATUS_STARTED);
+
+    capturerInServer_->status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
+    capturerInServer_->HandleOperationFlushed();
+    EXPECT_EQ(capturerInServer_->status_, I_STATUS_PAUSED);
+
+    capturerInServer_->status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
+    capturerInServer_->HandleOperationFlushed();
+    EXPECT_EQ(capturerInServer_->status_, I_STATUS_STOPPED);
+
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->HandleOperationFlushed();
+    EXPECT_EQ(capturerInServer_->status_, I_STATUS_IDLE);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: GetLastAudioDuration_001.
+ * @tc.desc  : Test GetLastAudioDuration interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, GetLastAudioDuration_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+
+    capturerInServer_->lastStopTime_ = 1;
+    capturerInServer_->lastStartTime_ = 2;
+    int64_t result = capturerInServer_->GetLastAudioDuration();
+    EXPECT_EQ(result, -1);
+
+    capturerInServer_->lastStopTime_ = 3;
+    result = capturerInServer_->GetLastAudioDuration();
+    EXPECT_EQ(result, 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -328,6 +328,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_015, TestSize.Level1)
     AudioFocuState newState{};
     auto it = pairList.begin();
     bool removeFocusInfo = true;
+    interruptServiceTest->dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
     interruptServiceTest->SendInterruptEvent(oldState, newState, it, removeFocusInfo);
     interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
     interruptServiceTest->SendInterruptEvent(oldState, newState, it, removeFocusInfo);
@@ -2826,6 +2827,118 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_DeactivateAudioInterruptInt
     EXPECT_NE(interruptServiceTest->zonesMap_.find(0), interruptServiceTest->zonesMap_.end());
 
     interruptServiceTest->zonesMap_.clear();
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_GetAppState_001
+* @tc.desc  : Test GetAppState
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_GetAppState_001, TestSize.Level1)
+{
+    auto server = GetPolicyServerTest();
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->zonesMap_.clear();
+    int32_t appPid = -1;
+
+    uint8_t ret = interruptServiceTest->GetAppState(appPid);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_WriteStartDfxMsg_001
+* @tc.desc  : Test WriteStartDfxMsg
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_WriteStartDfxMsg_001, TestSize.Level1)
+{
+    auto server = GetPolicyServerTest();
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->Init(server);
+
+    InterruptDfxBuilder dfxBuilder;
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.state == State::PREPARED;
+    audioInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    audioInterrupt.audioFocusType.isPlay = false;
+
+    interruptServiceTest->WriteStartDfxMsg(dfxBuilder, audioInterrupt);
+    EXPECT_NE(interruptServiceTest->dfxCollector_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_WriteSessionTimeoutDfxEvent_001
+* @tc.desc  : Test WriteSessionTimeoutDfxEvent
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_WriteSessionTimeoutDfxEvent_001, TestSize.Level1)
+{
+    auto server = GetPolicyServerTest();
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->Init(server);
+
+    int32_t pid = 1001;
+    AudioInterrupt interruptTest;
+    interruptTest.mode = SHARE_MODE;
+    interruptTest.pid = 0;
+    std::pair<AudioInterrupt, AudioFocuState> audioFocusTypePair;
+    audioFocusTypePair.first = interruptTest;
+    audioFocusTypePair.second = ACTIVE;
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->zonesMap_.find(0)->second->audioFocusInfoList.emplace_back(audioFocusTypePair);
+
+    interruptServiceTest->WriteSessionTimeoutDfxEvent(pid);
+    EXPECT_NE(interruptServiceTest->zonesMap_.find(0), interruptServiceTest->zonesMap_.end());
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_WriteStopDfxMsg_001
+* @tc.desc  : Test WriteStopDfxMsg
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_WriteStopDfxMsg_001, TestSize.Level1)
+{
+    auto server = GetPolicyServerTest();
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->Init(server);
+
+    int32_t pid = 1001;
+    AudioInterrupt interruptTest;
+    interruptTest.mode = SHARE_MODE;
+    interruptTest.pid = 0;
+    interruptTest.state = State::RELEASED;
+    std::pair<AudioInterrupt, AudioFocuState> audioFocusTypePair;
+    audioFocusTypePair.first = interruptTest;
+    audioFocusTypePair.second = ACTIVE;
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->zonesMap_.find(0)->second->audioFocusInfoList.emplace_back(audioFocusTypePair);
+
+    interruptServiceTest->WriteStopDfxMsg(interruptTest);
+    EXPECT_NE(interruptServiceTest->zonesMap_.find(0), interruptServiceTest->zonesMap_.end());
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_AudioSessionInfoDump_001
+* @tc.desc  : Test AudioSessionInfoDump
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_AudioSessionInfoDump_001, TestSize.Level1)
+{
+    auto server = GetPolicyServerTest();
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->zonesMap_.clear();
+    std::string dumpString = "test dump string";
+
+    interruptServiceTest->AudioSessionInfoDump(dumpString);
+    EXPECT_EQ(interruptServiceTest->sessionService_, nullptr);
+
+    interruptServiceTest->Init(server);
+    interruptServiceTest->AudioSessionInfoDump(dumpString);
+    EXPECT_NE(interruptServiceTest->sessionService_, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
