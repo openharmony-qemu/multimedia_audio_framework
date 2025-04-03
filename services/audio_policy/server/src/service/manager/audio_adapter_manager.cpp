@@ -653,8 +653,10 @@ void AudioAdapterManager::SetOffloadSessionId(uint32_t sessionId)
 
 void AudioAdapterManager::ResetOffloadSessionId()
 {
-    AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", offloadSessionID_.value());
-    offloadSessionID_.reset();
+    if (offloadSessionID_.has_value()) {
+        AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", offloadSessionID_.value());
+        offloadSessionID_.reset();
+    }
 }
 
 int32_t AudioAdapterManager::SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel)
