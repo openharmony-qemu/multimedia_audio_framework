@@ -121,11 +121,10 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
     } else if (operation == DATA_LINK_CONNECTING) {
-        isDataLinkConnected_ = false;
+        UpdateDataLinkState(false, false);
         return SUCCESS;
     } else if (operation == DATA_LINK_CONNECTED) {
-        isDataLinkConnected_ = true;
-        dataConnectionCV_.notify_all();
+        UpdateDataLinkState(true, true);
         return SUCCESS;
     }
 
@@ -150,6 +149,15 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
 
     callServerCV_.notify_all();
     return SUCCESS;
+}
+
+void RendererInClientInner::UpdateDataLinkState(bool isConnected, bool needNotify)
+{
+    std::lock_guard<std::mutex> stateLock(dataConnectionMutex_);
+    isDataLinkConnected_ = isConnected;
+    if (needNotify) {
+        dataConnectionCV_.notify_all();
+    }
 }
 
 void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
