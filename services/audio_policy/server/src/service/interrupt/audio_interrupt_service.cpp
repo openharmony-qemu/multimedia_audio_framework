@@ -652,7 +652,7 @@ void AudioInterruptService::HandleAppStreamType(AudioInterrupt &audioInterrupt)
 int32_t AudioInterruptService::ActivateAudioInterrupt(
     const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy)
 {
-    if(isPreemptMode_) {
+    if (isPreemptMode_) {
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
         SendInterruptEventToIncomingStream(interruptEvent, audioInterrupt);
         return ERR_FOCUS_DENIED;
