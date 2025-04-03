@@ -65,8 +65,6 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_QUERY_BUNDLE_NAME_LIST_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
-    "ACTIVATE_PREEMPT_MODE",
-    "DEACTIVATE_PREEMPT_MODE",
     "SET_INTERRUPT_CALLBACK",
     "UNSET_INTERRUPT_CALLBACK",
     "REQUEST_AUDIO_FOCUS",
@@ -204,6 +202,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
     "GET_DM_DEVICE_TYPE",
+    "ACTIVATE_PREEMPT_MODE",
+    "DEACTIVATE_PREEMPT_MODE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);

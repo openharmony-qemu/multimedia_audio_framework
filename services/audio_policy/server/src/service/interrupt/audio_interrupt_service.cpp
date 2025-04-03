@@ -727,7 +727,6 @@ void AudioInterruptService::ResetNonInterruptControl(uint32_t streamId)
 
 int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
-    CHECK_AND_RETURN_RET_LOG(!isPreemptMode_, ERR_FOCUS_DENIED, "isPreemptMode_ = true");
     AudioXCollie audioXCollie("AudioInterruptService::DeactivateAudioInterrupt", INTERRUPT_SERVICE_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("DeactivateAudioInterrupt timeout");
@@ -774,12 +773,8 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
     }
 }
 
-int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
+int32_t AudioInterruptService::ClearAudioFocusInfoList(const int32_t zoneId)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("start ActivatePreemptMode");
-    isPreemptMode_ = true;
-    AUDIO_INFO_LOG("setPreemptMode = %{public}d", isPreemptMode_);
     // Use local variable to record target focus info list, can be optimized
     auto targetZoneIt = zonesMap_.find(zoneId);
     if (targetZoneIt == zonesMap_.end()) {
@@ -804,14 +799,20 @@ int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
     }
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
     zonesMap_[zoneId] = targetZoneIt->second;
-    return SUCCESS;
 }
+
+int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    isPreemptMode_ = true;
+    AUDIO_INFO_LOG("isPreemptMode_ = %{public}d", isPreemptMode_);
+    return ClearAudioFocusInfoList(zoneId);
+}
+
 int32_t AudioInterruptService::DeactivatePreemptMode(const int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("start DeactivatePreemptMode");
     isPreemptMode_ = false;
-    AUDIO_INFO_LOG("setPreemptMode = %{public}d", isPreemptMode_);
     return SUCCESS;
 }
 

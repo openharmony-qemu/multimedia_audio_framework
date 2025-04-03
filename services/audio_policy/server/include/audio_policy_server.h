@@ -562,6 +562,7 @@ private:
     static constexpr int32_t AUDIO_UID = 1041;
     static constexpr uint32_t MICPHONE_CALLER = 0;
     static constexpr int32_t ROOT_UID = 0;
+    static constexpr int32_t PREEMPT_UID = 7015;
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;

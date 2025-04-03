@@ -1038,7 +1038,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
-     * @since 12
+     * @since 18
      */
     int32_t ActivatePreemptMode() const;
 
@@ -1047,7 +1047,7 @@ public:
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
-     * @since 12
+     * @since 18
      */
     int32_t DeactivatePreemptMode() const;
 
