@@ -1404,23 +1404,6 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     }
 }
 
-AudioRendererConcurrencyCallbackImpl::AudioRendererConcurrencyCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioRendererConcurrencyCallbackImpl ctor");
-}
-
-AudioRendererConcurrencyCallbackImpl::~AudioRendererConcurrencyCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioRendererConcurrencyCallbackImpl dtor");
-}
-
-void AudioRendererConcurrencyCallbackImpl::OnConcedeStream()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_LOG(renderer_ != nullptr, "renderer is nullptr");
-    renderer_->ConcedeStream();
-}
-
 AudioStreamCallbackRenderer::AudioStreamCallbackRenderer(std::weak_ptr<AudioRendererPrivate> renderer)
     : renderer_(renderer)
 {
@@ -2250,9 +2233,11 @@ void RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
     std::thread restoreThread ([weakRefCb] {
         std::shared_ptr<RendererPolicyServiceDiedCallback> strongRefCb = weakRefCb.lock();
         CHECK_AND_RETURN_LOG(strongRefCb != nullptr, "strongRef is nullptr");
+        int32_t count;
         do {
+            count = strongRefCb->taskCount_.load();
             strongRefCb->RestoreTheadLoop();
-        } while (strongRefCb->taskCount_.fetch_sub(1) > 1);
+        } while (strongRefCb->taskCount_.fetch_sub(count) > count);
     });
     pthread_setname_np(restoreThread.native_handle(), "OS_ARPSRestore");
     restoreThread.detach();

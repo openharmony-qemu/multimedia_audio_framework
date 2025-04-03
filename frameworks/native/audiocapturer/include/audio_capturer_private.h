@@ -236,7 +236,7 @@ public:
     void SaveCapturerInfoChangeCallback(const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback);
     void RemoveCapturerInfoChangeCallback(const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback);
     int32_t GetCapturerInfoChangeCallbackArraySize();
-    void setAudioCapturerObj(AudioCapturerPrivate *capturerObj);
+    void SetAudioCapturerObj(std::weak_ptr<AudioCapturerPrivate> capturerObj);
     void NotifyAudioCapturerDeviceChange(
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     void NotifyAudioCapturerInfoChange(
@@ -246,7 +246,7 @@ private:
     std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> deviceChangeCallbacklist_;
     std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist_;
     std::mutex capturerMutex_;
-    AudioCapturerPrivate *capturer_{nullptr};
+    std::weak_ptr<AudioCapturerPrivate> capturer_;
 };
 
 class InputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {
@@ -261,7 +261,7 @@ public:
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
 
-    void SetAudioCapturerObj(AudioCapturerPrivate * capturerObj)
+    void SetAudioCapturerObj(std::weak_ptr<AudioCapturerPrivate> capturerObj)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         capturer_ = capturerObj;
@@ -270,26 +270,27 @@ public:
     void UnsetAudioCapturerObj()
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        capturer_ = nullptr;
+        capturer_.reset();
     }
 private:
-    AudioCapturerPrivate *capturer_ = nullptr;
+    std::weak_ptr<AudioCapturerPrivate> capturer_;
     std::mutex mutex_;
 };
 
-class CapturerPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback {
+class CapturerPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback,
+    public std::enable_shared_from_this<CapturerPolicyServiceDiedCallback> {
 public:
     CapturerPolicyServiceDiedCallback();
     virtual ~CapturerPolicyServiceDiedCallback();
-    void SetAudioCapturerObj(AudioCapturerPrivate *capturerObj);
+    void SetAudioCapturerObj(std::weak_ptr<AudioCapturerPrivate>);
     void SetAudioInterrupt(AudioInterrupt &audioInterrupt);
     void OnAudioPolicyServiceDied() override;
 
 private:
-    AudioCapturerPrivate *capturer_ = nullptr;
+    std::weak_ptr<AudioCapturerPrivate> capturer_;
     AudioInterrupt audioInterrupt_;
     void RestoreTheadLoop();
-    std::unique_ptr<std::thread> restoreThread_ = nullptr;
+    std::atomic<int32_t> taskCount_ = 0;
 };
 
 class AudioCapturerConcurrencyCallbackImpl : public AudioConcurrencyCallback {
@@ -297,18 +298,18 @@ public:
     explicit AudioCapturerConcurrencyCallbackImpl();
     virtual ~AudioCapturerConcurrencyCallbackImpl();
     void OnConcedeStream() override;
-    void SetAudioCapturerObj(AudioCapturerPrivate *rendererObj)
+    void SetAudioCapturerObj(std::weak_ptr<AudioCapturerPrivate> capturerObj)
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        capturer_ = rendererObj;
+        capturer_ = capturerObj;
     }
     void UnsetAudioCapturerObj()
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        capturer_ = nullptr;
+        capturer_.reset();
     }
 private:
-    AudioCapturerPrivate *capturer_ = nullptr;
+    std::weak_ptr<AudioCapturerPrivate> capturer_;
     std::mutex mutex_;
 };
 }  // namespace AudioStandard
