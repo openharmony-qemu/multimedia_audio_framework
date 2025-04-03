@@ -1953,6 +1953,118 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_Stability_001, TestSiz
 }
 
 /**
+* @tc.name  : Test GetFirstPkgTimeStampInfo API via legal input.
+* @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_001
+* @tc.desc  : Test GetFirstPkgTimeStampInfo interface. Returns true, if the getting is successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    bool isBlockingRead = true;
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioCapturer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
+    EXPECT_GE(bytesRead, VALUE_ZERO);
+
+    int64_t firstTs;
+    bool getRet = audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
+    EXPECT_EQ(true, getRet);
+    EXPECT_TRUE(firstTs >= 0);
+
+    audioCapturer->Flush();
+    audioCapturer->Stop();
+    audioCapturer->Release();
+
+    free(buffer);
+}
+
+/**
+* @tc.name  : Test GetFirstPkgTimeStampInfo API via illegal state
+* @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_002
+* @tc.desc  : Test GetFirstPkgTimeStampInfo interface. Returns false, if the capturer state is CAPTURER_RELEASED
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_002, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioCapturer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    int64_t firstTs;
+    bool ret = audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name  : Test GetFirstPkgTimeStampInfo API via illegal state
+* @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_003
+* @tc.desc  : Test GetFirstPkgTimeStampInfo interface. Returns false, if the capturer state is CAPTURER_NEW.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_003, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    int64_t firstTs;
+    audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
+    EXPECT_TRUE(firstTs >= 0);
+}
+
+/**
+* @tc.name  : Test GetFirstPkgTimeStampInfo API stability.
+* @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_Stability_001
+* @tc.desc  : Test GetFirstPkgTimeStampInfo interface stability.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_Stability_001, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    thread captureThread(StartCaptureThread, audioCapturer.get(), AUDIO_TIME_STABILITY_TEST_FILE);
+
+    Timestamp timestamp;
+    bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(true, getAudioTime);
+
+    captureThread.join();
+
+    bool isStopped = audioCapturer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
 * @tc.name  : Test IsDeviceChanged API via different device type.
 * @tc.number: Audio_Capturer_IsDeviceChanged_001
 * @tc.desc  : Test IsDeviceChanged API via device type DEVICE_TYPE_INVALID, return true because different device types.
