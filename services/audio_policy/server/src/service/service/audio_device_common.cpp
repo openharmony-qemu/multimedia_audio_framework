@@ -670,8 +670,6 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
         rendererChangeInfo->sessionId);
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
         rendererChangeInfo->sessionId);
-    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
     int32_t oldStreamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
         rendererChangeInfo->outputDeviceInfo.deviceType_, rendererChangeInfo->rendererInfo.originalFlag,
         rendererChangeInfo->outputDeviceInfo.networkId_, rendererChangeInfo->rendererInfo.samplingRate, false);
