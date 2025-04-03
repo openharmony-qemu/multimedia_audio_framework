@@ -803,6 +803,7 @@ int32_t AudioInterruptService::ClearAudioFocusInfoList(const int32_t zoneId)
     }
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
     zonesMap_[zoneId] = targetZoneIt->second;
+    return SUCCESS;
 }
 
 int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
