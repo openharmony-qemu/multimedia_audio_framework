@@ -117,6 +117,10 @@ class ConcreteAudioHeadTrackingEnabledChangeCallback : public AudioHeadTrackingE
         const bool &enabled) override {}
 };
 
+class ConcreteSpatialEnabledChangeForCurrentDeviceCb : public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
+    void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override {}
+};
+
 class ConcreteAudioManagerAppVolumeChangeCallback : public AudioManagerAppVolumeChangeCallback {
     void OnAppVolumeChangedForUid(int32_t appUid, const VolumeEvent &event) override {};
 
