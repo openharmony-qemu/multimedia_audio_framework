@@ -652,7 +652,11 @@ void AudioInterruptService::HandleAppStreamType(AudioInterrupt &audioInterrupt)
 int32_t AudioInterruptService::ActivateAudioInterrupt(
     const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy)
 {
-    CHECK_AND_RETURN_RET_LOG(!isPreemptMode_, ERR_FOCUS_DENIED, "isPreemptMode_ = true");
+    if(isPreemptMode_) {
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+        SendInterruptEventToIncomingStream(interruptEvent, audioInterrupt);
+        return ERR_FOCUS_DENIED;
+    }
     AudioXCollie audioXCollie("AudioInterruptService::ActivateAudioInterrupt", INTERRUPT_SERVICE_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
