@@ -1207,15 +1207,14 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector
             scene.desc.pins = audioSceneOutPort;
             scene.desc.desc = const_cast<char *>("");
             int32_t ret = audioRender_->SelectScene(audioRender_, &scene);
-            CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
-                "Select scene FAILED: %{public}d", ret);
+            CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "Select scene FAILED: %{public}d", ret);
             AUDIO_WARNING_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevice);
             currentAudioScene_ = audioScene;
             isAudioSceneUpdate = true;
         }
-        if (activeDevices.size() != static_cast<size_t>(currentDevicesSize_) || activeDevice != currentActiveDevice_ ||
-            (isAudioSceneUpdate &&
-            (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
+        if (activeDevice != DEVICE_TYPE_NONE && (activeDevices.size() != static_cast<size_t>(currentDevicesSize_) ||
+            activeDevice != currentActiveDevice_ || (isAudioSceneUpdate &&
+            (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT)))) {
             std::vector<std::pair<DeviceType, AudioPortPin>> activeDevicesPortPin = {};
             for (auto device : activeDevices) {
                 activeDevicesPortPin.push_back(std::make_pair(device, audioSceneOutPort));
