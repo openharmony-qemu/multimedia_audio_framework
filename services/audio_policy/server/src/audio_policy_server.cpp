@@ -737,17 +737,6 @@ void AudioPolicyServer::CheckSubscribePowerStateChange()
     }
 }
 
-void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, int64_t deactivateSessionId)
-{
-    CheckSubscribePowerStateChange();
-    if (deactivateSessionId != OFFLOAD_NO_SESSION_ID) {
-        audioPolicyService_.OffloadStreamReleaseCheck(deactivateSessionId);
-    }
-    if (activateSessionId != OFFLOAD_NO_SESSION_ID) {
-        audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
-    }
-}
-
 AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerStateCallback(
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
@@ -2388,14 +2377,6 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
     GetAppVolumeLevel(streamChangeInfo.audioRendererChangeInfo.clientUID, appVolume);
     streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     int32_t ret = eventEntry_->UpdateTracker(mode, streamChangeInfo);
-    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
-        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
-        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
-        OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, streamChangeInfo.audioRendererChangeInfo.sessionId);
-    }
-    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
-        OffloadStreamCheck(streamChangeInfo.audioRendererChangeInfo.sessionId, OFFLOAD_NO_SESSION_ID);
-    }
     return ret;
 }
 

@@ -688,8 +688,6 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         AUDIO_PRERELEASE_LOGI("allow parallel play");
         return SUCCESS;
     }
-    policyServer_->CheckStreamMode(incomingStreamId);
-    policyServer_->OffloadStreamCheck(incomingStreamId, OFFLOAD_NO_SESSION_ID);
 
     if (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId) && !isUpdatedAudioStrategy) {
         AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
@@ -1635,9 +1633,6 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
         return;
     }
-
-    policyServer_->OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, audioInterrupt.streamId);
-    policyServer_->OffloadStopPlaying(audioInterrupt);
 
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList(zoneId, isSessionTimeout);

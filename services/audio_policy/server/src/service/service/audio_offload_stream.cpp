@@ -522,13 +522,16 @@ int32_t AudioOffloadStream::ActivateConcurrencyFromServer(AudioPipeType incoming
 
 void AudioOffloadStream::ResetOffloadStatus(uint32_t sessionId)
 {
-    AUDIO_INFO_LOG("Reset offload session: %{public}u", sessionId);
-    std::lock_guard<std::mutex> lock(offloadMutex_);
-    AudioServerProxy::GetInstance().UnsetOffloadModeProxy(sessionId);
-    AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
-    streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
-    offloadSessionID_.reset();
-    audioPolicyManager_.ResetOffloadSessionId();
+    AUDIO_INFO_LOG("Reset offload state for session: %{public}u", sessionId);
+    if (offloadSessionID_.has_value() && ((*offloadSessionID_) == sessionId)) {
+        AUDIO_INFO_LOG("Current offload session: %{public}u", (*offloadSessionID_));
+        std::lock_guard<std::mutex> lock(offloadMutex_);
+        AudioServerProxy::GetInstance().UnsetOffloadModeProxy(sessionId);
+        AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
+        streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
+        offloadSessionID_.reset();
+        audioPolicyManager_.ResetOffloadSessionId();
+    }
 }
 
 void AudioOffloadStream::SetOffloadStatus(uint32_t sessionId)
