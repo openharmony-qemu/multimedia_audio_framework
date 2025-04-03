@@ -1231,26 +1231,13 @@ bool NapiAudioEnum::IsLegalInputArgumentVolumeAdjustType(int32_t adjustType)
 
 bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
 {
-    bool result = false;
-    switch (deviceType) {
-        case DeviceType::DEVICE_TYPE_EARPIECE:
-        case DeviceType::DEVICE_TYPE_SPEAKER:
-        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
-        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DeviceType::DEVICE_TYPE_MIC:
-        case DeviceType::DEVICE_TYPE_USB_HEADSET:
-        case DeviceType::DEVICE_TYPE_USB_DEVICE:
-        case DeviceType::DEVICE_TYPE_FILE_SINK:
-        case DeviceType::DEVICE_TYPE_FILE_SOURCE:
-            result = true;
-            break;
-        default:
-            result = false;
-            break;
+    for (const auto &iter : NapiAudioEnum::deviceTypeMap) {
+        if (deviceType == iter.second && deviceType != DeviceType::DEVICE_TYPE_NONE &&
+            deviceType != DeviceType::DEVICE_TYPE_INVALID && deviceType != DeviceType::DEVICE_TYPE_MAX) {
+            return true;
+        }
     }
-    return result;
+    return false;
 }
 
 bool NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType)
