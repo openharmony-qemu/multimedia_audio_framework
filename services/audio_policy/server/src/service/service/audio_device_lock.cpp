@@ -234,6 +234,13 @@ void AudioDeviceLock::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChan
     AUDIO_INFO_LOG("fetch device for track, sessionid:%{public}d start",
         streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
+    AudioMode mode = AudioMode::AUDIO_MODE_RECORD;
+    // Set prerunningState true to refetch devices when device info change before update tracker to running
+    streamChangeInfo.audioCapturerChangeInfo.prerunningState = true;
+    if (streamCollector_.UpdateTrackerInternal(mode, streamChangeInfo) != SUCCESS) {
+        return;
+    }
+
     vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(
         make_shared<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));

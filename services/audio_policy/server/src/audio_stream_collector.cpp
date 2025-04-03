@@ -503,6 +503,24 @@ int32_t AudioStreamCollector::UpdateRendererStreamInternal(AudioStreamChangeInfo
     return ERROR;
 }
 
+int32_t AudioStreamCollector::UpdateCapturerStreamInternal(AudioStreamChangeInfo &streamChangeInfo)
+{
+    // Update the capturer internal info in audioCapturerChangeInfos_
+    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+        AudioCapturerChangeInfo audioCapturerChangeInfo = **it;
+        if ((*it)->clientUID == streamChangeInfo.audioCapturerChangeInfo.clientUID &&
+            (*it)->sessionId == streamChangeInfo.audioCapturerChangeInfo.sessionId) {
+            AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", (*it)->clientUID, (*it)->sessionId);
+            (*it)->prerunningState = streamChangeInfo.audioCapturerChangeInfo.prerunningState;
+            return SUCCESS;
+        }
+    }
+
+    AUDIO_ERR_LOG("Not found clientUid:%{public}d sessionId:%{public}d",
+        streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.sessionId);
+    return ERROR;
+}
+
 int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
@@ -759,7 +777,7 @@ int32_t AudioStreamCollector::UpdateTrackerInternal(AudioMode &mode, AudioStream
     if (mode == AUDIO_MODE_PLAYBACK) {
         return UpdateRendererStreamInternal(streamChangeInfo);
     }
-    return SUCCESS;
+    return UpdateCapturerStreamInternal(streamChangeInfo);
 }
 
 AudioStreamType AudioStreamCollector::GetStreamType(ContentType contentType, StreamUsage streamUsage)
