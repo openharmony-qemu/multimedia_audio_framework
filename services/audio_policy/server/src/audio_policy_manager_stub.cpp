@@ -201,9 +201,9 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_EXCLUDED_OUTPUT_DEVICES",
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
-    "GET_DM_DEVICE_TYPE",
     "ACTIVATE_PREEMPT_MODE",
     "DEACTIVATE_PREEMPT_MODE",
+    "GET_DM_DEVICE_TYPE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
