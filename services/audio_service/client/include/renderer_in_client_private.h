@@ -236,6 +236,7 @@ private:
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
+    void UpdateDataLinkState(bool isConnected, bool needNotify);
 
     int32_t RegisterSpatializationStateEventListener();
 

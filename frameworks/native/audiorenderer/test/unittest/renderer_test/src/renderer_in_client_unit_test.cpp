@@ -1117,5 +1117,25 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_043, TestSize.Level1
     bool isSwitching = false;
     ptrRendererInClientInner->SetSwitchingStatus(isSwitching);
 }
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_044
+ * @tc.desc  : Test RendererInClientInner::OnOperationHandled with DATA_LINK_CONNECTED
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_044, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    Operation operation = Operation::DATA_LINK_CONNECTED;
+    int64_t result = 0;
+    auto ret = ptrRendererInClientInner->OnOperationHandled(operation, result);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
