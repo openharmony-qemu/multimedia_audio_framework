@@ -961,9 +961,7 @@ void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice 
 {
     std::string deviceAddr = device.GetDeviceAddr();
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
-    AudioScene scene = AudioHfpManager::GetCurrentAudioScene();
-    AUDIO_INFO_LOG("HandleUserSelection current scene = %{public}d", scene);
-    if (bluetoothCategory == BT_WATCH && (scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING)) {
+    if (bluetoothCategory == BT_WATCH) {
         std::lock_guard<std::mutex> wearStateMapLock(g_hfpWearStateMapLock);
         std::lock_guard<std::mutex> hfpDeviceLock(g_hfpDeviceLock);
         auto isPresent = [] (BluetoothRemoteDevice &bluetoothRemoteDevice) {
