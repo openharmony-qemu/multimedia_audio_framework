@@ -839,7 +839,7 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     int32_t streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
-        attr_.adapterName, inputDevice, streamId, inputType);
+        attr_.adapterName.c_str(), inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(adapterNameCase_, inputDevice, streamId, inputType);
     return ret;
 }
