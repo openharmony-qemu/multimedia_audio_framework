@@ -2023,6 +2023,11 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
 int32_t AudioPolicyServer::ActivatePreemptMode(const int32_t zoneID)
 {
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid != PREEMPT_UID) {
+        AUDIO_ERR_LOG("ActivatePreemptMode: Error caller uid: %{public}d", callerUid);
+        return ERROR;
+    }
     if (interruptService_ != nullptr) {
         return interruptService_->ActivatePreemptMode(zoneID);
     }
