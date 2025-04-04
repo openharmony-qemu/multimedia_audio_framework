@@ -156,6 +156,7 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
     NapiAudioRenderer *napiRenderer = ObjectRefMap<NapiAudioRenderer>::IncreaseRef(obj);
     if (napiRenderer == nullptr) {
         AUDIO_ERR_LOG("napiRenderer is null");
+        delete event;
         return;
     }
     
