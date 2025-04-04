@@ -385,7 +385,7 @@ std::string AudioEcManager::GetPipeNameByDeviceForEc(const std::string &role, co
 }
 
 int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType,
-    std::shared_ptr<AdapterPipeInfo> pipeInfo)
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     std::string portName;
     if (role == ROLE_SOURCE) {

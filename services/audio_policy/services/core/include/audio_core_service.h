@@ -342,7 +342,7 @@ private:
     int32_t HandleDeviceChangeForFetchInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo, RendererState rendererState);
-    void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo);
     void CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo);
     void ReConfigOffloadStatus(uint32_t sessionId, std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName);
 private:
