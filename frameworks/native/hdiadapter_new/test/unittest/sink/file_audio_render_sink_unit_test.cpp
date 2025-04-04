@@ -251,10 +251,10 @@ HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_011, TestSize.Level1)
 
 /**
  * @tc.name   : Test FileSink API
- * @tc.number : FileSinkUnitTest_011
+ * @tc.number : FileSinkUnitTest_012
  * @tc.desc   : Test file sink start with file
  */
-HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_011, TestSize.Level1)
+HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_012, TestSize.Level1)
 {
     FileAudioRenderSink fileSink;
     fileSink.filePath_ = "/data/data/utTestFilel.pcm";
@@ -269,10 +269,10 @@ HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_011, TestSize.Level1)
 
 /**
  * @tc.name   : Test FileSink API
- * @tc.number : FileSinkUnitTest_011
+ * @tc.number : FileSinkUnitTest_013
  * @tc.desc   : Test file sink start without file
  */
-HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_011, TestSize.Level1)
+HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_013, TestSize.Level1)
 {
     FileAudioRenderSink fileSink;
     fileSink.filePath_ = "/data/data/utTestFilel.pcm";
