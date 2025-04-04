@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "sink/file_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -246,6 +247,42 @@ HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_011, TestSize.Level1)
     std::string info;
     sink_->DumpInfo(info);
     EXPECT_EQ(info.empty(), false);
+}
+
+/**
+ * @tc.name   : Test FileSink API
+ * @tc.number : FileSinkUnitTest_011
+ * @tc.desc   : Test file sink start with file
+ */
+HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_011, TestSize.Level1)
+{
+    FileAudioRenderSink fileSink;
+    fileSink.filePath_ = "/data/data/utTestFilel.pcm";
+    int32_t res = fileSink.Start();
+    EXPECT_EQ(res, SUCCESS);
+
+    res = fileSink.Stop();
+    EXPECT_EQ(res, SUCCESS);
+
+    fileSink.DeInit();
+}
+
+/**
+ * @tc.name   : Test FileSink API
+ * @tc.number : FileSinkUnitTest_011
+ * @tc.desc   : Test file sink start without file
+ */
+HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_011, TestSize.Level1)
+{
+    FileAudioRenderSink fileSink;
+    fileSink.filePath_ = "/data/data/utTestFilel.pcm";
+    int32_t res = fileSink.Start();
+    EXPECT_NE(res, SUCCESS);
+
+    res = fileSink.Stop();
+    EXPECT_EQ(res, SUCCESS);
+
+    fileSink.DeInit();
 }
 
 } // namespace AudioStandard
