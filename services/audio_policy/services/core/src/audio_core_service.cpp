@@ -1002,6 +1002,9 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
             !Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage)) {
             continue;
         }
+
+        MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
+        MuteSinkForSwitchDistributedDevice(streamDesc, reason);
         // handle a2dp
         std::string encryptMacAddr = GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
         int32_t bluetoothFetchResult =
