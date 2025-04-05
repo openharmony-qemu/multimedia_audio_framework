@@ -165,8 +165,9 @@ private:
         const std::vector<SourceType> &existConcurrentSources,
         const std::vector<SourceType> &incomingConcurrentSources);
     bool IsMediaStream(AudioStreamType audioStreamType);
+    std::string GetRealBundleName(uint32_t uid);
     void UpdateAudioFocusStrategy(AudioFocusType existAudioFocusType, AudioFocusType incomingAudioFocusType,
-        AudioFocusEntry &focusEntry);
+        AudioFocusEntry &focusEntry, int32_t uid);
     bool FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt);
     int32_t ProcessFocusEntry(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);

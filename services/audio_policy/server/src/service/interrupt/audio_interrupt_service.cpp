@@ -1171,7 +1171,8 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
         AudioFocusEntry focusEntry =
             focusCfgMap_[std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType)];
-        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry);
+        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry,
+            incomingInterrupt.uid);
         if (focusEntry.actionOn != CURRENT || IsSameAppInShareMode(incomingInterrupt, iterActive->first) ||
             iterActive->second == PLACEHOLDER || CanMixForSession(incomingInterrupt, iterActive->first, focusEntry) ||
             // incomming peeling should not stop/pause/duck other playing instances
@@ -1380,17 +1381,28 @@ int32_t AudioInterruptService::SetQueryBundleNameListCallback(const sptr<IRemote
     return SUCCESS;
 }
 
-void AudioInterruptService::UpdateAudioFocusStrategy(AudioFocusType existAudioFocusType,
-    AudioFocusType incomingAudioFocusType, AudioFocusEntry &focusEntry)
+std::string AudioInterruptService::GetRealBundleName(uint32_t uid)
 {
-    CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
+    CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, "", "policyServer nullptr");
+    if (IPCSkeleton::GetCallingUid() == MEDIA_SA_UID) {
+        auto info = policyServer_->GetBundleInfoFromUid(uid);
+        return info.name;
+    }
     std::string bundleName = policyServer_->GetBundleName();
+    return bundleName;
+}
+
+void AudioInterruptService::UpdateAudioFocusStrategy(AudioFocusType existAudioFocusType,
+    AudioFocusType incomingAudioFocusType, AudioFocusEntry &focusEntry, int32_t uid)
+{
+    std::string bundleName = GetRealBundleName(static_cast<uint32_t>(uid));
+    CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingAudioFocusType.streamType;
-    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType)
-        && queryBundleNameListCallback_ != nullptr
-        && queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName)
-        && focusEntry.hintType == INTERRUPT_HINT_STOP) {
+    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType) &&
+        queryBundleNameListCallback_ != nullptr &&
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName) &&
+        focusEntry.hintType == INTERRUPT_HINT_STOP) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
     }
@@ -1405,8 +1417,8 @@ bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrup
             CanMixForSession(incomingInterrupt, iterActive->first, focusEntry)) {
         return true;
     }
-    if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject)
-        && (IsAudioSourceConcurrency((iterActive->first).audioFocusType.sourceType, incomingSourceType,
+    if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject) &&
+        (IsAudioSourceConcurrency((iterActive->first).audioFocusType.sourceType, incomingSourceType,
         (iterActive->first).currencySources.sourcesTypes, incomingConcurrentSources)
         // if the rejection is caused by the existing peeling recording, just ignore it
         || IsLowestPriorityRecording(iterActive->first))) {
@@ -1438,7 +1450,8 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
         CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM, "no focus cfg");
         AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
-        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry);
+        UpdateAudioFocusStrategy((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType, focusEntry,
+            incomingInterrupt.uid);
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
         if (FocusEntryContinue(iterActive, focusEntry, incomingInterrupt)) { continue; }
         if (focusEntry.isReject) {
@@ -1708,7 +1721,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
                 break;
             }
             AudioFocusEntry focusEntry = focusCfgMap_[audioFocusTypePair];
-            UpdateAudioFocusStrategy(inprocessing.audioFocusType, incoming.audioFocusType, focusEntry);
+            UpdateAudioFocusStrategy(inprocessing.audioFocusType, incoming.audioFocusType, focusEntry, incoming.uid);
             SourceType existSourceType = inprocessing.audioFocusType.sourceType;
             std::vector<SourceType> existConcurrentSources = inprocessing.currencySources.sourcesTypes;
             bool bConcurrency = IsAudioSourceConcurrency(existSourceType, incomingSourceType,
