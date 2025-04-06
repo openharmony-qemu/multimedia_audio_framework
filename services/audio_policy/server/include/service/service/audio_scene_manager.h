@@ -58,8 +58,8 @@ private:
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()) {}
     ~AudioSceneManager() {}
-    void DealAudioSceneOutputDevices(const AudioScene &audioScene, std::vector<DeviceType> &activeOutputDevices,
-        bool &haveArmUsbDevice);
+    void DealAudioSceneInputAndOutputDevices(const AudioScene &audioScene,
+        std::vector<DeviceType> &activeOutputDevices, DeviceType &activeInputDevice);
 private:
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;
