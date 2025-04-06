@@ -82,7 +82,8 @@ int32_t FastAudioRenderSink::Start(void)
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(startMutex_);
     Trace trace("FastAudioRenderSink::Start");
-    AudioXCollie audioXCollie("FastAudioRenderSink::Start", TIMEOUT_SECONDS_10);
+    AudioXCollie audioXCollie("FastAudioRenderSink::Start", TIMEOUT_SECONDS_10,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     int64_t stamp = ClockTime::GetCurNano();
     if (started_) {
@@ -117,7 +118,8 @@ int32_t FastAudioRenderSink::Stop(void)
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(startMutex_);
     Trace trace("FastAudioRenderSink::Stop");
-    AudioXCollie audioXCollie("FastAudioRenderSink::Stop", TIMEOUT_SECONDS_10);
+    AudioXCollie audioXCollie("FastAudioRenderSink::Stop", TIMEOUT_SECONDS_10,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {

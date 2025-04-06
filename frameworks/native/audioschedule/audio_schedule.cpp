@@ -63,7 +63,8 @@ void ConfigPayload(uint32_t pid, uint32_t tid, const char *bundleName, int32_t q
 void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportData with qos level 7, pid " + std::to_string(pid) +
-        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT);
+        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace ("Rss::ReportData with qos level 7");
     AUDIO_INFO_LOG("Report tid %{public}u", tid);
     std::unordered_map<std::string, std::string> mapPayload;
@@ -74,7 +75,8 @@ void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName)
 void UnscheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportData with qos level -1, pid " + std::to_string(pid) +
-        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT);
+        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace ("Rss::ReportData with qos level -1");
     std::unordered_map<std::string, std::string> mapPayload;
     ConfigPayload(pid, tid, bundleName, DEFAULT_QOS_LEVEL, mapPayload);

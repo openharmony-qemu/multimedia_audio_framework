@@ -603,7 +603,8 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
     deviceDesc.portId = renderPort.portId;
     deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
-    AudioXCollie audioXCollie("audioAdapter_->CreateRender", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("audioAdapter_->CreateRender", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     AUDIO_INFO_LOG("Create offload render format: %{public}d, sampleRate:%{public}u channel%{public}u",
         param.format, param.sampleRate, param.channelCount);
@@ -753,7 +754,8 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
         }
     }
 
-    AudioXCollie audioXCollie("audioRender_->Start", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("audioRender_->Start", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     int32_t ret = audioRender_->Start(audioRender_);
     if (ret) {
         AUDIO_ERR_LOG("Start failed! ret %d", ret);
@@ -912,7 +914,8 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
 
     if (started_) {
         CHECK_AND_RETURN_RET_LOG(!Flush(), ERR_OPERATION_FAILED, "Flush failed!");
-        AudioXCollie audioXCollie("audioRender_->Stop", TIME_OUT_SECONDS);
+        AudioXCollie audioXCollie("audioRender_->Stop", TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         int32_t ret = audioRender_->Stop(audioRender_);
         UpdateSinkState(false);
         if (!ret) {

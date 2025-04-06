@@ -687,7 +687,8 @@ int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* 
 
 bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::mutex> lock(g_recordMapMutex);
     if (g_tokenIdRecordMap.count(targetTokenId)) {
         if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
@@ -716,7 +717,8 @@ bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t session
 
 bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStop", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStop", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::unique_lock<std::mutex> lock(g_recordMapMutex);
     if (!g_tokenIdRecordMap.count(targetTokenId)) {
         AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);

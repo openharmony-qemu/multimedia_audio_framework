@@ -484,7 +484,8 @@ void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_DEBUG_LOG("server: set audio parameter");
     if (key != "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
         bool ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
@@ -628,33 +629,14 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
     return SUCCESS;
 }
 
-bool AudioServer::CheckAndPrintStacktrace(const std::string &key)
-{
-    AUDIO_WARNING_LOG("Start handle forced xcollie event for key %{public}s", key.c_str());
-    if (key == "dump_pulseaudio_stacktrace") {
-        AudioXCollie audioXCollie("AudioServer::PrintStackTrace", 1);
-        sleep(2); // sleep 2 seconds to dump stacktrace
-        return true;
-    } else if (key == "recovery_audio_server") {
-        AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_RECOVERY);
-        sleep(2); // sleep 2 seconds to dump stacktrace
-        return true;
-    } else if (key == "dump_pa_stacktrace_and_kill") {
-        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr,
-            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-        sleep(2); // sleep 2 seconds to dump stacktrace
-        return true;
-    }
-    return false;
-}
-
 const std::string AudioServer::GetAudioParameter(const std::string &key)
 {
-    if (IPCSkeleton::GetCallingUid() == MEDIA_SERVICE_UID && CheckAndPrintStacktrace(key) == true) {
+    if (IPCSkeleton::GetCallingUid() == MEDIA_SERVICE_UID) {
         return "";
     }
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
-    AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
@@ -753,7 +735,8 @@ const std::string AudioServer::GetAudioParameter(const std::string& networkId, c
         VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION), "", "refused for %{public}d", callingUid);
 
     if (networkId == LOCAL_NETWORK_ID) {
-        AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
+        AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS,
+            nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         if (key == AudioParamKey::USB_DEVICE) {
             return GetUsbParameter(condition);
         }
@@ -887,7 +870,8 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     DeviceType activeOutputDevice = activeOutputDevices.front();
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
     if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
@@ -1132,7 +1116,7 @@ int32_t AudioServer::RegistCoreServiceProvider(const sptr<IRemoteObject> &object
 int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
 {
     AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
-        GET_BUNDLE_TIME_OUT_SECONDS);
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetHapBuildApiVersion");
@@ -1300,7 +1284,7 @@ bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
 const std::string AudioServer::GetBundleNameFromUid(int32_t uid)
 {
     AudioXCollie audioXCollie("AudioServer::GetBundleNameFromUid",
-        GET_BUNDLE_TIME_OUT_SECONDS);
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::string bundleName {""};
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();

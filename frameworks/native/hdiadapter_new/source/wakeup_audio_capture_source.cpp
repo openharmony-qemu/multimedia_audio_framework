@@ -134,7 +134,8 @@ int32_t WakeupAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
 void WakeupAudioCaptureSource::DeInit(void)
 {
-    AudioXCollie audioXCollie("WakeupAudioCaptureSource::DeInit", TIMEOUT_SECONDS_5);
+    AudioXCollie audioXCollie("WakeupAudioCaptureSource::DeInit", TIMEOUT_SECONDS_5,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(wakeupMutex_);

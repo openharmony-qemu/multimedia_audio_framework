@@ -165,15 +165,18 @@ int32_t AudioGeneralManager::SetQueryClientTypeCallback(const std::shared_ptr<Au
 
 const sptr<IStandardAudioService> AudioGeneralManager::GetAudioGeneralManagerProxy()
 {
-    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioGeneralManagerProxy", XCOLLIE_TIME_OUT_SECONDS);
+    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioGeneralManagerProxy", XCOLLIE_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::mutex> lock(g_asManagerProxyMutex);
     if (g_asManagerProxy == nullptr) {
-        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS);
+        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get sa manager failed");
         xcollieGetSystemAbilityManager.CancelXCollieTimer();
 
-        AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS);
+        AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
         CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
         g_asManagerProxy = iface_cast<IStandardAudioService>(object);

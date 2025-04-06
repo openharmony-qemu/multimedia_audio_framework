@@ -57,7 +57,7 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
 AppExecFwk::BundleInfo AppStateListener::GetBundleInfoFromUid(int32_t callingUid)
 {
     AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
-        GET_BUNDLE_TIME_OUT_SECONDS);
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::string bundleName {"uid:" + std::to_string(callingUid)};
     AppExecFwk::BundleInfo bundleInfo;
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleInfoFromUid");

@@ -256,7 +256,6 @@ private:
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
-    bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();

@@ -228,7 +228,8 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
         eStreamType_, info.encoding);
 
-    AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND);
+    AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
