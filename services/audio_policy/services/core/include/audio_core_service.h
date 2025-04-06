@@ -345,6 +345,22 @@ private:
     void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo);
     void ReConfigOffloadStatus(uint32_t sessionId, std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName);
+    void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
+        bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkForSwitchGeneralDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkForSwitchDistributedDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void SetVoiceCallMuteForSwitchDevice();
+    void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
+        AudioStreamDeviceChangeReasonExt reason);
+    void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
+    void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
+        AudioStreamDeviceChangeReasonExt reason);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
