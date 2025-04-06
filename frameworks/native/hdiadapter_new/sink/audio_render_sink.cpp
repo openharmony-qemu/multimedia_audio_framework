@@ -103,7 +103,8 @@ int32_t AudioRenderSink::Start(void)
     AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Start");
 #ifdef FEATURE_POWER_MANAGER
-    AudioXCollie audioXCollie("AudioRenderSink::CreateRunningLock", TIMEOUT_SECONDS_10);
+    AudioXCollie audioXCollie("AudioRenderSink::CreateRunningLock", TIMEOUT_SECONDS_10,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     if (runningLock_ == nullptr) {
         WatchTimeout guard("create AudioRunningLock start");
         runningLock_ = std::make_shared<AudioRunningLock>(std::string(RUNNING_LOCK_NAME_BASE) + halName_);

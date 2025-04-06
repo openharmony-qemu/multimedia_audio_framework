@@ -86,7 +86,8 @@ int32_t OffloadAudioRenderSink::Start(void)
         }
         return SUCCESS;
     }
-    AudioXCollie audioXCollie("OffloadAudioRenderSink::Start", TIMEOUT_SECONDS_10);
+    AudioXCollie audioXCollie("OffloadAudioRenderSink::Start", TIMEOUT_SECONDS_10,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Start(audioRender_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
@@ -112,7 +113,8 @@ int32_t OffloadAudioRenderSink::Stop(void)
     }
     int32_t ret = Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "flush fail");
-    AudioXCollie audioXCollie("OffloadAudioRenderSink::Stop", TIMEOUT_SECONDS_10);
+    AudioXCollie audioXCollie("OffloadAudioRenderSink::Stop", TIMEOUT_SECONDS_10,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
@@ -623,7 +625,8 @@ int32_t OffloadAudioRenderSink::CreateRender(void)
 
     AUDIO_INFO_LOG("create render, rate: %{public}u, channel: %{public}u, format: %{public}u", param.sampleRate,
         param.channelCount, param.format);
-    AudioXCollie audioXCollie("OffloadAudioRenderSink::CreateRender", TIMEOUT_SECONDS_10);
+    AudioXCollie audioXCollie("OffloadAudioRenderSink::CreateRender", TIMEOUT_SECONDS_10,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);

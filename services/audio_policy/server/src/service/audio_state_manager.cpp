@@ -284,7 +284,7 @@ int32_t AudioStateManager::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPoli
 const std::string AudioStateManager::GetBundleNameFromUid(int32_t uid)
 {
     AudioXCollie audioXCollie("AudioRecoveryDevice::GetBundleNameFromUid",
-        GET_BUNDLE_TIME_OUT_SECONDS);
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::string bundleName {""};
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();

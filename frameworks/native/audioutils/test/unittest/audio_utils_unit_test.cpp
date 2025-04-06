@@ -3199,7 +3199,7 @@ HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_005, TestSize.Level1)
 {
     std::string tag = "";
     uint32_t timeoutSeconds = 0;
-    AudioXCollie audioXCollie(tag, timeoutSeconds);
+    AudioXCollie audioXCollie(tag, timeoutSeconds, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     audioXCollie.isCanceled_ = false;
     audioXCollie.CancelXCollieTimer();
     EXPECT_EQ(audioXCollie.isCanceled_, true);
