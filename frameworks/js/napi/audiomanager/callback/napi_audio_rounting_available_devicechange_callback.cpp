@@ -132,7 +132,9 @@ void NapiAudioRountingAvailableDeviceChangeCallback::SafeJsCallbackAvailbleDevic
     std::shared_ptr<AudioRountingJsCallback> safeContext(
         static_cast<AudioRountingJsCallback*>(data),
         [](AudioRountingJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
