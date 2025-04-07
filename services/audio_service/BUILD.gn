@@ -370,6 +370,7 @@ audio_ohos_library("audio_process_service") {
   if (audio_framework_feature_low_latency) {
     sources += [
       "server/src/audio_endpoint.cpp",
+      "server/src/audio_endpoint_performance.cpp",
       "server/src/audio_endpoint_separate.cpp",
       "server/src/audio_process_in_server.cpp",
     ]
