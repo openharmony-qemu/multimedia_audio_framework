@@ -689,7 +689,7 @@ int32_t AudioVolumeManager::CheckActiveMusicTime()
 bool AudioVolumeManager::CheckMixActiveMusicTime(int32_t safeVolume)
 {
     int64_t mixSafeTime = activeSafeTimeBt_ + activeSafeTime_;
-    AUDIO_INFO_LOG("mix device cumulative time: %{public}lld", mixSafeTime);
+    AUDIO_INFO_LOG("mix device cumulative time: %{public}" PRId64, mixSafeTime);
     if (mixSafeTime >= ONE_MINUTE * audioPolicyManager_.GetSafeVolumeTimeout()) {
         AUDIO_INFO_LOG("mix device safe volume timeout");
         ChangeDeviceSafeStatus(SAFE_ACTIVE);
@@ -728,7 +728,7 @@ void AudioVolumeManager::CheckBlueToothActiveMusicTime(int32_t safeVolume)
         activeSafeTimeBt_ += currentTime - startSafeTimeBt_;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, activeSafeTimeBt_);
         startSafeTimeBt_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        AUDIO_INFO_LOG("bluetooth safe volume 1 min timeout, cumulative time: %{public}lld", activeSafeTimeBt_);
+        AUDIO_INFO_LOG("bluetooth safe volume 1 min timeout, cumulative time: %{public}" PRId64, activeSafeTimeBt_);
     }
     startSafeTime_ = 0;
 }
@@ -756,7 +756,7 @@ void AudioVolumeManager::CheckWiredActiveMusicTime(int32_t safeVolume)
         activeSafeTime_ += currentTime - startSafeTime_;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, activeSafeTime_);
         startSafeTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        AUDIO_INFO_LOG("wired safe volume 1 min timeout, cumulative time: %{public}lld", activeSafeTime_);
+        AUDIO_INFO_LOG("wired safe volume 1 min timeout, cumulative time: %{public}" PRId64, activeSafeTime_);
     }
     startSafeTimeBt_ = 0;
 }
