@@ -185,7 +185,9 @@ private:
     void InitAudiobuffer(bool resetReadWritePos);
     void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
     void ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData);
-    void HandleZeroVolumeCheckEvent();
+    void ResetZeroVolumeState();
+    void HandleZeroVolumeStartEvent();
+    void HandleZeroVolumeStopEvent();
     void HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData);
     int32_t HandleCapturerDataParams(const BufferDesc &writeBuf, const BufferDesc &readBuf,
         const BufferDesc &convertedBuffer);
@@ -267,6 +269,11 @@ private:
         FAST_SOURCE_TYPE_REMOTE,
         FAST_SOURCE_TYPE_VOIP
     };
+    enum ZeroVolumeState : uint32_t {
+        INACTIVE = 0,
+        ACTIVE,
+        IN_TIMING
+    };
     // SamplingRate EncodingType SampleFormat Channel
     AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamInfo dstStreamInfo_;
@@ -309,7 +316,8 @@ private:
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
     bool isStarted_ = false;
     int64_t delayStopTime_ = INT64_MAX;
-    int64_t delayStopTimeForZeroVolume_ = INT64_MAX;
+    int64_t zeroVolumeStartTime_ = INT64_MAX;
+    ZeroVolumeState zeroVolumeState_ = INACTIVE;
 
     std::atomic<ThreadStatus> threadStatus_ = WAITTING;
     std::thread endpointWorkThread_;
@@ -344,8 +352,6 @@ private:
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
 
-    bool zeroVolumeStopDevice_ = false;
-    bool isVolumeAlreadyZero_ = false;
     bool coreBinded_ = false;
 };
 
@@ -991,6 +997,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
         return false;
     }
     isStarted_ = true;
+    ResetZeroVolumeState();
 
     if (isInnerCapEnabled_) {
         Trace trace("AudioEndpointInner::StartDupStream");
@@ -1096,8 +1103,6 @@ bool AudioEndpointInner::StopDevice()
 int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
     InitLatencyMeasurement();
-    // Prevents the audio from immediately stopping at 0 volume on start
-    delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS;
     AUDIO_PRERELEASE_LOGI("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
@@ -1444,28 +1449,44 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
-    HandleZeroVolumeCheckEvent();
 }
 
-void AudioEndpointInner::HandleZeroVolumeCheckEvent()
+void AudioEndpointInner::HandleZeroVolumeStartEvent()
 {
-    if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
-        return;
-    }
-    if (!zeroVolumeStopDevice_ && (ClockTime::GetCurNano() >= delayStopTimeForZeroVolume_)) {
-        if (isStarted_) {
-            if (fastSink_ != nullptr && fastSink_->Stop() == SUCCESS) {
-                AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device success.");
-                isStarted_ = false;
-            } else {
-                AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device failed.");
-                isStarted_ = true;
-            }
+    if (!isStarted_) {
+        if (fastSink_ == nullptr || fastSink_->Start() != SUCCESS) {
+            AUDIO_INFO_LOG("Volume from zero to none-zero, start fastSink failed.");
+            isStarted_ = false;
+        } else {
+            AUDIO_INFO_LOG("Volume from zero to none-zero, start fastSink success.");
+            isStarted_ = true;
+            needReSyncPosition_ = true;
         }
-        zeroVolumeStopDevice_ = true;
+    } else {
+        AUDIO_INFO_LOG("fastSink already started");
     }
 }
 
+void AudioEndpointInner::HandleZeroVolumeStopEvent()
+{
+    if (isStarted_) {
+        if (fastSink_ != nullptr && fastSink_->Stop() == SUCCESS) {
+            AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop fastSink success.");
+            isStarted_ = false;
+        } else {
+            AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop fastSink failed.");
+            isStarted_ = true;
+        }
+    } else {
+        AUDIO_INFO_LOG("fastSink already stopped");
+    }
+}
+
+void AudioEndpointInner::ResetZeroVolumeState()
+{
+    zeroVolumeStartTime_ = INT64_MAX;
+    zeroVolumeState_ = INACTIVE;
+}
 
 void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData)
 {
@@ -1502,11 +1523,9 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
         int32_t vol = srcData.volumeStart; // change to modify volume of each channel
         int16_t *srcPtr = reinterpret_cast<int16_t *>(srcData.bufferDesc.buffer) + offset;
         int32_t sum = (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER; // 1/65536
-        ZeroVolumeCheck(vol);
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
-    HandleZeroVolumeCheckEvent();
 }
 
 void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
@@ -1515,25 +1534,26 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
         return;
     }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
-        if (!zeroVolumeStopDevice_ && !isVolumeAlreadyZero_) {
-            AUDIO_INFO_LOG("Begin zero volume, will stop device.");
-            delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS;
-            isVolumeAlreadyZero_ = true;
+        if (zeroVolumeState_ == INACTIVE) {
+            zeroVolumeStartTime_ = ClockTime::GetCurNano();
+            zeroVolumeState_ = IN_TIMING;
+            AUDIO_INFO_LOG("Begin zero volume, will stop fastSink in 4s.");
+            return;
+        }
+
+        if (zeroVolumeState_ == IN_TIMING &&
+            ClockTime::GetCurNano() - zeroVolumeStartTime_ > DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS) {
+            zeroVolumeState_ = ACTIVE;
+            HandleZeroVolumeStopEvent();
         }
     } else {
-        if (zeroVolumeStopDevice_ && !isStarted_) {
-            if (fastSink_ == nullptr || fastSink_->Start() != SUCCESS) {
-                AUDIO_INFO_LOG("Volume from zero to none-zero, start device failed.");
-                isStarted_ = false;
-            } else {
-                AUDIO_INFO_LOG("Volume from zero to none-zero, start device success.");
-                isStarted_ = true;
-                needReSyncPosition_ = true;
-            }
-            zeroVolumeStopDevice_ = false;
+        if (zeroVolumeState_ == INACTIVE) {
+            return;
         }
-        isVolumeAlreadyZero_ = false;
-        delayStopTimeForZeroVolume_ = INT64_MAX;
+        if (zeroVolumeState_ == ACTIVE) {
+            HandleZeroVolumeStartEvent();
+        }
+        ResetZeroVolumeState();
     }
 }
 
