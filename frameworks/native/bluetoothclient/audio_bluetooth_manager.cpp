@@ -570,8 +570,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
         newScoCategory = ScoCategory::SCO_CALLULAR;
         if (scene == AUDIO_SCENE_RINGING) {
             scene = AUDIO_SCENE_VOICE_RINGING;
-        }
-        else {
+        } else {
             scene = AUDIO_SCENE_PHONE_CALL;
         }
     }
