@@ -126,7 +126,7 @@ AudioZoneInterruptReporter::ReporterVector AudioZoneInterruptReporter::CreateRep
             rep->zoneId_ = it.first;
             rep->deviceId_ = it.second;
             rep->reportReason_ = reason;
-            rep->oldFoucsList_ = rep->GetFocusList();
+            rep->oldFocusList_ = rep->GetFocusList();
             vec.emplace_back(rep);
             AUDIO_DEBUG_LOG("create reporter with zone %{public}d, device %{public}d"
                 " for client %{public}d of reason %{public}d",
@@ -156,7 +156,7 @@ void AudioZoneInterruptReporter::ReportInterrupt()
     }
 
     AudioZoneFocusList newFocusList = GetFocusList();
-    if (IsFocusListEqual(oldFoucsList_, newFocusList)) {
+    if (IsFocusListEqual(oldFocusList_, newFocusList)) {
         return;
     }
 
@@ -186,4 +186,4 @@ bool AudioZoneInterruptReporter::IsFocusListEqual(const AudioZoneFocusList &a,
             });
 }
 } // namespace AudioStandard
-} // namespace OHO
+} // namespace OHOS

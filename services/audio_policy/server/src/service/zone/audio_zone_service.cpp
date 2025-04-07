@@ -135,15 +135,17 @@ const std::shared_ptr<AudioZoneDescriptor> AudioZoneService::GetAudioZone(int32_
 int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
-    std::lock_guard<std::mutex> lock(zoneMutex_);
-    auto zone = FindZone(zoneId);
-    if (zone == nullptr) {
-        AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
-        return ERROR;
-    }
-    int ret = zone->AddDeviceDescriptor(devices);
-    if (ret != SUCCESS) {
-        return ret;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        auto zone = FindZone(zoneId);
+        if (zone == nullptr) {
+            AUDIO_ERR_LOG("zone id %{public}d is not found", zoneId);
+            return ERROR;
+        }
+        int ret = zone->AddDeviceDescriptor(devices);
+        if (ret != SUCCESS) {
+            return ret;
+        }
     }
 
     for (auto device : devices) {
@@ -200,7 +202,7 @@ void AudioZoneService::UnRegisterAudioZoneClient(pid_t clientPid)
     std::lock_guard<std::mutex> lock(zoneMutex_);
     zoneReportClientList_.erase(clientPid);
     AudioZoneInterruptReporter::DisableInterruptReport(clientPid);
-    for (auto &it : zoneMaps_) {
+    for (const auto &it : zoneMaps_) {
         it.second->EnableChangeReport(clientPid, false);
     }
     CHECK_AND_RETURN_LOG(zoneClientManager_ != nullptr, "zoneClientManager is nullptr");
@@ -327,7 +329,7 @@ int32_t AudioZoneService::RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid,
 int32_t AudioZoneService::EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    if (zoneClientManager_ == nullptr || zoneClientManager_->IsRegisterAudioZoneClient(clientPid)) {
+    if (zoneClientManager_ == nullptr || !zoneClientManager_->IsRegisterAudioZoneClient(clientPid)) {
         AUDIO_ERR_LOG("client %{public}d for zone id %{public}d is not found", clientPid, zoneId);
         return ERROR;
     }

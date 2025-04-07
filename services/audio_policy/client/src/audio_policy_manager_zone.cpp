@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifdef LOG_TAG
-#undef LOG_TAG "AudioPolicyManagerZone"
+#ifndef LOG_TAG
+#define LOG_TAG "AudioPolicyManagerZone"
 #endif
 
 #include "audio_policy_manager.h"
@@ -126,12 +126,12 @@ int32_t AudioPolicyManager::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 }
 
 int32_t AudioPolicyManager::SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-    const int32_t volumeLebel, const int32_t volumeFlag)
+    const int32_t volumeLevel, const int32_t volumeFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->SetSystemVolumeLevelForZone(zoneId, volumeType, volumeLebel, volumeFlag);
+    return gsp->SetSystemVolumeLevelForZone(zoneId, volumeType, volumeLevel, volumeFlag);
 }
 
 int32_t AudioPolicyManager::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)

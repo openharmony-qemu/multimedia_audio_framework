@@ -64,17 +64,13 @@ AudioZoneBindKey::AudioZoneBindKey(AudioZoneBindKey &&other)
 
 AudioZoneBindKey &AudioZoneBindKey::operator=(const AudioZoneBindKey &other)
 {
-    if (this != &other) {
-        Assign(other);
-    }
+    Assign(other);
     return *this;
 }
 
 AudioZoneBindKey &AudioZoneBindKey::operator=(AudioZoneBindKey &&other)
 {
-    if (this != &other) {
-        Swap(std::move(other));
-    }
+    Swap(std::move(other));
     return *this;
 }
 
@@ -227,11 +223,10 @@ void AudioZone::BindByKey(const AudioZoneBindKey &key)
         if (itKey->IsContain(key)) {
             AUDIO_WARNING_LOG("exist low key %{public}s to %{public}s for zone %{public}d",
                 itKey->GetString().c_str(), key.GetString().c_str(), zoneId_);
-            keys_.erase(itKey++);
             return;
         }
         if (key.IsContain(*itKey)) {
-            AUDIO_INFO_LOG("exist high key %{public}s to %{public}s for zone %{public}d",
+            AUDIO_INFO_LOG("erase high key %{public}s to %{public}s for zone %{public}d",
                 itKey->GetString().c_str(), key.GetString().c_str(), zoneId_);
             keys_.erase(itKey++);
         } else {
@@ -239,7 +234,7 @@ void AudioZone::BindByKey(const AudioZoneBindKey &key)
         }
     }
     keys_.emplace_back(key);
-    AUDIO_INFO_LOG("bind key %{public}s for zone %{public}d", key.GetString().c_str(), zoneId_);
+    AUDIO_INFO_LOG("bind key %{public}s to zone %{public}d", key.GetString().c_str(), zoneId_);
     for (auto &temp : keys_) {
         AUDIO_DEBUG_LOG("zone %{public}d bind key %{public}s", zoneId_, temp.GetString().c_str());
     }
@@ -254,8 +249,8 @@ void AudioZone::RemoveKey(const AudioZoneBindKey &key)
         AUDIO_WARNING_LOG("key %{public}s not exist for zone %{public}d", key.GetString().c_str(), zoneId_);
         return;
     }
-    keys_.erase(itKey);
     AUDIO_INFO_LOG("remove key %{public}s for zone %{public}d", key.GetString().c_str(), zoneId_);
+    keys_.erase(itKey);
     for (auto &temp : keys_) {
         AUDIO_DEBUG_LOG("zone %{public}d bind key %{public}s", zoneId_, temp.GetString().c_str());
     }
@@ -265,7 +260,7 @@ void AudioZone::RemoveKey(const AudioZoneBindKey &key)
 bool AudioZone::IsContainKey(const AudioZoneBindKey &key)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    for (auto &it : keys_) {
+    for (const auto &it : keys_) {
         if (it == key) {
             return true;
         }
@@ -276,9 +271,9 @@ bool AudioZone::IsContainKey(const AudioZoneBindKey &key)
 int32_t AudioZone::AddDeviceDescriptor(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    for (auto &device : devices) {
+    for (const auto &device : devices) {
         CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is nullptr");
-        auto findDevice = [device] (const std::pair<std::shared_ptr<AudioDeviceDescriptor>, bool> &item) {
+        auto findDevice = [&device] (const std::pair<std::shared_ptr<AudioDeviceDescriptor>, bool> &item) {
             return device->IsSameDeviceDesc(*(item.first));
         };
         
@@ -298,7 +293,7 @@ int32_t AudioZone::AddDeviceDescriptor(const std::vector<std::shared_ptr<AudioDe
 int32_t AudioZone::RemoveDeviceDescriptor(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    for (auto &device : devices) {
+    for (const auto &device : devices) {
         CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is nullptr");
         auto findDevice = [device] (const std::pair<std::shared_ptr<AudioDeviceDescriptor>, bool> &item) {
             return device->IsSameDeviceDesc(*(item.first));

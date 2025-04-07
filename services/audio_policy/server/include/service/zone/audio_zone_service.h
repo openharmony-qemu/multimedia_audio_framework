@@ -56,7 +56,7 @@ public:
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
     int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-        const int32_t volumeLebel, const int32_t volumeFlag);
+        const int32_t volumeLevel, const int32_t volumeFlag);
     int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
@@ -87,7 +87,7 @@ private:
     std::shared_ptr<AudioInterruptService> interruptService_;
     std::shared_ptr<AudioZoneClientManager> zoneClientManager_;
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
-    std::set<int32_t> zoneReportClientList_;
+    std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);

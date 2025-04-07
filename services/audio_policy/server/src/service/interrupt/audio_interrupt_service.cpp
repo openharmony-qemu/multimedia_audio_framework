@@ -1641,11 +1641,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         return;
     }
 
-    policyServer_->OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, audioInterrupt.streamId);
-    policyServer_->OffloadStopPlaying(audioInterrupt);
-
     if (itZone->second->focusStrategy == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
-        AUDIO_INFO_LOG("zone %{public}d use distributed focus strategy not resume when deactivate interrupt",
+        AUDIO_INFO_LOG("zone: %{public}d distributed focus strategy not resume when deactivate interrupt",
             itZone->first);
         return;
     }
@@ -1827,11 +1824,14 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
 
     auto itZone = zonesMap_.find(zoneId);
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
-    GetAudioFocusInfoList(zoneId, audioFocusInfoList);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
+    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
+        audioFocusInfoList = itZone->second->audioFocusInfoList;
+    }
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList = SimulateFocusEntry(zoneId);
     for (auto iterActive = audioFocusInfoList.begin(), iterNew = newAudioFocuInfoList.begin();
         iterActive != audioFocusInfoList.end() && iterNew != newAudioFocuInfoList.end();) {
+        AudioInterrupt interruptToRemove = iterActive->first;
         AudioFocuState oldState = iterActive->second;
         if (IsHandleIter(iterActive, oldState, iterNew)) {
             continue;
@@ -1841,7 +1841,6 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         if (oldState != newState) {
             if (isSessionTimeout && oldState == PAUSE && (newState == ACTIVE || newState == DUCK)) {
                 // When the audio session is timeout, just send unduck event and skip resume event.
-                AudioInterrupt interruptToRemove = iterActive->first;
                 iterActive = audioFocusInfoList.erase(iterActive);
                 iterNew = newAudioFocuInfoList.erase(iterNew);
                 AUDIO_INFO_LOG("Audio session time out. Treat resume event as stop event. streamId %{public}d",
@@ -1855,7 +1854,6 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         }
 
         if (removeFocusInfo && GetClientTypeByStreamId((iterActive->first).streamId) != CLIENT_TYPE_GAME) {
-            AudioInterrupt interruptToRemove = iterActive->first;
             iterActive = audioFocusInfoList.erase(iterActive);
             iterNew = newAudioFocuInfoList.erase(iterNew);
             AUDIO_INFO_LOG("Remove focus info from focus list, streamId: %{public}d", interruptToRemove.streamId);

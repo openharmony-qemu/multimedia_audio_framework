@@ -207,7 +207,7 @@ int32_t AudioZoneClient::AddAudioInterruptCallback(int32_t zoneId,
 int32_t AudioZoneClient::AddAudioInterruptCallback(int32_t zoneId, int32_t deviceId,
     const std::shared_ptr<AudioZoneInterruptCallback> &callback)
 {
-    int32_t key = GetInterruptKeyId(zoneId, deviceId);
+    int64_t key = GetInterruptKeyId(zoneId, deviceId);
     std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
     if (audioZoneInterruptCallbackMap_.find(key) == audioZoneInterruptCallbackMap_.end()) {
         int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceId, true);
@@ -225,7 +225,7 @@ void AudioZoneClient::RemoveAudioInterruptCallback(int32_t zoneId)
 
 void AudioZoneClient::RemoveAudioInterruptCallback(int32_t zoneId, int32_t deviceId)
 {
-    int32_t key = GetInterruptKeyId(zoneId, deviceId);
+    int64_t key = GetInterruptKeyId(zoneId, deviceId);
     std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
     CHECK_AND_RETURN_LOG(audioZoneInterruptCallbackMap_.find(key) != audioZoneInterruptCallbackMap_.end(),
         "audioZoneInterruptCallbackMap_ not find key.");
@@ -314,7 +314,7 @@ void AudioZoneClient::OnInterruptEvent(int32_t zoneId, int32_t deviceId,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
     AudioZoneInterruptReason reason)
 {
-    int32_t key = GetInterruptKeyId(zoneId, deviceId);
+    int64_t key = GetInterruptKeyId(zoneId, deviceId);
     std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
     if (audioZoneInterruptCallbackMap_.find(key) != audioZoneInterruptCallbackMap_.end()) {
         audioZoneInterruptCallbackMap_[key]->OnInterruptEvent(interrupts, reason);

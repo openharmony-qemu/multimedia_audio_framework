@@ -61,7 +61,7 @@ private:
     pid_t clientPid_ = -1;
     int32_t zoneId_ = 0;
     int32_t deviceId_ = -1;
-    AudioZoneFocusList oldFoucsList_;
+    AudioZoneFocusList oldFocusList_;
     AudioZoneInterruptReason reportReason_ = AudioZoneInterruptReason::UNKNOWN;
 
     static ReportMap interruptEnableMaps_;

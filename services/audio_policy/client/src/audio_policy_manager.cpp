@@ -263,7 +263,7 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
 void AudioPolicyManager::RegisterServerDiedCallBack(AudioServerDiedCallBack func)
 {
     CHECK_AND_RETURN_LOG(func != nullptr, "func is null");
-    std::lock_guard<std::mutex> lock(serverDiedCbkMutex_);
+    std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
     serverDiedCbks_.emplace_back(func);
 }
 

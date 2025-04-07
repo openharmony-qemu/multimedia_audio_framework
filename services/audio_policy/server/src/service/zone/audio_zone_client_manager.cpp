@@ -48,7 +48,7 @@ void AudioZoneClientManager::UnRegisterAudioZoneClient(pid_t clientPid)
 {
     AUDIO_INFO_LOG("unregister audio zone client %{public}d", clientPid);
     std::lock_guard<std::mutex> lock(clientMutex_);
-    if (clients_.find(clientPid)== clients_.end()) {
+    if (clients_.find(clientPid) == clients_.end()) {
         AUDIO_WARNING_LOG("not found client %{public}d", clientPid);
     }
     clients_.erase(clientPid);
@@ -63,7 +63,7 @@ bool AudioZoneClientManager::IsRegisterAudioZoneClient(pid_t clientPid)
 void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event)
 {
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
-    
+
     if (event->descriptor != nullptr) {
         AUDIO_DEBUG_LOG("dispatch zone %{public}d event %{public}d to client %{public}d",
             event->descriptor->zoneId_, event->type, event->clientPid);
@@ -177,7 +177,7 @@ void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zon
         zoneId, clientPid);
 }
 
-int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, const pid_t zoneId,
+int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId,
     const AudioVolumeType volumeType, const int32_t volumeLevel, const int32_t volumeFlag)
 {
     sptr<IStandardAudioZoneClient> client = nullptr;
@@ -193,7 +193,7 @@ int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, cons
     return client->SetSystemVolume(zoneId, volumeType, volumeLevel, volumeFlag);
 }
 
-int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, const pid_t zoneId,
+int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId,
     AudioVolumeType volumeType)
 {
     sptr<IStandardAudioZoneClient> client = nullptr;
