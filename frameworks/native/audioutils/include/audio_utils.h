@@ -90,7 +90,7 @@ private:
 class AudioXCollie {
 public:
     AudioXCollie(const std::string &tag, uint32_t timeoutSeconds,
-        std::function<void(void *)> func = nullptr, void *arg = nullptr, uint32_t flag = 1);
+        std::function<void(void *)> func = nullptr, void *arg = nullptr, uint32_t flag = 0);
     ~AudioXCollie();
     void CancelXCollieTimer();
 private:
