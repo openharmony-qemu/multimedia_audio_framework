@@ -2036,6 +2036,11 @@ int32_t AudioPolicyServer::ActivatePreemptMode(const int32_t zoneID)
 
 int32_t AudioPolicyServer::DeactivatePreemptMode(const int32_t zoneID)
 {
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid != PREEMPT_UID) {
+        AUDIO_ERR_LOG("DeactivatePreemptMode: Error callingUid uid: %{public}d", callingUid);
+        return ERROR;
+    }
     if (interruptService_ != nullptr) {
         return interruptService_->DeactivatePreemptMode(zoneID);
     }
