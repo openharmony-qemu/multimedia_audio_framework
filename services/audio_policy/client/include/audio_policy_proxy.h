@@ -157,9 +157,9 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
 
-    int32_t ActivatePreemptMode(const int32_t zoneID = 0) override;
+    int32_t ActivatePreemptMode() override;
 
-    int32_t DeactivatePreemptMode(const int32_t zoneID = 0) override;
+    int32_t DeactivatePreemptMode() override;
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 

@@ -77,8 +77,8 @@ public:
     void ResetNonInterruptControl(uint32_t streamId);
 
     // preempt audio focus interfaces
-    int32_t ActivatePreemptMode(const int32_t zoneId);
-    int32_t DeactivatePreemptMode(const int32_t zoneId);
+    int32_t ActivatePreemptMode();
+    int32_t DeactivatePreemptMode();
 
     // zone debug interfaces
     int32_t CreateAudioInterruptZone(const int32_t zoneId, AudioZoneFocusStrategy focusStrategy =
@@ -99,7 +99,7 @@ public:
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
-    int32_t ClearAudioFocusInfoList(const int32_t zoneId);
+    int32_t ClearAudioFocusInfoList();
     void AudioInterruptZoneDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;

@@ -873,7 +873,7 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::ActivatePreemptMode(const int32_t zoneID)
+int32_t AudioPolicyProxy::ActivatePreemptMode()
 {
     MessageParcel data;
     MessageParcel reply;
@@ -881,7 +881,6 @@ int32_t AudioPolicyProxy::ActivatePreemptMode(const int32_t zoneID)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteInt32(zoneID);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_PREEMPT_MODE), data, reply, option);
@@ -890,7 +889,7 @@ int32_t AudioPolicyProxy::ActivatePreemptMode(const int32_t zoneID)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::DeactivatePreemptMode(const int32_t zoneID)
+int32_t AudioPolicyProxy::DeactivatePreemptMode()
 {
     MessageParcel data;
     MessageParcel reply;
@@ -898,7 +897,6 @@ int32_t AudioPolicyProxy::DeactivatePreemptMode(const int32_t zoneID)
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteInt32(zoneID);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_PREEMPT_MODE), data, reply, option);

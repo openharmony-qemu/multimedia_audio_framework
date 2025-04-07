@@ -758,14 +758,20 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("start DeactivateAudioInterrupt, current id:%{public}d", id);
+    ClearAudioFocusInfoList();
+}
+
+int32_t AudioInterruptService::ClearAudioFocusInfoList()
+{
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
         CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator it =
             audioInterruptZone->audioFocusInfoList.begin();
         while (it != audioInterruptZone->audioFocusInfoList.end()) {
-            if ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-                (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+            if (!isPreemptMode_ &&
+                ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+                (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE)) {
                 AUDIO_INFO_LOG("usage is voice modem communication or voice ring, skip");
                 ++it;
             } else {
@@ -775,38 +781,10 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
             }
         }
     }
-}
-
-int32_t AudioInterruptService::ClearAudioFocusInfoList(const int32_t zoneId)
-{
-    // Use local variable to record target focus info list, can be optimized
-    auto targetZoneIt = zonesMap_.find(zoneId);
-    if (targetZoneIt == zonesMap_.end()) {
-        AUDIO_ERR_LOG("can not find zone id");
-        isPreemptMode_ = false;
-        return ERROR;
-    }
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList {};
-    if (targetZoneIt != zonesMap_.end()) {
-        tmpFocusInfoList = targetZoneIt->second->audioFocusInfoList;
-        targetZoneIt->second->zoneId = zoneId;
-    }
-    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
-    for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
-        if (handler_ == nullptr) {
-            AUDIO_ERR_LOG("handler is nullptr");
-            isPreemptMode_ = false;
-            return ERROR;
-        }
-        SendInterruptEventCallback(interruptEvent, (*iterActive).first.streamId, (*iterActive).first);
-        iterActive = tmpFocusInfoList.erase(iterActive);
-    }
-    targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
-    zonesMap_[zoneId] = targetZoneIt->second;
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
+int32_t AudioInterruptService::ActivatePreemptMode()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     isPreemptMode_ = true;
@@ -814,7 +792,7 @@ int32_t AudioInterruptService::ActivatePreemptMode(const int32_t zoneId)
     return ClearAudioFocusInfoList(zoneId);
 }
 
-int32_t AudioInterruptService::DeactivatePreemptMode(const int32_t zoneId)
+int32_t AudioInterruptService::DeactivatePreemptMode()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     isPreemptMode_ = false;

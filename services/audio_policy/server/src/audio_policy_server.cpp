@@ -2021,7 +2021,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::ActivatePreemptMode(const int32_t zoneID)
+int32_t AudioPolicyServer::ActivatePreemptMode()
 {
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != PREEMPT_UID) {
@@ -2029,12 +2029,12 @@ int32_t AudioPolicyServer::ActivatePreemptMode(const int32_t zoneID)
         return ERROR;
     }
     if (interruptService_ != nullptr) {
-        return interruptService_->ActivatePreemptMode(zoneID);
+        return interruptService_->ActivatePreemptMode();
     }
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::DeactivatePreemptMode(const int32_t zoneID)
+int32_t AudioPolicyServer::DeactivatePreemptMode()
 {
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != PREEMPT_UID) {
@@ -2042,7 +2042,7 @@ int32_t AudioPolicyServer::DeactivatePreemptMode(const int32_t zoneID)
         return ERROR;
     }
     if (interruptService_ != nullptr) {
-        return interruptService_->DeactivatePreemptMode(zoneID);
+        return interruptService_->DeactivatePreemptMode();
     }
     return ERR_UNKNOWN;
 }

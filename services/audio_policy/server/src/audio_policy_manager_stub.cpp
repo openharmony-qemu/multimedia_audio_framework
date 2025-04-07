@@ -584,15 +584,13 @@ void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, Me
 
 void AudioPolicyManagerStub::ActivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t zoneID = data.ReadInt32();
-    int32_t result = ActivatePreemptMode(zoneID);
+    int32_t result = ActivatePreemptMode();
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::DeactivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t zoneID = data.ReadInt32();
-    int32_t result = DeactivatePreemptMode(zoneID);
+    int32_t result = DeactivatePreemptMode();
     reply.WriteInt32(result);
 }
 
