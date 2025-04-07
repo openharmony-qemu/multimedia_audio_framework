@@ -402,7 +402,7 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     bool enableDualHalToneState_ = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
-    bool isFastControlled_ = false;
+    bool isFastControlled_ = true;
     std::mutex serviceFlagMutex_;
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,

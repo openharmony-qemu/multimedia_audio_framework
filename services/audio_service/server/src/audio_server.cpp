@@ -333,10 +333,10 @@ void AudioServer::OnStart()
         AUDIO_ERR_LOG("start err");
         WriteServiceStartupError();
     }
-    int32_t fastControlFlag = 0; // default 0, set isFastControlled_ false
+    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
-    if (fastControlFlag == 1) {
-        isFastControlled_ = true;
+    if (fastControlFlag == 0) {
+        isFastControlled_ = false;
     }
     int32_t audioCacheState = 0;
     GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
