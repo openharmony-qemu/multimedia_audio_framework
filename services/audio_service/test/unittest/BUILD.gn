@@ -941,6 +941,7 @@ ohos_unittest("resource_manager_adapter_unit_test") {
     "hilog:libhilog",
     "i18n:intl_util",
     "ipc:ipc_core",
+    "resource_management:global_resmgr",
   ]
 }
 
