@@ -1119,7 +1119,7 @@ napi_value NapiAudioCapturer::RegisterPositionCallback(napi_env env, napi_value 
     int64_t markPosition = 0;
     NapiParamUtils::GetValueInt64(env, markPosition, argv[PARAM1]);
 
-    AUDIO_INFO_LOG("NapiAudioCapturer:RegisterPositionCallback start! %{public}lld", markPosition);
+    AUDIO_INFO_LOG("NapiAudioCapturer:RegisterPositionCallback start!");
     if (markPosition > 0) {
         napiCapturer->positionCbNapi_ = std::make_shared<NapiCapturerPositionCallback>(env);
         CHECK_AND_RETURN_RET_LOG(napiCapturer->positionCbNapi_ != nullptr,
