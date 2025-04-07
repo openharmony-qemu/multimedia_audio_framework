@@ -1989,5 +1989,328 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_077, TestSize.Level1)
 
     server->RegisterPowerStateListener();
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_078
+* @tc.desc  : Test UnRegisterPowerStateListener.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_078, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    server->powerStateListener_ = nullptr;
+    server->UnRegisterPowerStateListener();
+
+    server->powerStateListener_ = new PowerStateListener(server);
+    server->UnRegisterPowerStateListener();
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_079
+* @tc.desc  : Test RegisterAppStateListener.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_079, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    server->appStateListener_ = nullptr;
+    server->RegisterAppStateListener();
+
+    server->appStateListener_ = new AppStateListener();
+    server->RegisterAppStateListener();
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_080
+* @tc.desc  : Test RegisterSyncHibernateListener.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_080, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    server->syncHibernateListener_ = nullptr;
+    server->RegisterSyncHibernateListener();
+
+    server->syncHibernateListener_ = new SyncHibernateListener(server);
+    server->RegisterSyncHibernateListener();
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_081
+* @tc.desc  : Test UnRegisterSyncHibernateListener.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_081, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    server->syncHibernateListener_ = nullptr;
+    server->UnRegisterSyncHibernateListener();
+
+    server->syncHibernateListener_ = new SyncHibernateListener(server);
+    server->UnRegisterSyncHibernateListener();
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_082
+* @tc.desc  : Test IsSpatializationEnabled.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_082, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    auto ret = server->IsSpatializationEnabled();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_083
+* @tc.desc  : Test IsSpatializationEnabled.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_083, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::string address = "test";
+    auto ret = server->IsSpatializationEnabled(address);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_084
+* @tc.desc  : Test SetSpatializationEnabled.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_084, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    auto ret = server->SetSpatializationEnabled(true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_085
+* @tc.desc  : Test SetSpatializationEnabled.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_085, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    auto ret = server->SetSpatializationEnabled(selectedAudioDevice, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_086
+* @tc.desc  : Test UpdateTracker.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_086, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    AudioStreamChangeInfo streamChangeInfo;
+    AudioMode mode = AudioMode::AUDIO_MODE_PLAYBACK;
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_PAUSED;
+    auto ret = server->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_STOPPED;
+    ret = server->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_RELEASED;
+    ret = server->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_RUNNING;
+    ret = server->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_087
+* @tc.desc  : Test FetchOutputDeviceForTrack.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_087, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+    server->FetchOutputDeviceForTrack(streamChangeInfo, reason);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_088
+* @tc.desc  : Test FetchInputDeviceForTrack.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_088, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    AudioStreamChangeInfo streamChangeInfo;
+    server->FetchInputDeviceForTrack(streamChangeInfo);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_089
+* @tc.desc  : Test RegisterClientDeathRecipient.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_089, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    sptr<IRemoteObject> object = new RemoteObjectTestStub();
+    server->RegisterClientDeathRecipient(object, AudioPolicyServer::DeathRecipientId::TRACKER_CLIENT);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_090
+* @tc.desc  : Test RegisterClientDeathRecipient.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_090, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    sptr<IRemoteObject> object = new RemoteObjectTestStub();
+    server->RegisterClientDeathRecipient(object, AudioPolicyServer::DeathRecipientId::LISTENER_CLIENT);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_091
+* @tc.desc  : Test RegisterClientDeathRecipient.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_091, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    sptr<IRemoteObject> object = new RemoteObjectTestStub();
+    server->clientDiedListenerState_.push_back(AudioPolicyServer::DeathRecipientId::TRACKER_CLIENT);
+    server->RegisterClientDeathRecipient(object, AudioPolicyServer::DeathRecipientId::TRACKER_CLIENT);
+    server->RegisterClientDeathRecipient(object, AudioPolicyServer::DeathRecipientId::LISTENER_CLIENT);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_092
+* @tc.desc  : Test RegisteredStreamListenerClientDied.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_092, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    pid_t uid = 0;
+    pid_t pid = server->lastMicMuteSettingPid_;
+    server->interruptService_ = nullptr;
+    server->RegisteredStreamListenerClientDied(pid, uid);
+
+    pid = server->lastMicMuteSettingPid_ + 1;
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    server->RegisteredStreamListenerClientDied(pid, uid);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_093
+* @tc.desc  : Test GetNetworkIdByGroupId.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_093, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t groupId = 0;
+    std::string networkId = "test";
+    auto ret = server->GetNetworkIdByGroupId(groupId, networkId);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_094
+* @tc.desc  : Test SetSystemSoundUri.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_094, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::string key = "test";
+    std::string uri = "test";
+    auto ret = server->SetSystemSoundUri(key, uri);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_095
+* @tc.desc  : Test GetSystemSoundUri.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_095, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::string key = "test";
+    auto ret = server->GetSystemSoundUri(key);
+    EXPECT_EQ(ret, "");
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_096
+* @tc.desc  : Test GetMaxRendererInstances.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_096, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    server->isFirstAudioServiceStart_.store(true);
+    server->GetMaxRendererInstances();
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_097
+* @tc.desc  : Test GetMaxRendererInstances.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_097, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    server->isFirstAudioServiceStart_.store(false);
+    server->GetMaxRendererInstances();
+}
 } // AudioStandard
 } // OHOS

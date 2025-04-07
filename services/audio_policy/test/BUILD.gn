@@ -196,9 +196,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     external_deps += [ "config_policy:configpolicy_util" ]
   }
 
-  if (appgallery_part_enable == true) {
-    defines += [ "FEATURE_APPGALLERY" ]
-  }
+  defines += [ "FEATURE_APPGALLERY" ]
 
   if (bluetooth_part_enable == true) {
     deps +=
