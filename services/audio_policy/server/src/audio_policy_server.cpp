@@ -670,6 +670,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         if (isInitSettingsData_ == false) {
             AUDIO_INFO_LOG("First receive DATA_SHARE_READY action and need init SettingsData");
             InitKVStore();
+            SettingsDataReady();
             isInitSettingsData_ = true;
         }
     } else if (action == "usual.event.dms.rotation_changed") {
@@ -740,6 +741,11 @@ void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateCh
 void AudioPolicyServer::InitKVStore()
 {
     audioPolicyService_.InitKVStore();
+}
+
+void AudioPolicyServer::SettingsDataReady()
+{
+    audioPolicyService_.SettingsDataReady();
 }
 
 void AudioPolicyServer::ConnectServiceAdapter()

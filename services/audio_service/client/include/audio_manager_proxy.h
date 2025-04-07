@@ -124,6 +124,7 @@ public:
     int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
     void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
     void SetDeviceConnectedFlag(bool flag) override;
+    void NotifySettingsDataReady() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

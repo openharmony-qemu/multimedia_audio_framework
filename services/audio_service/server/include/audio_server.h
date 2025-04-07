@@ -183,6 +183,8 @@ public:
 
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 
+    void NotifySettingsDataReady() override;
+
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     
     void NotifyAccountsChanged() override;

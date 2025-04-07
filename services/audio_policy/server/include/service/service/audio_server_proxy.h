@@ -102,6 +102,7 @@ public:
     int32_t LoadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName);
     void UnloadHdiAdapterProxy(uint32_t devMgrType, const std::string &adapterName, bool force);
     void SetDeviceConnectedFlag(bool flag);
+    void NotifySettingsDataReady();
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

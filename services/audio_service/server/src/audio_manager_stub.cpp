@@ -118,6 +118,7 @@ const char *g_audioServerCodeStrs[] = {
     "CHECK_CAPTURE_LIMIT",
     "RELEASE_CAPTURE_LIMIT",
     "DEVICE_CONNECTED_FLAG",
+    "NOTIFY_SETTINGS_DATA_READY",
 };
 constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -862,6 +863,8 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetAudioEnhanceProperty(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY):
             return HandleSetAudioEffectProperty(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY):
+            return HandleNotifySettingsDataReady(data, reply);    
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }
@@ -1189,5 +1192,10 @@ int AudioManagerStub::HandleDeviceConnectedFlag(MessageParcel &data, MessageParc
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleNotifySettingsDataReady(MessageParcel &data, MessageParcel &reply)
+{
+    NotifySettingsDataReady();
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

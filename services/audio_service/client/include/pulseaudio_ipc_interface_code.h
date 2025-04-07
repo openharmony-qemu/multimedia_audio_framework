@@ -98,7 +98,8 @@ namespace AudioStandard {
         CHECK_CAPTURE_LIMIT,
         RELEASE_CAPTURE_LIMIT,
         DEVICE_CONNECTED_FLAG,
-        AUDIO_SERVER_CODE_MAX = DEVICE_CONNECTED_FLAG,
+        NOTIFY_SETTINGS_DATA_READY,
+        AUDIO_SERVER_CODE_MAX = NOTIFY_SETTINGS_DATA_READY,
     };
 } // namespace AudioStandard
 } // namespace OHOS
