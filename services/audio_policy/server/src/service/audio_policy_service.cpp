@@ -78,6 +78,8 @@ static const int32_t INITIAL_VALUE = 1;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
+static const int64_t MEDIA_TO_RING_MUTE_DURATION_TIME_US = 200000; // 200ms
+static const int64_t HEADSET_SWITCH_DELAY_US = 100000; //100ms
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -2228,13 +2230,6 @@ void AudioPolicyService::MuteSinkPortForSwtichDevice(unique_ptr<AudioRendererCha
     vector<std::unique_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::MuteSinkPortForSwtichDevice");
-    if (outputDevices.size() != 1) {
-        // mute primary when play music and ring
-        if (IsStreamActive(STREAM_MUSIC)) {
-            MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
-        }
-        return;
-    }
     if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
 
     moveDeviceFinished_ = false;
@@ -3572,9 +3567,15 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     std::vector<DeviceType> activeOutputDevices;
     bool haveArmUsbDevice = false;
     DealAudioSceneOutputDevices(audioScene, activeOutputDevices, haveArmUsbDevice);
-    // mute primary when play music and ring
-    if (activeOutputDevices.size() > 1 && IsStreamActive(STREAM_MUSIC)) {
-        MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
+    // mute primary when play media and ring
+    if (activeOutputDevices.size() > 1 && streamCollector_.IsMediaPlaying()) {
+        MuteSinkPort(PRIMARY_SPEAKER, MEDIA_TO_RING_MUTE_DURATION_TIME_US, true);
+        // Wait for the audio data in the cache to be drained before moving the stream
+        // Increase the delay time for the headset device
+        DeviceType mainDeviceType = activeOutputDevices.front();
+        if (mainDeviceType == DEVICE_TYPE_USB_HEADSET || mainDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+            usleep(HEADSET_SWITCH_DELAY_US); // sleep fix data cache pop.
+        }
     }
     int32_t result = SUCCESS;
     std::string identity = IPCSkeleton::ResetCallingIdentity();

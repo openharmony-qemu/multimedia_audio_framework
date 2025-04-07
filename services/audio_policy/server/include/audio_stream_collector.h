@@ -88,6 +88,7 @@ public:
     int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
+    bool IsMediaPlaying();
 
 private:
     std::mutex streamsInfoMutex_;
