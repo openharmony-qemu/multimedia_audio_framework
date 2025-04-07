@@ -778,6 +778,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleNotifyAudioPolicyReady(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG):
             return HandleDeviceConnectedFlag(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY):
+            return HandleNotifySettingsDataReady(data, reply);  
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }
@@ -863,8 +865,6 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetAudioEnhanceProperty(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY):
             return HandleSetAudioEffectProperty(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY):
-            return HandleNotifySettingsDataReady(data, reply);    
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }

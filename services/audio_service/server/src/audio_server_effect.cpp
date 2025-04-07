@@ -345,6 +345,5 @@ void AudioServer::NotifySettingsDataReady()
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
     audioEffectChainManager->LoadEffectProperties();
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

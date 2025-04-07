@@ -1557,6 +1557,5 @@ void AudioManagerProxy::NotifySettingsDataReady()
         static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
