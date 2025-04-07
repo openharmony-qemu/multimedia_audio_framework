@@ -571,7 +571,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
         if (scene == AUDIO_SCENE_RINGING) {
             scene = AUDIO_SCENE_VOICE_RINGING;
         }
-        if (scene == AUDIO_SCENE_PHONE_CHAT) {
+        else {
             scene = AUDIO_SCENE_PHONE_CALL;
         }
     }
