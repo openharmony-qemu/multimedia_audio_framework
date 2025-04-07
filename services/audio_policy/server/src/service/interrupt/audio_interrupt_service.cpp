@@ -775,7 +775,7 @@ int32_t AudioInterruptService::ClearAudioFocusInfoList()
                 AUDIO_INFO_LOG("usage is voice modem communication or voice ring, skip");
                 ++it;
             } else {
-                CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
+                CHECK_AND_RETURN_RET_LOG(handler_ != nullptr, ERROR, "handler is nullptr");
                 SendInterruptEventCallback(interruptEvent, (*it).first.streamId, (*it).first);
                 it = audioInterruptZone->audioFocusInfoList.erase(it);
             }
@@ -788,8 +788,12 @@ int32_t AudioInterruptService::ActivatePreemptMode()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     isPreemptMode_ = true;
+    int ret = ClearAudioFocusInfoList();
+    if (!ret) {
+        isPreemptMode_ = false;
+    }
     AUDIO_INFO_LOG("isPreemptMode_ = %{public}d", isPreemptMode_);
-    return ClearAudioFocusInfoList(zoneId);
+    return ret;
 }
 
 int32_t AudioInterruptService::DeactivatePreemptMode()
