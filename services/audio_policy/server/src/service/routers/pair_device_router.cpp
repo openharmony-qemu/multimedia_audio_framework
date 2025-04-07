@@ -67,7 +67,7 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(Sourc
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;
     bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
-    if (pairDevice->deviceType == DEVICE_TYPE_BLUETOOTH_SCO && pairDevice != nullptr &&
+    if (pairDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && pairDevice != nullptr &&
         pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&
         (pairDevice->isEnable_ || isScoStateConnect)) {
         AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
