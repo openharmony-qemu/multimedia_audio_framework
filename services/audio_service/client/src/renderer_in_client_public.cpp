@@ -567,6 +567,12 @@ void RendererInClientInner::OnFirstFrameWriting()
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
     std::lock_guard lock(speedMutex_);
+    // set the speed to 1.0 and the speed has never been turned on, no actual sonic stream is created.
+    if (isEqual(speed, SPEED_NORMAL) && !speedEnable_) {
+        speed_ = speed;
+        return SUCCESS;
+    }
+
     if (audioSpeed_ == nullptr) {
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
             curStreamParams_.channels);
@@ -1070,6 +1076,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     UpdateTracker("RELEASED");
     AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
 
+    std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
     audioSpeed_ = nullptr;
     return true;

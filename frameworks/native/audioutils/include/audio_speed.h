@@ -22,7 +22,9 @@
 #include "audio_info.h"
 namespace OHOS {
 namespace AudioStandard {
-
+namespace {
+constexpr float SPEED_NORMAL = 1.0f;
+}
 class AudioSpeed {
 public:
     AudioSpeed();
