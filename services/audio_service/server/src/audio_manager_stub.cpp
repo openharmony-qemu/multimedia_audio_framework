@@ -1256,7 +1256,7 @@ int AudioManagerStub::HandleCreateHdiSinkPort(MessageParcel &data, MessageParcel
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString() == "nullptr" ? "" : data.ReadString();
     attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.address = data.ReadString();
@@ -1280,7 +1280,7 @@ int AudioManagerStub::HandleCreateSinkPort(MessageParcel &data, MessageParcel &r
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString() == "nullptr" ? "" : data.ReadString();
     attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.address = data.ReadString();
@@ -1303,7 +1303,7 @@ int AudioManagerStub::HandleCreateHdiSourcePort(MessageParcel &data, MessageParc
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString() == "nullptr" ? "" : data.ReadString();
     attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
 
@@ -1325,7 +1325,7 @@ int AudioManagerStub::HandleCreateSourcePort(MessageParcel &data, MessageParcel 
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString() == "nullptr" ? "" : data.ReadString();
     attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
 
