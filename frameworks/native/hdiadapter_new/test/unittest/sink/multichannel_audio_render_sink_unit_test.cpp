@@ -169,13 +169,13 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_007, Test
 {
     AudioFormat hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_U8);
     EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_8_BIT);
-    AudioFormat hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_S16LE);
+    hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_S16LE);
     EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_16_BIT);
-    AudioFormat hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_S24LE);
+    hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_S24LE);
     EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_24_BIT);
-    AudioFormat hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_S32LE);
+    hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_S32LE);
     EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_32_BIT);
-    AudioFormat hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_F32LE);
+    hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_F32LE);
     EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_16_BIT);
 
     uint32_t bitFormat = MultichannelAudioRenderSink::PcmFormatToBit(SAMPLE_U8);
@@ -187,7 +187,7 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_007, Test
     bitFormat = MultichannelAudioRenderSink::PcmFormatToBit(SAMPLE_S32LE);
     EXPECT_EQ(bitFormat, PCM_32_BIT);
     bitFormat = MultichannelAudioRenderSink::PcmFormatToBit(SAMPLE_F32LE);
-    EXPECT_EQ(bitFormat, PCM_32_BIT);
+    EXPECT_EQ(bitFormat, PCM_16_BIT);
 }
 
 /**
