@@ -697,7 +697,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
         "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
     DeviceRole role = static_cast<DeviceRole>(deviceRoleNum);
 
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     CHECK_AND_RETURN_RET_LOG(sink, "", "rendererSink is nullptr");
     std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
     if (role == OUTPUT_DEVICE) {
@@ -710,7 +710,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
             usbInfoStr = it->second;
         }
     } else if (role == INPUT_DEVICE) {
-        std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+        std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
         CHECK_AND_RETURN_RET_LOG(source, "", "capturerSource is nullptr");
         source->SetAddress(address);
         auto it = usbInfoMap_.find(address);
