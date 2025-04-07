@@ -456,7 +456,8 @@ public:
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
-    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel, bool mute);
+    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
+        bool mute, const bool& isUpdateUi = false);
 
     void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);

@@ -1145,16 +1145,14 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Fail to set stream mute!");
     }
 
-    UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
-
     if (!mute && GetSystemVolumeLevelInternal(streamType) == 0 && !VolumeUtils::IsPCVolumeEnable()) {
         // If mute state is set to false but volume is 0, set volume to 1
         audioPolicyService_.SetSystemVolumeLevel(streamType, 1);
     }
-
+    
     ProcUpdateRingerModeForMute(updateRingerMode, mute);
-
     SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
+    UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
     return SUCCESS;
 }
 
@@ -1270,7 +1268,7 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
 }
 
 void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
-    bool mute)
+    bool mute, const bool& isUpdateUi)
 {
     bool muteStatus = mute;
     if (volumeLevel == 0 && !mute) {
@@ -1280,7 +1278,7 @@ void AudioPolicyServer::UpdateMuteStateAccordingToVolLevel(AudioStreamType strea
         muteStatus = false;
         audioPolicyService_.SetStreamMute(streamType, false);
     }
-    
+    SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
     if (VolumeUtils::IsPCVolumeEnable()) {
         // system mute status should be aligned with music mute status.
         if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
@@ -1350,11 +1348,10 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
     int32_t ret = audioPolicyService_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (ret == SUCCESS) {
-        UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
         if (updateRingerMode) {
             ProcUpdateRingerMode();
         }
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
+        UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute, isUpdateUi);
     } else if (ret == ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
         SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi);
         AUDIO_ERR_LOG("fail to set system volume level by safe vol");
