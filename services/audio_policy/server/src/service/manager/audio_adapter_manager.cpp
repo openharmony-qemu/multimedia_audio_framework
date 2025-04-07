@@ -926,17 +926,17 @@ void AudioAdapterManager::MaximizeVoiceAssistantVolume(InternalDeviceType device
     }
 }
 
-bool AudioAdapterManager::CheckAndUpdateVolumeForDeviceChange(AudioDeviceDescriptor deviceDescriptor)
+bool AudioAdapterManager::CheckAndUpdateRemoteDeviceVolume(AudioDeviceDescriptor deviceDescriptor)
 {
-    if (currentActiveDevice_.IsDistributedSpeaker() ||
-        currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP) {
-        volumeDataMaintainer_.StoreRemoteVolumeLevelMap();
-        return true;
-    }
-
     if (deviceDescriptor.IsDistributedSpeaker() ||
         deviceDescriptor.deviceType_ == DEVICE_TYPE_DP) {
         volumeDataMaintainer_.LoadRemoteVolumeLevelMap();
+        return true;
+    }
+
+    if (currentActiveDevice_.IsDistributedSpeaker() ||
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP) {
+        volumeDataMaintainer_.StoreRemoteVolumeLevelMap();
     }
 
     return false;
@@ -947,8 +947,9 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
     MaximizeVoiceAssistantVolume(deviceDescriptor.deviceType_);
     // The same device does not set the volume
-    bool isSameVolumeGroup = GetVolumeGroupForDevice(currentActiveDevice_.deviceType_) ==
-        GetVolumeGroupForDevice(deviceDescriptor.deviceType_);
+    bool isSameVolumeGroup = ((GetVolumeGroupForDevice(currentActiveDevice_.deviceType_) ==
+        GetVolumeGroupForDevice(deviceDescriptor.deviceType_)) &&
+        (currentActiveDevice_.networkId_ == deviceDescriptor.networkId_));
     if ((currentActiveDevice_.deviceType_ == deviceDescriptor.deviceType_) &&
         (currentActiveDevice_.networkId_ == deviceDescriptor.networkId_)) {
         AUDIO_INFO_LOG("Old device: %{public}d. New device: %{public}d. No need to update volume",
@@ -956,13 +957,13 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
         return;
     }
 
-    bool isNeedLoadVolumeFromDatabase = CheckAndUpdateVolumeForDeviceChange(deviceDescriptor);
+    bool isSwitchToRemoteDevice = CheckAndUpdateRemoteDeviceVolume(deviceDescriptor);
     AUDIO_INFO_LOG("SetVolumeForSwitchDevice: Load volume and mute status for new device %{public}d,"
         "same volume group %{public}d", deviceDescriptor.deviceType_, isSameVolumeGroup);
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceDescriptor;
 
-    if (!isSameVolumeGroup || isNeedLoadVolumeFromDatabase) {
+    if (!isSameVolumeGroup && !isSwitchToRemoteDevice) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
         // and retry for 5 times, which could cause a sysfreeze. Check if any os account is ready. If not,
         // skip interacting with datashare.
