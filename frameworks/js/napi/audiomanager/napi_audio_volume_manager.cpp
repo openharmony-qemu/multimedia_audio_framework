@@ -214,7 +214,7 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentageForUid(napi_env env, na
         NapiAudioError::ThrowError(env, "GetAppVolumePercentageForUid failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
-    int32_t argNum = 0;
+    size_t argNum = 0;
     auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
         argNum = argc;
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
@@ -256,7 +256,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentageForUid(napi_env env, na
         NapiAudioError::ThrowError(env, "SetAppVolumePercentageForUid failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
-    int32_t argNum = 0;
+    size_t argNum = 0;
     auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
         argNum = argc;
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
@@ -304,7 +304,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentage(napi_env env, napi_cal
         NapiAudioError::ThrowError(env, "SetAppVolumeDegree failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
-    int32_t argNum = 0;
+    size_t argNum = 0;
     auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
         argNum = argc;
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
