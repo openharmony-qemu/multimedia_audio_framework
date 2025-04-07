@@ -670,6 +670,16 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
         rendererChangeInfo->sessionId);
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
         rendererChangeInfo->sessionId);
+    int32_t oldStreamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
+        rendererChangeInfo->outputDeviceInfo.deviceType_, rendererChangeInfo->rendererInfo.originalFlag,
+        rendererChangeInfo->outputDeviceInfo.networkId_, rendererChangeInfo->rendererInfo.samplingRate, false);
+    int32_t newStreamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
+        outputDevices.front()->deviceType_, rendererChangeInfo->rendererInfo.originalFlag,
+        outputDevices.front()->networkId_, rendererChangeInfo->rendererInfo.samplingRate, false);
+    oldSinkName = oldStreamClass == AUDIO_FLAG_VOIP_DIRECT ? PRIMARY_DIRECT_VOIP : oldSinkName;
+    oldSinkName = oldStreamClass == AUDIO_FLAG_VOIP_FAST ? PRIMARY_MMAP_VOIP : oldSinkName;
+    newSinkName = newStreamClass == AUDIO_FLAG_VOIP_DIRECT ? PRIMARY_DIRECT_VOIP : newSinkName;
+    newSinkName = newStreamClass == AUDIO_FLAG_VOIP_FAST ? PRIMARY_MMAP_VOIP : newSinkName;
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
     MuteSinkPort(oldSinkName, newSinkName, reason);
 }
