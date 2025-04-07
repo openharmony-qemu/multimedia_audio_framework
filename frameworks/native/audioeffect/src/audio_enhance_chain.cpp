@@ -35,12 +35,16 @@ const uint32_t DEFAULT_FRAMELENGTH = 20;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_FORMAT = 2;
 const uint32_t DEFAULT_MICNUM = 2;
-const uint32_t DEFAULT_ECNUM = 0;
-const uint32_t DEFAULT_MICREFNUM = 0;
+const uint32_t DEFAULT_ECOFF_CH = 0;
+const uint32_t DEFAULT_MICREFOFF_CH = 0;
+const uint32_t DEFAULT_ECON_CH = 2;
+const uint32_t DEFAULT_MICREFON_CH = 4;
 const uint32_t BYTE_SIZE_SAMPLE_U8 = 1;
 const uint32_t BYTE_SIZE_SAMPLE_S16 = 2;
 const uint32_t BYTE_SIZE_SAMPLE_S24 = 3;
 const uint32_t BYTE_SIZE_SAMPLE_S32 = 4;
+const uint32_t DEFAULT_DEVICE_TYPE_CH = 4;
+const std::string DEFAULT_DEVICE_TYPE = "DEVICE_TYPE_MIC";
 
 const std::vector<std::string> NEED_EC_SCENE = {
     "SCENE_VOIP_UP",
@@ -82,22 +86,27 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
     enhanceLibHandles_.clear();
     standByEnhanceHandles_.clear();
 
+    if ((algoParam_.preDevice == DEFAULT_DEVICE_TYPE) && (deviceAttr_.micChannels != DEFAULT_DEVICE_TYPE_CH)) {
+        AUDIO_WARNING_LOG("mic channel[%{public}d] is set to 4", deviceAttr_.micChannels);
+        deviceAttr_.micChannels = DEFAULT_DEVICE_TYPE_CH;
+    }
+
     algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, DEFAULT_FORMAT * BITLENGTH,
-        deviceAttr_.micChannels, DEFAULT_ECNUM, DEFAULT_MICREFNUM, deviceAttr_.micChannels};
+        deviceAttr_.micChannels, DEFAULT_ECOFF_CH, DEFAULT_MICREFOFF_CH, deviceAttr_.micChannels};
     
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * DEFAULT_FORMAT;
     algoAttr_ = {DEFAULT_FORMAT, deviceAttr_.micChannels, byteLenPerFrame};
 
     if (count(NEED_EC_SCENE.begin(), NEED_EC_SCENE.end(), sceneType_)) {
         needEcFlag_ = true;
-        algoSupportedConfig_.ecNum = deviceAttr_.ecChannels;
-        algoAttr_.batchLen = deviceAttr_.micChannels + deviceAttr_.ecChannels;
+        algoSupportedConfig_.ecNum = DEFAULT_ECON_CH;
+        algoAttr_.batchLen = deviceAttr_.micChannels + algoSupportedConfig_.ecNum;
     }
 
     if (count(NEED_MICREF_SCENE.begin(), NEED_MICREF_SCENE.end(), sceneType_)) {
         needMicRefFlag_ = true;
-        algoSupportedConfig_.micRefNum = deviceAttr_.micRefChannels;
-        algoAttr_.batchLen += deviceAttr_.micRefChannels;
+        algoSupportedConfig_.micRefNum = DEFAULT_MICREFON_CH;
+        algoAttr_.batchLen += algoSupportedConfig_.micRefNum;
     }
 
     algoCache_.input.resize(algoAttr_.byteLenPerFrame * algoAttr_.batchLen);
@@ -315,16 +324,18 @@ uint32_t AudioEnhanceChain::GetAlgoBufferSize()
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSizeEc()
 {
+    CHECK_AND_RETURN_RET_LOG(needEcFlag_, 0, "%{public}s do not need ec", sceneType_.c_str());
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
         DEFAULT_FORMAT;
-    return byteLenPerFrame * deviceAttr_.ecChannels;
+    return byteLenPerFrame * algoSupportedConfig_.ecNum;
 }
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSizeMicRef()
 {
+    CHECK_AND_RETURN_RET_LOG(needMicRefFlag_, 0, "%{public}s do not need micref", sceneType_.c_str());
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
         DEFAULT_FORMAT;
-    return byteLenPerFrame * deviceAttr_.micRefChannels;
+    return byteLenPerFrame * algoSupportedConfig_.micRefNum;
 }
 
 int32_t AudioEnhanceChain::DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t offset)
@@ -352,10 +363,10 @@ int32_t AudioEnhanceChain::GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &
     uint32_t offset = 0;
     int32_t ret = 0;
     if ((enhanceBuffer->ecBuffer.size() != 0) && needEcFlag_) {
-        ret = DeinterleaverData(enhanceBuffer->ecBuffer.data(), deviceAttr_.ecChannels,
+        ret = DeinterleaverData(enhanceBuffer->ecBuffer.data(), algoSupportedConfig_.ecNum,
             &algoCache_.input[offset], offset);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in ec channel memcpy");
-        offset += algoAttr_.byteLenPerFrame * deviceAttr_.ecChannels;
+        offset += algoAttr_.byteLenPerFrame * algoSupportedConfig_.ecNum;
     }
 
     if (enhanceBuffer->micBufferIn.size() != 0) {
@@ -366,7 +377,7 @@ int32_t AudioEnhanceChain::GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &
     }
 
     if ((enhanceBuffer->micRefBuffer.size() != 0) && needMicRefFlag_) {
-        ret = DeinterleaverData(enhanceBuffer->micRefBuffer.data(), deviceAttr_.micRefChannels,
+        ret = DeinterleaverData(enhanceBuffer->micRefBuffer.data(), algoSupportedConfig_.micRefNum,
             &algoCache_.input[offset], offset);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in mic ref channel memcpy");
     }
@@ -386,9 +397,9 @@ void AudioEnhanceChain::WriteDumpFile(std::unique_ptr<EnhanceBuffer> &enhanceBuf
     buffer.reserve(length);
     for (size_t i = 0; i < algoAttr_.byteLenPerFrame / algoAttr_.bitDepth; i++) {
         if (needEcFlag_) {
-        offset = i * ecLen;
-        buffer.insert(buffer.end(), enhanceBuffer->ecBuffer.begin() + offset,
-            enhanceBuffer->ecBuffer.begin() + offset + ecLen);
+            offset = i * ecLen;
+            buffer.insert(buffer.end(), enhanceBuffer->ecBuffer.begin() + offset,
+                enhanceBuffer->ecBuffer.begin() + offset + ecLen);
         }
         offset= i * micLen;
         buffer.insert(buffer.end(), enhanceBuffer->micBufferIn.begin() + offset,

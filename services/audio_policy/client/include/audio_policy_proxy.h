@@ -44,13 +44,13 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) override;
 
-    bool IsAppVolumeMute(int32_t appUid, bool owned) override;
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) override;
 
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
-    int32_t GetAppVolumeLevel(int32_t appUid) override;
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) override;
 
-    int32_t GetSelfAppVolumeLevel() override;
+    int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel) override;
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) override;
 
@@ -76,11 +76,13 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1) override;
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
 
     DeviceType GetActiveOutputDevice() override;
+
+    uint16_t GetDmDeviceType() override;
 
     DeviceType GetActiveInputDevice() override;
 
@@ -357,7 +359,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = -1) override;
+        const int32_t pid = INVALID_PID) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
 
@@ -388,7 +390,7 @@ public:
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) override;
 
     int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc) override;
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID) override;
 
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) override;
 

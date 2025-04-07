@@ -40,7 +40,7 @@ class RenderDfxBuilder {
 public:
     RenderDfxBuilder& WriteActionMsg(uint32_t dfxIndex, RendererStage stage);
     RenderDfxBuilder& WriteInfoMsg(int64_t sourceDuration, const AudioRendererInfo &rendererInfo);
-    RenderDfxBuilder& WriteStatMsg(const AudioRendererInfo &rendererInfo, const PlayStat &playStat);
+    RenderDfxBuilder& WriteStatMsg(const AudioProcessConfig &processConfig, const PlayStat &playStat);
     RenderDfxInfo GetResult();
 private:
     RenderDfxInfo dfxInfo_{};

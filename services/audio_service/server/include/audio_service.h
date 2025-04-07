@@ -70,6 +70,7 @@ public:
     int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
+    void CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord);
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
         const AudioProcessConfig &clientConfig, bool isVoipStream);
@@ -94,6 +95,7 @@ public:
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
     std::shared_ptr<CapturerInServer> GetCapturerBySessionID(const uint32_t &session);
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
+    void SetNonInterruptMuteForProcess(const uint32_t SessionId, const bool muteFlag);
     void UpdateMuteControlSet(uint32_t sessionId, bool muteFlag);
     int32_t UpdateSourceType(SourceType sourceType);
     void SetIncMaxRendererStreamCnt(AudioMode audioMode);

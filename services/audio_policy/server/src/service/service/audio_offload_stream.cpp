@@ -520,5 +520,43 @@ int32_t AudioOffloadStream::ActivateConcurrencyFromServer(AudioPipeType incoming
     return SUCCESS;
 }
 
+void AudioOffloadStream::ResetOffloadStatus(uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("Reset offload state for session: %{public}u", sessionId);
+    if (offloadSessionID_.has_value() && ((*offloadSessionID_) == sessionId)) {
+        AUDIO_INFO_LOG("Current offload session: %{public}u", (*offloadSessionID_));
+        std::lock_guard<std::mutex> lock(offloadMutex_);
+        AudioServerProxy::GetInstance().UnsetOffloadModeProxy(sessionId);
+        AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
+        streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
+        offloadSessionID_.reset();
+        audioPolicyManager_.ResetOffloadSessionId();
+    }
+}
+
+void AudioOffloadStream::SetOffloadStatus(uint32_t sessionId)
+{
+    AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("sessionId[%{public}d]  callingUid[%{public}d] StreamType[%{public}d] "
+        "Getting offload stream", sessionId, callingUid, streamType);
+    std::lock_guard<std::mutex> lock(offloadMutex_);
+
+    if (!offloadSessionID_.has_value()) {
+        offloadSessionID_ = sessionId;
+        audioPolicyManager_.SetOffloadSessionId(sessionId);
+        AUDIO_DEBUG_LOG("sessionId[%{public}d] try get offload stream", sessionId);
+        SetOffloadMode();
+        AudioPipeType offloadPipe = PIPE_TYPE_OFFLOAD;
+        streamCollector_.UpdateRendererPipeInfo(sessionId, offloadPipe);
+    } else {
+        if (sessionId == *(offloadSessionID_)) {
+            AUDIO_DEBUG_LOG("sessionId[%{public}d] is already get offload stream", sessionId);
+        } else {
+            AUDIO_DEBUG_LOG("sessionId[%{public}d] no get offload, current offload sessionId[%{public}d]",
+                sessionId, *(offloadSessionID_));
+        }
+    }
+}
 }
 }

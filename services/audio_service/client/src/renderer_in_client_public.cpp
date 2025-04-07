@@ -121,11 +121,10 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
     } else if (operation == DATA_LINK_CONNECTING) {
-        isDataLinkConnected_ = false;
+        UpdateDataLinkState(false, false);
         return SUCCESS;
     } else if (operation == DATA_LINK_CONNECTED) {
-        isDataLinkConnected_ = true;
-        dataConnectionCV_.notify_all();
+        UpdateDataLinkState(true, true);
         return SUCCESS;
     }
 
@@ -150,6 +149,15 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
 
     callServerCV_.notify_all();
     return SUCCESS;
+}
+
+void RendererInClientInner::UpdateDataLinkState(bool isConnected, bool needNotify)
+{
+    std::lock_guard<std::mutex> stateLock(dataConnectionMutex_);
+    isDataLinkConnected_ = isConnected;
+    if (needNotify) {
+        dataConnectionCV_.notify_all();
+    }
 }
 
 void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
@@ -228,7 +236,8 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
         eStreamType_, info.encoding);
 
-    AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND);
+    AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
@@ -558,6 +567,13 @@ void RendererInClientInner::OnFirstFrameWriting()
 
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
+    std::lock_guard lock(speedMutex_);
+    // set the speed to 1.0 and the speed has never been turned on, no actual sonic stream is created.
+    if (isEqual(speed, SPEED_NORMAL) && !speedEnable_) {
+        speed_ = speed;
+        return SUCCESS;
+    }
+
     if (audioSpeed_ == nullptr) {
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
             curStreamParams_.channels);
@@ -566,19 +582,15 @@ int32_t RendererInClientInner::SetSpeed(float speed)
     }
     audioSpeed_->SetSpeed(speed);
     speed_ = speed;
+    speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
 }
 
 float RendererInClientInner::GetSpeed()
 {
+    std::lock_guard lock(speedMutex_);
     return speed_;
-}
-
-int32_t RendererInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
-    int32_t &outBufferSize)
-{
-    return audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, outBuffer, outBufferSize);
 }
 
 void RendererInClientInner::InitCallbackLoop()
@@ -591,7 +603,6 @@ void RendererInClientInner::InitCallbackLoop()
         std::shared_ptr<RendererInClientInner> strongRef = weakRef.lock();
         if (strongRef != nullptr) {
             strongRef->cbThreadCv_.notify_one();
-            strongRef->WatchingWriteCallbackFunc(); // add watchdog
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
@@ -608,7 +619,6 @@ void RendererInClientInner::InitCallbackLoop()
         }
         if (strongRef != nullptr) {
             AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", strongRef->sessionId_);
-            strongRef->RendererRemoveWatchdog("WatchingWriteCallbackFunc", strongRef->sessionId_); // Remove watchdog
         }
     });
     pthread_setname_np(callbackLoop.native_handle(), "OS_AudioWriteCB");
@@ -1067,6 +1077,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     UpdateTracker("RELEASED");
     AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
 
+    std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
     audioSpeed_ = nullptr;
     return true;
@@ -1725,6 +1736,7 @@ void RendererInClientInner::SetSwitchingStatus(bool isSwitching)
 
 void RendererInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->GetRestoreInfo(restoreInfo);
     return;
 }
@@ -1734,17 +1746,20 @@ void RendererInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
     if (restoreInfo.restoreReason == SERVER_DIED) {
         cbThreadReleased_ = true;
     }
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     clientBuffer_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus RendererInClientInner::CheckRestoreStatus()
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->CheckRestoreStatus();
 }
 
 RestoreStatus RendererInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->SetRestoreStatus(restoreStatus);
 }
 

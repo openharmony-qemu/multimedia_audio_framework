@@ -78,6 +78,11 @@ public:
         return sharedAudioCapturer_->GetAudioTime(timestamp, base);
     }
 
+    bool GetFirstPkgTimeStampInfo(int64_t &firstTs) const override
+    {
+        return sharedAudioCapturer_->GetFirstPkgTimeStampInfo(firstTs);
+    }
+
     bool Pause() const override
     {
         return sharedAudioCapturer_->Pause();
@@ -242,6 +247,11 @@ public:
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override
     {
         return sharedAudioCapturer_->SetAudioSourceConcurrency(targetSources);
+    }
+
+    int32_t SetInputDevice(DeviceType deviceType) const override
+    {
+        return sharedAudioCapturer_->SetInputDevice(deviceType);
     }
 
     void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override

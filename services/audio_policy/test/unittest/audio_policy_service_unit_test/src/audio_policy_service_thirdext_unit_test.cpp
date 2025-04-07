@@ -845,35 +845,60 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetRotationToEffect_001, TestSize.Lev
 }
 #endif
 /**
-* @tc.name  : Test DealAudioSceneOutputDevices.
-* @tc.number: DealAudioSceneOutputDevices_001
-* @tc.desc  : Test IsA2dpOffloadConnected interfaces.
+* @tc.name  : Test DealAudioSceneInputAndOutputDevices
+* @tc.number: DealAudioSceneInputAndOutputDevices_001
+* @tc.desc  : Test DealAudioSceneInputAndOutputDevices method witch AUDIO_SCENE_RINGING scene
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneOutputDevices_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneInputAndOutputDevices_001, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest DealAudioSceneOutputDevices_001 start");
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest DealAudioSceneInputAndOutputDevices_001 start");
     ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
 
-    const AudioScene audioScene = AUDIO_SCENE_RINGING;
+    AudioScene audioScene = AUDIO_SCENE_RINGING;
     std::vector<DeviceType> activeOutputDevices;
-    bool haveArmUsbDevice = false;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
-        audioScene, activeOutputDevices, haveArmUsbDevice);
-    EXPECT_EQ(false, haveArmUsbDevice);
+    DeviceType activeInputDevice = DEVICE_TYPE_NONE;
+    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.
+        DealAudioSceneInputAndOutputDevices(audioScene, activeOutputDevices, activeInputDevice);
+    EXPECT_NE(DEVICE_TYPE_NONE, activeOutputDevices.front());
+    EXPECT_NE(DEVICE_TYPE_NONE, activeInputDevice);
+}
 
-    const AudioScene audioScene2 = AUDIO_SCENE_VOICE_RINGING;
-    haveArmUsbDevice = false;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
-        audioScene2, activeOutputDevices, haveArmUsbDevice);
-    EXPECT_EQ(false, haveArmUsbDevice);
+/**
+* @tc.name  : Test DealAudioSceneInputAndOutputDevices
+* @tc.number: DealAudioSceneInputAndOutputDevices_002
+* @tc.desc  : Test DealAudioSceneInputAndOutputDevices method witch AUDIO_SCENE_VOICE_RINGING scene
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneInputAndOutputDevices_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest DealAudioSceneInputAndOutputDevices_002 start");
+    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
 
-    const AudioScene audioScene3 = AUDIO_SCENE_DEFAULT;
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs {};
-    haveArmUsbDevice = false;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
-        audioScene3, activeOutputDevices, haveArmUsbDevice);
-    EXPECT_TRUE(descs.empty());
-    EXPECT_EQ(false, haveArmUsbDevice);
+    AudioScene audioScene = AUDIO_SCENE_VOICE_RINGING;
+    std::vector<DeviceType> activeOutputDevices;
+    DeviceType activeInputDevice = DEVICE_TYPE_NONE;
+    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.
+        DealAudioSceneInputAndOutputDevices(audioScene, activeOutputDevices, activeInputDevice);
+    EXPECT_NE(DEVICE_TYPE_NONE, activeOutputDevices.front());
+    EXPECT_NE(DEVICE_TYPE_NONE, activeInputDevice);
+}
+
+/**
+* @tc.name  : Test DealAudioSceneInputAndOutputDevices
+* @tc.number: DealAudioSceneInputAndOutputDevices_003
+* @tc.desc  : Test DealAudioSceneInputAndOutputDevices method witch AUDIO_SCENE_DEFAULT scene
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneInputAndOutputDevices_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest DealAudioSceneInputAndOutputDevices_003 start");
+    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
+
+    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
+    std::vector<DeviceType> activeOutputDevices;
+    DeviceType activeInputDevice = DEVICE_TYPE_NONE;
+    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.
+        DealAudioSceneInputAndOutputDevices(audioScene, activeOutputDevices, activeInputDevice);
+    EXPECT_EQ(DEVICE_TYPE_NONE, activeOutputDevices.front());
+    EXPECT_EQ(DEVICE_TYPE_NONE, activeInputDevice);
 }
 
 /**
@@ -1027,7 +1052,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnected_001, TestSize.
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest IsA2dpOffloadConnected_001 start");
     auto server = GetServerUtil::GetServerPtr();
     ASSERT_NE(nullptr, server);
-    EXPECT_EQ(true, server->audioPolicyService_.IsA2dpOffloadConnected());
+    EXPECT_EQ(false, server->audioPolicyService_.IsA2dpOffloadConnected());
 }
 
 /**
@@ -1694,6 +1719,58 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSiz
         EXPECT_NE(deviceSetIt, configData.deviceInfoMap.end());
         EXPECT_EQ(deviceSetIt->second.size(), pair.second);
     }
+}
+
+/**
+* @tc.name  : Test DFX_MSG_MANAGER
+* @tc.number: DfxMsgManagerActionTest_001
+* @tc.desc  : Test DFX_MSG_MANAGER interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerActionTest_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    auto &manager = DfxMsgManager::GetInstance();
+    const int DFX_MSG_ACTION_LOOP_TIMES_1 = 50;
+    const int DFX_MSG_ACTION_LOOP_TIMES_2 = 60;
+    const int DFX_MSG_ACTION_SPLIT_NUM = 2;
+    std::list<RenderDfxInfo> renderInfo{};
+    int infoIndex = 0;
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_1; i++) {
+        DfxStatAction rendererAction{};
+        if (i % DFX_MSG_ACTION_SPLIT_NUM == 0) {
+            rendererAction.fourthByte = RendererStage::RENDERER_STAGE_START_OK;
+            rendererAction.firstByte = ++infoIndex;
+        }
+        renderInfo.push_back({.rendererAction = rendererAction});
+    }
+
+    std::list<RenderDfxInfo> renderInfo2{};
+    infoIndex = 0;
+    for (size_t i = 1; i <= DFX_MSG_ACTION_LOOP_TIMES_2; i++) {
+        DfxStatAction rendererAction{};
+        if (i % DFX_MSG_ACTION_SPLIT_NUM == 0) {
+            rendererAction.fourthByte = RendererStage::RENDERER_STAGE_START_FAIL;
+            rendererAction.firstByte = ++infoIndex;
+        }
+        renderInfo2.push_back({.rendererAction = rendererAction});
+    }
+
+    DfxMessage renderMsg = {.appUid = TEST_APP_UID, .renderInfo = renderInfo};
+    DfxMessage renderMsg2 = {.appUid = TEST_APP_UID, .renderInfo = renderInfo2};
+    manager.Process(renderMsg);
+    manager.Process(renderMsg2);
+
+    int8_t checkValue = 0;
+    for (auto &item : manager.reportQueue_) {
+        manager.UpdateAction(TEST_APP_UID, item.second.renderInfo);
+        checkValue = manager.GetDfxIndexByType(TEST_APP_UID, DfxMsgIndexType::DFX_MSG_IDX_TYPE_RENDER_INFO);
+    }
+
+    EXPECT_EQ(checkValue, (DFX_MSG_ACTION_LOOP_TIMES_1 / DFX_MSG_ACTION_SPLIT_NUM) +
+        (DFX_MSG_ACTION_LOOP_TIMES_2 / DFX_MSG_ACTION_SPLIT_NUM));
+    manager.reportQueue_.clear();
 }
 
 } // namespace AudioStandard

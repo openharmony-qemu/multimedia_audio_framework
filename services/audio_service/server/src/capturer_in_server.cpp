@@ -57,17 +57,7 @@ CapturerInServer::~CapturerInServer()
     }
     DumpFileUtil::CloseDumpFile(&dumpS2C_);
     if (needCheckBackground_) {
-        SwitchStreamInfo info = {
-            streamIndex_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_INVALID,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicIndicator(CAPTURER_INVALID);
     }
 }
 
@@ -188,7 +178,10 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
-            recorderDfx_->WriteDfxActionMsg(streamIndex_, CAPTURER_STAGE_PAUSE_OK);
+            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+            recorderDfx_->WriteDfxStopMsg(streamIndex_, CAPTURER_STAGE_PAUSE_OK,
+                GetLastAudioDuration(), processConfig_);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
@@ -325,6 +318,61 @@ int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
+bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
+    uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
+    SwitchStreamInfo info = {
+        streamIndex_,
+        processConfig_.callerUid,
+        processConfig_.appInfo.appUid,
+        processConfig_.appInfo.appPid,
+        tokenId,
+        capturerState,
+    };
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
+            false, "VerifyBackgroundCapture failed!");
+    }
+    SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
+
+    if (isMicIndicatorOn_) {
+        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already on."
+            "No need to call NotifyPrivacyStart!", streamIndex_);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
+            false, "NotifyPrivacyStart failed!");
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+            "after NotifyPrivacyStart success!", streamIndex_);
+        isMicIndicatorOn_ = true;
+    }
+    return true;
+}
+
+bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
+    SwitchStreamInfo info = {
+        streamIndex_,
+        processConfig_.callerUid,
+        processConfig_.appInfo.appUid,
+        processConfig_.appInfo.appPid,
+        tokenId,
+        capturerState,
+    };
+    SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+
+    if (isMicIndicatorOn_) {
+        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
+        AUDIO_INFO_LOG("Turn off micIndicator of stream:%{public}d from on after NotifyPrivacyStop!", streamIndex_);
+        isMicIndicatorOn_ = false;
+    } else {
+        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already off."
+            "No need to call NotifyPrivacyStop!", streamIndex_);
+    }
+    return true;
+}
+
 int32_t CapturerInServer::Start()
 {
     int32_t ret = StartInner();
@@ -351,22 +399,8 @@ int32_t CapturerInServer::StartInner()
         needCheckBackground_ = true;
     }
     if (needCheckBackground_) {
-        SwitchStreamInfo info = {
-            streamIndex_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_RUNNING,
-        };
-        uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(info.appTokenId,
-                fullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
-        }
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(info.appTokenId, streamIndex_),
-            ERR_PERMISSION_DENIED, "NotifyPrivacyStart failed!");
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
@@ -390,16 +424,7 @@ int32_t CapturerInServer::Pause()
         return ERR_ILLEGAL_STATE;
     }
     if (needCheckBackground_) {
-        SwitchStreamInfo info = {
-            streamIndex_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_PAUSED,
-        };
-        PermissionUtil::NotifyPrivacyStop(info.appTokenId, streamIndex_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicIndicator(CAPTURER_PAUSED);
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
@@ -458,16 +483,7 @@ int32_t CapturerInServer::Stop()
     status_ = I_STATUS_STOPPING;
 
     if (needCheckBackground_) {
-        SwitchStreamInfo info = {
-            streamIndex_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_STOPPED,
-        };
-        PermissionUtil::NotifyPrivacyStop(info.appTokenId, streamIndex_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicIndicator(CAPTURER_STOPPED);
     }
 
     int ret = stream_->Stop();
@@ -514,16 +530,7 @@ int32_t CapturerInServer::Release()
     }
 #endif
     if (needCheckBackground_) {
-        SwitchStreamInfo info = {
-            streamIndex_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_STOPPED,
-        };
-        PermissionUtil::NotifyPrivacyStop(info.appTokenId, streamIndex_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicIndicator(CAPTURER_RELEASED);
     }
     return SUCCESS;
 }

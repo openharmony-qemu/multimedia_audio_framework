@@ -93,10 +93,8 @@ int32_t BluetoothScoManager::HandleScoDisconnect(ScoCategory scoCategory, const 
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     std::lock_guard<std::mutex> stateLock(g_scoStateLock);
     AudioScoState lastScoState = currentScoState_;
-    lastScoMode_ = currentScoMode_;
-    currentScoMode_ = BluetoothScoManager::GetScoModeFromCategery(scoCategory);
-    AUDIO_INFO_LOG("HandleScoDisconnect, lastScoState: %{public}d, lastScoMode: %{public}d, currentScoMode: %{public}d",
-        lastScoState, lastScoMode_, currentScoMode_);
+    AUDIO_INFO_LOG("HandleScoDisconnect, lastScoState: %{public}d, lastScoMode: %{public}d",
+        lastScoState, lastScoMode_);
     int32_t ret = ERROR;
     if (lastScoState == AudioScoState::CONNECTED) {
         if (currentScoMode_ == AudioScoMode::REC_MODE) {

@@ -191,6 +191,11 @@ enum InterruptSummary {
     INTERRUPT_SUMMARY_INTERRUPT_BACKGROUND,
 };
 
+enum InterruptStrategyType {
+    INTERRUPT_TYPE_DEFAULT = 0,
+    INTERRUPT_TYPE_AUDIO_SESSION,
+};
+
 class AudioInterrupt {
 public:
     static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;

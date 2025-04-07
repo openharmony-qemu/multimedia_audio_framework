@@ -25,6 +25,14 @@
 namespace OHOS {
 namespace AudioStandard {
 
+
+static const std::map<RecorderType, DfxRecorderType> DFX_RECORDER_TYPE_MAP = {
+    {RECORDER_TYPE_DEFAULT, DFX_RECORDER_TYPE_NATIVE},
+    {RECORDER_TYPE_ARKTS_AUDIO_RECORDER, DFX_RECORDER_TYPE_ARKTS},
+    {RECORDER_TYPE_OPENSL_ES, DFX_RECORDER_TYPE_OPENSL_ES},
+    {RECORDER_TYPE_AV_RECORDER, DFX_RECORDER_TYPE_AV_RECORDER}
+};
+
 void AudioCapturerDfxCollector::FlushDfxMsg(uint32_t index, int32_t appUid)
 {
     if (appUid == DFX_INVALID_APP_UID) {
@@ -33,7 +41,8 @@ void AudioCapturerDfxCollector::FlushDfxMsg(uint32_t index, int32_t appUid)
     }
 
     for (auto &item : dfxInfos_) {
-        AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d", item.first, appUid);
+        AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d, size=%{public}d", item.first, appUid,
+            static_cast<int32_t>(item.second.size()));
         DfxMsgManager::GetInstance().Enqueue({.appUid = appUid, .captureInfo = item.second});
     }
     dfxInfos_.clear();
@@ -45,15 +54,18 @@ CapturerDfxBuilder &CapturerDfxBuilder::WriteActionMsg(uint32_t dfxIndex, Captur
     return *this;
 }
 
-CapturerDfxBuilder &CapturerDfxBuilder::WriteInfoMsg(SourceType sourceType)
+CapturerDfxBuilder &CapturerDfxBuilder::WriteInfoMsg(const AudioCapturerInfo &capturerInfo)
 {
-    dfxInfo_.capturerInfo = {0, 0, sourceType, 0};
+    auto pos = DFX_RECORDER_TYPE_MAP.find(capturerInfo.recorderType);
+    DfxRecorderType recorderType = (pos == DFX_RECORDER_TYPE_MAP.end()) ? DFX_RECORDER_TYPE_NATIVE : pos->second;
+
+    dfxInfo_.capturerInfo = {0, 0, recorderType, capturerInfo.sourceType};
     return *this;
 }
 
-CapturerDfxBuilder &CapturerDfxBuilder::WriteStatMsg(const AudioCapturerInfo &info, const RecordStat &stat)
+CapturerDfxBuilder &CapturerDfxBuilder::WriteStatMsg(const AudioProcessConfig &processConfig, const RecordStat &stat)
 {
-    dfxInfo_.capturerStat = {info.samplingRate, stat.recordDuration_};
+    dfxInfo_.capturerStat = {processConfig.streamInfo.samplingRate, stat.recordDuration_};
     return *this;
 }
 

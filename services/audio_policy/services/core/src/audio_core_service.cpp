@@ -423,6 +423,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
         return SUCCESS;
     }
     pipeManager_->RemoveClient(sessionId);
+    audioOffloadStream_.ResetOffloadStatus(sessionId);
     RemoveUnusedPipe();
 
     return SUCCESS;
@@ -645,6 +646,8 @@ int32_t AudioCoreService::SetCallDeviceActive(InternalDeviceType deviceType, boo
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetCallDeviceActive failed");
     ret = FetchDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchDeviceAndRoute failed");
+    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SetCallDeviceActive");
 
     return SUCCESS;
 }
@@ -788,6 +791,10 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     }
 
     SendA2dpConnectedWhileRunning(rendererState, streamChangeInfo.audioRendererChangeInfo.sessionId);
+
+    if (mode == AUDIO_MODE_PLAYBACK) {
+        CheckOffloadStream(streamChangeInfo);
+    }
     return ret;
 }
 
@@ -900,6 +907,8 @@ int32_t AudioCoreService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt re
 
     // update a2dp offload
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
+    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "TriggerFetchDevice");
     return SUCCESS;
 }
 
@@ -965,6 +974,8 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
         if (Util::IsRingerAudioScene(audioSceneManager_.GetAudioScene(true))) {
             AUDIO_INFO_LOG("fetch output device after switch new ringmode.");
             FetchOutputDeviceAndRoute();
+            audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+                audioActiveDevice_.GetCurrentOutputDevice(), "SetRingerMode");
         }
         Volume vol = {false, 1.0f, 0};
         DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
@@ -997,6 +1008,9 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
             !Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage)) {
             continue;
         }
+
+        MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
+        MuteSinkForSwitchDistributedDevice(streamDesc, reason);
         // handle a2dp
         std::string encryptMacAddr = GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
         int32_t bluetoothFetchResult =

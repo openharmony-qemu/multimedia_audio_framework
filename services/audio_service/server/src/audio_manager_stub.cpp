@@ -124,6 +124,8 @@ const char *g_audioServerCodeStrs[] = {
     "CREATE_SOURCE_PORT",
     "DESTROY_HDI_PORT",
     "DEVICE_CONNECTED_FLAG",
+    "SET_DM_DEVICE_TYPE",
+    "NOTIFY_SETTINGS_DATA_READY",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -369,6 +371,13 @@ int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, Messag
     std::string deviceName = data.ReadString();
     int32_t ret = UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, deviceName);
     reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetDmDeviceType(MessageParcel &data, MessageParcel &reply)
+{
+    int16_t dmDeviceType = data.ReadUint16();
+    SetDmDeviceType(dmDeviceType);
     return AUDIO_OK;
 }
 
@@ -792,6 +801,8 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleNotifyAudioPolicyReady(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG):
             return HandleDeviceConnectedFlag(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY):
+            return HandleNotifySettingsDataReady(data, reply);
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }
@@ -981,6 +992,8 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 return HandleGetAllSinkInputs(data, reply);
             case static_cast<uint32_t>(AudioServerInterfaceCode::SET_DEFAULT_ADAPTER_ENABLE):
                 return HandleSetDefaultAdapterEnable(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_DM_DEVICE_TYPE):
+                return HandleSetDmDeviceType(data, reply);
             default:
                 return HandleSecondPartCode(code, data, reply, option);
         }
@@ -1150,6 +1163,12 @@ int AudioManagerStub::HandleNotifyAccountsChanged(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleNotifySettingsDataReady(MessageParcel &data, MessageParcel &reply)
+{
+    NotifySettingsDataReady();
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<SinkInput> sinkInputs;
@@ -1237,7 +1256,7 @@ int AudioManagerStub::HandleCreateHdiSinkPort(MessageParcel &data, MessageParcel
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString() == "nullptr" ? "" : data.ReadString();
     attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.address = data.ReadString();
@@ -1261,7 +1280,7 @@ int AudioManagerStub::HandleCreateSinkPort(MessageParcel &data, MessageParcel &r
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString() == "nullptr" ? "" : data.ReadString();
     attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.address = data.ReadString();
@@ -1284,7 +1303,7 @@ int AudioManagerStub::HandleCreateHdiSourcePort(MessageParcel &data, MessageParc
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString() == "nullptr" ? "" : data.ReadString();
     attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
 
@@ -1306,7 +1325,7 @@ int AudioManagerStub::HandleCreateSourcePort(MessageParcel &data, MessageParcel 
     }
     std::istringstream iss(attrStr);
     iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
-    attr.adapterName = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
+    attr.adapterName = data.ReadString() == "nullptr" ? "" : data.ReadString();
     attr.filePath = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
     attr.deviceNetworkId = data.ReadString() == "nullptr" ? nullptr : data.ReadString().c_str();
 

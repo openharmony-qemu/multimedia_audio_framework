@@ -62,13 +62,14 @@ public:
     void DeInit();
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-    int32_t SetDeviceActive(DeviceType deviceType, bool active, const int32_t pid = -1);
+    int32_t SetDeviceActive(DeviceType deviceType, bool active, const int32_t pid = INVALID_PID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
-    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address, const int32_t pid = -1);
+    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address,
+        const int32_t pid = INVALID_PID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
@@ -100,7 +101,6 @@ public:
     void OnCapturerSessionRemoved(uint64_t sessionID);
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
-    void SetDmDeviceType(const uint16_t dmDeviceType);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
     /*****IDeviceStatusObserver*****/

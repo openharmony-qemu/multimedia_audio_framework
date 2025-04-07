@@ -220,6 +220,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_EXCLUDED_OUTPUT_DEVICES",
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
+    "GET_DM_DEVICE_TYPE",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -299,7 +300,9 @@ void AudioPolicyManagerStub::GetAppVolumeIsMuteInternal(MessageParcel &data, Mes
 {
     int32_t appUid = data.ReadInt32();
     bool owned = data.ReadBool();
-    int result = IsAppVolumeMute(appUid, owned);
+    bool isMute = false;
+    int result = IsAppVolumeMute(appUid, owned, isMute);
+    reply.WriteBool(isMute);
     reply.WriteInt32(result);
 }
 
@@ -411,14 +414,18 @@ void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, M
 void AudioPolicyManagerStub::GetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t appUid = data.ReadInt32();
-    int32_t volumeLevel = GetAppVolumeLevel(appUid);
+    int32_t volumeLevel = 0;
+    int32_t ret = GetAppVolumeLevel(appUid, volumeLevel);
     reply.WriteInt32(volumeLevel);
+    reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::GetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t volumeLevel = GetSelfAppVolumeLevel();
+    int32_t volumeLevel = 0;
+    int32_t ret = GetSelfAppVolumeLevel(volumeLevel);
     reply.WriteInt32(volumeLevel);
+    reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
@@ -1765,6 +1772,9 @@ void AudioPolicyManagerStub::OnMiddlesRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK):
             UnsetInterruptCallbackInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DM_DEVICE_TYPE):
+            GetDmDeviceTypeInternal(data, reply);
+            break;
         default:
             OnMiddleFirRemoteRequest(code, data, reply, option);
             break;
@@ -1937,8 +1947,9 @@ void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, Mes
 void AudioPolicyManagerStub::SetPreferredDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     PreferredType preferredType = static_cast<PreferredType>(data.ReadInt32());
+    int32_t pid = static_cast<int32_t>(data.ReadInt32());
     std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
-    int32_t result = SetPreferredDevice(preferredType, desc);
+    int32_t result = SetPreferredDevice(preferredType, desc, pid);
     reply.WriteInt32(result);
 }
 
@@ -2025,7 +2036,6 @@ void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyV3Internal(MessagePa
     for (int32_t i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
     }
-    return;
 }
 
 void AudioPolicyManagerStub::SetAudioEffectPropertyV3Internal(MessageParcel &data, MessageParcel &reply)
@@ -2041,7 +2051,6 @@ void AudioPolicyManagerStub::SetAudioEffectPropertyV3Internal(MessageParcel &dat
     }
     int32_t result = SetAudioEffectProperty(propertyArray);
     reply.WriteInt32(result);
-    return;
 }
 
 void AudioPolicyManagerStub::GetAudioEffectPropertyV3Internal(MessageParcel &data, MessageParcel &reply)
@@ -2056,7 +2065,6 @@ void AudioPolicyManagerStub::GetAudioEffectPropertyV3Internal(MessageParcel &dat
     for (int32_t i = 0; i < size; i++) {
         propertyArray.property[i].Marshalling(reply);
     }
-    return;
 }
 
 void AudioPolicyManagerStub::GetSupportedAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
@@ -2071,7 +2079,6 @@ void AudioPolicyManagerStub::GetSupportedAudioEnhancePropertyInternal(MessagePar
         propertyArray.property[i].Marshalling(reply);
     }
     reply.WriteInt32(result);
-    return;
 }
 
 void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
@@ -2085,7 +2092,6 @@ void AudioPolicyManagerStub::GetSupportedAudioEffectPropertyInternal(MessageParc
         propertyArray.property[i].Marshalling(reply);
     }
     reply.WriteInt32(result);
-    return;
 }
 
 void AudioPolicyManagerStub::SetAudioEffectPropertyInternal(MessageParcel &data, MessageParcel &reply)
@@ -2113,7 +2119,6 @@ void AudioPolicyManagerStub::GetAudioEffectPropertyInternal(MessageParcel &data,
         propertyArray.property[i].Marshalling(reply);
     }
     reply.WriteInt32(result);
-    return;
 }
 
 void AudioPolicyManagerStub::SetAudioEnhancePropertyInternal(MessageParcel &data, MessageParcel &reply)
@@ -2140,7 +2145,6 @@ void AudioPolicyManagerStub::GetAudioEnhancePropertyInternal(MessageParcel &data
         propertyArray.property[i].Marshalling(reply);
     }
     reply.WriteInt32(result);
-    return;
 }
 
 void AudioPolicyManagerStub::InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply)

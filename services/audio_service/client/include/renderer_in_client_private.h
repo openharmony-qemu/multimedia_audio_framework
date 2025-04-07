@@ -85,8 +85,6 @@ public:
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
-        int32_t &outBufferSize) override;
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
@@ -228,8 +226,6 @@ private:
     int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
-    void WatchingWriteCallbackFunc();
-    void RendererRemoveWatchdog(const std::string &message, const std::int32_t sessionId);
     bool WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
@@ -240,6 +236,7 @@ private:
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
+    void UpdateDataLinkState(bool isConnected, bool needNotify);
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -377,6 +374,8 @@ private:
     std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
+    std::atomic<bool> speedEnable_ = false;
+    std::mutex speedMutex_;
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
@@ -430,7 +429,6 @@ private:
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
 
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
-    std::atomic_bool writeCallbackFuncThreadStatusFlag_ { false };
     DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
 
     std::mutex switchingMutex_;

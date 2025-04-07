@@ -190,6 +190,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"HDMI", DEVICE_TYPE_HDMI},
     {"LINE_DIGITAL", DEVICE_TYPE_LINE_DIGITAL},
     {"REMOTE_DAUDIO", DEVICE_TYPE_REMOTE_DAUDIO},
+    {"ACCESSORY", DEVICE_TYPE_ACCESSORY},
     {"DEFAULT", DEVICE_TYPE_DEFAULT},
     {"MAX", DEVICE_TYPE_MAX},
 };
@@ -1231,26 +1232,8 @@ bool NapiAudioEnum::IsLegalInputArgumentVolumeAdjustType(int32_t adjustType)
 
 bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
 {
-    bool result = false;
-    switch (deviceType) {
-        case DeviceType::DEVICE_TYPE_EARPIECE:
-        case DeviceType::DEVICE_TYPE_SPEAKER:
-        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
-        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DeviceType::DEVICE_TYPE_MIC:
-        case DeviceType::DEVICE_TYPE_USB_HEADSET:
-        case DeviceType::DEVICE_TYPE_USB_DEVICE:
-        case DeviceType::DEVICE_TYPE_FILE_SINK:
-        case DeviceType::DEVICE_TYPE_FILE_SOURCE:
-            result = true;
-            break;
-        default:
-            result = false;
-            break;
-    }
-    return result;
+    return deviceType > DeviceType::DEVICE_TYPE_INVALID &&
+        deviceType < DeviceType::DEVICE_TYPE_MAX;
 }
 
 bool NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType)
@@ -1492,6 +1475,7 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
         case DeviceType::DEVICE_TYPE_USB_DEVICE:
         case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
         case DeviceType::DEVICE_TYPE_REMOTE_DAUDIO:
             result = true;
             break;

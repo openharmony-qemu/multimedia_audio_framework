@@ -42,7 +42,7 @@ int32_t AudioRunningLock::Lock(const int32_t timeoutMs)
     AudioXCollie audioXCollie("PowerMgr::RunningLock::Lock", LOCK_TIMEOUT_SECONDS,
         [](void *) {
             AUDIO_ERR_LOG("PowerMgr lock timeout");
-        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     WatchTimeout guard("PowerMgr Lock timeout");
     int32_t ret = runningLock_->Lock(timeoutMs);
     isLocked_ = true;

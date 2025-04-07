@@ -212,6 +212,13 @@ public:
         BluetoothOffloadState a2dpOffloadFlag) = 0;
 
     /**
+     * Set device dmDevice type.
+     *
+     * @return none.
+     */
+    virtual void SetDmDeviceType(uint16_t dmDeviceType) = 0;
+
+    /**
      * Update the audio route after devices is detected and route is decided
      *
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
@@ -489,6 +496,8 @@ public:
 
     virtual void NotifyAccountsChanged() = 0;
 
+    virtual void NotifySettingsDataReady() = 0;
+
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
     virtual void SetDefaultAdapterEnable(bool isEnable) = 0;
@@ -616,6 +625,7 @@ private:
     int HandleSetAudioScene(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDevicesRoute(MessageParcel &data, MessageParcel &reply);
+    int HandleSetDmDeviceType(MessageParcel &data, MessageParcel &reply);
     int HandleDualToneState(MessageParcel &data, MessageParcel &reply);
     int HandleGetTransactionId(MessageParcel &data, MessageParcel &reply);
     int HandleSetParameterCallback(MessageParcel &data, MessageParcel &reply);
@@ -677,6 +687,7 @@ private:
     int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifySettingsDataReady(MessageParcel &data, MessageParcel &reply);
     int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
     int HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);

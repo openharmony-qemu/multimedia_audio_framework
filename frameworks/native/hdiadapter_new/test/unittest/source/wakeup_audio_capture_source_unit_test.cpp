@@ -122,11 +122,25 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_003, TestSize.Le
 }
 
 /**
+* @tc.name   : Test WakeupSource API
+* @tc.number : WakeupSourceUnitTest_004
+* @tc.desc   : Test wakeup source capture frame
+*/
+HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_004, TestSize.Level1)
+{
+    EXPECT_TRUE(source_ && source_->IsInited());
+    uint64_t replyBytes = 0;
+    std::vector<char> buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
+    int32_t ret = source_->CaptureFrame(buffer.data(), buffer.size(), replyBytes);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name   : Test WakeupSource API
- * @tc.number : WakeupSourceUnitTest_004
+ * @tc.number : WakeupSourceUnitTest_005
  * @tc.desc   : Test wakeup source get param
  */
-HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_004, TestSize.Level1)
+HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_005, TestSize.Level1)
 {
     EXPECT_TRUE(source_ && source_->IsInited());
     std::string param = source_->GetAudioParameter(USB_DEVICE, "");
@@ -135,10 +149,10 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_004, TestSize.Le
 
 /**
  * @tc.name   : Test WakeupSource API
- * @tc.number : WakeupSourceUnitTest_005
+ * @tc.number : WakeupSourceUnitTest_006
  * @tc.desc   : Test wakeup source set/get volume
  */
-HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_005, TestSize.Level1)
+HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_006, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
     int32_t ret = source_->SetVolume(1.0f, 1.0f);
@@ -150,11 +164,11 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_005, TestSize.Le
 }
 
 /**
- * @tc.name   : Test PrimarySource API
- * @tc.number : WakeupSourceUnitTest_006
+ * @tc.name   : Test WakeupSource API
+ * @tc.number : WakeupSourceUnitTest_007
  * @tc.desc   : Test wakeup source set/get mute
  */
-HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_006, TestSize.Level1)
+HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_007, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
     int32_t ret = source_->SetMute(false);
@@ -166,11 +180,11 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_006, TestSize.Le
 }
  
 /**
- * @tc.name   : Test PrimarySource API
- * @tc.number : WakeupSourceUnitTest_007
+ * @tc.name   : Test WakeupSource API
+ * @tc.number : WakeupSourceUnitTest_008
  * @tc.desc   : Test wakeup source get transaction id
  */
-HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_007, TestSize.Level1)
+HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_008, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
     uint64_t transId = source_->GetTransactionId();
@@ -178,11 +192,11 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_007, TestSize.Le
 }
  
 /**
- * @tc.name   : Test PrimarySource API
- * @tc.number : WakeupSourceUnitTest_008
+ * @tc.name   : Test WakeupSource API
+ * @tc.number : WakeupSourceUnitTest_009
  * @tc.desc   : Test wakeup source get max amplitude
  */
-HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_008, TestSize.Level1)
+HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_009, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
     float maxAmplitude = source_->GetMaxAmplitude();
@@ -190,11 +204,11 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_008, TestSize.Le
 }
  
 /**
- * @tc.name   : Test PrimarySource API
- * @tc.number : WakeupSourceUnitTest_009
+ * @tc.name   : Test WakeupSource API
+ * @tc.number : WakeupSourceUnitTest_010
  * @tc.desc   : Test wakeup source set audio scene
  */
-HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_009, TestSize.Level1)
+HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_010, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
     int32_t ret = source_->SetAudioScene(AUDIO_SCENE_DEFAULT, DEVICE_TYPE_SPEAKER);
@@ -202,11 +216,11 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_009, TestSize.Le
 }
  
 /**
- * @tc.name   : Test PrimarySource API
- * @tc.number : WakeupSourceUnitTest_010
+ * @tc.name   : Test WakeupSource API
+ * @tc.number : WakeupSourceUnitTest_011
  * @tc.desc   : Test wakeup source update source type
  */
-HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_010, TestSize.Level1)
+HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_011, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
     int32_t ret = source_->UpdateSourceType(SOURCE_TYPE_MIC);
@@ -214,11 +228,11 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_010, TestSize.Le
 }
  
 /**
- * @tc.name   : Test PrimarySource API
- * @tc.number : WakeupSourceUnitTest_011
+ * @tc.name   : Test WakeupSource API
+ * @tc.number : WakeupSourceUnitTest_012
  * @tc.desc   : Test wakeup source update apps uid
  */
-HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_011, TestSize.Level1)
+HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_012, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
     vector<int32_t> appsUid;

@@ -701,6 +701,11 @@ ohos_shared_library("audio_foundation") {
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
+  defines = []
+  if (audio_framework_feature_detect_soundbox) {
+    defines += [ "DETECT_SOUNDBOX" ]
+  }
+
   innerapi_tags = [ "platformsdk" ]
   subsystem_name = "multimedia"
   part_name = "audio_framework"

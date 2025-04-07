@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "sink/multichannel_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -157,6 +158,64 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_006, Test
     std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
     int32_t ret = sink_->UpdateActiveDevice(deviceTypes);
     EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_007
+ * @tc.desc   : Test multichannel sink static function
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_007, TestSize.Level1)
+{
+    AudioFormat hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_U8);
+    EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_8_BIT);
+    hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_S16LE);
+    EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_16_BIT);
+    hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_S24LE);
+    EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_24_BIT);
+    hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_S32LE);
+    EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_32_BIT);
+    hdiFormat = MultichannelAudioRenderSink::ConvertToHdiFormat(SAMPLE_F32LE);
+    EXPECT_EQ(hdiFormat, AUDIO_FORMAT_TYPE_PCM_16_BIT);
+
+    uint32_t bitFormat = MultichannelAudioRenderSink::PcmFormatToBit(SAMPLE_U8);
+    EXPECT_EQ(bitFormat, PCM_8_BIT);
+    bitFormat = MultichannelAudioRenderSink::PcmFormatToBit(SAMPLE_S16LE);
+    EXPECT_EQ(bitFormat, PCM_16_BIT);
+    bitFormat = MultichannelAudioRenderSink::PcmFormatToBit(SAMPLE_S24LE);
+    EXPECT_EQ(bitFormat, PCM_24_BIT);
+    bitFormat = MultichannelAudioRenderSink::PcmFormatToBit(SAMPLE_S32LE);
+    EXPECT_EQ(bitFormat, PCM_32_BIT);
+    bitFormat = MultichannelAudioRenderSink::PcmFormatToBit(SAMPLE_F32LE);
+    EXPECT_EQ(bitFormat, PCM_16_BIT);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_008
+ * @tc.desc   : Test multichannel sink static function
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_008, TestSize.Level1)
+{
+    AudioSampleFormat sampleFormat = MultichannelAudioRenderSink::ParseAudioFormat("AUDIO_FORMAT_PCM_16_BIT");
+    EXPECT_EQ(sampleFormat, SAMPLE_S16LE);
+    sampleFormat = MultichannelAudioRenderSink::ParseAudioFormat("AUDIO_FORMAT_PCM_24_BIT");
+    EXPECT_EQ(sampleFormat, SAMPLE_S24LE);
+    sampleFormat = MultichannelAudioRenderSink::ParseAudioFormat("AUDIO_FORMAT_PCM_32_BIT");
+    EXPECT_EQ(sampleFormat, SAMPLE_S32LE);
+    sampleFormat = MultichannelAudioRenderSink::ParseAudioFormat("");
+    EXPECT_EQ(sampleFormat, SAMPLE_S16LE);
+
+    AudioCategory audioCategory = MultichannelAudioRenderSink::GetAudioCategory(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(audioCategory, AUDIO_IN_MEDIA);
+    audioCategory = MultichannelAudioRenderSink::GetAudioCategory(AUDIO_SCENE_RINGING);
+    EXPECT_EQ(audioCategory, AUDIO_IN_RINGTONE);
+    audioCategory = MultichannelAudioRenderSink::GetAudioCategory(AUDIO_SCENE_PHONE_CALL);
+    EXPECT_EQ(audioCategory, AUDIO_IN_CALL);
+    audioCategory = MultichannelAudioRenderSink::GetAudioCategory(AUDIO_SCENE_PHONE_CHAT);
+    EXPECT_EQ(audioCategory, AUDIO_IN_COMMUNICATION);
+    audioCategory = MultichannelAudioRenderSink::GetAudioCategory(AUDIO_SCENE_MAX);
+    EXPECT_EQ(audioCategory, AUDIO_IN_MEDIA);
 }
 
 } // namespace AudioStandard

@@ -8282,6 +8282,60 @@ HWTEST(AudioRendererUnitTest, RestoreTheadLoop_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioRendererPrivate
+ * @tc.number: SetAudioInterrupt
+ * @tc.desc  : Test SetAudioInterrupt API
+ */
+HWTEST(AudioRendererUnitTest, SetAudioInterrupt_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    AudioInterrupt audioInterrupt;
+
+    audioRendererPrivate->SetAudioInterrupt(audioInterrupt);
+    EXPECT_EQ(audioRendererPrivate->audioInterrupt_.streamId, 0);
+}
+
+/**
+ * @tc.name  : Test AudioRendererPrivate
+ * @tc.number: GetSourceDuration
+ * @tc.desc  : Test GetSourceDuration API
+ */
+HWTEST(AudioRendererUnitTest, GetSourceDuration_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+
+    audioRendererPrivate->sourceDuration_ = 1;
+    EXPECT_EQ(audioRendererPrivate->GetSourceDuration(), 1);
+}
+
+/**
+ * @tc.name  : Test AudioRendererPrivate
+ * @tc.number: SetSourceDuration
+ * @tc.desc  : Test SetSourceDuration API
+ */
+HWTEST(AudioRendererUnitTest, SetSourceDuration_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    int64_t duration = 1;
+    audioRendererPrivate->audioStream_ = nullptr;
+    AudioStreamParams audioStreamParams;
+    const AudioStreamType audioStreamType = STREAM_VOICE_CALL;
+    IAudioStream::StreamClass streamClass;
+
+    int32_t ret = audioRendererPrivate->PrepareAudioStream(audioStreamParams, audioStreamType, streamClass);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioRendererPrivate->SetSourceDuration(duration);
+    EXPECT_EQ(audioRendererPrivate->sourceDuration_, 1);
+}
+
+/**
  * @tc.name  : Test IsFastStreamClass
  * @tc.number: IsFastStreamClass
  * @tc.desc  : Test IsFastStreamClass

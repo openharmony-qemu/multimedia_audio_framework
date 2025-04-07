@@ -79,6 +79,7 @@ public:
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "") override;
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
@@ -189,6 +190,8 @@ public:
     
     void NotifyAccountsChanged() override;
 
+    void NotifySettingsDataReady() override;
+
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 
     void SetDefaultAdapterEnable(bool isEnable) override;
@@ -255,7 +258,6 @@ private:
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
-    bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();

@@ -556,5 +556,10 @@ int32_t RemoteFastAudioCaptureSource::CheckPositionTime(void)
     return ERR_OPERATION_FAILED;
 }
 
+void RemoteFastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -617,7 +617,7 @@ int32_t BluetoothAudioRenderSink::CreateRender(void)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     std::string adapterNameCase = "";
-    if (strcmp(attr_.adapterName, "dp") == 0) {
+    if (attr_.adapterName == "dp") {
         adapterNameCase = attr_.adapterName;
     } else {
         adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp"; // set sound card infomation

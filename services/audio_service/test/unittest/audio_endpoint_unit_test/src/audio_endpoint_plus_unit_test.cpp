@@ -755,6 +755,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_026, TestSize.Level1)
     uint8_t buffer = 1;
     size_t bufferSize = BIGNUMBER;
     audioEndpointInner->dstStreamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_8000;
+    audioEndpointInner->dstStreamInfo_.channels = AudioChannel::STEREO;
     audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
     audioEndpointInner->signalDetectAgent_->signalDetected_ = false;
     audioEndpointInner->signalDetectAgent_->dspTimestampGot_ = false;
@@ -783,6 +785,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_027, TestSize.Level1)
     uint8_t buffer = 1;
     size_t bufferSize = BIGNUMBER;
     audioEndpointInner->dstStreamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_8000;
+    audioEndpointInner->dstStreamInfo_.channels = AudioChannel::STEREO;
     audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
     audioEndpointInner->signalDetectAgent_->signalDetected_ = true;
     audioEndpointInner->signalDetectAgent_->dspTimestampGot_ = true;

@@ -48,6 +48,7 @@ public:
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "") override;
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
@@ -114,6 +115,7 @@ public:
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
+    void NotifySettingsDataReady() override;
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
     void SetDefaultAdapterEnable(bool isEnable) override;
     void NotifyAudioPolicyReady() override;

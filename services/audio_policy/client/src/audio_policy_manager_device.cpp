@@ -106,7 +106,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevic
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo, bool forceNoBTPermission)
 {
-    AudioXCollie audioXCollie("AudioPolicyManager::GetPreferredOutputDeviceDescriptors", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioPolicyManager::GetPreferredOutputDeviceDescriptors", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetPreferredOutputDeviceDescriptors: audio policy manager proxy is NULL.");
@@ -173,6 +174,13 @@ DeviceType AudioPolicyManager::GetActiveOutputDevice()
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DEVICE_TYPE_INVALID, "audio policy manager proxy is NULL.");
     return gsp->GetActiveOutputDevice();
+}
+
+uint16_t AudioPolicyManager::GetDmDeviceType()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DEVICE_TYPE_INVALID, "audio policy manager proxy is NULL.");
+    return gsp->GetDmDeviceType();
 }
 
 DeviceType AudioPolicyManager::GetActiveInputDevice()
@@ -487,11 +495,11 @@ int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt 
 }
 
 int32_t AudioPolicyManager::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->SetPreferredDevice(preferredType, desc);
+    return gsp->SetPreferredDevice(preferredType, desc, pid);
 }
 
 int32_t AudioPolicyManager::SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback)

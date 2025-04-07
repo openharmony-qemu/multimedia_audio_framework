@@ -52,19 +52,20 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
     }
     AUDIO_INFO_LOG("check result pid: %{public}d", callerPid);
     if (deviceDescriptor->deviceType_ == DEVICE_TYPE_NONE) {
-        if (callerPid == 0) {
+        if (callerPid == CLEAR_PID) {
             // clear all
             forcedDeviceMapList_.clear();
-        } else if (callerPid == -1) {
-            // clear equal ownerPid_
+        } else if (callerPid == SYSTEM_PID) {
+            // clear equal ownerPid_ and SYSTEM_PID
             RemoveForcedDeviceMapData(ownerPid_);
+            RemoveForcedDeviceMapData(SYSTEM_PID);
         } else {
             // clear equal pid
             RemoveForcedDeviceMapData(callerPid);
         }
     } else {
         std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> currentDeviceMap;
-        if (callerPid == -1) {
+        if (callerPid == SYSTEM_PID && ownerPid_ != 0) {
             RemoveForcedDeviceMapData(ownerPid_);
             currentDeviceMap = {{ownerPid_, deviceDescriptor}};
         } else {
@@ -166,7 +167,7 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
             }
         }
         for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
-            if (1 == it->begin()->first) {
+            if (SYSTEM_PID == it->begin()->first) {
                 AUDIO_INFO_LOG("bluetooth already force selected, deviceType: %{public}d",
                     it->begin()->second->deviceType_);
                 return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
@@ -283,7 +284,7 @@ int32_t AudioStateManager::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPoli
 const std::string AudioStateManager::GetBundleNameFromUid(int32_t uid)
 {
     AudioXCollie audioXCollie("AudioRecoveryDevice::GetBundleNameFromUid",
-        GET_BUNDLE_TIME_OUT_SECONDS);
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::string bundleName {""};
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();

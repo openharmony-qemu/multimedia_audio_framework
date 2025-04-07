@@ -37,7 +37,7 @@ public:
         pthread_setname_np(timerLoop.native_handle(), "OS_ATimer");
     }
 
-    ~AudioTimer()
+    virtual ~AudioTimer()
     {
         {
             std::unique_lock<std::mutex> lck(timerMutex);

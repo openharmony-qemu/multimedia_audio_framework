@@ -188,7 +188,7 @@ int32_t PaRendererStreamImpl::Start()
 int32_t PaRendererStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Enter");
-    PaLockGuard palock(mainloop_, 1);
+    PaLockGuard palock(mainloop_, true);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -707,7 +707,7 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     }
 
     // EnqueueBuffer is called in mainloop in most cases and don't need lock.
-    PaLockGuard palock(mainloop_, 1);
+    PaLockGuard palock(mainloop_, true);
 
     if (paStream_ == nullptr) {
         AUDIO_ERR_LOG("paStream is nullptr");
@@ -973,7 +973,7 @@ uint32_t PaRendererStreamImpl::GetStreamIndex()
 // offload
 size_t PaRendererStreamImpl::GetWritableSize()
 {
-    PaLockGuard lock(mainloop_, 1);
+    PaLockGuard lock(mainloop_, true);
     if (paStream_ == nullptr) {
         return 0;
     }
@@ -1126,7 +1126,7 @@ int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, 
         AUDIO_DEBUG_LOG("Update statePolicy immediately: %{public}d -> %{public}d, force(%d)",
             offloadStatePolicy_, statePolicy, force);
         lastOffloadUpdateFinishTime_ = 0;
-        PaLockGuard lock(mainloop_, 1);
+        PaLockGuard lock(mainloop_, true);
         if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
             AUDIO_ERR_LOG("Set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
             return ERR_ILLEGAL_STATE;

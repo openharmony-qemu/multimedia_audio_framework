@@ -49,6 +49,8 @@ public:
     AudioScene GetLastAudioScene() const;
     bool IsSameAudioScene();
     bool IsStreamActive(AudioStreamType streamType) const;
+    bool CheckVoiceCallActive(int32_t sessionId) const;
+
     bool IsVoiceCallRelatedScene();
 private:
     AudioSceneManager() : audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
@@ -56,8 +58,8 @@ private:
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()) {}
     ~AudioSceneManager() {}
-    void DealAudioSceneOutputDevices(const AudioScene &audioScene, std::vector<DeviceType> &activeOutputDevices,
-        bool &haveArmUsbDevice);
+    void DealAudioSceneInputAndOutputDevices(const AudioScene &audioScene,
+        std::vector<DeviceType> &activeOutputDevices, DeviceType &activeInputDevice);
 private:
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;

@@ -991,5 +991,41 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_045, Tes
     std::string encryptedAddress = ptrAudioSpatializationService->GetSha256EncryptAddress(testAddress);
     ptrAudioSpatializationService->UpdateSpatializationSupported(encryptedAddress);
 }
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_046
+* @tc.desc  : Test AudioSpatializationService::HandleSpatializationEnabledChangeForCurrentDevice
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_046, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    const bool enable = true;
+    ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+
+    EXPECT_NE(ptrAudioSpatializationService->audioPolicyServerHandler_, nullptr);
+
+    ptrAudioSpatializationService->HandleSpatializationEnabledChangeForCurrentDevice(enable);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_047
+* @tc.desc  : Test AudioSpatializationService::HandleSpatializationEnabledChangeForCurrentDevice
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_047, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    const bool enable = true;
+    ptrAudioSpatializationService->audioPolicyServerHandler_ = nullptr;
+
+    ptrAudioSpatializationService->HandleSpatializationEnabledChangeForCurrentDevice(enable);
+}
 } // namespace AudioStandard
 } // namespace OHOS

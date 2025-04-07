@@ -103,7 +103,8 @@ int32_t AudioRenderSink::Start(void)
     AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Start");
 #ifdef FEATURE_POWER_MANAGER
-    AudioXCollie audioXCollie("AudioRenderSink::CreateRunningLock", TIMEOUT_SECONDS_10);
+    AudioXCollie audioXCollie("AudioRenderSink::CreateRunningLock", TIMEOUT_SECONDS_10,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     if (runningLock_ == nullptr) {
         WatchTimeout guard("create AudioRunningLock start");
         runningLock_ = std::make_shared<AudioRunningLock>(std::string(RUNNING_LOCK_NAME_BASE) + halName_);
@@ -519,8 +520,10 @@ int32_t AudioRenderSink::SetPaPower(int32_t flag)
     std::string param;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    AUDIO_INFO_LOG("flag: %{public}d, paStatus: %{public}d", flag, paStatus_);
     if (flag == 0 && paStatus_ == 1) {
         param = "zero_volume=true;routing=0";
+        AUDIO_INFO_LOG("param: %{public}s", param.c_str());
         int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
         if (ret == SUCCESS) {
             paStatus_ = 0;
@@ -856,7 +859,6 @@ int32_t AudioRenderSink::CreateRender(void)
 
 int32_t AudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices)
 {
-    AUDIO_INFO_LOG("Adapter name: %{public}s", adapterNameCase_.c_str());
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);

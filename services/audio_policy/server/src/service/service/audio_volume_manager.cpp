@@ -195,9 +195,9 @@ void AudioVolumeManager::SetSharedAbsVolumeScene(const bool support)
     *sharedAbsVolumeScene_ = support;
 }
 
-int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid)
+int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
-    return audioPolicyManager_.GetAppVolumeLevel(appUid);
+    return audioPolicyManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
 int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
@@ -341,10 +341,10 @@ int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     return result;
 }
 
-bool AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned)
+int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppVolumeMute");
-    bool result = audioPolicyManager_.IsAppVolumeMute(appUid, owned);
+    int32_t result = audioPolicyManager_.IsAppVolumeMute(appUid, owned, isMute);
     return result;
 }
 
@@ -405,7 +405,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithDevice(AudioStreamType strea
 {
     int32_t result;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType !=STREAM_VOICE_CALL &&
+    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType != STREAM_VOICE_CALL &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
         result = SetA2dpDeviceVolume(btDevice, volumeLevel, true);
@@ -880,7 +880,7 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
         audioPolicyManager_.SetAbsVolumeScene(support);
         SetSharedAbsVolumeScene(support);
         int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
-        SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
+        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
     }
 }
 

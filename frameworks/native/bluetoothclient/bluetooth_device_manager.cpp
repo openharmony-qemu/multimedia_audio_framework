@@ -454,8 +454,8 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::CONNECTED;
-    AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
-        category is %{public}d, device name is %{public}s", deviceStatus,
+    AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address\
+        is %{public}s, category is %{public}d, device name is %{public}s", deviceStatus,
         GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
     {
         std::lock_guard<std::mutex> deviceMapLock(g_a2dpDeviceMapLock);
@@ -961,9 +961,7 @@ void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice 
 {
     std::string deviceAddr = device.GetDeviceAddr();
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
-    AudioScene scene = AudioHfpManager::GetCurrentAudioScene();
-    AUDIO_INFO_LOG("HandleUserSelection current scene = %{public}d", scene);
-    if (bluetoothCategory == BT_WATCH && (scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING)) {
+    if (bluetoothCategory == BT_WATCH) {
         std::lock_guard<std::mutex> wearStateMapLock(g_hfpWearStateMapLock);
         std::lock_guard<std::mutex> hfpDeviceLock(g_hfpDeviceLock);
         auto isPresent = [] (BluetoothRemoteDevice &bluetoothRemoteDevice) {

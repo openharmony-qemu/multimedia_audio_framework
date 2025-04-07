@@ -224,13 +224,13 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
         return AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     }
     if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT) {
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
             desc = FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
         } else {
             desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
         }
     } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT) {
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
             desc = FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
         } else {
             desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
@@ -271,6 +271,9 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchRecordCaptureDevice(So
 {
     for (auto &router : recordCaptureRouters_) {
         shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+        if (desc == nullptr) {
+            continue;
+        }
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
             routerType = router->GetRouterType();
             return desc;
@@ -312,6 +315,16 @@ int32_t AudioRouterCenter::UnsetAudioDeviceRefinerCallback()
 bool AudioRouterCenter::isCallRenderRouter(StreamUsage streamUsage)
 {
     return renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS;
+}
+
+int32_t AudioRouterCenter::GetSplitInfo(std::string &splitInfo)
+{
+    if (audioDeviceRefinerCb_ == nullptr) {
+        AUDIO_INFO_LOG("nullptr");
+        return ERROR;
+    }
+
+    return audioDeviceRefinerCb_->GetSplitInfoRefined(splitInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

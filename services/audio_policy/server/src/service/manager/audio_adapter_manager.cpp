@@ -334,17 +334,16 @@ int32_t AudioAdapterManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     return SetAppVolumeMutedDB(appUid, muted);
 }
 
-bool AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned)
+int32_t AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("IsAppVolumeMute: appUid: %{public}d, deviceType: %{public}d, owned:%{public}d",
         appUid, currentActiveDevice_.deviceType_, owned);
-    bool isMute = false;
     if (owned) {
-        isMute = volumeDataMaintainer_.GetAppMuteOwned(appUid);
+        volumeDataMaintainer_.GetAppMuteOwned(appUid, isMute);
     } else {
-        isMute = volumeDataMaintainer_.GetAppMute(appUid);
+        volumeDataMaintainer_.GetAppMute(appUid, isMute);
     }
-    return isMute;
+    return SUCCESS;
 }
 
 bool AudioAdapterManager::IsCurDeviceNeedSaveVolumeToDatabase()
@@ -406,9 +405,9 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 int32_t AudioAdapterManager::SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel,
     DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("SetSystemVolumeLevelWithDevice: streamType: %{public}d, currentDeviceType: %{public}d, "
-        "volumeLevel:%{public}d, deviceType: %{public}d", streamType, currentActiveDevice_.deviceType_,
-        volumeLevel, deviceType);
+    AUDIO_INFO_LOG("%{public}s: streamType: %{public}d, currentDeviceType: %{public}d, volumeLevel: %{public}d, "
+        "deviceType: %{public}d",  __func__, streamType, currentActiveDevice_.deviceType_, volumeLevel,
+        deviceType);
     int32_t mimRet = GetMinVolumeLevel(streamType);
     int32_t maxRet = GetMaxVolumeLevel(streamType);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
@@ -587,6 +586,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
         {DEVICE_TYPE_FILE_SINK, {FILE_CLASS}},
         {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
         {DEVICE_TYPE_HDMI, {PRIMARY_CLASS}},
+        {DEVICE_TYPE_ACCESSORY, {ACCESSORY_CLASS}},
     };
 
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
@@ -634,7 +634,8 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (offloadSessionID_.has_value()) { // need stream volume and system volume
-        volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_.value(), streamType, OFFLOAD_CLASS);
+        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+        volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_.value(), streamType, OFFLOAD_CLASS, &volumes);
         audioServerProxy_->OffloadSetVolume(volume);
     }
     IPCSkeleton::SetCallingIdentity(identity);
@@ -652,8 +653,10 @@ void AudioAdapterManager::SetOffloadSessionId(uint32_t sessionId)
 
 void AudioAdapterManager::ResetOffloadSessionId()
 {
-    AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", offloadSessionID_.value());
-    offloadSessionID_.reset();
+    if (offloadSessionID_.has_value()) {
+        AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", offloadSessionID_.value());
+        offloadSessionID_.reset();
+    }
 }
 
 int32_t AudioAdapterManager::SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel)
@@ -682,13 +685,14 @@ int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
     return volumeDataMaintainer_.GetStreamVolume(streamType);
 }
 
-int32_t AudioAdapterManager::GetAppVolumeLevel(int32_t appUid)
+int32_t AudioAdapterManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
     if (volumeDataMaintainer_.IsSetAppVolume(appUid)) {
-        return volumeDataMaintainer_.GetAppVolume(appUid);
+        volumeLevel = volumeDataMaintainer_.GetAppVolume(appUid);
     } else {
-        return appConfigVolume_.defaultVolume;
+        volumeLevel = appConfigVolume_.defaultVolume;
     }
+    return SUCCESS;
 }
 
 int32_t AudioAdapterManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
@@ -768,7 +772,9 @@ bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 
 bool AudioAdapterManager::GetAppMute(int32_t appUid)
 {
-    return volumeDataMaintainer_.GetAppMute(appUid);
+    bool isMute = false;
+    volumeDataMaintainer_.GetAppMute(appUid, isMute);
+    return isMute;
 }
 
 int32_t AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
@@ -1661,6 +1667,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_FILE_SOURCE:
         case DEVICE_TYPE_DP:
         case DEVICE_TYPE_HDMI:
+        case DEVICE_TYPE_ACCESSORY:
             return SPEAKER_VOLUME_TYPE;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
@@ -1779,7 +1786,7 @@ void AudioAdapterManager::UpdateSafeVolume()
                 isWiredBoot_ = false;
                 return;
             }
-            if (isWiredBoot_) {
+            if (isWiredBoot_ || safeStatus_) {
                 AUDIO_INFO_LOG("1st connect wired device:%{public}d after boot, update current volume to safevolume",
                     currentActiveDevice_.deviceType_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
@@ -1802,7 +1809,7 @@ void AudioAdapterManager::UpdateSafeVolume()
                     return;
                 }
             }
-            if (isBtBoot_) {
+            if (isBtBoot_ || safeStatusBt_) {
                 AUDIO_INFO_LOG("1st connect bt device:%{public}d after boot, update current volume to safevolume",
                     currentActiveDevice_.deviceType_);
                 volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
@@ -2232,25 +2239,9 @@ int32_t AudioAdapterManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_
 std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType)
 {
     std::string type = "";
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE:
-        case DEVICE_TYPE_SPEAKER:
-        case DEVICE_TYPE_DP:
-        case DEVICE_TYPE_HDMI:
-            type = "build-in";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-            type = "wireless";
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            type = "wired";
-            break;
-        default:
-            AUDIO_ERR_LOG("GetMuteKeyForKvStore: device %{public}d is not supported for kvStore", deviceType);
-            return "";
+    GetMuteKeyForDeviceType(deviceType, type);
+    if (type == "") {
+        return type;
     }
 
     switch (streamType) {
@@ -2280,6 +2271,32 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
             AUDIO_ERR_LOG("GetMuteKeyForKvStore: streamType %{public}d is not supported for kvStore", streamType);
             return "";
     }
+}
+
+std::string AudioAdapterManager::GetMuteKeyForDeviceType(DeviceType deviceType, std::string &type)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
+        case DEVICE_TYPE_SPEAKER:
+        case DEVICE_TYPE_DP:
+        case DEVICE_TYPE_HDMI:
+            type = "build-in";
+            break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_ACCESSORY:
+            type = "wireless";
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            type = "wired";
+            break;
+        default:
+            AUDIO_ERR_LOG("GetMuteKeyForKvStore: device %{public}d is not supported for kvStore", deviceType);
+            return "";
+    }
+    return type;
 }
 
 float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)

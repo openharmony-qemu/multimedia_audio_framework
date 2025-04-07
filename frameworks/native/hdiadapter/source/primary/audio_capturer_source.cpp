@@ -579,7 +579,8 @@ void AudioCapturerSourceInner::DeInit()
 {
     std::lock_guard<std::mutex> statusLock(statusMutex_);
     Trace trace("AudioCapturerSourceInner::DeInit");
-    AudioXCollie sourceXCollie("AudioCapturerSourceInner::DeInit", DEINIT_TIME_OUT_SECONDS);
+    AudioXCollie sourceXCollie("AudioCapturerSourceInner::DeInit", DEINIT_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("Start deinit of source inner");
     started_ = false;
     sourceInited_ = false;
@@ -1359,10 +1360,12 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
             currentAudioScene_ = audioScene;
         }
 
-        std::lock_guard<std::mutex> statusLock(statusMutex_);
-        ret = SetInputRoute(activeDevice, audioSceneInPort, deviceName);
-        if (ret < 0) {
-            AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);
+        if (activeDevice != DEVICE_TYPE_NONE) {
+            std::lock_guard<std::mutex> statusLock(statusMutex_);
+            ret = SetInputRoute(activeDevice, audioSceneInPort, deviceName);
+            if (ret < 0) {
+                AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);
+            }
         }
     }
     AUDIO_DEBUG_LOG("Select audio scene SUCCESS: %{public}d", audioScene);
@@ -1827,7 +1830,8 @@ bool AudioCapturerSourceWakeup::IsInited(void)
 
 void AudioCapturerSourceWakeup::DeInit(void)
 {
-    AudioXCollie wakeupXCollie("AudioCapturerSourceWakeup::DeInit", DEINIT_TIME_OUT_SECONDS);
+    AudioXCollie wakeupXCollie("AudioCapturerSourceWakeup::DeInit", DEINIT_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("Start deinit of source wakeup");
     std::lock_guard<std::mutex> lock(wakeupMutex_);
     if (!isInited) {

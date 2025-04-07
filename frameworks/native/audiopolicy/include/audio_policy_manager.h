@@ -69,7 +69,7 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
 
-    bool IsAppVolumeMute(int32_t appUid, bool muted);
+    int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute);
 
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0);
 
@@ -77,9 +77,9 @@ public:
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t GetAppVolumeLevel(int32_t appUid);
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     
-    int32_t GetSelfAppVolumeLevel();
+    int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel);
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
 
@@ -121,11 +121,13 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter);
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
     DeviceType GetActiveOutputDevice();
+
+    uint16_t GetDmDeviceType();
 
     DeviceType GetActiveInputDevice();
 
@@ -476,7 +478,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = -1);
+        const int32_t pid = INVALID_PID);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -514,8 +516,8 @@ public:
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
-    int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        const int32_t pid = INVALID_PID);
 
     int32_t SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback);
 

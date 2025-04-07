@@ -66,6 +66,8 @@ public:
     bool GetOffloadAvailableFromXml() const;
     void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
+    void SetOffloadStatus(uint32_t sessionId);
+    void ResetOffloadStatus(uint32_t sessionId);
 private:
     AudioOffloadStream() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),

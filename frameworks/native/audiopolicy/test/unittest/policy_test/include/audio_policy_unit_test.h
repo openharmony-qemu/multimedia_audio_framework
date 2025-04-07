@@ -129,6 +129,18 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) {};
 };
 
+class AudioSpatialEnabledChangeForCurrDeviceCbTest : public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
+    public:
+        virtual ~AudioSpatialEnabledChangeForCurrDeviceCbTest() = default;
+        /**
+         * @brief AudioSpatializationEnabledChangeForCurrentDeviceCallback will be executed when spatialization enabled
+         * state changes for current device
+         * @param enabled the spatialization enabled state for current device.
+         * @since 18
+         */
+        virtual void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) {};
+    };
+
 class AudioHeadTrackingEnabledChangeCallbackTest : public AudioHeadTrackingEnabledChangeCallback {
 public:
     virtual ~AudioHeadTrackingEnabledChangeCallbackTest() = default;

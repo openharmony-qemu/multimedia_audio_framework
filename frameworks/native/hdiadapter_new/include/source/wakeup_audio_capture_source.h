@@ -94,6 +94,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
+
 private:
     AudioCaptureSource audioCaptureSource_;
     static inline std::unique_ptr<WakeupBuffer> wakeupBuffer_ = nullptr;

@@ -94,6 +94,7 @@ public:
     bool Init(void);
     void Deinit(void);
     void InitKVStore();
+    void NotifySettingsDataReady();
     bool ConnectServiceAdapter();
 
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
@@ -110,11 +111,11 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
 
-    bool IsAppVolumeMute(int32_t appUid, bool owned);
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
-    int32_t GetAppVolumeLevel(int32_t appUid);
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
@@ -176,11 +177,13 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
     DeviceType GetActiveOutputDevice();
+
+    uint16_t GetDmDeviceType();
 
     shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
 
@@ -223,8 +226,6 @@ public:
     int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
 
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
-
-    void SetDmDeviceType(const uint16_t dmDeviceType);
 
     bool IsDataShareReady();
 
@@ -405,7 +406,7 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = -1);
+        const int32_t pid = INVALID_PID);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -623,7 +624,8 @@ private:
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_SPEAKER,
-        DEVICE_TYPE_HDMI
+        DEVICE_TYPE_HDMI,
+        DEVICE_TYPE_LINE_DIGITAL
     };
     std::vector<DeviceType> inputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
@@ -631,7 +633,8 @@ private:
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_WAKEUP,
-        DEVICE_TYPE_MIC
+        DEVICE_TYPE_MIC,
+        DEVICE_TYPE_ACCESSORY
     };
 
     AudioEffectService& audioEffectService_;

@@ -35,6 +35,7 @@ static const char* PIPE_PRIMARY_INPUT = "primary_input";
 static const char* PIPE_USB_ARM_OUTPUT = "usb_arm_output";
 static const char* PIPE_USB_ARM_INPUT = "usb_arm_input";
 static const char* PIPE_DP_OUTPUT = "dp_output";
+static const char* PIPE_ACCESSORY_INPUT = "accessory_input";
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 
 static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
@@ -97,6 +98,8 @@ static const std::map<std::pair<DeviceType, DeviceType>, EcType> DEVICE_TO_EC_TY
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
     {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_ACCESSORY, DEVICE_TYPE_SPEAKER}, EC_TYPE_DIFF_ADAPTER},
 };
 
 static std::string GetEncryptAddr(const std::string &addr)
@@ -153,7 +156,8 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
     }
 
     if (!moduleInfo.rate.empty() && !moduleInfo.format.empty() && !moduleInfo.channels.empty()) {
-        uint32_t rateValue, channelValue = 0;
+        uint32_t rateValue = 0;
+        uint32_t channelValue = 0;
         CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
             "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
         CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
@@ -372,6 +376,8 @@ std::string AudioEcManager::GetPipeNameByDeviceForEc(const std::string &role, co
             return PIPE_USB_ARM_OUTPUT;
         case DEVICE_TYPE_DP:
             return PIPE_DP_OUTPUT;
+        case DEVICE_TYPE_ACCESSORY:
+            return PIPE_ACCESSORY_INPUT;
         default:
             AUDIO_ERR_LOG("invalid device type %{public}d for role %{public}s", deviceType, role.c_str());
             return PIPE_PRIMARY_OUTPUT;
@@ -379,7 +385,7 @@ std::string AudioEcManager::GetPipeNameByDeviceForEc(const std::string &role, co
 }
 
 int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType,
-    std::shared_ptr<AdapterPipeInfo> pipeInfo)
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     std::string portName;
     if (role == ROLE_SOURCE) {
@@ -581,7 +587,8 @@ void AudioEcManager::UpdateArmModuleInfo(const string& address, const DeviceRole
     if (!deviceInfo.empty()) {
         GetUsbModuleInfo(deviceInfo, moduleInfo);
         if (isEcFeatureEnable_) {
-            uint32_t rateValue, channelValue = 0;
+            uint32_t rateValue = 0;
+            uint32_t channelValue = 0;
             CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
                 "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
             CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),

@@ -134,7 +134,8 @@ int32_t WakeupAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
 void WakeupAudioCaptureSource::DeInit(void)
 {
-    AudioXCollie audioXCollie("WakeupAudioCaptureSource::DeInit", TIMEOUT_SECONDS_5);
+    AudioXCollie audioXCollie("WakeupAudioCaptureSource::DeInit", TIMEOUT_SECONDS_5,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(wakeupMutex_);
@@ -297,6 +298,11 @@ int32_t WakeupAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &apps
 void WakeupAudioCaptureSource::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: WakeupSource\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
+}
+
+void WakeupAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 } // namespace AudioStandard

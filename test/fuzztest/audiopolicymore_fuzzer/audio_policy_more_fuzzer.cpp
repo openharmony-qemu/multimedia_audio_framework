@@ -50,22 +50,22 @@ static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 
-AudioPolicyServer* GetServerPtr()
+sptr<AudioPolicyServer> GetServerPtr()
 {
-    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit) {
-        server.OnStart();
-        server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-        server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server.OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
-        server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
         g_hasServerInit = true;
     }
-    return &server;
+    return server;
 }
 
 void AudioFuzzTestGetPermission()
@@ -254,7 +254,8 @@ void SendInterruptEventFuzzTest()
 void IsSameAppInShareModeFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    AudioInterrupt incomingInterrupt, activateInterrupt;
+    AudioInterrupt incomingInterrupt;
+    AudioInterrupt activateInterrupt;
     incomingInterrupt.contentType = GetData<ContentType>();
     incomingInterrupt.streamUsage = GetData<StreamUsage>();
     incomingInterrupt.audioFocusType.streamType = GetData<AudioStreamType>();

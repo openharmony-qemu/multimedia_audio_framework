@@ -1437,8 +1437,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     EXPECT_EQ(SUCCESS, ret);
 
     AppInfo appInfo = {};
-    std::unique_ptr<AudioCapturerPrivate> audioCapturerPrivate =
-        std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    std::shared_ptr<AudioCapturerPrivate> audioCapturerPrivate =
+        std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
 
     bool isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);

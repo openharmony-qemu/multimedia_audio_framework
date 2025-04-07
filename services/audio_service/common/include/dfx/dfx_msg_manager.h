@@ -21,6 +21,7 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
+#include <tuple>
 
 #include "dfx_stat.h"
 #include "dfx_utils.h"
@@ -39,6 +40,13 @@ struct DfxMessage {
     std::list<InterruptDfxInfo> interruptInfo{};
     std::list<CapturerDfxInfo> captureInfo{};
     bool ready = false;
+};
+
+enum class DfxMsgIndexType {
+    DFX_MSG_IDX_TYPE_RENDER_INFO,
+    DFX_MSG_IDX_TYPE_CAPTURE_INFO,
+    DFX_MSG_IDX_TYPE_INTERRUPT_INFO,
+    DFX_MSG_IDX_TYPE_INTERRUPT_EFFECT,
 };
 
 struct DfxReportResult {
@@ -100,6 +108,11 @@ private:
     void WriteRunningAppMsg(DfxMessage &msg, const std::unique_ptr<DfxReportResult> &result);
     void HandleToHiSysEvent(DfxMessage &msg);
     void WritePlayAudioStatsEvent(const std::unique_ptr<DfxReportResult> &result);
+    void UpdateAction(int32_t appUid, std::list<RenderDfxInfo> &renderInfo);
+    void UpdateAction(int32_t appUid, std::list<CapturerDfxInfo> &capturerInfo);
+    void UpdateAction(int32_t appUid, std::list<InterruptDfxInfo> &interruptInfo);
+    uint8_t& GetDfxIndexByType(int32_t appUid, DfxMsgIndexType type);
+    bool CheckIsInterrupted(InterruptStage stage);
 
     void LogDfxResult(const std::unique_ptr<DfxReportResult> &result);
 
@@ -116,6 +129,7 @@ private:
     std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
     std::condition_variable cvReachLimit_;
     std::mutex mutexLock_;
+    std::map<int32_t, std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>> indexesInfo_;
 
     enum {
         DFX_CHECK_REPORT_MSG = 0,

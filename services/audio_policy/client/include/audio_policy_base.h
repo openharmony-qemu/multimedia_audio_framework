@@ -47,13 +47,13 @@ public:
     virtual int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
         DeviceType deviceType, int32_t volumeFlag = 0) = 0;
 
-    virtual int32_t GetAppVolumeLevel(int32_t appUid) = 0;
+    virtual int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
-    virtual int32_t GetSelfAppVolumeLevel() = 0;
+    virtual int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel) = 0;
 
     virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
-    virtual bool IsAppVolumeMute(int32_t appUid, bool muted) = 0;
+    virtual int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute) = 0;
 
     virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) = 0;
 
@@ -89,11 +89,13 @@ public:
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter) = 0;
 
-    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = -1) = 0;
+    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID) = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
     virtual DeviceType GetActiveOutputDevice() = 0;
+
+    virtual uint16_t GetDmDeviceType() = 0;
 
     virtual DeviceType GetActiveInputDevice() = 0;
 
@@ -370,7 +372,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
 
     virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = -1) = 0;
+        const int32_t pid = INVALID_PID) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() = 0;
 
@@ -402,7 +404,7 @@ public:
     virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
     virtual int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID) = 0;
 
     virtual int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) = 0;
 

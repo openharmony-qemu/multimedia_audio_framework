@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_device_parser.h"
 #include "audio_policy_utils.h"
+#include "audio_bluetooth_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -415,6 +416,8 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
         capturePublicDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECOGNITION, "capture recognition privacy device",
+        reconCapturePrivacyDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_NEGATIVE, INPUT_DEVICE, MEDIA, "capture media negative device",
         reconCapturePrivacyDevices_);
 }
 

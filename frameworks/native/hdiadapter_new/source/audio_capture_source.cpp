@@ -47,7 +47,7 @@ AudioCaptureSource::~AudioCaptureSource()
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("In, attr's adapter name: %{public}s", adapterNameCase_.c_str());
+    AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(statusMutex_);
     if (attr.sourceType == SOURCE_TYPE_MIC_REF || attr.sourceType == SOURCE_TYPE_EC) {
         InitEcOrMicRefAttr(attr);
@@ -79,7 +79,8 @@ void AudioCaptureSource::DeInit(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     Trace trace("AudioCaptureSource::DeInit");
-    AudioXCollie audioXCollie("AudioCaptureSource::DeInit", TIMEOUT_SECONDS_5);
+    AudioXCollie audioXCollie("AudioCaptureSource::DeInit", TIMEOUT_SECONDS_5,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     AUDIO_INFO_LOG("in");
     sourceInited_ = false;
@@ -669,6 +670,8 @@ uint32_t AudioCaptureSource::GetUniqueId(void) const
 {
     if (halName_ == HDI_ID_INFO_USB) {
         return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_USB);
+    } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_ACCESSORY);
     }
     return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
 }
@@ -756,6 +759,12 @@ void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc
     deviceDesc.pins = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
+    } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+            deviceDesc.pins = PIN_IN_PENCIL;
+        } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+            deviceDesc.pins = PIN_IN_UWB;
+        }
     }
     deviceDesc.desc = const_cast<char *>(address_.c_str());
 }
@@ -767,6 +776,12 @@ void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, A
     AudioPortPin pin = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
         pin = PIN_IN_USB_HEADSET;
+    } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+            pin = PIN_IN_PENCIL;
+        } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+            pin = PIN_IN_UWB;
+        }
     }
     AUDIO_DEBUG_LOG("pin: %{public}d", pin);
     sceneDesc.desc.pins = pin;
@@ -825,8 +840,11 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     int32_t streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
-        attr_.adapterName, inputDevice, streamId, inputType);
+        attr_.adapterName.c_str(), inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(adapterNameCase_, inputDevice, streamId, inputType);
+    if (inputDevice == DEVICE_TYPE_ACCESSORY) {
+        SetAudioRouteInfoForEnhanceChain();
+    }
     return ret;
 }
 
@@ -1070,6 +1088,15 @@ void AudioCaptureSource::DumpData(char *frame, uint64_t &replyBytes)
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
             static_cast<void*>(frame), replyBytes);
     }
+}
+
+void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    dmDeviceType_ = dmDeviceType;
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    deviceManager->SetDmDeviceType(dmDeviceType);
 }
 
 } // namespace AudioStandard

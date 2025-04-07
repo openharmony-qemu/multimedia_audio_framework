@@ -135,6 +135,7 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
     if (capturerOptions.capturerInfo.capturerFlags != 0) {
         capturerOptions.capturerInfo.capturerFlags = 0;
     }
+    capturerOptions.capturerInfo.recorderType = RECORDER_TYPE_ARKTS_AUDIO_RECORDER;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     napiCapturer->audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
 #else
@@ -1118,7 +1119,7 @@ napi_value NapiAudioCapturer::RegisterPositionCallback(napi_env env, napi_value 
     int64_t markPosition = 0;
     NapiParamUtils::GetValueInt64(env, markPosition, argv[PARAM1]);
 
-    AUDIO_INFO_LOG("NapiAudioCapturer:RegisterPositionCallback start! %{public}lld", markPosition);
+    AUDIO_INFO_LOG("NapiAudioCapturer:RegisterPositionCallback start!");
     if (markPosition > 0) {
         napiCapturer->positionCbNapi_ = std::make_shared<NapiCapturerPositionCallback>(env);
         CHECK_AND_RETURN_RET_LOG(napiCapturer->positionCbNapi_ != nullptr,

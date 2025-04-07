@@ -34,7 +34,6 @@
 #include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "securec.h"
-#include "xcollie/watchdog.h"
 
 #include "audio_manager_base.h"
 #include "audio_process_cb_stub.h"
@@ -51,8 +50,6 @@ namespace AudioStandard {
 namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
-constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
-constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 }
@@ -180,8 +177,6 @@ private:
     void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost);
 
     void DoFadeInOut(uint64_t &curWritePos);
-    void WatchingRecordProcessCallbackFuc();
-    void ProcessRemoveWatchdog(const std::string &message, const std::int32_t sessionId);
 
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
@@ -252,7 +247,6 @@ private:
     std::atomic<bool> startFadeout_ = false; // true-fade out when pause or stop stream
 
     sptr<ProcessCbImpl> processCbImpl_ = nullptr;
-    std::atomic_bool recordProcessCallbackFucThreadStatus_ { false };
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -679,7 +673,6 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
             AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
             strongProcess->processProxy_->RegisterThreadPriority(gettid(),
                 AudioSystemManager::GetInstance()->GetSelfBundleName(strongProcess->processConfig_.appInfo.appUid));
-            strongProcess->WatchingRecordProcessCallbackFuc(); // add watchdog
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
         }
@@ -695,8 +688,6 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
             keepRunning = strongProcess->RecordProcessCallbackFuc(curReadPos, wakeUpTime, clientReadCost);
         }
         if (strongProcess != nullptr) {
-            strongProcess->ProcessRemoveWatchdog("WatchingRecordProcessCallbackFuc",
-                strongProcess->sessionId_); // Remove watchdog
             AUDIO_INFO_LOG("Callback loop of session %{public}u end", strongProcess->sessionId_);
         }
     });
@@ -1258,8 +1249,8 @@ void AudioProcessInClientInner::UpdateHandleInfo(bool isAysnc, bool resetReadWri
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RequestHandleInfo failed ret:%{public}d", ret);
     audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
 
-    bool isSuccess = handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
-    if (!isSuccess) {
+    CheckPosTimeRes res = handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
+    if (res == CHECK_FAILED) {
         handleTimeModel_.ResetFrameStamp(serverHandlePos, serverHandleTime);
     }
 
@@ -1443,32 +1434,6 @@ bool AudioProcessInClientInner::KeepLoopRunning()
     return false;
 }
 
-void AudioProcessInClientInner::ProcessRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
-{
-    std::string watchDogMessage = message;
-    watchDogMessage += std::to_string(sessionId);
-    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
-    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
-}
-
-void AudioProcessInClientInner::WatchingRecordProcessCallbackFuc()
-{
-    recordProcessCallbackFucThreadStatus_ = true;
-    auto taskFunc = [this]() {
-        if (recordProcessCallbackFucThreadStatus_) {
-            AUDIO_DEBUG_LOG("Set recordProcessCallbackFucThreadStatus_ to false");
-            recordProcessCallbackFucThreadStatus_ = false;
-        } else {
-            AUDIO_INFO_LOG("watchdog happened");
-        }
-    };
-    std::string watchDogMessage = "WatchingRecordProcessCallbackFuc";
-    watchDogMessage += std::to_string(sessionId_);
-    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
-    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
-        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
-}
-
 bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t &wakeUpTime,
     int64_t clientReadCost)
 {
@@ -1476,7 +1441,6 @@ bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, i
         return false;
     }
     if (!KeepLoopRunning()) {
-        recordProcessCallbackFucThreadStatus_ = true;
         return true;
     }
     threadStatus_ = INRUNNING;
@@ -1484,7 +1448,6 @@ bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, i
     if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
         wakeUpTime = ClockTime::GetCurNano();
         needReSyncPosition_ = false;
-        recordProcessCallbackFucThreadStatus_ = true;
         return true;
     }
     int64_t curTime = ClockTime::GetCurNano();
@@ -1514,7 +1477,6 @@ bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, i
         AUDIO_WARNING_LOG("%{public}s wakeUpTime is too late...", __func__);
         ClockTime::RelativeSleep(spanSizeInMs_ * ONE_MILLISECOND_DURATION);
     }
-    recordProcessCallbackFucThreadStatus_ = true;
     return true;
 }
 
@@ -1883,23 +1845,27 @@ int32_t AudioProcessInClientInner::SetSilentModeAndMixWithOthers(bool on)
 
 void AudioProcessInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     audioBuffer_->GetRestoreInfo(restoreInfo);
     return;
 }
 
 void AudioProcessInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
     audioBuffer_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus AudioProcessInClientInner::CheckRestoreStatus()
 {
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->CheckRestoreStatus();
 }
 
 RestoreStatus AudioProcessInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->SetRestoreStatus(restoreStatus);
 }
 } // namespace AudioStandard

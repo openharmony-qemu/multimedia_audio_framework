@@ -43,6 +43,7 @@ using namespace OHOS::AudioStandard;
 const uint32_t AUDIO_QOS_LEVEL = 7;
 const int32_t DEFAULT_QOS_LEVEL = -1;
 const uint32_t REPORTDATA_TIMEOUT = 8;
+const int32_t HIGH_LEVEL_THREAD_PRIORITY = 4;
 static std::mutex g_rssMutex;
 static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
@@ -63,7 +64,8 @@ void ConfigPayload(uint32_t pid, uint32_t tid, const char *bundleName, int32_t q
 void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportData with qos level 7, pid " + std::to_string(pid) +
-        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT);
+        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace ("Rss::ReportData with qos level 7");
     AUDIO_INFO_LOG("Report tid %{public}u", tid);
     std::unordered_map<std::string, std::string> mapPayload;
@@ -74,7 +76,8 @@ void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName)
 void UnscheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportData with qos level -1, pid " + std::to_string(pid) +
-        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT);
+        ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace ("Rss::ReportData with qos level -1");
     std::unordered_map<std::string, std::string> mapPayload;
     ConfigPayload(pid, tid, bundleName, DEFAULT_QOS_LEVEL, mapPayload);
@@ -109,12 +112,41 @@ void OnAddResSchedService(uint32_t audioServerPid)
         ScheduleReportData(audioServerPid, tid, "audio_server");
     }
 }
+
+bool SetEndpointThreadPriority()
+{
+    struct sched_param param = {0};
+    // priority 50 + 4 = 54
+    param.sched_priority = HIGH_LEVEL_THREAD_PRIORITY;
+    auto res = sched_setscheduler(0, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
+    if (res != 0) {
+        AUDIO_ERR_LOG("Set thread 50 + %{public}d priority fail : %{public}d", param.sched_priority, res);
+        return false;
+    }
+    AUDIO_INFO_LOG("Set thread 50 + %{public}d priority success", param.sched_priority);
+    return true;
+}
+
+bool ResetEndpointThreadPriority()
+{
+    struct sched_param param = {0};
+    param.sched_priority = 0;
+    auto res = sched_setscheduler(0, SCHED_OTHER, &param);
+    if (res != 0) {
+        AUDIO_ERR_LOG("Reset thread priority fail : %{public}d", res);
+        return false;
+    }
+    AUDIO_INFO_LOG("Reset thread priority success");
+    return true;
+};
 #else
 void ScheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 void ScheduleThreadInServer(uint32_t pid, uint32_t tid) {};
 void UnscheduleThreadInServer(uint32_t tid) {};
 void OnAddResSchedService(uint32_t audioServerPid) {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
+bool SetEndpointThreadPriority() { return false; };
+bool ResetEndpointThreadPriority() { return false; };
 #endif
 
 #ifdef __cplusplus

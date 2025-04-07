@@ -69,6 +69,7 @@ constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
+constexpr int32_t UID_DMSDP_SA = 7071;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
@@ -104,7 +105,8 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
     UID_THPEXTRA_SA,
-    UID_TELEPHONY_SA // used in distributed communication call
+    UID_TELEPHONY_SA, // used in distributed communication call
+    UID_DMSDP_SA
 };
 
 const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
@@ -400,6 +402,9 @@ bool PermissionUtil::VerifyIsAudio()
 
 bool PermissionUtil::VerifyIsSystemApp()
 {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    return true;
+#endif
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
@@ -410,6 +415,9 @@ bool PermissionUtil::VerifyIsSystemApp()
 
 bool PermissionUtil::VerifySelfPermission()
 {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    return true;
+#endif
     Security::AccessToken::FullTokenID selfToken = IPCSkeleton::GetSelfTokenID();
 
     auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(selfToken));
@@ -687,7 +695,8 @@ int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* 
 
 bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::mutex> lock(g_recordMapMutex);
     if (g_tokenIdRecordMap.count(targetTokenId)) {
         if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
@@ -716,7 +725,8 @@ bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t session
 
 bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStop", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStop", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::unique_lock<std::mutex> lock(g_recordMapMutex);
     if (!g_tokenIdRecordMap.count(targetTokenId)) {
         AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
@@ -1781,6 +1791,21 @@ void AudioDump::SetVersionType(const std::string& versionType)
 std::string AudioDump::GetVersionType()
 {
     return versionType_;
+}
+
+int32_t CheckSupportedParams(const AudioStreamInfo &info)
+{
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_SAMPLING_RATES, info.samplingRate),
+        ERR_INVALID_PARAM, "samplingRate not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(RENDERER_SUPPORTED_CHANNELS, info.channels),
+        ERR_INVALID_PARAM, "channels not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_FORMATS, info.format),
+        ERR_INVALID_PARAM, "format not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_ENCODING_TYPES, info.encoding),
+        ERR_INVALID_PARAM, "encoding not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(RENDERER_SUPPORTED_CHANNELLAYOUTS, info.channelLayout),
+        ERR_INVALID_PARAM, "channelLayout not supported");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

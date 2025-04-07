@@ -503,6 +503,24 @@ int32_t AudioStreamCollector::UpdateRendererStreamInternal(AudioStreamChangeInfo
     return ERROR;
 }
 
+int32_t AudioStreamCollector::UpdateCapturerStreamInternal(AudioStreamChangeInfo &streamChangeInfo)
+{
+    // Update the capturer internal info in audioCapturerChangeInfos_
+    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+        AudioCapturerChangeInfo audioCapturerChangeInfo = **it;
+        if ((*it)->clientUID == streamChangeInfo.audioCapturerChangeInfo.clientUID &&
+            (*it)->sessionId == streamChangeInfo.audioCapturerChangeInfo.sessionId) {
+            AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", (*it)->clientUID, (*it)->sessionId);
+            (*it)->prerunningState = streamChangeInfo.audioCapturerChangeInfo.prerunningState;
+            return SUCCESS;
+        }
+    }
+
+    AUDIO_ERR_LOG("Not found clientUid:%{public}d sessionId:%{public}d",
+        streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.sessionId);
+    return ERROR;
+}
+
 int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
@@ -759,7 +777,7 @@ int32_t AudioStreamCollector::UpdateTrackerInternal(AudioMode &mode, AudioStream
     if (mode == AUDIO_MODE_PLAYBACK) {
         return UpdateRendererStreamInternal(streamChangeInfo);
     }
-    return SUCCESS;
+    return UpdateCapturerStreamInternal(streamChangeInfo);
 }
 
 AudioStreamType AudioStreamCollector::GetStreamType(ContentType contentType, StreamUsage streamUsage)
@@ -1066,6 +1084,22 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
         }
     }
     return result;
+}
+
+bool AudioStreamCollector::CheckVoiceCallActive(int32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo->rendererState != RENDERER_PREPARED) {
+            continue;
+        }
+        if ((changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+            changeInfo->sessionId != sessionId) {
+            AUDIO_INFO_LOG("Find VoiceCall Stream : sessionid: %{public}d , No need mute", changeInfo->sessionId);
+            return false;
+        }
+    }
+    return true;
 }
 
 int32_t AudioStreamCollector::GetRunningStream(AudioStreamType certainType, int32_t certainChannelCount)
@@ -1494,17 +1528,17 @@ bool AudioStreamCollector::ChangeVoipCapturerStreamToNormal()
     return count > 1;
 }
 
-bool AudioStreamCollector::HasVoipRendererStream()
+bool AudioStreamCollector::HasVoipRendererStream(bool isFirstCreate)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     // judge stream original flage is AUDIO_FLAG_VOIP_FAST
-    bool hasVoip = std::any_of(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+    int count = std::count_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
         [](const auto &changeInfo) {
             return changeInfo->rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST;
         });
 
-    AUDIO_INFO_LOG("Has Fast Voip stream : %{public}d", hasVoip);
-    return hasVoip;
+    AUDIO_INFO_LOG("Has Fast Voip stream count : %{public}d", count);
+    return isFirstCreate ? count > 0 : count > 1;
 }
 
 bool AudioStreamCollector::HasRunningRendererStream()
@@ -1533,6 +1567,33 @@ bool AudioStreamCollector::HasRunningRecognitionCapturerStream()
 
     AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
     return hasRunningRecognitionCapturerStream;
+}
+
+// Check if media is currently playing
+bool AudioStreamCollector::IsMediaPlaying()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo->rendererState != RENDERER_RUNNING) {
+            continue;
+        }
+        AudioStreamType streamType = GetStreamType((changeInfo->rendererInfo).contentType,
+        (changeInfo->rendererInfo).streamUsage);
+        switch (streamType) {
+            case STREAM_MUSIC:
+            case STREAM_MEDIA:
+            case STREAM_MOVIE:
+            case STREAM_GAME:
+            case STREAM_SPEECH:
+            case STREAM_NAVIGATION:
+            case STREAM_CAMCORDER:
+            case STREAM_VOICE_MESSAGE:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

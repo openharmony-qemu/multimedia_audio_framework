@@ -257,7 +257,7 @@ int32_t AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForAllStream(DeviceType de
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     {
         AudioXCollie audioXCollie("AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForAllStream",
-            BLUETOOTH_TIME_OUT_SECONDS);
+            BLUETOOTH_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         std::vector<int32_t> stopPlayingStream(0);
         for (auto &changeInfo : audioRendererChangeInfos) {
             if (changeInfo->rendererState != RENDERER_RUNNING) {
@@ -526,6 +526,7 @@ std::string AudioA2dpOffloadManager::GetVolumeGroupType(DeviceType deviceType)
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_ACCESSORY:
             volumeGroupType = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:

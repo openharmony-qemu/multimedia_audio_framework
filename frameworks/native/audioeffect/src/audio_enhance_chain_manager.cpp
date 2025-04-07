@@ -306,7 +306,6 @@ int32_t AudioEnhanceChainManager::ParseSceneKeyCode(const uint64_t sceneKeyCode,
     std::string &capturerDeviceStr, std::string &rendererDeviceStr)
 {
     uint32_t sceneCode = (sceneKeyCode & SCENE_TYPE_MASK) >> SCENE_TYPE_OFFSET;
-    AUDIO_INFO_LOG("sceneKeyCode = %{public}" PRIu64 ", sceneCode = %{public}u", sceneKeyCode, sceneCode);
     AudioEnhanceScene scene = static_cast<AudioEnhanceScene>(sceneCode);
     DeviceType capturerDevice = DEVICE_TYPE_INVALID;
     const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
@@ -328,7 +327,8 @@ int32_t AudioEnhanceChainManager::ParseSceneKeyCode(const uint64_t sceneKeyCode,
         AUDIO_ERR_LOG("can't find captureId[%{public}u] in captureIdToDeviceMap_", captureId);
         return ERROR;
     }
-
+    AUDIO_INFO_LOG("sceneKeyCode = %{public}" PRIu64 ", sceneCode = %{public}u , capturerDevice = %{public}d",
+        sceneKeyCode, sceneCode, capturerDevice);
     DeviceType rendererDevice = renderIdToDeviceMap_[renderId];
 
     auto deviceItem = supportDeviceType.find(capturerDevice);

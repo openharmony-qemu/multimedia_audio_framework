@@ -34,7 +34,6 @@ namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
-class AudioRendererConcurrencyCallbackImpl;
 
 class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
 public:
@@ -355,26 +354,6 @@ private:
     void RestoreTheadLoop();
 
     std::atomic<int32_t> taskCount_ = 0;
-};
-
-class AudioRendererConcurrencyCallbackImpl : public AudioConcurrencyCallback {
-public:
-    explicit AudioRendererConcurrencyCallbackImpl();
-    virtual ~AudioRendererConcurrencyCallbackImpl();
-    void OnConcedeStream() override;
-    void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        renderer_ = rendererObj;
-    }
-    void UnsetAudioRendererObj()
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        renderer_ = nullptr;
-    }
-private:
-    AudioRendererPrivate *renderer_ = nullptr;
-    std::mutex mutex_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

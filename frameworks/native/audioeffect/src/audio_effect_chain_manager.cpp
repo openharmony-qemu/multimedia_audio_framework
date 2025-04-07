@@ -298,7 +298,6 @@ void AudioEffectChainManager::ConstructEffectChainMgrMaps(std::vector<EffectChai
     // Construct effectPropertyMap_ that stores effect's property
     effectPropertyMap_ = effectChainManagerParam.effectDefaultProperty;
     defaultPropertyMap_ = effectChainManagerParam.effectDefaultProperty;
-    LoadEffectProperties();
 }
 
 bool AudioEffectChainManager::CheckAndAddSessionID(const std::string &sessionID)
@@ -317,7 +316,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
     return CreateAudioEffectChainDynamicInner(sceneType);
 }
 
-int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode)
+int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey), ERROR,
@@ -342,7 +341,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
         effectChain = effectNone;
     }
 
-    ConfigureAudioEffectChain(audioEffectChain, effectMode);
+    ConfigureAudioEffectChain(audioEffectChain, effectMode, sceneType);
     bool exists = std::find(AUDIO_PERSISTENCE_SCENE.begin(), AUDIO_PERSISTENCE_SCENE.end(), sceneType) !=
         AUDIO_PERSISTENCE_SCENE.end();
     if (exists && !hasLoadedEffectProperties_) {
@@ -376,7 +375,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
 }
 
 void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
-    const std::string &effectMode)
+    const std::string &effectMode, std::string &sceneType)
 {
     audioEffectChain->SetEffectMode(effectMode);
     audioEffectChain->SetExtraSceneType(extraSceneType_);
@@ -385,6 +384,11 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
     audioEffectChain->SetLidState(lidState_);
     audioEffectChain->SetFoldState(foldState_);
+    std::string maxSession = std::to_string(maxSessionID_);
+    if (sessionIDToEffectInfoMap_.count(maxSession)) {
+        sceneType = sessionIDToEffectInfoMap_[maxSession].sceneType;
+        audioEffectChain->SetStreamUsage(sessionIDToEffectInfoMap_[maxSession].streamUsage);
+    }
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)
@@ -506,18 +510,18 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
         }
         auto audioEffectChain = it->second;
         float volumeMax = audioEffectChain->GetCurrVolume();
-        if ((static_cast<int32_t>(audioEffectChain->GetFinalVolume() * MAX_UINT_VOLUME_NUM) !=
-            static_cast<int32_t>(volumeMax * MAX_UINT_VOLUME_NUM)) &&
-            audioEffectChain->GetFinalVolumeState() == true) {
-            audioEffectChain->SetFinalVolume(volumeMax);
-            int32_t ret = audioEffectChain->UpdateEffectParam();
-            if (ret != 0) {
-                AUDIO_ERR_LOG("set ap volume failed, ret: %{public}d", ret);
-                continue;
-            }
-            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}f",
-                it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
+        if (static_cast<int32_t>(audioEffectChain->GetFinalVolume() * MAX_UINT_VOLUME_NUM) ==
+            static_cast<int32_t>(volumeMax * MAX_UINT_VOLUME_NUM)) {
             audioEffectChain->SetFinalVolumeState(false);
+        } else {
+            if (audioEffectChain->GetFinalVolumeState() == true) {
+                audioEffectChain->SetFinalVolume(volumeMax);
+                int32_t ret = audioEffectChain->UpdateEffectParam();
+                CHECK_AND_CONTINUE_LOG(ret == 0, "set ap volume failed, ret: %{public}d", ret);
+                AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, finalVolume changed to %{public}f",
+                    it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
+                audioEffectChain->SetFinalVolumeState(false);
+            }
         }
     }
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {

@@ -729,5 +729,118 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_043, TestSize.Level1)
     int32_t result = audioEnhanceChain->SetPropertyToHandle(handle, property);
     EXPECT_EQ(SUCCESS, result);
 }
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: GetAlgoBufferSize_001
+* @tc.desc  : Test AudioEnhanceChain::GetAlgoBufferSize()
+*/
+HWTEST(AudioEnhanceChainUnitTest, GetAlgoBufferSize_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+
+    audioEnhanceChain->algoSupportedConfig_.sampleRate = 0;
+    uint32_t ret = audioEnhanceChain->GetAlgoBufferSize();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: GetAlgoBufferSizeEc_001
+* @tc.desc  : Test AudioEnhanceChain::GetAlgoBufferSizeEc()
+*/
+HWTEST(AudioEnhanceChainUnitTest, GetAlgoBufferSizeEc_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+
+    audioEnhanceChain->algoSupportedConfig_.sampleRate = 0;
+    uint32_t ret = audioEnhanceChain->GetAlgoBufferSizeEc();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: GetAlgoBufferSizeMicRef_001
+* @tc.desc  : Test AudioEnhanceChain::GetAlgoBufferSizeMicRef()
+*/
+HWTEST(AudioEnhanceChainUnitTest, GetAlgoBufferSizeMicRef_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+
+    audioEnhanceChain->algoSupportedConfig_.sampleRate = 0;
+    uint32_t ret = audioEnhanceChain->GetAlgoBufferSizeMicRef();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: IsDefaultChain_001
+* @tc.desc  : Test AudioEnhanceChain::IsDefaultChain()
+*/
+HWTEST(AudioEnhanceChainUnitTest, IsDefaultChain_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+
+    bool ret = audioEnhanceChain->IsDefaultChain();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: ConvertFormat_001
+* @tc.desc  : Test AudioEnhanceChain::ConvertFormat()
+*/
+HWTEST(AudioEnhanceChainUnitTest, ConvertFormat_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
+    std::string sceneType = "SCENE_VOIP_UP";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    uint32_t format = 2;
+
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    EXPECT_NE(audioEnhanceChain, nullptr);
+
+    AudioSampleFormat ret = audioEnhanceChain->ConvertFormat(format);
+    EXPECT_EQ(ret, SAMPLE_S16LE);
+
+    format = 10;
+    ret = audioEnhanceChain->ConvertFormat(format);
+    EXPECT_EQ(ret, INVALID_WIDTH);
+}
 }
 }

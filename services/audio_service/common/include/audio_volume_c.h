@@ -22,6 +22,12 @@
 extern "C" {
 #endif
 
+struct VolumeValues {
+    float volumeSystem;
+    float volumeStream;
+    float volumeApp;
+};
+
 enum FadePauseState {
     NO_FADE,
     DO_FADE,
@@ -39,7 +45,7 @@ enum FadeStrategy {
     FADE_STRATEGY_SHORTER
 };
 
-float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass);
+float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass, struct VolumeValues *volumes);
 
 float GetStreamVolume(uint32_t sessionId);
 

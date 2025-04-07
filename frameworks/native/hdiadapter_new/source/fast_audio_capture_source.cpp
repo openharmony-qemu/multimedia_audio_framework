@@ -518,7 +518,7 @@ int32_t FastAudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     int32_t streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, input :%{public}d",
-        attr_.adapterName, inputDevice, streamId, inputType);
+        attr_.adapterName.c_str(), inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(attr_.adapterName, inputDevice, streamId, inputType);
     return ret;
 }
@@ -528,6 +528,7 @@ int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
     uint32_t totalBufferInMs = 40; // 40: 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency
     uint32_t reqBufferFrameSize = totalBufferInMs * (attr_.sampleRate / SECOND_TO_MILLISECOND);
     struct AudioMmapBufferDescriptor desc;
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
 
     int32_t ret = audioCapture_->ReqMmapBuffer(audioCapture_, reqBufferFrameSize, &desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "request mmap buffer fail, ret: %{public}d", ret);
@@ -589,6 +590,11 @@ int32_t FastAudioCaptureSource::CheckPositionTime(void)
     int32_t ret = audioCapture_->Stop(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "stop fail, ret: %{public}d", ret);
     return ERR_OPERATION_FAILED;
+}
+
+void FastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 } // namespace AudioStandard

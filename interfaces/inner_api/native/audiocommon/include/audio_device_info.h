@@ -209,6 +209,7 @@ inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_USB_HEADSET,
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
     DeviceType::DEVICE_TYPE_FILE_SOURCE,
+    DeviceType::DEVICE_TYPE_ACCESSORY,
 };
 
 inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
@@ -220,6 +221,12 @@ inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_
         return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
     }
 }
+
+enum DmDeviceType {
+    DM_DEVICE_TYPE_DEFAULT = 0,
+    DM_DEVICE_TYPE_PENCIL = 0xA07,
+    DM_DEVICE_TYPE_UWB = 0x06C,
+};
 
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_EARPIECE,
@@ -234,6 +241,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_FILE_SINK,
     DeviceType::DEVICE_TYPE_REMOTE_CAST,
     DeviceType::DEVICE_TYPE_HDMI,
+    DeviceType::DEVICE_TYPE_LINE_DIGITAL,
     DeviceType::DEVICE_TYPE_REMOTE_DAUDIO,
 };
 

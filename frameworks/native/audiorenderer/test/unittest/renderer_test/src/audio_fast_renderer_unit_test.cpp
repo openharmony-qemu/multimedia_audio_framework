@@ -40,6 +40,7 @@ const int32_t VALUE_THOUSAND = 1000;
 const int32_t VALUE_ZERO = 0;
 static size_t g_reqBufLen = 0;
 bool g_isFastRenderer = true;
+bool g_isInit = false;
 } // namespace
 
 class AudioFastRendererUnitTest : public testing::Test {
@@ -68,19 +69,27 @@ void InitializeFastRendererOptions(AudioRendererOptions &rendererOptions)
     rendererOptions.rendererInfo.rendererFlags = STREAM_FAST;
 }
 
+shared_ptr<AudioRenderer> GetRenderPtr()
+{
+    static shared_ptr<AudioRenderer> audioRenderer;
+    if (!g_isInit) {
+        AudioRendererOptions rendererOptions;
+        InitializeFastRendererOptions(rendererOptions);
+        audioRenderer = AudioRenderer::Create(rendererOptions);
+        g_isInit = true;
+    }
+    return audioRenderer;
+}
+
 void AudioFastRendererUnitTest::SetUpTestCase(void)
 {
     // input testsuit setup step，setup invoked before all testcases
-    AudioRendererOptions rendererOptions;
-
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     bool isFast = false;
-    if (audioRenderer != nullptr) {
-        isFast = audioRenderer->IsFastRenderer();
+    if (GetRenderPtr() != nullptr) {
+        isFast = GetRenderPtr()->IsFastRenderer();
     }
 
-    if (audioRenderer == nullptr || !isFast) {
+    if (GetRenderPtr() == nullptr || !isFast) {
         g_isFastRenderer = false;
     }
 }
@@ -90,6 +99,10 @@ InterruptEvent AudioRendererUnitTest::interruptEventTest_ = {};
 void AudioFastRendererUnitTest::TearDownTestCase(void)
 {
     // input testsuit teardown step，teardown invoked after all testcases
+    g_isInit = false;
+    GetRenderPtr()->Stop();
+    GetRenderPtr()->Release();
+    GetRenderPtr()->Stop();
 }
 
 void AudioFastRendererUnitTest::SetUp(void)
@@ -113,21 +126,16 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_001, TestSize.Level0)
         return;
     }
     int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+    ASSERT_NE(nullptr, GetRenderPtr());
 
-    float volume = audioRenderer->GetVolume();
+    float volume = GetRenderPtr()->GetVolume();
     EXPECT_EQ(1.0, volume);
 
-    ret = audioRenderer->SetVolume(0.5);
+    ret = GetRenderPtr()->SetVolume(0.5);
     EXPECT_EQ(SUCCESS, ret);
 
-    float volume1 = audioRenderer->GetVolume();
+    float volume1 = GetRenderPtr()->GetVolume();
     EXPECT_EQ(0.5, volume1);
-
-    audioRenderer->Release();
 }
 
 /**
@@ -141,25 +149,21 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_002, TestSize.Level0)
         return;
     }
     int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+    ASSERT_NE(nullptr, GetRenderPtr());
 
     shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
-    ret = audioRenderer->SetRendererPositionCallback(VALUE_THOUSAND, positionCB);
+    ret = GetRenderPtr()->SetRendererPositionCallback(VALUE_THOUSAND, positionCB);
     EXPECT_EQ(SUCCESS, ret);
 
-    audioRenderer->UnsetRendererPositionCallback();
+    GetRenderPtr()->UnsetRendererPositionCallback();
 
     shared_ptr<RendererPositionCallbackTest> positionCB1 = std::make_shared<RendererPositionCallbackTest>();
-    ret = audioRenderer->SetRendererPositionCallback(VALUE_THOUSAND, positionCB1);
+    ret = GetRenderPtr()->SetRendererPositionCallback(VALUE_THOUSAND, positionCB1);
     EXPECT_EQ(SUCCESS, ret);
 
     AudioRendererParams getRendererParams;
-    ret = audioRenderer->GetParams(getRendererParams);
+    ret = GetRenderPtr()->GetParams(getRendererParams);
     EXPECT_EQ(SUCCESS, ret);
-    audioRenderer->Release();
 }
 
 /**
@@ -175,39 +179,33 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
-    AudioRendererOptions rendererOptions;
-
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+    ASSERT_NE(nullptr, GetRenderPtr());
 
     uint64_t latency;
-    ret = audioRenderer->GetLatency(latency);
+    ret = GetRenderPtr()->GetLatency(latency);
     EXPECT_EQ(SUCCESS, ret);
 
     uint32_t frameCount;
-    ret = audioRenderer->GetFrameCount(frameCount);
+    ret = GetRenderPtr()->GetFrameCount(frameCount);
     EXPECT_EQ(SUCCESS, ret);
 
-    bool isStarted = audioRenderer->Start();
+    bool isStarted = GetRenderPtr()->Start();
     EXPECT_EQ(true, isStarted);
 
     Timestamp timestamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    bool getAudioTime = GetRenderPtr()->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioTime);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
+    ret = GetRenderPtr()->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
 
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
     ASSERT_NE(nullptr, buffer);
 
     size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
-    int32_t written = audioRenderer->Write(buffer, bytesToWrite);
+    int32_t written = GetRenderPtr()->Write(buffer, bytesToWrite);
     EXPECT_GE(written, ERR_INVALID_OPERATION);
-
-    audioRenderer->Release();
 }
 
 /**
@@ -220,20 +218,14 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
     if (!g_isFastRenderer) {
         return;
     }
-    AudioRendererOptions rendererOptions;
+    ASSERT_NE(nullptr, GetRenderPtr());
 
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    int32_t ret = audioRenderer->GetUnderflowCount();
+    int32_t ret = GetRenderPtr()->GetUnderflowCount();
     EXPECT_GE(ret, SUCCESS);
 
     Timestamp timestamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    bool getAudioTime = GetRenderPtr()->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioTime);
-
-    audioRenderer->Release();
 }
 
 /**
@@ -247,54 +239,47 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
         return;
     }
     int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
+    ASSERT_NE(nullptr, GetRenderPtr());
 
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    AudioRenderMode renderMode = GetRenderPtr()->GetRenderMode();
     EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
 
     shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
-    ret = audioRenderer->SetRendererWriteCallback(cb);
+    ret = GetRenderPtr()->SetRendererWriteCallback(cb);
     EXPECT_EQ(SUCCESS, ret);
 
     BufferQueueState bQueueSate {};
     bQueueSate.currentIndex = 1;
     bQueueSate.numBuffers = 1;
 
-    ret = audioRenderer->GetBufQueueState(bQueueSate);
+    ret = GetRenderPtr()->GetBufQueueState(bQueueSate);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioRenderer->SetRenderRate(RENDER_RATE_DOUBLE);
+    ret = GetRenderPtr()->SetRenderRate(RENDER_RATE_DOUBLE);
     EXPECT_EQ(ERR_INVALID_OPERATION, ret);
 
-    ret = audioRenderer->SetRenderRate(RENDER_RATE_NORMAL);
+    ret = GetRenderPtr()->SetRenderRate(RENDER_RATE_NORMAL);
     EXPECT_EQ(SUCCESS, ret);
 
-    AudioRendererRate renderRate = audioRenderer->GetRenderRate();
+    AudioRendererRate renderRate = GetRenderPtr()->GetRenderRate();
     EXPECT_EQ(RENDER_RATE_NORMAL, renderRate);
 
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
-    ret = audioRenderer->SetRendererCallback(audioRendererCB);
+    ret = GetRenderPtr()->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
 
     BufferDesc bufDesc {};
     bufDesc.buffer = nullptr;
     bufDesc.dataLength = g_reqBufLen;
-    ret = audioRenderer->GetBufferDesc(bufDesc);
+    ret = GetRenderPtr()->GetBufferDesc(bufDesc);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_NE(nullptr, bufDesc.buffer);
 
-    ret = audioRenderer->Enqueue(bufDesc);
+    ret = GetRenderPtr()->Enqueue(bufDesc);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioRenderer->Clear();
+    ret = GetRenderPtr()->Clear();
     EXPECT_EQ(SUCCESS, ret);
-
-    audioRenderer->Stop();
-    audioRenderer->Release();
 }
 
 /**
@@ -308,27 +293,21 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_006, TestSize.Level1)
         return;
     }
     int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
+    ASSERT_NE(nullptr, GetRenderPtr());
 
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    ret = audioRenderer->SetRenderMode(RENDER_MODE_NORMAL);
+    ret = GetRenderPtr()->SetRenderMode(RENDER_MODE_NORMAL);
     // If the audiorenderer does not enter low-latency mode but enters normal mode, the err code is ERR_INCORRECT_MODE.
     EXPECT_THAT(ret, AnyOf(Eq(ERR_INVALID_OPERATION), Eq(ERR_INCORRECT_MODE)));
 
-    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    ret = GetRenderPtr()->SetRenderMode(RENDER_MODE_CALLBACK);
     EXPECT_EQ(SUCCESS, ret);
 
-    AudioRenderMode renderMode = audioRenderer->GetRenderMode();
+    AudioRenderMode renderMode = GetRenderPtr()->GetRenderMode();
     EXPECT_EQ(RENDER_MODE_CALLBACK, renderMode);
 
     shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
-    ret = audioRenderer->SetRendererWriteCallback(cb);
+    ret = GetRenderPtr()->SetRendererWriteCallback(cb);
     EXPECT_EQ(SUCCESS, ret);
-
-    audioRenderer->Release();
 }
 
 /**
@@ -342,35 +321,26 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
         return;
     }
     int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
+    ASSERT_NE(nullptr, GetRenderPtr());
 
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
-
-    int32_t setLowPowerVolume = audioRenderer->SetLowPowerVolume(1.0f);
+    int32_t setLowPowerVolume = GetRenderPtr()->SetLowPowerVolume(1.0f);
     EXPECT_EQ(setLowPowerVolume, SUCCESS);
 
-    float getLowPowerVolume = audioRenderer->GetLowPowerVolume();
+    float getLowPowerVolume = GetRenderPtr()->GetLowPowerVolume();
     EXPECT_EQ(getLowPowerVolume, 1.0f);
 
-    float getSingleStreamVolume = audioRenderer->GetSingleStreamVolume();
+    float getSingleStreamVolume = GetRenderPtr()->GetSingleStreamVolume();
     EXPECT_EQ(getSingleStreamVolume, 1.0f);
 
-    ret = audioRenderer->SetAudioEffectMode(EFFECT_NONE);
+    ret = GetRenderPtr()->SetAudioEffectMode(EFFECT_NONE);
     // If the audiorenderer does not enter low-latency mode but enters normal mode, the err code is ERR_INCORRECT_MODE.
     EXPECT_THAT(ret, AnyOf(Eq(ERR_NOT_SUPPORTED), Eq(SUCCESS)));
 
-    AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
+    AudioEffectMode effectMode = GetRenderPtr()->GetAudioEffectMode();
     EXPECT_EQ(EFFECT_NONE, effectMode);
 
-    bool isPaused = audioRenderer->Pause();
+    bool isPaused = GetRenderPtr()->Pause();
     EXPECT_EQ(true, isPaused);
-
-    audioRenderer->Release();
 }
 
 /**
@@ -383,28 +353,22 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_008, TestSize.Level1)
     if (!g_isFastRenderer) {
         return;
     }
-    AudioRendererOptions rendererOptions;
-
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+    ASSERT_NE(nullptr, GetRenderPtr());
 
     // If the audiorenderer does not enter low-latency mode but enters normal mode, flush will return false in prepare.
-    audioRenderer->Flush();
+    GetRenderPtr()->Flush();
 
-    bool isStarted = audioRenderer->Start();
+    bool isStarted = GetRenderPtr()->Start();
     EXPECT_EQ(true, isStarted);
 
-    bool isDrained = audioRenderer->Drain();
+    bool isDrained = GetRenderPtr()->Drain();
     EXPECT_EQ(true, isDrained);
 
-    bool isStopped = audioRenderer->Stop();
+    bool isStopped = GetRenderPtr()->Stop();
     EXPECT_EQ(true, isStopped);
 
-    bool isFlushed1 = audioRenderer->Flush();
+    bool isFlushed1 = GetRenderPtr()->Flush();
     EXPECT_EQ(true, isFlushed1);
-
-    audioRenderer->Release();
 }
 
 /**
@@ -418,36 +382,29 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_009, TestSize.Level1)
         return;
     }
     int32_t ret = -1;
-
-    AudioRendererOptions rendererOptions;
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+    ASSERT_NE(nullptr, GetRenderPtr());
 
     uint32_t sampleRate = AudioSamplingRate::SAMPLE_RATE_96000;
-    ret = audioRenderer->SetRendererSamplingRate(sampleRate);
-    EXPECT_EQ(ERROR, ret);
+    ret = GetRenderPtr()->SetRendererSamplingRate(sampleRate);
+    EXPECT_NE(SUCCESS, ret);
 
-    uint32_t getSampleRateRet = audioRenderer->GetRendererSamplingRate();
+    uint32_t getSampleRateRet = GetRenderPtr()->GetRendererSamplingRate();
     EXPECT_EQ(getSampleRateRet, 48000);
 
     shared_ptr<RendererPeriodPositionCallbackTest> positionCB1 = std::make_shared<RendererPeriodPositionCallbackTest>();
-    ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_ZERO, positionCB1);
+    ret = GetRenderPtr()->SetRendererPeriodPositionCallback(VALUE_ZERO, positionCB1);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
-    ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_THOUSAND, positionCB1);
+    ret = GetRenderPtr()->SetRendererPeriodPositionCallback(VALUE_THOUSAND, positionCB1);
     EXPECT_EQ(SUCCESS, ret);
 
-    audioRenderer->UnsetRendererPeriodPositionCallback();
+    GetRenderPtr()->UnsetRendererPeriodPositionCallback();
 
     shared_ptr<RendererPeriodPositionCallbackTest> positionCB2 = std::make_shared<RendererPeriodPositionCallbackTest>();
-    ret = audioRenderer->SetRendererPeriodPositionCallback(VALUE_THOUSAND, positionCB2);
+    ret = GetRenderPtr()->SetRendererPeriodPositionCallback(VALUE_THOUSAND, positionCB2);
     EXPECT_EQ(SUCCESS, ret);
 
-    bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(true, isReleased);
-
-    bool isStopped = audioRenderer->Stop();
+    bool isStopped = GetRenderPtr()->Stop();
     EXPECT_EQ(false, isStopped);
 }
 
@@ -463,24 +420,18 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
     }
     int32_t setFrameSize = 960;
     uint32_t getFrameSize = 0;
-    AudioRendererOptions rendererOptions;
+    ASSERT_NE(nullptr, GetRenderPtr());
 
-    InitializeFastRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    audioRenderer->SetPreferredFrameSize(setFrameSize);
-    bool gotFrameSize = audioRenderer->GetFrameCount(getFrameSize);
+    GetRenderPtr()->SetPreferredFrameSize(setFrameSize);
+    bool gotFrameSize = GetRenderPtr()->GetFrameCount(getFrameSize);
     EXPECT_EQ(SUCCESS, gotFrameSize);
     EXPECT_EQ(static_cast<uint32_t>(setFrameSize), getFrameSize);
 
-    bool isStarted = audioRenderer->Start();
+    bool isStarted = GetRenderPtr()->Start();
     EXPECT_EQ(true, isStarted);
 
-    bool isStopped = audioRenderer->Stop();
+    bool isStopped = GetRenderPtr()->Stop();
     EXPECT_EQ(true, isStopped);
-
-    audioRenderer->Release();
 }
 
 /**

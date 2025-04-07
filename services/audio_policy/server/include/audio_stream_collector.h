@@ -54,6 +54,7 @@ public:
     void RegisteredTrackerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     bool IsStreamActive(AudioStreamType volumeType);
+    bool CheckVoiceCallActive(int32_t sessionId);
     int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT, int32_t certainChannelCount = 0);
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
@@ -84,7 +85,7 @@ public:
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     std::vector<uint32_t> GetAllCapturerSessionIDForUID(int32_t uid);
     int32_t ResumeStreamState();
-    bool HasVoipRendererStream();
+    bool HasVoipRendererStream(bool isFirstCreate = true);
     bool ChangeVoipCapturerStreamToNormal();
     bool IsCallStreamUsage(StreamUsage usage);
     std::set<int32_t> GetSessionIdsOnRemoteDeviceByStreamUsage(StreamUsage streamUsage);
@@ -93,6 +94,7 @@ public:
     int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
+    bool IsMediaPlaying();
     void UpdateAppVolume(int32_t appUid, int32_t volume);
 
 private:
@@ -112,6 +114,7 @@ private:
     int32_t UpdateRendererDeviceInfo(AudioDeviceDescriptor &outputDeviceInfo);
     int32_t UpdateCapturerDeviceInfo(AudioDeviceDescriptor &inputDeviceInfo);
     int32_t UpdateRendererStreamInternal(AudioStreamChangeInfo &streamChangeInfo);
+    int32_t UpdateCapturerStreamInternal(AudioStreamChangeInfo &streamChangeInfo);
     AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
     AudioStreamType GetStreamTypeFromSourceType(SourceType sourceType);
     void WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);

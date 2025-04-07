@@ -64,14 +64,17 @@ int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
+    bool isSameScene = audioSceneManager_.IsSameAudioScene();
     audioSceneManager_.SetAudioScenePre(audioScene);
 
     // fetch input&output device
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
     audioDeviceCommon_.FetchDevice(false);
 
-    int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
+    if (!isSameScene) {
+        int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
+    }
     audioDeviceCommon_.OnAudioSceneChange(audioScene);
 
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
@@ -130,7 +133,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceLock::GetActiveBluetoothDevice
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
 
     std::shared_ptr<AudioDeviceDescriptor> preferredDesc = audioStateManager_.GetPreferredCallRenderDevice();
-    if (preferredDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (preferredDesc != nullptr && preferredDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         return preferredDesc;
     }
 
@@ -230,6 +233,13 @@ void AudioDeviceLock::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChan
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
     AUDIO_INFO_LOG("fetch device for track, sessionid:%{public}d start",
         streamChangeInfo.audioCapturerChangeInfo.sessionId);
+
+    AudioMode mode = AudioMode::AUDIO_MODE_RECORD;
+    // Set prerunningState true to refetch devices when device info change before update tracker to running
+    streamChangeInfo.audioCapturerChangeInfo.prerunningState = true;
+    if (streamCollector_.UpdateTrackerInternal(mode, streamChangeInfo) != SUCCESS) {
+        return;
+    }
 
     vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(
@@ -405,7 +415,7 @@ void AudioDeviceLock::OnDeviceConfigurationChanged(DeviceType deviceType, const 
 static void UpdateRendererInfoWhenNoPermission(const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
     bool hasSystemPermission)
 {
-    if (!hasSystemPermission) {
+    if (!hasSystemPermission && audioRendererChangeInfos != nullptr) {
         audioRendererChangeInfos->clientUID = 0;
         audioRendererChangeInfos->rendererState = RENDERER_INVALID;
     }
@@ -438,9 +448,11 @@ int32_t AudioDeviceLock::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRe
     if (itr != outputDevices.end()) {
         size_t rendererInfosSize = audioRendererChangeInfos.size();
         for (size_t i = 0; i < rendererInfosSize; i++) {
-            UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
-            audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, *itr,
-                hasBTPermission, hasSystemPermission);
+            if (audioRendererChangeInfos[i] != nullptr) {
+                UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
+                audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, *itr,
+                    hasBTPermission, hasSystemPermission);
+            }
         }
     }
 
@@ -650,12 +662,6 @@ void AudioDeviceLock::UpdateSpatializationSupported(const std::string macAddress
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     audioConnectedDevice_.UpdateSpatializationSupported(macAddress, support);
-}
-
-void AudioDeviceLock::SetDmDeviceType(const uint16_t dmDeviceType)
-{
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    audioConnectedDevice_.SetDmDeviceType(dmDeviceType);
 }
 
 int32_t AudioDeviceLock::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)

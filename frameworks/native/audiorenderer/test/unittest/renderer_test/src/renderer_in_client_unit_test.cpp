@@ -398,14 +398,9 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_008, TestSize.Level1
     ptrRendererInClientInner->audioSpeed_ = std::make_unique<AudioSpeed>(rate, format, channels);
     ASSERT_TRUE(ptrRendererInClientInner->audioSpeed_ != nullptr);
 
-    ptrRendererInClientInner->audioSpeed_->LoadChangeSpeedFunc();
+    auto ret = ptrRendererInClientInner->audioSpeed_->LoadChangeSpeedFunc();
 
-    uint8_t *buffer = nullptr;
-    int32_t bufferSize = 100001;
-    std::unique_ptr<uint8_t []> outBuffer = nullptr;
-    int32_t outBufferSize;
-    auto ret = ptrRendererInClientInner->ChangeSpeed(buffer, bufferSize, outBuffer, outBufferSize);
-    EXPECT_EQ(ret, ERR_MEMORY_ALLOC_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1121,6 +1116,26 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_043, TestSize.Level1
 
     bool isSwitching = false;
     ptrRendererInClientInner->SetSwitchingStatus(isSwitching);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_044
+ * @tc.desc  : Test RendererInClientInner::OnOperationHandled with DATA_LINK_CONNECTED
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_044, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    Operation operation = Operation::DATA_LINK_CONNECTED;
+    int64_t result = 0;
+    auto ret = ptrRendererInClientInner->OnOperationHandled(operation, result);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

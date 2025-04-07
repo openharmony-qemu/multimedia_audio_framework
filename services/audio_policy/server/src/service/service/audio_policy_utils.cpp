@@ -212,6 +212,9 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
             portName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
             break;
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
+            portName = ACCESSORY_SOURCE;
+            break;
         default:
             portName = PORT_NONE;
             break;
@@ -319,6 +322,9 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
             break;
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             portName = BLUETOOTH_MIC;
+            break;
+        case InternalDeviceType::DEVICE_TYPE_ACCESSORY:
+            portName = ACCESSORY_SOURCE;
             break;
         default:
             portName = PORT_NONE;
@@ -485,7 +491,8 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-        case DeviceType::DEVICE_TYPE_HDMI: {
+        case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL: {
             std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
             AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
             break;
@@ -529,6 +536,14 @@ AudioModuleInfo AudioPolicyUtils::ConstructRemoteAudioModuleInfo(std::string net
     audioModuleInfo.rate = "48000";
     audioModuleInfo.bufferSize = "3840";
 
+    if (deviceType == DEVICE_TYPE_SPEAKER) {
+        std::string splitInfo = "";
+        if ((AudioRouterCenter::GetAudioRouterCenter().GetSplitInfo(splitInfo) == SUCCESS) && (splitInfo != "")) {
+            audioModuleInfo.lib = "libmodule-split-stream-sink.z.so";
+            audioModuleInfo.extra = splitInfo;
+        }
+    }
+
     return audioModuleInfo;
 }
 
@@ -546,9 +561,11 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
         case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
             return DeviceRole::INPUT_DEVICE;
         default:
             return DeviceRole::DEVICE_ROLE_NONE;
@@ -583,6 +600,8 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(AudioPin pin) const
         case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
         case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
         case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_PENCIL:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_UWB:
         case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
             return DeviceRole::INPUT_DEVICE;
         default:

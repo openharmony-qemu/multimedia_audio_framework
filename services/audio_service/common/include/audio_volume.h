@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <shared_mutex>
 #include "audio_stream_info.h"
+#include "audio_volume_c.h"
 #include "audio_utils.h"
 #include "audio_info.h"
 
@@ -41,7 +42,8 @@ public:
     static AudioVolume *GetInstance();
     ~AudioVolume();
 
-    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass); // all volume
+    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass,
+        VolumeValues *volumes); // all volume
     float GetStreamVolume(uint32_t sessionId); // only stream volume
     float GetAppVolume(int32_t appUid, AudioVolumeMode mode);
     // history volume
@@ -88,8 +90,9 @@ public:
         AdjustStreamVolume volumeType);
 private:
     AudioVolume();
-    float GetStreamVolume(uint32_t sessionId, int32_t& volumeType, int32_t& appUid, AudioVolumeMode& volumeMode);
-    float GetSystemVolume(int32_t volumeType, const std::string &deviceClass, int32_t &volumeLevel);
+    float GetStreamVolumeInternal(uint32_t sessionId, int32_t& volumeType,
+        int32_t& appUid, AudioVolumeMode& volumeMode);
+    float GetSystemVolumeInternal(int32_t volumeType, const std::string &deviceClass, int32_t &volumeLevel);
     bool IsChangeVolume(uint32_t sessionId, float volumeFloat, int32_t volumeLevel);
 private:
     std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};

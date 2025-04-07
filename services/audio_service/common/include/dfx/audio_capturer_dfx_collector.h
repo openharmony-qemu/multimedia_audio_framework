@@ -38,8 +38,8 @@ public:
 class CapturerDfxBuilder {
 public:
     CapturerDfxBuilder &WriteActionMsg(uint32_t dfxIndex, CapturerStage stage);
-    CapturerDfxBuilder &WriteInfoMsg(SourceType sourceType);
-    CapturerDfxBuilder &WriteStatMsg(const AudioCapturerInfo &info, const RecordStat &stat);
+    CapturerDfxBuilder &WriteInfoMsg(const AudioCapturerInfo &capturerInfo);
+    CapturerDfxBuilder &WriteStatMsg(const AudioProcessConfig &processConfig, const RecordStat &stat);
     CapturerDfxInfo GetResult();
 private:
     CapturerDfxInfo dfxInfo_{};

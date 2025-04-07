@@ -549,6 +549,23 @@ DeviceType AudioPolicyProxy::GetActiveOutputDevice()
     return static_cast<DeviceType>(reply.ReadInt32());
 }
 
+uint16_t AudioPolicyProxy::GetDmDeviceType()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, DEVICE_TYPE_INVALID, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DM_DEVICE_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, DEVICE_TYPE_INVALID,
+        "get dmDevice failed, error: %d", error);
+
+    return static_cast<uint16_t>(reply.ReadUint16());
+}
+
 DeviceType AudioPolicyProxy::GetActiveInputDevice()
 {
     MessageParcel data;
@@ -1947,7 +1964,7 @@ int32_t AudioPolicyProxy::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt re
 }
 
 int32_t AudioPolicyProxy::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1957,6 +1974,7 @@ int32_t AudioPolicyProxy::SetPreferredDevice(const PreferredType preferredType,
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(preferredType));
+    data.WriteInt32(static_cast<int32_t>(pid));
     bool result = desc->Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(result, -1, "Desc Marshalling() faild");
 

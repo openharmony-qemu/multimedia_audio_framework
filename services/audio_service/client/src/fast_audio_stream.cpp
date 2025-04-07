@@ -101,6 +101,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
         config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
         config.capturerInfo.originalFlag = capturerInfo_.originalFlag;
+        config.capturerInfo.recorderType = capturerInfo_.recorderType;
     } else {
         return ERR_INVALID_OPERATION;
     }
@@ -565,13 +566,6 @@ float FastAudioStream::GetSpeed()
 {
     AUDIO_ERR_LOG("GetSpeed is not supported");
     return static_cast<float>(ERROR);
-}
-
-int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
-    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
-{
-    AUDIO_ERR_LOG("ChangeSpeed is not supported");
-    return ERR_OPERATION_FAILED;
 }
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,

@@ -25,6 +25,7 @@
 #include "cockpit_phone_router.h"
 #include "pair_device_router.h"
 #include "default_router.h"
+#include "config_policy_utils.h"
 
 #include "media_monitor_manager.h"
 
@@ -33,7 +34,19 @@ namespace AudioStandard {
 bool AudioStrategyRouterParser::LoadConfiguration()
 {
     curNode_ = AudioXmlNode::Create();
-    int32_t ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
+    int32_t ret = 0;
+#ifdef USE_CONFIG_POLICY
+    char buf[MAX_PATH_LEN];
+    char *path = GetOneCfgFile(DEVICE_CONFIG_FILE, buf, MAX_PATH_LEN);
+    if (path != nullptr && *path != '\0') {
+        AUDIO_INFO_LOG("strategy router file path: %{public}s", path);
+        ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
+    }
+#else
+    ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
+    AUDIO_INFO_LOG("use default strategy router file path:%{public}s", DEVICE_CONFIG_FILE);
+#endif
+    
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Not found audio_strategy_router.xml!");
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(

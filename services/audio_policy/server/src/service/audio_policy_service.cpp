@@ -173,6 +173,11 @@ void AudioPolicyService::InitKVStore()
     audioVolumeManager_.InitKVStore();
 }
 
+void AudioPolicyService::NotifySettingsDataReady()
+{
+    AudioServerProxy::GetInstance().NotifySettingsDataReady();
+}
+
 bool AudioPolicyService::ConnectServiceAdapter()
 {
     bool ret = audioPolicyManager_.ConnectServiceAdapter();
@@ -304,9 +309,9 @@ int32_t AudioPolicyService::SetAppVolumeMuted(int32_t appUid, bool muted)
     return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
 }
 
-bool AudioPolicyService::IsAppVolumeMute(int32_t appUid, bool owned)
+int32_t AudioPolicyService::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
-    return audioVolumeManager_.IsAppVolumeMute(appUid, owned);
+    return audioVolumeManager_.IsAppVolumeMute(appUid, owned, isMute);
 }
 
 int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
@@ -319,9 +324,9 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
     return audioVolumeManager_.GetSystemVolumeLevel(streamType);
 }
 
-int32_t AudioPolicyService::GetAppVolumeLevel(int32_t appUid)
+int32_t AudioPolicyService::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
-    return audioVolumeManager_.GetAppVolumeLevel(appUid);
+    return audioVolumeManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
 int32_t AudioPolicyService::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
@@ -650,6 +655,11 @@ DeviceType AudioPolicyService::GetActiveInputDevice()
     return audioActiveDevice_.GetCurrentInputDeviceType();
 }
 
+uint16_t AudioPolicyService::GetDmDeviceType()
+{
+    return audioDeviceStatus_.GetDmDeviceType();
+}
+
 int32_t AudioPolicyService::SetRingerMode(AudioRingerMode ringMode)
 {
     int32_t result = audioPolicyManager_.SetRingerMode(ringMode);
@@ -758,19 +768,15 @@ void AudioPolicyService::SetDisplayName(const std::string &deviceName, bool isLo
     audioDeviceLock_.SetDisplayName(deviceName, isLocalDevice);
 }
 
-void AudioPolicyService::SetDmDeviceType(const uint16_t dmDeviceType)
-{
-    audioDeviceLock_.SetDmDeviceType(dmDeviceType);
-}
-
 void AudioPolicyService::RegisterRemoteDevStatusCallback()
 {
 #ifdef FEATURE_DEVICE_MANAGER
     std::shared_ptr<DistributedHardware::DmInitCallback> initCallback = std::make_shared<DeviceInitCallBack>();
     int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, initCallback);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init device manage failed");
-    std::shared_ptr<DistributedHardware::DeviceStatusCallback> callback = std::make_shared<DeviceStatusCallbackImpl>();
+    auto callback = std::make_shared<DeviceStatusCallbackImpl>();
     DistributedHardware::DeviceManager::GetInstance().RegisterDevStatusCallback(AUDIO_SERVICE_PKG, "", callback);
+    DistributedHardware::DeviceManager::GetInstance().RegisterDevStateCallback(AUDIO_SERVICE_PKG, "", callback);
     AUDIO_INFO_LOG("Done");
 #endif
 }
@@ -2043,8 +2049,12 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
 
 void AudioPolicyService::CheckConnectedDevice()
 {
-    bool flag = audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_USB_ARM_HEADSET ||
-        audioPolicyManager_.GetActiveDevice() ==  DEVICE_TYPE_USB_HEADSET;
+    auto isUsbHeadsetConnected =
+        audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_USB_HEADSET);
+    auto isUsbArmHeadsetConnected =
+        audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_USB_ARM_HEADSET);
+    
+    bool flag = (isUsbHeadsetConnected != nullptr || isUsbArmHeadsetConnected != nullptr) ? true : false;
     AudioServerProxy::GetInstance().SetDeviceConnectedFlag(flag);
 }
 

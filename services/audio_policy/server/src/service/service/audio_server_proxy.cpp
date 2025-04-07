@@ -108,6 +108,15 @@ int32_t AudioServerProxy::UpdateActiveDevicesRouteProxy(std::vector<std::pair<De
     return ret;
 }
 
+void AudioServerProxy::SetDmDeviceTypeProxy(uint16_t dmDeviceType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->SetDmDeviceType(dmDeviceType);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 int32_t AudioServerProxy::UpdateDualToneStateProxy(const bool &enable, const int32_t &sessionId)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -484,6 +493,15 @@ void AudioServerProxy::NotifyAccountsChanged()
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->NotifyAccountsChanged();
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+void AudioServerProxy::NotifySettingsDataReady()
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->NotifySettingsDataReady();
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

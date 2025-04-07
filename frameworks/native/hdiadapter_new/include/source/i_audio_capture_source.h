@@ -21,7 +21,7 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "common/hdi_adapter_info.h"
-#include "hdi_adapter_type.h"
+#include "common/hdi_adapter_type.h"
 
 #define SUCCESS_RET { return SUCCESS; }
 #define NOT_SUPPORT_RET { return ERR_NOT_SUPPORTED; }
@@ -79,6 +79,8 @@ public:
     virtual void SetAddress(const std::string &address) {}
 
     virtual void DumpInfo(std::string &dumpString) {}
+
+    virtual void SetDmDeviceType(uint16_t dmDeviceType) {}
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
