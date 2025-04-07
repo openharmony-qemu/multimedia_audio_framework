@@ -199,9 +199,9 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
-    int32_t ActivatePreemptMode();
+    int32_t ActivatePreemptMode(void);
 
-    int32_t DeactivatePreemptMode();
+    int32_t DeactivatePreemptMode(void);
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
