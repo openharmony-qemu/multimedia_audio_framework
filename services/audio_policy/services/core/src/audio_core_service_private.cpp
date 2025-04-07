@@ -1227,11 +1227,11 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
         // DEVICE_TYPE_REMOTE_CAST no need to open audioport
         id = pipeInfo->streamDescriptors_.front()->sessionId_;
     } else {
+        HandleCommonSourceOpened(pipeInfo);
         id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
     }
     CHECK_AND_RETURN_RET_LOG(id != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED, "OpenAudioPort failed %{public}d", id);
     audioIOHandleMap_.AddIOHandleInfo(pipeInfo->moduleInfo_.name, id);
-    HandleCommonSourceOpened(pipeInfo);
     AUDIO_INFO_LOG("Get HDI id: %{public}u, paIndex %{public}u", id, paIndex);
     return id;
 }
@@ -1631,12 +1631,16 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
     }
 }
 
-void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> pipeInfo)
+void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo)
 {
+    if (pipeInfo->pipeRole_ != PIPE_ROLE_INPUT || pipeInfo->streamDescriptors_.size() == 0) {
+        return;
+    }
     SourceType sourceType = pipeInfo->streamDescriptors_.front()->capturerInfo_.sourceType;
-    if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT && pipeInfo->streamDescriptors_.size() > 0 &&
-        specialSourceTypeSet_.count(sourceType) == 0) {
+    if (specialSourceTypeSet_.count(sourceType) == 0) {
         AUDIO_INFO_LOG("Source type: %{public}d", sourceType);
+        audioEcManager_.UpdateStreamEcInfo(pipeInfo->moduleInfo_, sourceType);
+        audioEcManager_.UpdateStreamMicRefInfo(pipeInfo->moduleInfo_, sourceType);
         audioEcManager_.SetOpenedNormalSource(sourceType);
     }
 }

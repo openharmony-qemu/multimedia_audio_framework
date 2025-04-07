@@ -69,6 +69,8 @@ public:
     void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void SetOpenedNormalSource(SourceType targetSource);
     int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
+    void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
 private:
     AudioEcManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
@@ -79,8 +81,6 @@ private:
 
     void UpdateEnhanceEffectState(SourceType source);
     void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo, SourceType sourceType);
-    void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
-    void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice, const AudioDeviceDescriptor &outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
@@ -92,7 +92,7 @@ private:
     std::string GetEcChannels(const std::string &halName, std::shared_ptr<PipeStreamPropInfo> &outModuleInfo);
 
     int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType,
-        std::shared_ptr<AdapterPipeInfo> pipeInfo);
+        std::shared_ptr<AdapterPipeInfo> &pipeInfo);
 
     void UpdateArmModuleInfo(const string &address, const DeviceRole role, AudioModuleInfo &moduleInfo);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
