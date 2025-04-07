@@ -126,8 +126,9 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_006, TestSize.Level1)
     soundCard.isPlayer_ = true;
     soundCard.isCapturer_ = true;
     audioUsbManager->soundCardMap_.insert({device.usbAddr_, soundCard});
-    audioUsbManager->NotifyDevice(device, true);
+    audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
     audioUsbManager->Deinit();
+    EXPECT_TRUE(audioUsbManager->audioDevices_.empty() && audioUsbManager->soundCardMap_.empty());
 }
 
 /**
@@ -149,7 +150,9 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_007, TestSize.Level1)
     soundCard.isPlayer_ = false;
     soundCard.isCapturer_ = true;
     audioUsbManager->soundCardMap_.insert({device.usbAddr_, soundCard});
-    audioUsbManager->NotifyDevice(device, true);
+    audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
+    audioUsbManager->Deinit();
+    EXPECT_TRUE(audioUsbManager->audioDevices_.empty() && audioUsbManager->soundCardMap_.empty());
 }
 
 /**
@@ -171,7 +174,9 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_008, TestSize.Level1)
     soundCard.isPlayer_ = true;
     soundCard.isCapturer_ = false;
     audioUsbManager->soundCardMap_.insert({device.usbAddr_, soundCard});
-    audioUsbManager->NotifyDevice(device, true);
+    audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
+    audioUsbManager->Deinit();
+    EXPECT_TRUE(audioUsbManager->audioDevices_.empty() && audioUsbManager->soundCardMap_.empty());
 }
 
 /**

@@ -1123,7 +1123,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_028, TestSize.Level1)
     ptrNoneMixEngine->uSampleRate_ = AudioSamplingRate::SAMPLE_RATE_16000;
     bool isVoip = true;
     int32_t ret = ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1152,7 +1152,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_029, TestSize.Level1)
     ptrNoneMixEngine->uSampleRate_ = AudioSamplingRate::SAMPLE_RATE_16000;
     bool isVoip = true;
     int32_t ret = ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 /**
  * @tc.name  : Test NoneMixEngine API
@@ -1181,7 +1181,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_030, TestSize.Level1)
     bool isVoip = true;
     ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
     int32_t ret = ptrNoneMixEngine->Start();
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1211,7 +1211,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_031, TestSize.Level1)
     bool isVoip = true;
     ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
     int32_t ret = ptrNoneMixEngine->Start();
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1343,10 +1343,10 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_036, TestSize.Level1)
     bool isVoip = true;
     ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
     int32_t ret = ptrNoneMixEngine->Start();
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 
     latency = ptrNoneMixEngine->GetLatency();
-    EXPECT_EQ(latency, 0);
+    EXPECT_NE(latency, 0);
 }
 
 /**

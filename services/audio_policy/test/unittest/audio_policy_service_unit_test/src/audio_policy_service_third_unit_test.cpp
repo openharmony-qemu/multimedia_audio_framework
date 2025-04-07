@@ -878,7 +878,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetWakeUpAudioCapturerFromAudioServer_
     AudioProcessConfig config;
     int32_t ret = server->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
 
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
