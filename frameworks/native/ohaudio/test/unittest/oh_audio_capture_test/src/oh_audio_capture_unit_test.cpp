@@ -27,6 +27,18 @@ void OHAudioCaptureUnitTest::SetUp(void) { }
 
 void OHAudioCaptureUnitTest::TearDown(void) { }
 
+void InitializeCapturerOptions(AudioCapturerOptions &capturerOptions)
+{
+    int32_t flag = 0;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = flag;
+    return;
+}
+
 OH_AudioStreamBuilder* OHAudioCaptureUnitTest::CreateCapturerBuilder()
 {
     OH_AudioStreamBuilder* builder;
@@ -1040,9 +1052,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_001, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length) ->
         void { return; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
@@ -1066,9 +1078,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_002, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length) ->
         void { return; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
@@ -1092,9 +1104,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_003, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length) ->
         int32_t { return 0; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
@@ -1118,9 +1130,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_004, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length) ->
         int32_t { return 0; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
@@ -1144,9 +1156,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_005, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioDeviceDescriptorArray* deviceArray) ->
         void { return; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
@@ -1170,9 +1182,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_006, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioDeviceDescriptorArray* deviceArray) ->
         void { return; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
@@ -1196,9 +1208,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_007, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioStream_Event event) ->
         int32_t { return 0; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
@@ -1222,9 +1234,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_008, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioStream_Event event) ->
         int32_t { return 0; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
@@ -1248,9 +1260,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_009, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioInterrupt_ForceType forceType,
         OH_AudioInterrupt_Hint hintType) -> void { return; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
@@ -1274,9 +1286,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_010, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioInterrupt_ForceType forceType,
         OH_AudioInterrupt_Hint hintType) -> void { return; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
@@ -1300,9 +1312,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_011, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioInterrupt_ForceType forceType,
         OH_AudioInterrupt_Hint hintType) -> int32_t { return 0; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
@@ -1326,9 +1338,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_012, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioInterrupt_ForceType forceType,
         OH_AudioInterrupt_Hint hintType) -> int32_t { return 0; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
@@ -1352,9 +1364,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_013, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioStream_Result error) ->
         void { return; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
@@ -1378,9 +1390,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_014, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioStream_Result error) ->
         void { return; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
@@ -1404,9 +1416,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_015, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioStream_Result error) ->
         int32_t { return 0; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
@@ -1430,9 +1442,9 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_016, TestSize.Level0)
         [](OH_AudioCapturer* capturer, void* userData, OH_AudioStream_Result error) ->
         int32_t { return 0; };
 
-    AudioStreamType audioStreamType = AudioStreamType::STREAM_VOICE_CALL;
-    AppInfo appInfo;
-    oHAudioCapturer->audioCapturer_ = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
     EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
 
     oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
