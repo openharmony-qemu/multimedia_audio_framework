@@ -84,6 +84,35 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_002, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via illegal OH_AudioStream_Type.
+* @tc.number: OH_Audio_Capture_Generate_003
+* @tc.desc  : Test OH_AudioStreamBuilder_GenerateCapturer interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+*             if builder is nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_003, TestSize.Level0)
+{
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(nullptr, &audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via illegal OH_AudioStream_Type.
+* @tc.number: OH_Audio_Capture_Generate_004
+* @tc.desc  : Test OH_AudioStreamBuilder_GenerateCapturer interface. Returns  AUDIOSTREAM_ERROR_INVALID_PARAM
+*             if audioCapturer is nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, nullptr);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
 * @tc.name  : Test OH_AudioCapturer_Start API via legal state.
 * @tc.number: Audio_Capturer_Start_001
 * @tc.desc  : Test OH_AudioCapturer_Start interface. Returns true if start is successful.
