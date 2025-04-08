@@ -1578,10 +1578,10 @@ uint32_t AudioManagerProxy::CreateHdiSinkPort(const std::string &deviceClass, co
     oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
     data.WriteString(oss.str());
     data.WriteString(attr.adapterName);
-    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
-    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    data.WriteString(attr.filePath == nullptr ? "" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "" : std::string(attr.deviceNetworkId));
     data.WriteString(attr.address);
-    data.WriteString(attr.aux == nullptr ? "nullptr" : std::string(attr.aux));
+    data.WriteString(attr.aux == nullptr ? "" : std::string(attr.aux));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SINK_PORT), data, reply, option);
@@ -1605,10 +1605,10 @@ uint32_t AudioManagerProxy::CreateSinkPort(HdiIdBase idBase, HdiIdType idType, c
     oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
     data.WriteString(oss.str());
     data.WriteString(attr.adapterName);
-    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
-    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    data.WriteString(attr.filePath == nullptr ? "" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "" : std::string(attr.deviceNetworkId));
     data.WriteString(attr.address);
-    data.WriteString(attr.aux == nullptr ? "nullptr" : std::string(attr.aux));
+    data.WriteString(attr.aux == nullptr ? "" : std::string(attr.aux));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_SINK_PORT), data, reply, option);
@@ -1631,8 +1631,8 @@ uint32_t AudioManagerProxy::CreateHdiSourcePort(const std::string &deviceClass, 
     oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
     data.WriteString(oss.str());
     data.WriteString(attr.adapterName);
-    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
-    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    data.WriteString(attr.filePath == nullptr ? "" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "" : std::string(attr.deviceNetworkId));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SOURCE_PORT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, HDI_INVALID_ID, "CreateHdiSourcePort failed, error: %{public}d", error);
@@ -1655,10 +1655,10 @@ uint32_t AudioManagerProxy::CreateSourcePort(HdiIdBase idBase, HdiIdType idType,
     oss.write(reinterpret_cast<const char *>(&attr), sizeof(IAudioSinkAttr));
     data.WriteString(oss.str());
     data.WriteString(attr.adapterName);
-    data.WriteString(attr.filePath == nullptr ? "nullptr" : std::string(attr.filePath));
-    data.WriteString(attr.deviceNetworkId == nullptr ? "nullptr" : std::string(attr.deviceNetworkId));
+    data.WriteString(attr.filePath == nullptr ? "" : std::string(attr.filePath));
+    data.WriteString(attr.deviceNetworkId == nullptr ? "" : std::string(attr.deviceNetworkId));
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SOURCE_PORT), data, reply, option);
+        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_SOURCE_PORT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, HDI_INVALID_ID, "CreateHdiSourcePort failed, error: %{public}d", error);
     return reply.ReadUint32();
 }

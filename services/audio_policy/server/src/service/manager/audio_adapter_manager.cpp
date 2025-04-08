@@ -1562,7 +1562,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
         attr.openMicSpeaker = static_cast<uint32_t>(std::stoul(audioModuleInfo.OpenMicSpeaker));
     }
     attr.format = ParseSourceAudioSampleFormat(audioModuleInfo.format);
-    if (!audioModuleInfo.OpenMicSpeaker.empty()) {
+    if (!audioModuleInfo.rate.empty()) {
         attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.rate));
     }
     if (!audioModuleInfo.channels.empty()) {
