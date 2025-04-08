@@ -378,6 +378,255 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SaveMuteStatusInternal
     EXPECT_TRUE(result);
 }
 
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetAppMute when appUid not found.
+ * @tc.number: GetAppMute_001
+ * @tc.desc  : Test VolumeDataMaintainer API when appUid is not present in appMuteStatusMap.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetAppMute_001, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    int32_t appUid = 12345;
+    bool isMute = false;
+    volumeDataMaintainer.appMuteStatusMap_.erase(appUid);
 
+    volumeDataMaintainer.GetAppMute(appUid, isMute);
+    EXPECT_FALSE(isMute);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetAppMute when subIter.second is true.
+ * @tc.number: GetAppMute_002
+ * @tc.desc  : Test VolumeDataMaintainer API when subIter.second is true in the loop.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetAppMute_002, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    int32_t appUid = 12345;
+    bool isMute = false;
+    volumeDataMaintainer.appMuteStatusMap_[appUid][STREAM_MUSIC] = true;
+
+    volumeDataMaintainer.GetAppMute(appUid, isMute);
+    EXPECT_TRUE(isMute);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetAppMute when subIter.second is false.
+ * @tc.number: GetAppMute_003
+ * @tc.desc  : Test VolumeDataMaintainer API when subIter.second is false in the loop.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetAppMute_003, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    int32_t appUid = 12345;
+    bool isMute = false;
+    volumeDataMaintainer.appMuteStatusMap_[appUid][STREAM_MUSIC] = false;
+    volumeDataMaintainer.appMuteStatusMap_[appUid][STREAM_RING] = false;
+
+    volumeDataMaintainer.GetAppMute(appUid, isMute);
+    EXPECT_FALSE(isMute);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetAppMuteOwned when appUid not found.
+ * @tc.number: GetAppMuteOwned_001
+ * @tc.desc  : Test VolumeDataMaintainer API when appUid is not present in appMuteStatusMap.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetAppMuteOwned_001, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    int32_t appUid = 12345;
+    bool isMute = false;
+    volumeDataMaintainer.appMuteStatusMap_.erase(appUid);
+
+    volumeDataMaintainer.GetAppMuteOwned(appUid, isMute);
+    EXPECT_FALSE(isMute);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetAppMuteOwned when appUid is found.
+ * @tc.number: GetAppMuteOwned_002
+ * @tc.desc  : Test VolumeDataMaintainer API when appUid is present in appMuteStatusMap.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetAppMuteOwned_002, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    int32_t appUid = 12345;
+    bool isMute = false;
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    volumeDataMaintainer.appMuteStatusMap_[appUid][callingUid] = true;
+
+    volumeDataMaintainer.GetAppMuteOwned(appUid, isMute);
+    EXPECT_TRUE(isMute);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetDeviceVolumeInternal when volumeKey is empty.
+ * @tc.number: GetDeviceVolumeInternal_001
+ * @tc.desc  : Test VolumeDataMaintainer API when GetVolumeKeyForDataShare returns empty string.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetDeviceVolumeInternal_001, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeValue = volumeDataMaintainer.GetDeviceVolumeInternal(deviceType, streamType);
+    EXPECT_EQ(volumeValue, 0);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetDeviceVolumeInternal when GetIntValue fails.
+ * @tc.number: GetDeviceVolumeInternal_002
+ * @tc.desc  : Test VolumeDataMaintainer API when GetIntValue returns failure.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetDeviceVolumeInternal_002, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeValue = volumeDataMaintainer.GetDeviceVolumeInternal(deviceType, streamType);
+    EXPECT_EQ(volumeValue, 0);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer SaveMuteStatusInternal when muteKey is empty.
+ * @tc.number: SaveMuteStatusInternal_001
+ * @tc.desc  : Test VolumeDataMaintainer API when GetMuteKeyForDataShare returns empty string.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SaveMuteStatusInternal_001, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
+    volumeDataMaintainer.volumeLevelMap_.clear();
+    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer.appVolumeLevelMap_.clear();
+    volumeDataMaintainer.appMuteStatusMap_.clear();
+
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    AudioStreamType streamType = STREAM_MUSIC;
+    bool muteStatus = true;
+    bool result = volumeDataMaintainer.SaveMuteStatusInternal(deviceType, streamType, muteStatus);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer SetMuteAffectedToMuteStatusDataBase when entering the if branch.
+ * @tc.number: SetMuteAffectedToMuteStatusDataBase_001
+ * @tc.desc  : Test VolumeDataMaintainer API when entering the if branch in the loop.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SetMuteAffectedToMuteStatusDataBase_001, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
+    volumeDataMaintainer.volumeLevelMap_.clear();
+    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer.appVolumeLevelMap_.clear();
+    volumeDataMaintainer.appMuteStatusMap_.clear();
+
+    int32_t affected = 1 << VolumeDataMaintainer::VT_STREAM_ALARM;
+    bool result = volumeDataMaintainer.SetMuteAffectedToMuteStatusDataBase(affected);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer SetRestoreVolumeLevel when deviceType is USB_HEADSET and ret is not SUCCESS.
+ * @tc.number: SetRestoreVolumeLevel_002
+ * @tc.desc  : Test VolumeDataMaintainer API when deviceType is USB_HEADSET and PutIntValue fails.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_002, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
+    volumeDataMaintainer.volumeLevelMap_.clear();
+    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer.appVolumeLevelMap_.clear();
+    volumeDataMaintainer.appMuteStatusMap_.clear();
+
+    DeviceType deviceType = DEVICE_TYPE_USB_HEADSET;
+    int32_t volume = 5;
+    bool result = volumeDataMaintainer.SetRestoreVolumeLevel(deviceType, volume);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer SetRestoreVolumeLevel when deviceType is
+  USB_ARM_HEADSET and ret is not SUCCESS.
+ * @tc.number: SetRestoreVolumeLevel_003
+ * @tc.desc  : Test VolumeDataMaintainer API when deviceType is USB_ARM_HEADSET and PutIntValue fails.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_003, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
+    volumeDataMaintainer.volumeLevelMap_.clear();
+    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer.appVolumeLevelMap_.clear();
+    volumeDataMaintainer.appMuteStatusMap_.clear();
+
+    DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    int32_t volume = 5;
+    bool result = volumeDataMaintainer.SetRestoreVolumeLevel(deviceType, volume);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer SetRestoreVolumeLevel when deviceType is not supported.
+ * @tc.number: SetRestoreVolumeLevel_004
+ * @tc.desc  : Test VolumeDataMaintainer API when deviceType is not supported.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_004, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
+    volumeDataMaintainer.volumeLevelMap_.clear();
+    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer.appVolumeLevelMap_.clear();
+    volumeDataMaintainer.appMuteStatusMap_.clear();
+
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    int32_t volume = 5;
+    bool result = volumeDataMaintainer.SetRestoreVolumeLevel(deviceType, volume);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetRestoreVolumeLevel when deviceType is not supported.
+ * @tc.number: GetRestoreVolumeLevel_001
+ * @tc.desc  : Test VolumeDataMaintainer API when deviceType is not supported.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetRestoreVolumeLevel_001, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
+    volumeDataMaintainer.volumeLevelMap_.clear();
+    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer.appVolumeLevelMap_.clear();
+    volumeDataMaintainer.appMuteStatusMap_.clear();
+
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    int32_t volume = 0;
+    bool result = volumeDataMaintainer.GetRestoreVolumeLevel(deviceType, volume);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetRestoreVolumeLevel when deviceType is not supported.
+ * @tc.number: GetRestoreVolumeLevel_002
+ * @tc.desc  : Test VolumeDataMaintainer API when deviceType is not supported.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetRestoreVolumeLevel_002, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
+    volumeDataMaintainer.volumeLevelMap_.clear();
+    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer.appVolumeLevelMap_.clear();
+    volumeDataMaintainer.appMuteStatusMap_.clear();
+
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    int32_t volume = 0;
+    bool result = volumeDataMaintainer.GetRestoreVolumeLevel(deviceType, volume);
+    EXPECT_FALSE(result);
+}
 } // AudioStandardnamespace
 } // OHOSnamespace
