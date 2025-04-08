@@ -62,7 +62,6 @@ namespace {
     static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME_NS = 200000000; // 200ms = 200 * 1000 * 1000ns
     static constexpr int64_t LINK_RECORDER_DELAY_STOP_HDI_TIME_NS = 1000000000; // 1000ms = 1000 * 1000 * 1000ns
     static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s = 1000 * 1000 * 1000ns
-    static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS = 4000000000; // 4s = 4 * 1000 * 1000 * 1000ns
     static constexpr int64_t DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS = 1000000000; // 1s
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
@@ -384,33 +383,6 @@ AudioEndpointInner::~AudioEndpointInner()
         AudioEndpointInner::Release();
     }
     AUDIO_INFO_LOG("~AudioEndpoint()");
-}
-
-void AudioEndpointInner::Dump(std::string &dumpString)
-{
-    // dump endpoint stream info
-    dumpString += "Endpoint stream info:\n";
-    AppendFormat(dumpString, "  - samplingRate: %d\n", dstStreamInfo_.samplingRate);
-    AppendFormat(dumpString, "  - channels: %u\n", dstStreamInfo_.channels);
-    AppendFormat(dumpString, "  - format: %u\n", dstStreamInfo_.format);
-    AppendFormat(dumpString, "  - sink type: %d\n", fastSinkType_);
-    AppendFormat(dumpString, "  - source type: %d\n", fastSourceType_);
-
-    // dump status info
-    AppendFormat(dumpString, "  - Current endpoint status: %s\n", GetStatusStr(endpointStatus_).c_str());
-    if (dstAudioBuffer_ != nullptr) {
-        AppendFormat(dumpString, "  - Currend hdi read position: %u\n", dstAudioBuffer_->GetCurReadFrame());
-        AppendFormat(dumpString, "  - Currend hdi write position: %u\n", dstAudioBuffer_->GetCurWriteFrame());
-    }
-
-    // dump linked process info
-    std::lock_guard<std::mutex> lock(listLock_);
-    AppendFormat(dumpString, "  - linked process:: %zu\n", processBufferList_.size());
-    for (auto item : processBufferList_) {
-        AppendFormat(dumpString, "  - process read position: %u\n", item->GetCurReadFrame());
-        AppendFormat(dumpString, "  - process write position: %u\n", item->GetCurWriteFrame());
-    }
-    dumpString += "\n";
 }
 
 bool AudioEndpointInner::ConfigInputPoint(const AudioDeviceDescriptor &deviceInfo)
@@ -817,6 +789,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
         return false;
     }
     isStarted_ = true;
+    ResetZeroVolumeState();
 
     Trace trace("AudioEndpointInner::StartDupStream");
     {
@@ -931,8 +904,6 @@ bool AudioEndpointInner::StopDevice()
 int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
     InitLatencyMeasurement();
-    // Prevents the audio from immediately stopping at 0 volume on start
-    delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS;
     AUDIO_PRERELEASE_LOGI("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
@@ -1128,25 +1099,6 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     return SUCCESS;
 }
 
-void AudioEndpointInner::CheckStandBy()
-{
-    if (endpointStatus_ == RUNNING) {
-        endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
-    }
-
-    if (endpointStatus_ == RUNNING) {
-        return;
-    }
-
-    AUDIO_INFO_LOG("endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
-    if (endpointStatus_ == IDEL) {
-        // delay call sink stop when no process running
-        AUDIO_INFO_LOG("status is IDEL, need delay call stop");
-        delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
-            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
-    }
-}
-
 bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos)
 {
     bool isAllReady = true;
@@ -1273,29 +1225,7 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
         dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
     ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart + channelVolumes.channel, 0) /
         channelVolumes.channel);
-    HandleZeroVolumeCheckEvent();
 }
-
-void AudioEndpointInner::HandleZeroVolumeCheckEvent()
-{
-    if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
-        return;
-    }
-    if (!zeroVolumeStopDevice_ && (ClockTime::GetCurNano() >= delayStopTimeForZeroVolume_)) {
-        if (isStarted_) {
-            std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
-            if (sink != nullptr && sink->Stop() == SUCCESS) {
-                AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device success.");
-                isStarted_ = false;
-            } else {
-                AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device failed.");
-                isStarted_ = true;
-            }
-        }
-        zeroVolumeStopDevice_ = true;
-    }
-}
-
 
 void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData,
     bool applyVol)
@@ -1346,39 +1276,8 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
         int32_t vol = 1 << VOLUME_SHIFT_NUMBER;
         int16_t *srcPtr = reinterpret_cast<int16_t *>(srcData.bufferDesc.buffer) + offset;
         int32_t sum = applyVol ? (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER : *srcPtr; // 1/65536
-        ZeroVolumeCheck(vol);
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
-    }
-    HandleZeroVolumeCheckEvent();
-}
-
-void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
-{
-    if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
-        return;
-    }
-    if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
-        if (!zeroVolumeStopDevice_ && !isVolumeAlreadyZero_) {
-            AUDIO_INFO_LOG("Begin zero volume, will stop device.");
-            delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS;
-            isVolumeAlreadyZero_ = true;
-        }
-    } else {
-        if (zeroVolumeStopDevice_ && !isStarted_) {
-            std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
-            if (sink == nullptr || sink->Start() != SUCCESS) {
-                AUDIO_INFO_LOG("Volume from zero to none-zero, start device failed.");
-                isStarted_ = false;
-            } else {
-                AUDIO_INFO_LOG("Volume from zero to none-zero, start device success.");
-                isStarted_ = true;
-                needReSyncPosition_ = true;
-            }
-            zeroVolumeStopDevice_ = false;
-        }
-        isVolumeAlreadyZero_ = false;
-        delayStopTimeForZeroVolume_ = INT64_MAX;
     }
 }
 
@@ -2116,76 +2015,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     ReSetThreadQosLevel();
     // stop watchdog
     EndPointRemoveWatchdog("WatchingEndpointWorkLoopFuc", GetEndpointName());
-}
-
-void AudioEndpointInner::InitLatencyMeasurement()
-{
-    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
-        return;
-    }
-    signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    signalDetectAgent_->sampleFormat_ = SAMPLE_S16LE;
-    signalDetectAgent_->formatByteSize_ = GetFormatByteSize(SAMPLE_S16LE);
-    latencyMeasEnabled_ = true;
-    signalDetected_ = false;
-}
-
-void AudioEndpointInner::DeinitLatencyMeasurement()
-{
-    signalDetectAgent_ = nullptr;
-    latencyMeasEnabled_ = false;
-}
-
-void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
-{
-    if (!latencyMeasEnabled_) {
-        return;
-    }
-    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    size_t byteSize = static_cast<size_t>(GetFormatByteSize(dstStreamInfo_.format));
-    size_t newlyCheckedTime = bufferSize / (dstStreamInfo_.samplingRate /
-        MILLISECOND_PER_SECOND) / (byteSize * sizeof(uint8_t) * dstStreamInfo_.channels);
-    detectedTime_ += newlyCheckedTime;
-    if (detectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_ &&
-        !signalDetectAgent_->dspTimestampGot_) {
-            AudioParamKey key = NONE;
-            std::string condition = "debug_audio_latency_measurement";
-            std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
-            std::string dspTime = sink->GetAudioParameter(key, condition);
-            LatencyMonitor::GetInstance().UpdateDspTime(dspTime);
-            LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true,
-                signalDetectAgent_->lastPeakBufferTime_);
-            AUDIO_INFO_LOG("LatencyMeas fastSink signal detected");
-            LatencyMonitor::GetInstance().ShowTimestamp(true);
-            signalDetectAgent_->dspTimestampGot_ = true;
-            signalDetectAgent_->signalDetected_ = false;
-    }
-    signalDetected_ = signalDetectAgent_->CheckAudioData(buffer, bufferSize);
-    if (signalDetected_) {
-        AUDIO_INFO_LOG("LatencyMeas fastSink signal detected");
-        detectedTime_ = 0;
-    }
-}
-
-void AudioEndpointInner::CheckRecordSignal(uint8_t *buffer, size_t bufferSize)
-{
-    if (!latencyMeasEnabled_) {
-        return;
-    }
-    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    signalDetected_ = signalDetectAgent_->CheckAudioData(buffer, bufferSize);
-    if (signalDetected_) {
-        AudioParamKey key = NONE;
-        std::string condition = "debug_audio_latency_measurement";
-        std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
-        std::string dspTime = source->GetAudioParameter(key, condition);
-        LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(false,
-            signalDetectAgent_->lastPeakBufferTime_);
-        LatencyMonitor::GetInstance().UpdateDspTime(dspTime);
-        AUDIO_INFO_LOG("LatencyMeas fastSource signal detected");
-        signalDetected_ = false;
-    }
 }
 
 void AudioEndpointInner::ProcessUpdateAppsUidForPlayback()
