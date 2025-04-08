@@ -1577,5 +1577,190 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetNormalVoipFlag_001, TestSize.Level1
     server->audioPolicyService_.SetNormalVoipFlag(normalVoipFlag);
     EXPECT_NE(server, nullptr);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyDump.
+ * @tc.number: AudioPolicyDump_001
+ * @tc.desc  : Test AudioPolicyDump interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyDump_001, TestSize.Level1)
+{
+    auto audioPolicyDump = std::make_shared<AudioPolicyDump>();
+    EXPECT_NE(audioPolicyDump, nullptr);
+
+    std::string dumpString = "abc";
+    audioPolicyDump->audioPolicyManager_.SetRingerMode(RINGER_MODE_SILENT);
+    audioPolicyDump->GetRingerModeDump(dumpString);
+    EXPECT_EQ(dumpString, "abcRinger Mode:SILENT\n\n");
+}
+
+/**
+ * @tc.name  : Test AudioPolicyDump.
+ * @tc.number: AudioPolicyDump_002
+ * @tc.desc  : Test AudioPolicyDump interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyDump_002, TestSize.Level1)
+{
+    auto audioPolicyDump = std::make_shared<AudioPolicyDump>();
+    EXPECT_NE(audioPolicyDump, nullptr);
+
+    std::string dumpString = "abc";
+    audioPolicyDump->audioPolicyManager_.SetRingerMode(RINGER_MODE_VIBRATE);
+    audioPolicyDump->GetRingerModeDump(dumpString);
+    EXPECT_EQ(dumpString, "abcRinger Mode:VIBRATE\n\n");
+}
+
+/**
+ * @tc.name  : Test AudioPolicyDump.
+ * @tc.number: AudioPolicyDump_003
+ * @tc.desc  : Test AudioPolicyDump interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyDump_003, TestSize.Level1)
+{
+    auto audioPolicyDump = std::make_shared<AudioPolicyDump>();
+    EXPECT_NE(audioPolicyDump, nullptr);
+
+    std::string dumpString = "abc";
+    audioPolicyDump->audioPolicyManager_.SetRingerMode(static_cast<AudioRingerMode>(3));
+    audioPolicyDump->GetRingerModeDump(dumpString);
+    EXPECT_EQ(dumpString, "abcRinger Mode:UNKNOWN\n\n");
+}
+
+/**
+ * @tc.name  : Test AudioPolicyDump.
+ * @tc.number: AudioPolicyDump_004
+ * @tc.desc  : Test AudioPolicyDump interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyDump_004, TestSize.Level1)
+{
+    auto audioPolicyDump = std::make_shared<AudioPolicyDump>();
+    EXPECT_NE(audioPolicyDump, nullptr);
+
+    AdjustStreamVolumeInfo adjustStreamVolumeInfo;
+    std::vector<AdjustStreamVolumeInfo> adjustInfo;
+    adjustInfo.push_back(adjustStreamVolumeInfo);
+
+    std::string dumpString = "abc";
+
+    audioPolicyDump->AdjustVolumeAppend(adjustInfo, dumpString);
+    EXPECT_NE(adjustInfo.size(), 0);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyDump.
+ * @tc.number: AudioPolicyDump_005
+ * @tc.desc  : Test AudioPolicyDump interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyDump_005, TestSize.Level1)
+{
+    auto audioPolicyDump = std::make_shared<AudioPolicyDump>();
+    EXPECT_NE(audioPolicyDump, nullptr);
+
+    std::string dumpString = "abc";
+    auto audioRendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    audioRendererChangeInfo->rendererInfo.rendererFlags = 0;
+    audioPolicyDump->streamCollector_.audioRendererChangeInfos_.push_back(audioRendererChangeInfo);
+
+    audioPolicyDump->AudioStreamDump(dumpString);
+    EXPECT_NE(dumpString, "abc");
+}
+
+/**
+ * @tc.name  : Test AudioPolicyDump.
+ * @tc.number: AudioPolicyDump_006
+ * @tc.desc  : Test AudioPolicyDump interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyDump_006, TestSize.Level1)
+{
+    auto audioPolicyDump = std::make_shared<AudioPolicyDump>();
+    EXPECT_NE(audioPolicyDump, nullptr);
+
+    std::string dumpString = "abc";
+    auto audioRendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    audioRendererChangeInfo->rendererInfo.rendererFlags = 1;
+    audioPolicyDump->streamCollector_.audioRendererChangeInfos_.push_back(audioRendererChangeInfo);
+
+    audioPolicyDump->AudioStreamDump(dumpString);
+    EXPECT_NE(dumpString, "abc");
+}
+
+/**
+ * @tc.name  : Test AudioPolicyDump.
+ * @tc.number: AudioPolicyDump_007
+ * @tc.desc  : Test AudioPolicyDump interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyDump_007, TestSize.Level1)
+{
+    auto audioPolicyDump = std::make_shared<AudioPolicyDump>();
+    EXPECT_NE(audioPolicyDump, nullptr);
+
+    AudioRingerMode ringerMode = RINGER_MODE_SILENT;
+    auto audioRingerMode = audioPolicyDump->GetRingerModeType(ringerMode);
+    EXPECT_EQ(audioRingerMode, "RINGER_MODE_SILENT");
+}
+
+/**
+ * @tc.name  : Test AudioPolicyDump.
+ * @tc.number: AudioPolicyDump_008
+ * @tc.desc  : Test AudioPolicyDump interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyDump_008, TestSize.Level1)
+{
+    auto audioPolicyDump = std::make_shared<AudioPolicyDump>();
+    EXPECT_NE(audioPolicyDump, nullptr);
+
+    AudioRingerMode ringerMode = RINGER_MODE_VIBRATE;
+    auto audioRingerMode = audioPolicyDump->GetRingerModeType(ringerMode);
+    EXPECT_EQ(audioRingerMode, "RINGER_MODE_VIBRATE");
+}
+
+/**
+ * @tc.name  : Test AudioPolicyDump.
+ * @tc.number: AudioPolicyDump_009
+ * @tc.desc  : Test AudioPolicyDump interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyDump_009, TestSize.Level1)
+{
+    auto audioPolicyDump = std::make_shared<AudioPolicyDump>();
+    EXPECT_NE(audioPolicyDump, nullptr);
+
+    AudioRingerMode ringerMode = static_cast<AudioRingerMode>(3);
+    auto audioRingerMode = audioPolicyDump->GetRingerModeType(ringerMode);
+    EXPECT_EQ(audioRingerMode, "UNKNOWMTYPE");
+}
+
+/**
+ * @tc.name  : Test AudioPolicyUtils.
+ * @tc.number: AudioPolicyUtils_001
+ * @tc.desc  : Test AudioPolicyUtils interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyUtils_001, TestSize.Level1)
+{
+    auto audioPolicyUtils = std::make_shared<AudioPolicyUtils>();
+    EXPECT_NE(audioPolicyUtils, nullptr);
+
+    AudioDeviceDescriptor desc;
+    desc.networkId_ == REMOTE_NETWORK_ID;
+    int32_t sessionId = 0;
+
+    auto ret = audioPolicyUtils->GetSinkName(desc, sessionId);
+    EXPECT_EQ(ret, "none");
+}
+
+/**
+ * @tc.name  : Test AudioPolicyUtils.
+ * @tc.number: AudioPolicyUtils_002
+ * @tc.desc  : Test AudioPolicyUtils interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyUtils_002, TestSize.Level1)
+{
+    auto audioPolicyUtils = std::make_shared<AudioPolicyUtils>();
+    EXPECT_NE(audioPolicyUtils, nullptr);
+
+    DeviceType deviceType = InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+
+    auto ret = audioPolicyUtils->GetSourcePortName(deviceType);
+    EXPECT_EQ(ret, "Bt_Mic");
+}
 } // namespace AudioStandard
 } // namespace OHOS
