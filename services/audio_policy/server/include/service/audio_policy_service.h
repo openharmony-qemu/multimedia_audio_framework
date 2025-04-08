@@ -603,7 +603,7 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
-    bool isFastControlled_ = false;
+    bool isFastControlled_ = true;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
