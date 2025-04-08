@@ -152,6 +152,27 @@ private:
     void AddAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
     void RemoveAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
     void ReleaseAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply);
+
+    void HandleRegisterAudioZoneClient(MessageParcel &data, MessageParcel &reply);
+    void HandleCreateAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleReleaseAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleGetAllAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleGetAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleBindAudioZoneDevice(MessageParcel &data, MessageParcel &reply);
+    void HandleUnBindAudioZoneDevice(MessageParcel &data, MessageParcel &reply);
+    void HandleEnableAudioZoneReport (MessageParcel &data, MessageParcel &reply);
+    void HandleEnableAudioZoneChangeReport(MessageParcel &data, MessageParcel &reply);
+    void HandleAddUidToAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleRemoveUidFromAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply);
+    void HandleSetSystemVolumeLevelForZone(MessageParcel &data, MessageParcel &reply);
+    void HandleGetSystemVolumeLevelForZone(MessageParcel &data, MessageParcel &reply);
+    void HandleGetAudioInterruptForZone(MessageParcel &data, MessageParcel &reply);
+    void HandleGetAudioInterruptForZoneDevice(MessageParcel &data, MessageParcel &reply);
+    void HandleEnableAudioZoneInterruptReport(MessageParcel &data, MessageParcel &reply);
+    void HandleInjectInterruptToAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleInjectInterruptToAudioZoneDevice(MessageParcel &data, MessageParcel &reply);
+
     void SetCallDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void GetConverterConfigInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveBluetoothDeviceInternal(MessageParcel &data, MessageParcel &reply);
@@ -216,6 +237,8 @@ private:
     void OnMiddleFirRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddlesRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMidRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnAudioZoneRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnAudioZoneRemoteRequestExt(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

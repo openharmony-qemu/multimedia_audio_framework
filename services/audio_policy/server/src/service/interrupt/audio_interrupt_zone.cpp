@@ -51,13 +51,13 @@ int32_t AudioInterruptZoneManager::GetAudioFocusInfoList(const int32_t zoneId,
 }
 
 int32_t AudioInterruptZoneManager::GetAudioFocusInfoList(const int32_t zoneId,
-    const std::string &deviceTag, AudioFocusList &focusInfoList)
+    const int32_t deviceId, AudioFocusList &focusInfoList)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
     auto itZone = service_->zonesMap_.find(zoneId);
     if (itZone != service_->zonesMap_.end() && itZone->second != nullptr) {
         for (const auto &focus : itZone->second->audioFocusInfoList) {
-            if (focus.first.deviceTag != deviceTag) {
+            if (focus.first.deviceId != deviceId) {
                 continue;
             }
             focusInfoList.emplace_back(focus);
@@ -120,7 +120,7 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
             it->first.streamUsage == STREAM_USAGE_MOVIE)) {
             ForceStopAudioFocusInZone(zoneId, it->first);
         } else {
-            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "");
+            int32_t destZoneId = func(it->first.uid, it->first.deviceId, it->first.deviceTag);
             service_->ActivateAudioInterruptInternal(zoneId, it->first, false, updateScene);
         }
     }
@@ -161,7 +161,7 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
     bool isMigrate = false;
     bool updateScene = false;
     for (auto itFocus = focusInfoList.begin(); itFocus != focusInfoList.end();) {
-        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "");
+        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceId, itFocus->first.deviceTag);
         if (toZoneId == zoneId) {
             ++itFocus;
             continue;
@@ -197,7 +197,7 @@ void AudioInterruptZoneManager::ForceStopAllAudioFocusInZone(std::shared_ptr<Aud
     }
 }
 
-int32_t AudioInterruptZoneManager::InjectInterruptToAudiotZone(const int32_t zoneId,
+int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zoneId,
     const AudioFocusList &interrupts)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
@@ -241,8 +241,8 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudiotZone(const int32_t zon
     return SUCCESS;
 }
 
-int32_t AudioInterruptZoneManager::InjectInterruptToAudiotZone(const int32_t zoneId,
-    const std::string &deviceTag, const AudioFocusList &interrupts)
+int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zoneId,
+    const int32_t deviceId, const AudioFocusList &interrupts)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
     CHECK_AND_RETURN_RET_LOG(CheckAudioInterruptZonePermission(), ERR_INVALID_PARAM,
@@ -253,26 +253,26 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudiotZone(const int32_t zon
         AUDIO_WARNING_LOG("zone %{public}d not exist", zoneId);
         return ERR_INVALID_PARAM;
     }
-    if (deviceTag.empty()) {
-        AUDIO_WARNING_LOG("device tag is invalid for zone %{public}d", zoneId);
+    if (deviceId == -1) {
+        AUDIO_WARNING_LOG("device id is invalid for zone %{public}d", zoneId);
         return ERR_INVALID_PARAM;
     }
 
-    AUDIO_INFO_LOG("inject interrupt size %{public}zu with device tag %{public}s to zone %{public}d",
-        interrupts.size(), deviceTag.c_str(), zoneId);
+    AUDIO_INFO_LOG("inject interrupt size %{public}zu with device id %{public}d to zone %{public}d",
+        interrupts.size(), deviceId, zoneId);
     AudioFocusList newFocusList = interrupts;
     AudioFocusList activeFocusList;
-    AudioFocusIterator oldDeviceList = QueryAudioFocusFromZone(zoneId, deviceTag);
+    AudioFocusIterator oldDeviceList = QueryAudioFocusFromZone(zoneId, deviceId);
 
     for (auto &itNew : newFocusList) {
-        auto isPresent = [itNew, deviceTag](const std::list<std::pair<AudioInterrupt,
+        auto isPresent = [itNew, deviceId](const std::list<std::pair<AudioInterrupt,
             AudioFocuState>>::iterator &iter) {
-            return iter->first.streamId == itNew.first.streamId && iter->first.deviceTag == deviceTag;
+            return iter->first.streamId == itNew.first.streamId && iter->first.deviceId == deviceId;
         };
         auto itOld = std::find_if(oldDeviceList.begin(), oldDeviceList.end(), isPresent);
         if (itOld == oldDeviceList.end()) {
             AUDIO_DEBUG_LOG("record new interrupt %{public}d", itNew.first.streamId);
-            itNew.first.deviceTag = deviceTag;
+            itNew.first.deviceId = deviceId;
             activeFocusList.emplace_back(itNew);
         } else {
             if ((*itOld)->second != itNew.second) {
@@ -292,12 +292,12 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudiotZone(const int32_t zon
 }
 
 AudioFocusIterator AudioInterruptZoneManager::QueryAudioFocusFromZone(int32_t zoneId,
-    const std::string &deviceTag)
+    const int32_t deviceId)
 {
     auto &focusInfoList = service_->zonesMap_[zoneId]->audioFocusInfoList;
     AudioFocusIterator deviceList;
     for (auto it = focusInfoList.begin(); it != focusInfoList.end(); it++) {
-        if (it->first.deviceTag != deviceTag) {
+        if (it->first.deviceId != deviceId) {
             continue;
         }
         deviceList.emplace_back(it);

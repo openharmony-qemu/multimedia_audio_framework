@@ -34,6 +34,8 @@
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
+#include "audio_zone_service.h"
+#include "i_standard_audio_zone_client.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -179,6 +181,8 @@ void AudioPolicyServer::OnStart()
     audioPolicyServerHandler_->Init(interruptService_);
 
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
+
+    AudioZoneService::GetInstance().Init(audioPolicyServerHandler_, interruptService_);
 
     if (audioPolicyService_.SetAudioStreamRemovedCallback(this)) {
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
@@ -2016,7 +2020,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
                 audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
             }
         }
-        return interruptService_->ActivateAudioInterrupt(zoneID, audioInterrupt, isUpdatedAudioStrategy);
+        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+        return interruptService_->ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;
 }
@@ -2024,7 +2029,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
-        return interruptService_->DeactivateAudioInterrupt(zoneID, audioInterrupt);
+        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+        return interruptService_->DeactivateAudioInterrupt(zoneId, audioInterrupt);
     }
     return ERR_UNKNOWN;
 }
@@ -2499,6 +2505,8 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
         interruptService_->DeactivateAudioSession(pid);
     }
     audioPolicyService_.ReduceAudioPolicyClientProxyMap(pid);
+
+    AudioZoneService::GetInstance().UnRegisterAudioZoneClient(pid);
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()
@@ -2896,7 +2904,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
 
-    if (ret == SUCCESS && audioPolicyServerHandler_!= nullptr && audioPolicyService_.IsCurrentActiveDeviceA2dp()) {
+    if (ret == SUCCESS && audioPolicyServerHandler_ != nullptr && audioPolicyService_.IsCurrentActiveDeviceA2dp()) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
     }
     return ret;
@@ -3311,6 +3319,11 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
 
 int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
 {
+    if (interruptService_ != nullptr) {
+        AudioZoneFocusStrategy context;
+        return interruptService_->CreateAudioInterruptZone(zoneID,
+            AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
+    }
     return ERR_UNKNOWN;
 }
 
@@ -3327,6 +3340,126 @@ int32_t AudioPolicyServer::RemoveAudioInterruptZonePids(const std::set<int32_t> 
 int32_t AudioPolicyServer::ReleaseAudioInterruptZone(const int32_t zoneID)
 {
     return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "RegisterAudioZoneClient listener object is nullptr");
+    
+    sptr<IStandardAudioZoneClient> client = iface_cast<IStandardAudioZoneClient>(object);
+    CHECK_AND_RETURN_RET_LOG(client != nullptr, ERR_INVALID_PARAM,
+        "RegisterAudioZoneClient listener obj cast failed");
+
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    AUDIO_DEBUG_LOG("register clientPid: %{public}d", clientPid);
+
+    client->hasBTPermission_ = VerifyBluetoothPermission();
+    client->hasSystemPermission_ = PermissionUtil::VerifySystemPermission();
+    AudioZoneService::GetInstance().RegisterAudioZoneClient(clientPid, client);
+
+    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context)
+{
+    return AudioZoneService::GetInstance().CreateAudioZone(name, context);
+}
+
+void AudioPolicyServer::ReleaseAudioZone(int32_t zoneId)
+{
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioPolicyServer::GetAllAudioZone()
+{
+    return AudioZoneService::GetInstance().GetAllAudioZone();
+}
+
+const std::shared_ptr<AudioZoneDescriptor> AudioPolicyServer::GetAudioZone(int32_t zoneId)
+{
+    return AudioZoneService::GetInstance().GetAudioZone(zoneId);
+}
+
+int32_t AudioPolicyServer::BindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
+{
+    return AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
+}
+
+int32_t AudioPolicyServer::UnBindDeviceToAudioZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
+{
+    return AudioZoneService::GetInstance().UnBindDeviceToAudioZone(zoneId, devices);
+}
+
+int32_t AudioPolicyServer::EnableAudioZoneReport(bool enable)
+{
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    return AudioZoneService::GetInstance().EnableAudioZoneReport(clientPid, enable);
+}
+
+int32_t AudioPolicyServer::EnableAudioZoneChangeReport(int32_t zoneId, bool enable)
+{
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    return AudioZoneService::GetInstance().EnableAudioZoneChangeReport(clientPid, zoneId, enable);
+}
+
+int32_t AudioPolicyServer::AddUidToAudioZone(int32_t zoneId, int32_t uid)
+{
+    return AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, uid);
+}
+
+int32_t AudioPolicyServer::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
+{
+    return AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, uid);
+}
+
+int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
+{
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    return AudioZoneService::GetInstance().EnableSystemVolumeProxy(clientPid, zoneId, enable);
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
+    const int32_t volumeLevel, const int32_t volumeFlag)
+{
+    return AudioZoneService::GetInstance().SetSystemVolumeLevelForZone(zoneId, volumeType, volumeLevel, volumeFlag);
+}
+
+int32_t AudioPolicyServer::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
+{
+    return AudioZoneService::GetInstance().GetSystemVolumeLevelForZone(zoneId, volumeType);
+}
+
+std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId)
+{
+    return AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId);
+}
+
+std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudioInterruptForZone(
+    int32_t zoneId, int32_t deviceId)
+{
+    return AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId, deviceId);
+}
+
+int32_t AudioPolicyServer::EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable)
+{
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    return AudioZoneService::GetInstance().EnableAudioZoneInterruptReport(clientPid, zoneId, deviceId, enable);
+}
+
+int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts)
+{
+    return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, interrupts);
+}
+
+int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts)
+{
+    return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, deviceId, interrupts);
 }
 
 int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,

@@ -25,6 +25,7 @@
 #include "audio_system_manager.h"
 #include "audio_effect.h"
 #include "microphone_descriptor.h"
+#include "audio_zone_manager.h"
 #include "audio_stream_descriptor.h"
 
 namespace OHOS {
@@ -325,6 +326,50 @@ public:
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t ReleaseAudioInterruptZone(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+
+    virtual int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object) = 0;
+
+    virtual int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context) = 0;
+
+    virtual void ReleaseAudioZone(int32_t zoneId) = 0;
+
+    virtual const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() = 0;
+
+    virtual const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) = 0;
+
+    virtual int32_t BindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) = 0;
+
+    virtual int32_t UnBindDeviceToAudioZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) = 0;
+
+    virtual int32_t EnableAudioZoneReport (bool enable) = 0;
+
+    virtual int32_t EnableAudioZoneChangeReport(int32_t zoneId, bool enable) = 0;
+
+    virtual int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid) = 0;
+
+    virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
+
+    virtual int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) = 0;
+
+    virtual int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
+        const int32_t volumeLevel, const int32_t volumeFlag = 0) = 0;
+
+    virtual int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) = 0;
+
+    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;
+
+    virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+        int32_t zoneId, int32_t deviceId) = 0;
+
+    virtual int32_t EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable) = 0;
+
+    virtual int32_t InjectInterruptToAudioZone(int32_t zoneId,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
+    
+    virtual int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
 
     virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
         const int32_t pid = INVALID_PID) = 0;

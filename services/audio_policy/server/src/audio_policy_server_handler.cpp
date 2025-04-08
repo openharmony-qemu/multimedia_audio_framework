@@ -1355,6 +1355,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
         case EventAudioServerCmd::NN_STATE_CHANGE:
             HandleNnStateChangeEvent(event);
             break;
+        case EventAudioServerCmd::AUDIO_ZONE_EVENT:
+            HandleAudioZoneEvent(event);
+            break;
         case EventAudioServerCmd::AUDIO_SCENE_CHANGE:
             HandleAudioSceneChange(event);
             break;
@@ -1485,6 +1488,36 @@ std::vector<AudioCapturerInfo> AudioPolicyServerHandler::GetCallbackCapturerInfo
         return {};
     }
     return it->second;
+}
+
+void AudioPolicyServerHandler::SetAudioZoneEventDispatcher(const std::shared_ptr<IAudioZoneEventDispatcher> dispatcher)
+{
+    audioZoneEventDispatcher_ = dispatcher;
+}
+
+bool AudioPolicyServerHandler::SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    AUDIO_INFO_LOG("send audio zone event");
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_ZONE_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send audio zone event failed");
+    return ret;
+}
+
+void AudioPolicyServerHandler::HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+
+    std::unique_lock<std::mutex> lock(handleMapMutex_);
+    std::shared_ptr<IAudioZoneEventDispatcher> dispatcher = audioZoneEventDispatcher_.lock();
+    lock.unlock();
+    if (dispatcher != nullptr) {
+        dispatcher->DispatchEvent(eventContextObj->audioZoneEvent);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -40,10 +40,6 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
             continue;
         }
         AppendFormat(dumpString, "  - Zone ID: %d\n", zoneID);
-        AppendFormat(dumpString, "  - Pids size: %zu\n", audioInterruptZoneDump->pids.size());
-        for (auto pid : audioInterruptZoneDump->pids) {
-            AppendFormat(dumpString, "    - pid: %d\n", pid);
-        }
 
         AppendFormat(dumpString, "  - Interrupt callback size: %zu\n",
             audioInterruptZoneDump->interruptCbStreamIdsMap.size());
