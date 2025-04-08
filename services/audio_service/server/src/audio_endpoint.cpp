@@ -475,7 +475,7 @@ std::shared_ptr<IAudioCaptureSource> AudioEndpointInner::GetFastSource(const std
     } else if (type == AudioEndpoint::TYPE_VOIP_MMAP) {
         AUDIO_INFO_LOG("Use voip mmap");
         fastSourceType_ = FAST_SOURCE_TYPE_VOIP;
-        SwitchSource(fastCaptureId_, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT); // In plan: should use voip mmap
+        SwitchSource(fastCaptureId_, HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP);
     }
     return nullptr;
 }
