@@ -1474,5 +1474,32 @@ bool AudioStreamCollector::HasRunningRecognitionCapturerStream()
     AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
     return hasRunningRecognitionCapturerStream;
 }
+
+// Check if media is currently playing
+bool AudioStreamCollector::IsMediaPlaying()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo->rendererState != RENDERER_RUNNING) {
+            continue;
+        }
+        AudioStreamType streamType = GetStreamType((changeInfo->rendererInfo).contentType,
+        (changeInfo->rendererInfo).streamUsage);
+        switch (streamType) {
+            case STREAM_MUSIC:
+            case STREAM_MEDIA:
+            case STREAM_MOVIE:
+            case STREAM_GAME:
+            case STREAM_SPEECH:
+            case STREAM_NAVIGATION:
+            case STREAM_CAMCORDER:
+            case STREAM_VOICE_MESSAGE:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

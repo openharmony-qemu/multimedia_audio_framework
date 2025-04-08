@@ -39,6 +39,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
+static const int64_t MEDIA_TO_RING_MUTE_DURATION_TIME_US = 200000; // 200ms
+static const int64_t HEADSET_SWITCH_DELAY_US = 100000; //100ms
+
 void AudioSceneManager::SetAudioScenePre(AudioScene audioScene)
 {
     AUDIO_INFO_LOG("Set audio scene start %{public}d", audioScene);
@@ -73,9 +76,15 @@ int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOf
     std::vector<DeviceType> activeOutputDevices;
     bool haveArmUsbDevice = false;
     DealAudioSceneOutputDevices(audioScene, activeOutputDevices, haveArmUsbDevice);
-    // mute primary when play music and ring
-    if (activeOutputDevices.size() > 1 && IsStreamActive(STREAM_MUSIC)) {
-        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, SET_BT_ABS_SCENE_DELAY_MS, true);
+    // mute primary when play media and ring
+    if (activeOutputDevices.size() > 1 && streamCollector_.IsMediaPlaying()) {
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, MEDIA_TO_RING_MUTE_DURATION_TIME_US, true);
+        // Wait for the audio data in the cache to be drained before moving the stream
+        // Increase the delay time for the headset device
+        DeviceType mainDeviceType = activeOutputDevices.front();
+        if (mainDeviceType == DEVICE_TYPE_USB_HEADSET || mainDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+            usleep(HEADSET_SWITCH_DELAY_US); // sleep fix data cache pop.
+        }
     }
     int32_t result = SUCCESS;
     if (AudioPolicyUtils::GetInstance().GetScoExcluded()) {
