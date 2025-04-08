@@ -568,6 +568,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     if (newScoCategory == ScoCategory::SCO_VIRTUAL && !IsVirtualCall()) {
         AUDIO_INFO_LOG("Voip change to Call Category");
         newScoCategory = ScoCategory::SCO_CALLULAR;
+        scene = ((scene == AUDIO_SCENE_RINGING) ? AUDIO_SCENE_VOICE_RINGING : AUDIO_SCENE_PHONE_CALL);
     }
     AUDIO_INFO_LOG("new sco category is %{public}d, last sco category is %{public}d", newScoCategory, lastScoCategory);
 

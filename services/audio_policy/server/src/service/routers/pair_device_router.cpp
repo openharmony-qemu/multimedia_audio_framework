@@ -63,6 +63,17 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::GetRingRenderDe
 shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
     const uint32_t sessionID)
 {
+    shared_ptr<AudioDeviceDescriptor> desc =
+        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
+    std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;
+    bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
+    if (pairDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && pairDevice != nullptr &&
+        pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&
+        (pairDevice->isEnable_ || isScoStateConnect)) {
+        AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
+            pairDevice->deviceType_);
+        return make_shared<AudioDeviceDescriptor>(*pairDevice);
+    }
     return make_shared<AudioDeviceDescriptor>();
 }
 
