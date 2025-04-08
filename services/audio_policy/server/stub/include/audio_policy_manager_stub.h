@@ -125,6 +125,7 @@ private:
     void SetDeviceAbsVolumeSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsAbsVolumeSceneInternal(MessageParcel &data, MessageParcel &reply);
     void SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void SetNearlinkDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);

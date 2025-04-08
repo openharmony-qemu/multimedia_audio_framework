@@ -118,6 +118,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_DEVICE_ABSOLUTE_VOLUME_SUPPORTED",
     "GET_ABS_VOLUME_SCENE",
     "SET_A2DP_DEVICE_VOLUME",
+    "SET_NEARLINK_DEVICE_VOLUME",
     "GET_AVAILABLE_DESCRIPTORS",
     "SET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
     "UNSET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
@@ -1006,15 +1007,6 @@ void AudioPolicyManagerStub::IsAbsVolumeSceneInternal(MessageParcel &data, Messa
     reply.WriteBool(IsAbsVolumeScene());
 }
 
-void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::string macAddress = data.ReadString();
-    int32_t volume = data.ReadInt32();
-    bool updateUi = data.ReadBool();
-    int32_t result = SetA2dpDeviceVolume(macAddress, volume, updateUi);
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
@@ -1633,6 +1625,9 @@ void AudioPolicyManagerStub::OnMiddleFifRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_A2DP_DEVICE_VOLUME):
             SetA2dpDeviceVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_NEARLINK_DEVICE_VOLUME):
+            SetNearlinkDeviceVolumeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AVAILABLE_DESCRIPTORS):
             GetAvailableDevicesInternal(data, reply);

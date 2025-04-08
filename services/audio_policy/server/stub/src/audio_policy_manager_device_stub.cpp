@@ -321,6 +321,27 @@ void AudioPolicyManagerStub::SetInputDeviceInternal(MessageParcel &data, Message
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string macAddress = data.ReadString();
+    int32_t volume = data.ReadInt32();
+    bool updateUi = data.ReadBool();
+    int32_t result = SetA2dpDeviceVolume(macAddress, volume, updateUi);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetNearlinkDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string macAddress = data.ReadString();
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    int32_t volume = data.ReadInt32();
+    bool updateUi = data.ReadBool();
+
+    int32_t result = SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
+
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
@@ -333,7 +354,10 @@ void AudioPolicyManagerStub::UpdateDeviceInfoInternal(MessageParcel &data, Messa
 {
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+    MapExternalToInternalDeviceType(*audioDeviceDescriptor);
+
     DeviceInfoUpdateCommand command = static_cast<DeviceInfoUpdateCommand>(data.ReadInt32());
+
     int32_t result = UpdateDeviceInfo(audioDeviceDescriptor, command);
     reply.WriteInt32(result);
 }
@@ -341,7 +365,8 @@ void AudioPolicyManagerStub::UpdateDeviceInfoInternal(MessageParcel &data, Messa
 void AudioPolicyManagerStub::SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(object != nullptr, "SetSleAudioOperationCallback is null");
+    CHECK_AND_RETURN_LOG(object != nullptr, "object is null");
+
     int32_t result = SetSleAudioOperationCallback(object);
     reply.WriteInt32(result);
 }

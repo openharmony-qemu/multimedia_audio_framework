@@ -176,7 +176,7 @@ typedef enum {
     /**
      * @brief Nearlink audio device.
      *
-     * @since 19
+     * @since 20
      */
     AUDIO_DEVICE_TYPE_NEARLINK = 31,
 
