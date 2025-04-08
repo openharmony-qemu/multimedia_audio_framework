@@ -30,7 +30,9 @@ ContextBase::~ContextBase()
         if (callbackRef != nullptr) {
             napi_delete_reference(env, callbackRef);
         }
-        napi_delete_reference(env, selfRef);
+        if (selfRef != nullptr) {
+            napi_delete_reference(env, selfRef);
+        }
         env = nullptr;
         callbackRef = nullptr;
         selfRef = nullptr;
