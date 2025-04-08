@@ -650,9 +650,9 @@ HWTEST(AudioServiceUnitTest, GetAudioEndpointForDevice_001, TestSize.Level1)
 {
     AudioService *audioService = AudioService::GetInstance();
     AudioProcessConfig clientConfig;
-    AudioDeviceDescriptor deviceInfo = audioService->GetDeviceInfoForProcess(clientConfig);
-    bool isVoipStream = true;
-    audioService->GetAudioEndpointForDevice(deviceInfo, clientConfig, isVoipStream);
+    clientConfig.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    clientConfig.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
+    audioService->GetAudioProcess(clientConfig);
 }
 
 /**
