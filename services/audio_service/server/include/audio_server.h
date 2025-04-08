@@ -261,6 +261,9 @@ private:
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
+    void ParseAudioParameter();
+    void CacheExtraParameters(const std::string& key,
+        const std::vector<std::pair<std::string, std::string>>& kvpairs);
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
@@ -307,6 +310,12 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
+
+    std::shared_mutex audioParameterKeyMutex_;
+    bool isAudioParameterParsed_ = false;
+    std::vector<std::pair<std::string,
+        std::vector<std::pair<std::string, std::string>>>> audioExtraParameterCacheVector_;
+
     bool isFastControlled_ = true;
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};

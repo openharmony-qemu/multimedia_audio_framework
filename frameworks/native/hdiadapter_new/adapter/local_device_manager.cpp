@@ -520,12 +520,10 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
 void LocalDeviceManager::SaveSetParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
-    // save bt_wbs param
+    // save set param
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid == UID_BLUETOOTH_SA && key == AudioParamKey::BT_WBS) {
-        AUDIO_INFO_LOG("save bt_wbs param when adapter is nullptr");
-        reSetParams_.push_back({ adapterName, key, condition, value });
-    }
+    AUDIO_INFO_LOG("save param when adapter is nullptr, callerUid is %{public}u", callerUid);
+    reSetParams_.push_back({ adapterName, key, condition, value });
 }
 
 void LocalDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
