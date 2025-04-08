@@ -127,7 +127,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
     int32_t tryCount = 3;
     while (tryCount-- > 0) {
         AUDIO_INFO_LOG("try to start bluetooth render");
-        CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+        CHECK_AND_BREAK_LOG(audioRender_ != nullptr, "Bluetooth renderer is nullptr");
         int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret) {
             AUDIO_ERR_LOG("start fail, remain %{public}d attempt(s)", tryCount);

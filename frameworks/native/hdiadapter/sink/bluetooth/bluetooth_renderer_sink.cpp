@@ -718,7 +718,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
     if (!started_) {
         while (tryCount-- > 0) {
             AUDIO_INFO_LOG("Try to start bluetooth render");
-            CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERROR, "Bluetooth renderer is nullptr");
+            CHECK_AND_BREAK_LOG(audioRender_ != nullptr, "Bluetooth renderer is nullptr");
             int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (!ret) {
                 AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
