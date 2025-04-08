@@ -66,6 +66,7 @@ void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
             AudioParamKey key = NONE;
             std::string condition = "debug_audio_latency_measurement";
             std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+            CHECK_AND_RETURN_LOG(sink != nullptr, "sink is nullptr!");
             std::string dspTime = sink->GetAudioParameter(key, condition);
             LatencyMonitor::GetInstance().UpdateDspTime(dspTime);
             LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true,
@@ -93,6 +94,7 @@ void AudioEndpointInner::CheckRecordSignal(uint8_t *buffer, size_t bufferSize)
         AudioParamKey key = NONE;
         std::string condition = "debug_audio_latency_measurement";
         std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
+        CHECK_AND_RETURN_LOG(source != nullptr, "source is nullptr!");
         std::string dspTime = source->GetAudioParameter(key, condition);
         LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(false,
             signalDetectAgent_->lastPeakBufferTime_);
