@@ -789,7 +789,7 @@ int32_t AudioInterruptService::ActivatePreemptMode()
     std::lock_guard<std::mutex> lock(mutex_);
     isPreemptMode_ = true;
     int ret = ClearAudioFocusInfoList();
-    if (!ret) {
+    if (ret) {
         isPreemptMode_ = false;
     }
     AUDIO_INFO_LOG("isPreemptMode_ = %{public}d", isPreemptMode_);
