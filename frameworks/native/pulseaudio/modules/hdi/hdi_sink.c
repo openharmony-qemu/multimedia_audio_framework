@@ -73,7 +73,6 @@
 #define DEFAULT_IN_CHANNEL_NUM 2
 #define PRIMARY_CHANNEL_NUM 2
 #define IN_CHANNEL_NUM_MAX 16
-#define OUT_CHANNEL_NUM_MAX 2
 #define DEFAULT_FRAMELEN 2048
 #define SCENE_TYPE_NUM 9
 #define HDI_MIN_MS_MAINTAIN 40
@@ -2127,7 +2126,7 @@ static void FreeEffectBuffer(struct Userdata *u)
 static void ResetBufferAttr(struct Userdata *u)
 {
     size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
-    size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
+    size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
     if (memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen) != EOK) {
         AUDIO_WARNING_LOG("SinkRenderBufIn memset_s failed");
     }
