@@ -56,6 +56,9 @@ public:
 
     int32_t SetUnderrunCount(uint32_t underrunCnt) override;
 
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+        uint32_t code) override;
+
 private:
     static inline BrokerDelegator<AudioProcessProxy> delegator_;
 };

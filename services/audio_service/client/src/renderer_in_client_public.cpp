@@ -489,6 +489,11 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
     return SUCCESS;
 }
 
+float RendererInClientInner::GetDuckVolume()
+{
+    return duckVolume_;
+}
+
 int32_t RendererInClientInner::SetMute(bool mute)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
@@ -503,6 +508,11 @@ int32_t RendererInClientInner::SetMute(bool mute)
         return ERROR;
     }
     return SUCCESS;
+}
+
+bool RendererInClientInner::GetMute()
+{
+    return std::abs(muteVolume_ - 0.0f) <= std::numeric_limits<float>::epsilon();
 }
 
 int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)

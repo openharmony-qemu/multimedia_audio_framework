@@ -98,7 +98,11 @@ public:
 
     int32_t SetDuckVolume(float vol) override;
 
+    float GetDuckVolume() override;
+
     int32_t SetMute(bool mute) override;
+
+    bool GetMute() override;
 
     int32_t SetSourceDuration(int64_t duration) override;
 
@@ -131,6 +135,8 @@ public:
     RestoreStatus CheckRestoreStatus() override;
 
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+
+    void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code) override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
@@ -441,6 +447,8 @@ int32_t AudioProcessInClientInner::SetVolume(float vol)
     int32_t volumeInt = static_cast<int32_t>(vol * PROCESS_VOLUME_MAX);
     int32_t ret = SetVolume(volumeInt);
     if (ret == SUCCESS) {
+        SaveAdjustStreamVolumeInfo(vol, sessionId_, GetTime(),
+            static_cast<uint32_t>(AdjustStreamVolume::STREAM_VOLUME_INFO));
         volumeInFloat_ = vol;
     }
     return ret;
@@ -457,6 +465,11 @@ int32_t AudioProcessInClientInner::SetMute(bool mute)
     return SUCCESS;
 }
 
+bool AudioProcessInClientInner::GetMute()
+{
+    return std::abs(muteVolumeInFloat_ - 0.0f) <= std::numeric_limits<float>::epsilon();
+}
+
 int32_t AudioProcessInClientInner::SetSourceDuration(int64_t duration)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
@@ -469,8 +482,15 @@ int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
     float maxVol = 1.0f;
     CHECK_AND_RETURN_RET_LOG(vol >= minVol && vol <= maxVol, ERR_INVALID_PARAM,
         "SetDuckVolume failed to with invalid volume:%{public}f", vol);
+    SaveAdjustStreamVolumeInfo(vol, sessionId_, GetTime(),
+        static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO));
     duckVolumeInFloat_ = vol;
     return SUCCESS;
+}
+
+float AudioProcessInClientInner::GetDuckVolume()
+{
+    return duckVolumeInFloat_;
 }
 
 uint32_t AudioProcessInClientInner::GetUnderflowCount()
@@ -1867,6 +1887,12 @@ RestoreStatus AudioProcessInClientInner::SetRestoreStatus(RestoreStatus restoreS
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->SetRestoreStatus(restoreStatus);
+}
+
+void AudioProcessInClientInner::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    processProxy_->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
 }
 } // namespace AudioStandard
 } // namespace OHOS

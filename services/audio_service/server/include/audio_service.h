@@ -109,6 +109,7 @@ public:
     void SetDefaultAdapterEnable(bool isEnable);
     bool GetDefaultAdapterEnable();
     RestoreStatus RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo);
+    void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif

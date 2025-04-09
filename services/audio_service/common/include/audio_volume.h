@@ -86,8 +86,7 @@ public:
     void SetVgsVolumeSupported(bool isVgsSupported);
     bool IsVgsVolumeSupported() const;
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
-    void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
-        AdjustStreamVolume volumeType);
+    void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t code);
     void SetCurrentActiveDevice(DeviceType currentActiveDevice);
 private:
     AudioVolume();

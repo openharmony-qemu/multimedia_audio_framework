@@ -54,6 +54,9 @@ public:
 
     virtual int32_t SetUnderrunCount(uint32_t underrunCnt) = 0;
 
+    virtual int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+        uint32_t code) = 0;
+
     virtual ~AudioProcess() = default;
 };
 
@@ -94,6 +97,7 @@ public:
         ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS,
         ON_SET_SOURCE_DURATION,
         ON_SET_UNDERRUN_CNT,
+        ON_SAVE_STREAM_VOLUME_INFO,
         PROCESS_MAX_MSG
     };
 

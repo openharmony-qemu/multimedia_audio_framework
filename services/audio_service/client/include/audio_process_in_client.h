@@ -97,7 +97,11 @@ public:
 
     virtual int32_t SetDuckVolume(float vol) = 0;
 
+    virtual float GetDuckVolume() = 0;
+
     virtual int32_t SetMute(bool mute) = 0;
+
+    virtual bool GetMute() = 0;
 
     virtual uint32_t GetUnderflowCount() = 0;
 
@@ -126,6 +130,9 @@ public:
     virtual RestoreStatus CheckRestoreStatus() = 0;
 
     virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
+
+    virtual void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+        uint32_t code) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

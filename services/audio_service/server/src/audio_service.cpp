@@ -1373,5 +1373,11 @@ RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo resto
     AUDIO_WARNING_LOG("Session not exists, restore failed");
     return RESTORE_ERROR;
 }
+
+void AudioService::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
+}
 } // namespace AudioStandard
 } // namespace OHOS

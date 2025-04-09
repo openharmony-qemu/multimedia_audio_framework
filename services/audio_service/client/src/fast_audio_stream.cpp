@@ -333,6 +333,11 @@ int32_t FastAudioStream::SetMute(bool mute)
     return ret;
 }
 
+bool FastAudioStream::GetMute()
+{
+    return processClient_->GetMute();
+}
+
 int32_t FastAudioStream::SetSourceDuration(int64_t duration)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetMute failed: null process");
@@ -347,6 +352,11 @@ int32_t FastAudioStream::SetDuckVolume(float volume)
     int32_t ret = processClient_->SetDuckVolume(volume);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDuckVolume error.");
     return ret;
+}
+
+float FastAudioStream::GetDuckVolume()
+{
+    return processClient_->GetDuckVolume();
 }
 
 void FastAudioStream::SetSilentModeAndMixWithOthers(bool on)
