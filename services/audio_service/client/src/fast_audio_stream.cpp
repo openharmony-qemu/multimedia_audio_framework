@@ -158,14 +158,14 @@ void FastAudioStream::InitCallbackHandler()
 void FastAudioStream::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
-    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}lld", eventCode, data);
+    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}" PRId64, eventCode, data);
     CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false, "Runner is Released");
     callbackHandler_->SendCallbackEvent(eventCode, data);
 }
 
 void FastAudioStream::OnHandle(uint32_t code, int64_t data)
 {
-    AUDIO_DEBUG_LOG("On handle event, event code: %{public}u, data: %{public}lld", code, data);
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}u, data: %{public}" PRId64, code, data);
     switch (code) {
         case STATE_CHANGE_EVENT:
             HandleStateChangeEvent(data);
