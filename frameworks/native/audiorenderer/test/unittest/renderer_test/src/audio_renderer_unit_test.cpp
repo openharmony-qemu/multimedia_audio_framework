@@ -5713,7 +5713,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioEffectMode_003, TestSize.Le
     ASSERT_NE(nullptr, audioRenderer);
 
     AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
-    EXPECT_EQ(SUCCESS, effectMode);
+    EXPECT_EQ(EFFECT_DEFAULT, effectMode);
     audioRenderer->Release();
 }
 
@@ -6270,8 +6270,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_002, TestSi
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     audioRenderer->GetCurrentOutputDevices(deviceInfo);
 
-    EXPECT_EQ(SUCCESS, deviceInfo.deviceRole_);
-    EXPECT_EQ(SUCCESS, deviceInfo.deviceType_);
+    EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole_);
+    EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType_);
 
     audioRenderer->Release();
 }
@@ -6283,7 +6283,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_002, TestSi
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_001, TestSize.Level1)
 {
-    int32_t ret = -1;
     AudioRendererOptions rendererOptions;
 
     AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
@@ -6292,8 +6291,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_0
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
         AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-        ret = audioRenderer->GetCurrentOutputDevices(deviceInfo);
-        EXPECT_EQ(SUCCESS, ret);
+        audioRenderer->GetCurrentOutputDevices(deviceInfo);
+
+        EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole_);
+        EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType_);
     }
 
     audioRenderer->Release();
