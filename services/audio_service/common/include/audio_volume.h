@@ -88,6 +88,7 @@ public:
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime,
         AdjustStreamVolume volumeType);
+    void SetCurrentActiveDevice(DeviceType currentActiveDevice);
 private:
     AudioVolume();
     float GetStreamVolumeInternal(uint32_t sessionId, int32_t& volumeType,
@@ -115,6 +116,8 @@ private:
         std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
     std::shared_ptr<FixedSizeList<AdjustStreamVolumeInfo>> setDuckVolumeInfo_ =
         std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
+
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
 };
 
 class StreamVolume {

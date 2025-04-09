@@ -636,7 +636,14 @@ void AudioVolume::SetVgsVolumeSupported(bool isVgsSupported)
 
 bool AudioVolume::IsVgsVolumeSupported() const
 {
-    return isVgsVolumeSupported_;
+    // solve bluetooth sco connneted then connect typec headset, the volume of typec headset can not be adjusted.
+    return isVgsVolumeSupported_ && currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO;
+}
+
+void AudioVolume::SetCurrentActiveDevice(DeviceType currentActiveDevice)
+{
+    AUDIO_INFO_LOG("SetCurrentActiveDevice %{public}d", currentActiveDevice);
+    currentActiveDevice_ = currentActiveDevice;
 }
 } // namespace AudioStandard
 } // namespace OHOS

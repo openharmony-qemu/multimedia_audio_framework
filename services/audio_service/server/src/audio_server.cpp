@@ -2037,7 +2037,7 @@ int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
 float AudioServer::GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("GetMaxAmplitude in audio server deviceClass %{public}s", deviceClass.c_str());
+    AUDIO_DEBUG_LOG("GetMaxAmplitude in audio server deviceClass %{public}s", deviceClass.c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), 0, "GetMaxAmplitude refused for %{public}d", callingUid);
 
     float fastMaxAmplitude = AudioService::GetInstance()->GetMaxAmplitude(isOutputDevice);
