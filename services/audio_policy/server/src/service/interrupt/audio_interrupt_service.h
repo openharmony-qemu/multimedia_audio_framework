@@ -82,6 +82,10 @@ public:
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
     void ResetNonInterruptControl(uint32_t streamId);
 
+    // preempt audio focus interfaces
+    int32_t ActivatePreemptMode();
+    int32_t DeactivatePreemptMode();
+
     // zone debug interfaces
     int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, AudioZoneFocusStrategy focusStrategy =
@@ -102,6 +106,7 @@ public:
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
+    int32_t ClearAudioFocusInfoList();
     void AudioInterruptZoneDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
@@ -284,6 +289,9 @@ private:
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
     int32_t clientOnFocus_ = 0;
+
+    // preempt audio focus mode flag
+    bool isPreemptMode_ = false;
 
     std::mutex mutex_;
     mutable int32_t ownerPid_ = 0;

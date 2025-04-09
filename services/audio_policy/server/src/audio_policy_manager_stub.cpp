@@ -220,6 +220,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_EXCLUDED_OUTPUT_DEVICES",
     "IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE",
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
+    "ACTIVATE_PREEMPT_MODE",
+    "DEACTIVATE_PREEMPT_MODE",
     "GET_DM_DEVICE_TYPE",
 };
 
@@ -596,6 +598,18 @@ void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, Me
     AudioInterrupt audioInterrupt = {};
     AudioInterrupt::Unmarshalling(data, audioInterrupt);
     int32_t result = DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::ActivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = ActivatePreemptMode();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::DeactivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = DeactivatePreemptMode();
     reply.WriteInt32(result);
 }
 
@@ -1692,6 +1706,12 @@ void AudioPolicyManagerStub::OnMiddleFirRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT):
             DeactivateInterruptInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_PREEMPT_MODE):
+            ActivatePreemptModeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_PREEMPT_MODE):
+            DeactivatePreemptModeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_INTERRUPT_CALLBACK):
             SetAudioManagerInterruptCbInternal(data, reply);

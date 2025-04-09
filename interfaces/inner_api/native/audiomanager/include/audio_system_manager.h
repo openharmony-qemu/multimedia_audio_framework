@@ -1034,6 +1034,24 @@ public:
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
 
     /**
+     * @brief Activactivate preempt audio focus mode
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 18
+     */
+    int32_t ActivatePreemptMode() const;
+
+    /**
+     * @brief Deactivactivate preempt audio focus mode
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 18
+     */
+    int32_t DeactivatePreemptMode() const;
+
+    /**
      * @brief registers the Interrupt callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
