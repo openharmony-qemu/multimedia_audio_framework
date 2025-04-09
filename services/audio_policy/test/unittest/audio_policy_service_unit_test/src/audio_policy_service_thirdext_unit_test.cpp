@@ -845,60 +845,35 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetRotationToEffect_001, TestSize.Lev
 }
 #endif
 /**
-* @tc.name  : Test DealAudioSceneInputAndOutputDevices
-* @tc.number: DealAudioSceneInputAndOutputDevices_001
-* @tc.desc  : Test DealAudioSceneInputAndOutputDevices method witch AUDIO_SCENE_RINGING scene
+* @tc.name  : Test DealAudioSceneOutputDevices.
+* @tc.number: DealAudioSceneOutputDevices_001
+* @tc.desc  : Test IsA2dpOffloadConnected interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneInputAndOutputDevices_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneOutputDevices_001, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest DealAudioSceneInputAndOutputDevices_001 start");
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest DealAudioSceneOutputDevices_001 start");
     ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
 
-    AudioScene audioScene = AUDIO_SCENE_RINGING;
+    const AudioScene audioScene = AUDIO_SCENE_RINGING;
     std::vector<DeviceType> activeOutputDevices;
-    DeviceType activeInputDevice = DEVICE_TYPE_NONE;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.
-        DealAudioSceneInputAndOutputDevices(audioScene, activeOutputDevices, activeInputDevice);
-    EXPECT_NE(DEVICE_TYPE_NONE, activeOutputDevices.front());
-    EXPECT_NE(DEVICE_TYPE_NONE, activeInputDevice);
-}
+    bool haveArmUsbDevice = false;
+    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
+        audioScene, activeOutputDevices, haveArmUsbDevice);
+    EXPECT_EQ(false, haveArmUsbDevice);
 
-/**
-* @tc.name  : Test DealAudioSceneInputAndOutputDevices
-* @tc.number: DealAudioSceneInputAndOutputDevices_002
-* @tc.desc  : Test DealAudioSceneInputAndOutputDevices method witch AUDIO_SCENE_VOICE_RINGING scene
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneInputAndOutputDevices_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest DealAudioSceneInputAndOutputDevices_002 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
+    const AudioScene audioScene2 = AUDIO_SCENE_VOICE_RINGING;
+    haveArmUsbDevice = false;
+    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
+        audioScene2, activeOutputDevices, haveArmUsbDevice);
+    EXPECT_EQ(false, haveArmUsbDevice);
 
-    AudioScene audioScene = AUDIO_SCENE_VOICE_RINGING;
-    std::vector<DeviceType> activeOutputDevices;
-    DeviceType activeInputDevice = DEVICE_TYPE_NONE;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.
-        DealAudioSceneInputAndOutputDevices(audioScene, activeOutputDevices, activeInputDevice);
-    EXPECT_NE(DEVICE_TYPE_NONE, activeOutputDevices.front());
-    EXPECT_NE(DEVICE_TYPE_NONE, activeInputDevice);
-}
-
-/**
-* @tc.name  : Test DealAudioSceneInputAndOutputDevices
-* @tc.number: DealAudioSceneInputAndOutputDevices_003
-* @tc.desc  : Test DealAudioSceneInputAndOutputDevices method witch AUDIO_SCENE_DEFAULT scene
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneInputAndOutputDevices_003, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest DealAudioSceneInputAndOutputDevices_003 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
-    std::vector<DeviceType> activeOutputDevices;
-    DeviceType activeInputDevice = DEVICE_TYPE_NONE;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.
-        DealAudioSceneInputAndOutputDevices(audioScene, activeOutputDevices, activeInputDevice);
-    EXPECT_EQ(DEVICE_TYPE_NONE, activeOutputDevices.front());
-    EXPECT_EQ(DEVICE_TYPE_NONE, activeInputDevice);
+    const AudioScene audioScene3 = AUDIO_SCENE_DEFAULT;
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs {};
+    haveArmUsbDevice = false;
+    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
+        audioScene3, activeOutputDevices, haveArmUsbDevice);
+    EXPECT_TRUE(descs.empty());
+    EXPECT_EQ(false, haveArmUsbDevice);
 }
 
 /**

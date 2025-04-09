@@ -79,8 +79,8 @@ bool AudioSceneManager::CheckVoiceCallActive(int32_t sessionId) const
 int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOffloadState state)
 {
     std::vector<DeviceType> activeOutputDevices;
-    DeviceType activeInputDevice = DEVICE_TYPE_NONE;
-    DealAudioSceneInputAndOutputDevices(audioScene, activeOutputDevices, activeInputDevice);
+    bool haveArmUsbDevice = false;
+    DealAudioSceneOutputDevices(audioScene, activeOutputDevices, haveArmUsbDevice);
     // mute primary when play media and ring
     if (activeOutputDevices.size() > 1 && streamCollector_.IsMediaPlaying()) {
         audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, MEDIA_TO_RING_MUTE_DURATION_TIME_US, true);
@@ -95,13 +95,18 @@ int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOf
     if (AudioPolicyUtils::GetInstance().GetScoExcluded()) {
         return result;
     }
-    result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
-        activeInputDevice, state);
+    if (haveArmUsbDevice) {
+        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
+            DEVICE_TYPE_USB_ARM_HEADSET, state);
+    } else {
+        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
+            audioActiveDevice_.GetCurrentInputDeviceType(), state);
+    }
     return result;
 }
 
-void AudioSceneManager::DealAudioSceneInputAndOutputDevices(const AudioScene &audioScene,
-    std::vector<DeviceType> &activeOutputDevices, DeviceType &activeInputDevice)
+void AudioSceneManager::DealAudioSceneOutputDevices(const AudioScene &audioScene,
+    std::vector<DeviceType> &activeOutputDevices, bool &haveArmUsbDevice)
 {
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs {};
     switch (audioScene) {
@@ -122,25 +127,24 @@ void AudioSceneManager::DealAudioSceneInputAndOutputDevices(const AudioScene &au
             break;
     }
 
-    bool hasArmUsbDevice = false;
     if (!descs.empty()) {
         for (size_t i = 0; i < descs.size(); i++) {
             if (descs[i]->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
                 AUDIO_INFO_LOG("usb headset is arm device.");
                 activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
-                hasArmUsbDevice = true;
+                haveArmUsbDevice = true;
             } else {
                 activeOutputDevices.push_back(descs[i]->getType());
             }
         }
-        if (hasArmUsbDevice) {
-            activeInputDevice = DEVICE_TYPE_USB_ARM_HEADSET;
-        } else {
-            activeInputDevice = audioActiveDevice_.GetCurrentInputDeviceType();
-        }
     } else {
-        activeOutputDevices.push_back(DEVICE_TYPE_NONE);
-        activeInputDevice = DEVICE_TYPE_NONE;
+        DeviceType activeDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+        if (activeDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+            activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
+            haveArmUsbDevice = true;
+        } else {
+            activeOutputDevices.push_back(audioActiveDevice_.GetCurrentOutputDeviceType());
+        }
     }
 }
 
