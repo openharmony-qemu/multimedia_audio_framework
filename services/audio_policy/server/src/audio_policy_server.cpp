@@ -1278,8 +1278,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamTyp
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
         return ERR_OPERATION_FAILED;
     }
-    bool mute = GetStreamMuteInternal(streamType);
-    return SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, mute, deviceType);
+    return SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
 }
 
 void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi)
@@ -1398,13 +1397,14 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 }
 
 int32_t AudioPolicyServer::SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
-    bool isUpdateUi, bool mute, DeviceType deviceType)
+    bool isUpdateUi, DeviceType deviceType)
 {
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     int32_t ret = SUCCESS;
     if (curOutputDeviceType != deviceType) {
-        ret = audioPolicyService_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
+        ret = audioPolicyService_.SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
     } else {
+        bool mute = GetStreamMuteInternal(streamType);
         ret = SetSingleStreamVolume(streamType, volumeLevel, isUpdateUi, mute);
     }
     return ret;

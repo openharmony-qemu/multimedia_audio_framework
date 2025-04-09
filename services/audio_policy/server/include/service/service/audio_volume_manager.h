@@ -86,7 +86,6 @@ public:
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
-    int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
@@ -123,6 +122,7 @@ public:
     void GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo> &systemVolumeLevelInfo);
     std::vector<std::shared_ptr<AllDeviceVolumeInfo>> GetAllDeviceVolumeInfo();
     void GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration> &keyRegistrationInfo);
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),

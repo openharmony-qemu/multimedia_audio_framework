@@ -638,7 +638,7 @@ private:
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute);
     int32_t SetAppSingleStreamVolume(int32_t streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
-        bool mute, DeviceType deviceType);
+        DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     int32_t GetAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel);

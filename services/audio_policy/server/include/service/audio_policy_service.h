@@ -105,8 +105,6 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
-    int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
-
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
@@ -502,6 +500,7 @@ public:
     void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
     void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
         bool registrationResult);
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

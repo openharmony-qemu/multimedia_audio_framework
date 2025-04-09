@@ -646,11 +646,11 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateCapturerStream_001, Test
 }
 
 /**
- * @tc.name  : Test SetSystemVolumeLevelWithDevice.
- * @tc.number: SetSystemVolumeLevelWithDevice_001
+ * @tc.name  : Test SaveSpecifiedDeviceVolume.
+ * @tc.number: SaveSpecifiedDeviceVolume_001
  * @tc.desc  : Test AudioPolicyService interfaces.
  */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, SetSystemVolumeLevelWithDevice_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SaveSpecifiedDeviceVolume_001, TestSize.Level1)
 {
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
@@ -659,7 +659,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetSystemVolumeLevelWithDevice_001, Te
     int32_t volumeLevel = 0;
     DeviceType deviceType = DEVICE_TYPE_INVALID;
 
-    int32_t ret = server->audioPolicyService_.SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
+    int32_t ret = server->audioPolicyService_.SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
