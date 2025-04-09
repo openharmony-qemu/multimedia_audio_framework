@@ -188,6 +188,7 @@ std::shared_ptr<AdapterPipeInfo> PolicyAdapterInfo::GetPipeInfoByName(const std:
     for (auto &pipeInfo : pipeInfos) {
         if (pipeInfo == nullptr) {
             AUDIO_ERR_LOG("pipeInfo is null!");
+            continue;
         }
         if (pipeInfo->name_ == pipeName) {
             return pipeInfo;

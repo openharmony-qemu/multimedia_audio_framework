@@ -68,6 +68,7 @@ group("audio_policy_unittest_packages") {
     ":audio_recovery_device_unit_test",
     ":audio_router_center_unit_test",
     ":audio_routing_manager_listener_stub_unit_test",
+    ":audio_server_definitions_unit_test",
     ":audio_session_service_unit_test",
     ":audio_session_state_monitor_test",
     ":audio_session_unit_test",
@@ -79,6 +80,7 @@ group("audio_policy_unittest_packages") {
     ":audio_usb_manager_unit_test",
     ":audio_volume_manager_unit_test",
     ":audio_zone_service_unit_test",
+    ":client_type_manager_unit_test",
     ":device_status_listener_unit_test",
     ":dfx_msg_manager_unit_test",
     ":power_state_listener_unit_test",
@@ -4689,4 +4691,35 @@ ohos_unittest("dfx_msg_manager_unit_test") {
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
+}
+
+ohos_unittest("client_type_manager_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../../audio_policy/server/include/service/manager",
+    "./unittest/client_type_manager_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  public_external_deps = [ "ffrt:libffrt" ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+
+  external_deps = [
+    "eventhandler:libeventhandler",
+  ]
+
+  cflags += [ "--coverage" ]
+  ldflags = [ "--coverage" ]
+
+  sources = [ "./unittest/client_type_manager_unit_test/src/client_type_manager_unit_test.cpp" ]
 }

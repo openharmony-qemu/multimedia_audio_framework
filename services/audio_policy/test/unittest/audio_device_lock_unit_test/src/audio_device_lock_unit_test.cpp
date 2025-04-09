@@ -525,5 +525,35 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_027, TestSize.Level1)
         hasBTPermission, hasSystemPermission);
     EXPECT_NE(ret, true);
 }
+
+/**
+* @tc.name  :  AudioDeviceLock_028
+* @tc.desc  : Test GetHasDpFlag interface.
+*/
+HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_028, TestSize.Level1)
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    EXPECT_NE(audioDeviceLock, nullptr);
+
+    audioDeviceLock->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(true);
+
+    audioDeviceLock->GetVolumeGroupInfos();
+    EXPECT_NE(audioDeviceLock, nullptr);
+}
+
+/**
+* @tc.name  :  AudioDeviceLock_029
+* @tc.desc  : Test GetHasDpFlag interface.
+*/
+HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_029, TestSize.Level1)
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    EXPECT_NE(audioDeviceLock, nullptr);
+
+    audioDeviceLock->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(false);
+
+    audioDeviceLock->GetVolumeGroupInfos();
+    EXPECT_NE(audioDeviceLock, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
