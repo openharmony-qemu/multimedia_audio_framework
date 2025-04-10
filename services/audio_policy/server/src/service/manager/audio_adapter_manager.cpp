@@ -1367,16 +1367,16 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
         isNeedCopyMuteData_ = true;
         isNeedCopyRingerModeData_ = true;
         isNeedCopySystemUrlData_ = true;
-        SetFirstBoot();
+        SetFirstBoot(false);
         return true;
     }
     // first boot
     char firstboot[3] = {0};
-    auto ret = GetParameter("persist.multimedia.audio.firstboot", "1", firstboot, sizeof(firstboot));
-    if (ret <= 0) {
+    GetParameter("persist.multimedia.audio.firstboot", "0", firstboot, sizeof(firstboot));
+    if (stoi(firstboot) == 1) {
         AUDIO_INFO_LOG("first boot, ready init data to database");
         isFirstBoot = true;
-        SetFirstBoot();
+        SetFirstBoot(false);
     }
 
     return true;
@@ -1480,13 +1480,15 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
         for (auto &streamType: VOLUME_TYPE_LIST) {
             // if GetVolume failed, wirte default value
             if (!volumeDataMaintainer_.GetVolume(deviceType, streamType)) {
-                auto ret = volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevelMapTemp[streamType]);
+                auto ret = volumeDataMaintainer_.SaveVolume(deviceType, streamType,
+                    volumeLevelMapTemp[VolumeUtils::GetVolumeTypeFromStreamType(streamType)]);
                 resetFirstFlag = ret ? resetFirstFlag : true;
             }
         }
     }
     if (resetFirstFlag) {
-        SetFirstBoot();
+        AUDIO_INFO_LOG("reset first boot init settingsdata");
+        SetFirstBoot(true);
     }
     // reLoad the current device volume
     LoadVolumeMap();
@@ -2097,12 +2099,13 @@ void AudioAdapterManager::InitVolumeMapIndex()
 {
     useNonlinearAlgo_ = 0;
     for (auto streamType : VOLUME_TYPE_LIST) {
-        minVolumeIndexMap_[streamType] = MIN_VOLUME_LEVEL;
-        maxVolumeIndexMap_[streamType] = MAX_VOLUME_LEVEL;
+        minVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)] = MIN_VOLUME_LEVEL;
+        maxVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)] = MAX_VOLUME_LEVEL;
         volumeDataMaintainer_.SetStreamVolume(streamType, DEFAULT_VOLUME_LEVEL);
         AUDIO_DEBUG_LOG("streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
-            streamType, minVolumeIndexMap_[streamType],
-            maxVolumeIndexMap_[streamType], volumeDataMaintainer_.GetStreamVolume(streamType));
+            streamType, minVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)],
+            maxVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)],
+            volumeDataMaintainer_.GetStreamVolume(streamType));
     }
 
     volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_CALL_ASSISTANT, MAX_VOLUME_LEVEL);
@@ -2123,13 +2126,13 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
                 appConfigVolume_.defaultVolume, appConfigVolume_.maxVolume, appConfigVolume_.minVolume);
             continue;
         }
-        minVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->minLevel;
-        maxVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->maxLevel;
+        AudioVolumeType CurStreamType = VolumeUtils::GetVolumeTypeFromStreamType(streamVolInfo->streamType);
+        minVolumeIndexMap_[CurStreamType] = streamVolInfo->minLevel;
+        maxVolumeIndexMap_[CurStreamType] = streamVolInfo->maxLevel;
         volumeDataMaintainer_.SetStreamVolume(streamVolInfo->streamType, streamVolInfo->defaultLevel);
         AUDIO_DEBUG_LOG("update streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
-            streamVolInfo->streamType, minVolumeIndexMap_[streamVolInfo->streamType],
-            maxVolumeIndexMap_[streamVolInfo->streamType],
-            volumeDataMaintainer_.GetStreamVolume(streamVolInfo->streamType));
+            streamVolInfo->streamType, minVolumeIndexMap_[CurStreamType], maxVolumeIndexMap_[CurStreamType],
+            volumeDataMaintainer_.GetStreamVolume(CurStreamType));
     }
     if (isAppConfigVolumeInit) {
         return;
@@ -2254,13 +2257,18 @@ int32_t AudioAdapterManager::GetSafeVolumeTimeout() const
     return safeVolumeTimeout_;
 }
 
-void AudioAdapterManager::SetFirstBoot()
+void AudioAdapterManager::SetFirstBoot(bool isFirst)
 {
-    int32_t ret = SetParameter("persist.multimedia.audio.firstboot", std::to_string(0).c_str());
-    if (ret == 0) {
-        AUDIO_INFO_LOG("Save first boot success");
+    int32_t ret = 0;
+    if (isFirst) {
+        ret = SetParameter("persist.multimedia.audio.firstboot", std::to_string(1).c_str());
     } else {
-        AUDIO_ERR_LOG("Save first boot failed, result %{public}d", ret);
+        ret = SetParameter("persist.multimedia.audio.firstboot", std::to_string(0).c_str());
+    }
+    if (ret == 0) {
+        AUDIO_INFO_LOG("Set first boot %{public}d success", isFirst);
+    } else {
+        AUDIO_ERR_LOG("Set first boot %{public}d failed, result %{public}d", isFirst, ret);
     }
 }
 

@@ -297,7 +297,7 @@ private:
     void UpdateSafeVolume();
     void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     void SetVolumeCallbackAfterClone();
-    void SetFirstBoot();
+    void SetFirstBoot(bool isFirst);
     void MaximizeVoiceAssistantVolume(InternalDeviceType deviceType);
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
