@@ -641,6 +641,8 @@ void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::Inn
             if (clientCallbacksMap_.count(it->first) > 0 &&
                 clientCallbacksMap_[it->first].count(CALLBACK_SET_DEVICE_CHANGE) > 0 &&
                 clientCallbacksMap_[it->first][CALLBACK_SET_DEVICE_CHANGE]) {
+                AUDIO_INFO_LOG("Send DeviceChange deviceType[%{public}d] change to clientPid[%{public}d]",
+                    deviceChangeAction.deviceDescriptors[0]->deviceType_, it->first);
                 it->second->OnDeviceChange(deviceChangeAction);
             }
         }
