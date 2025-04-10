@@ -1005,15 +1005,6 @@ public:
      */
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
-    /**
-     * @brief Judges whether the playback is supported by the renderer.
-     *
-     * @return Returns direct playback mode.
-     * @since 19
-     */
-    virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
-        const StreamUsage &sreamUsage) = 0;
-
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);

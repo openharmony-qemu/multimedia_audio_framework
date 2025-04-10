@@ -1002,31 +1002,31 @@ void AudioPolicyClientStubImpl::OnNnStateChange(const int32_t &nnState)
     }
 }
 
-int32_t AudioPolicyClientStubImpl::AddFormatUnsupportedErrorCallback(
-    const std::shared_ptr<FormatUnsupportedErrorCallback> &cb)
+int32_t AudioPolicyClientStubImpl::AddAudioFormatUnsupportedErrorCallback(
+    const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(formatUnsupportedErrorMutex_);
-    formatUnsupportedErrorCallbackList_.push_back(cb);
+    AudioFormatUnsupportedErrorCallbackList_.push_back(cb);
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemoveFormatUnsupportedErrorCallback()
+int32_t AudioPolicyClientStubImpl::RemoveAudioFormatUnsupportedErrorCallback()
 {
     std::lock_guard<std::mutex> lockCbMap(formatUnsupportedErrorMutex_);
-    formatUnsupportedErrorCallbackList_.clear();
+    AudioFormatUnsupportedErrorCallbackList_.clear();
     return SUCCESS;
 }
 
-size_t AudioPolicyClientStubImpl::GetFormatUnsupportedErrorCallbackSize() const
+size_t AudioPolicyClientStubImpl::GetAudioFormatUnsupportedErrorCallbackSize() const
 {
     std::lock_guard<std::mutex> lockCbMap(formatUnsupportedErrorMutex_);
-    return formatUnsupportedErrorCallbackList_.size();
+    return AudioFormatUnsupportedErrorCallbackList_.size();
 }
 
 void AudioPolicyClientStubImpl::OnFormatUnsupportedError(const AudioErrors &errorCode)
 {
     std::lock_guard<std::mutex> lockCbMap(formatUnsupportedErrorMutex_);
-    for (const auto &callback : formatUnsupportedErrorCallbackList_) {
+    for (const auto &callback : AudioFormatUnsupportedErrorCallbackList_) {
         callback->OnFormatUnsupportedError(errorCode);
     }
 }

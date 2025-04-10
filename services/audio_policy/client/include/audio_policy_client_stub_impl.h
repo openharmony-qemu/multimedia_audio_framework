@@ -116,9 +116,9 @@ public:
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
     size_t GetAudioSceneChangedCallbackSize() const;
     int32_t SetDistribuitedOutputChangeCallback(const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb);
-    int32_t AddFormatUnsupportedErrorCallback(const std::shared_ptr<FormatUnsupportedErrorCallback> &cb);
-    int32_t RemoveFormatUnsupportedErrorCallback();
-    size_t GetFormatUnsupportedErrorCallbackSize() const;
+    int32_t AddAudioFormatUnsupportedErrorCallback(const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &cb);
+    int32_t RemoveAudioFormatUnsupportedErrorCallback();
+    size_t GetAudioFormatUnsupportedErrorCallbackSize() const;
 
     void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
@@ -183,7 +183,7 @@ private:
         microphoneBlockedCallbackList_;
     std::vector<std::shared_ptr<AudioManagerAudioSceneChangedCallback>> audioSceneChangedCallbackList_;
     std::vector<std::shared_ptr<AudioDistribuitedOutputChangeCallback>> distribuitedOutputChangeCallback_;
-    std::vector<std::shared_ptr<FormatUnsupportedErrorCallback>> formatUnsupportedErrorCallbackList_;
+    std::vector<std::shared_ptr<AudioFormatUnsupportedErrorCallback>> AudioFormatUnsupportedErrorCallbackList_;
 
     std::unordered_map<StreamUsage,
         std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>>> preferredOutputDeviceCallbackMap_;

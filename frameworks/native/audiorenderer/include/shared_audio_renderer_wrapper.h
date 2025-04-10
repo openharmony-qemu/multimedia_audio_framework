@@ -428,12 +428,6 @@ public:
         return sharedAudioRenderer_->GetAudioTimestampInfo(timestamp, base);
     }
 
-    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
-        const StreamUsage &sreamUsage) override
-    {
-        return sharedAudioRenderer_->GetDirectPlaybackSupport(streamInfo, sreamUsage);
-    }
-
     void SetSourceDuration(int64_t duration) override
     {
         return sharedAudioRenderer_->SetSourceDuration(duration);

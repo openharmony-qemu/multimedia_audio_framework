@@ -13,39 +13,41 @@
  * limitations under the License.
  */
 
-#ifndef NAPI_AUDIO_RENDERER_ERROR_CALLBACK_H
-#define NAPI_AUDIO_RENDERER_ERROR_CALLBACK_H
+#ifndef NAPI_AUDIO_RENDER_ERROR_CALLBACK_H
+#define NAPI_AUDIO_RENDER_ERROR_CALLBACK_H
 
+#include <uv.h>
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-#include "napi_audio_renderer_callback.h"
+#include "napi_async_work.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class NapiRendererErrorCallback : public AudioRendererErrorCallback,
-    public NapiAudioRendererCallbackInner {
+const std::string RENDER_ERROR_CALLBACK_NAME = "renderError";
+
+class NapiAudioRenderErrorCallback : public AudioFormatUnsupportedErrorCallback {
 public:
-    explicit NapiRendererErrorCallback(napi_env env);
-    ~NapiRendererErrorCallback() override;
-    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
-    void OnError(AudioErrors errorCode) override;
+    explicit NapiAudioRenderErrorCallback(napi_env env);
+    virtual ~NapiAudioRenderErrorCallback();
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
+    bool IsSameCallback(const napi_value args);
+    void RemoveCallbackReference(const napi_value args);
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
     void CreateErrorTsfn(napi_env env);
-    void RemoveCallbackReference(const std::string &callbackName, napi_env env,
-        napi_value callback, napi_value args = nullptr) override;
-    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
-protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
-    napi_env &GetEnv() override;
+    bool GetErrorTsfnFlag();
+
 private:
-    struct RendererErrorJsCallback {
+    struct AudioRenderErrorJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         int64_t errorCode = 0;
+        napi_threadsafe_function errorTsfn = nullptr;
     };
 
-    void OnJsRendererErrorCallback(std::unique_ptr<RendererErrorJsCallback> &jsCb);
-    static void SafeJsCallbackErrorWork(napi_env env, napi_value js_cb, void *context, void *data);
+    void OnJsCallbackRenderError(std::unique_ptr<AudioRenderErrorJsCallback> &jsCb);
     static void ErrorTsfnFinalize(napi_env env, void *data, void *hint);
+    static void SafeJsCallbackErrorWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
@@ -55,4 +57,4 @@ private:
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // NAPI_AUDIO_RENDERER_ERROR_CALLBACK_H
+#endif /* NAPI_AUDIO_RENDER_ERROR_CALLBACK_H */

@@ -213,12 +213,9 @@ public:
     bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
     bool SendNnStateChangeCallback(const int32_t &state);
-<<<<<<< HEAD
     void SetAudioZoneEventDispatcher(const std::shared_ptr<IAudioZoneEventDispatcher> dispatcher);
     bool SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> event);
-=======
     bool SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode);
->>>>>>> df4d49c4d (add eac3)
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -261,12 +258,9 @@ private:
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
-<<<<<<< HEAD
     void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
-
-=======
     void HandleFormatUnsupportedError(const AppExecFwk::InnerEvent::Pointer &event);
->>>>>>> df4d49c4d (add eac3)
+
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);

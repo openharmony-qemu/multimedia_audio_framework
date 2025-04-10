@@ -2298,8 +2298,8 @@ int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
     return gsp->SetQueryAllowedPlaybackCallback(object);
 }
 
-int32_t AudioPolicyManager::SetFormatUnsupportedErrorCallback(
-    const std::shared_ptr<FormatUnsupportedErrorCallback> &callback)
+int32_t AudioPolicyManager::SetAudioFormatUnsupportedErrorCallback(
+    const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback)
 {
     AUDIO_DEBUG_LOG("Start to register");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
@@ -2313,21 +2313,21 @@ int32_t AudioPolicyManager::SetFormatUnsupportedErrorCallback(
 
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].mutex);
     CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
-    audioPolicyClientStubCB_->AddFormatUnsupportedErrorCallback(callback);
-    if (audioPolicyClientStubCB_->GetFormatUnsupportedErrorCallbackSize() == 1) {
+    audioPolicyClientStubCB_->AddAudioFormatUnsupportedErrorCallback(callback);
+    if (audioPolicyClientStubCB_->GetAudioFormatUnsupportedErrorCallbackSize() == 1) {
         callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].isEnable = true;
         SetClientCallbacksEnable(CALLBACK_FORMAT_UNSUPPORTED_ERROR, true);
     }
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::UnsetFormatUnsupportedErrorCallback()
+int32_t AudioPolicyManager::UnsetAudioFormatUnsupportedErrorCallback()
 {
     AUDIO_DEBUG_LOG("Start to unregister");
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].mutex);
     CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
-    audioPolicyClientStubCB_->RemoveFormatUnsupportedErrorCallback();
-    if (audioPolicyClientStubCB_->GetFormatUnsupportedErrorCallbackSize() == 0) {
+    audioPolicyClientStubCB_->RemoveAudioFormatUnsupportedErrorCallback();
+    if (audioPolicyClientStubCB_->GetAudioFormatUnsupportedErrorCallbackSize() == 0) {
         callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].isEnable = false;
         SetClientCallbacksEnable(CALLBACK_FORMAT_UNSUPPORTED_ERROR, false);
     }

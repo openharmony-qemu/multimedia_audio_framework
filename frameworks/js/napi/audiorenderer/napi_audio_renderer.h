@@ -73,7 +73,6 @@ private:
         int32_t channelBlendMode;
         DeviceRole deviceRole;
         int32_t deviceType;
-        int32_t streamUsage;
         Timestamp timeStamp;
         AudioRendererOptions rendererOptions;
         AudioDeviceDescriptor deviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
@@ -138,7 +137,6 @@ private:
     static napi_value GetSilentModeAndMixWithOthers(napi_env env, napi_callback_info info);
     static napi_value SetDefaultOutputDevice(napi_env env, napi_callback_info info);
     static napi_value GetCallback(size_t argc, napi_value *argv);
-    static napi_value GetDirectPlaybackSupport(napi_env env, napi_callback_info info);
 
     static napi_status WriteArrayBufferToNative(std::shared_ptr<AudioRendererAsyncContext> context);
 
@@ -176,10 +174,6 @@ private:
         const std::string &cbName, NapiAudioRenderer *napiRenderer);
     static void UnregisterRendererWriteDataCallback(napi_env env, size_t argc, const napi_value *argv,
         NapiAudioRenderer *napiRenderer);
-    static napi_value RegisterRendererErrorCallback(napi_env env, napi_value *argv,
-        const std::string &cbName, NapiAudioRenderer *napiRenderer);
-    static void UnregisterRendererErrorCallback(napi_env env, size_t argc, const std::string &cbName,
-        napi_value *argv, NapiAudioRenderer *napiRenderer);
     /* common interface in AudioRendererNapi */
     static bool CheckContextStatus(std::shared_ptr<AudioRendererAsyncContext> context);
     static bool CheckAudioRendererStatus(NapiAudioRenderer *napi, std::shared_ptr<AudioRendererAsyncContext> context);
@@ -204,7 +198,6 @@ private:
         rendererOutputDeviceChangeWithInfoCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> rendererPolicyServiceDiedCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRendererWriteCallback> rendererWriteDataCallbackNapi_ = nullptr;
-    std::shared_ptr<AudioRendererErrorCallback> errorCbNapi_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -8769,47 +8769,5 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_007, TestSize
 
     audioRenderer->Release();
 }
-
-/**
- * @tc.name  : Test GetDirectPlaybackSupport API via illegal state.
- * @tc.number: Audio_Renderer_GetDirectPlaybackSupport_001
- * @tc.desc  : Test GetDirectPlaybackSupport interface.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetDirectPlaybackSupport_001, TestSize.Level2)
-{
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    AudioStreamInfo streamInfo;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.encoding = ENCODING_PCM;
-    streamInfo.format = SAMPLE_S24LE;
-    streamInfo.channels = STEREO;
-    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-
-    DirectPlaybackMode mode = audioRenderer->GetDirectPlaybackSupport(streamInfo, streamUsage);
-    EXPECT_EQ(mode, DIRECT_PLAYBACK_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name  : Test GetDirectPlaybackSupport API via illegal state.
- * @tc.number: Audio_Renderer_GetDirectPlaybackSupport_002
- * @tc.desc  : Test GetDirectPlaybackSupport interface.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetDirectPlaybackSupport_002, TestSize.Level2)
-{
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    AudioStreamInfo streamInfo;
-    streamInfo.samplingRate = SAMPLE_RATE_24000;
-    streamInfo.encoding = ENCODING_EAC3;
-    streamInfo.format = SAMPLE_U8;
-    streamInfo.channels = STEREO;
-    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-
-    DirectPlaybackMode mode = audioRenderer->GetDirectPlaybackSupport(streamInfo, streamUsage);
-    EXPECT_EQ(mode, DIRECT_PLAYBACK_NOT_SUPPORTED);
-}
 } // namespace AudioStandard
 } // namespace OHOS

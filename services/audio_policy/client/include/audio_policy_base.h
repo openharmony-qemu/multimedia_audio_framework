@@ -461,7 +461,7 @@ public:
     virtual int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
-        const StreamUsage &sreamUsage) = 0;
+        const StreamUsage &streamUsage) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
