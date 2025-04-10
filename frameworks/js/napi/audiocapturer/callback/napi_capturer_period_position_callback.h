@@ -35,7 +35,7 @@ public:
     void CreatePeriodPositionTsfn(napi_env env);
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
     napi_env &GetEnv() override;
 
 private:

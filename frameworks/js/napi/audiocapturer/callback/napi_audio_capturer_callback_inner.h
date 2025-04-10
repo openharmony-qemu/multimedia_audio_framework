@@ -29,7 +29,7 @@ public:
     void RemoveCallbackReferenceInner(const std::string &callbackName, napi_env env, napi_value callback,
         std::function<void()> successed);
 protected:
-    virtual std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) = 0;
+    virtual std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) = 0;
     virtual napi_env &GetEnv() = 0;
 };
 

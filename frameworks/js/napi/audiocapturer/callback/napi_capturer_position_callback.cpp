@@ -150,7 +150,7 @@ napi_env &NapiCapturerPositionCallback::GetEnv()
     return env_;
 }
 
-std::shared_ptr<AutoRef> &NapiCapturerPositionCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> NapiCapturerPositionCallback::GetCallback(const std::string &callbackName)
 {
     std::shared_ptr<AutoRef> cb = nullptr;
     if (callbackName == MARK_REACH_CALLBACK_NAME) {

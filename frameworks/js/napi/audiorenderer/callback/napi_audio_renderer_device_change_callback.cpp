@@ -104,7 +104,7 @@ napi_env &NapiAudioRendererDeviceChangeCallback::GetEnv()
     return env_;
 }
 
-std::shared_ptr<AutoRef> &NapiAudioRendererDeviceChangeCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> NapiAudioRendererDeviceChangeCallback::GetCallback(const std::string &callbackName)
 {
     std::shared_ptr<AutoRef> callbackCur = std::make_shared<AutoRef>(env_, nullptr);
     return callbackCur;
@@ -249,7 +249,7 @@ napi_env &NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetEnv()
     return env_;
 }
 
-std::shared_ptr<AutoRef> &NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetCallback(
+std::shared_ptr<AutoRef> NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetCallback(
     const std::string &callbackName)
 {
     std::shared_ptr<AutoRef> callbackCur = std::make_shared<AutoRef>(env_, nullptr);
