@@ -14,6 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../config.gni")
+import("../../../../ressche_part.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_balance"
 
@@ -648,36 +649,98 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/common/include/dfx",
   ]
 
-  sources = [ "./client/audio_process_in_client_unit_test.cpp" ]
+  sources = [
+    "../../../../services/audio_service/server/src/audio_engine_manager.cpp",
+    "../../../../services/audio_service/server/src/audio_playback_engine.cpp",
+    "../../../../services/audio_service/server/src/audio_process_in_server.cpp",
+    "../../../../services/audio_service/server/src/audio_process_stub.cpp",
+    "../../../../services/audio_service/server/src/audio_service.cpp",
+    "../../../../services/audio_service/server/src/capturer_in_server.cpp",
+    "../../../../services/audio_service/server/src/core_service_handler.cpp",
+    "../../../../services/audio_service/server/src/core_service_provider_proxy.cpp",
+    "../../../../services/audio_service/server/src/i_stream_manager.cpp",
+    "../../../../services/audio_service/server/src/ipc_offline_stream_stub.cpp",
+    "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
+    "../../../../services/audio_service/server/src/ipc_stream_listener_proxy.cpp",
+    "../../../../services/audio_service/server/src/ipc_stream_stub.cpp",
+    "../../../../services/audio_service/server/src/none_mix_engine.cpp",
+    "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
+    "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
+    "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
+    "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
+    "../../../../services/audio_service/server/src/policy_handler.cpp",
+    "../../../../services/audio_service/server/src/policy_provider_proxy.cpp",
+    "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
+    "../../../../services/audio_service/server/src/pro_renderer_stream_impl.cpp",
+    "../../../../services/audio_service/server/src/renderer_in_server.cpp",
+    "./client/audio_process_in_client_unit_test.cpp",
+  ]
 
-  configs = [ ":module_private_config" ]
+  configs = [
+    ":module_private_config",
+    "../../../../services/audio_service:audio_service_config",
+  ]
 
   cflags = [ "-fno-access-control" ]
 
   deps = [
     "../../../../frameworks/native/audiocapturer:audio_capturer",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioqosmanager:audio_qosmanager",
+    "../../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../../services/audio_policy:audio_policy_client",
+    "../../../../services/audio_policy:audio_policy_service",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_common",
+    "../../../../services/audio_service:audio_process_service",
+    "../../../../services/audio_service:audio_service",
+    "../../../audio_policy:audio_foundation",
     "../../../audio_service:audio_client",
     "../../../audio_service:audio_common",
-    "../../../audio_service:audio_process_service_static",
   ]
 
   external_deps = [
     "c_utils:utils",
+    "drivers_interface_audio:libeffect_proxy_1.0",
+    "eventhandler:libeventhandler",
     "eventhandler:libeventhandler",
     "googletest:gtest",
+    "hdf_core:libhdf_utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
 
   defines = []
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+    defines += [ "RESSCHE_ENABLE" ]
+  }
+
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+    sources += [
+      "../../../../services/audio_service/server/src/audio_endpoint.cpp",
+      "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
+      "../../../../services/audio_service/server/src/audio_endpoint_separate.cpp",
+    ]
+  }
+  if (audio_framework_feature_inner_capturer) {
+    deps +=
+        [ "../../../../frameworks/native/playbackcapturer:playback_capturer" ]
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 }
 

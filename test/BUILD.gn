@@ -118,6 +118,7 @@ group("audio_unit_test") {
 
     if (audio_framework_feature_low_latency) {
       deps += [
+        "../services/audio_service/test/unittest:audio_process_in_client_unit_test",
         "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_plus_unit_test",
         "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test",
       ]
@@ -129,7 +130,6 @@ group("audio_unit_test") {
       "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_fast_renderer_unit_test",
       "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_unit_test",
       "../services/audio_service/test/unittest:audio_endpoint_separate_unit_test",
-      "../services/audio_service/test/unittest:audio_process_in_client_unit_test",
       "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
       "../services/audio_service/test/unittest:audio_service_unit_test",
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_unit_test",
