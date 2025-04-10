@@ -105,7 +105,7 @@ void NapiAudioRendererCallback::RemoveCallbackReference(const std::string &callb
     RemoveCallbackReferenceInner(callbackName, env, callback, successed);
 }
 
-std::shared_ptr<AutoRef> &NapiAudioRendererCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> NapiAudioRendererCallback::GetCallback(const std::string &callbackName)
 {
     std::shared_ptr<AutoRef> cb = nullptr;
     if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {

@@ -50,7 +50,7 @@ void NapiRendererPeriodPositionCallback::SaveCallbackReference(const std::string
     AUDIO_DEBUG_LOG("SaveAudioPeriodPositionCallback successful");
 }
 
-std::shared_ptr<AutoRef> &NapiRendererPeriodPositionCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> NapiRendererPeriodPositionCallback::GetCallback(const std::string &callbackName)
 {
     return renderPeriodPositionCallback_;
 }

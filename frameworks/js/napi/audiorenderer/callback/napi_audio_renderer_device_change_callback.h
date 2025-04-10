@@ -44,7 +44,7 @@ public:
         napi_value callback, napi_value args = nullptr) override;
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
     napi_env &GetEnv() override;
 private:
     struct AudioRendererDeviceChangeJsCallback {
@@ -83,7 +83,7 @@ public:
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
 
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
     napi_env &GetEnv() override;
 
 private:
