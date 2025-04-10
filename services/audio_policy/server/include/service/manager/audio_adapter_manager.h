@@ -85,8 +85,6 @@ public:
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
-    int32_t SetSystemVolumeLevelWithDevice(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
-
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
@@ -260,6 +258,8 @@ public:
     void UpdateSafeVolumeByS4();
     void SetVgsVolumeSupported(bool isVgsSupported);
     bool IsVgsVolumeSupported() const;
+
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
 private:
     friend class PolicyCallbackImpl;
 

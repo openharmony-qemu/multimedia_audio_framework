@@ -64,12 +64,12 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsAppVolumeMute_002, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetSystemVolumeLevelWithDevice_001
- * @tc.desc: Test SetSystemVolumeLevelWithDevice when deviceType is different from currentActiveDevice.
+ * @tc.name: SaveSpecifiedDeviceVolume_001
+ * @tc.desc: Test SaveSpecifiedDeviceVolume when deviceType is different from currentActiveDevice.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevelWithDevice_001, TestSize.Level1)
+HWTEST_F(AudioAdapterManagerUnitTest, SaveSpecifiedDeviceVolume_001, TestSize.Level1)
 {
     audioAdapterManager_->Init();
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
@@ -79,17 +79,17 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevelWithDevice_001, TestSi
     int32_t minVolume = audioAdapterManager_->GetMinVolumeLevel(streamType);
     int32_t maxVolume = audioAdapterManager_->GetMaxVolumeLevel(streamType);
     ASSERT_TRUE(volumeLevel >= minVolume && volumeLevel <= maxVolume);
-    int32_t result = audioAdapterManager_->SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
+    int32_t result = audioAdapterManager_->SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
     ASSERT_EQ(result, 0);
 }
 
 /**
- * @tc.name: SetSystemVolumeLevelWithDevice_002
- * @tc.desc: Test SetSystemVolumeLevelWithDevice when deviceType is same as currentActiveDevice.
+ * @tc.name: SaveSpecifiedDeviceVolume_002
+ * @tc.desc: Test SaveSpecifiedDeviceVolume when deviceType is same as currentActiveDevice.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevelWithDevice_002, TestSize.Level1)
+HWTEST_F(AudioAdapterManagerUnitTest, SaveSpecifiedDeviceVolume_002, TestSize.Level1)
 {
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
     AudioStreamType streamType = STREAM_MUSIC;
@@ -98,7 +98,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevelWithDevice_002, TestSi
     int32_t minVolume = audioAdapterManager_->GetMinVolumeLevel(streamType);
     int32_t maxVolume = audioAdapterManager_->GetMaxVolumeLevel(streamType);
     ASSERT_TRUE(volumeLevel >= minVolume && volumeLevel <= maxVolume);
-    int32_t result = audioAdapterManager_->SetSystemVolumeLevelWithDevice(streamType, volumeLevel, deviceType);
+    int32_t result = audioAdapterManager_->SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
     ASSERT_EQ(result, 0);
 }
 
