@@ -64,8 +64,8 @@ int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
-    bool isSameScene = audioSceneManager_.IsSameAudioScene();
     audioSceneManager_.SetAudioScenePre(audioScene);
+    bool isSameScene = audioSceneManager_.IsSameAudioScene();
 
     // fetch input&output device
     audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
