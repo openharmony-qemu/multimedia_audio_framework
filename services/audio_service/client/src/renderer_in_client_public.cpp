@@ -1075,10 +1075,16 @@ bool RendererInClientInner::FlushAudioStream()
     // clear cbBufferQueue
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbBufferQueue_.Clear();
+    if (clientConfig_.streamInfo.format == SAMPLE_U8) {
+        if (memset_s(cbBuffer_.get(), cbBufferSize_, 0x7f, cbBufferSize_) != EOK) {
+            AUDIO_ERR_LOG("memset_s buffer failed");
+        }
+    } else {
         if (memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_) != EOK) {
             AUDIO_ERR_LOG("memset_s buffer failed");
-        };
+        }
     }
+}
 
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");
 
