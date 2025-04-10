@@ -763,7 +763,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_005, 
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S32LE;
+    OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_F32LE;
     result = OH_AudioStreamBuilder_SetSampleFormat(builder, format);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
