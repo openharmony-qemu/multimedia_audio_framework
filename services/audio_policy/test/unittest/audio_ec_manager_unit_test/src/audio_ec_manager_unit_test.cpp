@@ -466,7 +466,10 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_018, TestSize.Level1)
     EXPECT_EQ(ecManager.GetSourceOpened(), SOURCE_TYPE_MIC);
 
     ecManager.Init(1, 0);
+    bool isEcFeatureEnable = ecManager.isEcFeatureEnable_;
+    ecManager.isEcFeatureEnable_ = true;
     ecManager.CloseNormalSource();
+    ecManager.isEcFeatureEnable_ = isEcFeatureEnable;
     EXPECT_EQ(ecManager.GetSourceOpened(), SOURCE_TYPE_INVALID);
     ecManager.Init(0, 0);
 }
@@ -530,5 +533,45 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_021, TestSize.Level1)
     ecManager.GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_MIC, targetSource, useMatchingPropInfo);
     EXPECT_EQ(targetSource, SOURCE_TYPE_MIC);
 }
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_022
+* @tc.desc  : Test ActivateArmDevice interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_022, TestSize.Level1)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+
+    const std::string badAddress{"bad address"};
+    const std::string goodAddress{"address=card=2;device=0 role=0"};
+    ecManager.isEcFeatureEnable_ = true;
+
+    ecManager.ActivateArmDevice(badAddress, DeviceRole::INPUT_DEVICE);
+    EXPECT_NE(ecManager.activeArmInputAddr_, badAddress);
+
+    ecManager.ActivateArmDevice(badAddress, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_NE(ecManager.activeArmOutputAddr_, badAddress);
+
+    std::list<AudioModuleInfo> moduleInfoList{};
+    ecManager.audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
+    if (moduleInfoList.empty()) {
+        AudioModuleInfo testModuleInfo1{.role = "sink", .name="m1"};
+        AudioModuleInfo testModuleInfo2{.role = "source", .name="m2"};
+        std::list<AudioModuleInfo> testModules{testModuleInfo1, testModuleInfo2};
+        ecManager.audioConfigManager_.deviceClassInfo_.insert(
+            std::make_pair(ClassType::TYPE_USB, testModules));
+
+        ecManager.ActivateArmDevice(goodAddress, DeviceRole::OUTPUT_DEVICE);
+        ecManager.ActivateArmDevice(goodAddress, DeviceRole::INPUT_DEVICE);
+        ecManager.activeArmOutputAddr_ = {};
+        ecManager.activeArmInputAddr_ = {};
+
+        ecManager.PresetArmIdleInput(goodAddress);
+        ecManager.isEcFeatureEnable_ = false;
+        ecManager.ActivateArmDevice(goodAddress, DeviceRole::INPUT_DEVICE);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

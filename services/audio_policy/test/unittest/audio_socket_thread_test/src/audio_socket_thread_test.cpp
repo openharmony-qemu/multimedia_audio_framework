@@ -1408,5 +1408,42 @@ HWTEST_F(AudioSocketThreadUnitTest, ReadAndScanDpName_Fail_WhenDevicePortNotFoun
     EXPECT_NE(ret, SUCCESS);
     remove(testPath.c_str());
 }
+
+/**
+ * @tc.name  : Test AudioSocketThread
+ * @tc.number: AudioSocketThread_101
+ * @tc.desc  : Test AudioSocketThread
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_101, TestSize.Level0)
+{
+    auto audioSocketThread = std::make_shared<AudioSocketThread>();
+    EXPECT_NE(audioSocketThread, nullptr);
+
+    struct AudioPnpUevent *audioPnpUevent = nullptr;
+    auto ret = audioSocketThread->AudioMicBlockDevice(audioPnpUevent);
+    EXPECT_EQ(ret, HDF_ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioSocketThread
+ * @tc.number: AudioSocketThread_102
+ * @tc.desc  : Test AudioSocketThread
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_102, TestSize.Level0)
+{
+    auto audioSocketThread = std::make_shared<AudioSocketThread>();
+    EXPECT_NE(audioSocketThread, nullptr);
+
+    struct AudioPnpUevent *audioPnpUevent = new AudioPnpUevent();
+    EXPECT_NE(audioPnpUevent, nullptr);
+    audioPnpUevent->name = "mic_blocked";
+    auto ret = audioSocketThread->AudioMicBlockDevice(audioPnpUevent);
+    EXPECT_EQ(ret, SUCCESS);
+
+    if (audioPnpUevent != nullptr) {
+        delete audioPnpUevent;
+        audioPnpUevent = nullptr;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

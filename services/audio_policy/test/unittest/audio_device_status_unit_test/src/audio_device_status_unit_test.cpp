@@ -980,5 +980,414 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_046, TestSize.Level1)
     result = audioDeviceStatus.HandleSpecialDeviceType(deviceType, isConnected, address, deviceRole);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_047
+* @tc.desc  : Test HandleSpecialDeviceType with USB_HEADSET and connected.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_047, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_USB_HEADSET;
+    bool isConnected = true;
+    std::string address = "00:11:22:33:44:55";
+    DeviceRole deviceRole = OUTPUT_DEVICE;
+    int32_t ret = 0;
+
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    remoteDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    remoteDeviceDescriptor->macAddress_ = address;
+    remoteDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioConnectedDevice_.AddConnectedDevice(remoteDeviceDescriptor);
+
+    ret = audioDeviceStatus.HandleSpecialDeviceType(deviceType, isConnected, address, deviceRole);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_048
+* @tc.desc  : Test HandleSpecialDeviceType with USB_HEADSET and connected.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_048, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_USB_HEADSET;
+    bool isConnected = true;
+    std::string address = "00:11:22:33:44:55";
+    DeviceRole deviceRole = OUTPUT_DEVICE;
+    int32_t ret = 0;
+
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    remoteDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    remoteDeviceDescriptor->macAddress_ = "";
+    remoteDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioConnectedDevice_.AddConnectedDevice(remoteDeviceDescriptor);
+
+    ret = audioDeviceStatus.HandleSpecialDeviceType(deviceType, isConnected, address, deviceRole);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_049
+* @tc.desc  : Test HandleSpecialDeviceType with USB_HEADSET and connected.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_049, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    bool isConnected = false;
+    std::string address = "00:11:22:33:44:55";
+    DeviceRole deviceRole = OUTPUT_DEVICE;
+    int32_t ret = 0;
+
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    remoteDeviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    remoteDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    remoteDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioConnectedDevice_.AddConnectedDevice(remoteDeviceDescriptor);
+
+    ret = audioDeviceStatus.HandleSpecialDeviceType(deviceType, isConnected, address, deviceRole);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_050
+* @tc.desc  : Test OnPnpDeviceStatusUpdated with DEVICE_TYPE_NONE.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_050, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NONE;
+    desc.macAddress_ = "00:11:22:33:44:55";
+    desc.deviceName_ = "NONE";
+    bool isConnected = true;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, isConnected);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_051
+* @tc.desc  : Test OnPnpDeviceStatusUpdated hasModulesLoaded is false.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_051, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.macAddress_ = "00:11:22:33:44:55";
+    desc.deviceName_ = "Bluetooth A2DP Device";
+    bool isConnected = false;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.hasModulesLoaded = false;
+
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, isConnected);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_052
+* @tc.desc  : Test OnPnpDeviceStatusUpdated hasModulesLoaded is true.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_052, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.macAddress_ = "00:11:22:33:44:55";
+    desc.deviceName_ = "Bluetooth A2DP Device";
+    bool isConnected = true;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.hasModulesLoaded = true;
+
+    audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, isConnected);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_053
+* @tc.desc  : Test UpdateActiveA2dpDeviceWhenDisconnecting
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_053, TestSize.Level1)
+{
+    std::string address = "00:11:22:33:44:55";
+    std::string device = "00:00:00:00:00:00";
+    A2dpDeviceConfigInfo config;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
+
+    audioDeviceStatus.UpdateActiveA2dpDeviceWhenDisconnecting(address);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_054
+* @tc.desc  : Test UpdateActiveA2dpDeviceWhenDisconnecting.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_054, TestSize.Level1)
+{
+    std::string address = "00:11:22:33:44:55";
+    std::string device = address;
+    A2dpDeviceConfigInfo config;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
+
+    audioDeviceStatus.UpdateActiveA2dpDeviceWhenDisconnecting(address);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_055
+* @tc.desc  : Test IsConfigurationUpdated.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_055, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    AudioStreamInfo streamInfo;
+    bool result;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_056
+* @tc.desc  : Test IsConfigurationUpdated.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_056, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioStreamInfo streamInfo;
+    streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    bool result;
+    std::string device = "00:11:22:33:44:55";
+    A2dpDeviceConfigInfo config;
+    config.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
+    audioDeviceStatus.audioActiveDevice_.SetActiveBtDeviceMac(device);
+
+    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_057
+* @tc.desc  : Test IsConfigurationUpdated.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_057, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    bool result;
+    std::string device = "00:11:22:33:44:55";
+    A2dpDeviceConfigInfo config;
+    config.streamInfo.format = SAMPLE_S32LE;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
+    audioDeviceStatus.audioActiveDevice_.SetActiveBtDeviceMac(device);
+
+    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_058
+* @tc.desc  : Test IsConfigurationUpdated.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_058, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioStreamInfo streamInfo;
+    streamInfo.channels = MONO;
+    bool result;
+    std::string device = "00:11:22:33:44:55";
+    A2dpDeviceConfigInfo config;
+    config.streamInfo.format = SAMPLE_S32LE;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
+    audioDeviceStatus.audioActiveDevice_.SetActiveBtDeviceMac(device);
+
+    result = audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_059
+* @tc.desc  : Test OpenPortAndAddDeviceOnServiceConnected.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_059, TestSize.Level1)
+{
+    bool result = false;
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "file_source";
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    result = audioDeviceStatus.OpenPortAndAddDeviceOnServiceConnected(moduleInfo);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_060
+* @tc.desc  : Test OpenPortAndAddDeviceOnServiceConnected.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_060, TestSize.Level1)
+{
+    bool result = false;
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "Built_in_mic";
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    result = audioDeviceStatus.OpenPortAndAddDeviceOnServiceConnected(moduleInfo);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_061
+* @tc.desc  : Test OpenPortAndAddDeviceOnServiceConnected.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_061, TestSize.Level1)
+{
+    bool result = false;
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "Speaker";
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    result = audioDeviceStatus.OpenPortAndAddDeviceOnServiceConnected(moduleInfo);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_062
+* @tc.desc  : Test OnForcedDeviceSelected.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_062, TestSize.Level1)
+{
+    bool result = false;
+    std::string macAddress = "00:11:22:33:44:55";
+    DeviceType devType = DEVICE_TYPE_BLUETOOTH_SCO;
+
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    remoteDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    remoteDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    remoteDeviceDescriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioConnectedDevice_.AddConnectedDevice(remoteDeviceDescriptor);
+
+
+    audioDeviceStatus.OnForcedDeviceSelected(devType, macAddress);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_063
+* @tc.desc  : Test DeviceUpdateClearRecongnitionStatus.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_063, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    desc.isEnable_ = true;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.DeviceUpdateClearRecongnitionStatus(desc);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_064
+* @tc.desc  : Test DeviceUpdateClearRecongnitionStatus.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_064, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.connectState_ == DEACTIVE_CONNECTED;
+    desc.deviceCategory_ = BT_HEARAID;
+    desc.isEnable_ = true;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.DeviceUpdateClearRecongnitionStatus(desc);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_065
+* @tc.desc  : Test DeviceUpdateClearRecongnitionStatus.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_065, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.connectState_ == SUSPEND_CONNECTED;
+    desc.deviceCategory_ = BT_HEARAID;
+    desc.isEnable_ = true;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.DeviceUpdateClearRecongnitionStatus(desc);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_066
+* @tc.desc  : Test DeviceUpdateClearRecongnitionStatus.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_066, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.connectState_ == VIRTUAL_CONNECTED;
+    desc.deviceCategory_ = BT_HEARAID;
+    desc.isEnable_ = false;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.DeviceUpdateClearRecongnitionStatus(desc);
+    EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

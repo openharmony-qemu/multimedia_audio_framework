@@ -33,6 +33,14 @@ void AudioPolicyServiceThirdUnitTest::TearDownTestCase(void) {}
 void AudioPolicyServiceThirdUnitTest::SetUp(void) {}
 void AudioPolicyServiceThirdUnitTest::TearDown(void) {}
 
+class AudioSharedMemoryTest : public AudioSharedMemory {
+public:
+    uint8_t *GetBase() override { return nullptr; };
+    size_t GetSize() override { return 0; };
+    int GetFd() override { return 0; };
+    std::string GetName() override { return "abc"; };
+};
+
 static AudioPolicyServer* GetServerPtr()
 {
     return GetServerUtil::GetServerPtr();
@@ -1761,6 +1769,664 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioPolicyUtils_002, TestSize.Level1)
 
     auto ret = audioPolicyUtils->GetSourcePortName(deviceType);
     EXPECT_EQ(ret, "Bt_Mic");
+}
+
+/**
+ * @tc.name  : Test GetPreferredInputStreamType.
+ * @tc.number: GetPreferredInputStreamType_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredInputStreamType_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_INVALID;
+    int32_t ret = server->audioPolicyService_.GetPreferredInputStreamType(capturerInfo);
+    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamState.
+ * @tc.number: UpdateStreamState_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, UpdateStreamState_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t clientUid = 1;
+    StreamSetStateEventInternal streamSetStateEventInternal;
+
+    int32_t ret = server->audioPolicyService_.UpdateStreamState(clientUid, streamSetStateEventInternal);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test GetUid.
+ * @tc.number: GetUid_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetUid_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t sessionId = 2;
+
+    int32_t ret = server->audioPolicyService_.GetUid(sessionId);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test RemoveDeviceForUid.
+ * @tc.number: RemoveDeviceForUid_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, RemoveDeviceForUid_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t uid = 1;
+    server->audioPolicyService_.RemoveDeviceForUid(uid);
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetVolumeGroupInfos.
+ * @tc.number: GetVolumeGroupInfos_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetVolumeGroupInfos_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    auto ret = server->audioPolicyService_.GetVolumeGroupInfos();
+    EXPECT_EQ(ret.size(), 0);
+}
+
+/**
+ * @tc.name  : Test InitSharedVolume.
+ * @tc.number: InitSharedVolume_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, InitSharedVolume_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    std::shared_ptr<AudioSharedMemory> buffer = std::make_shared<AudioSharedMemoryTest>();
+    int32_t ret = server->audioPolicyService_.InitSharedVolume(buffer);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test MoveToNewPipe.
+ * @tc.number: MoveToNewPipe_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, MoveToNewPipe_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    uint32_t sessionId = 0;
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    int32_t ret = server->audioPolicyService_.MoveToNewPipe(sessionId, pipeType);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test DynamicUnloadModule.
+ * @tc.number: DynamicUnloadModule_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, DynamicUnloadModule_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioPipeType pipeType = PIPE_TYPE_OFFLOAD;
+    int32_t ret = server->audioPolicyService_.DynamicUnloadModule(pipeType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeType = PIPE_TYPE_MULTICHANNEL;
+    ret = server->audioPolicyService_.DynamicUnloadModule(pipeType);
+    EXPECT_NE(ret, SUCCESS);
+
+    pipeType = PIPE_TYPE_DIRECT_VOIP;
+    ret = server->audioPolicyService_.DynamicUnloadModule(pipeType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetMaxRendererInstances.
+ * @tc.number: GetMaxRendererInstances_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetMaxRendererInstances_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t ret = server->audioPolicyService_.GetMaxRendererInstances();
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test GetMinStreamVolume.
+ * @tc.number: GetMinStreamVolume_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetMinStreamVolume_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    float ret = server->audioPolicyService_.GetMinStreamVolume();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test GetMaxStreamVolume.
+ * @tc.number: GetMaxStreamVolume_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetMaxStreamVolume_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    float ret = server->audioPolicyService_.GetMaxStreamVolume();
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test QueryEffectManagerSceneMode.
+ * @tc.number: QueryEffectManagerSceneMode_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, QueryEffectManagerSceneMode_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    SupportedEffectConfig supportedEffectConfig;
+    int32_t ret = server->audioPolicyService_.QueryEffectManagerSceneMode(supportedEffectConfig);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test GetHardwareOutputSamplingRate.
+ * @tc.number: GetHardwareOutputSamplingRate_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    int32_t ret = server->audioPolicyService_.GetHardwareOutputSamplingRate(desc);
+    EXPECT_EQ(ret, -1);
+
+    desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceRole_ == DeviceRole::DEVICE_ROLE_NONE;
+    ret = server->audioPolicyService_.GetHardwareOutputSamplingRate(desc);
+    EXPECT_EQ(ret, -1);
+
+    desc->deviceRole_ == DeviceRole::OUTPUT_DEVICE;
+    ret = server->audioPolicyService_.GetHardwareOutputSamplingRate(desc);
+    EXPECT_NE(ret, 48000);
+}
+
+/**
+ * @tc.name  : Test GetAvailableMicrophones.
+ * @tc.number: GetAvailableMicrophones_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAvailableMicrophones_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    vector<sptr<MicrophoneDescriptor>> ret = server->audioPolicyService_.GetAvailableMicrophones();
+    EXPECT_NE(ret.size(), 0);
+}
+
+/**
+ * @tc.name  : Test OnCapturerSessionRemoved.
+ * @tc.number: OnCapturerSessionRemoved_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, OnCapturerSessionRemoved_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    uint64_t sessionID = 0;
+    server->audioPolicyService_.OnCapturerSessionRemoved(sessionID);
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test DeviceFilterByUsageInner.
+ * @tc.number: DeviceFilterByUsageInner_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceFilterByUsageInner_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioDeviceUsage usage = MEDIA_OUTPUT_DEVICES;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    descs.push_back(desc);
+    server->audioPolicyService_.DeviceFilterByUsageInner(usage, descs);
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetAvailableDevices.
+ * @tc.number: GetAvailableDevices_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAvailableDevices_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioDeviceUsage usage = MEDIA_OUTPUT_DEVICES;
+    auto ret = server->audioPolicyService_.GetAvailableDevices(usage);
+    EXPECT_NE(ret.size(), 0);
+}
+
+/**
+ * @tc.name  : Test GetConverterConfig.
+ * @tc.number: GetConverterConfig_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetConverterConfig_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    ConverterConfig ret = server->audioPolicyService_.GetConverterConfig();
+    EXPECT_NE(ret.outChannelLayout, 0);
+}
+
+/**
+ * @tc.name  : Test GetSupportedAudioEffectProperty.
+ * @tc.number: GetSupportedAudioEffectProperty_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetSupportedAudioEffectProperty_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    int32_t ret = server->audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
+    EXPECT_EQ(ret, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test GetSupportedEffectProperty.
+ * @tc.number: GetSupportedEffectProperty_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetSupportedEffectProperty_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    server->audioPolicyService_.GetSupportedEffectProperty(propertyArray);
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetSupportedEnhanceProperty.
+ * @tc.number: GetSupportedEnhanceProperty_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetSupportedEnhanceProperty_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    server->audioPolicyService_.GetSupportedEnhanceProperty(propertyArray);
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test CheckSupportedAudioEffectProperty.
+ * @tc.number: CheckSupportedAudioEffectProperty_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckSupportedAudioEffectProperty_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    EffectFlag flag = CAPTURE_EFFECT_FLAG;
+    int32_t ret = server->audioPolicyService_.CheckSupportedAudioEffectProperty(propertyArray, flag);
+    EXPECT_EQ(ret, AUDIO_OK);
+
+    flag = RENDER_EFFECT_FLAG;
+    ret = server->audioPolicyService_.CheckSupportedAudioEffectProperty(propertyArray, flag);
+    EXPECT_EQ(ret, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test SetAudioEffectProperty.
+ * @tc.number: SetAudioEffectProperty_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetAudioEffectProperty_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyV3 effectProperty;
+    effectProperty.flag = CAPTURE_EFFECT_FLAG;
+    propertyArray.property.push_back(effectProperty);
+    int32_t ret = server->audioPolicyService_.SetAudioEffectProperty(propertyArray);
+    EXPECT_NE(ret, AUDIO_OK);
+
+    propertyArray.property.clear();
+    effectProperty.flag = RENDER_EFFECT_FLAG;
+    propertyArray.property.push_back(effectProperty);
+    ret = server->audioPolicyService_.SetAudioEffectProperty(propertyArray);
+    EXPECT_NE(ret, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test GetAudioEnhanceProperty.
+ * @tc.number: GetAudioEnhanceProperty_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyV3 effectProperty;
+    effectProperty.flag = CAPTURE_EFFECT_FLAG;
+    propertyArray.property.push_back(effectProperty);
+    int32_t ret = server->audioPolicyService_.SetAudioEffectProperty(propertyArray);
+    EXPECT_NE(ret, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test GetAudioEffectProperty.
+ * @tc.number: GetAudioEffectProperty_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEffectProperty_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyV3 effectProperty;
+    effectProperty.flag = CAPTURE_EFFECT_FLAG;
+    propertyArray.property.push_back(effectProperty);
+    int32_t ret = server->audioPolicyService_.GetAudioEffectProperty(propertyArray);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test GetAudioEnhancePropertyByDevice.
+ * @tc.number: GetAudioEnhancePropertyByDevice_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhancePropertyByDevice_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    AudioEnhancePropertyArray propertyArray;
+
+    int32_t ret = server->audioPolicyService_.GetAudioEnhancePropertyByDevice(deviceType, propertyArray);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test SetRotationToEffect.
+ * @tc.number: SetRotationToEffect_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetRotationToEffect_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    uint32_t rotate = 0;
+    server->audioPolicyService_.SetRotationToEffect(rotate);
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test LoadSplitModule.
+ * @tc.number: LoadSplitModule_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    auto ret = server->audioPolicyService_.LoadSplitModule("", "");
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test LoadSplitModule.
+ * @tc.number: LoadSplitModule_002
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_002, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    std::string splitArgs = "";
+    std::string networkId = "b94d27b9934d3e08a52e52d7da";
+    auto ret = server->audioPolicyService_.LoadSplitModule(splitArgs, networkId);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test LoadSplitModule.
+ * @tc.number: LoadSplitModule_003
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_003, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    std::string splitArgs = "8:4096:1";
+    std::string networkId = "";
+    auto ret = server->audioPolicyService_.LoadSplitModule(splitArgs, networkId);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test LoadSplitModule.
+ * @tc.number: LoadSplitModule_004
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_004, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    std::string splitArgs = "8:4096:1";
+    std::string networkId = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
+    auto ret = server->audioPolicyService_.LoadSplitModule(splitArgs, networkId);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test IsCurrentActiveDeviceA2dp.
+ * @tc.number: IsCurrentActiveDeviceA2dp_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, IsCurrentActiveDeviceA2dp_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    auto ret = server->audioPolicyService_.IsCurrentActiveDeviceA2dp();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test SetDefaultOutputDevice.
+ * @tc.number: SetDefaultOutputDevice_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    DeviceType deviceType = DEVICE_TYPE_MAX;
+    uint32_t sessionID = 0;
+    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    bool isRunning = false;
+
+    server->audioPolicyService_.audioConfigManager_.hasEarpiece_ = false;
+    auto ret = server->audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    EXPECT_NE(ret, SUCCESS);
+
+    server->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
+    ret = server->audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    EXPECT_EQ(ret, SUCCESS);
+
+    isRunning = true;
+    streamUsage = STREAM_USAGE_VOICE_MESSAGE;
+    server->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
+    ret = server->audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetInputDevice.
+ * @tc.number: SetInputDevice_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetInputDevice_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    DeviceType deviceType = DEVICE_TYPE_MAX;
+    uint32_t sessionID = 0;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    bool isRunning = false;
+
+    int32_t ret = server->audioPolicyService_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ActivateConcurrencyFromServer.
+ * @tc.number: ActivateConcurrencyFromServer_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
+    int32_t ret = server->audioPolicyService_.ActivateConcurrencyFromServer(incomingPipe);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CheckConnectedDevice.
+ * @tc.number: CheckConnectedDevice_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckConnectedDevice_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    server->audioPolicyService_.CheckConnectedDevice();
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test SetDeviceConnectedFlagFalseAfterDuration.
+ * @tc.number: SetDeviceConnectedFlagFalseAfterDuration_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDeviceConnectedFlagFalseAfterDuration_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    server->audioPolicyService_.SetDeviceConnectedFlagFalseAfterDuration();
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test CheckHibernateState.
+ * @tc.number: CheckHibernateState_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckHibernateState_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    bool hibernate = false;
+    server->audioPolicyService_.CheckHibernateState(hibernate);
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test UpdateSafeVolumeByS4.
+ * @tc.number: UpdateSafeVolumeByS4_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, UpdateSafeVolumeByS4_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    server->audioPolicyService_.UpdateSafeVolumeByS4();
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test SetQueryAllowedPlaybackCallback.
+ * @tc.number: SetQueryAllowedPlaybackCallback_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetQueryAllowedPlaybackCallback_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = server->audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

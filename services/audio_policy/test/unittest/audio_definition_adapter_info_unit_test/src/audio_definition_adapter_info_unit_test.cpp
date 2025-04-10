@@ -59,5 +59,83 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, PolicyAdapterInfo_001, TestSize.Level
     ret = policyAdapter->GetAdapterType("");
     EXPECT_EQ(AudioAdapterType::TYPE_INVALID, ret);
 }
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: PolicyAdapterInfo_002
+* @tc.desc  : Test GetAdapterType
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, PolicyAdapterInfo_002, TestSize.Level1)
+{
+    auto policyAdapter = std::make_shared<PolicyAdapterInfo>();
+    EXPECT_NE(policyAdapter, nullptr);
+
+    const std::string TEST_PIPE_NAME{"test1"};
+    auto pipeInfo = std::make_shared<AdapterPipeInfo>();
+    EXPECT_NE(pipeInfo, nullptr);
+    pipeInfo->name_ = TEST_PIPE_NAME;
+    
+    policyAdapter->SelfCheck();
+    policyAdapter->pipeInfos.push_back(nullptr);
+    policyAdapter->pipeInfos.push_back(pipeInfo);
+    auto ret1 = policyAdapter->GetPipeInfoByName(TEST_PIPE_NAME);
+    EXPECT_NE(ret1, nullptr);
+    auto ret2 = policyAdapter->GetPipeInfoByName("");
+    EXPECT_EQ(ret2, nullptr);
+
+    auto deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    EXPECT_NE(deviceInfo, nullptr);
+    deviceInfo->type_ = DeviceType::DEVICE_TYPE_EARPIECE;
+    deviceInfo->role_ = DeviceRole::OUTPUT_DEVICE;
+    policyAdapter->SelfCheck();
+    policyAdapter->deviceInfos.push_back(deviceInfo);
+    policyAdapter->SelfCheck();
+    auto ret3 = policyAdapter->GetDeviceInfoByType(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_NE(ret3, nullptr);
+    auto ret4 = policyAdapter->GetDeviceInfoByType(DeviceType::DEVICE_TYPE_NONE, DeviceRole::DEVICE_ROLE_NONE);
+    EXPECT_EQ(ret4, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: DeviceAdapterInfo_001
+* @tc.desc  : Test GetAdapterType
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, DeviceAdapterInfo_001, TestSize.Level1)
+{
+    auto deviceAdapter = std::make_shared<AdapterDeviceInfo>();
+    EXPECT_NE(deviceAdapter, nullptr);
+
+    deviceAdapter->SelfCheck();
+    EXPECT_EQ(deviceAdapter->adapterInfo_.lock(), nullptr);
+
+    auto adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    deviceAdapter->adapterInfo_ = adapterInfoPtr;
+    deviceAdapter->SelfCheck();
+    EXPECT_EQ(deviceAdapter->supportPipeMap_.size(), 0);
+
+    const std::string TEST_PIPE_NAME{"PIPE1"};
+    deviceAdapter->supportPipes_.push_back(TEST_PIPE_NAME);
+
+    auto pipeInfo = std::make_shared<AdapterPipeInfo>();
+    EXPECT_NE(pipeInfo, nullptr);
+    pipeInfo->adapterInfo_ = adapterInfoPtr;
+    auto pipestreamPtr = std::make_shared<PipeStreamPropInfo>();
+    pipestreamPtr->pipeInfo_ = std::make_shared<AdapterPipeInfo>();
+    pipestreamPtr->supportDevices_.push_back(TEST_PIPE_NAME);
+    pipestreamPtr->supportDevices_.push_back("");
+
+    auto deviceAdapter2 = std::make_shared<AdapterDeviceInfo>();
+    deviceAdapter2->name_ = TEST_PIPE_NAME;
+    pipestreamPtr->supportDeviceMap_.insert(std::make_pair(DeviceType::DEVICE_TYPE_EARPIECE, deviceAdapter2));
+    pipeInfo->streamPropInfos_.push_back(pipestreamPtr);
+    pipeInfo->SelfCheck();
+
+    pipeInfo->name_ = TEST_PIPE_NAME;
+    deviceAdapter->supportPipeMap_.insert(std::make_pair(0, std::make_shared<AdapterPipeInfo>()));
+    deviceAdapter->SelfCheck();
+    deviceAdapter->supportPipeMap_.insert(std::make_pair(1, pipeInfo));
+    deviceAdapter->SelfCheck();
+}
 } // namespace AudioStandard
 } // namespace OHOS
