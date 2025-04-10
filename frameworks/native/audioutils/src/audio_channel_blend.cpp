@@ -74,7 +74,8 @@ void AudioBlend::ProcessWithBlendMode(T *buffer, size_t bufferSize)
     }
 
     uint32_t frameCount = 0;
-    frameCount = bufferSize / (channels_ * (format_ + 1));
+    size_t bitWidthSize = GetAudioFormatSize();
+    frameCount = bufferSize / (channels_ * bitWidthSize);
     switch (blendMode_) {
         case MODE_BLEND_LR:
             ProcessBlendLRModeWithFormat<T>(buffer, frameCount, (AudioChannel)channels_);
@@ -192,19 +193,46 @@ void AudioBlend::ProcessAllRightModeWithFormat(T *buffer, size_t count, AudioCha
     }
 }
 
+size_t AudioBlend::GetAudioFormatSize()
+{
+    size_t bitWidthSize = 2; // size is 2
+    switch (format_) {
+        case AudioSampleFormat::SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case AudioSampleFormat::SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case AudioSampleFormat::SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case AudioSampleFormat::SAMPLE_S32LE:
+        case AudioSampleFormat::SAMPLE_F32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            bitWidthSize = 2; // size is 2
+            break;
+    }
+    return bitWidthSize;
+}
+
 template void AudioBlend::ProcessBlendLRModeWithFormat(uint8_t *buffer, size_t count, AudioChannel channel);
 template void AudioBlend::ProcessBlendLRModeWithFormat(int16_t *buffer, size_t count, AudioChannel channel);
 template void AudioBlend::ProcessBlendLRModeWithFormat(int24_t *buffer, size_t count, AudioChannel channel);
 template void AudioBlend::ProcessBlendLRModeWithFormat(int32_t *buffer, size_t count, AudioChannel channel);
+template void AudioBlend::ProcessBlendLRModeWithFormat(float *buffer, size_t count, AudioChannel channel);
 
 template void AudioBlend::ProcessAllLeftModeWithFormat(uint8_t *buffer, size_t count, AudioChannel channel);
 template void AudioBlend::ProcessAllLeftModeWithFormat(int16_t *buffer, size_t count, AudioChannel channel);
 template void AudioBlend::ProcessAllLeftModeWithFormat(int24_t *buffer, size_t count, AudioChannel channel);
 template void AudioBlend::ProcessAllLeftModeWithFormat(int32_t *buffer, size_t count, AudioChannel channel);
+template void AudioBlend::ProcessAllLeftModeWithFormat(float *buffer, size_t count, AudioChannel channel);
 
 template void AudioBlend::ProcessAllRightModeWithFormat(uint8_t *buffer, size_t count, AudioChannel channel);
 template void AudioBlend::ProcessAllRightModeWithFormat(int16_t *buffer, size_t count, AudioChannel channel);
 template void AudioBlend::ProcessAllRightModeWithFormat(int24_t *buffer, size_t count, AudioChannel channel);
 template void AudioBlend::ProcessAllRightModeWithFormat(int32_t *buffer, size_t count, AudioChannel channel);
+template void AudioBlend::ProcessAllRightModeWithFormat(float *buffer, size_t count, AudioChannel channel);
 } // namespace AudioStandard
 } // namespace OHOS
