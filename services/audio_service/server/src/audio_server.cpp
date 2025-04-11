@@ -913,6 +913,8 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
     if (activeInputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+    } else if (activeInputDevice == DEVICE_TYPE_ACCESSORY) {
+        source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
     } else {
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
     }

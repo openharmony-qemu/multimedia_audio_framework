@@ -176,6 +176,8 @@ AudioAdapterType PolicyAdapterInfo::GetAdapterType(const std::string &adapterNam
         return AudioAdapterType::TYPE_USB;
     } else if (adapterName == ADAPTER_TYPE_DP) {
         return AudioAdapterType::TYPE_DP;
+    } else if (adapterName == ADAPTER_TYPE_ACCESSORY) {
+        return AudioAdapterType::TYPE_ACCESSORY;
     } else if (adapterName == ADAPTER_TYPE_SLE) {
         return AudioAdapterType::TYPE_SLE;
     } else {
