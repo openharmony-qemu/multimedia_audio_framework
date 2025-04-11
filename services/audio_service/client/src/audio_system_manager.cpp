@@ -1571,7 +1571,7 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     AUDIO_INFO_LOG("RegisterWakeupSourceCallback");
     remoteWakeUpCallback_ = std::make_shared<WakeUpCallbackImpl>(this);
 
-    auto wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
+    sptr<AudioManagerListenerStub> wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
     CHECK_AND_RETURN_RET_LOG(wakeupCloseCbStub != nullptr, ERROR,
         "wakeupCloseCbStub is null");
     wakeupCloseCbStub->SetWakeupSourceCallback(remoteWakeUpCallback_);
@@ -1582,7 +1582,6 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     sptr<IRemoteObject> object = wakeupCloseCbStub->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("SetWakeupCloseCallback listenerStub object is nullptr");
-        delete wakeupCloseCbStub;
         return ERROR;
     }
     return gasp->SetWakeupSourceCallback(object);
