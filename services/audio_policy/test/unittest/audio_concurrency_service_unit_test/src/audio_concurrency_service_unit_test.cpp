@@ -16,6 +16,8 @@
 #include "audio_errors.h"
 #include "audio_concurrency_service_unit_test.h"
 
+#include "audio_policy_server.h"
+
 using namespace testing::ext;
 
 namespace OHOS {
@@ -382,6 +384,97 @@ HWTEST_F(AudioConcurrencyServiceUnitTest, AudioConcurrencyService_016, TestSize.
     auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
     auto result = audioConcurrencyService->GetConcurrencyMap();
     EXPECT_EQ(result.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioInputThread.
+* @tc.number: DispatchConcurrencyEventWithSessionId_001.
+* @tc.desc  : Test DispatchConcurrencyEventWithSessionId.
+*/
+HWTEST_F(AudioConcurrencyServiceUnitTest, DispatchConcurrencyEventWithSessionId_001, TestSize.Level1)
+{
+    auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
+    uint32_t sessionID = MAX_STREAMID;
+
+    audioConcurrencyService->DispatchConcurrencyEventWithSessionId(sessionID);
+    EXPECT_NE(audioConcurrencyService, nullptr);
+
+    sessionID = MIN_STREAMID + 10;
+    audioConcurrencyService->DispatchConcurrencyEventWithSessionId(sessionID);
+    EXPECT_NE(audioConcurrencyService, nullptr);
+
+    std::shared_ptr<AudioConcurrencyCallback> callback = nullptr;
+    sptr<IRemoteObject> object = nullptr;
+    sptr<AudioConcurrencyService::AudioConcurrencyDeathRecipient> deathRecipient = nullptr;
+    std::shared_ptr<AudioConcurrencyService::AudioConcurrencyClient> client =
+            std::make_shared<AudioConcurrencyService::AudioConcurrencyClient>(callback, object, deathRecipient, sessionID);
+    audioConcurrencyService->concurrencyClients_[sessionID] = client;
+    audioConcurrencyService->DispatchConcurrencyEventWithSessionId(sessionID);
+    EXPECT_NE(audioConcurrencyService, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioInputThread.
+* @tc.number: SetAudioConcurrencyCallback_001.
+* @tc.desc  : Test SetAudioConcurrencyCallback.
+*/
+HWTEST_F(AudioConcurrencyServiceUnitTest, SetAudioConcurrencyCallback_001, TestSize.Level1)
+{
+    auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
+    uint32_t sessionID = MIN_STREAMID + 10;
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = nullptr;
+
+    int32_t ret = audioConcurrencyService->SetAudioConcurrencyCallback(sessionID, object);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    ret = audioConcurrencyService->SetAudioConcurrencyCallback(sessionID, object);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioConcurrencyService->SetAudioConcurrencyCallback(sessionID, object);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test AudioInputThread.
+* @tc.number: UnsetAudioConcurrencyCallback_001.
+* @tc.desc  : Test UnsetAudioConcurrencyCallback.
+*/
+HWTEST_F(AudioConcurrencyServiceUnitTest, UnsetAudioConcurrencyCallback_001, TestSize.Level1)
+{
+    auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
+    uint32_t sessionID = MIN_STREAMID + 8;
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    audioConcurrencyService->SetAudioConcurrencyCallback(sessionID, object);
+    int32_t ret = audioConcurrencyService->UnsetAudioConcurrencyCallback(sessionID);
+    EXPECT_EQ(ret, SUCCESS);
+
+    sessionID = MIN_STREAMID + 5;
+    ret = audioConcurrencyService->UnsetAudioConcurrencyCallback(sessionID);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test AudioInputThread.
+* @tc.number: OnConcedeStream_001.
+* @tc.desc  : Test OnConcedeStream.
+*/
+HWTEST_F(AudioConcurrencyServiceUnitTest, OnConcedeStream_001, TestSize.Level1)
+{
+    auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
+    uint32_t sessionID = MIN_STREAMID + 3;
+    std::shared_ptr<AudioConcurrencyCallback> callback;
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<AudioConcurrencyService::AudioConcurrencyDeathRecipient> deathRecipient = nullptr;
+    std::shared_ptr<AudioConcurrencyService::AudioConcurrencyClient> audioConcurrencyClient =
+        std::make_shared<AudioConcurrencyService::AudioConcurrencyClient>(callback, object, deathRecipient, sessionID);
+
+    audioConcurrencyService->SetAudioConcurrencyCallback(sessionID, object);
+    audioConcurrencyClient->OnConcedeStream();
+    EXPECT_NE(audioConcurrencyClient, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
