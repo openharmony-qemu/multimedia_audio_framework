@@ -191,5 +191,61 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_009, TestSize.Leve
     }
     EXPECT_NE(audioActiveDevice, nullptr);
 }
+
+/**
+* @tc.name  : Test AudioActiveDevice.
+* @tc.number: AudioActiveDeviceUnitTest_010.
+* @tc.desc  : Test CheckActiveOutputDeviceSupportOffload.
+*/
+HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_010, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+
+    AudioDeviceDescriptor audioDeviceDescriptor1(DeviceType::DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor1);
+    bool result = audioActiveDevice->CheckActiveOutputDeviceSupportOffload();
+    EXPECT_EQ(result, true);
+
+    AudioDeviceDescriptor audioDeviceDescriptor(DeviceType::DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
+    auto ret = audioActiveDevice->CheckActiveOutputDeviceSupportOffload();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioActiveDevice.
+* @tc.number: AudioActiveDeviceUnitTest_011.
+* @tc.desc  : Test IsDirectSupportedDevice.
+*/
+HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_011, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    AudioDeviceDescriptor audioDeviceDescriptor(DeviceType::DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
+    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
+    bool result = audioActiveDevice->IsDirectSupportedDevice();
+    EXPECT_EQ(result, true);
+
+    AudioDeviceDescriptor audioDeviceDescriptor1(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor1);
+    result = audioActiveDevice->IsDirectSupportedDevice();
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioActiveDevice.
+* @tc.number: AudioActiveDeviceUnitTest_012.
+* @tc.desc  : Test IsDeviceActive.
+*/
+HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_012, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    AudioDeviceDescriptor audioDeviceDescriptor(DeviceType::DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
+    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
+    bool result = audioActiveDevice->IsDeviceActive(DeviceType::DEVICE_TYPE_USB_HEADSET);
+    EXPECT_EQ(result, true);
+
+    result = audioActiveDevice->IsDeviceActive(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(result, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
