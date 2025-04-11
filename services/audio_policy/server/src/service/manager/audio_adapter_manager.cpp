@@ -394,7 +394,6 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
                 handler_->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel);
             } else {
                 handler_->SendSaveVolume(currentActiveDevice_.deviceType_, streamType, volumeLevel);
-                SetDeviceSafeVolume(streamType, volumeLevel);
             }
         }
     }
@@ -416,52 +415,9 @@ int32_t AudioAdapterManager::SaveSpecifiedDeviceVolume(AudioStreamType streamTyp
     return SUCCESS;
 }
 
-void AudioAdapterManager::SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel)
+int32_t AudioAdapterManager::GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType)
 {
-    if (handler_ == nullptr) {
-        AUDIO_ERR_LOG("handler is nullptr");
-        return;
-    }
-
-    if (safeVolumeCall_ == false) {
-        AUDIO_ERR_LOG("safeVolumeCall is false, not deal");
-        return;
-    }
-
-    int64_t activeSafeTimeBt = GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
-    int64_t activeSafeTime = GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
-    SafeStatus safeStatusBt = GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
-    SafeStatus safeStatus = GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
-    int32_t btVolume = volumeDataMaintainer_.GetDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
-    int32_t wiredVolume = volumeDataMaintainer_.GetDeviceVolume(DEVICE_TYPE_WIRED_HEADSET, STREAM_MUSIC);
-    const int32_t ONE_MINUTE = 60;
-    bool isTimeout = activeSafeTimeBt + activeSafeTime >= ONE_MINUTE * GetSafeVolumeTimeout() ? true : false;
-    switch (currentActiveDevice_.deviceType_) {
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            if (btVolume > safeVolume_ && isTimeout && safeStatusBt == SAFE_ACTIVE) {
-                AUDIO_INFO_LOG("wired device timeout, set bt device to safe volume");
-                handler_->SendSaveVolume(DEVICE_TYPE_BLUETOOTH_A2DP, streamType, volumeLevel);
-            }
-            break;
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-            if (wiredVolume > safeVolume_ && isTimeout && safeStatus == SAFE_ACTIVE) {
-                AUDIO_INFO_LOG("bt device timeout, set wired device to safe volume");
-                handler_->SendSaveVolume(DEVICE_TYPE_WIRED_HEADSET, streamType, volumeLevel);
-            }
-            break;
-        default:
-            AUDIO_ERR_LOG("current device not set safe volume");
-            break;
-    }
-}
-
-void AudioAdapterManager::SetRestoreVolumeFlag(const bool safeVolumeCall)
-{
-    safeVolumeCall_ = safeVolumeCall;
+    return volumeDataMaintainer_.GetDeviceVolume(deviceType, streamType);
 }
 
 void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel)

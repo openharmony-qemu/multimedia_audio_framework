@@ -103,22 +103,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SaveSpecifiedDeviceVolume_002, TestSize.Le
 }
 
 /**
- * @tc.name: SetDeviceSafeVolumeh_001
- * @tc.desc: Test SetDeviceSafeVolume when entering the first if branch.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, SetDeviceSafeVolume_001, TestSize.Level1)
-{
-    bool safeVolumeCall = true;
-    AudioAdapterManager::GetInstance().SetDeviceSafeVolume(STREAM_MUSIC, 5);
-    AudioAdapterManager::GetInstance().Init();
-    AudioAdapterManager::GetInstance().SetRestoreVolumeFlag(safeVolumeCall);
-    AudioAdapterManager::GetInstance().SetDeviceSafeVolume(STREAM_RING, 5);
-    EXPECT_TRUE(safeVolumeCall);
-}
-
-/**
  * @tc.name: HandleStreamMuteStatus_001
  * @tc.desc: Test HandleStreamMuteStatus when deviceType is not DEVICE_TYPE_NONE.
  * @tc.type: FUNC
