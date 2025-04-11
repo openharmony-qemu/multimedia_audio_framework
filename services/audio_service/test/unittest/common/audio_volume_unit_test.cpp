@@ -407,5 +407,34 @@ HWTEST_F(AudioVolumeUnitTest, ConvertStreamTypeStrToInt_002, TestSize.Level1)
     EXPECT_EQ(ret, 1);
 }
 
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SaveAdjustStreamVolumeInfo_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SaveAdjustStreamVolumeInfo_001, TestSize.Level1)
+{
+    auto audioVolume = std::make_shared<AudioVolume>();
+    ASSERT_TRUE(audioVolume != nullptr);
+
+    float volume = 0.5f;
+    uint32_t sessionId = 0;
+    std::string invocationTime  = GetTime();
+    uint32_t code = static_cast<uint32_t>(AdjustStreamVolume::STREAM_VOLUME_INFO);
+    audioVolume->SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, code);
+    auto ret = audioVolume->GetStreamVolumeInfo(AdjustStreamVolume::STREAM_VOLUME_INFO);
+    EXPECT_TRUE(ret.size() != 0);
+
+    code = static_cast<uint32_t>(AdjustStreamVolume::LOW_POWER_VOLUME_INFO);
+    audioVolume->SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, code);
+    ret = audioVolume->GetStreamVolumeInfo(AdjustStreamVolume::LOW_POWER_VOLUME_INFO);
+    EXPECT_TRUE(ret.size() != 0);
+
+    code = static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO);
+    audioVolume->SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, code);
+    ret = audioVolume->GetStreamVolumeInfo(AdjustStreamVolume::DUCK_VOLUME_INFO);
+    EXPECT_TRUE(ret.size() != 0);
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

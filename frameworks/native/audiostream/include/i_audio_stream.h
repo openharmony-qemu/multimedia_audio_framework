@@ -144,7 +144,9 @@ public:
     virtual int32_t SetVolume(float volume) = 0;
     virtual float GetVolume() = 0;
     virtual int32_t SetDuckVolume(float volume) = 0;
+    virtual float GetDuckVolume() = 0;
     virtual int32_t SetMute(bool mute) = 0;
+    virtual bool GetMute() = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;

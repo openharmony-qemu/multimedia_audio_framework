@@ -122,6 +122,8 @@ public:
     
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+        uint32_t code) override;
 public:
     const AudioProcessConfig processConfig_;
 
