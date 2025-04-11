@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "fast_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -174,5 +175,111 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_007, TestSize.Level1)
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_008
+ * @tc.desc   : Test fast sink update apps uid
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_008, TestSize.Level1)
+{
+    auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
+    EXPECT_NE(fastAudioRenderSink, nullptr);
+
+    AudioSampleFormat format = SAMPLE_U8;
+    auto ret = fastAudioRenderSink->PcmFormatToBit(format);
+    EXPECT_EQ(ret, PCM_8_BIT);
+
+    format = SAMPLE_S16LE;
+    ret = fastAudioRenderSink->PcmFormatToBit(format);
+    EXPECT_EQ(ret, PCM_16_BIT);
+
+    format = SAMPLE_S24LE;
+    ret = fastAudioRenderSink->PcmFormatToBit(format);
+    EXPECT_EQ(ret, PCM_24_BIT);
+
+    format = SAMPLE_S32LE;
+    ret = fastAudioRenderSink->PcmFormatToBit(format);
+    EXPECT_EQ(ret, PCM_32_BIT);
+
+    format = SAMPLE_F32LE;
+    ret = fastAudioRenderSink->PcmFormatToBit(format);
+    EXPECT_EQ(ret, PCM_32_BIT);
+
+    format = static_cast<AudioSampleFormat>(5);
+    ret = fastAudioRenderSink->PcmFormatToBit(format);
+    EXPECT_EQ(ret, PCM_24_BIT);
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_009
+ * @tc.desc   : Test fast sink update apps uid
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_009, TestSize.Level1)
+{
+    auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
+    EXPECT_NE(fastAudioRenderSink, nullptr);
+
+    AudioSampleFormat format = SAMPLE_U8;
+    auto ret = fastAudioRenderSink->ConvertToHdiFormat(format);
+    EXPECT_EQ(ret, AUDIO_FORMAT_TYPE_PCM_8_BIT);
+
+    format = SAMPLE_S16LE;
+    ret = fastAudioRenderSink->ConvertToHdiFormat(format);
+    EXPECT_EQ(ret, AUDIO_FORMAT_TYPE_PCM_16_BIT);
+
+    format = SAMPLE_S24LE;
+    ret = fastAudioRenderSink->ConvertToHdiFormat(format);
+    EXPECT_EQ(ret, AUDIO_FORMAT_TYPE_PCM_24_BIT);
+
+    format = SAMPLE_S32LE;
+    ret = fastAudioRenderSink->ConvertToHdiFormat(format);
+    EXPECT_EQ(ret, AUDIO_FORMAT_TYPE_PCM_32_BIT);
+
+    format = SAMPLE_F32LE;
+    ret = fastAudioRenderSink->ConvertToHdiFormat(format);
+    EXPECT_EQ(ret, AUDIO_FORMAT_TYPE_PCM_32_BIT);
+
+    format = static_cast<AudioSampleFormat>(5);
+    ret = fastAudioRenderSink->ConvertToHdiFormat(format);
+    EXPECT_EQ(ret, AUDIO_FORMAT_TYPE_PCM_16_BIT);
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_010
+ * @tc.desc   : Test fast sink update apps uid
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_010, TestSize.Level1)
+{
+    auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
+    EXPECT_NE(fastAudioRenderSink, nullptr);
+
+    struct AudioDeviceDescriptor deviceDesc;
+
+    fastAudioRenderSink->attr_.deviceType = DEVICE_TYPE_EARPIECE;
+    fastAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_EARPIECE);
+
+    fastAudioRenderSink->attr_.deviceType = DEVICE_TYPE_SPEAKER;
+    fastAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_SPEAKER);
+
+    fastAudioRenderSink->attr_.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    fastAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_HEADSET);
+
+    fastAudioRenderSink->attr_.deviceType = DEVICE_TYPE_USB_HEADSET;
+    fastAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_USB_EXT);
+
+    fastAudioRenderSink->attr_.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    fastAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_BLUETOOTH_SCO);
+
+    fastAudioRenderSink->attr_.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    fastAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_SPEAKER);
+}
 } // namespace AudioStandard
 } // namespace OHOS

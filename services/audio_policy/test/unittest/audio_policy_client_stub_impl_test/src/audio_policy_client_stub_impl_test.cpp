@@ -638,6 +638,47 @@ HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_001, TestSize.Level1
 }
 
 /**
+* @tc.name  : Test AudioDeviceDescriptor.
+* @tc.number: GetDeviceCategory_001
+* @tc.desc  : Test AudioDeviceDescriptor/GetDeviceCategory.
+*/
+HWTEST(AudioPolicyClientStubImplTest, GetDeviceCategory_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.hasPair_ = true;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    EXPECT_EQ(deviceDescriptor.GetDeviceCategory(), CATEGORY_DEFAULT);
+}
+
+/**
+* @tc.name  : Test AudioDeviceDescriptor.
+* @tc.number: Dump_001
+* @tc.desc  : Test AudioDeviceDescriptor/Dump.
+*/
+HWTEST(AudioPolicyClientStubImplTest, Dump_001, TestSize.Level1)
+{
+    string dumpString = "";
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceName_ = "Test";
+    deviceDescriptor.deviceRole_ = DEVICE_ROLE_NONE;
+    deviceDescriptor.hasPair_ = true;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+
+    deviceDescriptor.Dump(dumpString);
+    EXPECT_EQ(dumpString.empty(), false);
+
+    dumpString = "";
+    deviceDescriptor.deviceRole_ = INPUT_DEVICE;
+    deviceDescriptor.Dump(dumpString);
+    EXPECT_EQ(dumpString.empty(), false);
+
+    dumpString = "";
+    deviceDescriptor.deviceRole_ = OUTPUT_DEVICE;
+    deviceDescriptor.Dump(dumpString);
+    EXPECT_EQ(dumpString.empty(), false);
+}
+
+/**
 * @tc.name  : Test AudioPolicyClientStubImpl.
 * @tc.number: AudioPolicyClientStubImpl_029
 * @tc.desc  : Test DeviceFilterByFlag.

@@ -494,5 +494,179 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_023, Test
     auto ret = multichannelAudioRenderSink->InitRender();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_024
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_024, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_USB);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    struct AudioSceneDescriptor sceneDesc;
+    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
+
+    multichannelAudioRenderSink->InitSceneDesc(sceneDesc, audioScene);
+    EXPECT_EQ(sceneDesc.desc.pins, PIN_OUT_USB_HEADSET);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_025
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_025, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    struct AudioSceneDescriptor sceneDesc;
+    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
+
+    multichannelAudioRenderSink->InitSceneDesc(sceneDesc, audioScene);
+    EXPECT_EQ(sceneDesc.desc.pins, PIN_OUT_SPEAKER);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_026
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_026, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_USB);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    struct AudioDeviceDescriptor deviceDesc;
+
+    multichannelAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_USB_HEADSET);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_027
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_027, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    struct AudioDeviceDescriptor deviceDesc;
+
+    multichannelAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_SPEAKER);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_028
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_028, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    DeviceType device = DEVICE_TYPE_WIRED_HEADSET;
+    multichannelAudioRenderSink->currentActiveDevice_ = DEVICE_TYPE_WIRED_HEADSET;
+
+    multichannelAudioRenderSink->ResetActiveDeviceForDisconnect(device);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_029
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_029, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    DeviceType device = DEVICE_TYPE_NONE;
+    multichannelAudioRenderSink->currentActiveDevice_ = DEVICE_TYPE_WIRED_HEADSET;
+
+    multichannelAudioRenderSink->ResetActiveDeviceForDisconnect(device);
+    EXPECT_EQ(multichannelAudioRenderSink->currentActiveDevice_, DEVICE_TYPE_WIRED_HEADSET);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_030
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_030, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    std::vector<DeviceType> outputDevices;
+    outputDevices.push_back(DEVICE_TYPE_NONE);
+    EXPECT_EQ(!outputDevices.empty() && outputDevices.size() == 1, true);
+
+    multichannelAudioRenderSink->currentActiveDevice_ = DEVICE_TYPE_NONE;
+
+    auto ret = multichannelAudioRenderSink->UpdateActiveDevice(outputDevices);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_031
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_031, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    std::vector<DeviceType> outputDevices;
+    outputDevices.push_back(DEVICE_TYPE_NONE);
+    EXPECT_EQ(!outputDevices.empty() && outputDevices.size() == 1, true);
+
+    multichannelAudioRenderSink->currentActiveDevice_ = DEVICE_TYPE_SPEAKER;
+
+    auto ret = multichannelAudioRenderSink->UpdateActiveDevice(outputDevices);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_032
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_032, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    AudioParamKey key = NONE;
+    std::string condition = "get_usb_info";
+    multichannelAudioRenderSink->adapterNameCase_ = "abc";
+
+    multichannelAudioRenderSink->GetAudioParameter(key, condition);
+    EXPECT_EQ(multichannelAudioRenderSink->adapterNameCase_, "usb");
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_033
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_033, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    AudioParamKey key = NONE;
+    std::string condition = "abc";
+
+    multichannelAudioRenderSink->GetAudioParameter(key, condition);
+    EXPECT_EQ(multichannelAudioRenderSink->adapterNameCase_, "");
+}
 } // namespace AudioStandard
 } // namespace OHOS
