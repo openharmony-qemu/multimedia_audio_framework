@@ -90,7 +90,7 @@ public:
     bool SupportImplicitConversion(uint32_t routeFlag);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo);
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
-        const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
+        const AudioStreamInfo &streamInfo);
     bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
 
     AudioPolicyConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),

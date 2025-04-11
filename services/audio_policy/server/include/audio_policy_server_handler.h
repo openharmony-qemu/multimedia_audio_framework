@@ -259,7 +259,7 @@ private:
     void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleFormatUnsupportedError(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

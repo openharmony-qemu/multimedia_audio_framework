@@ -2353,7 +2353,7 @@ int32_t AudioPolicyProxy::SetDeviceConnectionStatus(const std::shared_ptr<AudioD
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CONNECTION_STATUS), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 
@@ -2373,7 +2373,8 @@ DirectPlaybackMode AudioPolicyProxy::GetDirectPlaybackSupport(const AudioStreamI
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DIRECT_PLAYBACK_SUPPORT), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, DIRECT_PLAYBACK_NOT_SUPPORTED, "SendRequest failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, DIRECT_PLAYBACK_NOT_SUPPORTED, "SendRequest failed, error: %{public}d",
+        error);
     return static_cast<DirectPlaybackMode>(reply.ReadInt32());
 }
 } // namespace AudioStandard

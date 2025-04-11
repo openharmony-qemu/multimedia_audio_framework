@@ -314,7 +314,8 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 19
      */
-    int32_t SetAudioFormatUnsupportedErrorCallback(const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback);
+    int32_t SetAudioFormatUnsupportedErrorCallback(
+        const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback);
 
     /**
      * @brief Unsets format unsupported error callback.

@@ -491,7 +491,6 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
-    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
@@ -595,6 +594,7 @@ private:
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
     void SetDefaultAdapterEnable(bool isEnable);
+    bool IsDevicePlaybackSupport(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
 private:
 
     static bool isBtListenerRegistered;

@@ -158,7 +158,6 @@ private:
     static napi_ref audioChannel_;
     static napi_ref samplingRate_;
     static napi_ref encodingType_;
-    static napi_ref directPlaybackMode_;
     static napi_ref contentType_;
     static napi_ref streamUsage_;
     static napi_ref audioVolumeMode_;
@@ -208,7 +207,6 @@ private:
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
     static const std::map<std::string, int32_t> encodingTypeMap;
-    static const std::map<std::string, int32_t> directPlaybackModeMap;
     static const std::map<std::string, int32_t> contentTypeMap;
     static const std::map<std::string, int32_t> streamUsageMap;
     static const std::map<std::string, int32_t> audioVolumeModeMap;

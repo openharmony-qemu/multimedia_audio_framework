@@ -41,6 +41,7 @@
 #define NATIVE_AUDIOSTREAM_BASE_H
 
 #include <stdint.h>
+#include "multimedia/native_audio_channel_layout.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -176,6 +177,38 @@ typedef enum {
 } OH_AudioStream_EncodingType;
 
 /**
+ * @brief Define the audio stream info structure, used to describe basic audio format.
+ *
+ * @since 19
+ */
+typedef struct OH_AudioStreamInfo {
+    /**
+     * @brief Audio sampling rate.
+     *
+     * @since 19
+     */
+    int32_t samplingRate;
+    /**
+     * @brief Audio channel layout.
+     *
+     * @since 19
+     */
+    OH_AudioChannelLayout channelLayout;
+    /**
+     * @brief Audio encoding format type.
+     *
+     * @since 19
+     */
+    OH_AudioStream_EncodingType encodingType;
+    /**
+     * @brief Audio sample format.
+     *
+     * @since 19
+     */
+    OH_AudioStream_SampleFormat sampleFormat;
+} OH_AudioStreamInfo;
+
+/**
  * @brief Define the audio stream usage.
  * Audio stream usage is used to describe what work scenario
  * the current stream is used for.
@@ -308,11 +341,11 @@ typedef enum {
      */
     AUDIOSTREAM_DIRECT_PLAYBACK_BITSTREAM_SUPPORTED = 1,
     /**
-     * Direct playback mode which is pcm pass-through, without any process such as resampling.
+     * Direct playback mode of pcm.
      *
      * @since 19
      */
-    AUDIOSTREAM_DIRECT_PLAYBACK_PCM_SUPPORTED= 2
+    AUDIOSTREAM_DIRECT_PLAYBACK_PCM_SUPPORTED = 2
 } OH_AudioStream_DirectPlaybackMode;
 
 /**

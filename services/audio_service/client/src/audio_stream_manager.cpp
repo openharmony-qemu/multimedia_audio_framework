@@ -210,6 +210,8 @@ int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioD
 DirectPlaybackMode AudioStreamManager::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
     const StreamUsage &streamUsage)
 {
+    CHECK_AND_RETURN_RET_LOG(streamUsage > STREAM_USAGE_UNKNOWN && streamUsage < STREAM_USAGE_MAX,
+        DIRECT_PLAYBACK_NOT_SUPPORTED, "invalid streamUsage: %{public}d", streamUsage);
     return AudioPolicyManager::GetInstance().GetDirectPlaybackSupport(streamInfo, streamUsage);
 }
 

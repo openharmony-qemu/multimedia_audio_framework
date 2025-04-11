@@ -2301,18 +2301,16 @@ int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
 int32_t AudioPolicyManager::SetAudioFormatUnsupportedErrorCallback(
     const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback)
 {
-    AUDIO_DEBUG_LOG("Start to register");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     }
 
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].mutex);
-    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, ERR_NULL_POINTER);
     audioPolicyClientStubCB_->AddAudioFormatUnsupportedErrorCallback(callback);
     if (audioPolicyClientStubCB_->GetAudioFormatUnsupportedErrorCallbackSize() == 1) {
         callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].isEnable = true;
@@ -2323,9 +2321,8 @@ int32_t AudioPolicyManager::SetAudioFormatUnsupportedErrorCallback(
 
 int32_t AudioPolicyManager::UnsetAudioFormatUnsupportedErrorCallback()
 {
-    AUDIO_DEBUG_LOG("Start to unregister");
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].mutex);
-    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, SUCCESS);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_ != nullptr, ERR_NULL_POINTER);
     audioPolicyClientStubCB_->RemoveAudioFormatUnsupportedErrorCallback();
     if (audioPolicyClientStubCB_->GetAudioFormatUnsupportedErrorCallbackSize() == 0) {
         callbackChangeInfos_[CALLBACK_FORMAT_UNSUPPORTED_ERROR].isEnable = false;

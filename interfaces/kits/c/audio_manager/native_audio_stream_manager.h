@@ -21,7 +21,7 @@
  *
  * @syscap SystemCapability.Multimedia.Audio.Core
  *
- * @since 12
+ * @since 19
  * @version 1.0
  */
 
@@ -43,6 +43,7 @@
 #ifndef NATIVE_AUDIO_STREAM_MANAGER_H
 #define NATIVE_AUDIO_STREAM_MANAGER_H
 
+#include "native_audio_common.h"
 #include "native_audiostream_base.h"
 #ifdef __cplusplus
 extern "C" {
@@ -57,13 +58,15 @@ extern "C" {
 typedef struct OH_AudioStreamManager OH_AudioStreamManager;
 
 /**
- * @brief Query the audio stream manager handle.
- * which should be set as the first parameter in stream management releated functions.
+ * @brief Query the audio stream manager handle, which should be set as the first parameter in stream management
+ * releated functions.
  *
- * @param audioStreamManager the {@link OH_AudioStreamManager}
- * handle returned by {@link OH_AudioManager_GetAudioStreamManager}.
+ * @param audioStreamManager the {@link OH_AudioStreamManager} handle returned by
+ * {@link OH_AudioManager_GetAudioStreamManager}.
  * @return Function result code:
  *         {@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.
+ *         {@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}:
+ *                                                        1.The param of audioStreamManager is nullptr.
  * @since 19
  */
 OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManager **audioStreamManager);
@@ -71,29 +74,23 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManage
 /**
  * @brief Gets the mode of direct playback available for a given audio format with current active device.
  *
- * @param audioStreamManager the {@link OH_AudioStreamManager}
- * handle returned by {@link OH_AudioManager_GetAudioStreamManager}.
- * @param encodingType the {@link OH_AudioStream_EncodingType}.
- * @param format the {@link @OH_AudioStream_SampleFormat}.
- * @param channelCount the channel count.
- * @param smplingRate the sampling rate.
+ * @param audioStreamManager the {@link OH_AudioStreamManager} handle returned by
+ * {@link OH_AudioManager_GetAudioStreamManager}.
+ * @param streamInfo the {@link OH_AudioStreamInfo}.
  * @param usage the {@link OH_AudioStream_Usage}.
- * @param directPlaybackMode the {@link OH_AudioStream_DirectPlaybackMode}
- * pointer to a variable which receives the result.
+ * @param directPlaybackMode the {@link OH_AudioStream_DirectPlaybackMode} pointer to a variable which receives the
+ * result.
  * @return Function result code:
  *         {@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.
  *         {@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}:
  *                                                        1.The param of audioStreamManager is nullptr;
- *                                                        2.The param of encodingType invalid;
- *                                                        3.The param of format invalid;
- *                                                        4.The param of channelCount invalid;
- *                                                        5.The param of samplingRate invalid;
- *                                                        6.The param of usage invalid;
+ *                                                        2.The param of streamInfo is nullptr;
+ *                                                        3.The param of usage invalid;
+ *                                                        4.The param of directPlaybackMode is nullptr.
  * @since 19
  */
 OH_AudioCommon_Result OH_AudioStreamManager_GetDirectPlaybackSupport(
-    OH_AudioStreamManager *audioStreamManager, OH_AudioStream_EncodingType encodingType, 
-    OH_AudioStream_SampleFormat format, int32_t channelCount, int32_t samplingRate, 
+    OH_AudioStreamManager *audioStreamManager, OH_AudioStreamInfo *streamInfo,
     OH_AudioStream_Usage usage, OH_AudioStream_DirectPlaybackMode *directPlaybackMode);
 
 #ifdef __cplusplus

@@ -501,7 +501,8 @@ const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
 
 const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
     ENCODING_PCM,
-    ENCODING_AUDIOVIVID
+    ENCODING_AUDIOVIVID,
+    ENCODING_EAC3
 };
 
 const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {

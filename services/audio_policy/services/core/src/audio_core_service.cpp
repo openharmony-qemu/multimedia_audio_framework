@@ -1043,6 +1043,15 @@ void AudioCoreService::SetAudioServerProxy()
     audioPolicyManager_.SetAudioServerProxy(gsp);
 }
 
+DirectPlaybackMode AudioCoreService::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(
+        streamUsage, getuid());
+    CHECK_AND_RETURN_RET_LOG(!descs.empty(), DIRECT_PLAYBACK_NOT_SUPPORTED, "find output device failed");
+    return policyConfigMananger_.GetDirectPlaybackSupport(descs.front(), streamInfo);
+}
+
 #ifdef BLUETOOTH_ENABLE
 void AudioCoreService::RegisterBluetoothDeathCallback()
 {

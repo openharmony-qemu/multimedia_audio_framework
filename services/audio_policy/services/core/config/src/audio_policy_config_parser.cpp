@@ -504,9 +504,10 @@ void AudioPolicyConfigParser::HandleDefaultAdapterSupportParsed(std::string &val
     }
 }
 
-void AudioPolicyConfigParser::HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> &pipeInfo,
-    std::string &value)
+void AudioPolicyConfigParser::HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> pipeInfo,
+    const std::string &value)
 {
+    CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
     if (value == ENCODING_EAC3_NAME) {
         pipeInfo->supportEncodingEac3_ = true;
         configManager_->OnUpdateEac3Support(true);

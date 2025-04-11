@@ -1293,7 +1293,7 @@ void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExec
     AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
 }
 
-void AudioPolicyServerHandler::HandleFormatUnsupportedError(const AppExecFwk::InnerEvent::Pointer &event)
+void AudioPolicyServerHandler::HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
@@ -1400,7 +1400,7 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             HandleAppVolumeChangeEvent(event);
             break;
         case EventAudioServerCmd::FORMAT_UNSUPPORTED_ERROR:
-            HandleFormatUnsupportedError(event);
+            HandleFormatUnsupportedErrorEvent(event);
             break;
         default:
             break;

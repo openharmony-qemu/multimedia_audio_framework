@@ -87,7 +87,7 @@ std::unordered_map<std::string, AudioSampleFormat> AudioDefinitionPolicyUtils::f
     {"s16le", SAMPLE_S16LE},
     {"s24le", SAMPLE_S24LE},
     {"s32le", SAMPLE_S32LE},
-    {"eac3", SAMPLE_S32LE}, // eac3的位宽是多少？
+    {"eac3", INVALID_WIDTH},
 };
 
 // for moduleInfo

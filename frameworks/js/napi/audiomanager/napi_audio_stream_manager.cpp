@@ -24,7 +24,6 @@
 #include "audio_manager_log.h"
 #include "napi_audio_renderer_state_callback.h"
 #include "napi_audio_capturer_state_callback.h"
-#include "napi_audio_render_error_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -104,7 +103,6 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getSupportedAudioEnhanceProperty", GetSupportedAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("getAudioEnhanceProperty", GetAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("setAudioEnhanceProperty", SetAudioEnhanceProperty),
-        DECLARE_NAPI_FUNCTION("getDirectPlaybackSupport", GetDirectPlaybackSupport),
     };
 
     status = napi_define_class(env, AUDIO_STREAM_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -474,8 +472,6 @@ void NapiAudioStreamMgr::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterRendererStateChangeCallback(env, args, cbName, napiStreamMgr);
     } else if (!cbName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
         RegisterCapturerStateChangeCallback(env, args, cbName, napiStreamMgr);
-    } else if (!cbName.compare(RENDER_ERROR_CALLBACK_NAME)) {
-        RegisterRenderErrorCallback(env, args, cbName, napiStreamMgr);
     } else {
         AUDIO_ERR_LOG("NapiAudioStreamMgr::No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -534,30 +530,6 @@ void NapiAudioStreamMgr::RegisterCapturerStateChangeCallback(napi_env env, napi_
     AUDIO_INFO_LOG("OnCapturerStateChangeCallback is successful");
 }
 
-void NapiAudioStreamMgr::RegisterRenderErrorCallback(napi_env env, napi_value *args,
-    const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr)
-{
-    if (!napiStreamMgr->errorCallbackNapi_) {
-        napiStreamMgr->errorCallbackNapi_ = std::make_shared<NapiAudioRenderErrorCallback>(env);
-        CHECK_AND_RETURN_LOG(napiStreamMgr->errorCallbackNapi_ != nullptr,
-            "Memory Allocation Failed !!");
-
-        int32_t ret =
-            napiStreamMgr->audioStreamMngr_->SetAudioFormatUnsupportedErrorCallback(napiStreamMgr->errorCallbackNapi_);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS,
-            "Registering of Render Error Callback Failed");
-    }
-
-    std::shared_ptr<NapiAudioRenderErrorCallback> cb =
-        std::static_pointer_cast<NapiAudioRenderErrorCallback>(napiStreamMgr->errorCallbackNapi_);
-    cb->SaveCallbackReference(cbName, args[PARAM1]);
-    if (!cb->GetErrorTsfnFlag()) {
-        cb->CreateErrorTsfn(env);
-    }
-
-    AUDIO_INFO_LOG("OnFormatUnsupportedError is successful");
-}
-
 napi_value NapiAudioStreamMgr::On(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_TWO;
@@ -608,9 +580,6 @@ void NapiAudioStreamMgr::UnregisterCallback(napi_env env, napi_value jsThis,
     } else if (!cbName.compare(CAPTURERCHANGE_CALLBACK_NAME)) {
         UnregisterCapturerChangeCallback(napiStreamMgr, argc, args);
         AUDIO_INFO_LOG("UnRegistering of capturer State Change Callback successful");
-    } else if (!cbName.compare(RENDER_ERROR_CALLBACK_NAME)) {
-        UnregisterRenderErrorCallback(napiStreamMgr, argc, args);
-        AUDIO_INFO_LOG("UnRegistering of Render Error Callback successful");
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -656,25 +625,6 @@ void NapiAudioStreamMgr::UnregisterCapturerChangeCallback(NapiAudioStreamMgr *na
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unregister capturer state change callback failed");
     cb->RemoveCallbackReference(callback);
     napiStreamMgr->capturerStateChangeCallbackNapi_.reset();
-}
-
-void NapiAudioStreamMgr::UnregisterRenderErrorCallback(NapiAudioStreamMgr *napiStreamMgr,
-    size_t argc, napi_value *args)
-{
-    CHECK_AND_RETURN_LOG(napiStreamMgr->errorCallbackNapi_ != nullptr,
-        "errorCallbackNapi is nullptr");
-    std::shared_ptr<NapiAudioRenderErrorCallback> cb =
-        std::static_pointer_cast<NapiAudioRenderErrorCallback>(napiStreamMgr->errorCallbackNapi_);
-    napi_value callback = nullptr;
-    if (argc == ARGS_TWO) {
-        callback = args[PARAM1];
-        CHECK_AND_RETURN_LOG(cb->IsSameCallback(callback),
-            "The callback need to be unregistered is not the same as the registered callback");
-    }
-    int32_t ret = napiStreamMgr->audioStreamMngr_->UnsetAudioFormatUnsupportedErrorCallback();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unregister render error callback failed");
-    cb->RemoveCallbackReference(callback);
-    napiStreamMgr->errorCallbackNapi_.reset();
 }
 
 napi_value NapiAudioStreamMgr::Off(napi_env env, napi_callback_info info)
@@ -847,48 +797,5 @@ napi_value NapiAudioStreamMgr::SetAudioEnhanceProperty(napi_env env, napi_callba
     return result;
 }
 
-napi_value NapiAudioStreamMgr::GetDirectPlaybackSupport(napi_env env, napi_callback_info info)
-{
-    auto context = std::make_shared<AudioStreamMgrAsyncContext>();
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("GetDirectPlaybackSupport failed : no memory");
-        NapiAudioError::ThrowError(env, "GetDirectPlaybackSupport failed : no memory",
-            NAPI_ERR_NO_MEMORY);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
-
-    auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "mandatory parameters are left unspecified",
-            NAPI_ERR_INPUT_INVALID);
-        context->status = NapiParamUtils::GetStreamInfo(env, &(context->audioStreamInfo), argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioStreamInfo failed",
-            NAPI_ERR_INPUT_INVALID);
-        context->status = NapiParamUtils::GetValueInt32(env, context->streamUsage, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get streamUsage failed",
-            NAPI_ERR_INPUT_INVALID);
-    };
-    context->GetCbInfo(env, info, inputParser);
-
-    if (context->status != napi_ok && context->errCode == NAPI_ERR_INPUT_INVALID) {
-        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
-
-    auto executor = [context]() {
-        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioStreamMgr*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiStreamMgr = objectGuard.GetPtr();
-        CHECK_AND_RETURN_LOG(CheckAudioStreamManagerStatus(napiStreamMgr, context),
-            "context object state is error.");
-        context->intValue = static_cast<int32_t>(napiStreamMgr->audioStreamMngr_->GetDirectPlaybackSupport(
-            context->audioStreamInfo, static_cast<StreamUsage>(context->streamUsage)));
-    };
-
-    auto complete = [env, context](napi_value &output) {
-        NapiParamUtils::SetValueInt32(env, context->intValue, output);
-    };
-    return NapiAsyncWork::Enqueue(env, context, "GetDirectPlaybackSupport", executor, complete);
-}
 }  // namespace AudioStandard
 }  // namespace OHOS

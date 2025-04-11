@@ -53,7 +53,6 @@ ohos_shared_library("audio") {
       "audiomanager/callback/napi_audio_manager_callbacks.cpp",
       "audiomanager/callback/napi_audio_manager_interrupt_callback.cpp",
       "audiomanager/callback/napi_audio_micstatechange_callback.cpp",
-      "audiomanager/callback/napi_audio_render_error_callback.cpp",
       "audiomanager/callback/napi_audio_renderer_state_callback.cpp",
       "audiomanager/callback/napi_audio_ringermode_callback.cpp",
       "audiomanager/callback/napi_audio_rounting_available_devicechange_callback.cpp",
