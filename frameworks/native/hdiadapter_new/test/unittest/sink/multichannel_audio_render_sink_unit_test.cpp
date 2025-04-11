@@ -218,5 +218,281 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_008, Test
     EXPECT_EQ(audioCategory, AUDIO_IN_MEDIA);
 }
 
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_009
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_009, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->startUpdate_ = false;
+    multichannelAudioRenderSink->CheckUpdateState(data, len);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_010
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_010, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->startUpdate_ = true;
+    multichannelAudioRenderSink->renderFrameNum_ = 0;
+    multichannelAudioRenderSink->CheckUpdateState(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->renderFrameNum_, 1);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_011
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_011, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->startUpdate_ = true;
+    multichannelAudioRenderSink->renderFrameNum_ = 9;
+    multichannelAudioRenderSink->lastGetMaxAmplitudeTime_ = -1;
+    multichannelAudioRenderSink->CheckUpdateState(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->renderFrameNum_, 0);
+    EXPECT_EQ(multichannelAudioRenderSink->startUpdate_, false);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_012
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_012, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_U8;
+
+    multichannelAudioRenderSink->AdjustAudioBalance(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_013
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_013, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_S16LE;
+
+    multichannelAudioRenderSink->AdjustAudioBalance(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_014
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_014, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_S24LE;
+
+    multichannelAudioRenderSink->AdjustAudioBalance(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_015
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_015, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_S32LE;
+
+    multichannelAudioRenderSink->AdjustAudioBalance(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_016
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_016, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_F32LE;
+
+    multichannelAudioRenderSink->AdjustAudioBalance(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_017
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_017, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_U8;
+
+    multichannelAudioRenderSink->AdjustStereoToMono(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_018
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_018, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_S16LE;
+
+    multichannelAudioRenderSink->AdjustStereoToMono(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_019
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_019, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_S24LE;
+
+    multichannelAudioRenderSink->AdjustStereoToMono(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_020
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_020, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_S32LE;
+
+    multichannelAudioRenderSink->AdjustStereoToMono(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_021
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_021, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    char *data = nullptr;
+    uint64_t len = 0;
+    multichannelAudioRenderSink->attr_.channel = MultichannelAudioRenderSink::STEREO_CHANNEL_COUNT;
+    multichannelAudioRenderSink->attr_.format = AudioSampleFormat::SAMPLE_F32LE;
+
+    multichannelAudioRenderSink->AdjustStereoToMono(data, len);
+    EXPECT_EQ(multichannelAudioRenderSink->attr_.channel, 2);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_022
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_022, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    multichannelAudioRenderSink->renderInited_ = true;
+
+    auto ret = multichannelAudioRenderSink->InitRender();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_023
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_023, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>();
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    multichannelAudioRenderSink->renderInited_ = true;
+
+    auto ret = multichannelAudioRenderSink->InitRender();
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
