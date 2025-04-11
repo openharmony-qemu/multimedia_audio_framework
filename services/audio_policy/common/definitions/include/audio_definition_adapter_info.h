@@ -37,6 +37,7 @@ static const char* ADAPTER_TYPE_REMOTE = "remote";
 static const char* ADAPTER_TYPE_FILE = "file";
 static const char* ADAPTER_TYPE_USB = "usb";
 static const char* ADAPTER_TYPE_DP = "dp";
+static const char* ADAPTER_TYPE_ACCESSORY = "accessory";
 static const char* ADAPTER_TYPE_SLE = "sle";
 
 struct PairHash {
@@ -62,6 +63,7 @@ enum class AudioAdapterType {
     TYPE_FILE_IO,
     TYPE_REMOTE_AUDIO,
     TYPE_DP,
+    TYPE_ACCESSORY,
     TYPE_SLE,
     TYPE_INVALID
 };

@@ -687,6 +687,8 @@ ClassType AudioPolicyConfigParser::GetClassTypeByAdapterType(AudioAdapterType ad
         return ClassType::TYPE_USB;
     }  else if (adapterType == AudioAdapterType::TYPE_DP) {
         return ClassType::TYPE_DP;
+    } else if (adapterType == AudioAdapterType::TYPE_ACCESSORY) {
+        return ClassType::TYPE_ACCESSORY;
     } else {
         return ClassType::TYPE_INVALID;
     }

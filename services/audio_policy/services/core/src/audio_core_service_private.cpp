@@ -62,7 +62,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(BLUETOOTH_MIC),
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
-    std::string(FILE_SOURCE)
+    std::string(FILE_SOURCE),
+    std::string(ACCESSORY_SOURCE)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
@@ -1229,6 +1230,11 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     } else {
         HandleCommonSourceOpened(pipeInfo);
         id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
+        if (audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_MIC ||
+            audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_ACCESSORY) {
+            audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(),
+                pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
+        }
     }
     CHECK_AND_RETURN_RET_LOG(id != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED, "OpenAudioPort failed %{public}d", id);
     audioIOHandleMap_.AddIOHandleInfo(pipeInfo->moduleInfo_.name, id);
