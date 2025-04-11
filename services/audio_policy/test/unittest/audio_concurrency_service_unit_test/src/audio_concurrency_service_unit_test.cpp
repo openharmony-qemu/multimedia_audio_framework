@@ -407,7 +407,7 @@ HWTEST_F(AudioConcurrencyServiceUnitTest, DispatchConcurrencyEventWithSessionId_
     sptr<IRemoteObject> object = nullptr;
     sptr<AudioConcurrencyService::AudioConcurrencyDeathRecipient> deathRecipient = nullptr;
     std::shared_ptr<AudioConcurrencyService::AudioConcurrencyClient> client =
-            std::make_shared<AudioConcurrencyService::AudioConcurrencyClient>(callback, object, deathRecipient, sessionID);
+        std::make_shared<AudioConcurrencyService::AudioConcurrencyClient>(callback, object, deathRecipient, sessionID);
     audioConcurrencyService->concurrencyClients_[sessionID] = client;
     audioConcurrencyService->DispatchConcurrencyEventWithSessionId(sessionID);
     EXPECT_NE(audioConcurrencyService, nullptr);
