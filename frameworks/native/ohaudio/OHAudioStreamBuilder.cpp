@@ -414,6 +414,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
     AUDIO_INFO_LOG("Generate OHAudioRenderer");
     CHECK_AND_RETURN_RET_LOG(streamType_ == RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Error, invalid type input");
+    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "Error, renderer is nullptr");
 
     AudioStreamInfo streamInfo = {
         (AudioSamplingRate)samplingRate_,
@@ -437,7 +439,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
     };
 
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
-    if (audioRenderer->Initialize(options)) {
+    if (audioRenderer != nullptr && audioRenderer->Initialize(options)) {
         OHOS::AudioStandard::ObjectRefMap<OHOS::AudioStandard::OHAudioRenderer>::Insert(audioRenderer);
         audioRenderer->SetRendererWriteDataCallbackType(writeDataCallbackType_);
         audioRenderer->SetRendererInterruptEventCallbackType(interruptCallbackType_);
@@ -445,7 +447,6 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
         audioRenderer->SetRendererCallback(rendererCallbacks_, userData_, metadataUserData_);
         audioRenderer->SetRendererOutputDeviceChangeCallback(outputDeviceChangecallback_, outputDeviceChangeuserData_);
         audioRenderer->SetInterruptMode(interruptMode_);
-        CHECK_AND_RETURN_RET_LOG(renderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "render is nullptr");
         *renderer = (OH_AudioRenderer*)audioRenderer;
         if (preferredFrameSize_ != UNDEFINED_SIZE) {
             audioRenderer->SetPreferredFrameSize(preferredFrameSize_);
@@ -463,6 +464,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
     AUDIO_INFO_LOG("Generate OHAudioCapturer");
     CHECK_AND_RETURN_RET_LOG(streamType_ == CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Error, invalid type input");
+    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "Error, capturer is nullptr");
     AudioStreamInfo streamInfo = {
         (AudioSamplingRate)samplingRate_,
         encodingType_,
@@ -482,13 +485,12 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
     };
 
     OHAudioCapturer *audioCapturer = new OHAudioCapturer();
-    if (audioCapturer->Initialize(options)) {
+    if (audioCapturer != nullptr && audioCapturer->Initialize(options)) {
         audioCapturer->SetCapturerReadDataCallbackType(readDataCallbackType_);
         audioCapturer->SetCapturerStreamEventCallbackType(streamEventCallbackType_);
         audioCapturer->SetCapturerInterruptEventCallbackType(interruptCallbackType_);
         audioCapturer->SetCapturerErrorCallbackType(errorCallbackType_);
         audioCapturer->SetCapturerCallback(capturerCallbacks_, userData_);
-        CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "capturer is nullptr");
         *capturer = (OH_AudioCapturer*)audioCapturer;
         return AUDIOSTREAM_SUCCESS;
     }
