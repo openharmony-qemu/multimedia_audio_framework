@@ -150,6 +150,9 @@ private:
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
+    void SetRestoreVolumeLevel(DeviceType deviceType, int32_t curDeviceVolume);
+    void CheckLowerDeviceVolume(DeviceType deviceType);
+    int32_t CheckRestoreDeviceVolume(DeviceType deviceType);
     int32_t DealWithEventVolume(const int32_t notificationId);
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
@@ -190,7 +193,8 @@ private:
     bool isVoiceRingtoneMute_ = false;
 
     std::mutex notifyMutex_;
-    int32_t streamMusicVol_ = 0;
+    int32_t btRestoreVol_ = 0;
+    int32_t wiredRestoreVol_ = 0;
     bool restoreNIsShowing_ = false;
     bool increaseNIsShowing_ = false;
 

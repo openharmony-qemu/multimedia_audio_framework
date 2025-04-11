@@ -188,9 +188,7 @@ public:
 
     virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
 
-    virtual void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel) = 0;
-
-    virtual void SetRestoreVolumeFlag(const bool safeVolumeCall) = 0;
+    virtual int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType) = 0;
 
     virtual void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime) = 0;
 
