@@ -172,14 +172,14 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerCreateCb_003, TestSize
     EXPECT_EQ(ERROR, result);
 
     result = EffectChainManagerCreateCb(sceneType, sessionid);
-    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true) {
+    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
         EXPECT_EQ(SUCCESS, result);
     } else {
         EXPECT_EQ(ERROR, result);
     }
 
     result = EffectChainManagerReleaseCb(sceneType, sessionid);
-    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true) {
+    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
         EXPECT_EQ(SUCCESS, result);
     } else {
         EXPECT_EQ(ERROR, result);
@@ -202,13 +202,13 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerCreateCb_004, TestSize
     EXPECT_EQ(ERROR, result);
 
     result = EffectChainManagerCreateCb(sceneType, sessionid);
-    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true) {
+    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
         EXPECT_EQ(SUCCESS, result);
     } else {
         EXPECT_EQ(ERROR, result);
     }
     result = EffectChainManagerReleaseCb(sceneType, sessionid);
-    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true) {
+    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
         EXPECT_EQ(SUCCESS, result);
     } else {
         EXPECT_EQ(ERROR, result);
@@ -306,7 +306,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerCheckEffectOffload_001
     EXPECT_EQ(ERROR, result);
 
     bool result2 = EffectChainManagerCheckEffectOffload();
-    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true) {
+    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
         EXPECT_EQ(true, result2);
     } else {
         EXPECT_EQ(false, result2);
@@ -970,7 +970,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerVolumeUpdate_001, Test
     int32_t result = EffectChainManagerInitCb(sceneType);
     EXPECT_EQ(SUCCESS, result);
     const char *sessionid = "111";
-    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true) {
+    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
         result = EffectChainManagerVolumeUpdate(sessionid);
         EXPECT_EQ(ERROR, result);
     } else {
@@ -994,7 +994,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerVolumeUpdate_002, Test
     EXPECT_EQ(SUCCESS, result);
     const char *sessionid = "111";
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true) {
+    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
         result = EffectChainManagerVolumeUpdate(sessionid);
         EXPECT_EQ(SUCCESS, result);
     } else {

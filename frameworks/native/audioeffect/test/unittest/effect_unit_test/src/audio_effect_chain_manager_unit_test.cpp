@@ -1608,7 +1608,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpkOffloadState_004, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true) {
+    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
         AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
         AudioEffectChainManager::GetInstance()->SetSpkOffloadState();
         bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
