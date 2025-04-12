@@ -32,6 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 // audio effect manager info
 constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
+constexpr uint32_t SEND_HDI_COMMAND_LEN = 20;
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,
@@ -190,9 +191,10 @@ enum AudioEffectScene {
 * Enumerates the audio enhance scene effect type.
 */
 enum AudioEnhanceScene {
-    SCENE_VOIP_UP = 0,
-    SCENE_RECORD = 1,
-    SCENE_PRE_ENHANCE = 2,
+    SCENE_NONE = 0,
+    SCENE_VOIP_UP = 1,
+    SCENE_RECORD = 2,
+    SCENE_PRE_ENHANCE = 3,
     SCENE_ASR = 4,
     SCENE_VOICE_MESSAGE = 5,
 };

@@ -39,6 +39,11 @@ typedef struct IAudioSinkAttr {
     const char *aux = nullptr;
 } IAudioSinkAttr;
 
+enum AudioDrainType {
+    AUDIO_DRAIN_EARLY_NOTIFY,
+    AUDIO_DRAIN_ALL
+};
+
 class IAudioSinkCallback {
 public:
     virtual void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
@@ -121,6 +126,14 @@ public:
     {
         return;
     }
+
+    virtual int32_t RegisterRenderCallback(OnRenderCallback (*callback), int8_t *userdata) { return 0; }
+    virtual int32_t Drain(AudioDrainType type) { return 0; }
+    virtual int32_t SetBufferSize(uint32_t sizeMs) { return 0; }
+    
+    virtual int32_t OffloadRunningLockInit(void) { return 0; }
+    virtual int32_t OffloadRunningLockLock(void) { return 0; }
+    virtual int32_t OffloadRunningLockUnlock(void) { return 0; }
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {
@@ -132,22 +145,10 @@ public:
     virtual int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
 };
 
-enum AudioDrainType {
-    AUDIO_DRAIN_EARLY_NOTIFY,
-    AUDIO_DRAIN_ALL
-};
-
 class IOffloadAudioRendererSink : public IAudioRendererSink {
 public:
     IOffloadAudioRendererSink() = default;
     virtual ~IOffloadAudioRendererSink() = default;
-    virtual int32_t RegisterRenderCallback(OnRenderCallback (*callback), int8_t *userdata) = 0;
-    virtual int32_t Drain(AudioDrainType type) = 0;
-    virtual int32_t SetBufferSize(uint32_t sizeMs) = 0;
-
-    virtual int32_t OffloadRunningLockInit(void) = 0;
-    virtual int32_t OffloadRunningLockLock(void) = 0;
-    virtual int32_t OffloadRunningLockUnlock(void) = 0;
 };
 class IRemoteAudioRendererSink : public IAudioRendererSink {
 public:

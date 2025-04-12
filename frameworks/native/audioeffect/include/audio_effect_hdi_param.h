@@ -18,8 +18,7 @@
 
 #include <mutex>
 #include "v1_0/ieffect_model.h"
-
-const uint32_t SEND_HDI_COMMAND_LEN = 20;
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {

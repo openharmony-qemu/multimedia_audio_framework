@@ -19,12 +19,10 @@
 #include <atomic>
 
 #include "audio_effect.h"
-#include "audio_utils.h"
 
 #ifdef SENSOR_ENABLE
 #include "audio_head_tracker.h"
 #endif
-#include "audio_effect_hdi_param.h"
 #ifdef WINDOW_MANAGER_ENABLE
 #include "audio_effect_rotation.h"
 #endif

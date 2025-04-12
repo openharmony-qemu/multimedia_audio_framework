@@ -132,6 +132,9 @@ void AudioCapturerFileSource::DeInit()
 
 int32_t AudioCapturerFileSource::Init(const IAudioSourceAttr &attr)
 {
+    if (attr.filePath == nullptr) {
+        return ERROR;
+    }
     const char *filePath = attr.filePath;
     char realPath[PATH_MAX + 1] = {0x00};
     std::string sourceFilePath(filePath);

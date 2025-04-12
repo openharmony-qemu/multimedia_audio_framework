@@ -1827,19 +1827,22 @@ void AudioRendererSinkInner::SetAddress(const std::string &address)
 
 int32_t AudioRendererSinkInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &outputDevice)
 {
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     uint32_t renderId = 0;
     int32_t ret = GetRenderId(renderId);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("GetRenderId failed");
     }
-    if (halName_ == "usb") {
-        audioEnhanceChainManager->SetOutputDevice(renderId, DEVICE_TYPE_USB_ARM_HEADSET);
-    } else if (halName_ == "dp") {
-        audioEnhanceChainManager->SetOutputDevice(renderId, DEVICE_TYPE_DP);
-    } else {
-        audioEnhanceChainManager->SetOutputDevice(renderId, outputDevice);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 0) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+        if (halName_ == "usb") {
+            audioEnhanceChainManager->SetOutputDevice(renderId, DEVICE_TYPE_USB_ARM_HEADSET);
+        } else if (halName_ == "dp") {
+            audioEnhanceChainManager->SetOutputDevice(renderId, DEVICE_TYPE_DP);
+        } else {
+            audioEnhanceChainManager->SetOutputDevice(renderId, outputDevice);
+        }
     }
     return SUCCESS;
 }
