@@ -32,6 +32,7 @@ public:
 
     bool Connect() override;
     uint32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) override;
+    int32_t OpenAudioPort(std::string audioPortName, const AudioModuleInfo& audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex, bool isSync = false) override;
     int32_t SetDefaultSink(std::string name) override;
     int32_t SetDefaultSource(std::string name) override;
@@ -48,6 +49,12 @@ public:
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) override;
     int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId,
         uint32_t sourceIndex, std::string sourceName) override;
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override { return 0; }
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override { return 0; }
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) override { return 0; }
+    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) override { return 0; }
 
     // Static Member functions
     static void PaGetSinksCb(pa_context *c, const pa_sink_info *i, int eol, void *userdata);

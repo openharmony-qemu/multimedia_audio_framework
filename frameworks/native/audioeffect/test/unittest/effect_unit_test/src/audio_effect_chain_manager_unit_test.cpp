@@ -64,7 +64,6 @@ SessionEffectInfo DEFAULT_INFO = {
     "SCENE_MOVIE",
     INFOCHANNELS,
     INFOCHANNELLAYOUT,
-    "0",
 };
 }
 
@@ -1365,7 +1364,7 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectVolumeUpdate_001, TestSize.Level1)
     const std::string sessionIDString = "12345";
     const float streamVolume = 0.5;
     audioEffectVolume->SetStreamVolume(sessionIDString, streamVolume);
-    int32_t ret = AudioEffectChainManager::GetInstance()->EffectVolumeUpdate(audioEffectVolume);
+    int32_t ret = AudioEffectChainManager::GetInstance()->EffectVolumeUpdate();
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1480,7 +1479,6 @@ HWTEST(AudioEffectChainManagerUnitTest, GetLatency_007, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
-    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionID].spatializationEnabled = "0";
     uint32_t result = AudioEffectChainManager::GetInstance()->GetLatency(sessionID);
     EXPECT_EQ(0, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -1499,7 +1497,6 @@ HWTEST(AudioEffectChainManagerUnitTest, GetLatency_008, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
-    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionID].spatializationEnabled = "0";
     uint32_t result = AudioEffectChainManager::GetInstance()->GetLatency(sessionID);
     EXPECT_EQ(0, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -2149,7 +2146,6 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_003, TestSize.Level1)
         "SCENE_MOVIE",
         INFOCHANNELS,
         INFOCHANNELLAYOUT,
-        "0",
     };
     ret = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
     EXPECT_EQ(ret, SUCCESS);
@@ -2158,7 +2154,6 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_003, TestSize.Level1)
         "SCENE_MOVIE",
         INFOCHANNELS,
         INFOCHANNELLAYOUT,
-        "1",
     };
     ret = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info2);
     EXPECT_EQ(ret, SUCCESS);
@@ -2256,7 +2251,6 @@ HWTEST(AudioEffectChainManagerUnitTest, FindMaxSessionID_001, TestSize.Level1)
         "SCENE_MOVIE",
         INFOCHANNELS,
         INFOCHANNELLAYOUT,
-        "0",
     };
     EXPECT_NE(AudioEffectChainManager::GetInstance(), nullptr);
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionID] = sessionEffectInfo;
@@ -2282,7 +2276,6 @@ HWTEST(AudioEffectChainManagerUnitTest, FindMaxSessionID_002, TestSize.Level1)
         "SCENE_MOVIE",
         INFOCHANNELS,
         INFOCHANNELLAYOUT,
-        "0",
     };
 
     EXPECT_NE(AudioEffectChainManager::GetInstance(), nullptr);

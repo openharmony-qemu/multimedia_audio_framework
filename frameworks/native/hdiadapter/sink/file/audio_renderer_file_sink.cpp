@@ -124,6 +124,9 @@ void AudioRendererFileSink::DeInit()
 
 int32_t AudioRendererFileSink::Init(const IAudioSinkAttr &attr)
 {
+    if (attr.filePath == nullptr) {
+        return ERROR;
+    }
     filePath_.assign(attr.filePath);
 
     return SUCCESS;
@@ -172,6 +175,8 @@ int32_t AudioRendererFileSink::Stop(void)
     if (filePtr_ != nullptr) {
         fclose(filePtr_);
         filePtr_ = nullptr;
+    } else {
+        return ERROR;
     }
 
     return SUCCESS;

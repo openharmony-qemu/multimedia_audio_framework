@@ -25,6 +25,7 @@
 #include "securec.h"
 #include "media_monitor_manager.h"
 #include "audio_effect_map.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {

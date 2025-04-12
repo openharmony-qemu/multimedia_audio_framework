@@ -1097,6 +1097,18 @@ template bool GetSysPara(const char *key, uint32_t &value);
 template bool GetSysPara(const char *key, int64_t &value);
 template bool GetSysPara(const char *key, std::string &value);
 
+int32_t GetEngineFlag()
+{
+    std::string para = "sys.audio.engine.proaudio.enable";
+    int32_t engineFlag = -1;
+    bool res = GetSysPara(para.c_str(), engineFlag);
+    AUDIO_DEBUG_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
+    if (!res || engineFlag == -1) {
+        AUDIO_ERR_LOG("get %{public}s fail", para.c_str());
+    }
+    return engineFlag;
+}
+
 std::map<std::string, std::string> DumpFileUtil::g_lastPara = {};
 
 FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, AudioDumpFileType fileType)
