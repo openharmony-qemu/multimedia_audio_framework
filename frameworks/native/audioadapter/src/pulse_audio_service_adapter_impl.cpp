@@ -165,7 +165,7 @@ Fail:
     return false;
 }
 
-int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(std::string audioPortName, const AudioModuleInfo& audioModuleInfo)
+int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const AudioModuleInfo& audioModuleInfo)
 {
     AUDIO_PRERELEASE_LOGE("OpenAudioPort enter the INCORRECT func.");
     return 0;

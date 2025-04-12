@@ -143,7 +143,6 @@ public:
     int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t EffectVolumeUpdate();
-    int32_t EffectVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     int32_t StreamVolumeUpdate(const std::string sessionIDString, const float streamVolume);
     uint32_t GetLatency(const std::string &sessionId);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);

@@ -130,7 +130,7 @@ public:
     virtual int32_t RegisterRenderCallback(OnRenderCallback (*callback), int8_t *userdata) { return 0; }
     virtual int32_t Drain(AudioDrainType type) { return 0; }
     virtual int32_t SetBufferSize(uint32_t sizeMs) { return 0; }
-    
+
     virtual int32_t OffloadRunningLockInit(void) { return 0; }
     virtual int32_t OffloadRunningLockLock(void) { return 0; }
     virtual int32_t OffloadRunningLockUnlock(void) { return 0; }

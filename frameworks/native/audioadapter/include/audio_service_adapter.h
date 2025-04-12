@@ -43,7 +43,7 @@ public:
      * @param cb callback reference for AudioServiceAdapterCallback class
      * @return Returns instance of class that extends AudioServiceAdapter
     */
-    static std::shared_ptrudioServiceAdapter> CreateAudioAdapter(std::unique_ptr<AudioServiceAdapterCallback> cb);
+    static std::shared_ptr<AudioServiceAdapter> CreateAudioAdapter(std::unique_ptr<AudioServiceAdapterCallback> cb);
 
     /**
      * @brief Connect to underlining audio server
@@ -206,7 +206,7 @@ public:
      *
      * @return int32_t the result.
      */
-    virtual int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
+    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual ~AudioServiceAdapter();

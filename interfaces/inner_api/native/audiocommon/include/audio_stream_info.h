@@ -599,7 +599,7 @@ struct AudioCallBackStreamInfo {
 };
 
 struct AudioChannelInfo {
-    AudioChannelLayOut channelLayout;
+    AudioChannelLayout channelLayout;
     uint32_t numChannels;
 };
 
