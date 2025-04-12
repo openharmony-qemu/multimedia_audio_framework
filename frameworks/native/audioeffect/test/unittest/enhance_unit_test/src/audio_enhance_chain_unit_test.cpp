@@ -47,8 +47,8 @@ namespace {
 
     AudioEnhanceParamAdapter algoParam;
     AudioEnhanceDeviceAttr deviceAttr;
-    std::string sceneType = "SCENE_VOIP_UP";
-    bool defaultFlag = false;
+    std::string g_sceneType = "SCENE_VOIP_UP";
+    bool g_defaultFlag = false;
 }
 
 void AudioEnhanceChainUnitTest::SetUpTestCase(void)
@@ -71,7 +71,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->standByEnhanceHandles_ = std::vector<AudioEffectHandle>(DEFAULT_HANDLES_NUM);
@@ -89,7 +89,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_002, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->standByEnhanceHandles_ = std::vector<AudioEffectHandle>(1);
@@ -111,7 +111,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_003, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->standByEnhanceHandles_ = std::vector<AudioEffectHandle>(DEFAULT_HANDLES_NUM);
@@ -132,7 +132,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_004, TestSize.Level1)
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
     deviceAttr.micChannels = 1;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
     EXPECT_EQ(audioEnhanceChain->deviceAttr_.micChannels, DEFAULT_MIC_NUM);
 }
@@ -147,7 +147,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_005, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->enhanceNames_.push_back("record");
@@ -168,7 +168,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_007, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     std::unique_ptr<EnhanceBuffer> enhanceBuffer = nullptr;
@@ -188,7 +188,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_008, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     std::unique_ptr<EnhanceBuffer> enhanceBuffer = std::make_unique<EnhanceBuffer>();
@@ -209,7 +209,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_009, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->needEcFlag_ = true;
@@ -232,7 +232,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_010, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->needMicRefFlag_ = true;
@@ -255,7 +255,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_011, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
     audioEnhanceChain->algoAttr_.batchLen = 0;
     audioEnhanceChain->algoCache_.input.resize(0);
@@ -278,7 +278,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_012, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     std::unique_ptr<EnhanceBuffer> enhanceBuffer = std::make_unique<EnhanceBuffer>();
@@ -297,7 +297,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_013, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     std::unique_ptr<EnhanceBuffer> enhanceBuffer = std::make_unique<EnhanceBuffer>();
@@ -317,7 +317,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_014, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     std::unique_ptr<EnhanceBuffer> enhanceBuffer = std::make_unique<EnhanceBuffer>();
@@ -339,7 +339,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_015, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     std::unique_ptr<EnhanceBuffer> enhanceBuffer = std::make_unique<EnhanceBuffer>();
@@ -361,7 +361,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_016, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->algoCache_.input.resize(0);
@@ -385,7 +385,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_017, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     uint8_t *src = nullptr;
@@ -407,7 +407,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_018, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     uint8_t src[DEFAULT_BUFFER_SIZE] = {0};
@@ -429,7 +429,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_019, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
     audioEnhanceChain->algoCache_.input.resize(0);
 
@@ -452,7 +452,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_020, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     std::string inputDevice = "";
@@ -472,7 +472,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_021, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     std::string inputDevice = "testDevice";
@@ -492,7 +492,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_025, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->algoParam_.foldState = 1;
@@ -512,7 +512,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_026, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->algoParam_.foldState = 0;
@@ -532,7 +532,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_029, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     bool mute = false;
@@ -552,7 +552,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_040, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->needEcFlag_ = false;
@@ -588,7 +588,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_041, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->needEcFlag_ = true;
@@ -624,7 +624,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_043, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     AudioEffectHandle handle = nullptr;
@@ -644,7 +644,7 @@ HWTEST(AudioEnhanceChainUnitTest, GetAlgoBufferSize_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->algoSupportedConfig_.sampleRate = 0;
@@ -662,7 +662,7 @@ HWTEST(AudioEnhanceChainUnitTest, GetAlgoBufferSizeEc_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->algoSupportedConfig_.sampleRate = 0;
@@ -680,7 +680,7 @@ HWTEST(AudioEnhanceChainUnitTest, GetAlgoBufferSizeMicRef_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     audioEnhanceChain->algoSupportedConfig_.sampleRate = 0;
@@ -697,12 +697,8 @@ HWTEST(AudioEnhanceChainUnitTest, GetAlgoBufferSizeMicRef_001, TestSize.Level1)
 HWTEST(AudioEnhanceChainUnitTest, IsDefaultChain_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
-    std::string sceneType = "SCENE_VOIP_UP";
-    AudioEnhanceParamAdapter algoParam;
-    AudioEnhanceDeviceAttr deviceAttr;
-    bool defaultFlag = false;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     bool ret = audioEnhanceChain->IsDefaultChain();
@@ -720,7 +716,7 @@ HWTEST(AudioEnhanceChainUnitTest, ConvertFormat_001, TestSize.Level1)
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
     uint32_t format = VALID_FORMAT;
 
-    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(sceneType, algoParam, deviceAttr, defaultFlag);
+    audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
     EXPECT_NE(audioEnhanceChain, nullptr);
 
     AudioSampleFormat ret = audioEnhanceChain->ConvertFormat(format);
