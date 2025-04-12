@@ -95,13 +95,15 @@ void AudioPipeManager::StartClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
-    streamDesc->streamStatus_ = STREAM_STATUS_STARTTING;
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
 }
 
 void AudioPipeManager::PauseClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
 }
 
@@ -109,6 +111,7 @@ void AudioPipeManager::StopClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
 }
 

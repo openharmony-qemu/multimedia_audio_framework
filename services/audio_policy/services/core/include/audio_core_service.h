@@ -279,11 +279,14 @@ private:
     void ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag);
     void ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag);
     void RemoveUnusedPipe();
+    void MoveStreamSink(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::shared_ptr<AudioPipeInfo> pipeInfo, const AudioStreamDeviceChangeReasonExt reason);
     void MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<AudioPipeInfo> pipeInfo,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t MoveToRemoteOutputDevice(
         std::vector<SinkInput> sinkInputIds, std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+    void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t MoveToLocalInputDevice(
         std::vector<SourceOutput> sourceOutputs, std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor);
@@ -361,6 +364,8 @@ private:
     void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
     void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
+    int32_t ActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    int32_t ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;

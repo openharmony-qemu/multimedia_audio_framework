@@ -62,6 +62,7 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(
 
 int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
 {
+    AUDIO_INFO_LOG("Session: %{public}u, operation: %{public}u", sessionId, operation);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     switch (operation) {
         case SESSION_OPERATION_START:
