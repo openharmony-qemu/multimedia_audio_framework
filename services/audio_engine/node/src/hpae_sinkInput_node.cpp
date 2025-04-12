@@ -1,0 +1,240 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef LOG_TAG
+#define LOG_TAG "HpaeSinkInputNode"
+#endif
+#include "hpae_sink_input_node.h"
+#include <iostream>
+#include "hpae_format_convert.h"
+#include "hpae_node_common.h"
+#include "audio_engine_log.h"
+#include "audio_errors.h"
+
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
+static constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
+static constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
+
+HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
+    : HpaeNode(nodeInfo),
+      pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
+      inputAudioBuffer_(pcmBufferInfo_), outputStream_(this),
+      interleveData_(nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format)), framesWritten_(0),
+      totalFrames_(0)
+{
+    AUDIO_INFO_LOG("sinkinput sessionId %{public}d, channelcount %{public}d, channelLayout %{public}lu, "
+        "frameLen %{public}d", nodeInfo.sessionId, inputAudioBuffer_.GetChannelCount(),
+        inputAudioBuffer_.GetChannelLayout(), inputAudioBuffer_.GetFrameLen());
+    
+    handleTimeModel_ = std::make_unique<LinearPosTimeModel>();
+    handleTimeModel_->ConfigSampleRate(nodeInfo.samplingRate);
+#ifdef ENABLE_HOOK_PCM
+    inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+        "HpaeSinkInputNode_id_" + std::to_string(GetSessionId()) + "_ch_" + std::to_string(GetChannelCount()) +
+        "_rate_" + std::to_string(GetSampleRate()) + "_bit_" + std::to_string(GetBitWidth()) + ".pcm");
+#endif
+    if (nodeInfo.historyFrameCount > 0) {
+        PcmBufferInfo pcmInfo = PcmBufferInfo{
+            nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout,
+                nodeInfo.historyFrameCount, true};
+        historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
+        AUDIO_INFO_LOG("HpaeSinkInputNode::historybuffer created");
+    } else {
+        historyBuffer_ = nullptr;
+    }
+}
+
+HpaeSinkInputNode::~HpaeSinkInputNode()
+{}
+
+void HpaeSinkInputNode::CheckAndDestoryHistoryBuffer()
+{
+    HpaeNodeInfo nodeInfo = GetNodeInfo();
+    // historyBuffer_ has no data, check if historyFrameCount is 0 and distory it
+    if (nodeInfo.historyFrameCount == 0) {
+        if (historyBuffer_) {
+            AUDIO_INFO_LOG("HpaeSinkInputNode::historyBuffer_ useless, distory it");
+        }
+        historyBuffer_ = nullptr;
+    } else if (historyBuffer_ == nullptr) {  // this case need to create historyBuffer_
+        PcmBufferInfo pcmInfo = PcmBufferInfo{
+            nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout,
+                nodeInfo.historyFrameCount, true};
+        historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
+        AUDIO_INFO_LOG("HpaeSinkInputNode::historybuffer created");
+    }
+}
+
+void HpaeSinkInputNode::DoProcess()
+{
+    CHECK_AND_RETURN_LOG(
+        writeCallback_.lock(), "HpaeSinkInputNode writeCallback_ is nullptr, SessionId:%{public}d", GetSessionId());
+
+    auto nodeCallback = GetNodeStatusCallback().lock();
+    if (nodeCallback) {
+        nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
+    }
+
+    streamInfo_ = {.framesWritten = framesWritten_.load(),
+        .inputData = interleveData_.data(),
+        .requestDataLen = interleveData_.size(),
+        .deviceClass = GetDeviceClass(),
+        .deviceNetId = GetDeviceNetId(),
+        .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
+    GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
+    int32_t ret = writeCallback_.lock()->OnStreamData(streamInfo_);
+
+    // if historyBuffer has enough data, write to outputStream
+    if (!streamInfo_.needData) {
+        historyBuffer_->GetFrameData(inputAudioBuffer_);
+        outputStream_.WriteDataToOutput(&inputAudioBuffer_);
+        return;
+    }
+    CheckAndDestoryHistoryBuffer();
+    if (nodeCallback && ret) {
+        nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
+        if (isDrain_) {
+            AUDIO_INFO_LOG("OnNodeStatusUpdate Drain sessionId:%{public}u", GetSessionId());
+            nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_DRAINED);
+            isDrain_ = false;
+        }
+    }
+    inputAudioBuffer_.SetBufferValid(ret ? false : true);
+
+#ifdef ENABLE_HOOK_PCM
+    if (inputPcmDumper_ != nullptr && inputAudioBuffer_.IsValid()) {
+        inputPcmDumper_->CheckAndReopenHandlde();
+        inputPcmDumper_->Dump(static_cast<int8_t *>(interleveData_.data()),
+            GetChannelCount() * GetFrameLen() * GET_SIZE_FROM_FORMAT(GetBitWidth()));
+    }
+#endif
+    
+    ConvertToFloat(
+        GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("request data is not enough sessionId:%{public}u", GetSessionId());
+        memset_s(inputAudioBuffer_.GetPcmDataBuffer(), inputAudioBuffer_.Size(), 0, inputAudioBuffer_.Size());
+    } else {
+        totalFrames_ = totalFrames_ + GetFrameLen();
+        framesWritten_.store(totalFrames_);
+        if (historyBuffer_) {
+            historyBuffer_->StoreFrameData(inputAudioBuffer_);
+        }
+    }
+    outputStream_.WriteDataToOutput(&inputAudioBuffer_);
+}
+
+bool HpaeSinkInputNode::Reset()
+{
+    return true;
+}
+
+bool HpaeSinkInputNode::ResetAll()
+{
+    return true;
+}
+
+std::shared_ptr<HpaeNode> HpaeSinkInputNode::GetSharedInstance()
+{
+    return shared_from_this();
+}
+
+OutputPort<HpaePcmBuffer *> *HpaeSinkInputNode::GetOutputPort()
+{
+    return &outputStream_;
+}
+
+bool HpaeSinkInputNode::RegisterWriteCallback(const std::weak_ptr<IStreamCallback> &callback)
+{
+    writeCallback_ = callback;
+    return true;
+}
+// reset historyBuffer
+void HpaeSinkInputNode::Flush()
+{
+    if (GetNodeInfo().historyFrameCount == 0) {
+        historyBuffer_ = nullptr;
+    } else if (historyBuffer_ && historyBuffer_->GetFrames() == GetNodeInfo().historyFrameCount) {
+        historyBuffer_->Reset();
+    } else {
+        HpaeNodeInfo nodeInfo = GetNodeInfo();
+        PcmBufferInfo pcmInfo = PcmBufferInfo{
+            nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout,
+                nodeInfo.historyFrameCount, true};
+        historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
+    }
+}
+
+bool HpaeSinkInputNode::Drain()
+{
+    isDrain_ = true;
+    return true;
+}
+
+int32_t HpaeSinkInputNode::SetState(RendererState renderState)
+{
+    state_ = renderState;
+    return SUCCESS;
+}
+
+RendererState HpaeSinkInputNode::GetState()
+{
+    return state_;
+}
+
+uint64_t HpaeSinkInputNode::GetFramesWritten()
+{
+    return framesWritten_.load();
+}
+
+bool HpaeSinkInputNode::GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec)
+{
+    framePos = GetFramesWritten();
+    int64_t time = handleTimeModel_->GetTimeOfPos(framePos);
+    int64_t deltaTime = DEFAULT_BUFFER_MICROSECOND;  // note: 20ms
+    time += deltaTime;
+    sec = time / AUDIO_NS_PER_S;
+    nanoSec = time % AUDIO_NS_PER_S;
+    return true;
+}
+
+int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
+{
+    int64_t timeSec = 0;
+    int64_t timeNsec = 0;
+    bool ret = GetAudioTime(framePosition, timeSec, timeNsec);
+    if (historyBuffer_) {
+        framePosition = framePosition > historyBuffer_->GetCurFrames() * GetNodeInfo().frameLen
+                            ? framePosition - historyBuffer_->GetCurFrames() * GetNodeInfo().frameLen
+                            : 0;
+    }
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "GetAudioTime error");
+    timespec tm{};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    return SUCCESS;
+}
+
+int32_t HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime)
+{
+    CHECK_AND_RETURN_RET_LOG(historyBuffer_, ERROR, "historyBuffer_ is nullptr");
+    AUDIO_INFO_LOG("HpaeSinkInputNode::rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+    return historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+}
+}  // namespace HPAE
+}  // namespace AudioStandard
+}  // namespace OHOS
