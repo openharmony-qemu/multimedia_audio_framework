@@ -48,7 +48,7 @@ ohos_unittest("pro_audio_service_adapter_unit_test") {
     "src/pro_audio_service_adapter_unit_test.cpp",
   ]
 
- configs = [ ":audio_engine_private_config" ]
+  configs = [ ":audio_engine_private_config" ]
 
   deps = [
     "../../../audioutils:audio_utils",
@@ -66,4 +66,3 @@ ohos_unittest("pro_audio_service_adapter_unit_test") {
     "samgr:samgr_proxy",
   ]
 }
-
