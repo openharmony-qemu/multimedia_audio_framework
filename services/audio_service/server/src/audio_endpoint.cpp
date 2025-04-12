@@ -178,6 +178,12 @@ int32_t MockCallbacks::OnWriteData(size_t length)
     return SUCCESS;
 }
 
+int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
+{
+    Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen));
+    return SUCCESS;
+}
+
 bool AudioEndpointInner::ShouldInnerCap(int32_t innerCapId)
 {
     bool shouldBecapped = false;

@@ -65,7 +65,7 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
     uint64_t sceneCode = static_cast<uint64_t>(sceneType);
     uint64_t sceneKeyCode = 0;
     sceneKeyCode = (sceneCode << SCENE_TYPE_OFFSET) + (captureId_ << CAPTURER_ID_OFFSET) + renderId_;
-    AUDIO_INFO_LOG("sceneCode:%{public}lu sceneKeyCode:%{public}lu", sceneCode, sceneKeyCode);
+    AUDIO_INFO_LOG("sceneCode:%{public}" PRIu64 "sceneKeyCode:%{public}" PRIu64, sceneCode, sceneKeyCode);
     CaptureEffectAttr attr = {};
     attr.micChannels = static_cast<uint32_t>(sourceInfo_.channels);
     attr.ecChannels = static_cast<uint32_t>(sourceInfo_.ecChannels);

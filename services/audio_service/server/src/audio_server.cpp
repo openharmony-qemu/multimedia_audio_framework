@@ -57,6 +57,7 @@
 #include "offline_stream_in_server.h"
 #include "audio_dump_pcm.h"
 #include "audio_info.h"
+#include "i_hpae_manager.h"
 
 #define PA
 #ifdef PA
@@ -304,11 +305,18 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     }
     std::string dumpString;
 
-    AudioServerDump dumpObj;
-    int32_t res = dumpObj.Initialize();
-    CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
-        "Audio Service Dump Not initialised\n");
-    dumpObj.AudioDataDump(dumpString, argQue);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        int32_t res = hpaeDumpObj_.Initialize();
+        CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR, "Audio Service Hpae Dump not Initialed");
+        hpaeDUmperObj_.AudioDataDUmp(dumpString, argQue);
+    } else {
+        AudioServerDump dumpObj;
+        int32_t res = dumpObj.Initialize();
+        CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
+            "Audio Service Dump Not initialised\n");
+        dumpObj.AudioDataDump(dumpString, argQue);
+    }
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
@@ -343,15 +351,21 @@ void AudioServer::OnStart()
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        HPAE::IHpaeManager::GetHpaeManager()->Init();
+        AUDIO_INFO_LOG("IHpaeManager Init\n");
+    } else {
 #ifdef PA
-    int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
-    pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
-    if (ret != 0) {
-        AUDIO_ERR_LOG("pthread_create failed %d", ret);
-        WriteServiceStartupError();
-    }
-    AUDIO_DEBUG_LOG("Created paDaemonThread\n");
+        int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
+        pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
+        if (ret != 0) {
+            AUDIO_ERR_LOG("pthread_create failed %d", ret);
+            WriteServiceStartupError();
+        }
+        AUDIO_DEBUG_LOG("Created paDaemonThread\n");
 #endif
+    }
 
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();

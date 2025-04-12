@@ -18,6 +18,7 @@
 #include "hpae_audio_format_converter_node.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
+#include "cinttypes"
 
 static constexpr uint32_t DEFAULT_EFFECT_RATE = 48000;
 
@@ -47,8 +48,8 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     // for now, work at float32le by default
     channelConverter_.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, true);
     AUDIO_INFO_LOG("node id %{public}d, sessionid %{public}d, "
-        "input: bitformat %{public}d, sample rate %{public}d, channels %{public}d, channelLayout %{public}lu"
-        ", output: bitformat %{public}d, sample rate %{public}d, channels %{public}d, channelLayout %{public}lu",
+        "input: bitformat %{public}d, sample rate %{public}d, channels %{public}d, channelLayout %{public}" PRIu64 ""
+        ", output: bitformat %{public}d, sample rate %{public}d, channels %{public}d, channelLayout %{public}" PRIu64 "",
         GetNodeId(), GetSessionId(), preNodeInfo.format, preNodeInfo.samplingRate, inChannelInfo.numChannels,
         inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.samplingRate, outChannelInfo.numChannels,
         outChannelInfo.channelLayout);
@@ -220,7 +221,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     // update channels and channelLayout
     if ((curInChannelInfo.numChannels != numChannels) || (curInChannelInfo.channelLayout != channelLayout)) {
         AUDIO_INFO_LOG("NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
-            "channels: %{public}d -> %{public}d, channellayout: %{public}lu -> %{public}lu.",
+            "channels: %{public}d -> %{public}d, channellayout: %{public}" PRIu64 " -> %{public}" PRIu64 ".",
             GetNodeId(), curInChannelInfo.numChannels, numChannels, curInChannelInfo.channelLayout, channelLayout);
  
         AudioChannelInfo newInChannelInfo = {

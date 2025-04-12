@@ -372,6 +372,9 @@ audio_ohos_library("audio_process_service") {
     "server/src/pa_adapter_manager.cpp",
     "server/src/pa_capturer_stream_impl.cpp",
     "server/src/pa_renderer_stream_impl.cpp",
+    "server/src/pro_adapter_manager.cpp",
+    "server/src/hpae_capturer_stream_impl.cpp",
+    "server/src/hpae_renderer_stream_impl.cpp",
     "server/src/policy_handler.cpp",
     "server/src/policy_provider_proxy.cpp",
     "server/src/pro_audio_stream_manager.cpp",
@@ -392,6 +395,7 @@ audio_ohos_library("audio_process_service") {
 
   deps = [
     ":audio_common",
+    "../audio_engine:audio_engine_manager",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioschedule:audio_schedule",
@@ -471,6 +475,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server.cpp",
     "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
+    "server/src/audio_server_hpae_dump.cpp",
     "server/src/audio_server_effect.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
@@ -480,6 +485,7 @@ audio_ohos_library("audio_service") {
   deps = [
     ":audio_common",
     ":audio_process_service",
+    "../auido_engine:audio_engine_manager",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioschedule:audio_schedule",

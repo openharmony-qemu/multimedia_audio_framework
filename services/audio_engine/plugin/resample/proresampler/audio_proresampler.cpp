@@ -14,6 +14,7 @@
  */
 #include "audio_proresampler.h"
 #include "audio_policy_log.h"
+#include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {

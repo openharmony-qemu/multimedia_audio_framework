@@ -250,6 +250,12 @@ public:
     std::shared_ptr<AllDeviceVolumeInfo> GetAllDeviceVolumeInfo(DeviceType deviceType, AudioStreamType streamType);
 
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
+    
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 & propertyArray) const;
+
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray& propertyArray) const;
+
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray& propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) const;
 
     void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel);
 
@@ -361,7 +367,7 @@ private:
         return *reinterpret_cast<T *>(const_cast<uint8_t *>(&data[0]));
     }
 
-    std::unique_ptr<AudioServiceAdapter> audioServiceAdapter_;
+    std::shared_ptr<AudioServiceAdapter> audioServiceAdapter_;
     std::unordered_map<AudioStreamType, int> minVolumeIndexMap_;
     std::unordered_map<AudioStreamType, int> maxVolumeIndexMap_;
     std::mutex systemSoundMutex_;

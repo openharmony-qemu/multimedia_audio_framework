@@ -19,6 +19,7 @@
 #include "hpae_mixer_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
+#include "cinttypes"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -67,7 +68,7 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
         isPCMBufferInfoUpdated = true;
     }
     if (pcmBufferInfo_.channelLayout != inputs[0]->GetChannelLayout()) {
-        AUDIO_INFO_LOG("Update channel layout %{public}lu -> %{public}lu",
+        AUDIO_INFO_LOG("Update channel layout %{public}" PRIu64 " -> %{public}" PRIu64 "",
             pcmBufferInfo_.channelLayout, inputs[0]->GetChannelLayout());
         pcmBufferInfo_.channelLayout = inputs[0]->GetChannelLayout();
         isPCMBufferInfoUpdated = true;

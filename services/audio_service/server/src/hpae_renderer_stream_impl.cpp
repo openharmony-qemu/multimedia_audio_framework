@@ -76,7 +76,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.sourceType = processConfig_.isInnerCapturer == true ? SOURCE_TYPE_PLAYBACK_CAPTURE : SOURCE_TYPE_INVALID;
     streamInfo.deviceName = deviceName;
     AUDIO_INFO_LOG("InitParams channels %{public}u  end", streamInfo.channels);
-    AUDIO_INFO_LOG("InitParams channelLayout %{public}lu end", streamInfo.channelLayout);
+    AUDIO_INFO_LOG("InitParams channelLayout %{public}" PRIu64 " end", streamInfo.channelLayout);
     AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.samplingRate);
     AUDIO_INFO_LOG("InitParams format %{public}u  end", streamInfo.format);
     AUDIO_INFO_LOG("InitParams frameLen %{public}zu  end", streamInfo.frameLen);
@@ -204,7 +204,7 @@ int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
     auto timestamp = static_cast<uint64_t>(tm.tv_sec) * 1000000000ll + static_cast<uint64_t>(tm.tv_nsec);
     auto interval = (timestamp - timestamp_) / 1000;
     latency = latency_ > interval ? latency_ - interval : 0;
-    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}lu, interval %{public}llu latency %{public}lu", latency_, interval, latency);
+    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}" PRIu64 ", interval %{public}llu latency %{public}" PRIu64, latency_, interval, latency);
     return SUCCESS;
 }
 

@@ -40,7 +40,7 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeSinkOutputNode_Out_bit_" + std::to_string(GetBitWidth()) +
                                                        "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
                                                        std::to_string(GetSampleRate()) + ".pcm");
-    AUDIO_INFO_LOG("HpaeSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName);
+    AUDIO_INFO_LOG("HpaeSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName.c_str());
 #endif
 }
 
@@ -87,7 +87,7 @@ void HpaeSinkOutputNode::DoProcess()
     intervalTimer_.Stop();
     uint64_t interval = intervalTimer_.Elapsed();
     AUDIO_DEBUG_LOG("HpaeSinkOutputNode: name %{public}s, RenderFrame interval: %{public}" PRIu64 " ms",
-        sinkOutAttr_.adapterName,
+        sinkOutAttr_.adapterName.c_str(),
         interval);
     outputPcmDumper_->CheckAndReopenHandlde();
     if (outputPcmDumper_) {
@@ -107,7 +107,7 @@ void HpaeSinkOutputNode::DoProcess()
     timer.Stop();
     uint64_t elapsed = timer.Elapsed();
     AUDIO_DEBUG_LOG("HpaeSinkOutputNode :name %{public}s, RenderFrame elapsed time: %{public}" PRIu64 " ms",
-        sinkOutAttr_.adapterName,
+        sinkOutAttr_.adapterName.c_str(),
         elapsed);
     intervalTimer_.Start();
 #endif
@@ -189,7 +189,7 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     uint64_t interval = timer.Elapsed();
     AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRIu64
                    " ms ret: %{public}d",
-        sinkOutAttr_.adapterName,
+        sinkOutAttr_.adapterName.c_str(),
         interval,
         ret);
     std::string adapterName = sinkOutAttr_.adapterName;
@@ -217,7 +217,7 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
     timer.Stop();
     uint64_t interval = timer.Elapsed();
     AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRIu64 " ms",
-        sinkOutAttr_.adapterName,
+        sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
     return SUCCESS;
@@ -281,7 +281,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
     timer.Stop();
     uint64_t interval = timer.Elapsed();
     AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRIu64 " ms",
-        sinkOutAttr_.adapterName,
+        sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
     state_ = RENDERER_RUNNING;
@@ -309,7 +309,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
     timer.Stop();
     uint64_t interval = timer.Elapsed();
     AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRIu64 " ms",
-        sinkOutAttr_.adapterName,
+        sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
     state_ = RENDERER_STOPPED;

@@ -1807,7 +1807,12 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
 int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
     int32_t ret = AUDIO_OK;
-    ret = AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
+    } else {
+        ret = AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
     auto oIter = propertyArray.property.begin();
     while (oIter != propertyArray.property.end()) {
@@ -1822,7 +1827,12 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &
 
 int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
-    return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
+    } else {
+        return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    }
 }
 
 int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
@@ -1873,7 +1883,12 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
 
 int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_->GetAudioEffectProperty(propertyArray);
+    else {
+        return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    }
 }
 
 int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
@@ -1907,7 +1922,12 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
 int32_t AudioPolicyService::GetAudioEnhancePropertyByDevice(DeviceType deviceType,
     AudioEnhancePropertyArray &propertyArray)
 {
-    return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray, deviceType);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_->GetAudioEffectProperty(propertyArray, deviceType);
+    else {
+        return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray, deviceType);
+    }
 }
 
 void AudioPolicyService::UpdateEffectBtOffloadSupported(const bool &isSupported)

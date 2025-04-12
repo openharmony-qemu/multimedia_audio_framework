@@ -51,6 +51,8 @@ float GetStreamVolume(uint32_t sessionId);
 
 float GetPreVolume(uint32_t sessionId);
 
+float GetCurVolumeByStreamType(uint32_t sessionId, int32_t streamType, const char* deviceClass);
+
 void SetPreVolume(uint32_t sessionId, float volume);
 
 void GetStreamVolumeFade(uint32_t sessionId, float *fadeBegin, float *fadeEnd);
