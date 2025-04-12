@@ -1,0 +1,69 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../../../config.gni")
+
+module_output_path = "multimedia_audio_framework/audio_engine"
+
+config("audio_engine_private_config") {
+    visibility = [ ":*" ]
+
+    include_dirs = [
+        "../../../audioutils/include",
+        "../../../../../interfaces/inner_api/native/audiocommon/include",
+        "../../../../../services/audio_service/server/include",
+        "../../../hdiadapter/common/include",
+        "../../../hdiadapter/sink/common",
+        "../../../hdiadapter/source/common",
+        "../../../../../services/audio_policy/server/include/service/common",
+        "../../../../../services/audio_engine/manager/include",
+        "../../../../../services/audio_service/common/include",
+        "./include",
+        "../../include"
+    ]
+}
+
+#############################################################################################
+ohos_unittest("pro_audio_service_adapter_unit_test") {
+    module_out_path = module_output_path
+    testonly = true
+    cflags = [
+        "-Wall",
+        "-Werror",
+        "-fno-access-control",
+    ]
+    sources = [
+        "src/pro_audio_service_adapter_unit_test.cpp",
+    ]
+
+    configs = [ ":audio_engine_private_config" ]
+
+    deps = [
+        "../../../audioutils:audio_utils",
+        "../../../../../services/audio_engine:audio_engine_manager",
+        "../../:pulse_audio_service_adapter",
+    ]
+
+    external_deps = [
+        "c_utils:utils",
+        "googletest:gtest",
+        "hilog:libhilog",
+        "hisysevent:libhisysevent",
+        "ipc:ipc_single",
+        "safwk:system_ability_fwk",
+        "samgr:samgr_proxy",
+    ]
+}
+
