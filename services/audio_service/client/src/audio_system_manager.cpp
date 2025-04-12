@@ -261,9 +261,9 @@ AudioScene AudioSystemManager::GetAudioScene() const
     }
 }
 
-int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag) const
+int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientPid) const
 {
-    int32_t pid = GetCallingPid();
+    int32_t pid = clientPid == -1 ? GetCallingPid() : clientPid;
     AUDIO_INFO_LOG("device: %{public}d pid: %{public}d", deviceType, pid);
     if (!IsActiveDeviceType(deviceType)) {
         AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
@@ -1745,9 +1745,11 @@ AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImp
     AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl destroy");
 }
 
-int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address) const
+int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address,
+    const int32_t clientPid) const
 {
-    int32_t pid = GetCallingPid();
+    int32_t pid = clientPid == -1 ? GetCallingPid() : clientPid;
+    AUDIO_INFO_LOG("device: %{public}d pid: %{public}d", deviceType, pid);
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
         flag, address, pid));
 }
