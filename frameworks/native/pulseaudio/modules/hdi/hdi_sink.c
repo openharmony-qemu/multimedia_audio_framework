@@ -174,6 +174,7 @@ static void OffloadUnlock(struct Userdata *u);
 static int32_t UpdatePresentationPosition(struct Userdata *u);
 static bool InputIsPrimary(pa_sink_input *i);
 static bool InputIsOffload(pa_sink_input *i);
+static uint32_t getSinkInputUid(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
 static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
 static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i);
@@ -1349,14 +1350,14 @@ static void SinkRenderPrimaryStateCheck(pa_mix_info *infoIn, pa_sink_input *sink
 {
     const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-
+    uint32_t uid = getSinkInputUid(sinkIn);
     if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
         AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
-        RecordPaSilenceState(sessionID, true, PA_PIPE_TYPE_NORMAL);
+        RecordPaSilenceState(sessionID, true, PA_PIPE_TYPE_NORMAL, uid);
         pa_sink_input_handle_ohos_underrun(sinkIn);
     } else {
         AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
-        RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_NORMAL);
+        RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_NORMAL, uid);
     }
 }
 
@@ -1475,14 +1476,14 @@ static void SinkRenderMultiChannelStateCheck(pa_sink *si, pa_mix_info *infoIn, p
     const char *sessionIDStr = safeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
     const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
-
+    uint32_t uid = getSinkInputUid(sinkIn);
     if (pa_memblock_is_silence(infoIn->chunk.memblock) && sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING) {
         AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
-        RecordPaSilenceState(sessionID, true, PA_PIPE_TYPE_MULTICHANNEL);
+        RecordPaSilenceState(sessionID, true, PA_PIPE_TYPE_MULTICHANNEL, uid);
         pa_sink_input_handle_ohos_underrun(sinkIn);
     } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
         AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_not_silence");
-        RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_MULTICHANNEL);
+        RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_MULTICHANNEL, uid);
         pa_atomic_store(&sinkIn->isFirstReaded, 1);
         PrepareMultiChannelFading(sinkIn, infoIn, si);
         CheckMultiChannelFadeinIsDone(si, sinkIn);
@@ -2912,6 +2913,16 @@ static int32_t getSinkInputSessionID(pa_sink_input *i)
     const char *res = pa_proplist_gets(i->proplist, "stream.sessionID");
     if (res == NULL) {
         return -1;
+    } else {
+        return atoi(res);
+    }
+}
+
+static uint32_t getSinkInputUid(pa_sink_input *i)
+{
+    const char *res = pa_proplist_gets(i->proplist, "stream.client.uid");
+    if (res == NULL) {
+        return 0;
     } else {
         return atoi(res);
     }
