@@ -21,17 +21,17 @@ config("audio_engine_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-      "../../../audioutils/include",
-      "../../../../../interfaces/inner_api/native/audiocommon/include",
-      "../../../../../services/audio_service/server/include",
-      "../../../hdiadapter/common/include",
-      "../../../hdiadapter/sink/common",
-      "../../../hdiadapter/source/common",
-      "../../../../../services/audio_policy/server/include/service/common",
-      "../../../../../services/audio_engine/manager/include",
-      "../../../../../services/audio_service/common/include",
-      "./include",
-      "../../include"
+    "../../../audioutils/include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../services/audio_service/server/include",
+    "../../../hdiadapter/common/include",
+    "../../../hdiadapter/sink/common",
+    "../../../hdiadapter/source/common",
+    "../../../../../services/audio_policy/server/include/service/common",
+    "../../../../../services/audio_engine/manager/include",
+    "../../../../../services/audio_service/common/include",
+    "./include",
+    "../../include"
   ]
 }
 
@@ -40,30 +40,30 @@ ohos_unittest("pro_audio_service_adapter_unit_test") {
   module_out_path = module_output_path
   testonly = true
   cflags = [
-      "-Wall",
-      "-Werror",
-      "-fno-access-control",
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
   ]
   sources = [
-      "src/pro_audio_service_adapter_unit_test.cpp",
+    "src/pro_audio_service_adapter_unit_test.cpp",
   ]
 
  configs = [ ":audio_engine_private_config" ]
 
   deps = [
-      "../../../audioutils:audio_utils",
-      "../../../../../services/audio_engine:audio_engine_manager",
-      "../../:pulse_audio_service_adapter",
+    "../../../audioutils:audio_utils",
+    "../../../../../services/audio_engine:audio_engine_manager",
+    "../../:pulse_audio_service_adapter",
   ]
 
   external_deps = [
-      "c_utils:utils",
-      "googletest:gtest",
-      "hilog:libhilog",
-      "hisysevent:libhisysevent",
-      "ipc:ipc_single",
-      "safwk:system_ability_fwk",
-      "samgr:samgr_proxy",
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 }
 

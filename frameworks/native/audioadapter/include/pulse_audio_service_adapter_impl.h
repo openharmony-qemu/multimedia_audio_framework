@@ -53,7 +53,7 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override { return 0; }
     int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override { return 0; }
-    int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override { return 0; }
 
     // Static Member functions

@@ -1771,7 +1771,7 @@ ProcessClusterOperation AudioEffectChainManager::CheckProcessClusterInstances(co
                 sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
             if (isDefaultEffectChainExisted_ && sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
                 sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
-                    return USE_DEFAULT_PROCESSCLUSTER;
+                return USE_DEFAULT_PROCESSCLUSTER;
             }
             return NO_NEED_TO_CREATE_PROCESSCLUSTER;
         }
