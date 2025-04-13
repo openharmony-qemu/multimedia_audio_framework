@@ -149,6 +149,7 @@ private:
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
     void ReLinkProcessToEndpoint();
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
+    bool IsMuteSwitchStream(uint32_t sessionId);
 
 private:
     std::mutex processListMutex_;
@@ -185,6 +186,7 @@ private:
     std::condition_variable allRunningSinksCV_;
     std::set<uint32_t> allRunningSinks_;
     bool onHibernate_ = false;
+    uint32_t muteSwitchStream_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
