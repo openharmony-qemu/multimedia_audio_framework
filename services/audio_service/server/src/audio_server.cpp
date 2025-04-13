@@ -92,6 +92,7 @@ static const size_t PARAMETER_SET_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
 constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 128;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
+constexpr int32_t UID_FOUNDATION_SA = 5523;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -129,6 +130,11 @@ static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
         }
     }
     return false;
+}
+
+static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUid)
+{
+    return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA;
 }
 
 class CapturerStateOb final : public ICapturerStateCallback {
@@ -1306,7 +1312,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
 
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+    if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK &&
+        !IsVoiceModemCommunication(resetConfig.rendererInfo.streamUsage, callingUid)) {
         errorCode = CheckMaxRendererInstances();
         if (errorCode != SUCCESS) {
             return nullptr;
