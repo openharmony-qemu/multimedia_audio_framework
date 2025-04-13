@@ -60,6 +60,9 @@ public:
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
 
+    bool TurnOnMicIndicator(CapturerState capturerState);
+    bool TurnOffMicIndicator(CapturerState capturerState);
+
 private:
     int32_t InitCacheBuffer(size_t targetSize);
     bool IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
@@ -76,6 +79,7 @@ private:
     IStatus status_ = I_STATUS_IDLE;
 
     bool needCheckBackground_ = false;
+    bool isMicIndicatorOn_ = false;
 
     AudioPlaybackCaptureConfig filterConfig_;
     std::weak_ptr<IStreamListener> streamListener_;
