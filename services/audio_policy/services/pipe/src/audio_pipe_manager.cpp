@@ -227,6 +227,18 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
     return streamDescs;
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByIoHandle(AudioIOHandle id)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it : curPipeList_) {
+        if (it->id_ == id) {
+            return it->streamDescriptors_;
+        }
+    }
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {};
+    return streamDescs;
+}
+
 std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetStreamDescById(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);

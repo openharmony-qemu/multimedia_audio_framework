@@ -387,7 +387,10 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     AudioIOHandle activateDeviceIOHandle;
     audioIOHandleMap_.GetModuleIdByKey(portName, activateDeviceIOHandle);
     uint32_t curPaIndex = pipeManager_->GetPaIndexByIoHandle(activateDeviceIOHandle);
-    AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u", activateDeviceIOHandle, curPaIndex);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs =
+        pipeManager->GetStreamDescsByIoHandle(activateDeviceIOHandle);
+    AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u, stream num: %{public}zu",
+        activateDeviceIOHandle, curPaIndex, streamDescs.size());
     int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     pipeManager_->RemoveAudioPipeInfo(activateDeviceIOHandle);
@@ -413,6 +416,7 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     pipeInfo_->adapterName_ = "a2dp";
     pipeInfo_->moduleInfo_ = moduleInfo;
     pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
     pipeManager_->AddAudioPipeInfo(pipeInfo_);
     AUDIO_INFO_LOG("Close paIndex: %{public}u, open paIndex: %{public}u", curPaIndex, paIndex);
     return SUCCESS;
