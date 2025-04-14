@@ -391,7 +391,13 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
     config.audioMode = AUDIO_MODE_RECORD;
-    AudioService::GetInstance()->GetAudioProcess(config);
+    cofig.streamType = STREAM_VOICE_CALL;
+    config.streamInfo.channels = AudioChannel::MONO;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.encoding = ENCODING_PCM;
+    auto audioProcess = AudioService::GetInstance()->GetAudioProcess(config);
+    EXPECT_NE(audioProcess, nullptr);
 
     AudioService::GetInstance()->OnInitInnerCapList(1);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
@@ -403,6 +409,8 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     ret = AudioService::GetInstance()->DisableDualToneList(MAX_STREAMID - 1);
     EXPECT_EQ(SUCCESS, ret);
     AudioService::GetInstance()->ResetAudioEndpoint();
+    ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -961,6 +969,8 @@ HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_002, TestSize.Level1)
     int32_t delayInMs = 1;
     audioService->endpointList_[endpointName] = audioEndpoint;
     audioService->DelayCallReleaseEndpoint(endpointName, delayInMs);
+    EXPECT_EQ(audioService->endpointList_.count(endpointName), 1);
+    audioService->endpointList_.erase(endpointName);
 
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     audioService->SetIncMaxRendererStreamCnt(audioMode);

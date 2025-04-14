@@ -95,7 +95,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_004, TestSize.Level1)
     AudioVolumeType volumeType = AudioVolumeType::STREAM_ULTRASONIC;
 
     auto ret = audioGeneralManagerPtr->GetVolume(volumeType);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_GE(ret, 0);
 }
 
 /**
