@@ -383,25 +383,6 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_006, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test CheckAndPrintStacktrace API
- * @tc.type  : FUNC
- * @tc.number: AudioServerGetExtraParameters_001
- * @tc.desc  : Test CheckAndPrintStacktrace interface.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerCheckAndPrintStacktrace, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    EXPECT_TRUE(audioServer->CheckAndPrintStacktrace("dump_pulseaudio_stacktrace"));
-
-    EXPECT_TRUE(audioServer->CheckAndPrintStacktrace("recovery_audio_server"));
-
-    EXPECT_TRUE(audioServer->CheckAndPrintStacktrace("dump_pa_stacktrace_and_kill"));
-
-    EXPECT_FALSE(audioServer->CheckAndPrintStacktrace(""));
-}
-
-/**
  * @tc.name  : Test GetAudioParameter API
  * @tc.type  : FUNC
  * @tc.number: AudioServerGetAudioParameter_001

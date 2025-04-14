@@ -704,7 +704,8 @@ int32_t FastAudioRendererSinkInner::Start(void)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("FastAudioRendererSinkInner::Start");
-    AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Start", XCOLLIE_TIME_OUT_SECONDS);
+    AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Start", XCOLLIE_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("FastAudioRendererSinkInner::Start, sinkId %{public}u", sinkId_);
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
@@ -910,7 +911,8 @@ int32_t FastAudioRendererSinkInner::Stop(void)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("FastAudioRendererSinkInner::Stop");
-    AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Stop", XCOLLIE_TIME_OUT_SECONDS);
+    AudioXCollie sourceXCollie("FastAudioRendererSinkInner::Stop", XCOLLIE_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("Stop, sinkId %{public}u", sinkId_);
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,

@@ -79,7 +79,8 @@ void AudioCaptureSource::DeInit(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     Trace trace("AudioCaptureSource::DeInit");
-    AudioXCollie audioXCollie("AudioCaptureSource::DeInit", TIMEOUT_SECONDS_5);
+    AudioXCollie audioXCollie("AudioCaptureSource::DeInit", TIMEOUT_SECONDS_5,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     AUDIO_INFO_LOG("in");
     sourceInited_ = false;

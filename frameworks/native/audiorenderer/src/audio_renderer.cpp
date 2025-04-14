@@ -880,7 +880,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) {
             AUDIO_ERR_LOG("Start timeout");
-        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "volume: %{public}f, interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType,
@@ -1047,7 +1047,10 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::Pause");
-    AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS,
+        [](void *) {
+            AUDIO_ERR_LOG("Pause timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
