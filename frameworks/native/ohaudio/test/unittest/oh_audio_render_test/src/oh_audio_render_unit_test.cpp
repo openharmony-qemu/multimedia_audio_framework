@@ -2039,7 +2039,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_005, TestSize.Level0
 
     result = OH_AudioRenderer_GetTimestamp(audioRenderer, clockId, nullptr, &timestamp);
 
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -2060,7 +2060,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetTimestamp_006, TestSize.Level0
 
     result = OH_AudioRenderer_GetTimestamp(audioRenderer, clockId, &framePosition, nullptr);
 
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 

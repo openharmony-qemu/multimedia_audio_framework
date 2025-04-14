@@ -83,6 +83,24 @@ public:
     State state_ = State::RUNNING;
 };
 
+class FastAudioStreamFork : public FastAudioStream {
+public:
+    FastAudioStreamFork() : FastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0) {}
+    uint32_t GetOverflowCount() override { return g_writeOverflowNum; }
+    State GetState() override { return state_; }
+    int32_t SetAudioStreamInfo(const AudioStreamParams info,
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
+    bool StopAudioStream() override { return true; }
+    bool StartAudioStream(StateChangeCmdType cmdType,
+        AudioStreamDeviceChangeReasonExt reason) override { return true; }
+    IAudioStream::StreamClass GetStreamClass() override { return IAudioStream::PA_STREAM; }
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override { return restoreStatus; }
+
+    State state_ = State::RUNNING;
+};
+
 /**
 * @tc.name  : Test MISCELLANEOUS classes of module audio capturer.
 * @tc.number: Audio_Capturer_MISCELLANEOUS_001.
@@ -287,6 +305,87 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_006, TestSize.Level1)
     auto audioStream = std::make_shared<TestAudioStremStub>();
 
     capturer->SetSwitchInfo(info, audioStream);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_007
+ * @tc.desc  : Test AudioCapturerPrivate::SetSwitchInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_007, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::SwitchInfo info;
+    auto audioStream = std::make_shared<FastAudioStreamFork>();
+    ASSERT_NE(audioStream, nullptr);
+
+    info.renderPositionCb = std::make_shared<RendererPositionCallbackTestStub>();
+    info.framePeriodNumber = 1;
+    info.capturePositionCb  = std::make_shared<CapturerPositionCallbackTestStub>();
+    info.renderPeriodPositionCb = std::make_shared<RendererPeriodPositionCallbackTestStub>();
+    info.framePeriodNumber = 1;
+    info.capturePeriodPositionCb = std::make_shared<CapturerPeriodPositionCallbackTestStub>();
+
+    auto ret = capturer->SetSwitchInfo(info, audioStream);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_008
+ * @tc.desc  : Test AudioCapturerPrivate::SetSwitchInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_008, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::SwitchInfo info;
+    auto audioStream = std::make_shared<FastAudioStreamFork>();
+    ASSERT_NE(audioStream, nullptr);
+
+    info.renderPositionCb = std::make_shared<RendererPositionCallbackTestStub>();
+    info.framePeriodNumber = 0;
+    info.capturePositionCb  = std::make_shared<CapturerPositionCallbackTestStub>();
+    info.renderPeriodPositionCb = std::make_shared<RendererPeriodPositionCallbackTestStub>();
+    info.framePeriodNumber = 0;
+    info.capturePeriodPositionCb = std::make_shared<CapturerPeriodPositionCallbackTestStub>();
+
+    auto ret = capturer->SetSwitchInfo(info, audioStream);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_009
+ * @tc.desc  : Test AudioCapturerPrivate::SetSwitchInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_009, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::SwitchInfo info;
+    auto audioStream = std::make_shared<FastAudioStreamFork>();
+    ASSERT_NE(audioStream, nullptr);
+
+    info.renderPositionCb = nullptr;
+    info.framePeriodNumber = 0;
+    info.capturePositionCb  = nullptr;
+    info.renderPeriodPositionCb = nullptr;
+    info.framePeriodNumber = 0;
+    info.capturePeriodPositionCb = nullptr;
+
+    auto ret = capturer->SetSwitchInfo(info, audioStream);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
