@@ -151,7 +151,7 @@ napi_env &NapiAudioCapturerInfoChangeCallback::GetEnv()
     return env_;
 }
 
-std::shared_ptr<AutoRef> &NapiAudioCapturerInfoChangeCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> NapiAudioCapturerInfoChangeCallback::GetCallback(const std::string &callbackName)
 {
     return callbackPtr_;
 }

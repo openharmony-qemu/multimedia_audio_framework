@@ -54,7 +54,7 @@ void NapiRendererDataRequestCallback::SaveCallbackReference(const std::string &c
     AUDIO_DEBUG_LOG("SaveAudioRendererDataRequestCallback sucessful");
 }
 
-std::shared_ptr<AutoRef> &NapiRendererDataRequestCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> NapiRendererDataRequestCallback::GetCallback(const std::string &callbackName)
 {
     return rendererDataRequestCallback_;
 }
