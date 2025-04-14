@@ -637,8 +637,8 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
         audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
             AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
         audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-        uint32_t curPaIndex = AudioPipeManager::GetPipeManager()->GetPaIndexByIoHandle(activateDeviceIOHandle);
         std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+        uint32_t curPaIndex = pipeManager->GetPaIndexByIoHandle(activateDeviceIOHandle);
         std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs =
             pipeManager->GetStreamDescsByIoHandle(activateDeviceIOHandle);
         AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u, stream count: %{public}zu",
@@ -646,7 +646,7 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
         pipeManager->RemoveAudioPipeInfo(activateDeviceIOHandle);
         audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
 
-        CHECK_AND_RETURN(RestoreNewA2dpPort(streamDescs, moduleInfo) == SUCCESS);
+        CHECK_AND_RETURN(RestoreNewA2dpPort(streamDescs, moduleInfo, currentActivePort) == SUCCESS);
         std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
         if (!audioSceneManager_.IsVoiceCallRelatedScene()) {
             audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
@@ -1308,7 +1308,7 @@ uint16_t AudioDeviceStatus::GetDmDeviceType()
 }
 
 int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
-    AudioModuleInfo &moduleInfo)
+    AudioModuleInfo &moduleInfo, std::string &currentActivePort)
 {
     // Load bt sink module again with new configuration
     AUDIO_INFO_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
@@ -1335,7 +1335,7 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     pipeInfo->moduleInfo_ = moduleInfo;
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
-    pipeManager_->AddAudioPipeInfo(pipeInfo);
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
     return SUCCESS;
 }
 }

@@ -388,7 +388,7 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     audioIOHandleMap_.GetModuleIdByKey(portName, activateDeviceIOHandle);
     uint32_t curPaIndex = pipeManager_->GetPaIndexByIoHandle(activateDeviceIOHandle);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs =
-        pipeManager->GetStreamDescsByIoHandle(activateDeviceIOHandle);
+        pipeManager_->GetStreamDescsByIoHandle(activateDeviceIOHandle);
     AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u, stream num: %{public}zu",
         activateDeviceIOHandle, curPaIndex, streamDescs.size());
     int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
@@ -403,21 +403,21 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
         "OpenAudioPort failed %{public}d", ioHandle);
     audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
 
-    std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
-    pipeInfo_->id_ = ioHandle;
-    pipeInfo_->paIndex_ = paIndex;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = ioHandle;
+    pipeInfo->paIndex_ = paIndex;
     if (moduleInfo.role == "sink") {
-        pipeInfo_->pipeRole_ = PIPE_ROLE_OUTPUT;
-        pipeInfo_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+        pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     } else {
-        pipeInfo_->pipeRole_ = PIPE_ROLE_INPUT;
-        pipeInfo_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     }
-    pipeInfo_->adapterName_ = "a2dp";
-    pipeInfo_->moduleInfo_ = moduleInfo;
-    pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->adapterName_ = "a2dp";
+    pipeInfo->moduleInfo_ = moduleInfo;
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
-    pipeManager_->AddAudioPipeInfo(pipeInfo_);
+    pipeManager_->AddAudioPipeInfo(pipeInfo);
     AUDIO_INFO_LOG("Close paIndex: %{public}u, open paIndex: %{public}u", curPaIndex, paIndex);
     return SUCCESS;
 }

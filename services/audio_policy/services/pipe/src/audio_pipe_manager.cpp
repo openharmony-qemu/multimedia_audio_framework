@@ -231,7 +231,7 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamD
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto it : curPipeList_) {
-        if (it->id_ == id) {
+        if (it != nullptr && it->id_ == id) {
             return it->streamDescriptors_;
         }
     }
