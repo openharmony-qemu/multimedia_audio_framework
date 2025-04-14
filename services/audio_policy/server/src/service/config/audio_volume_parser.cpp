@@ -192,6 +192,12 @@ void AudioVolumeParser::ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> cur
             std::shared_ptr<DeviceVolumeInfo> deviceVolInfo = std::make_shared<DeviceVolumeInfo>();
             deviceVolInfo->deviceType = audioDeviceMap_[pValueStr];
             AUDIO_DEBUG_LOG("deviceVolInfo->deviceType %{public}d;", deviceVolInfo->deviceType);
+            int32_t result = curNode->GetProp("defaultidx", pValueStr);
+            if (result == SUCCESS) {
+                StringConverter<int32_t>(pValueStr, deviceVolInfo->defaultLevel);
+            } else {
+                AUDIO_DEBUG_LOG("The defaultidx attribute is not configured or defaultidx parameter is invalid");
+            }
             ParseVolumePoints(curNode->GetChildrenNode(), deviceVolInfo);
             streamVolInfo->deviceVolumeInfos[deviceVolInfo->deviceType] = deviceVolInfo;
         }
