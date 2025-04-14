@@ -978,16 +978,14 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
         }
         SetPlaybackStreamFlag(streamDesc);
 
-        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-            MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
-            MuteSinkForSwitchDistributedDevice(streamDesc, reason);
-            int32_t outputRet = ActivateOutputDevice(streamDesc->newDeviceDescs_.front());
-            CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
-            if (needUpdateActiveDevice) {
-                isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
-                    reason);
-                needUpdateActiveDevice = !isUpdateActiveDevice;
-            }
+        MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
+        MuteSinkForSwitchDistributedDevice(streamDesc, reason);
+        int32_t outputRet = ActivateOutputDevice(streamDesc->newDeviceDescs_.front());
+        CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
+        if (needUpdateActiveDevice) {
+            isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
+                reason);
+            needUpdateActiveDevice = !isUpdateActiveDevice;
         }
         AUDIO_INFO_LOG("Will use audio flag: %{public}u", streamDesc->audioFlag_);
     }
