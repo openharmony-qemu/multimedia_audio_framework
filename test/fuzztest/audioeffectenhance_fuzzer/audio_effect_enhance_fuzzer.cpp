@@ -141,7 +141,6 @@ void AudioEffectChainManagerEnhanceFuzzTest()
         "SCENE_MOVIE",
         INFOCHANNELS,
         INFOCHANNELLAYOUT,
-        "0",
     };
 
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionID] = sessionEffectInfo;

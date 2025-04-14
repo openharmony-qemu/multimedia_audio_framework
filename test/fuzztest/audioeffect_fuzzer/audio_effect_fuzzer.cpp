@@ -50,7 +50,6 @@ SessionEffectInfo DEFAULT_INFO = {
     SCENETYPEDEFAULT,
     INFOCHANNELS,
     INFOCHANNELLAYOUT,
-    "0",
 };
 
 /*

@@ -48,6 +48,7 @@ typedef void (*TestPtr)(const uint8_t *, size_t);
 sptr<AudioPolicyServer> GetServerPtr()
 {
     static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    server->ConnectServiceAdapter();
     if (!g_hasServerInit) {
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
