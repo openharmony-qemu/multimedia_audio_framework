@@ -64,6 +64,13 @@ enum class AsrNoiseSuppressionMode {
      * @since 12
      */
     FULL_DUPLEX_NEAR_FIELD = 5,
+    /**
+     * ASR_WHISPER_MODE.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    ASR_WHISPER_MODE = 6,
 };
 
 /**
