@@ -88,7 +88,7 @@ bool NapiAudioCapturerCallback::GetInterruptTsfnFlag()
     return regAcInterruptTsfn_;
 }
 
-std::shared_ptr<AutoRef> &NapiAudioCapturerCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> NapiAudioCapturerCallback::GetCallback(const std::string &callbackName)
 {
     std::shared_ptr<AutoRef> cb = nullptr;
 

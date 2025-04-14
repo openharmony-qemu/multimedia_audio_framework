@@ -47,7 +47,7 @@ public:
     void RemoveCallbackReference(const std::string &callbackName, napi_env env, napi_value callback) override;
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
     napi_env &GetEnv() override;
 
 private:

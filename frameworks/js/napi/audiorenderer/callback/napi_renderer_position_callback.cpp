@@ -51,7 +51,7 @@ void NapiRendererPositionCallback::SaveCallbackReference(const std::string &call
     AUDIO_DEBUG_LOG("SaveAudioPositionCallback successful");
 }
 
-std::shared_ptr<AutoRef> &NapiRendererPositionCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> NapiRendererPositionCallback::GetCallback(const std::string &callbackName)
 {
     return renderPositionCallback_;
 }
