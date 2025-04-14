@@ -295,6 +295,7 @@ private:
 
     std::mutex mutex_;
     mutable int32_t ownerPid_ = 0;
+    mutable int32_t ownerUid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };

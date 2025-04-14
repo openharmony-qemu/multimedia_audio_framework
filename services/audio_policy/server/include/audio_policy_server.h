@@ -659,7 +659,8 @@ private:
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     bool VerifyBluetoothPermission();
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
-    int32_t SetAudioSceneInternal(AudioScene audioScene);
+    int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
+        const int32_t pid = INVALID_PID);
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT

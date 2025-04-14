@@ -44,7 +44,7 @@ public:
         return instance;
     }
     int32_t SetAudioSceneAfter(AudioScene audioScene, BluetoothOffloadState state);
-    void SetAudioScenePre(AudioScene audioScene);
+    void SetAudioScenePre(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
     AudioScene GetAudioScene(bool hasSystemPermission = true) const;
     AudioScene GetLastAudioScene() const;
     bool IsSameAudioScene();

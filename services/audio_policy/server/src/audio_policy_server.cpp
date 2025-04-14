@@ -1908,9 +1908,9 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
     }
 }
 
-int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene)
+int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    return eventEntry_->SetAudioScene(audioScene);
+    return eventEntry_->SetAudioScene(audioScene, uid, pid);
 }
 
 AudioScene AudioPolicyServer::GetAudioScene()

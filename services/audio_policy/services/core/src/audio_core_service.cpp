@@ -396,9 +396,10 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::SetAudioScene(AudioScene audioScene)
+int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    audioSceneManager_.SetAudioScenePre(audioScene);
+    audioSceneManager_.SetAudioScenePre(audioScene, uid, pid);
+    audioStateManager_.SetAudioSceneOwnerPid(audioScene == 0 ? 0 : pid);
 
     FetchDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
 

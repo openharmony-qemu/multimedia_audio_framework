@@ -181,10 +181,10 @@ void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, co
     coreService_->OnForcedDeviceSelected(devType, macAddress);
 }
 
-int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene)
+int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->SetAudioScene(audioScene);
+    coreService_->SetAudioScene(audioScene, uid, pid);
     return SUCCESS;
 }
 

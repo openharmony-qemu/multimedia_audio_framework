@@ -42,9 +42,10 @@ namespace AudioStandard {
 static const int64_t MEDIA_TO_RING_MUTE_DURATION_TIME_US = 200000; // 200ms
 static const int64_t HEADSET_SWITCH_DELAY_US = 100000; //100ms
 
-void AudioSceneManager::SetAudioScenePre(AudioScene audioScene)
+void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    AUDIO_INFO_LOG("Set audio scene start %{public}d, lastScene %{public}d", audioScene, audioScene_);
+    AUDIO_INFO_LOG("Set audio scene start: %{public}d, lastScene: %{public}d, uid: %{public}d, pid: %{public}d",
+        audioScene, audioScene_, uid, pid);
     lastAudioScene_ = audioScene_;
     audioScene_ = audioScene;
     Bluetooth::AudioHfpManager::SetAudioSceneFromPolicy(audioScene_);
