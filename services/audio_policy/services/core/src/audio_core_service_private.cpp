@@ -510,7 +510,11 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
                 flag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_MOVE:
-                MoveToNewOutputDevice(desc, pipeInfo, reason);
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                    MoveStreamSink(desc, pipeInfo, reason);
+                } else {
+                    MoveToNewOutputDevice(desc, pipeInfo, reason);
+                }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateRendererStreamCallback(desc->appInfo_.appPid,
@@ -628,7 +632,11 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
-                MoveToNewInputDevice(desc);
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                    MoveStreamSource(desc);
+                } else {
+                    MoveToNewInputDevice(desc);
+                }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateCapturerStreamCallback(desc->appInfo_.appPid,
