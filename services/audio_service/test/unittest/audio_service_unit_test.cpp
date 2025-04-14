@@ -391,7 +391,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
     config.audioMode = AUDIO_MODE_RECORD;
-    cofig.streamType = STREAM_VOICE_CALL;
+    config.streamType = STREAM_VOICE_CALL;
     config.streamInfo.channels = AudioChannel::MONO;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
     config.streamInfo.format = SAMPLE_S16LE;
