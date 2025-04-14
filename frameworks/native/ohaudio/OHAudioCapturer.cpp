@@ -449,7 +449,6 @@ void OHAudioCapturerModeCallback::OnReadData(size_t length)
 {
     OHAudioCapturer* audioCapturer = (OHAudioCapturer*)ohAudioCapturer_;
     OHOS::AudioStandard::ObjectRefMap objectGuard(audioCapturer);
-    audioCapturer = objectGuard.GetPtr();
     CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "capturer client is nullptr");
     CHECK_AND_RETURN_LOG((callbacks_.OH_AudioCapturer_OnReadData != nullptr) || onReadDataCallback_ != nullptr,
         "pointer to the fuction is nullptr");
