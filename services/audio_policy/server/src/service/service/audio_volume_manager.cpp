@@ -403,18 +403,29 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
 int32_t AudioVolumeManager::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
     DeviceType deviceType)
 {
+    int32_t sVolumeLevel = volumeLevel;
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
+        deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET ||
+        deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceType == DEVICE_TYPE_WIRED_HEADPHONES) {
+        sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel, deviceType);
+    }
     int32_t result = audioPolicyManager_.SaveSpecifiedDeviceVolume(
-        VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel, deviceType);
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType), sVolumeLevel, deviceType);
     return result;
 }
 
-int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel)
+int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,
+    DeviceType deviceType)
 {
     int32_t sVolumeLevel = volumeLevel;
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) != STREAM_MUSIC) {
+        // Safe Volume only applying to  STREAM_MUSIC
+        return sVolumeLevel;
+    }
+    DeviceType curOutputDeviceType = (deviceType == DEVICE_TYPE_NONE) ?
+        audioActiveDevice_.GetCurrentOutputDeviceType() : deviceType;
     DeviceCategory curOutputDeviceCategory = audioActiveDevice_.GetCurrentOutputDeviceCategory();
-    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel() &&
-        VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
+    if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
         switch (curOutputDeviceType) {
             case DEVICE_TYPE_BLUETOOTH_A2DP:
             case DEVICE_TYPE_BLUETOOTH_SCO:
