@@ -20,6 +20,7 @@
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
 #include "cinttypes"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {

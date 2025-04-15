@@ -309,8 +309,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
     timer.Stop();
     uint64_t interval = timer.Elapsed();
     AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRIu64 " ms",
-        sinkOutAttr_.adapterName.c_str(),
-        interval);
+        sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     state_ = RENDERER_STOPPED;
     return SUCCESS;

@@ -484,8 +484,9 @@ uint64_t HpaeOffloadSinkOutputNode::CalcOffloadCacheLenInHdi()
 
 void HpaeOffloadSinkOutputNode::OffloadSetHdiVolume()
 {
+    struct VolumeValues volumes;
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamType());
-    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, DEVICE_CLASS_OFFLOAD);
+    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, DEVICE_CLASS_OFFLOAD, &volumes);
     float volumeBeg = AudioVolume::GetInstance()->GetHistoryVolume(GetSessionId());
     if (volumeBeg != volumeEnd) {
         AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode::sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
