@@ -295,6 +295,57 @@ int32_t CapturerInServer::OnReadData(size_t length)
     return SUCCESS;
 }
 
+int32_t CapturerInServer::OnReadData(std::vector<char>& outputData, size_t requestDataLen)
+{
+    CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
+        "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
+    uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
+    if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
+        return ERR_READ_FAILED;
+    }
+    Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
+    OptResult result = ringCache_->GetWritableSize();
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
+        "RingCache write invalid size %{public}zu", result.size);
+    
+    BufferDesc srcBuffer = {nullptr, requestDataLen, 0};
+    srcBuffer.buffer = reinterpret_cast<uint8_t *>(outputData.data());
+
+    ringCache_->Enqueue({srcBuffer.buffer, srcBuffer.bufLength});
+    result = ringCache_->GetReadableSize();
+    if (result.ret != OPERATION_SUCCESS || result.size < spanSizeInBytes_) {
+        return SUCCESS;
+    }
+
+    BufferDesc dstBuffer = {nullptr, 0, 0};
+    uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
+    if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
+        return ERR_READ_FAILED;
+    }
+    if ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
+        LEGACY_MUTE_CAP) || muteFlag_) {
+        dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
+    }
+    if (muteFlag_) {
+        memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
+    }
+    ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+            static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+    }
+
+    uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
+    audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
+    audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
+
+    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+    return SUCCESS;
+}
+
 int32_t CapturerInServer::UpdateReadIndex()
 {
     AUDIO_DEBUG_LOG("audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d",

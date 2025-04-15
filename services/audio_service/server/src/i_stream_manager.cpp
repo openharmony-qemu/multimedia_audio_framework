@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
+#include "audio_utils.h"
+#include "audio_engine_log.h"
 #include "pa_adapter_manager.h"
+#include "pro_adapter_manager.h"
 #include "pro_audio_stream_manager.h"
 
 namespace OHOS {
@@ -29,27 +32,51 @@ IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
             return voipManager;
         case PLAYBACK:
         default:
-            static PaAdapterManager adapterManager(PLAYBACK);
-            return adapterManager;
+            int32_t engineFlag = GetEngineFlag();
+            if (engineFlag == 1) {
+                static ProAdapterManager adapterManager(PLAYBACK);
+                return adapterManager;
+            } else {
+                static PaAdapterManager adapterManager(PLAYBACK);
+                return adapterManager;
+            }
     }
 }
 
 IStreamManager &IStreamManager::GetDupPlaybackManager()
 {
-    static PaAdapterManager adapterManager(DUP_PLAYBACK);
-    return adapterManager;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        static ProAdapterManager adapterManager(DUP_PLAYBACK);
+        return adapterManager;
+    } else {
+        static PaAdapterManager adapterManager(DUP_PLAYBACK);
+        return adapterManager;
+    }
 }
 
 IStreamManager &IStreamManager::GetDualPlaybackManager()
 {
-    static PaAdapterManager adapterManager(DUAL_PLAYBACK);
-    return adapterManager;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        static ProAdapterManager adapterManager(DUAL_PLAYBACK);
+        return adapterManager;
+    } else {
+        static PaAdapterManager adapterManager(DUAL_PLAYBACK);
+        return adapterManager;
+    }
 }
 
 IStreamManager &IStreamManager::GetRecorderManager()
 {
-    static PaAdapterManager adapterManager(RECORDER);
-    return adapterManager;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        static ProAdapterManager adapterManager(RECORDER);
+        return adapterManager;
+    } else {
+        static PaAdapterManager adapterManager(RECORDER);
+        return adapterManager;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
