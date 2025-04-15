@@ -518,7 +518,7 @@ int32_t RemoteAudioRendererSinkInner::RenderFrameLogic(char &data, uint64_t len,
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(&data), len, len };
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
         static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_ + streamType, volumeDataCount_);
     Trace traceRenderFrame("audioRender_->RenderFrame");
     ret = audioRender_->RenderFrame(frameHal, writeLen);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, ClockTime::GetCurNano());
@@ -590,7 +590,8 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
 
     for (const auto &audioPort : audioPortMap_) {
         FILE *dumpFile = nullptr;
-        std::string dumpFileName = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + GetTime() + "_" +
+        std::string dumpFileName = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" +
+            std::to_string(audioPort.first) + "_" + GetTime() + "_" +
             std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
             std::to_string(attr_.format) + ".pcm";
         DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName, &dumpFile);
