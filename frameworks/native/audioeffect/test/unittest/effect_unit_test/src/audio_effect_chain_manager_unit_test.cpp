@@ -1608,12 +1608,15 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpkOffloadState_004, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    // use spkOffloadEnabled_ to differentiate platforms
     if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
+        // the algorithm can be loaded on the DSP platform
         AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
         AudioEffectChainManager::GetInstance()->SetSpkOffloadState();
         bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
         EXPECT_EQ(true, result);
     } else {
+        // the algorithm cannot be loaded on the DSP platform
         AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
         AudioEffectChainManager::GetInstance()->SetSpkOffloadState();
         bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
