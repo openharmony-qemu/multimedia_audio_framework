@@ -229,8 +229,6 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             overFlowLogFlag_ = 0;
         }
         overFlowLogFlag_++;
-        BufferDesc dstBuffer = stream_->DequeueBuffer(length);
-        stream_->EnqueueBuffer(dstBuffer);
         stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
         return true;
     }
@@ -309,7 +307,7 @@ int32_t CapturerInServer::OnReadData(std::vector<char>& outputData, size_t reque
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
         "RingCache write invalid size %{public}zu", result.size);
-    
+
     BufferDesc srcBuffer = {nullptr, requestDataLen, 0};
     srcBuffer.buffer = reinterpret_cast<uint8_t *>(outputData.data());
 
