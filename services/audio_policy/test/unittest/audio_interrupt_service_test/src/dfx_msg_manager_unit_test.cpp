@@ -460,24 +460,12 @@ HWTEST(DfxMsgManagerUnitTest, HandleThreadExit_001, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
 
-    dfxMsgManager.HandleThreadExit();
-    EXPECT_EQ(dfxMsgManager.isFull_, false);
-}
-
-/**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: LogDfxResult_001
-* @tc.desc  : Test DfxMsgManager::LogDfxResult
-*/
-HWTEST(DfxMsgManagerUnitTest, LogDfxResult_001, TestSize.Level1)
-{
-    DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     std::unique_ptr<DfxReportResult> result = std::make_unique<DfxReportResult>();
-
     result->appName = "appName";
     result->appVersion = "1.0";
     result->summary = 2;
     dfxMsgManager.LogDfxResult(result);
+    dfxMsgManager.HandleThreadExit();
     EXPECT_EQ(dfxMsgManager.isFull_, false);
 }
 
