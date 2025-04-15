@@ -48,11 +48,8 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
         HPAE::IHpaeManager::GetHpaeManager()->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
     } else {
         AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-        if (audioEnhanceChainManager == nullptr) {
-            AUDIO_ERR_LOG("audioEnhanceChainManager is nullptr");
-            return;
-        }
-        audioEnhanceChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        return audioEnhanceChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
     }
 }
 
@@ -67,7 +64,7 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
     if (engineFlag == 1) {
         HPAE::IHpaeManager::GetHpaeManager()->InitAudioEffectChainManager(effectChains, effectParam,
             audioEffectServer_->GetEffectEntries());
-        HPAE::IHpaeManager::GetHpaeManager()->InitAudioEnhanceChainManager(effectChains, effectParam,
+        HPAE::IHpaeManager::GetHpaeManager()->InitAudioEnhanceChainManager(effectChains, enhanceParam,
             audioEffectServer_->GetEffectEntries());
         AUDIO_INFO_LOG("AudioEffectChainManager Init");
     } else {
@@ -275,7 +272,6 @@ int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &pr
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "Set Audio Enhance Property refused for %{public}d", callingUid);
-
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         return HPAE::IHpaeManager::GetHpaeManager()->SetAudioEnhanceProperty(propertyArray, deviceType);
@@ -344,7 +340,7 @@ void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager()->UpdateEffectBtOffloadSupported(isSupported);
+        HPAE::IHpaeManager::GetHpaeManager()->UpdateEffectBtOffloadSupported(isSupported);
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
