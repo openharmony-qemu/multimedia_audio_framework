@@ -99,6 +99,7 @@ const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
 const std::string CALLER_NAME = "audio_server";
+static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -3730,6 +3731,8 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
+    // Asynchronous clear audio focus infos
+    usleep(WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US);
     audioPolicyService_.NotifyAccountsChanged(id);
 }
 
