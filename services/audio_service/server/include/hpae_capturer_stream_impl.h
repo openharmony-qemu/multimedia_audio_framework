@@ -45,7 +45,7 @@ public:
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
     int32_t DropBuffer() override;
-    void AbortCallback(int32_t abortTimes) override;
+    void AbortCallback(int32_t abortTimes);
 
 private:
 

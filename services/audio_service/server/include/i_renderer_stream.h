@@ -24,10 +24,11 @@ namespace AudioStandard {
 class IWriteCallback {
 public:
     virtual int32_t OnWriteData(size_t length) = 0;
-    virtual int32_t OnwriteData(int8_t *inputData, size_t requestDataLen);
+    virtual int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) = 0;
 };
 
 class IStreamCallback {
+public:
     virtual int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) = 0;
 };
 

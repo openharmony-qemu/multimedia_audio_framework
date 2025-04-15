@@ -39,7 +39,7 @@ public:
     virtual ~MockCallbacks() = default;
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
-    int32_t OnWriteData(int8_t* inputData, size_t requestDataLen) override;
+    int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
 private:
     uint32_t streamIndex_ = 0;
 };

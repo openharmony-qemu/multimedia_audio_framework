@@ -194,7 +194,7 @@ int32_t ProAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std:
     AUDIO_DEBUG_LOG("Create capturer start");
     CHECK_AND_RETURN_RET_LOG(managerType_ == RECORDER, ERROR, "Invalid managerType:%{public}d", managerType_);
     uint32_t sessionId = 0;
-    if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_SSTREAMID) {
+    if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
         AUDIO_ERR_LOG("Create capturer originalSessionId is error %{public}d", processConfig.originalSessionId);
     } else {

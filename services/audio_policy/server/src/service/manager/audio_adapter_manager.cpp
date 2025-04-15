@@ -1060,6 +1060,7 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> 
     AUDIO_INFO_LOG("Adapter load-module %{public}s, route flag: %{public}u", moduleArgs.c_str(), pipeInfo->routeFlag_);
     curActiveCount_++;
     AudioIOHandle ioHandle = HDI_INVALID_ID;
+
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         ioHandle = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, pipeInfo->moduleInfo_);
@@ -1070,7 +1071,7 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> 
             AUDIO_INFO_LOG("Is pa route");
             return OpenPaAudioPort(pipeInfo, paIndex, moduleArgs);
         }
-    
+
         AUDIO_INFO_LOG("Not pa route");
         return OpenNotPaAudioPort(pipeInfo, paIndex);
     }
@@ -1195,6 +1196,7 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     curActiveCount_++;
     AudioIOHandle ioHandle = HDI_INVALID_ID;
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ioHandle, "audioServerProxy_ null");
+
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         ioHandle = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, audioModuleInfo);
@@ -1217,9 +1219,10 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
             }
         }
         IPCSkeleton::SetCallingIdentity(identity);
-    
+
         paIndex = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
     }
+
     AUDIO_INFO_LOG("Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
     return ioHandle;
 }
@@ -1245,32 +1248,34 @@ int32_t AudioAdapterManager::GetCurActivateCount() const
     return curActiveCount_ > 0 ? curActiveCount_ : 0;
 }
 
-int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 & propertyArray) const
+int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     int32_t ret = 0;
     AudioEffectPropertyArrayV3 effectPropertyArray = {};
     ret = audioServiceAdapter_->GetAudioEffectProperty(effectPropertyArray);
-    CHECK_AND_RETURN_RET_LOG(ret != nullptr, ERR_OPERATION_FAILED, "GetAudioEffectProperty failed");
-    propertyArray.property.insert(propertyArray.property.end(), effectPropertyArray.property.begin(), effectPropertyArray.property.end());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetAudioEffectProperty failed");
+    propertyArray.property.insert(propertyArray.property.end(),
+        effectPropertyArray.property.begin(), effectPropertyArray.property.end());
     AudioEffectPropertyArrayV3 enhancePropertyArray = {};
     ret = audioServiceAdapter_->GetAudioEnhanceProperty(enhancePropertyArray);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetAudioEnhanceProperty failed");
-    propertyArray.property.insert(propertyArray.property.end(), enhancePropertyArray.property.begin(), enhancePropertyArray.property.end());
+    propertyArray.property.insert(propertyArray.property.end(),
+        enhancePropertyArray.property.begin(), enhancePropertyArray.property.end());
     return ret;
-
 }
 
-int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArray& propertyArray) const
+int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     return audioServiceAdapter_->GetAudioEffectProperty(propertyArray);
 }
 
-int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray& propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) const
+int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    DeviceType deviceType = DEVICE_TYPE_NONE) const
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->GetAudioEffectProperty(propertyArray, deviceType);
+    return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
 void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)

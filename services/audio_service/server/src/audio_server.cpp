@@ -304,12 +304,12 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         argQue.push(args[index]);
     }
     std::string dumpString;
-
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         int32_t res = hpaeDumpObj_.Initialize();
-        CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR, "Audio Service Hpae Dump not Initialed");
-        hpaeDUmperObj_.AudioDataDUmp(dumpString, argQue);
+        CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
+            "Audio Service Hpae Dump not Initialed");
+        hpaeDumpObj_.AudioDataDump(dumpString, argQue);
     } else {
         AudioServerDump dumpObj;
         int32_t res = dumpObj.Initialize();

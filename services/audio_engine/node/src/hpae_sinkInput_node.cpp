@@ -22,7 +22,7 @@
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
 #include "audio_errors.h"
-#include "cinttypes"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -36,7 +36,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
       interleveData_(nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format)), framesWritten_(0),
       totalFrames_(0)
 {
-    AUDIO_INFO_LOG("sinkinput sessionId %{public}d, channelcount %{public}d, channelLayout %{public}" PRIu64", "
+    AUDIO_INFO_LOG("sinkinput sessionId %{public}d, channelcount %{public}d, channelLayout %{public}" PRIu64 ", "
         "frameLen %{public}d", nodeInfo.sessionId, inputAudioBuffer_.GetChannelCount(),
         inputAudioBuffer_.GetChannelLayout(), inputAudioBuffer_.GetFrameLen());
     

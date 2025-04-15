@@ -144,7 +144,7 @@ int32_t DownMixer::SetupDownMixTable()
     if ((!isValidChLayout(inLayout_, inChannels_)) || (!isValidChLayout(outLayout_, outChannels_))
         || inLayout_ == outLayout_ || inChannels_ <= outChannels_) {
         AUDIO_ERR_LOG("invalid input or output channellayout: input channel count %{public}d, "
-            "inLayout_ %{public}" PRIu64 ". output channel count %{public}d, outLayout_ %{public}" PRIu64 "",
+            "inLayout_ %{public}" PRIu64 "output channel count %{public}d, outLayout_ %{public}" PRIu64 "",
             inChannels_, inLayout_, outChannels_, outLayout_);
         return DMIX_ERR_INVALID_ARG;
     }
