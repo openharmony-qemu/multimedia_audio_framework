@@ -103,7 +103,8 @@ int32_t RemoteAudioRenderSink::Start(void)
     std::lock_guard<std::mutex> lock(createRenderMutex_);
 
     for (auto &it : audioRenderWrapperMap_) {
-        it.second.dumpFileName_ = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + GetTime() + "_" +
+        it.second.dumpFileName_ = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + std::to_string(it.first) +
+            '_' + GetTime() + "_" +
             std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
             std::to_string(attr_.format) + ".pcm";
         DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, it.second.dumpFileName_ + std::to_string(it.first) +
@@ -606,7 +607,7 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     BufferDesc buffer = { reinterpret_cast<uint8_t *>(&data), len, len };
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
         static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_ + std::to_string(type), volumeDataCount_);
     Trace trace("RemoteAudioRenderSink::RenderFrame inner renderFrame");
     Trace::CountVolume("RemoteAudioRenderSink::RenderFrame", static_cast<uint8_t>(data));
     ret = audioRender->RenderFrame(bufferVec, writeLen);
