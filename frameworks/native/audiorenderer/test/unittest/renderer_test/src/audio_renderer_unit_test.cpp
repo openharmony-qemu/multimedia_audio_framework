@@ -6317,8 +6317,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetCurrentOutputDevices_Stability_0
         AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
         audioRenderer->GetCurrentOutputDevices(deviceInfo);
 
-        EXPECT_EQ(SUCCESS, deviceInfo.deviceRole_);
-        EXPECT_EQ(SUCCESS, deviceInfo.deviceType_);
+        EXPECT_EQ(OUTPUT_DEVICE, deviceInfo.deviceRole_);
+        EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceInfo.deviceType_);
     }
 
     audioRenderer->Release();
