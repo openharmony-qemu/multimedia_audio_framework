@@ -1272,7 +1272,7 @@ int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArray &pr
 }
 
 int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType = DEVICE_TYPE_NONE) const
+    DeviceType deviceType) const
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);

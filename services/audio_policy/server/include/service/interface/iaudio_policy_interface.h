@@ -193,7 +193,7 @@ public:
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const = 0;
 
     virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-        DeviceType deviceType = DEVICE_TYPE_NONE) const  = 0;
+        DeviceType deviceType = DEVICE_TYPE_NONE) const = 0;
 
     virtual void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel) = 0;
 

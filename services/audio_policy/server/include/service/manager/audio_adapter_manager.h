@@ -250,7 +250,7 @@ public:
     std::shared_ptr<AllDeviceVolumeInfo> GetAllDeviceVolumeInfo(DeviceType deviceType, AudioStreamType streamType);
 
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
-    
+
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const;
 
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const;

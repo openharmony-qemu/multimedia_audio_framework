@@ -1885,7 +1885,7 @@ int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &pro
 {
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return audioPolicyManager_->GetAudioEffectProperty(propertyArray);
+        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
     } else {
         return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
     }
@@ -1924,7 +1924,7 @@ int32_t AudioPolicyService::GetAudioEnhancePropertyByDevice(DeviceType deviceTyp
 {
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return audioPolicyManager_->GetAudioEnhanceProperty(propertyArray, deviceType);
+        return audioPolicyManager_.GetAudioEnhanceProperty(propertyArray, deviceType);
     } else {
         return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray, deviceType);
     }

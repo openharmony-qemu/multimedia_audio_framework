@@ -308,7 +308,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     if (engineFlag == 1) {
         int32_t res = hpaeDumpObj_.Initialize();
         CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
-            "Audio Service Hpae Dump not Initialed");
+            "Audio Service Hpae Dump Not Initialed");
         hpaeDumpObj_.AudioDataDump(dumpString, argQue);
     } else {
         AudioServerDump dumpObj;
