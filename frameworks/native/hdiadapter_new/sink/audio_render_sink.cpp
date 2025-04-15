@@ -446,7 +446,8 @@ int32_t AudioRenderSink::SetDeviceConnectedFlag(bool flag)
     return SUCCESS;
 }
 
-int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
+int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+    bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
@@ -458,13 +459,15 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
         return SUCCESS;
     }
 
-    if (audioScene != currentAudioScene_) {
+    if (audioScene != currentAudioScene_ && !scoExcludeFlag) {
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
 
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
         int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
+    }
+    if (audioScene != currentAudioScene_) {
         currentAudioScene_ = audioScene;
         if (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT) {
             forceSetRouteFlag_ = true;

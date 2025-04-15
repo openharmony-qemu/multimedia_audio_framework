@@ -92,9 +92,6 @@ int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOf
         }
     }
     int32_t result = SUCCESS;
-    if (AudioPolicyUtils::GetInstance().GetScoExcluded()) {
-        return result;
-    }
     if (haveArmUsbDevice) {
         result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
             DEVICE_TYPE_USB_ARM_HEADSET, state);
