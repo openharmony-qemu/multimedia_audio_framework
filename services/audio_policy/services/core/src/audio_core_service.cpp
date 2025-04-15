@@ -148,17 +148,7 @@ int32_t AudioCoreService::CreateRendererClient(
     for (auto device : streamDesc->newDeviceDescs_) {
         AUDIO_INFO_LOG("Device type %{public}d", device->deviceType_);
     }
-    {
-        // handle a2dp
-        std::string encryptMacAddr =
-            GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
-        int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc->newDeviceDescs_.front(),
-            AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
-        if (bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_CONTINUE ||
-            bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_ERROR) {
-            return ERROR;
-        }
-    }
+
     SetPlaybackStreamFlag(streamDesc);
     AUDIO_INFO_LOG("Will use audio flag: %{public}u", streamDesc->audioFlag_);
 
@@ -181,13 +171,6 @@ int32_t AudioCoreService::CreateCapturerClient(
     streamDesc->newDeviceDescs_.clear();
     streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
     AUDIO_INFO_LOG("New stream device type %{public}d", inputDeviceDesc->deviceType_);
-
-    {
-        // handle a2dp
-        if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            BluetoothScoFetch(streamDesc);
-        }
-    }
 
     SetRecordStreamFlag(streamDesc);
     AUDIO_INFO_LOG("Will use audio flag: %{public}u", streamDesc->audioFlag_);
@@ -346,6 +329,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        int32_t outputRet = ActivateOutputDevice(streamDesc->newDeviceDescs_.front());
+        CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (streamDesc->newDeviceDescs_.size() == 2) { // 2 for dual use
             std::string firstSinkName =
@@ -373,6 +358,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
     } else {
+        int32_t inputRet = ActivateInputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
         streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
@@ -384,32 +371,12 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
 
 int32_t AudioCoreService::PauseClient(uint32_t sessionId)
 {
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        audioActiveDevice_.UpdateActiveDeviceRoute(
-            streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
-    } else {
-        audioActiveDevice_.UpdateActiveDeviceRoute(
-            streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
-    }
-    audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
-
     pipeManager_->PauseClient(sessionId);
     return SUCCESS;
 }
 
 int32_t AudioCoreService::StopClient(uint32_t sessionId)
 {
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        audioActiveDevice_.UpdateActiveDeviceRoute(
-            streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
-    } else {
-        audioActiveDevice_.UpdateActiveDeviceRoute(
-            streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
-    }
-    audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
-
     pipeManager_->StopClient(sessionId);
     return SUCCESS;
 }
@@ -1002,28 +969,19 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
             audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
-        AUDIO_INFO_LOG("DeviceType %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
+        AUDIO_INFO_LOG("DeviceType %{public}d, state: %{public}u",
+            streamDesc->newDeviceDescs_[0]->deviceType_, streamDesc->streamStatus_);
 
         if (HandleDeviceChangeForFetchOutputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE &&
             !Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage)) {
             continue;
         }
+        SetPlaybackStreamFlag(streamDesc);
 
         MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
         MuteSinkForSwitchDistributedDevice(streamDesc, reason);
-        // handle a2dp
-        std::string encryptMacAddr = GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
-        int32_t bluetoothFetchResult =
-            BluetoothDeviceFetchOutputHandle(streamDesc->newDeviceDescs_.front(), reason, encryptMacAddr);
-        if (bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_CONTINUE ||
-            bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_ERROR) {
-            continue;
-        }
-        if (streamDesc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            audioEcManager_.ActivateArmDevice(
-                streamDesc->newDeviceDescs_.front()->macAddress_, streamDesc->newDeviceDescs_.front()->deviceRole_);
-        }
-        SetPlaybackStreamFlag(streamDesc);
+        int32_t outputRet = ActivateOutputDevice(streamDesc->newDeviceDescs_.front());
+        CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);

@@ -57,6 +57,7 @@ public:
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
     int32_t GetStreamCount(const std::string adapterName, const uint32_t routeFlag);

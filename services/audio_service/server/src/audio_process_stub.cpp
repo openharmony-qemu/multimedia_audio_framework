@@ -92,6 +92,8 @@ int AudioProcessStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return HandleSetSourceDuration(data, reply);
         case ON_SET_UNDERRUN_CNT:
             return HandleSetUnderrunCount(data, reply);
+        case ON_SAVE_STREAM_VOLUME_INFO:
+            return HandleSaveStreamVolumeInfo(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -208,6 +210,16 @@ int32_t AudioProcessStub::HandleSetUnderrunCount(MessageParcel &data, MessagePar
 {
     uint32_t underrunCnt = data.ReadUint32();
     reply.WriteInt32(SetUnderrunCount(underrunCnt));
+    return AUDIO_OK;
+}
+
+int32_t AudioProcessStub::HandleSaveStreamVolumeInfo(MessageParcel &data, MessageParcel &reply)
+{
+    float volume = data.ReadFloat();
+    uint32_t sessionId = data.ReadUint32();
+    std::string adjustTime = data.ReadString();
+    uint32_t code = data.ReadUint32();
+    reply.WriteInt32(SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

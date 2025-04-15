@@ -39,6 +39,74 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
 };
+
+class AudioClientTrackerTest : public AudioClientTracker {
+public:
+    virtual ~AudioClientTrackerTest() = default;
+
+    /**
+     * Mute Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {}
+
+    /**
+     * Unmute Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {}
+
+    /**
+     * Paused Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {}
+
+     /**
+     * Resumed Stream was controlled by system application
+     *
+     * @param streamSetStateEventInternal Contains the set even information.
+     */
+    virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {}
+
+    /**
+     * Set low power volume was controlled by system application
+     *
+     * @param volume volume value.
+     */
+    virtual void SetLowPowerVolumeImpl(float volume) {}
+
+    /**
+     * Get low power volume was controlled by system application
+     *
+     * @param volume volume value.
+     */
+    virtual void GetLowPowerVolumeImpl(float &volume) { volume = 0; }
+
+    /**
+     * Set Stream into a specified Offload state
+     *
+     * @param state power state.
+     * @param isAppBack app state.
+     */
+    virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) {}
+
+    /**
+     * Unset Stream out of Offload state
+     *
+     */
+    virtual void UnsetOffloadModeImpl() {}
+
+    /**
+     * Get single stream was controlled by system application
+     *
+     * @param volume volume value.
+     */
+    virtual void GetSingleStreamVolumeImpl(float &volume) { volume = 0; }
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif //AUDIO_STREAM_COLLECTOR_UNIT_TEST_H

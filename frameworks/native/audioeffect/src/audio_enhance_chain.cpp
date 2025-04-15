@@ -453,6 +453,7 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enh
     audioBufOut_.raw = static_cast<void *>(algoCache_.output.data());
 
     for (AudioEffectHandle handle : standByEnhanceHandles_) {
+        CHECK_AND_CONTINUE_LOG(handle != nullptr, "handle is null ptr");
         int32_t ret = (*handle)->process(handle, &audioBufIn_, &audioBufOut_);
         CHECK_AND_CONTINUE_LOG(ret == 0, "[%{public}s] either one of libs process fail", sceneType_.c_str());
     }

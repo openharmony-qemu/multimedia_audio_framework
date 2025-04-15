@@ -143,6 +143,8 @@ private:
     int32_t GetModuleInfo(ClassType classType, std::string &moduleInfoStr);
     int32_t LoadDpModule(std::string deviceInfo);
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
+    int32_t RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+        AudioModuleInfo &moduleInfo, std::string &currentActivePort);
 
     void DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc);
     void HandleOfflineDistributedDevice();

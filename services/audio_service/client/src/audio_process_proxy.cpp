@@ -267,5 +267,21 @@ int32_t AudioProcessProxy::SetUnderrunCount(uint32_t underrunCnt)
     return reply.ReadInt32();
 }
 
+int32_t AudioProcessProxy::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteFloat(volume);
+    data.WriteUint32(sessionId);
+    data.WriteString(adjustTime);
+    data.WriteUint32(code);
+    int ret = Remote()->SendRequest(IAudioProcessMsg::ON_SAVE_STREAM_VOLUME_INFO, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

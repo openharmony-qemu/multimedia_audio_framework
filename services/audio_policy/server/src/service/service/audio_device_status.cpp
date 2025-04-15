@@ -637,18 +637,16 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
         audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
             AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
         audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-        audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
+        std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+        uint32_t curPaIndex = pipeManager->GetPaIndexByIoHandle(activateDeviceIOHandle);
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs =
+            pipeManager->GetStreamDescsByIoHandle(activateDeviceIOHandle);
+        AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u, stream count: %{public}zu",
+            activateDeviceIOHandle, curPaIndex, streamDescs.size());
+        pipeManager->RemoveAudioPipeInfo(activateDeviceIOHandle);
+        audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
 
-        // Load bt sink module again with new configuration
-        AUDIO_INFO_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
-        uint32_t paIndex;
-        AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
-        if (ioHandle == OPEN_PORT_FAILURE) {
-            audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
-            AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
-            return;
-        }
-        audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
+        CHECK_AND_RETURN(RestoreNewA2dpPort(streamDescs, moduleInfo, currentActivePort) == SUCCESS);
         std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
         if (!audioSceneManager_.IsVoiceCallRelatedScene()) {
             audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
@@ -1083,7 +1081,12 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
         CheckForA2dpSuspend(updatedDesc);
         // fix pop, fetch device before unload module
-        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
+        if (IsOutputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
+            AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
+        }
+        if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
+            AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
+        }
         int32_t result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
@@ -1304,5 +1307,36 @@ uint16_t AudioDeviceStatus::GetDmDeviceType()
     return dmDeviceType_;
 }
 
+int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+    AudioModuleInfo &moduleInfo, std::string &currentActivePort)
+{
+    // Load bt sink module again with new configuration
+    AUDIO_INFO_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
+    uint32_t paIndex;
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
+    if (ioHandle == OPEN_PORT_FAILURE) {
+        audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+        AUDIO_ERR_LOG("OpenAudioPort failed %{public}d", ioHandle);
+        return ERROR;
+    }
+    audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = ioHandle;
+    pipeInfo->paIndex_ = paIndex;
+    if (moduleInfo.role == "sink") {
+        pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+        pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    } else {
+        pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    }
+    pipeInfo->adapterName_ = "a2dp";
+    pipeInfo->moduleInfo_ = moduleInfo;
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
+    return SUCCESS;
+}
 }
 }

@@ -62,7 +62,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(BLUETOOTH_MIC),
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
-    std::string(FILE_SOURCE)
+    std::string(FILE_SOURCE),
+    std::string(ACCESSORY_SOURCE)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
@@ -386,7 +387,10 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     AudioIOHandle activateDeviceIOHandle;
     audioIOHandleMap_.GetModuleIdByKey(portName, activateDeviceIOHandle);
     uint32_t curPaIndex = pipeManager_->GetPaIndexByIoHandle(activateDeviceIOHandle);
-    AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u", activateDeviceIOHandle, curPaIndex);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs =
+        pipeManager_->GetStreamDescsByIoHandle(activateDeviceIOHandle);
+    AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u, stream num: %{public}zu",
+        activateDeviceIOHandle, curPaIndex, streamDescs.size());
     int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     pipeManager_->RemoveAudioPipeInfo(activateDeviceIOHandle);
@@ -399,20 +403,21 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
         "OpenAudioPort failed %{public}d", ioHandle);
     audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
 
-    std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
-    pipeInfo_->id_ = ioHandle;
-    pipeInfo_->paIndex_ = paIndex;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = ioHandle;
+    pipeInfo->paIndex_ = paIndex;
     if (moduleInfo.role == "sink") {
-        pipeInfo_->pipeRole_ = PIPE_ROLE_OUTPUT;
-        pipeInfo_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+        pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     } else {
-        pipeInfo_->pipeRole_ = PIPE_ROLE_INPUT;
-        pipeInfo_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     }
-    pipeInfo_->adapterName_ = "a2dp";
-    pipeInfo_->moduleInfo_ = moduleInfo;
-    pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
-    pipeManager_->AddAudioPipeInfo(pipeInfo_);
+    pipeInfo->adapterName_ = "a2dp";
+    pipeInfo->moduleInfo_ = moduleInfo;
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
+    pipeManager_->AddAudioPipeInfo(pipeInfo);
     AUDIO_INFO_LOG("Close paIndex: %{public}u, open paIndex: %{public}u", curPaIndex, paIndex);
     return SUCCESS;
 }
@@ -509,7 +514,11 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
                 flag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_MOVE:
-                MoveToNewOutputDevice(desc, pipeInfo, reason);
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                    MoveStreamSink(desc, pipeInfo, reason);
+                } else {
+                    MoveToNewOutputDevice(desc, pipeInfo, reason);
+                }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateRendererStreamCallback(desc->appInfo_.appPid,
@@ -533,7 +542,11 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
-                MoveToNewOutputDevice(desc, pipeInfo, reason);
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                    MoveStreamSink(desc, pipeInfo, reason);
+                } else {
+                    MoveToNewOutputDevice(desc, pipeInfo, reason);
+                }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateRendererStreamCallback(desc->appInfo_.appPid,
@@ -596,7 +609,11 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
-                MoveToNewInputDevice(desc);
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                    MoveStreamSource(desc);
+                } else {
+                    MoveToNewInputDevice(desc);
+                }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateCapturerStreamCallback(desc->appInfo_.appPid,
@@ -619,7 +636,11 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
-                MoveToNewInputDevice(desc);
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                    MoveStreamSource(desc);
+                } else {
+                    MoveToNewInputDevice(desc);
+                }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateCapturerStreamCallback(desc->appInfo_.appPid,
@@ -710,6 +731,27 @@ void AudioCoreService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop
 {
     // Distributed devices status update
     audioDeviceStatus_.OnDeviceStatusUpdated(statusInfo, isStop);
+}
+
+void AudioCoreService::MoveStreamSink(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    std::shared_ptr<AudioPipeInfo> pipeInfo, const AudioStreamDeviceChangeReasonExt reason)
+{
+    AUDIO_INFO_LOG("session %{public}u", streamDesc->sessionId_);
+    Trace trace("AudioCoreService::MoveStreamSink");
+    DeviceType oldDeviceType = DEVICE_TYPE_NONE;
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = streamDesc->newDeviceDescs_.front();
+    AUDIO_INFO_LOG("Move sink, [][]->[%{public}d][%{public}s], reason %{public}d", newDeviceDesc->deviceType_,
+        GetEncryptAddr(newDeviceDesc->macAddress_).c_str(), static_cast<int32_t>(reason));
+
+    std::vector<SinkInput> sinkInputs;
+    audioPolicyManager_.GetAllSinkInputs(sinkInputs);
+    std::vector<SinkInput> targetSinkInputs = audioOffloadStream_.FilterSinkInputs(streamDesc->sessionId_, sinkInputs);
+
+    auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
+        ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
+        : MoveToRemoteOutputDevice(targetSinkInputs, newDeviceDesc);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Move sink input %{public}d to device %{public}d failed!",
+        streamDesc->sessionId_, newDeviceDesc->deviceType_);
 }
 
 void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -835,6 +877,23 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
     }
     isCurrentRemoteRenderer_ = true;
     return SUCCESS;
+}
+
+void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    Trace trace("AudioCoreService::MoveStreamSource");
+    std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_);
+
+    AUDIO_INFO_LOG("Move session %{public}u to [%{public}d][%{public}s]",
+        streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_,
+        GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_).c_str());
+
+    // MoveSourceOuputByIndexName
+    auto ret = (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID)
+        ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front())
+        : MoveToRemoteInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front());
+    CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
+        streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
 }
 
 void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc)
@@ -1229,6 +1288,11 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     } else {
         HandleCommonSourceOpened(pipeInfo);
         id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
+        if (audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_MIC ||
+            audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_ACCESSORY) {
+            audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(),
+                pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
+        }
     }
     CHECK_AND_RETURN_RET_LOG(id != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED, "OpenAudioPort failed %{public}d", id);
     audioIOHandleMap_.AddIOHandleInfo(pipeInfo->moduleInfo_.name, id);
@@ -1816,6 +1880,29 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
         // remote cast -> earpiece 300ms fix sound leak
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true);
     }
+}
+
+int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "Device desc is nullptr");
+    std::string encryptMacAddr = GetEncryptAddr(deviceDesc->macAddress_);
+    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(deviceDesc,
+        AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
+    CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0,
+        ERR_INVALID_PARAM, "Invalid stream desc");
+    if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        BluetoothScoFetch(streamDesc);
+    }
+    return SUCCESS;
 }
 }
 }

@@ -296,6 +296,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
         recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK,
             GetLastAudioDuration(), processConfig_);
     }
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_PAUSE);
 
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
     return SUCCESS;
@@ -351,6 +352,7 @@ int32_t AudioProcessInServer::Stop()
         recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_STOP_OK,
             GetLastAudioDuration(), processConfig_);
     }
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_STOP);
 
     AUDIO_INFO_LOG("Stop in server success!");
     return SUCCESS;
@@ -724,5 +726,11 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
     return restoreStatus;
 }
 
+int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    AudioService::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

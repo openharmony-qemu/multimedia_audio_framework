@@ -261,9 +261,9 @@ AudioScene AudioSystemManager::GetAudioScene() const
     }
 }
 
-int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag) const
+int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientPid) const
 {
-    int32_t pid = GetCallingPid();
+    int32_t pid = clientPid == -1 ? GetCallingPid() : clientPid;
     AUDIO_INFO_LOG("device: %{public}d pid: %{public}d", deviceType, pid);
     if (!IsActiveDeviceType(deviceType)) {
         AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
@@ -1571,7 +1571,7 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     AUDIO_INFO_LOG("RegisterWakeupSourceCallback");
     remoteWakeUpCallback_ = std::make_shared<WakeUpCallbackImpl>(this);
 
-    auto wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
+    sptr<AudioManagerListenerStub> wakeupCloseCbStub = new(std::nothrow) AudioManagerListenerStub();
     CHECK_AND_RETURN_RET_LOG(wakeupCloseCbStub != nullptr, ERROR,
         "wakeupCloseCbStub is null");
     wakeupCloseCbStub->SetWakeupSourceCallback(remoteWakeUpCallback_);
@@ -1582,7 +1582,6 @@ int32_t AudioSystemManager::RegisterWakeupSourceCallback()
     sptr<IRemoteObject> object = wakeupCloseCbStub->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("SetWakeupCloseCallback listenerStub object is nullptr");
-        delete wakeupCloseCbStub;
         return ERROR;
     }
     return gasp->SetWakeupSourceCallback(object);
@@ -1746,9 +1745,11 @@ AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImp
     AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl destroy");
 }
 
-int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address) const
+int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address,
+    const int32_t clientPid) const
 {
-    int32_t pid = GetCallingPid();
+    int32_t pid = clientPid == -1 ? GetCallingPid() : clientPid;
+    AUDIO_INFO_LOG("device: %{public}d pid: %{public}d", deviceType, pid);
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
         flag, address, pid));
 }

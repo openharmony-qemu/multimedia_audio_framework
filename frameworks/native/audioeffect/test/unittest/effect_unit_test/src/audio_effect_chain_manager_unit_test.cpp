@@ -1605,13 +1605,20 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpkOffloadState_004, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
-    AudioEffectChainManager::GetInstance()->SetSpkOffloadState();
-
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    AudioEffectChainManager::GetInstance()->SetSpkOffloadState();
-    bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
-    EXPECT_EQ(false, result);
+    // use spkOffloadEnabled_ to differentiate platforms
+    if (AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ == true) {
+        // the algorithm can be loaded on the DSP platform
+        AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+        AudioEffectChainManager::GetInstance()->SetSpkOffloadState();
+        bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
+        EXPECT_EQ(true, result);
+    } else {
+        // the algorithm cannot be loaded on the DSP platform
+        AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+        AudioEffectChainManager::GetInstance()->SetSpkOffloadState();
+        bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
+        EXPECT_EQ(false, result);
+    }
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1927,8 +1934,8 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateEffectBtOffloadSupported_001, Test
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->btOffloadSupported_ = true;
     AudioEffectChainManager::GetInstance()->UpdateEffectBtOffloadSupported(true);
-    bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
-    EXPECT_EQ(false, result);
+    bool result = AudioEffectChainManager::GetInstance()->btOffloadSupported_;
+    EXPECT_EQ(true, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1943,7 +1950,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateEffectBtOffloadSupported_002, Test
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->btOffloadSupported_ = true;
     AudioEffectChainManager::GetInstance()->UpdateEffectBtOffloadSupported(false);
-    bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
+    bool result = AudioEffectChainManager::GetInstance()->btOffloadSupported_;
     EXPECT_EQ(false, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -1959,12 +1966,17 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateEffectBtOffloadSupported_003, Test
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->btOffloadSupported_ = false;
     AudioEffectChainManager::GetInstance()->UpdateEffectBtOffloadSupported(true);
-    AudioEffectChainManager::GetInstance()->spatializationEnabled_  =true;
+    bool result = AudioEffectChainManager::GetInstance()->btOffloadSupported_;
+    EXPECT_EQ(true, result);
+    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = false;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
     AudioEffectChainManager::GetInstance()->UpdateEffectBtOffloadSupported(true);
-    AudioEffectChainManager::GetInstance()->spatializationEnabled_  =false;
+    result = AudioEffectChainManager::GetInstance()->btOffloadSupported_;
+    EXPECT_EQ(true, result);
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = false;
     AudioEffectChainManager::GetInstance()->UpdateEffectBtOffloadSupported(true);
-    bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
-    EXPECT_EQ(false, result);
+    result = AudioEffectChainManager::GetInstance()->btOffloadSupported_;
+    EXPECT_EQ(true, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 

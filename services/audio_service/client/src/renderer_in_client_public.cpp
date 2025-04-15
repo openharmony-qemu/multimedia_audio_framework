@@ -489,6 +489,11 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
     return SUCCESS;
 }
 
+float RendererInClientInner::GetDuckVolume()
+{
+    return duckVolume_;
+}
+
 int32_t RendererInClientInner::SetMute(bool mute)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
@@ -503,6 +508,11 @@ int32_t RendererInClientInner::SetMute(bool mute)
         return ERROR;
     }
     return SUCCESS;
+}
+
+bool RendererInClientInner::GetMute()
+{
+    return std::abs(muteVolume_ - 0.0f) <= std::numeric_limits<float>::epsilon();
 }
 
 int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
@@ -1096,9 +1106,10 @@ bool RendererInClientInner::FlushAudioStream()
     // clear cbBufferQueue
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbBufferQueue_.Clear();
-        if (memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_) != EOK) {
+        int chToFill = (clientConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
+        if (memset_s(cbBuffer_.get(), cbBufferSize_, chToFill, cbBufferSize_) != EOK) {
             AUDIO_ERR_LOG("memset_s buffer failed");
-        };
+        }
     }
 
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");

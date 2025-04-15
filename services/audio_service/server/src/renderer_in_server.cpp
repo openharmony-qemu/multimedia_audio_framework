@@ -735,6 +735,9 @@ int32_t RendererInServer::OnWriteData(size_t length)
     bool mayNeedForceWrite = false;
     if (writeLock_.try_lock()) {
         // length unit is bytes, using spanSizeInByte_
+        if (spanSizeInByte_ <= 0) {
+            return ERR_WRITE_FAILED;
+        }
         for (size_t i = 0; i < length / spanSizeInByte_; i++) {
             mayNeedForceWrite = WriteData() != SUCCESS || mayNeedForceWrite;
         }
@@ -933,6 +936,7 @@ int32_t RendererInServer::Pause()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
 
     return SUCCESS;
 }
@@ -1085,6 +1089,7 @@ int32_t RendererInServer::Stop()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     return SUCCESS;
 }
 
@@ -1184,7 +1189,7 @@ int32_t RendererInServer::SetLowPowerVolume(float volume)
     AUDIO_INFO_LOG("SetLowPowerVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
         volume, streamIndex_, currentTime.c_str());
     AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(volume, streamIndex_, currentTime,
-        AdjustStreamVolume::LOW_POWER_VOLUME_INFO);
+        static_cast<uint32_t>(AdjustStreamVolume::LOW_POWER_VOLUME_INFO));
 
     lowPowerVolume_ = volume;
     AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(streamIndex_, volume);
@@ -1562,7 +1567,7 @@ int32_t RendererInServer::SetClientVolume()
     AUDIO_INFO_LOG("SetVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
         clientVolume, streamIndex_, currentTime.c_str());
     AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(clientVolume, streamIndex_, currentTime,
-        AdjustStreamVolume::STREAM_VOLUME_INFO);
+        static_cast<uint32_t>(AdjustStreamVolume::STREAM_VOLUME_INFO));
     int32_t ret = stream_->SetClientVolume(clientVolume);
     SetStreamVolumeInfoForEnhanceChain();
     AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, clientVolume);
@@ -1616,7 +1621,7 @@ int32_t RendererInServer::SetDuckFactor(float duckFactor)
     AUDIO_INFO_LOG("SetDuckVolumeInfo volume: %{public}f, sessionID: %{public}d, adjustTime: %{public}s",
         duckFactor, streamIndex_, currentTime.c_str());
     AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(duckFactor, streamIndex_, currentTime,
-        AdjustStreamVolume::DUCK_VOLUME_INFO);
+        static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO));
 
     AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(streamIndex_, duckFactor);
     for (auto &capInfo : captureInfos_) {
