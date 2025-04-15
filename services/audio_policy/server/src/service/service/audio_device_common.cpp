@@ -783,7 +783,8 @@ int32_t AudioDeviceCommon::HandleScoOutputDeviceFetched(std::shared_ptr<AudioDev
             FetchOutputDevice(rendererChangeInfos, reason);
             return ERROR;
         }
-        if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) {
+        if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene() ||
+            !Bluetooth::AudioHfpManager::IsVirtualCall()) {
             Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
             return SUCCESS;
         }

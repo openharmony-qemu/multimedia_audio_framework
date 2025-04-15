@@ -587,12 +587,10 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     }
     if (lastScoCategory != ScoCategory::SCO_DEFAULT) {
         AUDIO_INFO_LOG("Entered to disConnectSco for last audioScene category.");
-        if (!IsVirtualCall()) {
-            AUDIO_INFO_LOG("voip change to call disconnect sco.");
-            ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_CALLULAR);
+        ret = BluetoothScoManager::HandleScoDisconnect(static_cast<ScoCategory> (lastScoCategory));
+        if (!IsVirtualCall() && lastScoCategory == ScoCategory::SCO_CALLULAR) {
+            AUDIO_INFO_LOG("voip change to disconnect call sco, need setvirtualcall.");
             SetVirtualCall(true);
-        } else {
-            ret = BluetoothScoManager::HandleScoDisconnect(static_cast<ScoCategory> (lastScoCategory));
         }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
             "ConnectScoWithAudioScene failed as the last SCO failed to be disconnected, result: %{public}d", ret);
