@@ -578,6 +578,38 @@ float FastAudioStream::GetSpeed()
     return static_cast<float>(ERROR);
 }
 
+// only call from StartAudioStream
+void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
+{
+    uint32_t tid;
+    switch (rendererInfo_.playerType) {
+        case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
+            // main thread
+            tid = getpid();
+            break;
+        case PLAYER_TYPE_OH_AUDIO_RENDERER:
+            tid = gettid();
+            break;
+        default:
+            return;
+    }
+
+    if (cmdType == CMD_FROM_CLIENT) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        lastCallStartByUserTid_ = tid;
+    } else if (cmdType == CMD_FROM_SYSTEM) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
+        tid = lastCallStartByUserTid_.value();
+    } else {
+        AUDIO_ERR_LOG("illeagl param");
+        return;
+    }
+
+    processClient_->RegisterThreadPriority(tid,
+        AudioSystemManager::GetInstance()->GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
+}
+
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
@@ -609,6 +641,8 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
+    RegisterThreadPriorityOnStart(cmdType);
 
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
     return true;
@@ -874,6 +908,11 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
         info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
     }
 
+    {
+        std::lock_guard<std::mutex> lock(lastCallStartByUserTidMutex_);
+        info.lastCallStartByUserTid = lastCallStartByUserTid_;
+    }
+
     if (spkProcClientCb_) {
         info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();
     }
@@ -1083,6 +1122,12 @@ void FastAudioStream::FetchDeviceForSplitStream()
     if (processClient_) {
         processClient_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
     }
+}
+
+void FastAudioStream::SetCallStartByUserTid(uint32_t tid)
+{
+    std::lock_guard lock(lastCallStartByUserTidMutex_);
+    lastCallStartByUserTid_ = tid;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -727,12 +727,8 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_025, TestSize.Level1)
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     std::string name = "unit_test";
-    auto ret = audioProcessInServerRet.RegisterThreadPriority(0, name);
+    auto ret = audioProcessInServerRet.RegisterThreadPriority(0, name, METHOD_WRITE_OR_READ);
     EXPECT_EQ(ret, SUCCESS);
-
-    audioProcessInServerRet.clientThreadPriorityRequested_ = true;
-    ret = audioProcessInServerRet.RegisterThreadPriority(0, name);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 /**
  * @tc.name  : Test AudioProcessInServer API

@@ -222,6 +222,7 @@ public:
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
 
+    void SetCallStartByUserTid(uint32_t tid) override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -1719,7 +1720,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
         needSetThreadPriority_ = false;
     }
 
@@ -2068,6 +2069,11 @@ void CapturerInClientInner::FetchDeviceForSplitStream()
         AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
     }
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
+}
+
+void CapturerInClientInner::SetCallStartByUserTid(uint32_t tid)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
 }
 } // namespace AudioStandard
 } // namespace OHOS

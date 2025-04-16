@@ -46,7 +46,7 @@ public:
 
     int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 
-    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
+    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 

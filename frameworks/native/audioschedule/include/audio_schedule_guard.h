@@ -18,6 +18,10 @@
 
 #include <inttypes.h>
 #include <string>
+#include <memory>
+#include <map>
+#include <mutex>
+#include <condition_variable>
 #include "audio_schedule.h"
 
 namespace OHOS {
@@ -32,7 +36,7 @@ public:
 
     AudioScheduleGuard(AudioScheduleGuard&& audioScheduleGuard);
 
-    bool operator==(const AudioScheduleGuard&) const = default;
+    bool operator==(const AudioScheduleGuard&) const;
 
     AudioScheduleGuard& operator=(AudioScheduleGuard&& audioScheduleGuard);
 
@@ -42,6 +46,34 @@ private:
     uint32_t tid_;
     std::string bundleName_;
     bool isReported_ = false;
+};
+
+class SharedAudioScheduleGuard {
+public:
+    static std::shared_ptr<SharedAudioScheduleGuard> Create(
+        uint32_t pid, uint32_t tid, const std::string &bundleName = "audio_server");
+
+    SharedAudioScheduleGuard(const SharedAudioScheduleGuard&) = delete;
+    SharedAudioScheduleGuard(SharedAudioScheduleGuard&&) = delete;
+    SharedAudioScheduleGuard operator=(const SharedAudioScheduleGuard&) = delete;
+    SharedAudioScheduleGuard& operator=(SharedAudioScheduleGuard&&) = delete;
+
+    SharedAudioScheduleGuard(uint32_t pid, uint32_t tid, const std::string &bundleName = "audio_server")
+        : guard_(pid, tid, bundleName), pid_(pid), tid_(tid) {};
+
+    ~SharedAudioScheduleGuard();
+private:
+    AudioScheduleGuard guard_;
+
+    uint32_t pid_;
+    uint32_t tid_;
+
+    static std::map<std::pair<uint32_t, uint32_t>,
+        std::weak_ptr<SharedAudioScheduleGuard>> guardMap_;
+
+    static std::mutex mutex_;
+
+    static std::condition_variable cv_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

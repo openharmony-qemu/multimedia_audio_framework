@@ -1743,6 +1743,10 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
         audioStream->SetSpeed(speed_.value());
     }
 
+    if (info.lastCallStartByUserTid.has_value()) {
+        audioStream->SetCallStartByUserTid(info.lastCallStartByUserTid.value());
+    }
+
     // set callback
     if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
         audioStream->SetRendererPositionCallback(info.frameMarkPosition, info.renderPositionCb);

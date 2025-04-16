@@ -276,6 +276,12 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     (void)isFlush;
+
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
+
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_PAUSING,
         ERR_ILLEGAL_STATE, "Pause failed, invalid status.");
@@ -330,6 +336,11 @@ int32_t AudioProcessInServer::Stop()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
+
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STOPPING,
         ERR_ILLEGAL_STATE, "Stop failed, invalid status.");
@@ -361,8 +372,11 @@ int32_t AudioProcessInServer::Stop()
 int32_t AudioProcessInServer::Release(bool isSwitchStream)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
-    UnscheduleReportData(processConfig_.appInfo.appPid, clientTid_, clientBundleName_.c_str());
-    clientThreadPriorityRequested_ = false;
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_WRITE_OR_READ] = nullptr;
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
     isInited_ = false;
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
@@ -612,17 +626,15 @@ int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProce
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
+int32_t AudioProcessInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName,
+    BoostTriggerMethod method)
 {
-    if (!clientThreadPriorityRequested_) {
-        clientTid_ = tid;
-        clientBundleName_ = bundleName;
-        ScheduleReportData(processConfig_.appInfo.appPid, tid, bundleName.c_str());
-        return SUCCESS;
-    } else {
-        AUDIO_ERR_LOG("client thread priority requested");
-        return ERR_OPERATION_FAILED;
-    }
+    uint32_t pid = IPCSkeleton::GetCallingPid();
+    CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, tid, bundleName);
+    std::lock_guard lock(scheduleGuardsMutex_);
+    scheduleGuards_[method].swap(sharedGuard);
+    return SUCCESS;
 }
 
 void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby)

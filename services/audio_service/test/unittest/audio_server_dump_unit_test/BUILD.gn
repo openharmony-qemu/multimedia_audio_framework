@@ -47,6 +47,7 @@ ohos_unittest("audio_server_dump_unit_test") {
     "../../../../../frameworks/native/playbackcapturer/include",
     "../../../../../frameworks/native/hdiadapter/common",
     "../../../../../frameworks/native/audioutils/include",
+    "../../../../../frameworks/native/audioschedule/include",
     "../../../../../frameworks/native/hdiadapter/common/include",
     "../../../../../frameworks/native/hdiadapter/sink/common",
     "../../../../../frameworks/native/hdiadapter_new/include",

@@ -100,7 +100,10 @@ public:
 
     virtual int32_t SetDuckFactor(float duckFactor) { return 0; }
 
-    virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) { return 0; }
+    virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName, BoostTriggerMethod method)
+    {
+        return 0;
+    }
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) { return 0; }
 

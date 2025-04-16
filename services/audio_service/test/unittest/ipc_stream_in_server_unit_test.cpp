@@ -608,12 +608,8 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_024, TestSize.Level1)
     uint32_t tidRet = 0;
     std::string clientBundleNameRet;
 
-    auto ret = ipcStreamInServerRet.RegisterThreadPriority(tidRet, clientBundleNameRet);
+    auto ret = ipcStreamInServerRet.RegisterThreadPriority(tidRet, clientBundleNameRet, METHOD_START);
     EXPECT_EQ(ret, SUCCESS);
-
-    ipcStreamInServerRet.clientThreadPriorityRequested_ = true;
-    ret = ipcStreamInServerRet.RegisterThreadPriority(tidRet, clientBundleNameRet);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
 /**

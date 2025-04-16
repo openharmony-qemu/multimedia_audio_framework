@@ -539,7 +539,7 @@ void RendererInClientInner::FirstFrameProcess()
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_.exchange(false)) {
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
     }
 
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
@@ -874,6 +874,37 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
     waitLock.unlock();
     AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
+}
+
+void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
+{
+    uint32_t tid;
+    switch (rendererInfo_.playerType) {
+        case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
+            // main thread
+            tid = getpid();
+            break;
+        case PLAYER_TYPE_OH_AUDIO_RENDERER:
+            tid = gettid();
+            break;
+        default:
+            return;
+    }
+
+    if (cmdType == CMD_FROM_CLIENT) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        lastCallStartByUserTid_ = tid;
+    } else if (cmdType == CMD_FROM_SYSTEM) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
+        tid = lastCallStartByUserTid_.value();
+    } else {
+        AUDIO_ERR_LOG("illeagl param");
+        return;
+    }
+
+    ipcStream_->RegisterThreadPriority(tid,
+        AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_START);
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()

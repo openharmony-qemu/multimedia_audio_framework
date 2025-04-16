@@ -430,6 +430,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
         volumeMode_
     };
 
+    rendererInfo.playerType = PLAYER_TYPE_OH_AUDIO_RENDERER;
+
     AudioRendererOptions options = {
         streamInfo,
         rendererInfo,
