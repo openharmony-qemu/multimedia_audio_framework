@@ -486,9 +486,8 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
-    AUDIO_INFO_LOG("currentActiveDevice: %{public}d, outputDevices %{public}d",
-        currentActiveDevice_, outputDevices[0]);
-    if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() <
+    AUDIO_INFO_LOG("device: %{public}d, currentActiveDevice: %{public}d", outputDevices[0], currentActiveDevice_);
+    if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() <=
         static_cast<uint32_t>(currentDevicesSize_) && !forceSetRouteFlag_) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
         return SUCCESS;
