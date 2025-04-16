@@ -49,6 +49,7 @@ public:
     int32_t CopyMicRefToEnhanceBuffer(void *data, uint32_t length);
     int32_t CopyFromEnhanceBuffer(void *data, uint32_t length);
     int32_t ApplyAudioEnhanceChain(const uint64_t sceneKeyCode, uint32_t length);
+    in32_t SetAccessoryDeviceState(bool state);
     int32_t SetInputDevice(const uint32_t &captureId, const DeviceType &inputDevice,
         const std::string &deviceName = "");
     int32_t SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice);
