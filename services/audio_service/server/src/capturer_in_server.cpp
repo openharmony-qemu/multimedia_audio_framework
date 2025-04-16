@@ -229,6 +229,11 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             overFlowLogFlag_ = 0;
         }
         overFlowLogFlag_++;
+        int32_t engineFlag = GetEngineFlag();
+        if (engineFlag != 1) {
+            BufferDesc dstBuffer = stream_->DequeueBuffer(length);
+            stream_->EnqueueBuffer(dstBuffer);
+        }
         stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
         return true;
     }

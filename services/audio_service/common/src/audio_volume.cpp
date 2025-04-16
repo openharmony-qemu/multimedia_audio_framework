@@ -202,7 +202,7 @@ float AudioVolume::GetHistoryVolume(uint32_t sessionId)
 
 void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
 {
-    AUDIO_DEBUG_LOG("history volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
+    AUDIO_INFO_LOG("history volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
     Trace trace("AudioVolume::SetHistoryVolume sessionId:" + std::to_string(sessionId));
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = historyVolume_.find(sessionId);

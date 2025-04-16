@@ -191,12 +191,12 @@ enum AudioEffectScene {
 * Enumerates the audio enhance scene effect type.
 */
 enum AudioEnhanceScene {
-    SCENE_NONE = 0,
-    SCENE_VOIP_UP = 1,
-    SCENE_RECORD = 2,
-    SCENE_PRE_ENHANCE = 3,
+    SCENE_VOIP_UP = 0,
+    SCENE_RECORD = 1,
+    SCENE_PRE_ENHANCE = 2,
     SCENE_ASR = 4,
     SCENE_VOICE_MESSAGE = 5,
+    SCENE_NONE = 6,
 };
 
 /**

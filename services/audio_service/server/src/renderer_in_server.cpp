@@ -89,7 +89,12 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    totalSizeInFrame_ = spanSizeInFrame_ * 2; // 4 frames
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        totalSizeInFrame_ = spanSizeInFrame_ * 2; // 2 * 2 = 4 frames
+    } else {
+        totalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
+    }
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
@@ -1294,7 +1299,7 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Config dup buffer failed");
     }
     // todo check index
-    dupStreamCallback_ = std::make_shared<StreamCallbacks>(streamIndex_);
+    dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex);
     capInfo.dupStream->RegisterStatusCallback(dupStreamCallback_);
     capInfo.dupStream->RegisterWriteCallback(dupStreamCallback_);
 
@@ -1396,13 +1401,19 @@ int32_t RendererInServer::InitDualToneStream()
 StreamCallbacks::StreamCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
 {
     AUDIO_INFO_LOG("DupStream %{public}u create StreamCallbacks", streamIndex_);
-    dumpDupOutFileName_ = std::to_string(streamIndex_) + "_dup_out_" + ".pcm";
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupOutFileName_, &dumpDupOut_);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        dumpDupOutFileName_ = std::to_string(streamIndex_) + "_dup_out_" + ".pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupOutFileName_, &dumpDupOut_);
+    }
 }
  
 StreamCallbacks::~StreamCallbacks()
 {
-    DumpFileUtil::CloseDumpFile(&dumpDupOut_);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        DumpFileUtil::CloseDumpFile(&dumpDupOut_);
+    }
 }
 
 void StreamCallbacks::OnStatusUpdate(IOperation operation)
