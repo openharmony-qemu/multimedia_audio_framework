@@ -268,7 +268,7 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
 
 int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
 {
-    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance("offload", "");
+    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance("offload", "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
