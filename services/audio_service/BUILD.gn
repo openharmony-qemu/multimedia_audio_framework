@@ -475,7 +475,6 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server.cpp",
     "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
-    "server/src/audio_server_hpae_dump.cpp",
     "server/src/audio_server_effect.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
@@ -485,7 +484,6 @@ audio_ohos_library("audio_service") {
   deps = [
     ":audio_common",
     ":audio_process_service",
-    "../audio_engine:audio_engine_manager",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioschedule:audio_schedule",

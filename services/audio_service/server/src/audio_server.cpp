@@ -57,7 +57,6 @@
 #include "offline_stream_in_server.h"
 #include "audio_dump_pcm.h"
 #include "audio_info.h"
-#include "i_hpae_manager.h"
 
 #define PA
 #ifdef PA
@@ -311,10 +310,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     std::string dumpString;
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        int32_t res = hpaeDumpObj_.Initialize();
-        CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
-            "Audio Service Hpae Dump Not Initialed");
-        hpaeDumpObj_.AudioDataDump(dumpString, argQue);
+        AUDIO_DEBUG_LOG("HPAE dump");
     } else {
         AudioServerDump dumpObj;
         int32_t res = dumpObj.Initialize();
@@ -358,8 +354,7 @@ void AudioServer::OnStart()
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        HPAE::IHpaeManager::GetHpaeManager()->Init();
-        AUDIO_INFO_LOG("IHpaeManager Init\n");
+        AUDIO_INFO_LOG("HPAE IHpaeManager Init\n");
     } else {
 #ifdef PA
         int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
