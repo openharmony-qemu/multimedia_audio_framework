@@ -78,8 +78,6 @@ const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
-static const int32_t INVALID_APP_UID = -1;
-static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = -1;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
 const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
@@ -98,7 +96,7 @@ static const int32_t FAST_DUMPINFO_LEN = 2;
 static const int32_t BUNDLENAME_LENGTH_LIMIT = 1024;
 static const size_t PARAMETER_SET_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
-constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 40;
+constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 128;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 const int32_t MCU_UID = 7500;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
@@ -1375,17 +1373,7 @@ int32_t AudioServer::CheckMaxRendererInstances()
     if (maxRendererInstances <= 0) {
         maxRendererInstances = DEFAULT_MAX_RENDERER_INSTANCES;
     }
-
     if (AudioService::GetInstance()->GetCurrentRendererStreamCnt() >= maxRendererInstances) {
-        int32_t mostAppUid = INVALID_APP_UID;
-        int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
-        AudioService::GetInstance()->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
-        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
-            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
-        bean->Add("CLIENT_UID", mostAppUid);
-        bean->Add("TIMES", mostAppNum);
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
         return ERR_EXCEED_MAX_STREAM_CNT;
     }
