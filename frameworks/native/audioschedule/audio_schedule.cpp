@@ -156,7 +156,7 @@ bool ResetEndpointThreadPriority() { return false; };
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
+static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
 }
 std::map<std::pair<uint32_t, uint32_t>,
     std::weak_ptr<SharedAudioScheduleGuard>> SharedAudioScheduleGuard::guardMap_;
