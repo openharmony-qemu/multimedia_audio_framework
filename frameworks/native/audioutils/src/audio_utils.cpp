@@ -1099,7 +1099,7 @@ template bool GetSysPara(const char *key, std::string &value);
 
 int32_t GetEngineFlag()
 {
-    std::string para = "sys.audio.engine.proaudio.enable";
+    std::string para = "const.multimedia.audio.proaudioEnable";
     int32_t engineFlag = -1;
     bool res = GetSysPara(para.c_str(), engineFlag);
     AUDIO_DEBUG_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);

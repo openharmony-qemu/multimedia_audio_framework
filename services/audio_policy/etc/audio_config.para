@@ -16,4 +16,4 @@ const.multimedia.audio.volumestep = 1
 persist.multimedia.audio.safevolume = 15
 persist.multimedia.audio.safevolume.timeout = 1140
 persist.multimedia.audio.firstboot = 1
-sys.audio.engine.proaudio.enable = 1
+const.multimedia.audio.proaudioEnable = 0

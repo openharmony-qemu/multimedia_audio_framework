@@ -39,7 +39,7 @@ void ProAudioServiceAdapterUnitTest::TearDown(void)
 {
     impl_ = nullptr;
     if (engineFlag_ != 1) {
-        const char *key = "sys.audio.engine.proaudio.enable";
+        const char *key = "const.multimedia.audio.proaudioEnable";
         SetSysPara(key, engineFlag_);
     }
 }
@@ -49,7 +49,7 @@ ProAudioServiceAdapterUnitTest::ProAudioServiceAdapterUnitTest()
     engineFlag_ = GetEngineFlag();
     std::cout<<"engine flag:"<<engineFlag_<<std::endl;
     if (engineFlag_ != 1) {
-        const char *key = "sys.audio.engine.proaudio.enable";
+        const char *key = "const.multimedia.audio.proaudioEnable";
         const int32_t value = 1;
         SetSysPara(key, value);
     }

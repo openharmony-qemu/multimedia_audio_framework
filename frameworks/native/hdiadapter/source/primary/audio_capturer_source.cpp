@@ -1771,7 +1771,7 @@ int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceT
         AUDIO_WARNING_LOG("GetCaptureId failed");
     }
     int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 0) {
+    if (engineFlag != 1) {
         AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
         CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
         if (halName_ == "usb") {

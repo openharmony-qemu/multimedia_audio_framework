@@ -590,7 +590,7 @@ int32_t BluetoothCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const Dev
     }
 
     int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 0) {
+    if (engineFlag != 1) {
         AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
         CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
         audioEnhanceChainManager->SetInputDevice(captureId, inputDevice, deviceName);
