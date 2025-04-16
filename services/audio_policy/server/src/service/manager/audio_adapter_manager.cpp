@@ -1820,7 +1820,7 @@ int32_t AudioAdapterManager::GetDefaultVolumeLevel(
 
     // find the volume level corresponding the the volume type
     auto volumeIt = volumeLevelMapTemp.find(internalVolumeType);
-    int32_t defaultVolumeLevel = 7;
+    int32_t defaultVolumeLevel = DEFAULT_VOLUME_LEVEL;
     if (volumeIt != volumeLevelMapTemp.end()) {
         defaultVolumeLevel = volumeIt->second;
     } else {
