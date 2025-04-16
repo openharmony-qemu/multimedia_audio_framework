@@ -30,6 +30,7 @@
 #include "source/i_audio_capture_source.h"
 #include "audio_volume.h"
 #include "audio_performance_monitor.h"
+#include "media_monitor_manager.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
 #endif
@@ -46,6 +47,9 @@ static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
 static const int32_t MEDIA_SERVICE_UID = 1013;
+static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
+static const int32_t INVALID_APP_UID = -1;
+static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -1270,6 +1274,19 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
     } else {
         int32_t initValue = 1;
         appUseNumMap_.emplace(appUid, initValue);
+    }
+
+    if (appUseNumMap_[appUid] >= RENDERER_STREAM_CNT_PER_UID_LIMIT) {
+        int32_t mostAppUid = INVALID_APP_UID;
+        int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
+        GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
+            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+        bean->Add("CLIENT_UID", mostAppUid);
+        bean->Add("TIMES", mostAppNum);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        AUDIO_WARNING_LOG("Current audio renderer stream num is greater than the renderer stream num limit per uid");
     }
 
     if (appUseNumMap_[appUid] > maxStreamCntPerUid) {
