@@ -21,7 +21,7 @@
 #endif
 
 #include "hpae_renderer_stream_impl.h"
-#include "sink/i_audio_renderer_sink.h"
+#include "sink/i_audio_render_sink.h"
 #include "manager/hdi_adapter_manager.h"
 #include <chrono>
 #include "safe_map.h"
@@ -136,9 +136,9 @@ int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     if (deviceClass_ != "offload") {
         uint32_t SinkLatency = 0;
-        IAudioRendererSink* audioRendererSink = IAudioRendererSink::GetInstance(deviceClass_.c_str(), deviceNetId_.c_str());
+        std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
-            audioRendererSink->GetLatency(&SinkLatency);
+            audioRendererSink->GetLatency(SinkLatency);
         }
         latency = SinkLatency + latency_;
         return SUCCESS;
@@ -268,7 +268,7 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
 
 int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
 {
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance("offload", "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
@@ -365,41 +365,6 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
     AUDIO_PRERELEASE_LOGI("set client volume success");
     clientVolume_ = clientVolume;
     return SUCCESS;
-}
-
-static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels)
-{
-    if (channels < MONO || channels > CHANNEL_16) {
-        return CH_LAYOUT_UNKNOWN;
-    }
-    switch (channels) {
-        case MONO:
-            return CH_LAYOUT_MONO;
-        case STEREO:
-            return CH_LAYOUT_STEREO;
-        case CHANNEL_3:
-            return CH_LAYOUT_SURROUND;
-        case CHANNEL_4:
-            return CH_LAYOUT_3POINT1;
-        case CHANNEL_5:
-            return CH_LAYOUT_4POINT1;
-        case CHANNEL_6:
-            return CH_LAYOUT_5POINT1;
-        case CHANNEL_7:
-            return CH_LAYOUT_6POINT1;
-        case CHANNEL_8:
-            return CH_LAYOUT_5POINT1POINT2;
-        case CHANNEL_10:
-            return CH_LAYOUT_7POINT1POINT2;
-        case CHANNEL_12:
-            return CH_LAYOUT_7POINT1POINT4;
-        case CHANNEL_14:
-            return CH_LAYOUT_9POINT1POINT4;
-        case CHANNEL_16:
-            return CH_LAYOUT_9POINT1POINT6;
-        default:
-            return CH_LAYOUT_UNKNOWN;
-    }
 }
 
 } // namespace AudioStandard
