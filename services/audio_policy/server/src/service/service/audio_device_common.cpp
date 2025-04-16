@@ -40,7 +40,8 @@ static const int64_t NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS = 1000000; // 1s
 static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
-static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 200000; // 200ms
+static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
+static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_SLEEP_US = 50000; // 50ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
@@ -663,6 +664,9 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
     Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
     if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
 
+    SetHeadsetUnpluggedToSpeakerFlag(rendererChangeInfo->outputDeviceInfo.deviceType_,
+        outputDevices.front()->deviceType_);
+
     audioIOHandleMap_.SetMoveFinish(false);
 
     if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL &&
@@ -916,6 +920,10 @@ void AudioDeviceCommon::MuteSinkPortLogic(const std::string &oldSinkName, const 
         MutePrimaryOrOffloadSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
+        if (VolumeUtils::IsPCVolumeEnable() && isHeadsetUnpluggedToSpeakerFlag_) {
+            usleep(OLD_DEVICE_UNAVALIABLE_EXT_SLEEP_US); // sleep fix data cache pop.
+            isHeadsetUnpluggedToSpeakerFlag_ = false;
+        }
     } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
@@ -2008,6 +2016,14 @@ void AudioDeviceCommon::SetFirstScreenOn()
 int32_t AudioDeviceCommon::SetVirtualCall(const bool isVirtual)
 {
     return Bluetooth::AudioHfpManager::SetVirtualCall(isVirtual);
+}
+
+void AudioDeviceCommon::SetHeadsetUnpluggedToSpeakerFlag(DeviceType oldDeviceType, DeviceType newDeviceType)
+{
+    if ((oldDeviceType == DEVICE_TYPE_USB_HEADSET || oldDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) &&
+        newDeviceType == DEVICE_TYPE_SPEAKER) {
+        isHeadsetUnpluggedToSpeakerFlag_ = true;
+    }
 }
 }
 }
