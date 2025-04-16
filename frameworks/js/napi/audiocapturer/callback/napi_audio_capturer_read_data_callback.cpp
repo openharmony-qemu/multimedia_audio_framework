@@ -94,6 +94,7 @@ void NapiCapturerReadDataCallback::OnReadData(size_t length)
     cb->readDataCallbackPtr = this;
 
     CHECK_AND_RETURN_LOG(napiCapturer_ != nullptr, "Cannot find the reference to audio capturer napi");
+    CHECK_AND_RETURN_LOG(napiCapturer_->audioCapturer_ != nullptr, "audioCapturer is null");
     napiCapturer_->audioCapturer_->GetBufferDesc(cb->bufDesc);
     if (cb->bufDesc.buffer == nullptr) {
         return;
