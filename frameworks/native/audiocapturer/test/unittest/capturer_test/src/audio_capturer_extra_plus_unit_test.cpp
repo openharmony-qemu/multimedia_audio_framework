@@ -713,7 +713,8 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_023, TestSize.Level1)
 
     std::shared_ptr<AudioCapturerInfoChangeCallback> callback = nullptr;
 
-    audioCapturerStateChangeCallbackImpl->capturerInfoChangeCallbacklist_.push_back(std::make_shared<AudioCapturerInfoChangeCallbackTest>());
+    audioCapturerStateChangeCallbackImpl->
+        capturerInfoChangeCallbacklist_.push_back(std::make_shared<AudioCapturerInfoChangeCallbackTest>());
 
     audioCapturerStateChangeCallbackImpl->RemoveCapturerInfoChangeCallback(callback);
     EXPECT_EQ(audioCapturerStateChangeCallbackImpl->capturerInfoChangeCallbacklist_.empty(), true);
