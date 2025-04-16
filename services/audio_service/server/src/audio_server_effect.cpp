@@ -136,9 +136,7 @@ int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, f
         AUDIO_INFO_LOG("streamType: %{public}d, systemVolume: %{public}f", streamType, volume);
         audioEffectChainManager->SetEffectSystemVolume(systemVolumeType, volume);
 
-        std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-        CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
-        audioEffectChainManager->EffectVolumeUpdate(audioEffectVolume);
+        audioEffectChainManager->EffectVolumeUpdate();
     }
     return SUCCESS;
 }
@@ -151,6 +149,7 @@ int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spa
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         AUDIO_DEBUG_LOG("HPAE SetSpatializationSceneType");
+        return SUCCESS;
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
