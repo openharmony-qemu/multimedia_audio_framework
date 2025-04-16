@@ -662,14 +662,6 @@ float GetCurVolume(uint32_t sessionId, const char *streamType, const char *devic
     return AudioVolume::GetInstance()->GetVolume(sessionId, stream, deviceClass, volumes);
 }
 
-float GetCurVolumeByStreamType(uint32_t sessionId, int32_t streamType, const char *deviceClass)
-{
-    struct VolumeValues volumes;
-    CHECK_AND_RETURN_RET_LOG(deviceClass != nullptr, 1.0f, "deviceClass is nullptr");
-    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
-    return AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
-}
-
 float GetStreamVolume(uint32_t sessionId)
 {
     return AudioVolume::GetInstance()->GetStreamVolume(sessionId);

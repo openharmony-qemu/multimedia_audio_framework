@@ -49,8 +49,6 @@ float GetCurVolume(uint32_t sessionId, const char *streamType, const char *devic
 
 float GetStreamVolume(uint32_t sessionId);
 
-float GetCurVolumeByStreamType(uint32_t sessionId, int32_t streamType, const char *deviceClass);
-
 float GetPreVolume(uint32_t sessionId);
 
 void SetPreVolume(uint32_t sessionId, float volume);
