@@ -1485,9 +1485,9 @@ static void SinkRenderMultiChannelStateCheck(pa_sink *si, pa_mix_info *infoIn, p
         AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_not_silence");
         RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_MULTICHANNEL, uid);
         pa_atomic_store(&sinkIn->isFirstReaded, 1);
-        PrepareMultiChannelFading(sinkIn, infoIn, si);
-        CheckMultiChannelFadeinIsDone(si, sinkIn);
     }
+    PrepareMultiChannelFading(sinkIn, infoIn, si);
+    CheckMultiChannelFadeinIsDone(si, sinkIn);
 }
 
 static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
@@ -3140,8 +3140,6 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
             u->multiChannel.isHDISinkInited = true;
         } else {
             if (u->multiChannel.isHDISinkStarted) {
-                pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 1);
-                u->multiChannel.multiChannelFadingInDone = 0;
                 u->multiChannel.multiChannelSinkInIndex = u->multiChannel.multiChannelTmpSinkInIndex;
                 return;
             }
