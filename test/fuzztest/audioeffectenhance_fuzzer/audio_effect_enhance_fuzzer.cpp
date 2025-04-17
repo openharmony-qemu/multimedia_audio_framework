@@ -17,6 +17,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include "securec.h"
+
 #include "audio_effect_log.h"
 #include "audio_effect_chain.h"
 #include "audio_effect_chain_adapter.h"
