@@ -41,7 +41,8 @@ namespace AudioStandard {
 
 AudioServiceAdapter::~AudioServiceAdapter() = default;
 
-std::shared_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(std::unique_ptr<AudioServiceAdapterCallback> cb)
+std::shared_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(
+    std::unique_ptr<AudioServiceAdapterCallback> cb)
 {
     CHECK_AND_RETURN_RET_LOG(cb != nullptr, nullptr, "CreateAudioAdapter cb is nullptr!");
     AUDIO_INFO_LOG("CreateAudioAdapter");

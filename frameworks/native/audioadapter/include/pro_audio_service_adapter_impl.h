@@ -24,7 +24,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class ProAudioServiceAdapterImpl : public AudioServiceAdapter, public std::enable_shared_from_this<ProAudioServiceAdapterImpl> {
+class ProAudioServiceAdapterImpl : public AudioServiceAdapter,
+                                   public std::enable_shared_from_this<ProAudioServiceAdapterImpl> {
 public:
     explicit ProAudioServiceAdapterImpl(std::unique_ptr<AudioServiceAdapterCallback> &cb);
     ~ProAudioServiceAdapterImpl();
