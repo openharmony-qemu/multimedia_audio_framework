@@ -147,6 +147,7 @@ private:
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
     void ReLinkProcessToEndpoint();
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
+    bool IsMuteSwitchStream(uint32_t sessionId);
 
 private:
     std::mutex processListMutex_;
@@ -168,6 +169,7 @@ private:
 
     std::mutex rendererMapMutex_;
     std::mutex capturerMapMutex_;
+    std::mutex muteSwitchStreamSetMutex_;
     std::unordered_map<int32_t, std::vector<std::weak_ptr<RendererInServer>>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
@@ -179,6 +181,7 @@ private:
     int32_t currentRendererStreamCnt_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     std::map<int32_t, std::int32_t> appUseNumMap_;
+    std::set<uint32_t> muteSwitchStreams_ = {};
     std::mutex allRunningSinksMutex_;
     std::condition_variable allRunningSinksCV_;
     std::set<uint32_t> allRunningSinks_;
