@@ -49,8 +49,7 @@ int32_t ProAdapterManager::CreateRender(AudioProcessConfig processConfig, std::s
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
         AUDIO_ERR_LOG("Create [%{public}d] type renderer:[%{public}u] error",
             managerType_, processConfig.originalSessionId);
-
-    } 
+    }
     AUDIO_INFO_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
     std::string deviceName;
     int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);

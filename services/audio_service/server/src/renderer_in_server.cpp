@@ -1827,7 +1827,7 @@ int32_t RendererInServer::SetSourceDuration(int64_t duration)
 
 std::unique_ptr<AudioRingCache>& RendererInServer::GetDupRingBuffer()
 {
-    return dupRingBuffer_; 
+    return dupRingBuffer_;
 }
  
 int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
@@ -1850,8 +1850,8 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
     dupSpanSizeInByte_ = dupSpanSizeInFrame_ * dupByteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(dupSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config dup buffer failed");
     AUDIO_INFO_LOG("dupTotalSizeInFrame_: %{public}zu, dupSpanSizeInFrame_: %{public}zu,"
-    "dupByteSizePerFrame_:%{public}zu dupSpanSizeInByte_: %{public}zu,",
-    dupTotalSizeInFrame_, dupSpanSizeInFrame_, dupByteSizePerFrame_, dupSpanSizeInByte_);
+        "dupByteSizePerFrame_:%{public}zu dupSpanSizeInByte_: %{public}zu,",
+        dupTotalSizeInFrame_, dupSpanSizeInFrame_, dupByteSizePerFrame_, dupSpanSizeInByte_);
  
     // create dupBuffer in server
     dupRingBuffer_ = AudioRingCache::Create(dupTotalSizeInFrame_ * dupByteSizePerFrame_);

@@ -47,7 +47,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
     spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_ON_MS *
-        (static_cast<float>(streamInfo.samplingRate) / MSEC_PER_SEC));
+        (static_cast<float>(processConfig.streamInfo.samplingRate) / MSEC_PER_SEC));
     byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
 }
@@ -152,7 +152,8 @@ int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
     auto timestamp = static_cast<uint64_t>(tm.tv_sec) * 1000000000ll + static_cast<uint64_t>(tm.tv_nsec);
     auto interval = (timestamp - timestamp_) / 1000;
     latency = latency_ > interval ? latency_ - interval : 0;
-    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}" PRIu64 ", interval %{public}llu latency %{public}" PRIu64, latency_, interval, latency);
+    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}" PRIu64 ","
+        "interval %{public}llu latency %{public}" PRIu64, latency_, interval, latency);
     return SUCCESS;
 }
 
@@ -267,7 +268,7 @@ void HpaeRendererStreamImpl::AbortCallback(int32_t abortTimes)
 
 size_t HpaeRendererStreamImpl::GetWritableSize()
 {
-   return 0;
+    return 0;
 }
 
 int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
@@ -365,7 +366,6 @@ void HpaeRendererStreamImpl::BlockStream() noexcept
 
 int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 {
-    
     AUDIO_PRERELEASE_LOGI("set client volume success");
     clientVolume_ = clientVolume;
     return SUCCESS;
