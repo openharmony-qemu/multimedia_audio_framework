@@ -1104,9 +1104,7 @@ int32_t GetEngineFlag()
     if (engineFlag == -1) {
         bool res = GetSysPara(para.c_str(), engineFlag);
         AUDIO_DEBUG_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
-    }
-    if (!res || engineFlag == -1) {
-        AUDIO_ERR_LOG("get %{public}s fail", para.c_str());
+        CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
     }
     return engineFlag;
 }
