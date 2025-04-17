@@ -77,7 +77,7 @@
     *InitEffectBuffer*;
     *EffectChainManagerQueryHdiSupportedChannelLayout*;
     *LoadEffectProperties*;
-    *SetAccessoryDeviceState*；
+    *SetAccessoryDeviceState*;
   local:
     *;
 };
