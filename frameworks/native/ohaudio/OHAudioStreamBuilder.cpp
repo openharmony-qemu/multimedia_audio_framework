@@ -486,6 +486,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
 
     OHAudioCapturer *audioCapturer = new OHAudioCapturer();
     if (audioCapturer != nullptr && audioCapturer->Initialize(options)) {
+        OHOS::AudioStandard::ObjectRefMap<OHOS::AudioStandard::OHAudioCapturer>::Insert(audioCapturer);
         audioCapturer->SetCapturerReadDataCallbackType(readDataCallbackType_);
         audioCapturer->SetCapturerStreamEventCallbackType(streamEventCallbackType_);
         audioCapturer->SetCapturerInterruptEventCallbackType(interruptCallbackType_);
