@@ -339,9 +339,11 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             offloadEnable_ = operation == OPERATION_SET_OFFLOAD_ENABLE ? true : false;
-            if (offloadEnable_ == true && dupRingBuffer_ != nullptr) {
+            int32_t engineFlag = GetEngineFlag();
+            if (engineFlag == 1 && offloadEnable_ == true && dupStreamCallback_ != nullptr &&
+                dupStreamCallback_->GetDupRingBuffer() != nullptr) {
                 dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
-                dupRingBuffer_->ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
+                dupStreamCallback_->GetDupRingBuffer()->ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
             }
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
@@ -1295,10 +1297,11 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
         isSystemApp, processConfig_.rendererInfo.volumeMode);
 
+    dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         ret = CreateDupBufferInner(innerCapId);
-        dumpDupInFileName_ = std::to_string(streamIndex_) + "_dup_in_" + ".pcm";
+        dumpDupInFileName_ = std::to_string(dupStreamIndex) + "_dup_in_" + ".pcm";
         DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupInFileName_, &dumpDupIn_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Config dup buffer failed");
     }
@@ -1453,6 +1456,16 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
         DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
     }
     return SUCCESS;
+}
+
+std::unique_ptr<AudioRingCache>& StreamCallbacks::GetDupRingBuffer()
+{
+    return dupRingBuffer_;
+}
+
+std::shared_ptr<StreamCallbacks>& RendererInServer::GetDupStreamCallback()
+{
+    return dupStreamCallback_;
 }
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
@@ -1833,7 +1846,7 @@ std::unique_ptr<AudioRingCache>& RendererInServer::GetDupRingBuffer()
 int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 {
     // todo dynamic
-    if (dupRingBuffer_ != nullptr) {
+    if (dupStreamCallback_->GetDupRingBuffer() != nullptr) {
         AUDIO_INFO_LOG("dup buffer already configed!");
         return SUCCESS;
     }
@@ -1854,15 +1867,16 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
         dupTotalSizeInFrame_, dupSpanSizeInFrame_, dupByteSizePerFrame_, dupSpanSizeInByte_);
  
     // create dupBuffer in server
-    dupRingBuffer_ = AudioRingCache::Create(dupTotalSizeInFrame_ * dupByteSizePerFrame_);
-    CHECK_AND_RETURN_RET_LOG(dupRingBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create dup buffer failed");
+    dupStreamCallback_->GetDupRingBuffer() = AudioRingCache::Create(dupTotalSizeInFrame_ * dupByteSizePerFrame_);
+    CHECK_AND_RETURN_RET_LOG(dupStreamCallback_->GetDupRingBuffer() != nullptr, ERR_OPERATION_FAILED,
+        "Create dup buffer failed");
     return SUCCESS;
 }
  
 int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc)
 {
     size_t targetSize = bufferDesc.bufLength;
-    OptResult result = dupRingBuffer_->GetWritableSize();
+    OptResult result = dupStreamCallback_->GetDupRingBuffer()->GetWritableSize();
     // todo get writeable size failed
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
         "DupRingBuffer write invalid size is:%{public}zu", result.size);
@@ -1871,7 +1885,7 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc)
     size_t writeSize = std::min(writableSize, targetSize);
     BufferWrap bufferWrap = {bufferDesc.buffer, writeSize};
     if (writeSize > 0) {
-        result = dupRingBuffer_->Enqueue(bufferWrap);
+        result = dupStreamCallback_->GetDupRingBuffer()->Enqueue(bufferWrap);
         if (result.ret != OPERATION_SUCCESS) {
             AUDIO_ERR_LOG("RingCache Enqueue failed ret:%{public}d size:%{public}zu", result.ret, result.size);
         }

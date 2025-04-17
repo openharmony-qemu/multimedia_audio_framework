@@ -35,10 +35,12 @@ public:
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
     int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
+    std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 private:
     uint32_t streamIndex_ = 0;
     FILE *dumpDupOut_ = nullptr;
     std::string dumpDupOutFileName_ = "";
+    std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
 };
 
 class RendererInServer : public IStatusCallback, public IWriteCallback,
@@ -118,6 +120,7 @@ public:
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     void dualToneStreamInStart();
+    std::shared_ptr<StreamCallbacks>& GetDupStreamCallback();
 
 public:
     const AudioProcessConfig processConfig_;
