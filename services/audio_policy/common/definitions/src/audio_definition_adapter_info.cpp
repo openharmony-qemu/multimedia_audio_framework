@@ -148,6 +148,7 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
         std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
         if (adapterInfoPtr == nullptr) {
             AUDIO_ERR_LOG("AdapterInfo is nullptr!");
+            continue;
         }
         if (adapterInfoPtr->adapterName == targetAdapterName) {
             return deviceInfo;
@@ -216,7 +217,7 @@ void PolicyAdapterInfo::SelfCheck()
         adapterName.c_str());
     CHECK_AND_RETURN_LOG(deviceInfos.size() != 0, "SelfCheck Failled! Adapter:%{public}s No Device!",
         adapterName.c_str());
-    
+
     for (auto &pipeInfo : pipeInfos) {
         pipeInfo->SelfCheck();
     }
@@ -232,7 +233,7 @@ void AdapterDeviceInfo::SelfCheck()
         name_.c_str());
     CHECK_AND_RETURN_LOG(supportPipeMap_.size() != 0, "SelfCheck Failled! Device:%{public}s Not Support Any Pipe!",
         name_.c_str());
-    
+
     for (auto &pipeName : supportPipes_) {
         bool flag = false;
         for (auto &pair : supportPipeMap_) {
@@ -268,7 +269,7 @@ void PipeStreamPropInfo::SelfCheck()
     CHECK_AND_RETURN_LOG(pipeInfoPtr != nullptr, "SelfCheck Failled! pipeinfo is null!");
     CHECK_AND_RETURN_LOG(supportDeviceMap_.size() != 0, "SelfCheck Failled! Pipe:%{public}s Not support Any Device!",
         pipeInfoPtr->name_.c_str());
-    
+
     for (auto &deviceName : supportDevices_) {
         bool flag = false;
         for (auto &pair : supportDeviceMap_) {
