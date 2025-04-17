@@ -89,6 +89,11 @@ static const std::vector<std::string> SourceNames = {
     std::string(FILE_SOURCE)
 };
 
+static int16_t IsDistributedOutput(const AudioDeviceDescriptor &desc)
+{
+    return (desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID) ? 1 : 0;
+}
+
 void AudioDeviceCommon::Init(std::shared_ptr<AudioPolicyServerHandler> handler)
 {
     audioPolicyServerHandler_ = handler;
@@ -1407,7 +1412,7 @@ void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDevice
     std::string networkId = audioActiveDevice_.GetCurrentOutputDeviceNetworkId();
     std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(
         audioActiveDevice_.GetCurrentOutputDeviceType());
-        
+
     int32_t ret = LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo, networkId, sinkName,
         sourceType);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "load a2dp input module failed");
@@ -1533,6 +1538,19 @@ int32_t AudioDeviceCommon::HandleScoInputDeviceFetched(std::shared_ptr<AudioDevi
     return SUCCESS;
 }
 
+void AudioDeviceCommon::NotifyDistributedOutputChange(const vector<shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    if (!deviceDescs.empty() && deviceDescs[0]) {
+        int16_t isDistOld = IsDistributedOutput(audioActiveDevice_.GetCurrentOutputDevice());
+        int16_t isDistNew = IsDistributedOutput(deviceDescs[0]);
+        AUDIO_INFO_LOG("Entry. Check Distributed Output Change[%{public}d-->%{public}d]", isDistOld, isDistNew);
+        int16_t flag = isDistNew - isDistOld;
+        if (audioPolicyServerHandler_ && flag != 0) {
+            audioPolicyServerHandler_->SendDistribuitedOutputChangeEvent(deviceDescs[0], flag > 0);
+        }
+    }
+}
+
 int32_t AudioDeviceCommon::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
     std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
@@ -1615,7 +1633,7 @@ int32_t AudioDeviceCommon::OpenRemoteAudioDevice(std::string networkId, DeviceRo
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
     AudioModuleInfo remoteDeviceInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
         deviceRole, deviceType);
-    
+
     auto ret = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_REMOTE, networkId);
     if (ret) {
         AUDIO_ERR_LOG("load adapter fail");
@@ -1989,7 +2007,7 @@ int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &device
     float maxMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
         maxVoiceCall * VOLUME_LEVEL_MID_SIZE / VOLUME_LEVEL_MAX_SIZE, deviceType) *
         audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
-    
+
     if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
         for (int i = 0; i < DEFAULT_ADJUST_TIMES; i++) {
             if (curVoiceRingMixDb < minMixDbDefault && curRingToneLevel <= VOLUME_LEVEL_MAX_SIZE) {
