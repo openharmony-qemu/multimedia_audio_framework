@@ -956,7 +956,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
     }
 
     if (audioConfigManager_.GetUpdateRouteSupport() && !reason.isSetAudioScene()) {
-        UpdateRoute(rendererChangeInfo, outputDevices);
+        UpdateRoute(oldRendererChangeInfo, outputDevices);
     }
 
     std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
@@ -1060,7 +1060,12 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
     AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
-        if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
+        bool skipSelectRingerOrAlarmDevices = IsSameDevice(outputDevices.front(), rendererChangeInfo->outputDeviceInfo);
+        if (Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+            skipSelectRingerOrAlarmDevices = false;
+        }
+        if (!skipSelectRingerOrAlarmDevices &&
+            !SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo)) {
             audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
 
