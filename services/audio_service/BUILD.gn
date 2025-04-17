@@ -294,9 +294,9 @@ ohos_prebuilt_etc("audio_server_init") {
 config("audio_service_config") {
   visibility = [ ":*" ]
   visibility += [
+    "../../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
     "../../services/audio_service/test/unittest/audio_server_unit_test",
-    "../../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
     "../../test/fuzztest/*",
   ]
@@ -363,6 +363,9 @@ audio_ohos_library("audio_process_service") {
     "server/src/capturer_in_server.cpp",
     "server/src/core_service_handler.cpp",
     "server/src/core_service_provider_proxy.cpp",
+    "server/src/hpae_adapter_manager.cpp",
+    "server/src/hpae_capturer_stream_impl.cpp",
+    "server/src/hpae_renderer_stream_impl.cpp",
     "server/src/i_stream_manager.cpp",
     "server/src/ipc_offline_stream_stub.cpp",
     "server/src/ipc_stream_in_server.cpp",
@@ -373,9 +376,6 @@ audio_ohos_library("audio_process_service") {
     "server/src/pa_adapter_manager.cpp",
     "server/src/pa_capturer_stream_impl.cpp",
     "server/src/pa_renderer_stream_impl.cpp",
-    "server/src/pro_adapter_manager.cpp",
-    "server/src/hpae_capturer_stream_impl.cpp",
-    "server/src/hpae_renderer_stream_impl.cpp",
     "server/src/policy_handler.cpp",
     "server/src/policy_provider_proxy.cpp",
     "server/src/pro_audio_stream_manager.cpp",

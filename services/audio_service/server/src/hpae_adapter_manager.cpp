@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "ProAdapterManager"
+#define LOG_TAG "HpaeAdapterManager"
 #endif
 
-#include "pro_adapter_manager.h"
+#include "hpae_adapter_manager.h"
 #include <sstream>
 #include <atomic>
 #include "audio_common_log.h"
@@ -33,13 +33,13 @@ const char* PRO_INNER_CAPTURER_SOURCE = "Speaker.monitor";
 const char* PRO_NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
 const char* PRO_MONITOR_SOURCE_SUFFIX = ".monitor";
 
-ProAdapterManager::ProAdapterManager(ManagerType type)
+HpaeAdapterManager::HpaeAdapterManager(ManagerType type)
 {
     AUDIO_INFO_LOG("Constructor with type:%{public}d", type);
     managerType_ = type;
 }
 
-int32_t ProAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
+int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
 {
     AUDIO_DEBUG_LOG("Create renderer start");
     uint32_t sessionId = 0;
@@ -56,7 +56,7 @@ int32_t ProAdapterManager::CreateRender(AudioProcessConfig processConfig, std::s
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "getdevicename err: %{public}d", ret);
 
     processConfig.originalSessionId = sessionId;
-    // ProAdapterManager is solely responsible for creating paStream objects
+    // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
     rendererStream->SetStreamIndex(sessionId);
@@ -75,7 +75,7 @@ int32_t ProAdapterManager::CreateRender(AudioProcessConfig processConfig, std::s
     return SUCCESS;
 }
 
-int32_t ProAdapterManager::ReleaseRender(uint32_t streamIndex)
+int32_t HpaeAdapterManager::ReleaseRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Release [%{public}d] type render:[%{public}u]", managerType_, streamIndex);
     std::unique_lock<std::mutex> lock(streamMapMutex_);
@@ -108,7 +108,7 @@ int32_t ProAdapterManager::ReleaseRender(uint32_t streamIndex)
     return SUCCESS;
 }
 
-int32_t ProAdapterManager::StartRender(uint32_t streamIndex)
+int32_t HpaeAdapterManager::StartRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter StartRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -120,7 +120,7 @@ int32_t ProAdapterManager::StartRender(uint32_t streamIndex)
     return rendererStreamMap_[streamIndex]->Start();
 }
 
-int32_t ProAdapterManager::StopRender(uint32_t streamIndex)
+int32_t HpaeAdapterManager::StopRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter StopRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -132,7 +132,7 @@ int32_t ProAdapterManager::StopRender(uint32_t streamIndex)
     return rendererStreamMap_[streamIndex]->Stop();
 }
 
-int32_t ProAdapterManager::PauseRender(uint32_t streamIndex)
+int32_t HpaeAdapterManager::PauseRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter PauseRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -145,12 +145,12 @@ int32_t ProAdapterManager::PauseRender(uint32_t streamIndex)
     return SUCCESS;
 }
 
-int32_t ProAdapterManager::TriggerStartIfNecessary()
+int32_t HpaeAdapterManager::TriggerStartIfNecessary()
 {
     return SUCCESS;
 }
 
-int32_t ProAdapterManager::GetStreamCount() const noexcept
+int32_t HpaeAdapterManager::GetStreamCount() const noexcept
 {
     if (managerType_ == RECORDER) {
         return capturerStreamMap_.size();
@@ -159,7 +159,7 @@ int32_t ProAdapterManager::GetStreamCount() const noexcept
     }
 }
 
-int32_t ProAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConfig, uint32_t sessionId,
+int32_t HpaeAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConfig, uint32_t sessionId,
     std::string &deviceName)
 {
     deviceName = "";
@@ -189,7 +189,7 @@ int32_t ProAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processCon
     return SUCCESS;
 }
 
-int32_t ProAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream)
+int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream)
 {
     AUDIO_DEBUG_LOG("Create capturer start");
     CHECK_AND_RETURN_RET_LOG(managerType_ == RECORDER, ERROR, "Invalid managerType:%{public}d", managerType_);
@@ -205,7 +205,7 @@ int32_t ProAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std:
     int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "getdevicename err: %{public}d", ret);
 
-    // ProAdapterManager is solely responsible for creating paStream objects
+    // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, deviceName);
     CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
     capturerStream->SetStreamIndex(sessionId);
@@ -215,12 +215,12 @@ int32_t ProAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std:
     return SUCCESS;
 }
 
-int32_t ProAdapterManager::AddUnprocessStream(int32_t appUid)
+int32_t HpaeAdapterManager::AddUnprocessStream(int32_t appUid)
 {
     return SUCCESS;
 }
 
-int32_t ProAdapterManager::ReleaseCapturer(uint32_t streamIndex)
+int32_t HpaeAdapterManager::ReleaseCapturer(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter ReleaseCapturer");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -243,7 +243,7 @@ int32_t ProAdapterManager::ReleaseCapturer(uint32_t streamIndex)
     return SUCCESS;
 }
 
-std::shared_ptr<IRendererStream> ProAdapterManager::CreateRendererStream(AudioProcessConfig processConfig,
+std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioProcessConfig processConfig,
     const std::string &deviceName)
 {
     std::lock_guard<std::mutex> lock(paElementsMutex_);
@@ -261,7 +261,7 @@ std::shared_ptr<IRendererStream> ProAdapterManager::CreateRendererStream(AudioPr
     return rendererStream;
 }
 
-std::shared_ptr<ICapturerStream> ProAdapterManager::CreateCapturerStream(AudioProcessConfig processConfig,
+std::shared_ptr<ICapturerStream> HpaeAdapterManager::CreateCapturerStream(AudioProcessConfig processConfig,
     const std::string &deviceName)
 {
     std::lock_guard<std::mutex> lock(paElementsMutex_);
@@ -274,12 +274,12 @@ std::shared_ptr<ICapturerStream> ProAdapterManager::CreateCapturerStream(AudioPr
     return capturerStream;
 }
 
-uint64_t ProAdapterManager::GetLatency() noexcept
+uint64_t HpaeAdapterManager::GetLatency() noexcept
 {
     return 0;
 }
 
-void ProAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+void HpaeAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     sinkInputs = sinkInputs_;

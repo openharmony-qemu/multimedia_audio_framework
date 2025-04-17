@@ -167,7 +167,6 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_005, TestS
         "SCENE_MOVIE",
         INFOCHANNELS,
         INFOCHANNELLAYOUT,
-        "0",
         10,
     };
 

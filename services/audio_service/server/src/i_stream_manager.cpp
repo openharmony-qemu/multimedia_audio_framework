@@ -16,7 +16,7 @@
 #include "audio_utils.h"
 #include "audio_engine_log.h"
 #include "pa_adapter_manager.h"
-#include "pro_adapter_manager.h"
+#include "hpae_adapter_manager.h"
 #include "pro_audio_stream_manager.h"
 
 namespace OHOS {
@@ -34,7 +34,7 @@ IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
         default:
             int32_t engineFlag = GetEngineFlag();
             if (engineFlag == 1) {
-                static ProAdapterManager adapterManager(PLAYBACK);
+                static HpaeAdapterManager adapterManager(PLAYBACK);
                 return adapterManager;
             } else {
                 static PaAdapterManager adapterManager(PLAYBACK);
@@ -47,7 +47,7 @@ IStreamManager &IStreamManager::GetDupPlaybackManager()
 {
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        static ProAdapterManager adapterManager(DUP_PLAYBACK);
+        static HpaeAdapterManager adapterManager(DUP_PLAYBACK);
         return adapterManager;
     } else {
         static PaAdapterManager adapterManager(DUP_PLAYBACK);
@@ -59,7 +59,7 @@ IStreamManager &IStreamManager::GetDualPlaybackManager()
 {
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        static ProAdapterManager adapterManager(DUAL_PLAYBACK);
+        static HpaeAdapterManager adapterManager(DUAL_PLAYBACK);
         return adapterManager;
     } else {
         static PaAdapterManager adapterManager(DUAL_PLAYBACK);
@@ -71,7 +71,7 @@ IStreamManager &IStreamManager::GetRecorderManager()
 {
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        static ProAdapterManager adapterManager(RECORDER);
+        static HpaeAdapterManager adapterManager(RECORDER);
         return adapterManager;
     } else {
         static PaAdapterManager adapterManager(RECORDER);

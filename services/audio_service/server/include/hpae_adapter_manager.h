@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef PRO_ADAPTER_MANAGER_H
-#define PRO_ADAPTER_MANAGER_H
+#ifndef HPAE_ADAPTER_MANAGER_H
+#define HPAE_ADAPTER_MANAGER_H
 
 #include <map>
 #include <mutex>
@@ -26,9 +26,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class ProAdapterManager : public IStreamManager {
+class HpaeAdapterManager : public IStreamManager {
 public:
-    ProAdapterManager(ManagerType type);
+    HpaeAdapterManager(ManagerType type);
 
     int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) override;
     int32_t ReleaseRender(uint32_t streamIndex_) override;
@@ -60,4 +60,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // pro_adapter_manager_H
+#endif // HPAE_ADAPTER_MANAGER_H
