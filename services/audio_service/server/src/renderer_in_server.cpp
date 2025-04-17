@@ -312,6 +312,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
+    int32_t engineFlag = GetEngineFlag();
     switch (operation) {
         case OPERATION_RELEASED:
             stateListener->OnOperationHandled(RELEASE_STREAM, 0);
@@ -339,7 +340,6 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             offloadEnable_ = operation == OPERATION_SET_OFFLOAD_ENABLE ? true : false;
-            int32_t engineFlag = GetEngineFlag();
             if (engineFlag == 1 && offloadEnable_ == true && dupStreamCallback_ != nullptr &&
                 dupStreamCallback_->GetDupRingBuffer() != nullptr) {
                 dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
@@ -1461,11 +1461,6 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
 std::unique_ptr<AudioRingCache>& StreamCallbacks::GetDupRingBuffer()
 {
     return dupRingBuffer_;
-}
-
-std::shared_ptr<StreamCallbacks>& RendererInServer::GetDupStreamCallback()
-{
-    return dupStreamCallback_;
 }
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
