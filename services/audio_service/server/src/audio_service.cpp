@@ -197,7 +197,7 @@ void AudioService::RemoveIdFromMuteControlSet(uint32_t sessionId)
 void AudioService::CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
-    if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+    if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         renderer->SetNonInterruptMute(true);
@@ -207,7 +207,7 @@ void AudioService::CheckRenderSessionMuteState(uint32_t sessionId, std::shared_p
 void AudioService::CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
-    if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+    if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         capturer->SetNonInterruptMute(true);
@@ -216,11 +216,22 @@ void AudioService::CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_
 void AudioService::CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
-    if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+    if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         process->SetNonInterruptMute(true);
     }
+}
+
+bool AudioService::IsMuteSwitchStream(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> muteSwitchStreamLock(muteSwitchStreamSetMutex_);
+    if (muteSwitchStreams_.count(sessionId)) {
+        AUDIO_INFO_LOG("find session %{public}u in muteSwitchStreams_", sessionId);
+        muteSwitchStreams_.erase(sessionId);
+        return true;
+    }
+    return false;
 }
 
 void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
@@ -979,6 +990,18 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     // need erase it from mutedSessions_ to avoid new stream cannot be set unmute
     if (mutedSessions_.count(sessionId) && !muteFlag) {
         mutedSessions_.erase(sessionId);
+    }
+    // when old stream already released and new stream not create yet
+    // set muteflag 1 but cannot find sessionId in allRendererMap_, allCapturerMap_ and linkedPairedList_
+    // this sessionid will not add into mutedSessions_
+    // so need save it temporarily, when new stream create, check if new stream need mute
+    // if set muteflag 0 again before new stream create, do not mute it
+    std::lock_guard<std::mutex> muteSwitchStreamLock(muteSwitchStreamSetMutex_);
+    if (muteFlag) {
+        muteSwitchStreams_.insert(sessionId);
+        AUDIO_INFO_LOG("Insert into muteSwitchStreams_");
+    } else if (muteSwitchStreams_.count(sessionId)) {
+        muteSwitchStreams_.erase(sessionId);
     }
 }
 
