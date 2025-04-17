@@ -120,7 +120,6 @@ public:
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     void dualToneStreamInStart();
-    std::shared_ptr<StreamCallbacks>& GetDupStreamCallback();
 
 public:
     const AudioProcessConfig processConfig_;
