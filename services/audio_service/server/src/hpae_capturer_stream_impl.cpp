@@ -23,21 +23,25 @@
 #include "audio_utils.h"
 #include "policy_handler.h"
 #include <iostream>
-#include <inttypes.h>
+#include <cinttypes>
 
 namespace OHOS {
 namespace AudioStandard {
 static SafeMap<void *, std::weak_ptr<HpaeCapturerStreamImpl>> paCapturerMap_;
-const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_10MS = 2;
+const int32_t FRAME_LEN_ON_MS = 20;
+const int32_t MSEC_PER_SEC = 1000;
 
-#define GET_SIZE_FROM_FORMAT(format) ((format) != SAMPLE_F32LE ? ((format) + 1) : (4))
+static inline int32_t GetSizeFromFormat(int32_t format)
+{
+    return format != SAMPLE_F32LE ? ((format) + 1) : (4);
+}
 
 HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / 100);
-    byteSizePerFrame_ = (processConfig.streamInfo.channels * GET_SIZE_FROM_FORMAT(processConfig.streamInfo.format));
+    spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_ON_MS *
+        (static_cast<float>(streamInfo.samplingRate) / MSEC_PER_SEC));
+    byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
 }
 

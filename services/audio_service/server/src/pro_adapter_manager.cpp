@@ -47,7 +47,8 @@ int32_t ProAdapterManager::CreateRender(AudioProcessConfig processConfig, std::s
     if (managerType_ == DUP_PLAYBACK ||
         processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
-        AUDIO_ERR_LOG("Create [%{public}d] type renderer:[%{public}u] error", managerType_, processConfig.originalSessionId);
+        AUDIO_ERR_LOG("Create [%{public}d] type renderer:[%{public}u] error",
+            managerType_, processConfig.originalSessionId);
 
     } 
     AUDIO_INFO_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);

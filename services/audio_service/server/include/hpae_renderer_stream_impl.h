@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef pro_renderer_stream_impl_H
-#define pro_renderer_stream_impl_H
+#ifndef HPAE_RENDERER_STREAM_IMPL_H
+#define HPAE_RENDERER_STREAM_IMPL_H
 
 #include <mutex>
 #include <shared_mutex>
@@ -23,7 +23,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererStreamImpl>, public IStreamCallback, public IRendererStream {
+class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererStreamImpl>,
+                               public IStreamCallback,
+                               public IRendererStream {
 public:
     HpaeRendererStreamImpl(AudioProcessConfig processConfig);
     ~HpaeRendererStreamImpl();

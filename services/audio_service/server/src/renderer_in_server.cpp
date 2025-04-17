@@ -694,31 +694,36 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
     }
 }
 
+void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo)
+{
+    int32_t engineFlag = GetEngineFlag();
+    if (renderEmptyCountForInnerCap_ > 0) {
+        size_t emptyBufferSize = static_cast<size_t>(renderEmptyCountForInnerCap_) * spanSizeInByte_;
+        auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
+        BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
+        memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
+        if (engineFlag == 1) {
+            WriteDupBufferInner(emptyBufferDesc);
+        } else {
+            captureInfo.dupStream->EnqueueBuffer(emptyBufferDesc);
+        }
+        renderEmptyCountForInnerCap_ = 0;
+    }
+    if (engineFlag == 1) {
+        AUDIO_INFO_LOG("OtherStreamEnqueue running");
+        WriteDupBufferInner(bufferDesc);
+    } else {
+        captureInfo.dupStream->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+    }
+}
+
 void RendererInServer::InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo)
 {
     if (captureInfo.isInnerCapEnabled) {
         Trace traceDup("RendererInServer::WriteData DupSteam write");
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (captureInfo.dupStream != nullptr) {
-            int32_t engineFlag = GetEngineFlag();
-            if (renderEmptyCountForInnerCap_ > 0) {
-                size_t emptyBufferSize = static_cast<size_t>(renderEmptyCountForInnerCap_) * spanSizeInByte_;
-                auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
-                BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
-                memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
-                if (engineFlag == 1) {
-                    WriteDupBufferInner(emptyBufferDesc);
-                } else {
-                    captureInfo.dupStream->EnqueueBuffer(emptyBufferDesc);
-                }
-                renderEmptyCountForInnerCap_ = 0;
-            }
-            if (engineFlag == 1) {
-                AUDIO_INFO_LOG("OtherStreamEnqueue running");
-                WriteDupBufferInner(bufferDesc);
-            } else {
-                captureInfo.dupStream->EnqueueBuffer(bufferDesc); // what if enqueue fail?
-            }
+            InnerCaptureEnqueueBuffer(bufferDesc, captureInfo);
         }
     }
 }
@@ -1068,7 +1073,6 @@ int32_t RendererInServer::Stop()
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
         fadeoutFlag_ = NO_FADING;
     }
-    stopedTime_ = ClockTime::GetCurNano();
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK)
                       ? IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_)
                       : stream_->Stop();
@@ -1441,7 +1445,8 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
             "dupBuffer get readable size failed, size is:%{public}zu", result.size);
         CHECK_AND_RETURN_RET_LOG((result.size != 0) && (result.size >= requestDataLen), ERROR,
-            "Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu", result.size, requestDataLen);
+            "Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu",
+            result.size, requestDataLen);
         AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
         result = dupBuffer->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");\
@@ -1820,7 +1825,8 @@ int32_t RendererInServer::SetSourceDuration(int64_t duration)
     return SUCCESS;
 }
 
-std::unique_ptr<AudioRingCache>& RendererInServer::GetDupRingBuffer() {
+std::unique_ptr<AudioRingCache>& RendererInServer::GetDupRingBuffer()
+{
     return dupRingBuffer_; 
 }
  

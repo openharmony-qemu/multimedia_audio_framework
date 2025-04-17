@@ -134,6 +134,7 @@ private:
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
     void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo);
+    void InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo);
     int32_t StartInner();
     int64_t GetLastAudioDuration();
     int32_t CreateDupBufferInner(int32_t innerCapId);

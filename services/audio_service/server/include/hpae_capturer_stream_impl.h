@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef hpae_capturer_stream_impl_H
-#define hpae_capturer_stream_impl_H
+#ifndef HPAE_CAPTURER_STREAM_IMPL_H
+#define HPAE_CAPTURER_STREAM_IMPL_H
 
 #include "i_capturer_stream.h"
 

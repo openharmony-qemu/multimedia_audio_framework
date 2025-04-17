@@ -35,26 +35,20 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_10MS = 2;
+const int32_t FRAME_LEN_ON_MS = 20;
+const int32_t MSEC_PER_SEC = 1000;
 
-#define GET_SIZE_FROM_FORMAT(format) ((format) != SAMPLE_F32LE ? ((format) + 1) : (4))
-
-static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)
+static inline int32_t GetSizeFromFormat(int32_t format)
 {
-    uint32_t renderId = HDI_INVALID_ID;
-    if (deviceNetId.empty()) {
-        renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, false);
-    } else {
-        renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, false);
-    }
-    return HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
+    return format != SAMPLE_F32LE ? ((format) + 1) : (4);
 }
 
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / 100);
-    byteSizePerFrame_ = (processConfig.streamInfo.channels * GET_SIZE_FROM_FORMAT(processConfig.streamInfo.format));
+    spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_ON_MS *
+        (static_cast<float>(streamInfo.samplingRate) / MSEC_PER_SEC));
+    byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
 }
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
@@ -130,6 +124,16 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     return SUCCESS;
 }
 
+static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)
+{
+    uint32_t renderId = HDI_INVALID_ID;
+    if (deviceNetId.empty()) {
+        renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, false);
+    } else {
+        renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, false);
+    }
+    return HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
+}
 
 int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
 {
