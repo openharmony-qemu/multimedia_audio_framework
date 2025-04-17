@@ -175,7 +175,7 @@ bool TonePlayerImpl::LoadTone(ToneType toneType)
     amplitudeType_ = std::count(TONE_TYPE_LIST.begin(), TONE_TYPE_LIST.end(), toneType_) > 0 ?
         DIGITAMPLITUDE : AMPLITUDE;
     initialToneInfo_ = AudioPolicyManager::GetInstance().GetToneConfig(toneType, GetCountryCode());
-    if (initialToneInfo_->segmentCnt == 0) {
+    if (initialToneInfo_ != nullptr && initialToneInfo_->segmentCnt == 0) {
         AUDIO_ERR_LOG("LoadTone failed, calling GetToneConfig returned invalid");
         return result;
     }

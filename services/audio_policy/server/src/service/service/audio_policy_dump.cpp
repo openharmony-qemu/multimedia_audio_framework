@@ -126,6 +126,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyDump::GetDumpDevi
 
     for (const auto &desc : deviceDescs) {
         std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
+        CHECK_AND_BREAK_LOG(devDesc != nullptr, "devDesc is nullptr");
         dumpString += "\n";
         AppendFormat(dumpString, "  - device name:%s\n",
             AudioInfoDumpUtils::GetDeviceTypeName(devDesc->deviceType_).c_str());
