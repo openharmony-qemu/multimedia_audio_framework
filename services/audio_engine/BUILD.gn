@@ -73,18 +73,18 @@ ohos_shared_library("audio_engine_plugins") {
   install_enable = true
 
   sources = [
-    "plugin/resample/proresampler/audio_proresampler.cpp",
-    "plugin/resample/proresampler/audio_proresampler_process.c",
+    "plugin/bitdepth_converter/bitdepth_converter.c",
     "plugin/channel_converter/src/channel_converter.cpp",
     "plugin/channel_converter/src/down_mixer.cpp",
-    "plugin/bitdepth_converter/bitdepth_converter.c"
+    "plugin/resample/proresampler/audio_proresampler.cpp",
+    "plugin/resample/proresampler/audio_proresampler_process.c",
   ]
 
   include_dirs = [
     "plugin/resample/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "plugin/channel_converter/include",
-    "pulgin/bitdepth_converter"
+    "pulgin/bitdepth_converter",
   ]
 
   cflags = [
@@ -127,8 +127,8 @@ config("audio_engine_node_config") {
     "-D_FORTIFY_SOURCE=2 -O2",
   ]
   cflags += [ "-Os" ]
-  cflags += [ "-DENABLE_HOOK_PCM"]
-  cflags += [ "-DENABLE_HIDUMP_DFX"]
+  cflags += [ "-DENABLE_HOOK_PCM" ]
+  cflags += [ "-DENABLE_HIDUMP_DFX" ]
   cflags_cc = cflags
 }
 
@@ -145,35 +145,34 @@ ohos_shared_library("audio_engine_node") {
   configs = [ ":audio_engine_node_config" ]
 
   sources = [
+    "node/src/hpae_audio_format_converter_node.cpp",
+    "node/src/hpae_capture_effect_node.cpp",
+    "node/src/hpae_gain_node.cpp",
+    "node/src/hpae_inner_cap_sink_node.cpp",
     "node/src/hpae_mixer_node.cpp",
+    "node/src/hpae_node_common.cpp",
+    "node/src/hpae_offload_sinkoutput_node.cpp",
+    "node/src/hpae_output_cluster.cpp",
     "node/src/hpae_plugin_node.cpp",
-    "node/src/hpae_sink_input_node.cpp",
-    "node/src/hpae_sink_output_node.cpp",
-    "node/src/hpae_source_output_node.cpp",
-    "node/src/hpae_source_input_node.cpp",
+    "node/src/hpae_process_cluster.cpp",
     "node/src/hpae_render_effect_node.cpp",
     "node/src/hpae_resample_node.cpp",
-    "node/src/hpae_gain_node.cpp",
-    "node/src/hpae_node_common.cpp",
-    "node/src/hpae_process_cluster.cpp",
-    "node/src/hpae_output_cluster.cpp",
+    "node/src/hpae_sink_input_node.cpp",
+    "node/src/hpae_sink_output_node.cpp",
     "node/src/hpae_source_input_cluster.cpp",
+    "node/src/hpae_source_input_node.cpp",
+    "node/src/hpae_source_output_node.cpp",
     "node/src/hpae_source_process_cluster.cpp",
-    "node/src/hpae_capture_effect_node.cpp",
-    "node/src/hpae_audio_format_converter_node.cpp",
-    "node/src/hpae_inner_cap_sink_node.cpp",
-    "node/src/hpae_offload_sinkoutput_node.cpp",
   ]
 
   deps = [
-    ":audio_engine_utils",
     ":audio_engine_plugins",
-    "../audio_service:audio_common",
-    "../audio_policy:audio_foundation",
+    ":audio_engine_utils",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_foundation",
+    "../audio_service:audio_common",
   ]
 
   external_deps = [
@@ -205,24 +204,24 @@ ohos_shared_library("audio_engine_manager") {
   ]
 
   sources = [
-    "manager/src/hpae_manager.cpp",
     "manager/src/hpae_capturer_manager.cpp",
+    "manager/src/hpae_inner_capturer_manager.cpp",
+    "manager/src/hpae_manager.cpp",
+    "manager/src/hpae_offload_renderer_manager.cpp",
     "manager/src/hpae_policy_manager.cpp",
     "manager/src/hpae_renderer_manager.cpp",
     "manager/src/hpae_signal_process_thread.cpp",
     "manager/src/i_hpae_manager.cpp",
-    "manager/src/hpae_inner_capturer_manager.cpp",
-    "manager/src/hpae_offload_renderer_manager.cpp",
     "manager/src/i_hpae_renderer_manager.cpp",
   ]
 
   deps = [
-    ":audio_engine_utils",
     ":audio_engine_node",
-    "../audio_policy:audio_foundation",
+    ":audio_engine_utils",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_foundation",
   ]
 
   external_deps = [
