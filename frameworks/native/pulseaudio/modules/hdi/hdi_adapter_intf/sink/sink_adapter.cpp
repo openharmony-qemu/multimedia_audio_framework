@@ -43,7 +43,8 @@ int32_t InitSinkAdapter(struct SinkAdapter *adapter, const char *deviceClass, co
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "adapter is nullptr");
 
     adapter->renderId = HDI_INVALID_ID;
-    adapter->deviceClass = nullptr;
+    adapter->deviceClass = strdup(deviceClass);
+    CHECK_AND_RETURN_RET_LOG(adapter->deviceClass != nullptr, ERR_OPERATION_FAILED, "strdup fail");
     if (info == nullptr) {
         adapter->renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
             HDI_ID_INFO_DEFAULT, true);
@@ -58,7 +59,6 @@ int32_t InitSinkAdapter(struct SinkAdapter *adapter, const char *deviceClass, co
         HdiAdapterManager::GetInstance().ReleaseId(adapter->renderId);
         return ERR_OPERATION_FAILED;
     }
-    adapter->deviceClass = strdup(deviceClass);
     return SUCCESS;
 }
 

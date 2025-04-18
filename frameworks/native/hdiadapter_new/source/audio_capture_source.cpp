@@ -722,7 +722,9 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.isBigEndian = false;
     param.isSignedData = true;
-    param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    }
     param.stopThreshold = INT_MAX;
     param.silenceThreshold = AUDIO_BUFFER_SIZE;
     param.sourceType = SOURCE_TYPE_MIC;
@@ -734,7 +736,9 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
-    param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    }
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
 
     if ((attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) && attr_.channelEc != 0) {

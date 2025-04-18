@@ -784,7 +784,9 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBit(attr_.format) * param.channelCount / PCM_8_BIT;
-    param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    }
 }
 
 void AudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)

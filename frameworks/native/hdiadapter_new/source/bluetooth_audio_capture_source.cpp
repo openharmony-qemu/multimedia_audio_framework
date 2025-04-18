@@ -398,7 +398,9 @@ void BluetoothAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttribut
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.isBigEndian = false;
     param.isSignedData = true;
-    param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    }
     param.stopThreshold = INT_MAX;
     param.silenceThreshold = AUDIO_BUFFER_SIZE; // 16 * 1024
 
@@ -408,7 +410,9 @@ void BluetoothAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttribut
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
-    param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    }
 }
 
 void BluetoothAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
