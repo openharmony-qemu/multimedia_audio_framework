@@ -583,12 +583,12 @@ void MultichannelAudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sce
 {
     sceneDesc.scene.id = GetAudioCategory(audioScene);
 
-    AudioPortPin pin = PIN_OUT_SPEAKER;
+    AudioPortPin port = PIN_OUT_SPEAKER;
     if (halName_ == HDI_ID_INFO_USB) {
-        pin = PIN_OUT_USB_HEADSET;
+        port = PIN_OUT_USB_HEADSET;
     }
-    AUDIO_DEBUG_LOG("pin is %{public}d", pin);
-    sceneDesc.desc.pins = pin;
+    AUDIO_DEBUG_LOG("port: %{public}d", port);
+    sceneDesc.desc.pins = port;
     sceneDesc.desc.desc = const_cast<char *>("");
 }
 

@@ -773,18 +773,18 @@ void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, A
 {
     sceneDesc.scene.id = GetAudioCategory(audioScene);
 
-    AudioPortPin pin = PIN_IN_MIC;
+    AudioPortPin port = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
-        pin = PIN_IN_USB_HEADSET;
+        port = PIN_IN_USB_HEADSET;
     } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
         if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
-            pin = PIN_IN_PENCIL;
+            port = PIN_IN_PENCIL;
         } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
-            pin = PIN_IN_UWB;
+            port = PIN_IN_UWB;
         }
     }
-    AUDIO_DEBUG_LOG("pin: %{public}d", pin);
-    sceneDesc.desc.pins = pin;
+    AUDIO_DEBUG_LOG("port: %{public}d", port);
+    sceneDesc.desc.pins = port;
     sceneDesc.desc.desc = const_cast<char *>("");
 }
 

@@ -811,14 +811,14 @@ void AudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, Audi
         sceneDesc.scene.id = AUDIO_IN_COMMUNICATION;
     }
 
-    AudioPortPin pin = GetAudioPortPin();
+    AudioPortPin port = GetAudioPortPin();
     if (halName_ == HDI_ID_INFO_USB) {
-        pin = PIN_OUT_USB_HEADSET;
+        port = PIN_OUT_USB_HEADSET;
     } else if (halName_ == HDI_ID_INFO_DP) {
-        pin = PIN_OUT_DP;
+        port = PIN_OUT_DP;
     }
-    AUDIO_DEBUG_LOG("pin is %{public}d", pin);
-    sceneDesc.desc.pins = pin;
+    AUDIO_DEBUG_LOG("port: %{public}d", port);
+    sceneDesc.desc.pins = port;
     sceneDesc.desc.desc = const_cast<char *>("");
 }
 
