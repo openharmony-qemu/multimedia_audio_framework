@@ -24,8 +24,8 @@
 #include "audio_effect_chain_manager.h"
 #include "audio_utils.h"
 
-constexpr int32_t DEFAULT_EFFECT_RATE 48000
-constexpr int32_t DEFAULT_EFFECT_FRAME_LEN 960
+constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
+constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
 
 namespace OHOS {
 namespace AudioStandard {
