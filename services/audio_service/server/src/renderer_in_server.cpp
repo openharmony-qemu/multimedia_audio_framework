@@ -144,6 +144,15 @@ int32_t RendererInServer::InitBufferStatus()
     return SUCCESS;
 }
 
+void RendererInServer::GetEAC3ControlParam()
+{
+    int32_t eac3TestFlag = 0;
+    GetSysPara("persist.multimedia.eac3test", eac3TestFlag);
+    if (eac3TestFlag == 1) {
+        managerType_ = EAC3_PLAYBACK;
+    }
+}
+
 int32_t RendererInServer::Init()
 {
     if (IsHighResolution()) {
@@ -151,7 +160,10 @@ int32_t RendererInServer::Init()
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
     }
-
+    if (processConfig_.streamInfo.encoding == ENCODING_EAC3) {
+        managerType_ = EAC3_PLAYBACK;
+        AUDIO_INFO_LOG("current stream marked as eac3 direct stream");
+    }
     if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
         if (IStreamManager::GetPlaybackManager(VOIP_PLAYBACK).GetStreamCount() <= 0) {
             AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
@@ -160,6 +172,7 @@ int32_t RendererInServer::Init()
             AUDIO_WARNING_LOG("One VoIP direct stream has been created! Use normal mode.");
         }
     }
+    GetEAC3ControlParam();
     streamIndex_ = processConfig_.originalSessionId;
     AUDIO_INFO_LOG("Stream index: %{public}u", streamIndex_);
 
@@ -778,7 +791,7 @@ int32_t RendererInServer::StartInner()
     fadeLock.unlock();
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
-    ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+    ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
@@ -841,7 +854,8 @@ int32_t RendererInServer::Pause()
         }
     }
     standByCounter_ = 0;
-    int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+    GetEAC3ControlParam();
+    int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_) : stream_->Pause();
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
@@ -991,7 +1005,8 @@ int32_t RendererInServer::Stop()
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
         fadeoutFlag_ = NO_FADING;
     }
-    int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+    GetEAC3ControlParam();
+    int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
     {
         std::lock_guard<std::mutex> lock(dupMutex_);

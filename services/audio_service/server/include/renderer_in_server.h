@@ -97,6 +97,7 @@ public:
     int32_t DisableDualTone();
     int32_t InitDualToneStream();
 
+    void GetEAC3ControlParam();
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
     int32_t SetClientVolume();
