@@ -1291,8 +1291,12 @@ bool AudioDeviceCommon::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         isUpdateActiveDevice, capturerChangeInfo->capturerInfo.capturerFlags,
         capturerChangeInfo->capturerInfo.originalFlag);
     CHECK_AND_RETURN_RET_LOG(isUpdateActiveDevice, false, "isUpdateActiveDevice is false");
-    CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
-        "original flag is false");
+    if (!((capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID) ^
+        (audioActiveDevice_.GetCurrentInputDevice().networkId_ == LOCAL_NETWORK_ID))) {
+        CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
+            "original flag is false");
+    }
+
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(
         capturerChangeInfo->inputDeviceInfo.deviceType_);
