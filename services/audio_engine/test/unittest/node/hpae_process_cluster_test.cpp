@@ -89,7 +89,7 @@ TEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode)
     hpaeProcessCluster->Connect(hpaeSinkInputNode1);
     EXPECT_EQ(hpaeSinkInputNode1.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), (DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 2);
+    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 1 + 1);
 }
 static int32_t g_testValue1 = 0;
 static int32_t g_testValue2 = 0;

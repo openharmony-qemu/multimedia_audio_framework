@@ -172,15 +172,15 @@ void HpaeDfxTree::PrintTree(std::string &outStr)
     }
 }
 
-void HpaeDfxTree::UpdateNodeInfo(uint32_t NodeId, const HpaeDfxNodeInfo &nodeInfo)
+void HpaeDfxTree::UpdateNodeInfo(uint32_t nodeId, const HpaeDfxNodeInfo &nodeInfo)
 {
     if (root_ == nullptr) {
         AUDIO_WARNING_LOG("Hidumper dfx tree is empty!");
         return;
     }
-    DfxTreeNode *target = FindDfxNode(root_, NodeId);
+    DfxTreeNode *target = FindDfxNode(root_, nodeId);
     if (target == nullptr) {
-        AUDIO_WARNING_LOG("Cannot find Node Id: %{public}d", NodeId);
+        AUDIO_WARNING_LOG("Cannot find Node Id: %{public}d", nodeId);
         return;
     }
     target->nodeInfo_ = nodeInfo;

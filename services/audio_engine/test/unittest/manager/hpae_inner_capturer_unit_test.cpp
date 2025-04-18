@@ -30,7 +30,7 @@ namespace AudioStandard {
 namespace HPAE{
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const float FRAME_LENGTH_IN_SECOND = 0.02;
-std::string rootPath = "/data/data/.pulse_dir/";
+std::string g_rootPath = "/data/data/.pulse_dir/";
 
 
 static HpaeSinkInfo GetInCapSinkInfo()
@@ -39,7 +39,7 @@ static HpaeSinkInfo GetInCapSinkInfo()
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = rootPath + "constructHpaeInnerCapturerManagerTest.pcm";
+    sinkInfo.filePath = g_rootPath + "constructHpaeInnerCapturerManagerTest.pcm";
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     sinkInfo.frameLen = SAMPLE_RATE_48000 * FRAME_LENGTH_IN_SECOND;
     sinkInfo.format = SAMPLE_F32LE;
@@ -101,13 +101,13 @@ static void WaitForMsgProcessing(std::shared_ptr<HpaeInnerCapturerManager>& hpae
     int waitCount = 0;
     const int32_t WAIT_COUNT_THD = 5;
     while(hpaeInnerCapturerManager->IsMsgProcessing()) {
-         std::this_thread::sleep_for(std::chrono::milliseconds(20));
+         std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 20ms frameLen, need optimize
          waitCount++;
          if (waitCount >= WAIT_COUNT_THD) {
             break;
          }
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(40));
+    std::this_thread::sleep_for(std::chrono::milliseconds(40));  // 40ms wait time, need optimize
     EXPECT_EQ(hpaeInnerCapturerManager->IsMsgProcessing(), false);
     EXPECT_EQ(waitCount < WAIT_COUNT_THD, true);
 }

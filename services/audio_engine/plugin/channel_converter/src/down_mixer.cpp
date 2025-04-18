@@ -16,10 +16,11 @@
 #define LOG_TAG "HpaeDownMixer"
 #endif
 #include <algorithm>
+#include <cinttypes>
 #include "securec.h"
-#include "inttypes.h"
 #include "audio_engine_log.h"
 #include "down_mixer.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -76,8 +77,8 @@ static constexpr uint64_t MASK_BOTTOM = BOTTOM_FRONT_CENTER
 static constexpr uint64_t MASK_LFE = LOW_FREQUENCY
 | LOW_FREQUENCY_2;
 
-static uint32_t bitCounts(uint64_t bits);
-static bool isValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts);
+static uint32_t BitCounts(uint64_t bits);
+static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts);
 static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels);
 
 // 改成默认构造
@@ -141,7 +142,7 @@ int32_t DownMixer::Process(uint32_t frameLen, float* in, uint32_t inLen, float* 
 
 int32_t DownMixer::SetupDownMixTable()
 {
-    if ((!isValidChLayout(inLayout_, inChannels_)) || (!isValidChLayout(outLayout_, outChannels_))
+    if ((!IsValidChLayout(inLayout_, inChannels_)) || (!IsValidChLayout(outLayout_, outChannels_))
         || inLayout_ == outLayout_ || inChannels_ <= outChannels_) {
         AUDIO_ERR_LOG("invalid input or output channellayout: input channel count %{public}d, "
             "inLayout_ %{public}" PRIu64 "output channel count %{public}d, outLayout_ %{public}" PRIu64 "",
@@ -990,13 +991,13 @@ void DownMixer::DownMixTopCenter(uint64_t inBit, uint64_t outBit, uint32_t i, ui
     uint64_t exitTopOuts = outLayout_ & (MASK_TOP_FRONT | MASK_TOP_REAR);
     uint64_t exitMiddleOuts = outLayout_ & (MASK_MIDDLE_FRONT | MASK_MIDDLE_REAR);
     if (exitTopOuts != 0) { // exist top outs
-        uint32_t numChannels = bitCounts(exitTopOuts);
+        uint32_t numChannels = BitCounts(exitTopOuts);
         uint32_t coeff = 1.0f / sqrt((float)numChannels);
         if ((outBit & exitTopOuts) != 0) {
             downMixTable_[i][j] = coeff;
         }
     } else if (exitMiddleOuts != 0) {
-        uint32_t numChannels = bitCounts(exitMiddleOuts);
+        uint32_t numChannels = BitCounts(exitMiddleOuts);
         uint32_t coeff = 1.0f / sqrt((float)numChannels);
         if ((outBit & exitMiddleOuts) != 0) {
             downMixTable_[i][j] = coeff;
@@ -1028,7 +1029,7 @@ void DownMixer::DownMixTopRear(uint64_t inBit, uint64_t outBit, uint32_t i, uint
     }
 }
 
-static uint32_t bitCounts(uint64_t bits)
+static uint32_t BitCounts(uint64_t bits)
 {
     uint32_t num = 0;
     for (; bits != 0; bits &= bits - 1) {
@@ -1037,12 +1038,12 @@ static uint32_t bitCounts(uint64_t bits)
     return num;
 }
 
-static bool isValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
+static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
 {
     if (chCounts < MONO || chCounts > CHANNEL_16) {
         return false;
     }
-    if (chLayout == CH_LAYOUT_UNKNOWN || bitCounts(chLayout) != chCounts) {
+    if (chLayout == CH_LAYOUT_UNKNOWN || BitCounts(chLayout) != chCounts) {
         chLayout = SetDefaultChannelLayout((AudioChannel)chCounts);
     }
     return true;
