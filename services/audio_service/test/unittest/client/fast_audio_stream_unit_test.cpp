@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (c) 2024 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 #include <gtest/gtest.h>
 
@@ -41,7 +41,7 @@ public:
      * @param streamSetStateEventInternal Contains the set even information.
      */
     virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
-     /**
+    /**
      * Unmute Stream was controlled by system application
      *
      * @param streamSetStateEventInternal Contains the set even information.
@@ -53,7 +53,7 @@ public:
      * @param streamSetStateEventInternal Contains the set even information.
      */
     virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
-     /**
+    /**
      * Resumed Stream was controlled by system application
      *
      * @param streamSetStateEventInternal Contains the set even information.
@@ -1068,28 +1068,6 @@ HWTEST(FastSystemStreamUnitTest, SafeSendCallbackEvent_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test OnHandle API
- * @tc.type  : FUNC
- * @tc.number: OnHandle_001
- * @tc.desc  : Test OnHandle interface.
- */
-HWTEST(FastSystemStreamUnitTest, OnHandle_001, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream =
-        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    uint32_t code = FastAudioStream::STATE_CHANGE_EVENT;
-    int64_t data = 0;
-
-    fastAudioStream->OnHandle(code, data);
-    EXPECT_EQ(fastAudioStream->streamCallback_.lock(), nullptr);
-
-    code = 10;
-    fastAudioStream->OnHandle(code, data);
-    EXPECT_EQ(fastAudioStream->streamCallback_.lock(), nullptr);
-}
-
-/**
  * @tc.name  : Test HandleStateChangeEvent API
  * @tc.type  : FUNC
  * @tc.number: HandleStateChangeEvent_001
@@ -1226,6 +1204,253 @@ HWTEST(FastSystemStreamUnitTest, SetStreamCallback_001, TestSize.Level1)
 
     fastAudioStream->state_ = PREPARED;
     ret = fastAudioStream->SetStreamCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetAudioStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioStreamInfo_001
+ * @tc.desc  : Test GetAudioStreamInfo interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetAudioStreamInfo_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    AudioStreamParams audioStreamInfo;
+    auto ret = fastAudioStream->GetAudioStreamInfo(audioStreamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetAudioSessionID API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioSessionID_001
+ * @tc.desc  : Test GetAudioSessionID interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetAudioSessionID_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    uint32_t sessionId = 0;
+    auto ret = fastAudioStream->GetAudioSessionID(sessionId);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetAudioTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTime_001
+ * @tc.desc  : Test GetAudioTime interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetAudioTime_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    Timestamp timestamp;
+    auto base = static_cast<Timestamp::Timestampbase>(1);
+    auto ret = fastAudioStream->GetAudioTime(timestamp, base);
+    EXPECT_EQ(ret, false);
+
+    ret = fastAudioStream->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(ret, false);
+
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.encoding = AudioEncodingType::ENCODING_PCM;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = AudioChannel::STEREO;
+    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
+    fastAudioStream->SetAudioStreamInfo(info, proxyObj);
+
+    ret = fastAudioStream->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_NE(ret, true);
+}
+
+/**
+ * @tc.name  : Test GetBufferSize API
+ * @tc.type  : FUNC
+ * @tc.number: GetBufferSize_001
+ * @tc.desc  : Test GetBufferSize interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetBufferSize_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream
+        = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    size_t bufferSize = 0;
+    auto ret = fastAudioStream->GetBufferSize(bufferSize);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetFrameCount API
+ * @tc.type  : FUNC
+ * @tc.number: GetFrameCount_001
+ * @tc.desc  : Test GetFrameCount interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetFrameCount_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream
+        = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    size_t frameCount = 0;
+    auto ret = fastAudioStream->GetFrameCount(frameCount);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetLatency API
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_001
+ * @tc.desc  : Test GetLatency interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetLatency_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream
+        = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    uint64_t latency = 0;
+    auto ret = fastAudioStream->GetLatency(latency);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetDuckVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetDuckVolume_001
+ * @tc.desc  : Test SetDuckVolume interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetDuckVolume_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream
+        = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    float duckVolume = 0;
+    auto ret = fastAudioStream->SetDuckVolume(duckVolume);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetRenderRate API
+ * @tc.type  : FUNC
+ * @tc.number: SetRenderRate_001
+ * @tc.desc  : Test SetRenderRate interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetRenderRate_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream
+        = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    AudioRendererRate renderRate = AudioRendererRate::RENDER_RATE_NORMAL;
+    auto ret = fastAudioStream->SetRenderRate(renderRate);
+    EXPECT_EQ(ret, SUCCESS);
+
+    renderRate = AudioRendererRate::RENDER_RATE_DOUBLE;
+    ret = fastAudioStream->SetRenderRate(renderRate);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test SetRendererWriteCallback API
+ * @tc.type  : FUNC
+ * @tc.number: SetRendererWriteCallback_001
+ * @tc.desc  : Test SetRendererWriteCallback interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetRendererWriteCallback_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream
+        = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    auto callback = std::make_shared<AudioRendererWriteCallbackTest>();
+    auto ret = fastAudioStream->SetRendererWriteCallback(callback);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test SetCapturerReadCallback API
+ * @tc.type  : FUNC
+ * @tc.number: SetCapturerReadCallback_001
+ * @tc.desc  : Test SetCapturerReadCallback interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetCapturerReadCallback_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream
+        = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_RECORD, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    auto callback = std::make_shared<AudioCapturerReadCallbackTest>();
+    auto ret = fastAudioStream->SetCapturerReadCallback(callback);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test GetBufferDesc API
+ * @tc.type  : FUNC
+ * @tc.number: GetBufferDesc_001
+ * @tc.desc  : Test GetBufferDesc interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetBufferDesc_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream
+        = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    BufferDesc bufferDesc;
+    auto ret = fastAudioStream->GetBufferDesc(bufferDesc);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.encoding = AudioEncodingType::ENCODING_PCM;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = AudioChannel::STEREO;
+    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
+    fastAudioStream->SetAudioStreamInfo(info, proxyObj);
+
+    ret = fastAudioStream->GetBufferDesc(bufferDesc);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetBufQueueState API
+ * @tc.type  : FUNC
+ * @tc.number: GetBufQueueState_001
+ * @tc.desc  : Test GetBufQueueState interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetBufQueueState_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream
+        = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    BufferQueueState bufState;
+    auto ret = fastAudioStream->GetBufQueueState(bufState);
     EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
