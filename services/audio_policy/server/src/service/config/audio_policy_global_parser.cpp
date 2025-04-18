@@ -79,6 +79,12 @@ void AudioPolicyGlobalParser::ParserAttribute(xmlNode *currNode)
         xmlChar *attrName = xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name"));
         xmlChar *attrValue = xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("value"));
         if (attrName == nullptr || attrValue == nullptr) {
+            if (attrName != nullptr) {
+                xmlFree(attrName);
+            }
+            if (attrValue != nullptr) {
+                xmlFree(attrValue);
+            }
             currNode = currNode->next;
             continue;
         }
