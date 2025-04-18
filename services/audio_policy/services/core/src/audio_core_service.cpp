@@ -40,7 +40,6 @@ static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 bool AudioCoreService::isBtListenerRegistered = false;
 bool AudioCoreService::isBtCrashed = false;
 #ifdef BLUETOOTH_ENABLE
-static sptr<IStandardAudioService> g_btProxy = nullptr;
 mutex g_btProxyMutex;
 #endif
 
