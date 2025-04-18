@@ -30,6 +30,9 @@ FileAudioCaptureSource::~FileAudioCaptureSource()
 
 int32_t FileAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
+    if (attr.filePath == nullptr) {
+        return ERROR;
+    }
     std::string filePath(attr.filePath);
     std::string dirPath;
     std::string fileName;

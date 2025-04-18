@@ -188,6 +188,13 @@ public:
 
     virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
 
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const = 0;
+
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const = 0;
+
+    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) const = 0;
+
     virtual int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType) = 0;
 
     virtual void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime) = 0;

@@ -30,6 +30,9 @@ FileAudioRenderSink::~FileAudioRenderSink()
 
 int32_t FileAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
+    if (attr.filePath == nullptr) {
+        return ERROR;
+    }
     filePath_.assign(attr.filePath);
     return SUCCESS;
 }

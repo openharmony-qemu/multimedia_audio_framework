@@ -583,15 +583,18 @@ int32_t BluetoothCapturerSourceInner::SetInputRoute(DeviceType inputDevice, cons
 int32_t BluetoothCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceType &inputDevice,
     const std::string &deviceName)
 {
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     uint32_t captureId = 0;
     int32_t ret = GetCaptureId(captureId);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("GetCaptureId failed");
     }
 
-    audioEnhanceChainManager->SetInputDevice(captureId, inputDevice, deviceName);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+        audioEnhanceChainManager->SetInputDevice(captureId, inputDevice, deviceName);
+    }
     return SUCCESS;
 }
 
