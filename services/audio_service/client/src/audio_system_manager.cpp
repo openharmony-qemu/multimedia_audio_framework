@@ -1147,13 +1147,13 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
 
 int32_t AudioSystemManager::ActivatePreemptMode() const
 {
-    AUDIO_DEBUG_LOG("stub implementation");
+    AUDIO_DEBUG_LOG("ActivatePreemptMode");
     return AudioPolicyManager::GetInstance().ActivatePreemptMode();
 }
 
 int32_t AudioSystemManager::DeactivatePreemptMode() const
 {
-    AUDIO_DEBUG_LOG("stub implementation");
+    AUDIO_DEBUG_LOG("DeactivatePreemptMode");
     return AudioPolicyManager::GetInstance().DeactivatePreemptMode();
 }
 

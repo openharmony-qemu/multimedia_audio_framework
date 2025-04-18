@@ -763,6 +763,7 @@ void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &
 
 int32_t AudioInterruptService::ClearAudioFocusInfoList()
 {
+    AUDIO_INFO_LOG("start clear audio focusInfo list");
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
         CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
@@ -786,6 +787,7 @@ int32_t AudioInterruptService::ClearAudioFocusInfoList()
 
 int32_t AudioInterruptService::ActivatePreemptMode()
 {
+    AUDIO_INFO_LOG("start activate preempt mode");
     std::lock_guard<std::mutex> lock(mutex_);
     isPreemptMode_ = true;
     int ret = ClearAudioFocusInfoList();
@@ -798,6 +800,7 @@ int32_t AudioInterruptService::ActivatePreemptMode()
 
 int32_t AudioInterruptService::DeactivatePreemptMode()
 {
+    AUDIO_INFO_LOG("start deactivate preempt mode");
     std::lock_guard<std::mutex> lock(mutex_);
     isPreemptMode_ = false;
     return SUCCESS;
