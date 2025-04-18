@@ -1603,5 +1603,84 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_050, TestSize.Level1)
     auto ret = ptrNoneMixEngine->GetLatency();
     EXPECT_EQ(ret, 1);
 }
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_051
+ * @tc.desc  : Test NoneMixEngine::Start
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_051, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    EXPECT_NE(ptrNoneMixEngine, nullptr);
+
+    AudioStreamInfo streamInfo;
+    ptrNoneMixEngine->isInit_ = true;
+    ptrNoneMixEngine->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY,
+        HDI_ID_INFO_DEFAULT, true);
+    EXPECT_NE(ptrNoneMixEngine->renderId_, HDI_INVALID_ID);
+
+    streamInfo.channels = AudioChannel::CHANNEL_15;
+    streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    ptrNoneMixEngine->uChannel_ = 2;
+    ptrNoneMixEngine->uFormat_ = SAMPLE_S16LE;
+    ptrNoneMixEngine->isVoip_ = true;
+    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
+    ptrNoneMixEngine->uSampleRate_ = AudioSamplingRate::SAMPLE_RATE_16000;
+    bool isVoip = true;
+    ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
+
+    std::string name = "noneMixThread";
+    ptrNoneMixEngine->playbackThread_ = std::make_unique<AudioThreadTask>(name);
+    ptrNoneMixEngine->isStart_ = true;
+    int32_t ret = ptrNoneMixEngine->Start();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_052
+ * @tc.desc  : Test NoneMixEngine::PauseAsync()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_052, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    std::string name = "noneMixThread";
+    ptrNoneMixEngine->isStart_ = true;
+    ptrNoneMixEngine->playbackThread_ = std::make_unique<AudioThreadTask>(name);
+    ptrNoneMixEngine->playbackThread_->state_.store(AudioThreadTask::RunningState::PAUSING);
+    ptrNoneMixEngine->PauseAsync();
+    EXPECT_EQ(ptrNoneMixEngine->isStart_, false);
+
+    ptrNoneMixEngine->playbackThread_ = nullptr;
+    ptrNoneMixEngine->PauseAsync();
+    EXPECT_EQ(ptrNoneMixEngine->isStart_, false);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_053
+ * @tc.desc  : Test NoneMixEngine::Pause()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_053, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    ptrNoneMixEngine->isStart_ = true;
+    auto ret = ptrNoneMixEngine->Pause();
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::string name = "test";
+    ptrNoneMixEngine->isStart_ = true;
+    ptrNoneMixEngine->playbackThread_ = std::make_unique<AudioThreadTask>(name);
+    ret = ptrNoneMixEngine->Pause();
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
