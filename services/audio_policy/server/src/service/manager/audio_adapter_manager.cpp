@@ -1022,13 +1022,21 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> 
     AUDIO_INFO_LOG("Adapter load-module %{public}s, route flag: %{public}u", moduleArgs.c_str(), pipeInfo->routeFlag_);
     curActiveCount_++;
     AudioIOHandle ioHandle = HDI_INVALID_ID;
-    if (IsPaRoute(pipeInfo->routeFlag_)) {
-        AUDIO_INFO_LOG("Is pa route");
-        return OpenPaAudioPort(pipeInfo, paIndex, moduleArgs);
-    }
 
-    AUDIO_INFO_LOG("Not pa route");
-    return OpenNotPaAudioPort(pipeInfo, paIndex);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        ioHandle = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, pipeInfo->moduleInfo_);
+        paIndex = ioHandle;
+        return ioHandle;
+    } else {
+        if (IsPaRoute(pipeInfo->routeFlag_)) {
+            AUDIO_INFO_LOG("Is pa route");
+            return OpenPaAudioPort(pipeInfo, paIndex, moduleArgs);
+        }
+
+        AUDIO_INFO_LOG("Not pa route");
+        return OpenNotPaAudioPort(pipeInfo, paIndex);
+    }
 }
 
 AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex,
@@ -1150,25 +1158,33 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     curActiveCount_++;
     AudioIOHandle ioHandle = HDI_INVALID_ID;
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ioHandle, "audioServerProxy_ null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    if (audioModuleInfo.lib == "libmodule-inner-capturer-sink.z.so") {
-        std::string idInfo = audioModuleInfo.name;
-        IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-        ioHandle = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, idInfo, attr);
-    } else {
-        if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
-            std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
-            IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-            ioHandle = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr);
-        } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
-            std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
-            IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
-            ioHandle = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr);
-        }
-    }
-    IPCSkeleton::SetCallingIdentity(identity);
 
-    paIndex = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        ioHandle = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, audioModuleInfo);
+        paIndex = ioHandle;
+    } else {
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
+        if (audioModuleInfo.lib == "libmodule-inner-capturer-sink.z.so") {
+            std::string idInfo = audioModuleInfo.name;
+            IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
+            ioHandle = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, idInfo, attr);
+        } else {
+            if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
+                std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
+                IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
+                ioHandle = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr);
+            } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
+                std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
+                IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
+                ioHandle = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr);
+            }
+        }
+        IPCSkeleton::SetCallingIdentity(identity);
+
+        paIndex = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
+    }
+
     AUDIO_INFO_LOG("Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
     return ioHandle;
 }
@@ -1192,6 +1208,36 @@ int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle, uint32_t paI
 int32_t AudioAdapterManager::GetCurActivateCount() const
 {
     return curActiveCount_ > 0 ? curActiveCount_ : 0;
+}
+
+int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    int32_t ret = 0;
+    AudioEffectPropertyArrayV3 effectPropertyArray = {};
+    ret = audioServiceAdapter_->GetAudioEffectProperty(effectPropertyArray);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetAudioEffectProperty failed");
+    propertyArray.property.insert(propertyArray.property.end(),
+        effectPropertyArray.property.begin(), effectPropertyArray.property.end());
+    AudioEffectPropertyArrayV3 enhancePropertyArray = {};
+    ret = audioServiceAdapter_->GetAudioEnhanceProperty(enhancePropertyArray);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetAudioEnhanceProperty failed");
+    propertyArray.property.insert(propertyArray.property.end(),
+        enhancePropertyArray.property.begin(), enhancePropertyArray.property.end());
+    return ret;
+}
+
+int32_t AudioAdapterManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    return audioServiceAdapter_->GetAudioEffectProperty(propertyArray);
+}
+
+int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+    DeviceType deviceType) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
 void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)

@@ -1765,17 +1765,20 @@ int32_t AudioCapturerSourceInner::SetAudioRouteInfoForEnhanceChain(const DeviceT
         AUDIO_ERR_LOG("non blocking source not support SetAudioRouteInfoForEnhanceChain");
         return SUCCESS;
     }
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     uint32_t captureId = 0;
     int32_t ret = GetCaptureId(captureId);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("GetCaptureId failed");
     }
-    if (halName_ == "usb") {
-        audioEnhanceChainManager->SetInputDevice(captureId, DEVICE_TYPE_USB_ARM_HEADSET, deviceName);
-    } else {
-        audioEnhanceChainManager->SetInputDevice(captureId, inputDevice, deviceName);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+        if (halName_ == "usb") {
+            audioEnhanceChainManager->SetInputDevice(captureId, DEVICE_TYPE_USB_ARM_HEADSET, deviceName);
+        } else {
+            audioEnhanceChainManager->SetInputDevice(captureId, inputDevice, deviceName);
+        }
     }
     return SUCCESS;
 }

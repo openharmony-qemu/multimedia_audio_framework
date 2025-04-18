@@ -20,11 +20,13 @@
 #include "audio_effect.h"
 #include "audio_errors.h"
 #include "audio_effect_log.h"
+#include "audio_utils.h"
 #include "securec.h"
 #include "system_ability_definition.h"
 #include "audio_setting_provider.h"
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
+#include "audio_effect_hdi_param.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -236,9 +238,9 @@ void AudioEffectChainManager::InitHdiStateInner()
 }
 
 // Boot initialize
-void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
+void AudioEffectChainManager::InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectChainManagerParam,
-    std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList)
+    const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     maxEffectChainCount_ = effectChainManagerParam.maxExtraNum + 1;
@@ -252,9 +254,9 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     RecoverAllChains();
 }
 
-void AudioEffectChainManager::ConstructEffectChainMgrMaps(std::vector<EffectChain> &effectChains,
+void AudioEffectChainManager::ConstructEffectChainMgrMaps(const std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectChainManagerParam,
-    std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList)
+    const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList)
 {
     const std::unordered_map<std::string, std::string> &map = effectChainManagerParam.sceneTypeToChainNameMap;
     std::set<std::string> effectSet;
@@ -413,6 +415,21 @@ bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType
     return ExistAudioEffectChainInner(sceneType, effectMode);
 }
 
+int32_t AudioEffectChainManager::GetOutputChannelInfo(const std::string &sceneType,
+    uint32_t &channels, uint64_t &channelLayout)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+
+    auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);
+    CHECK_AND_RETURN_RET_LOG(it != sceneTypeToEffectChainMap_.end() && it->second != nullptr,
+        ERROR, "effect chain not found for scene type: %{public}s", sceneTypeAndDeviceKey.c_str());
+
+    auto audioEffectChain = it->second;
+    audioEffectChain->UpdateBufferConfig(channels, channelLayout);
+    return SUCCESS;
+}
+
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneType,
     std::unique_ptr<EffectBufferAttr> &bufferAttr)
 {
@@ -534,9 +551,10 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::EffectVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
+int32_t AudioEffectChainManager::EffectVolumeUpdate()
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     return EffectVolumeUpdateInner(audioEffectVolume);
 }
 
@@ -563,7 +581,7 @@ int32_t AudioEffectChainManager::SetEffectSystemVolume(const int32_t systemVolum
     AUDIO_INFO_LOG("systemVolumeType: %{public}d, systemVolume: %{public}f", systemVolumeType,
         audioEffectVolume->GetSystemVolume(systemVolumeType));
 
-    return SUCCESS;
+    return EffectVolumeUpdateInner(audioEffectVolume);
 }
 
 #ifdef WINDOW_MANAGER_ENABLE
@@ -730,8 +748,7 @@ int32_t AudioEffectChainManager::SessionInfoMapAdd(const std::string &sessionID,
     if (!sessionIDToEffectInfoMap_.count(sessionID)) {
         sceneTypeToSessionIDMap_[info.sceneType].insert(sessionID);
         sessionIDToEffectInfoMap_[sessionID] = info;
-    } else if (sessionIDToEffectInfoMap_[sessionID].sceneMode != info.sceneMode ||
-        sessionIDToEffectInfoMap_[sessionID].spatializationEnabled != info.spatializationEnabled) {
+    } else if (sessionIDToEffectInfoMap_[sessionID].sceneMode != info.sceneMode) {
         sessionIDToEffectInfoMap_[sessionID] = info;
     } else {
         return ERROR;
@@ -1736,6 +1753,47 @@ bool AudioEffectChainManager::IsEffectChainStop(const std::string &sceneType, co
         }
     }
     return true;
+}
+
+ProcessClusterOperation AudioEffectChainManager::CheckProcessClusterInstances(const std::string &sceneType)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    CHECK_AND_RETURN_RET_LOG(sceneType != "SCENE_EXTRA", CREATE_EXTRA_PROCESSCLUSTER, "scene type is extra");
+    CHECK_AND_RETURN_RET_LOG(!GetOffloadEnabled(), USE_NONE_PROCESSCLUSTER, "offload, use none processCluster");
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+
+    if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+        if (sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
+            AUDIO_WARNING_LOG("scene type %{public}s has null process cluster", sceneTypeAndDeviceKey.c_str());
+        } else {
+            AUDIO_INFO_LOG("process cluster already exist, current count: %{public}d, default count: %{public}d",
+                sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
+            if (isDefaultEffectChainExisted_ && sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
+                sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
+                return USE_DEFAULT_PROCESSCLUSTER;
+            }
+            return NO_NEED_TO_CREATE_PROCESSCLUSTER;
+        }
+    }
+
+    bool isPriorScene = std::find(priorSceneList_.begin(), priorSceneList_.end(), sceneType) != priorSceneList_.end();
+    if (isPriorScene) {
+        AUDIO_INFO_LOG("create prior process cluster: %{public}s", sceneType.c_str());
+        return CREATE_NEW_PROCESSCLUSTER;
+    }
+    if ((maxEffectChainCount_ - static_cast<int32_t>(sceneTypeToSpecialEffectSet_.size())) > 1) {
+        AUDIO_INFO_LOG("max audio process cluster count not reached, create special process cluster: %{public}s",
+            sceneType.c_str());
+        return CREATE_NEW_PROCESSCLUSTER;
+    } else if (!isDefaultEffectChainExisted_) {
+        AUDIO_INFO_LOG("max audio process cluster count reached, create current and default process cluster");
+        return CREATE_DEFAULT_PROCESSCLUSTER;
+    } else {
+        AUDIO_INFO_LOG("max audio process cluster count reached and default already exist: %{public}d",
+            defaultEffectChainCount_);
+        return USE_DEFAULT_PROCESSCLUSTER;
+    }
 }
 
 int32_t AudioEffectChainManager::QueryEffectChannelInfo(const std::string &sceneType, uint32_t &channels,
