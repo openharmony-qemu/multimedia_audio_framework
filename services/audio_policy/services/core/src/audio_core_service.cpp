@@ -1048,13 +1048,15 @@ void AudioCoreService::SetAudioServerProxy()
 void AudioCoreService::RegisterBluetoothDeathCallback()
 {
     lock_guard<mutex> lock(g_btProxyMutex);
-    AUDIO_INFO_LOG("RegisterBluetoothDeathCallback Enter");
+    AUDIO_INFO_LOG("Enter");
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_LOG(samgr != nullptr,"get sa manager failed");
-    sptr object = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_LOG(object != nullptr, "get audio service remote object failed");
+    CHECK_AND_RETURN_LOG(samgr != nullptr,
+        "get sa manager failed");
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_LOG(object != nullptr,
+        "get audio service remote object failed");
     // register death recipent
-    sptr asDeathRecipient =
+    sptr<AudioServerDeathRecipient> asDeathRecipient =
         new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
     if (asDeathRecipient != nullptr) {
         asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
