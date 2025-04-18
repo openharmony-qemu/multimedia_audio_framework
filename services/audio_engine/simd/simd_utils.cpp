@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "SimdUtils.h"
+#include "simd_utils.h"
 #include <algorithm>
 #include <limits>
 

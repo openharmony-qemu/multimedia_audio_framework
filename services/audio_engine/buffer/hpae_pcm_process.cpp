@@ -18,7 +18,7 @@
 #endif
 
 #include "hpae_pcm_process.h"
-#include "SimdUtils.h"
+#include "simd_utils.h"
 #include "audio_engine_log.h"
 
 namespace OHOS {

@@ -70,7 +70,6 @@ ohos_unittest("audio_engine_unit_test") {
 
   deps = [
     "../../:audio_engine_node",
-    "../../:audio_engine_buffer",
     "../../:audio_engine_manager",
     "../../:audio_engine_utils",
   ]

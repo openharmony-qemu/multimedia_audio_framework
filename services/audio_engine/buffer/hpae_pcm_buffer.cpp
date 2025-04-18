@@ -18,7 +18,7 @@
 #endif
 
 #include "securec.h"
-#include "SimdUtils.h"
+#include "simd_utils.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_engine_log.h"
 

@@ -28,7 +28,7 @@ ohos_shared_library("audio_engine_utils") {
     "utils/hpae_no_lock_queue.cpp",
     "utils/hpae_pcm_dumper.cpp",
     "dfx/hpae_dfx_tree.cpp",
-    "simd/SimdUtils.cpp",
+    "simd/simd_utils.cpp",
     "buffer/hpae_pcm_buffer.cpp",
     "buffer/hpae_pcm_process.cpp",
   ]
