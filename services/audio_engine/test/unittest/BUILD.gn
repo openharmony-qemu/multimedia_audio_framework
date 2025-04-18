@@ -69,8 +69,8 @@ ohos_unittest("audio_engine_unit_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:audio_engine_node",
     "../../:audio_engine_manager",
+    "../../:audio_engine_node",
     "../../:audio_engine_utils",
   ]
 
@@ -86,4 +86,3 @@ ohos_unittest("audio_engine_unit_test") {
 
   resource_config_file = "./resource/ohos_test.xml"
 }
-
