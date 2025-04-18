@@ -28,9 +28,14 @@ ohos_shared_library("audio_engine_utils") {
     "utils/hpae_no_lock_queue.cpp",
     "utils/hpae_pcm_dumper.cpp",
     "dfx/hpae_dfx_tree.cpp",
+    "simd/SimdUtils.cpp",
+    "buffer/hpae_pcm_buffer.cpp",
+    "buffer/hpae_pcm_process.cpp",
   ]
 
   include_dirs = [
+    "buffer",
+    "simd",
     "utils",
     "dfx",
     "buffer",
@@ -58,7 +63,7 @@ ohos_shared_library("audio_engine_utils") {
   part_name = "audio_framework"
 }
 
-ohos_shared_library("audio_engine_resample") {
+ohos_shared_library("audio_engine_plugins") {
   stack_protector_ret = true
   sanitize = {
     cfi = true
@@ -87,79 +92,6 @@ ohos_shared_library("audio_engine_resample") {
     "-Wall",
     "-Werror",
     "-D_FORTIFY_SOURCE=2 -O2",
-  ]
-
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-  ]
-
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
-}
-
-ohos_shared_library("audio_engine_simd") {
-  stack_protector_ret = true
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-  }
-  install_enable = true
-
-  sources = [
-    "simd/SimdUtils.cpp",
-  ]
-
-  include_dirs = [
-    "simd",
-  ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-D_FORTIFY_SOURCE=2 -O2",
-  ]
-
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-  ]
-
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
-}
-
-ohos_shared_library("audio_engine_buffer") {
-  stack_protector_ret = true
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-  }
-  install_enable = true
-
-  sources = [
-    "buffer/hpae_pcm_buffer.cpp",
-    "buffer/hpae_pcm_process.cpp",
-  ]
-
-  include_dirs = [
-    "buffer",
-    "simd",
-    "../../interfaces/inner_api/native/audiocommon/include",
-  ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-D_FORTIFY_SOURCE=2 -O2",
-  ]
-
-  deps = [
-    ":audio_engine_simd",
   ]
 
   external_deps = [
@@ -235,10 +167,8 @@ ohos_shared_library("audio_engine_node") {
   ]
 
   deps = [
-    ":audio_engine_simd",
-    ":audio_engine_buffer",
     ":audio_engine_utils",
-    ":audio_engine_resample",
+    ":audio_engine_plugins",
     "../audio_service:audio_common",
     "../audio_policy:audio_foundation",
     "../../frameworks/native/audioeffect:audio_effect",
