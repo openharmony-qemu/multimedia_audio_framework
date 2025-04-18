@@ -404,6 +404,8 @@ bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &session
 
 int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::string &sceneType)
 {
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
     std::thread([this, sceneType] {
         std::this_thread::sleep_for(std::chrono::milliseconds(RELEASE_WAIT_TIME_MS));
         std::lock_guard<std::mutex> lock(dynamicMutex_);
