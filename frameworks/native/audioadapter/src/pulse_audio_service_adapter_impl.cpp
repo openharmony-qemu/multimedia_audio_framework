@@ -72,14 +72,7 @@ static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM
     {"camcorder", STREAM_CAMCORDER}
 };
 
-AudioServiceAdapter::~AudioServiceAdapter() = default;
 PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;
-
-unique_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(unique_ptr<AudioServiceAdapterCallback> cb)
-{
-    CHECK_AND_RETURN_RET_LOG(cb != nullptr, nullptr, "CreateAudioAdapter cb is nullptr!");
-    return make_unique<PulseAudioServiceAdapterImpl>(cb);
-}
 
 PulseAudioServiceAdapterImpl::PulseAudioServiceAdapterImpl(unique_ptr<AudioServiceAdapterCallback> &cb)
 {
@@ -170,6 +163,12 @@ Fail:
     pa_context_unref(mContext);
     mContext = nullptr;
     return false;
+}
+
+int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const AudioModuleInfo& audioModuleInfo)
+{
+    AUDIO_PRERELEASE_LOGE("OpenAudioPort enter the INCORRECT func.");
+    return 0;
 }
 
 uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)

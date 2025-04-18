@@ -137,8 +137,9 @@ void AudioEnhanceChainManager::ResetInfo()
     isMute_ = false;
 }
 
-void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectChain> &enhanceChains,
-    const EffectChainManagerParam &managerParam, std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
+void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(const std::vector<EffectChain> &enhanceChains,
+    const EffectChainManagerParam &managerParam,
+    const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
     std::set<std::string> enhanceSet;
     for (EffectChain enhanceChain : enhanceChains) {
@@ -240,8 +241,9 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
     }
 }
 
-void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
-    const EffectChainManagerParam &managerParam, std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
+void AudioEnhanceChainManager::InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
+    const EffectChainManagerParam &managerParam,
+    const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     normalSceneLimit_ = managerParam.maxExtraNum;

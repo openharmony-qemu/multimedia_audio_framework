@@ -32,6 +32,7 @@ public:
     virtual ~CapturerInServer();
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnReadData(size_t length) override;
+    int32_t OnReadData(std::vector<char>& outputData, size_t requestDataLen) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);

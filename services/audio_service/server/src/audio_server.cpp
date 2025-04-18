@@ -308,12 +308,16 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         argQue.push(args[index]);
     }
     std::string dumpString;
-
-    AudioServerDump dumpObj;
-    int32_t res = dumpObj.Initialize();
-    CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
-        "Audio Service Dump Not initialised\n");
-    dumpObj.AudioDataDump(dumpString, argQue);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        AUDIO_DEBUG_LOG("HPAE dump");
+    } else {
+        AudioServerDump dumpObj;
+        int32_t res = dumpObj.Initialize();
+        CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
+            "Audio Service Dump Not initialised\n");
+        dumpObj.AudioDataDump(dumpString, argQue);
+    }
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
@@ -348,15 +352,20 @@ void AudioServer::OnStart()
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        AUDIO_INFO_LOG("HPAE IHpaeManager Init\n");
+    } else {
 #ifdef PA
-    int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
-    pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
-    if (ret != 0) {
-        AUDIO_ERR_LOG("pthread_create failed %d", ret);
-        WriteServiceStartupError();
-    }
-    AUDIO_DEBUG_LOG("Created paDaemonThread\n");
+        int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
+        pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
+        if (ret != 0) {
+            AUDIO_ERR_LOG("pthread_create failed %d", ret);
+            WriteServiceStartupError();
+        }
+        AUDIO_DEBUG_LOG("Created paDaemonThread\n");
 #endif
+    }
 
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();
@@ -891,7 +900,7 @@ int32_t AudioServer::OffloadSetVolume(float volume)
 }
 
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag)
+    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("Scene: %{public}d, device: %{public}d", audioScene, activeInputDevice);
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
@@ -931,7 +940,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
         if (activeOutputDevice == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
             activeOutputDevices[0] = DEVICE_TYPE_NONE;
         }
-        sink->SetAudioScene(audioScene, activeOutputDevices);
+        sink->SetAudioScene(audioScene, activeOutputDevices, scoExcludeFlag);
     }
 
     audioScene_ = audioScene;

@@ -17,6 +17,7 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <parcel.h>
 
@@ -584,6 +585,24 @@ struct AudioStreamData {
     int32_t volumeEnd;
     std::unordered_map<int32_t, bool> isInnerCapeds;
 };
+
+struct AudioCallBackStreamInfo {
+    uint64_t framePosition;
+    uint64_t framesWritten;
+    uint64_t timestamp;
+    uint64_t latency = 0;
+    int8_t *inputData;
+    size_t requestDataLen;
+    std::string deviceClass;
+    std::string deviceNetId;
+    bool needData;
+};
+
+struct AudioChannelInfo {
+    AudioChannelLayout channelLayout;
+    uint32_t numChannels;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STREAM_INFO_H

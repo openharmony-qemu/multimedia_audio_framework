@@ -22,7 +22,6 @@ ohos_fuzztest("AudioServiceClientFuzzTest") {
   include_dirs = [
     "../../../frameworks/native/audioinnercall/include",
     "../../../frameworks/native/audiostream/include",
-    "../../../frameworks/native/hdiadapter/sink/common",
     "../../../services/audio_service/server/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_policy/client/include",
@@ -40,11 +39,11 @@ ohos_fuzztest("AudioServiceClientFuzzTest") {
   configs = [ "../../../services/audio_service:audio_service_config" ]
 
   deps = [
+    "../../../frameworks/native/audioutils:audio_utils",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
-    "../../../frameworks/native/audioutils:audio_utils",
   ]
   external_deps = [
     "ability_base:want",
