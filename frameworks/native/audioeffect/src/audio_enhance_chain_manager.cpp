@@ -918,6 +918,21 @@ int32_t AudioEnhanceChainManager::WriteEnhancePropertyToDb(const std::string &ke
     return SUCCESS;
 }
 
+int32_t AudioEnhanceChainManager::SetAccessoryDeviceState(bool state)
+{
+    ErrCode ret;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), ERROR, "os account not ready");
+    if (state) {
+        ret = settingProvider.PutStringValue("hw.pencil.mic_ack.state", "1", "global");
+    } else {
+        ret = settingProvider.PutStringValue("hw.pencil.mic_ack.state", "0", "global");
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Write Accessory state to Database failed");
+    AUDIO_INFO_LOG("success write hw.pencil.mic_ack.state %{public}d to Database", state);
+    return SUCCESS;
+}
+
 void AudioEnhanceChainManager::GetDeviceTypeName(DeviceType deviceType, std::string &deviceName)
 {
     const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
