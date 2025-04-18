@@ -541,7 +541,7 @@ static void MultiplyFilterSymmetricEvenDownMultichannel(SingleStagePolyphaseResa
             }
             j++;
         }
-        //Skip zero
+        // Skip zero
         coeffs++;
         j++;
         for (i = 0; i < decimateFactor / TWO_STEPS; i++) {
@@ -769,8 +769,8 @@ static int32_t PolyphaseResamplerMultichannel(SingleStagePolyphaseResamplerState
     int32_t i;
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex)
-            - subfilterNum) - 1) / decimateFactor + 1);
+        outSample = COMPARE_MIN((*outputLength), ((interpolateFactor *
+            ((*inputLength) - inputIndex) - subfilterNum) - 1) / decimateFactor + 1);
     }
 
     for (i = 0; i < outSample; i++) {

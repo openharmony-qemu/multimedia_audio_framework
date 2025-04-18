@@ -26,7 +26,7 @@ namespace HPAE {
 constexpr uint32_t MIN_START_NODE_ID = 100;
 class DfxTreeNode {
 public:
-    DfxTreeNode(HpaeDfxNodeInfo val) : nodeInfo_(val)
+    explicit DfxTreeNode(HpaeDfxNodeInfo val) : nodeInfo_(val)
     {}
     ~DfxTreeNode()
     {

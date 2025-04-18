@@ -146,8 +146,9 @@ void HpaeDfxTree::PrintNodeInfo(std::string &outStr, HpaeDfxNodeInfo &nodeInfo)
 
 void HpaeDfxTree::PrintSubTree(DfxTreeNode *node, const std::string &prefix, bool isLastChild, std::string &outStr)
 {
-    if (!node)
+    if (!node) {
         return;
+    }
 
     outStr = outStr + prefix;
     outStr = outStr + (isLastChild ? "|___ " : "|--- ");

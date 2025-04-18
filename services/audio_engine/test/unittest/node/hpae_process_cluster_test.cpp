@@ -164,5 +164,5 @@ TEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest)
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 0);
 }
 
-} //AudioStandard
-} //OHOS
+} // AudioStandard
+} // OHOS

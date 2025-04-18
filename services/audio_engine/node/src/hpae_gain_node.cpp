@@ -19,7 +19,7 @@
 
 #include "hpae_gain_node.h"
 #include "hpae_pcm_buffer.h"
-#include "audio_volume_c.h"
+#include "audio_volume.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "securec.h"
@@ -41,7 +41,8 @@ static constexpr float EPSILON = 1e-6f;
 
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
-    float curSystemGain = GetCurVolumeByStreamType(GetSessionId(), (int32_t)GetStreamType(), GetDeviceClass().c_str());
+    struct VolumeValues volumes;
+    float curSystemGain = AudioVolume::GetInstance()->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
     SetPreVolume(GetSessionId(), curSystemGain);
     AUDIO_INFO_LOG("HpaeGainNode curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
     AUDIO_INFO_LOG(
@@ -201,8 +202,9 @@ void HpaeGainNode::SlienceData(HpaePcmBuffer *pcmBuffer)
 
 void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t channelCount)
 {
+    struct VolumeValues volumes;
     float *inputData = (float *)input->GetPcmDataBuffer();
-    float curSystemGain = GetCurVolumeByStreamType(GetSessionId(), (int32_t)GetStreamType(), GetDeviceClass().c_str());
+    float curSystemGain = AudioVolume::GetInstance()->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
     float preSystemGain = GetPreVolume(GetSessionId());
     float systemStepGain = (curSystemGain - preSystemGain) / frameLen;
     AUDIO_DEBUG_LOG(
