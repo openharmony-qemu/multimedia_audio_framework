@@ -467,11 +467,20 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
         int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     }
+    bool isRingingToDefaultScene = false;
     if (audioScene != currentAudioScene_) {
-        currentAudioScene_ = audioScene;
-        if (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT) {
+        if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {
             forceSetRouteFlag_ = true;
         }
+        if (audioScene == AUDIO_SCENE_DEFAULT &&
+            (currentAudioScene_ == AUDIO_SCENE_RINGING || currentAudioScene_ == AUDIO_SCENE_VOICE_RINGING)) {
+            isRingingToDefaultScene = true;
+        }
+        currentAudioScene_ = audioScene;
+    }
+    if (isRingingToDefaultScene) {
+        AUDIO_INFO_LOG("ringing scene to default scene");
+        return SUCCESS;
     }
     int32_t ret = UpdateActiveDevice(activeDevices);
     if (ret != SUCCESS) {
@@ -490,7 +499,7 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
     AUDIO_INFO_LOG("device: %{public}d, currentActiveDevice: %{public}d", outputDevices[0], currentActiveDevice_);
-    if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() <=
+    if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() ==
         static_cast<uint32_t>(currentDevicesSize_) && !forceSetRouteFlag_) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
         return SUCCESS;
