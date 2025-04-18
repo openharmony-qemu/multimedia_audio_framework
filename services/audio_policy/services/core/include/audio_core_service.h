@@ -262,7 +262,7 @@ private:
         SourceType sourceType);
     bool IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo);
 #ifdef BLUETOOTH_ENABLE
-    const sptr<IStandardAudioService> RegisterBluetoothDeathCallback();
+    void RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
     int32_t FetchDeviceAndRoute(
@@ -400,6 +400,7 @@ private:
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     static bool isBtListenerRegistered;
+    static bool isBtCrashed;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     bool isCurrentRemoteRenderer_ = false;

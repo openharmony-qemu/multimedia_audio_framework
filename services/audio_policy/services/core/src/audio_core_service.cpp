@@ -38,8 +38,8 @@ static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 bool AudioCoreService::isBtListenerRegistered = false;
+bool AudioCoreService::isBtCrashed = false;
 #ifdef BLUETOOTH_ENABLE
-static sptr<IStandardAudioService> g_btProxy = nullptr;
 mutex g_btProxyMutex;
 #endif
 
@@ -905,10 +905,13 @@ void AudioCoreService::RegisterBluetoothListener()
         AUDIO_INFO_LOG("audio policy service already register bt listerer, return");
         return;
     }
-    Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
-    Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+    if (!isBtCrashed) {
+        Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
+        Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+    }
     isBtListenerRegistered = true;
-    const sptr<IStandardAudioService> gsp = RegisterBluetoothDeathCallback();
+    isBtCrashed = false;
+    RegisterBluetoothDeathCallback();
     AudioPolicyUtils::GetInstance().SetBtConnecting(true);
     Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
     Bluetooth::AudioHfpManager::CheckHfpDeviceReconnect();
@@ -1041,43 +1044,36 @@ void AudioCoreService::SetAudioServerProxy()
 }
 
 #ifdef BLUETOOTH_ENABLE
-const sptr<IStandardAudioService> AudioCoreService::RegisterBluetoothDeathCallback()
+void AudioCoreService::RegisterBluetoothDeathCallback()
 {
     lock_guard<mutex> lock(g_btProxyMutex);
-    if (g_btProxy == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr,
-            "get sa manager failed");
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
-        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr,
-            "get audio service remote object failed");
-        g_btProxy = iface_cast<IStandardAudioService>(object);
-        CHECK_AND_RETURN_RET_LOG(g_btProxy != nullptr, nullptr,
-            "get audio service proxy failed");
-
-        // register death recipent
-        sptr<AudioServerDeathRecipient> asDeathRecipient =
-            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
-        if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
-                AudioCoreService::BluetoothServiceCrashedCallback(pid, uid);
-            });
-            bool result = object->AddDeathRecipient(asDeathRecipient);
-            if (!result) {
-                AUDIO_ERR_LOG("failed to add deathRecipient");
-            }
+    AUDIO_INFO_LOG("Enter");
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_LOG(samgr != nullptr,
+        "get sa manager failed");
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_LOG(object != nullptr,
+        "get audio service remote object failed");
+    // register death recipent
+    sptr<AudioServerDeathRecipient> asDeathRecipient =
+        new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
+    if (asDeathRecipient != nullptr) {
+        asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
+            BluetoothServiceCrashedCallback(pid, uid);
+        });
+        bool result = object->AddDeathRecipient(asDeathRecipient);
+        if (!result) {
+            AUDIO_ERR_LOG("failed to add deathRecipient");
         }
     }
-    sptr<IStandardAudioService> gasp = g_btProxy;
-    return gasp;
 }
 
 void AudioCoreService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("Bluetooth sa crashed, will restore proxy in next call");
     lock_guard<mutex> lock(g_btProxyMutex);
-    g_btProxy = nullptr;
     isBtListenerRegistered = false;
+    isBtCrashed = true;
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSource();
     Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
