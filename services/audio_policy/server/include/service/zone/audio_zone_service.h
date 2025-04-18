@@ -44,6 +44,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
     int32_t UnBindDeviceToAudioZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
+    int32_t UpdateDeviceFromGlobalForAllZone(std::shared_ptr<AudioDeviceDescriptor> device);
 
     int32_t RegisterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client);
     void UnRegisterAudioZoneClient(pid_t clientPid);
@@ -55,22 +56,19 @@ public:
     int32_t FindAudioZoneByUid(int32_t uid);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
-    int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-        const int32_t volumeLevel, const int32_t volumeFlag);
-    int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId,
-        int32_t deviceId);
+        const std::string &deviceTag);
     int32_t EnableAudioZoneInterruptReport(pid_t clientPid, int32_t zoneId,
-        int32_t deviceId, bool enable);
+        const std::string &deviceTag, bool enable);
 
     int32_t ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy = false);
     int32_t DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
-    int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+    int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(int32_t zoneId,
@@ -91,11 +89,11 @@ private:
     std::mutex zoneMutex_;
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
-    int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, int32_t deviceId,
-        const std::string &tag);
-    int32_t RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid, int32_t deviceId,
-        const std::string &tag);
-    int32_t FindAudioZoneByKey(int32_t uid, int32_t deviceId, const std::string &tag);
+    int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag);
+    int32_t RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag);
+    int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag);
     bool CheckIsZoneValid(int32_t zoneId);
     void RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device);
 };

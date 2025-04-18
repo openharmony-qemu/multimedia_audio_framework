@@ -453,7 +453,7 @@ public:
     int32_t UnBindDeviceToAudioZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
 
-    int32_t EnableAudioZoneReport (bool enable);
+    int32_t EnableAudioZoneReport(bool enable);
 
     int32_t EnableAudioZoneChangeReport(int32_t zoneId, bool enable);
 
@@ -463,22 +463,17 @@ public:
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable);
 
-    int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-        const int32_t volumeLevel, const int32_t volumeFlag = 0);
-
-    int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType);
-
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
-        int32_t zoneId, int32_t deviceId);
+        int32_t zoneId, const std::string &deviceTag);
 
-    int32_t EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable);
+    int32_t EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable);
 
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     
-    int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+    int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,

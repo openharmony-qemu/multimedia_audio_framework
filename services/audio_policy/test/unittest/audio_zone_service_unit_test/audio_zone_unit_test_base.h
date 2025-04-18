@@ -86,13 +86,13 @@ public:
         Notify();
     }
 
-    void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
+    void OnInterruptEvent(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
         AudioZoneInterruptReason reason) override
     {
         recvEvent_.type = AUDIO_ZONE_INTERRUPT_EVENT;
         recvEvent_.zoneId = zoneId;
-        recvEvent_.deviceId = deviceId;
+        recvEvent_.deviceTag = deviceTag;
         recvEvent_.interrupts = interrupts;
         recvEvent_.zoneInterruptReason = reason;
         Notify();
@@ -160,9 +160,9 @@ public:
         EXPECT_NE(client2000_, nullptr);
 
         AudioZoneContext context;
-        auto zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+        zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
         EXPECT_NE(zoneId1_, 0);
-        auto zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
+        zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
         EXPECT_NE(zoneId2_, 0);
     }
 

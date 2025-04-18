@@ -38,7 +38,7 @@ public:
     void SendZoneRemoveEvent(pid_t clientPid, int32_t zoneId);
     void SendZoneChangeEvent(pid_t clientPid, std::shared_ptr<AudioZoneDescriptor> descriptor,
         AudioZoneChangeReason reason);
-    void SendZoneInterruptEvent(pid_t clientPid, int32_t zoneId, int32_t deviceId,
+    void SendZoneInterruptEvent(pid_t clientPid, int32_t zoneId, const std::string &deviceTag,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
         AudioZoneInterruptReason reason);
 

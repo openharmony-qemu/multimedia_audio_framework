@@ -33,7 +33,7 @@ struct AudioZoneEvent {
     AudioZoneEventType type;
     pid_t clientPid;
     int32_t zoneId;
-    int32_t deviceId;
+    std::string deviceTag;
     std::shared_ptr<AudioZoneDescriptor> descriptor;
     AudioZoneChangeReason zoneChangeReason;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;

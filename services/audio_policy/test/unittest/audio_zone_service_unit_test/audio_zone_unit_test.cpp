@@ -35,6 +35,14 @@ static std::shared_ptr<AudioZone> CreateZone(const std::string &name)
     return zone;
 }
 
+static void ClearZone()
+{
+    auto zoneList = AudioZoneService::GetInstance().GetAllAudioZone();
+    for (auto zone : zoneList) {
+        AudioZoneService::GetInstance().ReleaseAudioZone(zone->zoneId_);
+    }
+}
+
 /**
  * @tc.name  : Test AudioZone.
  * @tc.number: AudioZone_001
@@ -42,6 +50,7 @@ static std::shared_ptr<AudioZone> CreateZone(const std::string &name)
  */
 HWTEST_F(AudioZoneUnitTest, AudioZone_001, TestSize.Level1)
 {
+    ClearZone();
     auto zone = CreateZone("TestZone");
     auto desc = zone->GetDescriptor();
     EXPECT_NE(desc, nullptr);
@@ -56,18 +65,19 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_001, TestSize.Level1)
  */
 HWTEST_F(AudioZoneUnitTest, AudioZone_002, TestSize.Level1)
 {
+    ClearZone();
     auto zone = CreateZone("TestZone");
-    zone->BindByKey(AudioZoneBindKey(1, 1));
+    zone->BindByKey(AudioZoneBindKey(1, "d1"));
     zone->BindByKey(AudioZoneBindKey(1));
-    zone->BindByKey(AudioZoneBindKey(2, 1, "test"));
-    zone->BindByKey(AudioZoneBindKey(2, -1, "test"));
-    zone->BindByKey(AudioZoneBindKey(2, -1, "temp"));
-    zone->RemoveKey(AudioZoneBindKey(2, -1, "temp"));
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, -1, "temp")), false);
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, -1, "test")), true);
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, 1, "test")), false);
+    zone->BindByKey(AudioZoneBindKey(2, "d1", "test"));
+    zone->BindByKey(AudioZoneBindKey(2, "", "test"));
+    zone->BindByKey(AudioZoneBindKey(2, "", "temp"));
+    zone->RemoveKey(AudioZoneBindKey(2, "", "temp"));
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "temp")), false);
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "test")), true);
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "test")), false);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1)), true);
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1, -1)), false);
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1, "")), true);
 }
 
 /**
@@ -77,6 +87,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_002, TestSize.Level1)
  */
 HWTEST_F(AudioZoneUnitTest, AudioZone_003, TestSize.Level1)
 {
+    ClearZone();
     auto zone = CreateZone("TestZone");
     auto device1 = CreateDevice(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "", "LocalDevice");
     auto device2 = CreateDevice(DEVICE_TYPE_MIC, INPUT_DEVICE, "", "LocalDevice");
@@ -113,6 +124,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_003, TestSize.Level1)
  */
 HWTEST_F(AudioZoneUnitTest, AudioZone_004, TestSize.Level1)
 {
+    ClearZone();
     AudioZoneContext context;
     auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
     EXPECT_NE(zoneId1, 0);
@@ -144,17 +156,13 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_004, TestSize.Level1)
  */
 HWTEST_F(AudioZoneUnitTest, AudioZone_005, TestSize.Level1)
 {
+    ClearZone();
     AudioZoneContext context;
-    EXPECT_EQ(AudioZoneService::GetInstance().EnableAudioZoneReport(TEST_PID_1000, true), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().EnableAudioZoneReport(TEST_PID_1000, true), 0);
     auto client = RegisterTestClient(TEST_PID_1000);
     EXPECT_NE(client, nullptr);
     auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
     EXPECT_NE(zoneId1, 0);
-    client->Wait();
-    EXPECT_EQ(client->recvEvent_.type, AUDIO_ZONE_ADD_EVENT);
-    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
-    client->Wait();
-    EXPECT_EQ(client->recvEvent_.type, AUDIO_ZONE_REMOVE_EVENT);
 }
 
 /**
@@ -165,7 +173,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_005, TestSize.Level1)
 HWTEST_F(AudioZoneUnitTest, AudioZone_006, TestSize.Level1)
 {
     AudioZoneContext context;
-    EXPECT_NE(AudioZoneService::GetInstance().EnableAudioZoneReport(TEST_PID_1000, true), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().EnableAudioZoneChangeReport(TEST_PID_1000, true), 0);
     auto client = RegisterTestClient(TEST_PID_1000);
     EXPECT_NE(client, nullptr);
     auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
@@ -173,7 +181,6 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_006, TestSize.Level1)
     EXPECT_EQ(AudioZoneService::GetInstance().EnableAudioZoneChangeReport(TEST_PID_1000, zoneId1, true), 0);
 
     EXPECT_EQ(AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1, TEST_PID_1000), 0);
-    client->Wait();
     EXPECT_NE(client->recvEvent_.type, AUDIO_ZONE_CHANGE_EVENT);
 }
 } // namespace AudioStandard

@@ -99,7 +99,7 @@ void AudioZoneClientStub::HandleAudioZoneInterrupt(MessageParcel &data, MessageP
 void AudioZoneClientStub::HandleAudioZoneDeviceInterrupt(MessageParcel &data, MessageParcel &reply)
 {
     int32_t zoneId = data.ReadInt32();
-    int32_t deviceId = data.ReadInt32();
+    std::string deviceTag = data.ReadString();
     int32_t size = data.ReadInt32();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
     for (int i = 0; i < size; i++) {
@@ -109,7 +109,7 @@ void AudioZoneClientStub::HandleAudioZoneDeviceInterrupt(MessageParcel &data, Me
         interrupts.emplace_back(std::make_pair(temp, state));
     }
     AudioZoneInterruptReason reason = static_cast<AudioZoneInterruptReason>(data.ReadInt32());
-    OnInterruptEvent(zoneId, deviceId, interrupts, reason);
+    OnInterruptEvent(zoneId, deviceTag, interrupts, reason);
 }
 
 void AudioZoneClientStub::HandleAudioZoneSetSystemVolume(MessageParcel &data, MessageParcel &reply)
@@ -201,16 +201,16 @@ void AudioZoneClient::RemoveAudioZoneVolumeProxy(int32_t zoneId)
 int32_t AudioZoneClient::AddAudioInterruptCallback(int32_t zoneId,
     const std::shared_ptr<AudioZoneInterruptCallback> &callback)
 {
-    return AddAudioInterruptCallback(zoneId, -1, callback);
+    return AddAudioInterruptCallback(zoneId, "", callback);
 }
 
-int32_t AudioZoneClient::AddAudioInterruptCallback(int32_t zoneId, int32_t deviceId,
+int32_t AudioZoneClient::AddAudioInterruptCallback(int32_t zoneId, const std::string &deviceTag,
     const std::shared_ptr<AudioZoneInterruptCallback> &callback)
 {
-    int64_t key = GetInterruptKeyId(zoneId, deviceId);
+    std::string key = GetInterruptKeyId(zoneId, deviceTag);
     std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
     if (audioZoneInterruptCallbackMap_.find(key) == audioZoneInterruptCallbackMap_.end()) {
-        int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceId, true);
+        int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceTag, true);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
             "EnableAudioZoneInterruptReport result:%{public}d", result);
     }
@@ -220,16 +220,16 @@ int32_t AudioZoneClient::AddAudioInterruptCallback(int32_t zoneId, int32_t devic
 
 void AudioZoneClient::RemoveAudioInterruptCallback(int32_t zoneId)
 {
-    RemoveAudioInterruptCallback(zoneId, -1);
+    RemoveAudioInterruptCallback(zoneId, "");
 }
 
-void AudioZoneClient::RemoveAudioInterruptCallback(int32_t zoneId, int32_t deviceId)
+void AudioZoneClient::RemoveAudioInterruptCallback(int32_t zoneId, const std::string &deviceTag)
 {
-    int64_t key = GetInterruptKeyId(zoneId, deviceId);
+    std::string key = GetInterruptKeyId(zoneId, deviceTag);
     std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
     CHECK_AND_RETURN_LOG(audioZoneInterruptCallbackMap_.find(key) != audioZoneInterruptCallbackMap_.end(),
         "audioZoneInterruptCallbackMap_ not find key.");
-    AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceId, false);
+    AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceTag, false);
     audioZoneInterruptCallbackMap_.erase(key);
 }
 
@@ -262,20 +262,30 @@ void AudioZoneClient::Restore()
     {
         std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
         for (const auto &it : audioZoneInterruptCallbackMap_) {
-        /* 0xFFFFFFFF: mask */
-            int32_t zoneId = static_cast<int32_t>(it.first & 0xFFFFFFFF);
-            int32_t deviceId = static_cast<int32_t>((it.first >> BIT_32) & 0xFFFFFFFF);
-            int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceId, true);
+            std::size_t pos = it.first.find('&');
+            if (pos == std::string::npos) {
+                AUDIO_INFO_LOG("error str:%{public}s", it.first.c_str());
+                return;
+            }
+            std::string zoneIdStr = it.first.substr(0, pos);
+            std::string deviceTag = it.first.substr(pos + 1);
+            int32_t zoneId = 0;
+            auto [ptr, ec] = std::from_chars(zoneIdStr.data(), zoneIdStr.data() + zoneIdStr.size(), zoneId);
+            void(ptr);
+            if (ec == std::errc::invalid_argument) {
+                AUDIO_ERR_LOG("%{public}s is not a number", zoneIdStr.c_str());
+            } else if (ec == std::errc::result_out_of_range) {
+                AUDIO_ERR_LOG("%{public}s is out of range", zoneIdStr.c_str());
+            }
+            int32_t result = AudioPolicyManager::GetInstance().EnableAudioZoneInterruptReport(zoneId, deviceTag, true);
             AUDIO_INFO_LOG("EnableAudioZoneInterruptReport result:%{public}d", result);
         }
     }
 }
 
-int64_t AudioZoneClient::GetInterruptKeyId(int32_t zoneId, int32_t deviceId)
+std::string AudioZoneClient::GetInterruptKeyId(int32_t zoneId, const std::string &deviceTag)
 {
-    int64_t key = zoneId;
-    key = key << BIT_32;
-    return key | deviceId;
+    return std::to_string(zoneId) + "&" + deviceTag;
 }
 
 void AudioZoneClient::OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor)
@@ -307,14 +317,14 @@ void AudioZoneClient::OnInterruptEvent(int32_t zoneId,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
     AudioZoneInterruptReason reason)
 {
-    OnInterruptEvent(zoneId, -1, interrupts, reason);
+    OnInterruptEvent(zoneId, "", interrupts, reason);
 }
 
-void AudioZoneClient::OnInterruptEvent(int32_t zoneId, int32_t deviceId,
+void AudioZoneClient::OnInterruptEvent(int32_t zoneId, const std::string &deviceTag,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
     AudioZoneInterruptReason reason)
 {
-    int64_t key = GetInterruptKeyId(zoneId, deviceId);
+    std::string key = GetInterruptKeyId(zoneId, deviceTag);
     std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
     if (audioZoneInterruptCallbackMap_.find(key) != audioZoneInterruptCallbackMap_.end()) {
         audioZoneInterruptCallbackMap_[key]->OnInterruptEvent(interrupts, reason);

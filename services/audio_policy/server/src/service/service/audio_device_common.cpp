@@ -28,7 +28,6 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_recovery_device.h"
-#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -591,12 +590,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetDeviceDescr
     std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(rendererChangeInfo->clientUID);
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
-    } else if (zoneId != 0) {
-        descs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
-            rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID, ROUTER_TYPE_DEFAULT);
     } else {
         descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
             rendererChangeInfo->clientUID);
