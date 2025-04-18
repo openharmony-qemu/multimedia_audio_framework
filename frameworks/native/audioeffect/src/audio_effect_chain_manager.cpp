@@ -29,6 +29,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+constexpr int32_t RELEASE_WAIT_TIME_MS = 1000; // 1000ms
 const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
     {"voip_down", "settings.sound_ai_voip_down_selection"},
 };
@@ -403,8 +404,12 @@ bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &session
 
 int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::string &sceneType)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    return ReleaseAudioEffectChainDynamicInner(sceneType);
+    std::thread([this, sceneType] {
+        std::this_thread::sleep_for(std::chrono::milliseconds(RELEASE_WAIT_TIME_MS));
+        std::lock_guard<std::mutex> lock(dynamicMutex_);
+        ReleaseAudioEffectChainDynamicInner(sceneType);
+    }).detach();
+    return SUCCESS;
 }
 
 bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode)
