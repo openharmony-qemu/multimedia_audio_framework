@@ -369,6 +369,7 @@ private:
     }
 
     std::shared_ptr<AudioServiceAdapter> audioServiceAdapter_;
+    std::vector<AudioStreamType> defaultVolumeTypeList_;
     std::unordered_map<AudioStreamType, int> minVolumeIndexMap_;
     std::unordered_map<AudioStreamType, int> maxVolumeIndexMap_;
     std::mutex systemSoundMutex_;

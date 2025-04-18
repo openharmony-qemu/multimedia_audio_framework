@@ -59,18 +59,6 @@ static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 }
 
-static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
-    STREAM_VOICE_CALL,
-    STREAM_RING,
-    STREAM_MUSIC,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_ALARM,
-    STREAM_ACCESSIBILITY,
-    STREAM_ULTRASONIC,
-    STREAM_SYSTEM,
-    STREAM_VOICE_CALL_ASSISTANT,
-    STREAM_ALL
-};
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
