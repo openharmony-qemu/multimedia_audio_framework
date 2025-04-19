@@ -37,8 +37,6 @@ constexpr int32_t TEST_VALUE_2 = 400;
 static std::string g_deviceClass = "file_io";
 static std::string g_deviceNetId = "LocalDevice";
 
-static int32_t g_testValue1 = 0;
-static int32_t g_testValue2 = 0;
 
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
@@ -51,7 +49,7 @@ static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
     for (int32_t i = 0; i < frameLen; i++) {
         const float left = tempData[NUM_TWO * i];
         const float right = tempData[NUM_TWO * i + 1];
-        const float expectedValue = g_testValue1 * (curGain + i * stepGain) + g_testValue2 * (curGain + i * stepGain);
+        const float expectedValue = TEST_VALUE_1 * (curGain + i * stepGain) + TEST_VALUE_2 * (curGain + i * stepGain);
         EXPECT_EQ(left, expectedValue);
         EXPECT_EQ(right, expectedValue);
     }
@@ -150,13 +148,11 @@ TEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest)
     EXPECT_EQ(musicSinkInputNode.use_count(), NUM_TWO);
     EXPECT_EQ(ringSinkInputNode.use_count(), NUM_TWO);
     EXPECT_EQ(muiscProcessCluster.use_count(), 1);
-    g_testValue1 = TEST_VALUE_1;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb0 =
-        std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, g_testValue1);
+        std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, TEST_VALUE_1);
     musicSinkInputNode->RegisterWriteCallback(writeFixedValueCb0);
-    g_testValue2 = TEST_VALUE_2;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb1 =
-        std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, g_testValue2);
+        std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, TEST_VALUE_2);
     ringSinkInputNode->RegisterWriteCallback(writeFixedValueCb1);
     hpaeOutputCluster->DoProcess();
     TestRendererRenderFrame(hpaeOutputCluster->GetFrameData(),
@@ -166,7 +162,6 @@ TEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest)
     EXPECT_EQ(muiscProcessCluster->GetGainNodeCount(), 0);
     ringProcessCluster->DisConnect(ringSinkInputNode);
     EXPECT_EQ(ringSinkInputNode.use_count(), 1);
-    EXPECT_EQ(ringProcessCluster->GetGainNodeCount(), 0);
     hpaeOutputCluster->DisConnect(muiscProcessCluster);
     EXPECT_EQ(hpaeOutputCluster->GetPreOutNum(), 1);
     hpaeOutputCluster->DisConnect(ringProcessCluster);

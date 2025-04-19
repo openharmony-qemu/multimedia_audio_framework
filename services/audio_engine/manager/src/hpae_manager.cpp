@@ -650,17 +650,24 @@ int32_t HpaeManager::GetAllSinkInputs()
     return SUCCESS;
 }
 
+void HpaeManager::AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>>& sinkIdMap, 
+    std::pair<uint32_t, std::string>& id, std::string& name)
+{
+    if (id.second == name && rendererIdSinkNameMap_[id.first] != id.second) {
+        if (sinkIdMap.find(id.second) == sinkIdMap.end()) {
+            sinkIdMap[id.second] = std::vector<uint32_t>{};
+        }
+        sinkIdMap[id.second].push_back(id.first);
+    }
+    return;
+}
+
 void HpaeManager::MoveToPreferSink(const std::string &name)
 {
     AUDIO_INFO_LOG("enter in");
     std::unordered_map<std::string, std::vector<uint32_t>> sinkIdMap;
     for (const auto &id : idPreferSinkNameMap_) {
-        if (id.second == name && rendererIdSinkNameMap_[id.first] != id.second) {
-            if (sinkIdMap.find(id.second) == sinkIdMap.end()) {
-                sinkIdMap[id.second] = std::vector<uint32_t>{};
-            }
-            sinkIdMap[id.second].push_back(id.first);
-        }
+        AddSinkIdByName(sinkIdMap, id, name);
     }
     for (const auto &sinkId : sinkIdMap) {
         std::string sinkName = sinkId.first;
