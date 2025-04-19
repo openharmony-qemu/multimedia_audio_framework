@@ -48,11 +48,12 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     // for now, work at float32le by default
     channelConverter_.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, true);
     AUDIO_INFO_LOG("node id %{public}d, sessionid %{public}d, "
-        "input: bitformat %{public}d, sample rate %{public}d, channels %{public}d, channelLayout %{public}" PRIu64 ""
-        ", output: bitformat %{public}d, sample rate %{public}d, channels %{public}d, channelLayout %{public}" PRIu64 "",
-        GetNodeId(), GetSessionId(), preNodeInfo.format, preNodeInfo.samplingRate, inChannelInfo.numChannels,
-        inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.samplingRate, outChannelInfo.numChannels,
-        outChannelInfo.channelLayout);
+        "input: bitformat %{public}d, sample rate %{public}d, channels %{public}d,"
+        "channelLayout %{public}" PRIu64 ", output: bitformat %{public}d, sample rate %{public}d,"
+        "channels %{public}d, channelLayout %{public}" PRIu64 "", GetNodeId(), GetSessionId(),
+        preNodeInfo.format, preNodeInfo.samplingRate, inChannelInfo.numChannels,
+        inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.samplingRate,
+        outChannelInfo.numChannels, outChannelInfo.channelLayout);
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeConverterNodeInput_id_" + std::to_string(GetSessionId()) +
                                                       "_ch_" + std::to_string(preNodeInfo_.channels) + "_rate_" +

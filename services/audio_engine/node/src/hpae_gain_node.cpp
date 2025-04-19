@@ -206,6 +206,7 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     float *inputData = (float *)input->GetPcmDataBuffer();
     float curSystemGain = AudioVolume::GetInstance()->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
     float preSystemGain = GetPreVolume(GetSessionId());
+    CHECK_AND_RETURN_LOG(frameLen != 0, "framelen is zero, invalid val.");
     float systemStepGain = (curSystemGain - preSystemGain) / frameLen;
     AUDIO_DEBUG_LOG(
         "curSystemGain:%{public}f, preSystemGain:%{public}f, systemStepGain:%{public}f deviceClass :%{public}s",

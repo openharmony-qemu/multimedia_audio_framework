@@ -26,23 +26,23 @@ extern "C" {
     };
 
     /** Audio sample format */
-    typedef enum audio_sample_format {
+    typedef enum AudioSampleFormat {
         SAMPLE_U8 = 0,
         SAMPLE_S16LE = 1,
         SAMPLE_S24LE = 2,
         SAMPLE_S32LE = 3,
         SAMPLE_F32LE = 4,
         INVALID_WIDTH = -1
-    } audio_sample_format_t;
+    } AudioSampleFormat;
 
 
     typedef void (*FmtConversionFunction)(unsigned n, const void* in, const void* out);
 
-    FmtConversionFunction GetFmtConversionU8(audio_sample_format_t fmt);
-    FmtConversionFunction GetFmtConversionS16Le(audio_sample_format_t fmt);
-    FmtConversionFunction GetFmtConversionS24Le(audio_sample_format_t fmt);
-    FmtConversionFunction GetFmtConversionS32Le(audio_sample_format_t fmt);
-    FmtConversionFunction GetFmtConversionF32Le(audio_sample_format_t fmt);
+    FmtConversionFunction GetFmtConversionU8(AudioSampleFormat fmt);
+    FmtConversionFunction GetFmtConversionS16Le(AudioSampleFormat fmt);
+    FmtConversionFunction GetFmtConversionS24Le(AudioSampleFormat fmt);
+    FmtConversionFunction GetFmtConversionS32Le(AudioSampleFormat fmt);
+    FmtConversionFunction GetFmtConversionF32Le(AudioSampleFormat fmt);
 
     typedef struct BitDepthConversionState BitDepthConversionState;
 

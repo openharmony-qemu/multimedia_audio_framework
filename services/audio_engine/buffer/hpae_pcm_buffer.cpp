@@ -35,7 +35,10 @@ HpaePcmBuffer &HpaePcmBuffer::operator=(HpaePcmBuffer &other)
     if (this != &other) {
         pcmBufferInfo_ = other.pcmBufferInfo_;
         InitPcmProcess();
-        memcpy_s(GetPcmDataBuffer(), bufferByteSize_, other.GetPcmDataBuffer(), bufferByteSize_);
+        int32_t ret = memcpy_s(GetPcmDataBuffer(), bufferByteSize_, other.GetPcmDataBuffer(), bufferByteSize_);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("memcpy failed when copy PcmBuffer");
+        }
     }
     return *this;
 }

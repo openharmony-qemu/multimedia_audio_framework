@@ -251,27 +251,27 @@ static FmtConversionFunction sample_f32le_table[] = {
 };
 
 // choose function from function table
-FmtConversionFunction GetFmtConversionU8(audio_sample_format_t fmt)
+FmtConversionFunction GetFmtConversionU8(AudioSampleFormat fmt)
 {
     return sample_u8_table[fmt];
 }
 
-FmtConversionFunction GetFmtConversionS16Le(audio_sample_format_t fmt)
+FmtConversionFunction GetFmtConversionS16Le(AudioSampleFormat fmt)
 {
     return sample_s16le_table[fmt];
 }
 
-FmtConversionFunction GetFmtConversionS24Le(audio_sample_format_t fmt)
+FmtConversionFunction GetFmtConversionS24Le(AudioSampleFormat fmt)
 {
     return sample_s24le_table[fmt];
 }
 
-FmtConversionFunction GetFmtConversionS32Le(audio_sample_format_t fmt)
+FmtConversionFunction GetFmtConversionS32Le(AudioSampleFormat fmt)
 {
     return sample_s32le_table[fmt];
 }
 
-FmtConversionFunction GetFmtConversionF32Le(audio_sample_format_t fmt)
+FmtConversionFunction GetFmtConversionF32Le(AudioSampleFormat fmt)
 {
     return sample_f32le_table[fmt];
 }

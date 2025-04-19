@@ -27,7 +27,7 @@ using namespace HPAE;
 
 namespace OHOS {
 namespace AudioStandard {
-namespace HPAE{
+namespace HPAE {
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const float FRAME_LENGTH_IN_SECOND = 0.02;
 std::string g_rootPath = "/data/data/.pulse_dir/";
@@ -101,11 +101,11 @@ static void WaitForMsgProcessing(std::shared_ptr<HpaeInnerCapturerManager>& hpae
     int waitCount = 0;
     const int32_t WAIT_COUNT_THD = 5;
     while(hpaeInnerCapturerManager->IsMsgProcessing()) {
-         std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 20ms frameLen, need optimize
-         waitCount++;
-         if (waitCount >= WAIT_COUNT_THD) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 20ms frameLen, need optimize
+        waitCount++;
+        if (waitCount >= WAIT_COUNT_THD) {
             break;
-         }
+        }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(40));  // 40ms wait time, need optimize
     EXPECT_EQ(hpaeInnerCapturerManager->IsMsgProcessing(), false);

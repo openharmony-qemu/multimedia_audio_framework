@@ -852,7 +852,7 @@ std::string HpaeCapturerManager::GetThreadName()
 
 void HpaeCapturerManager::DumpSourceInfo()
 {
-    SendRequest([this](){
+    SendRequest([this]() {
         AUDIO_INFO_LOG("DumpSourceInfo deviceName %{public}s", sourceInfo_.deviceName.c_str());
         UploadDumpSourceInfo(sourceInfo_.deviceName);
     });

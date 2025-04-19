@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "audio_proresampler.h"
 #include "audio_policy_log.h"
 #include "securec.h"

@@ -70,7 +70,7 @@ public:
     int32_t Init() override;
     int32_t DeInit() override;
     int32_t RegisterSerivceCallback(const std::weak_ptr<AudioServiceHpaeCallback> &callback) override;
-    int32_t RegisterHpaeDumpCallback( AudioServiceHpaeDumpCallback *callback) override;
+    int32_t RegisterHpaeDumpCallback(AudioServiceHpaeDumpCallback *callback) override;
     void DumpSinkInfo(std::string deviceName) override;
     void DumpSourceInfo(std::string deviceName) override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
