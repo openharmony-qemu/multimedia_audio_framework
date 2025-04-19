@@ -39,22 +39,22 @@ public:
         return size_;
     }
 
-    float *begin()
+    float *Begin()
     {
         return pcmDataPtr_;
     }
 
-    float *end()
+    float *End()
     {
         return pcmDataPtr_ + size_;
     }
 
-    const float *begin() const
+    const float *Begin() const
     {
         return pcmDataPtr_;
     }
 
-    const float *end() const
+    const float *End() const
     {
         return pcmDataPtr_ + size_;
     }

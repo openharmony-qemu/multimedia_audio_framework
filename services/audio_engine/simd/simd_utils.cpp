@@ -32,7 +32,9 @@ void SimdPointByPointAdd(size_t length, const float* inputLeft, const float* inp
         }
     } else {
         size_t procLen = length >> 2;
-        float32x4_t left32x4, right32x4, out32x4;
+        float32x4_t left32x4;
+        float32x4_t right32x4;
+        float32x4_t out32x4;
         for (size_t i = 0; i < procLen; i++) {
             left32x4 = vld1q_f32(inputLeft + i * ALIGIN_FLOAT_SIZE);
             right32x4 = vld1q_f32(inputRight + i * ALIGIN_FLOAT_SIZE);

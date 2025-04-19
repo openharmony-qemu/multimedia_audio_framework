@@ -34,7 +34,7 @@ HpaePcmProcess &HpaePcmProcess::operator = (const std::vector<float>& other)
 HpaePcmProcess &HpaePcmProcess::operator = (const HpaePcmProcess& other)
 {
     if (this != &other) {
-        errNo_ = memcpy_s(pcmDataPtr_, sizeof(float) * size_, other.begin(), sizeof(float) * other.Size());
+        errNo_ = memcpy_s(pcmDataPtr_, sizeof(float) * size_, other.Begin(), sizeof(float) * other.Size());
         CHECK_AND_RETURN_RET_LOG(errNo_ == 0, *this, "memcpy_s failed, errNo: %{public}d", errNo_);
     }
     return *this;
@@ -42,31 +42,31 @@ HpaePcmProcess &HpaePcmProcess::operator = (const HpaePcmProcess& other)
 
 HpaePcmProcess &HpaePcmProcess::operator+=(const HpaePcmProcess &other)
 {
-    float *curData = begin();
-    const float *otherData = other.begin();
+    float *curData = Begin();
+    const float *otherData = other.Begin();
     SimdPointByPointAdd(size_, otherData, curData, curData);
     return *this;
 }
 
 HpaePcmProcess &HpaePcmProcess::operator-=(const HpaePcmProcess &other)
 {
-    float *curData = begin();
-    const float *otherData = other.begin();
+    float *curData = Begin();
+    const float *otherData = other.Begin();
     SimdPointByPointSub(size_, curData, otherData, curData);
     return *this;
 }
 
 HpaePcmProcess &HpaePcmProcess::operator*=(const HpaePcmProcess &other)
 {
-    float *curData = begin();
-    const float *otherData = other.begin();
+    float *curData = Begin();
+    const float *otherData = other.Begin();
     SimdPointByPointMul(size_, otherData, curData, curData);
     return *this;
 }
 
 void HpaePcmProcess::Reset()
 {
-    errNo_ = memset_s(begin(), sizeof(float) * size_, 0, sizeof(float) * size_);
+    errNo_ = memset_s(Begin(), sizeof(float) * size_, 0, sizeof(float) * size_);
     CHECK_AND_RETURN_LOG(errNo_ == 0, "memcpy_s failed, errNo: %{public}d", errNo_);
 }
 }  // namespace HPAE

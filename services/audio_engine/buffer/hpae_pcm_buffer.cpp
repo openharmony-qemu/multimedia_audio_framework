@@ -156,7 +156,7 @@ bool HpaePcmBuffer::GetFrameData(std::vector<float> &frameData)
     }
     int32_t ret = memcpy_s(frameData.data(),
         sizeof(float) * frameData.size(),
-        pcmProcessVec_[readPos_.load()].begin(),
+        pcmProcessVec_[readPos_.load()].Begin(),
         frameSample_ * sizeof(float));
     if (ret != 0) {
         return false;
@@ -178,7 +178,7 @@ bool HpaePcmBuffer::GetFrameData(HpaePcmBuffer &frameData)
     }
     int32_t ret = memcpy_s(frameData.GetPcmDataBuffer(),
         sizeof(float) * frameData.Size(),
-        pcmProcessVec_[readPos_.load()].begin(),
+        pcmProcessVec_[readPos_.load()].Begin(),
         frameSample_ * sizeof(float));
     if (ret != 0) {
         return false;
@@ -198,7 +198,7 @@ bool HpaePcmBuffer::PushFrameData(std::vector<float> &frameData)
         AUDIO_WARNING_LOG("PushFrameData vector frames is full");
         return false;
     }
-    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
+    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].Begin(), frameByteSize_,
         frameData.data(), sizeof(float) * frameData.size());
     if (ret != 0) {
         AUDIO_ERR_LOG("memcpy failed when PushFrameData");
@@ -219,7 +219,7 @@ bool HpaePcmBuffer::PushFrameData(HpaePcmBuffer &frameData)
         AUDIO_WARNING_LOG("PushFrameData HpaePcmBuffer frames is full");
         return false;
     }
-    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
+    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].Begin(), frameByteSize_,
         frameData.GetPcmDataBuffer(), frameData.Size());
     if (ret != 0) {
         AUDIO_ERR_LOG("memcpy failed when PushFrameData");
@@ -236,7 +236,7 @@ bool HpaePcmBuffer::StoreFrameData(HpaePcmBuffer &frameData)
         return false;
     }
 
-    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
+    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].Begin(), frameByteSize_,
         frameData.GetPcmDataBuffer(), frameData.Size());
     if (ret != 0) {
         AUDIO_ERR_LOG("memcpy failed when StoreFrameData");

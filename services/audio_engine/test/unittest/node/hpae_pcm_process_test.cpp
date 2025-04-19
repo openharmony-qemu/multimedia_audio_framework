@@ -49,8 +49,8 @@ TEST_F(HpaePcmProcessTest, constructHpaePcmProcess)
         const float testValue = hpaePcmProcess[i];
         EXPECT_EQ(hpaePcmProcess[i], testValue);
     }
-    EXPECT_EQ(&testData[0], hpaePcmProcess.begin());
-    EXPECT_EQ(&testData[TEST_FREAME_LEN - 1], hpaePcmProcess.end() - 1);
+    EXPECT_EQ(&testData[0], hpaePcmProcess.Begin());
+    EXPECT_EQ(&testData[TEST_FREAME_LEN - 1], hpaePcmProcess.End() - 1);
 }
 
 TEST_F(HpaePcmProcessTest, assignHpaeProcessTest)
