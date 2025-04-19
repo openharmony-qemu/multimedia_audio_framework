@@ -198,7 +198,7 @@ bool HpaePcmBuffer::PushFrameData(std::vector<float> &frameData)
         AUDIO_WARNING_LOG("PushFrameData vector frames is full");
         return false;
     }
-    int32_t memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
+    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
         frameData.data(), sizeof(float) * frameData.size());
     if (ret != 0) {
         AUDIO_ERR_LOG("memcpy failed when PushFrameData");
