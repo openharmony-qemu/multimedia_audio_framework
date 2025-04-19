@@ -174,8 +174,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
-    HpaeStreamInfo streamInfo;
-    streamInfo = GetInCapPlayStreamInfo();
+    HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSinkInputInfo sinkInputInfo;
