@@ -236,7 +236,7 @@ bool HpaePcmBuffer::StoreFrameData(HpaePcmBuffer &frameData)
         return false;
     }
 
-    ret = memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
+    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
         frameData.GetPcmDataBuffer(), frameData.Size());
     if (ret != 0) {
         AUDIO_ERR_LOG("memcpy failed when StoreFrameData");
