@@ -1926,10 +1926,9 @@ void AudioAdapterManager::SetMaxVolumeForDeviceChange()
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
 {
     if (isFirstBoot) {
-        ringerMode_ = RINGER_MODE_NORMAL;
         isLoaded_ = true;
         if (!volumeDataMaintainer_.GetRingerMode(ringerMode_)) {
-            isLoaded_ = volumeDataMaintainer_.SaveRingerMode(RINGER_MODE_NORMAL);
+            isLoaded_ = volumeDataMaintainer_.SaveRingerMode(ringerMode_);
         }
         AUDIO_INFO_LOG("InitRingerMode first boot ringermode:%{public}d", ringerMode_);
     } else {
