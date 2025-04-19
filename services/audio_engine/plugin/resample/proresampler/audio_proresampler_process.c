@@ -94,7 +94,7 @@ struct QualityTable {
  * The relationship between coshParameter and side lobe decay is as follows:
  * coshParameter = -8.722e-5 * attenuation^TWO_STEPS + 0.1335 * attenuation - 1.929 (50 < attenuation)
  */
-static const struct QualityTable qualityTable[11] = {
+static const struct QualityTable QUALITY_TABLE[11] = {
     {  8, 5.767008}, /* Q0 */
     { 16, 5.767008}, /* Q1 */
     { 32, 5.767008}, /* Q2 */ /*  ( ~60 dB stop) 6  */
@@ -355,7 +355,7 @@ static void MultiplyFilterSymmetricOddDownMono(SingleStagePolyphaseResamplerStat
     const uint32_t decimateFactor = state->decimateFactor;
     float sum;
     int32_t rem = indCenter % decimateFactor;
-    int32_t L = indCenter / decimateFactor;
+    int32_t len = indCenter / decimateFactor;
     int32_t i, j, l;
     // center index
     sum = coeffs[indCenter] * inputs[indCenter];
@@ -363,7 +363,7 @@ static void MultiplyFilterSymmetricOddDownMono(SingleStagePolyphaseResamplerStat
     for (j = 0; j < rem; j++) {
         sum += (*coeffs++) * (inputs[j] + inputs[(n - j - TWO_STEPS)]);
     }
-    for (l = 0; l < L; l++) {
+    for (l = 0; l < len; l++) {
         coeffs++;
         j++;
         for (i = 1; i < decimateFactor; i++) {
@@ -383,7 +383,7 @@ static void MultiplyFilterSymmetricOddDownStereo(SingleStagePolyphaseResamplerSt
     const uint32_t decimateFactor = state->decimateFactor;
     float sumL, sumR, h;
     int32_t rem = indCenter % decimateFactor;
-    int32_t L = indCenter / decimateFactor;
+    int32_t len = indCenter / decimateFactor;
     int32_t i;
     int32_t j;
     int32_t l;
@@ -398,7 +398,7 @@ static void MultiplyFilterSymmetricOddDownStereo(SingleStagePolyphaseResamplerSt
         sumL += h * (inputs[j * STEREO] + inputs[(n - j - TWO_STEPS) * STEREO]);
         sumR += h * (inputs[j * STEREO + 1] + inputs[(n - j - TWO_STEPS) * STEREO + 1]);
     }
-    for (l = 0; l < L; l++) {
+    for (l = 0; l < len; l++) {
         coeffs++;
         j++;
         for (i = 1; i < decimateFactor; i++) {
@@ -424,7 +424,7 @@ static void MultiplyFilterSymmetricOddDownMultichannel(SingleStagePolyphaseResam
     float sum[MAX_NUM_CHANNEL];
     float h;
     int32_t rem = indCenter % decimateFactor;
-    int32_t L = indCenter / decimateFactor;
+    int32_t len = indCenter / decimateFactor;
 
     // center index
     h = coeffs[indCenter];
@@ -438,7 +438,7 @@ static void MultiplyFilterSymmetricOddDownMultichannel(SingleStagePolyphaseResam
             sum[ch] += h * (inputs[j * numChannels + ch] + inputs[(n - j - TWO_STEPS) * numChannels + ch]);
         }
     }
-    for (l = 0; l < L; l++) {
+    for (l = 0; l < len; l++) {
         coeffs++;
         j++;
         for (i = 1; i < decimateFactor; i++) {
@@ -463,7 +463,7 @@ static void MultiplyFilterSymmetricEvenDownMono(SingleStagePolyphaseResamplerSta
     const uint32_t decimateFactor = state->decimateFactor;
     int32_t i, j, l;
     int32_t rem = (n / TWO_STEPS) % decimateFactor;
-    int32_t L = (n / TWO_STEPS) / decimateFactor;
+    int32_t len = (n / TWO_STEPS) / decimateFactor;
     float h;
 
     float sum = 0;
@@ -473,7 +473,7 @@ static void MultiplyFilterSymmetricEvenDownMono(SingleStagePolyphaseResamplerSta
         h = *coeffs++;
         sum += h * (inputs[j] + inputs[(n - j - 1)]);
     }
-    for (l = 0; l < L; l++) {
+    for (l = 0; l < len; l++) {
         for (i = 0; i < decimateFactor / TWO_STEPS; i++) {
             h = *coeffs++;
             sum += h * (inputs[j] + inputs[(n - j - 1)]);
@@ -498,7 +498,7 @@ static void MultiplyFilterSymmetricEvenDownStereo(SingleStagePolyphaseResamplerS
     const uint32_t decimateFactor = state->decimateFactor;
     int32_t i, j, l;
     int32_t rem = (n / TWO_STEPS) % decimateFactor;
-    int32_t L = (n / TWO_STEPS) / decimateFactor;
+    int32_t len = (n / TWO_STEPS) / decimateFactor;
     float h;
 
     float sumL = 0;
@@ -510,7 +510,7 @@ static void MultiplyFilterSymmetricEvenDownStereo(SingleStagePolyphaseResamplerS
         sumL += h * (inputs[j * STEREO] + inputs[(n - j - 1) * STEREO]);
         sumR += h * (inputs[j * STEREO + 1] + inputs[(n - j - 1) * STEREO + 1]);
     }
-    for (l = 0; l < L; l++) {
+    for (l = 0; l < len; l++) {
         for (i = 0; i < decimateFactor / TWO_STEPS; i++) {
             h = *coeffs++;
             sumL += h * (inputs[j * STEREO] + inputs[(n - j - 1) * STEREO]);
@@ -542,7 +542,7 @@ static void MultiplyFilterSymmetricEvenDownMultichannel(SingleStagePolyphaseResa
     float sum[MAX_NUM_CHANNEL];
     float h;
     int32_t rem = (n / TWO_STEPS) % decimateFactor;
-    int32_t L = (n / TWO_STEPS) / decimateFactor;
+    int32_t len = (n / TWO_STEPS) / decimateFactor;
 
     for (ch = 0; ch < numChannels; ch++) {
         sum[ch] = 0;
@@ -554,7 +554,7 @@ static void MultiplyFilterSymmetricEvenDownMultichannel(SingleStagePolyphaseResa
             sum[ch] += h * (inputs[j * numChannels + ch] + inputs[(n - j - 1) * numChannels + ch]);
         }
     }
-    for (l = 0; l < L; l++) {
+    for (l = 0; l < len; l++) {
         for (i = 0; i < decimateFactor / TWO_STEPS; i++) {
             h = *coeffs++;
             for (ch = 0; ch < numChannels; ch++) {
@@ -1219,8 +1219,8 @@ static int32_t UpdateResamplerState(SingleStagePolyphaseResamplerState* state)
 
     state->quoSamplerateRatio = state->decimateFactor / state->interpolateFactor;
     state->remSamplerateRatio = state->decimateFactor % state->interpolateFactor;
-    state->filterLength = qualityTable[state->quality].filterLength;
-    state->coshParameter = qualityTable[state->quality].coshParameter;
+    state->filterLength = QUALITY_TABLE[state->quality].filterLength;
+    state->coshParameter = QUALITY_TABLE[state->quality].coshParameter;
 
     if (state->interpolateFactor < state->decimateFactor) { // downsampling
         state->cutoff = (float)state->interpolateFactor / state->decimateFactor;

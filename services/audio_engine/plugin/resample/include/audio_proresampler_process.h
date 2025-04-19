@@ -29,7 +29,7 @@ extern "C" {
         MULTIPLY_FILTER_FUN_SYMMETRIC_EVEN_DOWN,
         MULTIPLY_FILTER_FUN_DOWN,
         MULTIPLY_FILTER_FUN_MAX
-    } MultiplyFilterFun_t;
+    } MultiplyFilterFunT;
 
     enum {
         RESAMPLER_ERR_SUCCESS = 0,
@@ -56,7 +56,7 @@ extern "C" {
         uint32_t decimateFactor; /** Integer decimation factor */
         uint32_t interpolateFactor; /** Integer interpolation factor */
 
-        int32_t    quality; /** Parameter for resampler quality (0~10) */
+        int32_t quality; /** Parameter for resampler quality (0~10) */
         uint32_t numChannels; /** Number of channels */
         uint32_t filterLength; /** Number of taps of anti-aliasing/imaging filter */
         uint32_t bufferSize; /** Number of buffer samples for each channel */

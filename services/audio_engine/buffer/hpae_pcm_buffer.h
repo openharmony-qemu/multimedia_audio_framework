@@ -39,13 +39,13 @@ public:
     using pointer = T *;
     using size_type = size_t;
 
-    pointer allocate(size_type n)
+    pointer Allocate(size_type n)
     {
         void *ptr = std::aligned_alloc(Alignment, n * sizeof(T));
         return static_cast<pointer>(ptr);
     }
 
-    void deallocate(pointer p, size_type n)
+    void DeAllocate(pointer p, size_type n)
     {
         std::free(p);
     }

@@ -215,35 +215,35 @@ static void F32LeToS32Le(unsigned n, const float* a, int32_t* b)
 }
 
 // function table
-static FmtConversionFunction sample_u8_table[] = {
+static FmtConversionFunction g_sampleU8Table[] = {
     [SAMPLE_S16LE] = (FmtConversionFunction)S16LeToU8,
     [SAMPLE_S24LE] = (FmtConversionFunction)S24LeToU8,
     [SAMPLE_S32LE] = (FmtConversionFunction)S32LeToU8,
     [SAMPLE_F32LE] = (FmtConversionFunction)F32LeToU8,
 };
 
-static FmtConversionFunction sample_s16le_table[] = {
+static FmtConversionFunction g_sampleS16leTable[] = {
     [SAMPLE_U8] = (FmtConversionFunction)U8ToS16Le,
     [SAMPLE_S24LE] = (FmtConversionFunction)S24LeToS16Le,
     [SAMPLE_S32LE] = (FmtConversionFunction)S32LeToS16Le,
     [SAMPLE_F32LE] = (FmtConversionFunction)F32LeToS16Le,
 };
 
-static FmtConversionFunction sample_s24le_table[] = {
+static FmtConversionFunction g_sampleS24leTable[] = {
     [SAMPLE_U8] = (FmtConversionFunction)U8ToS24Le,
     [SAMPLE_S16LE] = (FmtConversionFunction)S16LeToS24Le,
     [SAMPLE_S32LE] = (FmtConversionFunction)S32LeToS24Le,
     [SAMPLE_F32LE] = (FmtConversionFunction)F32LeToS24Le,
 };
 
-static FmtConversionFunction sample_s32le_table[] = {
+static FmtConversionFunction g_sampleS32leTable[] = {
     [SAMPLE_U8] = (FmtConversionFunction)U8ToS32Le,
     [SAMPLE_S16LE] = (FmtConversionFunction)S16LeToS32Le,
     [SAMPLE_S24LE] = (FmtConversionFunction)S24LeToS32Le,
     [SAMPLE_F32LE] = (FmtConversionFunction)F32LeToS32Le,
 };
 
-static FmtConversionFunction sample_f32le_table[] = {
+static FmtConversionFunction g_sampleF32leTable[] = {
     [SAMPLE_U8] = (FmtConversionFunction)U8ToF32Le,
     [SAMPLE_S16LE] = (FmtConversionFunction)S16LeToF32Le,
     [SAMPLE_S24LE] = (FmtConversionFunction)S24LeToF32Le,
@@ -253,27 +253,27 @@ static FmtConversionFunction sample_f32le_table[] = {
 // choose function from function table
 FmtConversionFunction GetFmtConversionU8(AudioSampleFormat fmt)
 {
-    return sample_u8_table[fmt];
+    return g_sampleU8Table[fmt];
 }
 
 FmtConversionFunction GetFmtConversionS16Le(AudioSampleFormat fmt)
 {
-    return sample_s16le_table[fmt];
+    return g_sampleS16leTable[fmt];
 }
 
 FmtConversionFunction GetFmtConversionS24Le(AudioSampleFormat fmt)
 {
-    return sample_s24le_table[fmt];
+    return g_sampleS24leTable[fmt];
 }
 
 FmtConversionFunction GetFmtConversionS32Le(AudioSampleFormat fmt)
 {
-    return sample_s32le_table[fmt];
+    return g_sampleS32leTable[fmt];
 }
 
 FmtConversionFunction GetFmtConversionF32Le(AudioSampleFormat fmt)
 {
-    return sample_f32le_table[fmt];
+    return g_sampleF32leTable[fmt];
 }
 
 // BitDepthConversion implementation

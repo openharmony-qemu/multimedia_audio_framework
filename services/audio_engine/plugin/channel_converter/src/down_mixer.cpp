@@ -35,14 +35,14 @@ enum OutChannelIndex : uint32_t {
     BR
 };
 
-static uint32_t SL = 6;
-static uint32_t SR = 7;
-static uint32_t TFL = 8;
-static uint32_t TFR = 9;
-static uint32_t TBL = 10;
-static uint32_t TBR = 11;
-static uint32_t TSL = 12;
-static uint32_t TSR = 13;
+static uint32_t g_sl = 6;
+static uint32_t g_sr = 7;
+static uint32_t g_tfl = 8;
+static uint32_t g_tfr = 9;
+static uint32_t g_tbl = 10;
+static uint32_t g_tbr = 11;
+static uint32_t g_tsl = 12;
+static uint32_t g_tsr = 13;
 
 static constexpr uint32_t INDEX_SIX = 6;
 static constexpr uint32_t INDEX_SEVEN = 7;
@@ -264,14 +264,14 @@ void DownMixer::Setup5Point1DmixTable()
 }
 void DownMixer::Setup5Point1Point2DmixTable()
 {
-    TSL = INDEX_SIX;
-    TSR = INDEX_SEVEN;
+    g_tsl = INDEX_SIX;
+    g_tsr = INDEX_SEVEN;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
         uint64_t bit = inChMsk & -(int64_t)inChMsk;
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
         downMixTable_[SW][i] = downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
-        downMixTable_[TSL][i] = downMixTable_[TSR][i] = 0.f;
+        downMixTable_[g_tsl][i] = downMixTable_[g_tsr][i] = 0.f;
         Setup5Point1Point2DmixTablePart1(bit, i);
         Setup5Point1Point2DmixTablePart2(bit, i);
         inChMsk ^= bit;
@@ -279,17 +279,17 @@ void DownMixer::Setup5Point1Point2DmixTable()
 }
 void DownMixer::Setup5Point1Point4DmixTable()
 {
-    TFL = INDEX_SIX;
-    TFR = INDEX_SEVEN;
-    TBL = INDEX_EIGHT;
-    TBR = INDEX_NINE;
+    g_tfl = INDEX_SIX;
+    g_tfr = INDEX_SEVEN;
+    g_tbl = INDEX_EIGHT;
+    g_tbr = INDEX_NINE;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
         uint64_t bit = inChMsk & -(int64_t)inChMsk;
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
         downMixTable_[SW][i] = downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
-        downMixTable_[TFL][i] = downMixTable_[TFR][i] = 0.f;
-        downMixTable_[TBL][i] = downMixTable_[TBR][i] = 0.f;
+        downMixTable_[g_tfl][i] = downMixTable_[g_tfr][i] = 0.f;
+        downMixTable_[g_tbl][i] = downMixTable_[g_tbr][i] = 0.f;
         Setup5Point1Point4DmixTablePart1(bit, i);
         Setup5Point1Point4DmixTablePart2(bit, i);
         inChMsk ^= bit;
@@ -297,13 +297,13 @@ void DownMixer::Setup5Point1Point4DmixTable()
 }
 void DownMixer::Setup7Point1DmixTable()
 {
-    SL = INDEX_SIX;
-    SR = INDEX_SEVEN;
+    g_sl = INDEX_SIX;
+    g_sr = INDEX_SEVEN;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
         uint64_t bit = inChMsk & -(int64_t)inChMsk;
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
-        downMixTable_[SW][i] = downMixTable_[SL][i] = downMixTable_[SR][i] = 0.f;
+        downMixTable_[SW][i] = downMixTable_[g_sl][i] = downMixTable_[g_sr][i] = 0.f;
         downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
         Setup7Point1DmixTablePart1(bit, i);
         Setup7Point1DmixTablePart2(bit, i);
@@ -312,17 +312,17 @@ void DownMixer::Setup7Point1DmixTable()
 }
 void DownMixer::Setup7Point1Point2DmixTable()
 {
-    SL = INDEX_SIX;
-    SR = INDEX_SEVEN;
-    TSL = INDEX_EIGHT;
-    TSR = INDEX_NINE;
+    g_sl = INDEX_SIX;
+    g_sr = INDEX_SEVEN;
+    g_tsl = INDEX_EIGHT;
+    g_tsr = INDEX_NINE;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
         uint64_t bit = inChMsk & -(int64_t)inChMsk;
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
-        downMixTable_[SW][i] = downMixTable_[SL][i] = downMixTable_[SR][i] = 0.f;
+        downMixTable_[SW][i] = downMixTable_[g_sl][i] = downMixTable_[g_sr][i] = 0.f;
         downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
-        downMixTable_[TSL][i] = downMixTable_[TSR][i] = 0.f;
+        downMixTable_[g_tsl][i] = downMixTable_[g_tsr][i] = 0.f;
         Setup7Point1Point2DmixTablePart1(bit, i);
         Setup7Point1Point2DmixTablePart2(bit, i);
         inChMsk ^= bit;
@@ -330,20 +330,20 @@ void DownMixer::Setup7Point1Point2DmixTable()
 }
 void DownMixer::Setup7Point1Point4DmixTable()
 {
-    SL = INDEX_SIX;
-    SR = INDEX_SEVEN;
-    TFL = INDEX_EIGHT;
-    TFR = INDEX_NINE;
-    TBL = INDEX_TEN;
-    TBR = INDEX_ELEVEN;
+    g_sl = INDEX_SIX;
+    g_sr = INDEX_SEVEN;
+    g_tfl = INDEX_EIGHT;
+    g_tfr = INDEX_NINE;
+    g_tbl = INDEX_TEN;
+    g_tbr = INDEX_ELEVEN;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
         uint64_t bit = inChMsk & -(int64_t)inChMsk;
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
-        downMixTable_[SW][i] = downMixTable_[SL][i] = downMixTable_[SR][i] = 0.f;
+        downMixTable_[SW][i] = downMixTable_[g_sl][i] = downMixTable_[g_sr][i] = 0.f;
         downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
-        downMixTable_[TFL][i] = downMixTable_[TFR][i] = 0.f;
-        downMixTable_[TBL][i] = downMixTable_[TBR][i] = 0.f;
+        downMixTable_[g_tfl][i] = downMixTable_[g_tfr][i] = 0.f;
+        downMixTable_[g_tbl][i] = downMixTable_[g_tbr][i] = 0.f;
         Setup7Point1Point4DmixTablePart1(bit, i);
         Setup7Point1Point4DmixTablePart2(bit, i);
         inChMsk ^= bit;
@@ -582,11 +582,11 @@ void DownMixer::Setup5Point1Point2DmixTablePart2(uint64_t bit, uint32_t i)
     switch (bit) {
         case (TOP_BACK_LEFT):
         case (TOP_SIDE_LEFT):
-            downMixTable_[TSL][i] = COEF_0DB_F;
+            downMixTable_[g_tsl][i] = COEF_0DB_F;
             break;
         case (TOP_BACK_RIGHT):
         case (TOP_SIDE_RIGHT):
-            downMixTable_[TSR][i] = COEF_0DB_F;
+            downMixTable_[g_tsr][i] = COEF_0DB_F;
             break;
         case (LOW_FREQUENCY):
         case (LOW_FREQUENCY_2):
@@ -608,8 +608,8 @@ void DownMixer::Setup5Point1Point2DmixTablePart2(uint64_t bit, uint32_t i)
             break;
         case (TOP_BACK_CENTER):
         case (TOP_CENTER):
-            downMixTable_[TSL][i] = COEF_M3DB_F;
-            downMixTable_[TSR][i] = COEF_M3DB_F;
+            downMixTable_[g_tsl][i] = COEF_M3DB_F;
+            downMixTable_[g_tsr][i] = COEF_M3DB_F;
             break;
         default:
             break;
@@ -642,18 +642,18 @@ void DownMixer::Setup5Point1Point4DmixTablePart1(uint64_t bit, uint32_t i)
             downMixTable_[BR][i] = COEF_0DB_F;
             break;
         case (TOP_FRONT_LEFT):
-            downMixTable_[TFL][i] = COEF_0DB_F;
+            downMixTable_[g_tfl][i] = COEF_0DB_F;
             break;
         case (TOP_FRONT_RIGHT):
-            downMixTable_[TFR][i] = COEF_0DB_F;
+            downMixTable_[g_tfr][i] = COEF_0DB_F;
             break;
         case (TOP_BACK_LEFT):
         case (TOP_SIDE_LEFT):
-            downMixTable_[TBL][i] = COEF_0DB_F;
+            downMixTable_[g_tbl][i] = COEF_0DB_F;
             break;
         case (TOP_BACK_RIGHT):
         case (TOP_SIDE_RIGHT):
-            downMixTable_[TBR][i] = COEF_0DB_F;
+            downMixTable_[g_tbr][i] = COEF_0DB_F;
             break;
         case (LOW_FREQUENCY):
         case (LOW_FREQUENCY_2):
@@ -680,18 +680,18 @@ void DownMixer::Setup5Point1Point4DmixTablePart2(uint64_t bit, uint32_t i)
             downMixTable_[BR][i] = COEF_M3DB_F;
             break;
         case (TOP_FRONT_CENTER):
-            downMixTable_[TFL][i] = COEF_M3DB_F;
-            downMixTable_[TFR][i] = COEF_M3DB_F;
+            downMixTable_[g_tfl][i] = COEF_M3DB_F;
+            downMixTable_[g_tfr][i] = COEF_M3DB_F;
             break;
         case (TOP_BACK_CENTER):
-            downMixTable_[TBL][i] = COEF_M3DB_F;
-            downMixTable_[TBR][i] = COEF_M3DB_F;
+            downMixTable_[g_tbl][i] = COEF_M3DB_F;
+            downMixTable_[g_tbr][i] = COEF_M3DB_F;
             break;
         case (TOP_CENTER):
-            downMixTable_[TFL][i] = COEF_M6DB_F;
-            downMixTable_[TFR][i] = COEF_M6DB_F;
-            downMixTable_[TBL][i] = COEF_M6DB_F;
-            downMixTable_[TBR][i] = COEF_M6DB_F;
+            downMixTable_[g_tfl][i] = COEF_M6DB_F;
+            downMixTable_[g_tfr][i] = COEF_M6DB_F;
+            downMixTable_[g_tbl][i] = COEF_M6DB_F;
+            downMixTable_[g_tbr][i] = COEF_M6DB_F;
             break;
         default:
             break;
@@ -720,11 +720,11 @@ void DownMixer::Setup7Point1DmixTablePart1(uint64_t bit, uint32_t i)
             break;
         case (SIDE_LEFT):
         case (TOP_SIDE_LEFT):
-            downMixTable_[SL][i] = COEF_0DB_F;
+            downMixTable_[g_sl][i] = COEF_0DB_F;
             break;
         case (SIDE_RIGHT):
         case (TOP_SIDE_RIGHT):
-            downMixTable_[SR][i] = COEF_0DB_F;
+            downMixTable_[g_sr][i] = COEF_0DB_F;
             break;
         case (BACK_LEFT):
         case (TOP_BACK_LEFT):
@@ -763,8 +763,8 @@ void DownMixer::Setup7Point1DmixTablePart2(uint64_t bit, uint32_t i)
             break;
         case (TOP_CENTER):
             downMixTable_[FC][i] = COEF_M6DB_F;
-            downMixTable_[SL][i] = COEF_M6DB_F;
-            downMixTable_[SR][i] = COEF_M6DB_F;
+            downMixTable_[g_sl][i] = COEF_M6DB_F;
+            downMixTable_[g_sr][i] = COEF_M6DB_F;
             break;
         default:
             break;
@@ -792,10 +792,10 @@ void DownMixer::Setup7Point1Point2DmixTablePart1(uint64_t bit, uint32_t i)
             downMixTable_[FC][i] = COEF_0DB_F;
             break;
         case (SIDE_LEFT):
-            downMixTable_[SL][i] = COEF_0DB_F;
+            downMixTable_[g_sl][i] = COEF_0DB_F;
             break;
         case (SIDE_RIGHT):
-            downMixTable_[SR][i] = COEF_0DB_F;
+            downMixTable_[g_sr][i] = COEF_0DB_F;
             break;
         case (BACK_LEFT):
             downMixTable_[BL][i] = COEF_0DB_F;
@@ -805,11 +805,11 @@ void DownMixer::Setup7Point1Point2DmixTablePart1(uint64_t bit, uint32_t i)
             break;
         case (TOP_BACK_LEFT):
         case (TOP_SIDE_LEFT):
-            downMixTable_[TSL][i] = COEF_0DB_F;
+            downMixTable_[g_tsl][i] = COEF_0DB_F;
             break;
         case (TOP_BACK_RIGHT):
         case (TOP_SIDE_RIGHT):
-            downMixTable_[TSR][i] = COEF_0DB_F;
+            downMixTable_[g_tsr][i] = COEF_0DB_F;
             break;
         case (LOW_FREQUENCY):
         case (LOW_FREQUENCY_2):
@@ -839,8 +839,8 @@ void DownMixer::Setup7Point1Point2DmixTablePart2(uint64_t bit, uint32_t i)
             break;
         case (TOP_BACK_CENTER):
         case (TOP_CENTER):
-            downMixTable_[TSL][i] = COEF_M3DB_F;
-            downMixTable_[TSR][i] = COEF_M3DB_F;
+            downMixTable_[g_tsl][i] = COEF_M3DB_F;
+            downMixTable_[g_tsr][i] = COEF_M3DB_F;
             break;
         default:
             break;
@@ -865,10 +865,10 @@ void DownMixer::Setup7Point1Point4DmixTablePart1(uint64_t bit, uint32_t i)
             downMixTable_[FC][i] = COEF_0DB_F;
             break;
         case (SIDE_LEFT):
-            downMixTable_[SL][i] = COEF_0DB_F;
+            downMixTable_[g_sl][i] = COEF_0DB_F;
             break;
         case (SIDE_RIGHT):
-            downMixTable_[SR][i] = COEF_0DB_F;
+            downMixTable_[g_sr][i] = COEF_0DB_F;
             break;
         case (BACK_LEFT):
             downMixTable_[BL][i] = COEF_0DB_F;
@@ -877,18 +877,18 @@ void DownMixer::Setup7Point1Point4DmixTablePart1(uint64_t bit, uint32_t i)
             downMixTable_[BR][i] = COEF_0DB_F;
             break;
         case (TOP_FRONT_LEFT):
-            downMixTable_[TFL][i] = COEF_0DB_F;
+            downMixTable_[g_tfl][i] = COEF_0DB_F;
             break;
         case (TOP_FRONT_RIGHT):
-            downMixTable_[TFR][i] = COEF_0DB_F;
+            downMixTable_[g_tfr][i] = COEF_0DB_F;
             break;
         case (TOP_BACK_LEFT):
         case (TOP_SIDE_LEFT):
-            downMixTable_[TBL][i] = COEF_0DB_F;
+            downMixTable_[g_tbl][i] = COEF_0DB_F;
             break;
         case (TOP_BACK_RIGHT):
         case (TOP_SIDE_RIGHT):
-            downMixTable_[TBR][i] = COEF_0DB_F;
+            downMixTable_[g_tbr][i] = COEF_0DB_F;
             break;
         default:
             break;
@@ -917,18 +917,18 @@ void DownMixer::Setup7Point1Point4DmixTablePart2(uint64_t bit, uint32_t i)
             downMixTable_[BR][i] = COEF_M3DB_F;
             break;
         case (TOP_FRONT_CENTER):
-            downMixTable_[TFL][i] = COEF_M3DB_F;
-            downMixTable_[TFR][i] = COEF_M3DB_F;
+            downMixTable_[g_tfl][i] = COEF_M3DB_F;
+            downMixTable_[g_tfr][i] = COEF_M3DB_F;
             break;
         case (TOP_BACK_CENTER):
-            downMixTable_[TBL][i] = COEF_M3DB_F;
-            downMixTable_[TBR][i] = COEF_M3DB_F;
+            downMixTable_[g_tbl][i] = COEF_M3DB_F;
+            downMixTable_[g_tbr][i] = COEF_M3DB_F;
             break;
         case (TOP_CENTER):
-            downMixTable_[TFL][i] = COEF_M6DB_F;
-            downMixTable_[TFR][i] = COEF_M6DB_F;
-            downMixTable_[TBL][i] = COEF_M6DB_F;
-            downMixTable_[TBR][i] = COEF_M6DB_F;
+            downMixTable_[g_tfl][i] = COEF_M6DB_F;
+            downMixTable_[g_tfr][i] = COEF_M6DB_F;
+            downMixTable_[g_tbl][i] = COEF_M6DB_F;
+            downMixTable_[g_tbr][i] = COEF_M6DB_F;
             break;
         default:
             break;
