@@ -28,11 +28,7 @@
 #define SHIFTS_16BIT 16
 #define SHIFTS_24BIT 24
 
-template <typename T>
-inline T CLAMP(T x, T low, T high)
-{
-    return ((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x));
-}
+#define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 static inline uint32_t READ24LE(const uint8_t *p)
 {
