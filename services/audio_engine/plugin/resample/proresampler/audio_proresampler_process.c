@@ -18,7 +18,9 @@
 #include <limits.h>
 #include <stdint.h>
 #include "audio_proresampler_process.h"
+#include "audio_engine_log.h"
 #include "securec.h"
+
 /**
  * @brief Ratio of circumference to diameter
  *
@@ -135,7 +137,7 @@ static float Sinc(float x)
 static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
 {
     uint32_t i;
-    int32_t j;
+    uint32_t j;
     float phi0 = 0;
     float phi = 0;
     double w;
