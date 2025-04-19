@@ -650,8 +650,8 @@ int32_t HpaeManager::GetAllSinkInputs()
     return SUCCESS;
 }
 
-void HpaeManager::AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>>& sinkIdMap, 
-    std::pair<uint32_t, std::string>& id, std::string& name)
+void HpaeManager::AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>> &sinkIdMap,
+    const std::pair<uint32_t, std::string> &id, const std::string &name)
 {
     if (id.second == name && rendererIdSinkNameMap_[id.first] != id.second) {
         if (sinkIdMap.find(id.second) == sinkIdMap.end()) {

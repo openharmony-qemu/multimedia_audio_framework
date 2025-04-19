@@ -199,8 +199,8 @@ private:
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo);
 
     void MoveToPreferSink(const std::string& name);
-    void AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>>& sinkIdMap, 
-        std::pair<uint32_t, std::string>& id, std::string& name);
+    void AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>> &sinkIdMap,
+        const std::pair<uint32_t, std::string> &id, const std::string &name);
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
     std::unique_ptr<HpaePolicyManager> hpaePolicyManager_ = nullptr;
