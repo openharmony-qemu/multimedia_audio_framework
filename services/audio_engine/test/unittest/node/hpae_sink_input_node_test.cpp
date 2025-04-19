@@ -142,7 +142,7 @@ TEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputAndSinkOutputDataCase)
         float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
         for (int32_t j = 0; j < nodeInfo.frameLen; j++) {
             for (int32_t k = 0; k < nodeInfo.channels; k++) {
-				float diff = outputPcmData[j * nodeInfo.channels + k] - i;
+                float diff = outputPcmData[j * nodeInfo.channels + k] - i;
                 EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
             }
         }

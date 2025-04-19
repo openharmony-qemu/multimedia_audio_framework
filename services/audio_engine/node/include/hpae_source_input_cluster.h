@@ -21,7 +21,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-class HpaeSourceInputCluster : public OutputNode<HpaePcmBuffer *>{
+class HpaeSourceInputCluster : public OutputNode<HpaePcmBuffer *> {
 public:
     HpaeSourceInputCluster(HpaeNodeInfo &nodeInfo);
     HpaeSourceInputCluster(std::vector<HpaeNodeInfo> &nodeInfos);

@@ -155,7 +155,8 @@ int32_t HpaeSourceInputNode::WriteCapturerData(char *data, int32_t dataSize)
     CHECK_AND_RETURN_RET_LOG(
         itCapturerFrameData != capturerFrameDataMap_.end() && itFrameByteSize != frameByteSizeMap_.end(),
         ERROR, "outStreamMap_ is empty.\n");
-    memcpy_s(itCapturerFrameData->second.data(), itFrameByteSize->second, data, dataSize);
+    int32_t ret = memcpy_s(itCapturerFrameData->second.data(), itFrameByteSize->second, data, dataSize);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "memcpy error when WriteCapturerData");
     return 0;
 }
 

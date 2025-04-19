@@ -208,7 +208,7 @@ void DownMixer::NormalizeDMixTable()
         maxx = 1.0f / maxx;
     } else {
         AUDIO_ERR_LOG("invalid channel num: in_ch = %{public}u, out_ch = %{public}u",
-                inChannels_, outChannels_);
+            inChannels_, outChannels_);
         maxx = 1.0f;
     }
 

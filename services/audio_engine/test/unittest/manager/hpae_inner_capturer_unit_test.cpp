@@ -57,8 +57,7 @@ public:
 
 void HpaeInnerCapturerManagerUnitTest::SetUp(void)
 {
-    HpaeSinkInfo sinkInfo;
-    sinkInfo = GetInCapSinkInfo();
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
 }
 
@@ -213,8 +212,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
-    HpaeStreamInfo streamInfo;
-    streamInfo = GetInCapPlayStreamInfo();
+    HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Start(streamInfo.sessionId), SUCCESS);
@@ -311,8 +309,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopChange_001)
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSourceOutputInfo sourceOutoputInfo;
 
-    HpaeStreamInfo playStreamInfo;
-    playStreamInfo = GetInCapPlayStreamInfo();
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);

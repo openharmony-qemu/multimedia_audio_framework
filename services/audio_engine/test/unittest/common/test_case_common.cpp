@@ -180,7 +180,10 @@ int32_t ReadDataCb::OnReadData(size_t length)
 int32_t ReadDataCb::OnReadData(std::vector<char>& outputData, size_t requestDataLen)
 {
     CHECK_AND_RETURN_RET_LOG(testFile_ != nullptr, ERROR, "testFile_ is nullptr");
-    fwrite(outputData.data(), 1, requestDataLen, testFile_);
+    int32_t ret = fwrite(outputData.data(), 1, requestDataLen, testFile_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG(" something wrong when writing pcm! ");
+    }
     return SUCCESS;
 }
 } // namespace AudioStandard

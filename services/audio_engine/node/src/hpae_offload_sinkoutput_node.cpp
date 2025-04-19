@@ -154,7 +154,7 @@ int32_t HpaeOffloadSinkOutputNode::GetRenderSinkInstance(const std::string &devi
     const std::string &deviceNetworkId)
 {
     renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
-            deviceClass, HDI_ID_INFO_DEFAULT, true);
+        deviceClass, HDI_ID_INFO_DEFAULT, true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get offload sink fail, deviceClass: %{public}s, renderId_: %{public}u",

@@ -139,7 +139,8 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort(HpaeNodeInfo 
     if (isDisConnect && fmtConverterNodeMap_[nodeKey]->GetOutputPortNum() <= 1) {
         AUDIO_INFO_LOG("disconnect fmtConverterNode between effectnode[[%{public}s] and sourceinputnode[%{public}s]",
             nodeKey.c_str(), inputNodeKey.c_str());
-        fmtConverterNodeMap_[nodeKey]->DisConnectWithInfo(sourceInputNode_, fmtConverterNodeMap_[nodeKey]->GetNodeInfo());
+        fmtConverterNodeMap_[nodeKey]->DisConnectWithInfo(
+            sourceInputNode_, fmtConverterNodeMap_[nodeKey]->GetNodeInfo());
     }
     return fmtConverterNodeMap_[nodeKey]->GetOutputPort();
 }

@@ -665,7 +665,7 @@ int32_t HpaeInnerCapturerManager::ConnectRendererInputSessionInner(uint32_t sess
     CHECK_AND_RETURN_RET_LOG(rendererSceneClusterMap_.find(sceneType) != rendererSceneClusterMap_.end(), SUCCESS,
         "miss corresponding process cluster for scene type %{public}d", sceneType);
     rendererSceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
-    // todo check if connect process cluster 
+    // todo check if connect process cluster
     hpaeInnerCapSinkNode_->Connect(rendererSceneClusterMap_[sceneType]);
     return SUCCESS;
 }

@@ -475,7 +475,7 @@ int32_t HpaeCapturerManager::InitCapturer()
     int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceInit(attr);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
         "init mic source input node err, , ret = %{public}d.\n", ret);
-    if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && 
+    if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER &&
         sourceInputClusterMap_.find(HPAE_SOURCE_EC) != sourceInputClusterMap_.end()) {
         IAudioSourceAttr attrEc;
         attrEc.sourceType = SOURCE_TYPE_EC;
