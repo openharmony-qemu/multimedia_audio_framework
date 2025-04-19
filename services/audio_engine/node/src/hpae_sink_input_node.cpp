@@ -36,7 +36,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
       inputAudioBuffer_(pcmBufferInfo_), outputStream_(this),
-      interleveData_(nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format)), framesWritten_(0),
+      interleveData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)), framesWritten_(0),
       totalFrames_(0)
 {
     AUDIO_INFO_LOG("sinkinput sessionId %{public}d, channelcount %{public}d, channelLayout %{public}" PRIu64 ", "
@@ -128,7 +128,7 @@ void HpaeSinkInputNode::DoProcess()
     if (inputPcmDumper_ != nullptr && inputAudioBuffer_.IsValid()) {
         inputPcmDumper_->CheckAndReopenHandlde();
         inputPcmDumper_->Dump(static_cast<int8_t *>(interleveData_.data()),
-            GetChannelCount() * GetFrameLen() * GET_SIZE_FROM_FORMAT(GetBitWidth()));
+            GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
     }
 #endif
     

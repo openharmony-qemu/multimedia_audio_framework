@@ -115,7 +115,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == RENDERER_STOPPED, true);
     hpaeSinkOutputNode->DoProcess();
     TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
-        nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format));
+        nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     EXPECT_EQ(hpaeSinkInputNode.use_count(), usedCount);
     hpaeSinkOutputNode->DisConnect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);

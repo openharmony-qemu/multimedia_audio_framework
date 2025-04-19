@@ -26,6 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 constexpr int REASAMPLE_QUAILTY = 5;
+
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
@@ -55,12 +56,14 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
         inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.samplingRate,
         outChannelInfo.numChannels, outChannelInfo.channelLayout);
 #ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeConverterNodeInput_id_" + std::to_string(GetSessionId()) +
-                                                      "_ch_" + std::to_string(preNodeInfo_.channels) + "_rate_" +
-                                                      std::to_string(preNodeInfo_.samplingRate) + "_" + GetTime() + ".pcm");
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
-                                                       "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-                                                       std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
+    inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+        "HpaeConverterNodeInput_id_" + std::to_string(GetSessionId()) +
+        "_ch_" + std::to_string(preNodeInfo_.channels) + "_rate_" +
+        std::to_string(preNodeInfo_.samplingRate) + "_" + GetTime() + ".pcm");
+    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+        "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
+        "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
+        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
 #endif
 }
 

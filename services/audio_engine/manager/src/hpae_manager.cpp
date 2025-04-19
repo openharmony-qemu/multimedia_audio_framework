@@ -285,7 +285,7 @@ void HpaeManager::TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModu
     sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
     sinkInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
     int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
-    sinkInfo.frameLen = bufferSize / (sinkInfo.channels * GET_SIZE_FROM_FORMAT(sinkInfo.format));
+    sinkInfo.frameLen = bufferSize / (sinkInfo.channels * GetSizeFromFormat(sinkInfo.format));
     sinkInfo.channelLayout = 0ULL;
     sinkInfo.deviceType = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
     sinkInfo.volume = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
@@ -310,7 +310,7 @@ void HpaeManager::TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioMo
     int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
     sourceInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
     sourceInfo.format = TransFormatFromStringToEnum(audioModuleInfo.format);
-    sourceInfo.frameLen = bufferSize / (sourceInfo.channels * GET_SIZE_FROM_FORMAT(sourceInfo.format));
+    sourceInfo.frameLen = bufferSize / (sourceInfo.channels * GetSizeFromFormat(sourceInfo.format));
     sourceInfo.samplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.rate.c_str()));
     sourceInfo.channelLayout = 0ULL;
     sourceInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));

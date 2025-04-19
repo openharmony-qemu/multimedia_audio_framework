@@ -110,7 +110,7 @@ TEST_F(HpaeMixerNodeTest, testHpaePlayOutConnectNode)
     hpaeSinkInputNode1->RegisterWriteCallback(writeFixedValueCb1);
     hpaeSinkOutputNode->DoProcess();
     TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(), nodeInfo.frameLen * nodeInfo.channels *
-        GET_SIZE_FROM_FORMAT(nodeInfo.format));
+        GetSizeFromFormat(nodeInfo.format));
     hpaeSinkOutputNode->DisConnect(hpaeMixerNode);
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
     EXPECT_EQ(hpaeMixerNode.use_count(), 1);

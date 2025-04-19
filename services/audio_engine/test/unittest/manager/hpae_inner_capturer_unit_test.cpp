@@ -100,7 +100,7 @@ static void WaitForMsgProcessing(std::shared_ptr<HpaeInnerCapturerManager>& hpae
 {
     int waitCount = 0;
     const int32_t WAIT_COUNT_THD = 5;
-    while(hpaeInnerCapturerManager->IsMsgProcessing()) {
+    while (hpaeInnerCapturerManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 20ms frameLen, need optimize
         waitCount++;
         if (waitCount >= WAIT_COUNT_THD) {
@@ -123,8 +123,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, Construct_001)
     EXPECT_NE(hpaeInnerCapturerManager_, nullptr);
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    HpaeSinkInfo sinkInfo;
-    sinkInfo = GetInCapSinkInfo();
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     HpaeSinkInfo dstSinkInfo = hpaeInnerCapturerManager_->GetSinkInfo();
     EXPECT_EQ(dstSinkInfo.deviceNetId == sinkInfo.deviceNetId, true);
     EXPECT_EQ(dstSinkInfo.deviceClass == sinkInfo.deviceClass, true);
@@ -237,8 +236,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_002)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    HpaeStreamInfo streamInfo;
-    streamInfo = GetInCapRecordStreamInfo();
+    HpaeStreamInfo streamInfo = GetInCapRecordStreamInfo();
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
@@ -258,16 +256,14 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseChange_001)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    HpaeStreamInfo recordStreamInfo;
-    recordStreamInfo = GetInCapRecordStreamInfo();
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSourceOutputInfo sourceOutoputInfo;
 
-    HpaeStreamInfo playStreamInfo;
-    playStreamInfo = GetInCapPlayStreamInfo();
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);

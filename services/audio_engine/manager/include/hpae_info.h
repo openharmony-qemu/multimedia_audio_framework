@@ -67,7 +67,11 @@ struct HpaeStreamInfo {
     std::string deviceName;
 };
 
-#define GET_SIZE_FROM_FORMAT(format) ((format) != SAMPLE_F32LE ? ((format) + 1) : (4))
+static inline int32_t GetSizeFromFormat(int32_t format)
+{
+    return format != SAMPLE_F32LE ? ((format) + 1) : (4); // float 4
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

@@ -160,7 +160,7 @@ TEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest)
     ringSinkInputNode->RegisterWriteCallback(writeFixedValueCb1);
     hpaeOutputCluster->DoProcess();
     TestRendererRenderFrame(hpaeOutputCluster->GetFrameData(),
-        nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format));
+        nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     muiscProcessCluster->DisConnect(musicSinkInputNode);
     EXPECT_EQ(musicSinkInputNode.use_count(), 1);
     EXPECT_EQ(muiscProcessCluster->GetGainNodeCount(), 0);

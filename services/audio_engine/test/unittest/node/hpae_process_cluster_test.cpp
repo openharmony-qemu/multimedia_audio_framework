@@ -152,7 +152,7 @@ TEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest)
     hpaeSinkInputNode1->RegisterWriteCallback(writeFixedValueCb1);
     hpaeSinkOutputNode->DoProcess();
     TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
-        nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format));
+        nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     hpaeSinkOutputNode->DisConnect(hpaeProcessCluster);
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
     EXPECT_EQ(hpaeProcessCluster.use_count(), 1);

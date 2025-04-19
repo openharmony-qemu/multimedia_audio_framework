@@ -226,7 +226,7 @@ bool HpaeInnerCapturerManager::DeactivateThread()
 
 int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
 {
-   if (hpaeSignalProcessThread_ != nullptr) {
+    if (hpaeSignalProcessThread_ != nullptr) {
         hpaeSignalProcessThread_->DeactivateThread();
         hpaeSignalProcessThread_ = nullptr;
     }

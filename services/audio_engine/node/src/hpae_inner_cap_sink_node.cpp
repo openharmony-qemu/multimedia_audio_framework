@@ -54,7 +54,7 @@ void HpaeInnerCapSinkNode::DoProcess()
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump((int8_t *)outputData->GetPcmDataBuffer(), GetChannelCount() *
-            GetFrameLen() * GET_SIZE_FROM_FORMAT(GetBitWidth()));
+            GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
     }
 #endif
     // no need convert

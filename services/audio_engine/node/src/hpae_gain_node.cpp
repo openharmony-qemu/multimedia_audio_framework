@@ -42,7 +42,8 @@ static constexpr float EPSILON = 1e-6f;
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
     struct VolumeValues volumes;
-    float curSystemGain = AudioVolume::GetInstance()->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
+    float curSystemGain = AudioVolume::GetInstance()->GetVolume(GetSessionId(),
+        GetStreamType(), GetDeviceClass(), &volumes);
     SetPreVolume(GetSessionId(), curSystemGain);
     AUDIO_INFO_LOG("HpaeGainNode curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
     AUDIO_INFO_LOG(
