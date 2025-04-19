@@ -174,7 +174,7 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
-    AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
+    AudioScene currentAudioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t currentDevicesSize_ = 0;
     bool forceSetRouteFlag_ = false;
     int32_t paStatus_ = 1;
