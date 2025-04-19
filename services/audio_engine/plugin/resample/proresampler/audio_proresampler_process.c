@@ -60,13 +60,20 @@
  * @brief A function that compares two values and returns the smaller one
  *
  */
-#define COMPARE_MIN(a, b) ((a) > (b) ? (b) : (a))
+
+static inline uint32_t CompareMin(uint32_t a, uint32_t b)
+{
+    return a < b ? a : b;
+}
 
 /**
  * @brief A function that compares two values and returns the larger one
  *
  */
-#define COMPARE_MAX(a, b) ((a) < (b) ? (b) : (a))
+static inline uint32_t CompareMax(uint32_t a, uint32_t b)
+{
+    return a < b ? b : a;
+}
 
 /**
  * @brief A function that helps update resampler state
@@ -375,7 +382,9 @@ static void MultiplyFilterSymmetricOddDownStereo(SingleStagePolyphaseResamplerSt
     float sumL, sumR, h;
     int32_t rem = indCenter % decimateFactor;
     int32_t L = indCenter / decimateFactor;
-    int32_t i, j, l;
+    int32_t i;
+    int32_t j;
+    int32_t l;
 
     // center
     h = coeffs[indCenter];
@@ -703,7 +712,7 @@ static int32_t PolyphaseResamplerMono(SingleStagePolyphaseResamplerState *state,
     int32_t i;
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
+        outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
     }
 
@@ -741,7 +750,7 @@ static int32_t PolyphaseResamplerStereo(SingleStagePolyphaseResamplerState* stat
     int32_t i;
 
     if (inputIndex < (int32_t) (*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
+        outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
     }
     for (i = 0; i < outSample; i++) {
@@ -779,7 +788,7 @@ static int32_t PolyphaseResamplerMultichannel(SingleStagePolyphaseResamplerState
     int32_t i;
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), ((interpolateFactor *
+        outSample = CompareMin((*outputLength), ((interpolateFactor *
             ((*inputLength) - inputIndex) - subfilterNum) - 1) / decimateFactor + 1);
     }
 
@@ -815,7 +824,7 @@ static int32_t PolyphaseDownsamplerHalfbandMono(SingleStagePolyphaseResamplerSta
     float sum;
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
+        outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
     }
 
     for (i = 0; i < outSample; i++) {
@@ -850,7 +859,7 @@ static int32_t PolyphaseDownsamplerHalfbandStereo(SingleStagePolyphaseResamplerS
     float sumL, sumR, h;
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
+        outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
     }
 
     for (i = 0; i < outSample; i++) {
@@ -891,7 +900,7 @@ static int32_t PolyphaseDownsamplerHalfbandMultichannel(SingleStagePolyphaseResa
     const int32_t numChannels = state->numChannels;
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
+        outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
     }
 
     for (i = 0; i < outSample; i++) {
@@ -934,7 +943,7 @@ static int32_t PolyphaseDownsamplerThirdbandMono(SingleStagePolyphaseResamplerSt
     float hCenter = filterCoefficients[indCenter];
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), (((*inputLength) - inputIndex) - 1) / THREE_STEPS + 1);
+        outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / THREE_STEPS + 1);
     }
 
     for (i = 0; i < outSample; i++) {
@@ -975,7 +984,7 @@ static int32_t PolyphaseDownsamplerThirdbandStereo(SingleStagePolyphaseResampler
     float hCenter = filterCoefficients[indCenter];
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), (((*inputLength) - inputIndex) - 1) / THREE_STEPS + 1);
+        outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / THREE_STEPS + 1);
     }
 
     for (i = 0; i < outSample; i++) {
@@ -1027,7 +1036,7 @@ static int32_t PolyphaseDownsamplerThirdbandMultichannel(SingleStagePolyphaseRes
     float hCenter = filterCoefficients[indCenter];
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), (((*inputLength) - inputIndex) - 1) / THREE_STEPS + 1);
+        outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / THREE_STEPS + 1);
     }
 
     for (i = 0; i < outSample; i++) {
@@ -1083,7 +1092,7 @@ static int32_t PolyphaseResamplerCoarse(SingleStagePolyphaseResamplerState* stat
     int32_t i;
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
+        outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
     }
 
@@ -1126,7 +1135,7 @@ static int32_t PolyphaseResamplerZero(SingleStagePolyphaseResamplerState* state,
     (void)in;
 
     if (inputIndex < (int32_t)(*inputLength)) {
-        outSample = COMPARE_MIN((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
+        outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
     }
 
@@ -1150,7 +1159,7 @@ static int32_t PolyphaseResamplerZero(SingleStagePolyphaseResamplerState* state,
 
 static MultiplyFilterFun GetMultiplyFilterFun(SingleStagePolyphaseResamplerState* state, int32_t i)
 {
-    int32_t channelMode = COMPARE_MIN(state->numChannels - 1, STEREO);
+    int32_t channelMode = CompareMin(state->numChannels - 1, STEREO);
 
     if (state->interpolateFactor < state->decimateFactor) { // downsampling
         if (i == 0) {
@@ -1222,7 +1231,7 @@ static int32_t UpdateResamplerState(SingleStagePolyphaseResamplerState* state)
     }
     
     // modified for new requirements (extended i/o sample rate combination) 2025.2.28
-    if ((COMPARE_MAX(state->decimateFactor, state->interpolateFactor) <= MAX_RATIO_INTEGRAL_METHOD) &
+    if ((CompareMax(state->decimateFactor, state->interpolateFactor) <= MAX_RATIO_INTEGRAL_METHOD) &
         ((state->decimateFactor == 1 || state->interpolateFactor == 1) ||
             ((float)state->decimateFactor / (float)state->interpolateFactor < 2.0f))) {
         state->resamplerFunction = SetResamplerFunctionCoarse(state);

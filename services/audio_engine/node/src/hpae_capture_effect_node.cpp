@@ -75,19 +75,19 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     uint32_t outputIndex = 0;
     for (uint32_t i = 0; i < inputs.size(); i++) {
         if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_MIC) {
-            ConvertFromFloat(SAMPLE_S16LE, micBufferLength_ / GET_SIZE_FROM_FORMAT(SAMPLE_S16LE),
+            ConvertFromFloat(SAMPLE_S16LE, micBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE),
                 inputs[i]->GetPcmDataBuffer(), static_cast<void *>(cacheDataIn_.data()));
             audioEnhanceChainManager->CopyToEnhanceBuffer(static_cast<void *>(cacheDataIn_.data()), micBufferLength_);
             processLength = micBufferLength_;
             outputIndex = i;
             AUDIO_DEBUG_LOG("CopyToEnhanceBuffer size:%{public}u", processLength);
         } else if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_EC) {
-            ConvertFromFloat(SAMPLE_S16LE, ecBufferLength_ / GET_SIZE_FROM_FORMAT(SAMPLE_S16LE),
+            ConvertFromFloat(SAMPLE_S16LE, ecBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE),
                 inputs[i]->GetPcmDataBuffer(), static_cast<void *>(cacheDataIn_.data()));
             audioEnhanceChainManager->CopyEcToEnhanceBuffer(static_cast<void *>(cacheDataIn_.data()), ecBufferLength_);
             AUDIO_DEBUG_LOG("CopyEcToEnhanceBuffer size:%{public}u", ecBufferLength_);
         } else if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_MICREF) {
-            ConvertFromFloat(SAMPLE_S16LE, micrefBufferLength_ / GET_SIZE_FROM_FORMAT(SAMPLE_S16LE),
+            ConvertFromFloat(SAMPLE_S16LE, micrefBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE),
                 inputs[i]->GetPcmDataBuffer(), static_cast<void *>(cacheDataIn_.data()));
             audioEnhanceChainManager->CopyMicRefToEnhanceBuffer(static_cast<void *>(cacheDataIn_.data()),
                 micrefBufferLength_);
@@ -98,12 +98,12 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     int32_t ret = audioEnhanceChainManager->ApplyAudioEnhanceChain(sceneKeyCode_, processLength);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, inputs[outputIndex], "effect apply failed, ret:%{public}d", ret);
     audioEnhanceChainManager->CopyFromEnhanceBuffer(static_cast<void *>(cacheDataOut_.data()), processLength);
-    ConvertToFloat(SAMPLE_S16LE, micBufferLength_ / GET_SIZE_FROM_FORMAT(SAMPLE_S16LE),
+    ConvertToFloat(SAMPLE_S16LE, micBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE),
         static_cast<void *>(cacheDataOut_.data()), inputs[outputIndex]->GetPcmDataBuffer());
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump((int8_t *)inputs[outputIndex]->GetPcmDataBuffer(),
-            micBufferLength_ / GET_SIZE_FROM_FORMAT(SAMPLE_S16LE) * sizeof(float));
+            micBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE) * sizeof(float));
     }
 #endif
     return inputs[outputIndex];

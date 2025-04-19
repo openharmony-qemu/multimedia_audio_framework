@@ -123,10 +123,10 @@ TEST_F(HpaeGainNodeTest, testHpaeGainTestNode)
     hpaeSinkInputNode->RegisterWriteCallback(writeFixedValueCb0);
     hpaeSinkOutputNode->DoProcess();
     TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
-        nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format));
+        nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     hpaeSinkOutputNode->DoProcess();
     TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
-        nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format));
+        nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     hpaeSinkOutputNode->DisConnect(hpaeGainNode);
     EXPECT_EQ(hpaeGainNode.use_count(), 1);
     hpaeGainNode->DisConnect(hpaeSinkInputNode);

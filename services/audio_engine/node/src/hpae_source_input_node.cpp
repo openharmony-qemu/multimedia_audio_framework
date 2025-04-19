@@ -55,7 +55,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
     inputAudioBufferMap_.emplace(sourceBufferType, HpaePcmBuffer(pcmBufferInfoMap_.at(sourceBufferType)));
     inputAudioBufferMap_.at(sourceBufferType).SetSourceBufferType(sourceBufferType);
     frameByteSizeMap_.emplace(
-        sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format));
+        sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
     outputStreamMap_.emplace(sourceBufferType, this);
 
@@ -79,7 +79,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
         inputAudioBufferMap_.emplace(sourceBufferType, HpaePcmBuffer(pcmBufferInfoMap_.at(sourceBufferType)));
         inputAudioBufferMap_.at(sourceBufferType).SetSourceBufferType(sourceBufferType);
         frameByteSizeMap_.emplace(
-            sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format));
+            sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
         capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
         fdescMap_.emplace(sourceBufferType,
             FrameDesc{capturerFrameDataMap_.at(sourceBufferType).data(), frameByteSizeMap_.at(sourceBufferType)});
@@ -141,7 +141,8 @@ void HpaeSourceInputNode::DoProcess()
         }
 #endif
         // todo: do not convert to float in SourceInputNode
-        ConvertToFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(), capturerFrameDataMap_.at(sourceBufferType).data(),
+        ConvertToFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(),
+            capturerFrameDataMap_.at(sourceBufferType).data(),
             inputAudioBufferMap_.at(sourceBufferType).GetPcmDataBuffer());
         outputStreamMap_.at(sourceBufferType).WriteDataToOutput(&inputAudioBufferMap_.at(sourceBufferType));
     }
@@ -212,7 +213,8 @@ HpaeSourceBufferType HpaeSourceInputNode::GetOutputPortBufferType(HpaeNodeInfo &
 }
 
 int32_t HpaeSourceInputNode::GetCapturerSourceAdapter(
-    const std::string &deviceClass, const SourceType &sourceType, const std::string &info) {
+    const std::string &deviceClass, const SourceType &sourceType, const std::string &info)
+{
     captureId_ = HDI_INVALID_ID;
     if (info.empty()) {
         captureId_ = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(
@@ -232,7 +234,7 @@ int32_t HpaeSourceInputNode::GetCapturerSourceAdapter(
 }
 
 int32_t HpaeSourceInputNode::GetCapturerSourceInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const SourceType &sourceType, const std::string &sourceName)
+    const SourceType &sourceType, const std::string &sourceName)
 {
     if (sourceType == SOURCE_TYPE_WAKEUP || sourceName == HDI_ID_INFO_EC || sourceName == HDI_ID_INFO_MIC_REF) {
         return GetCapturerSourceAdapter(deviceClass, sourceType, sourceName);

@@ -185,11 +185,13 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
 {
     uint32_t sessionId = preNode->GetNodeInfo().sessionId;
     AUDIO_INFO_LOG(
-        "Process DisConnect sessionId is %{public}u, streamType is %{public}d", sessionId, preNode->GetNodeInfo().streamType);
+        "Process DisConnect sessionId is %{public}u, streamType is %{public}d",
+        sessionId, preNode->GetNodeInfo().streamType);
 #ifdef ENABLE_HIDUMP_DFX
     auto callBack = mixerNode_->GetNodeStatusCallback().lock();
     if (callBack != nullptr && idConverterMap_.find(sessionId) != idConverterMap_.end()) {
-        callBack->OnNotifyDfxNodeInfo(false, idConverterMap_[sessionId]->GetNodeId(), idConverterMap_[sessionId]->GetNodeInfo());
+        callBack->OnNotifyDfxNodeInfo(false, idConverterMap_[sessionId]->GetNodeId(),
+            idConverterMap_[sessionId]->GetNodeInfo());
     }
 #endif
     if (idConverterMap_.find(sessionId) != idConverterMap_.end()) {
@@ -199,7 +201,7 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         idConverterMap_.erase(sessionId);
         idGainMap_.erase(sessionId);
         AUDIO_INFO_LOG("Process DisConnect Exist converterNode preOutNum is %{public}zu", mixerNode_->GetPreOutNum());
-    } 
+    }
     if (renderEffectNode_ != nullptr && mixerNode_->GetPreOutNum() == 0) {
         renderEffectNode_->DisConnect(mixerNode_);
         AUDIO_INFO_LOG("Process DisConnect mixerNode_");

@@ -26,7 +26,7 @@ namespace AudioStandard {
 
 int32_t WriteFixedDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
 {
-    size_t sampleSize = GET_SIZE_FROM_FORMAT(format_);
+    size_t sampleSize = GetSizeFromFormat(format_);
     CHECK_AND_RETURN_RET_LOG(sampleSize != 0, SUCCESS, "sampleSize is zero, invalid format");
     for (size_t i = 0; i < callBackStremInfo.requestDataLen / sampleSize; i++) {
         switch (format_) {
@@ -63,7 +63,7 @@ int32_t WriteFixedDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInf
 
 int32_t WriteFixedValueCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
 {
-    size_t sampleSize = GET_SIZE_FROM_FORMAT(format_);
+    size_t sampleSize = GetSizeFromFormat(format_);
     CHECK_AND_RETURN_RET_LOG(sampleSize != 0, SUCCESS, "sampleSize is zero, invalid format");
     for (size_t i = 0; i < callBackStremInfo.requestDataLen / sampleSize; i++) {
         switch (format_) {
@@ -99,7 +99,7 @@ int32_t WriteFixedValueCb::OnStreamData(AudioCallBackStreamInfo& callBackStremIn
 
 int32_t WriteIncDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
 {
-    for (size_t i = 0; i < callBackStremInfo.requestDataLen / GET_SIZE_FROM_FORMAT(format_); i++) {
+    for (size_t i = 0; i < callBackStremInfo.requestDataLen / GetSizeFromFormat(format_); i++) {
         switch (format_) {
             case AudioSampleFormat::SAMPLE_U8: {
                 *(callBackStremInfo.inputData + i) = i;

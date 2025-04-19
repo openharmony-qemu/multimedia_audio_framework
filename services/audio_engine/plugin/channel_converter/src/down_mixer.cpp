@@ -119,7 +119,11 @@ int32_t DownMixer::Process(uint32_t frameLen, float* in, uint32_t inLen, float* 
     uint32_t expectInLen = frameLen * inChannels_ * formatSize_;
     uint32_t expectOutLen = frameLen * outChannels_ * formatSize_;
     if ((expectInLen > inLen) || (expectOutLen > outLen)) {
-        memcpy_s(out, outLen, in, inLen);
+        int32_t ret = memcpy_s(out, outLen, in, inLen);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("memcpy failed when down-mixer process");
+            return DMIX_ERR_ALLOC_FAILED;
+        }
         AUDIO_ERR_LOG("expect Input Len: %{public}d, inLen: %{public}d,"
             "expected output len: %{public}d, outLen %{public}d",
             expectInLen, inLen, expectOutLen, outLen);

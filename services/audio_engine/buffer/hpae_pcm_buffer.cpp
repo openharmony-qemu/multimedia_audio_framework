@@ -176,10 +176,13 @@ bool HpaePcmBuffer::GetFrameData(HpaePcmBuffer &frameData)
         AUDIO_WARNING_LOG("GetFrameData HpaePcmBuffer frames is empty");
         return false;
     }
-    memcpy_s(frameData.GetPcmDataBuffer(),
+    int32_t ret = memcpy_s(frameData.GetPcmDataBuffer(),
         sizeof(float) * frameData.Size(),
         pcmProcessVec_[readPos_.load()].begin(),
         frameSample_ * sizeof(float));
+    if (ret != 0) {
+        return false;
+    }
     readPos_.store((readPos_.load() + 1) % GetFrames());
     curFrames_.fetch_sub(1);
     return true;
@@ -195,8 +198,12 @@ bool HpaePcmBuffer::PushFrameData(std::vector<float> &frameData)
         AUDIO_WARNING_LOG("PushFrameData vector frames is full");
         return false;
     }
-    memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
+    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
         frameData.data(), sizeof(float) * frameData.size());
+    if (ret != 0) {
+        AUDIO_ERR_LOG("memcpy failed when PushFrameData");
+        return false;
+    }
     writePos_.store((writePos_.load() + 1) % GetFrames());
     curFrames_.fetch_add(1);
     return true;
@@ -212,8 +219,12 @@ bool HpaePcmBuffer::PushFrameData(HpaePcmBuffer &frameData)
         AUDIO_WARNING_LOG("PushFrameData HpaePcmBuffer frames is full");
         return false;
     }
-    memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
+    int32_t ret = memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
         frameData.GetPcmDataBuffer(), frameData.Size());
+    if (ret != 0) {
+        AUDIO_ERR_LOG("memcpy failed when PushFrameData");
+        return false;
+    }
     writePos_.store((writePos_.load() + 1) % GetFrames());
     curFrames_.fetch_add(1);
     return true;
@@ -225,8 +236,12 @@ bool HpaePcmBuffer::StoreFrameData(HpaePcmBuffer &frameData)
         return false;
     }
 
-    memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
+    ret = memcpy_s(pcmProcessVec_[writePos_.load()].begin(), frameByteSize_,
         frameData.GetPcmDataBuffer(), frameData.Size());
+    if (ret != 0) {
+        AUDIO_ERR_LOG("memcpy failed when StoreFrameData");
+        return false;
+    }
     writePos_.store((writePos_.load() + 1) % GetFrames());
     readPos_.store((readPos_.load() + 1) % GetFrames());
     return true;

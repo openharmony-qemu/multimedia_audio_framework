@@ -223,10 +223,12 @@ int32_t HpaeCapturerManager::ConnectProcessClusterWithEc(HpaeProcessorType &scen
     if (CheckSceneTypeNeedEc(sceneType) &&
         sceneClusterMap_[sceneType]->GetCapturerEffectConfig(ecNodeInfo, HPAE_SOURCE_BUFFER_TYPE_EC)) {
         ecNodeInfo.statusCallback = weak_from_this();
-        if(sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER) {
-            sceneClusterMap_[sceneType]->ConnectWithInfo(sourceInputClusterMap_[mainMicType_], ecNodeInfo); // ec from mic
+        if (sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER) {
+            sceneClusterMap_[sceneType]->ConnectWithInfo(
+                sourceInputClusterMap_[mainMicType_], ecNodeInfo); // ec from mic
         } else if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER) {
-            sceneClusterMap_[sceneType]->ConnectWithInfo(sourceInputClusterMap_[HPAE_SOURCE_EC], ecNodeInfo); // ec
+            sceneClusterMap_[sceneType]->ConnectWithInfo(
+                sourceInputClusterMap_[HPAE_SOURCE_EC], ecNodeInfo); // ec
         }
     }
     return SUCCESS;

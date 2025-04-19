@@ -27,7 +27,7 @@ namespace AudioStandard {
 namespace HPAE {
 HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
-      sourceOuputData_(nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format)),
+      sourceOuputData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
 #ifdef ENABLE_HOOK_PCM
@@ -59,7 +59,7 @@ void HpaeSourceOutputNode::DoProcess()
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump(
-            (int8_t *)sourceOuputData_.data(), GetChannelCount() * GetFrameLen() * GET_SIZE_FROM_FORMAT(GetBitWidth()));
+            (int8_t *)sourceOuputData_.data(), GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
     }
 #endif
     int32_t ret = readCallback_.lock()->OnReadData(sourceOuputData_, sourceOuputData_.size());

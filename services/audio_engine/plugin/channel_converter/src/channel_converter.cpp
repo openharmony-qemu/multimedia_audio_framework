@@ -20,12 +20,13 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
 static inline uint32_t Min(uint32_t a, uint32_t b)
 {
     return a < b ? a : b;
 }
 
-static inline uint32_t GetFormatSize(AudioSampleFormat format)
+static uint32_t GetFormatSize(AudioSampleFormat format)
 {
     uint32_t sampleSize = 0;
     switch (format) {

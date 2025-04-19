@@ -97,14 +97,14 @@ TEST_F(HpaeSourceOutputNodeTest, constructHpaeSourceOutputNode)
 
 TEST_F(HpaeSourceOutputNodeTest, connectHpaeSourceInputAndOutputNode)
 {
-   HpaeNodeInfo nodeInfo;
+    HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
     nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeSourceInputNode> hpaeSoruceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format);
+    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
     std::vector<char> testData(requestBytes);
     uint64_t replyBytes = 0;
     std::string deviceClass = "file_io";

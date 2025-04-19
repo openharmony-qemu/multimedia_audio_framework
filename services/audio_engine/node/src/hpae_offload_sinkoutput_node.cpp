@@ -52,7 +52,7 @@ namespace {
 HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels *
-        GET_SIZE_FROM_FORMAT(nodeInfo.format) * CACHE_FRAME_COUNT),
+        GetSizeFromFormat(nodeInfo.format) * CACHE_FRAME_COUNT),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
 #ifdef ENABLE_HOOK_PCM
@@ -86,7 +86,7 @@ void HpaeOffloadSinkOutputNode::DoProcess()
         return;
     }
     // if there are no enough frames in cache, read more data from pre-output
-    size_t frameSize = GET_SIZE_FROM_FORMAT(GetBitWidth()) * GetFrameLen() * GetChannelCount();
+    size_t frameSize = GetSizeFromFormat(GetBitWidth()) * GetFrameLen() * GetChannelCount();
     while (renderFrameData_.size() < CACHE_FRAME_COUNT * frameSize) {
         std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
         if (outputVec.front()->IsValid()) {

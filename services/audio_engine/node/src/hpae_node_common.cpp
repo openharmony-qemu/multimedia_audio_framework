@@ -131,18 +131,18 @@ AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &process
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo)
 {
     return usTime * nodeInfo.samplingRate / TIME_US_PER_S /
-        (nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format));
+        (nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
 }
 
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
 {
-    if (nodeInfo.channels == 0 || GET_SIZE_FROM_FORMAT(nodeInfo.format) == 0 || nodeInfo.samplingRate == 0) {
+    if (nodeInfo.channels == 0 || GetSizeFromFormat(nodeInfo.format) == 0 || nodeInfo.samplingRate == 0) {
         AUDIO_ERR_LOG("invalid nodeInfo");
         return 0;
     }
 
     double samples = static_cast<double>(bufferSize) /
-                     (nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format));
+                     (nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     double seconds = samples / static_cast<int32_t>(nodeInfo.samplingRate);
     double microseconds = seconds * TIME_US_PER_S;
 
