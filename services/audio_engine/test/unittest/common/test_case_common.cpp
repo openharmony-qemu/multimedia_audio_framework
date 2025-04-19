@@ -23,11 +23,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
-namespace HPAE {
 
 int32_t WriteFixedDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
 {
-    size_t sampleSize = GetSizeFromFormat(format_);
+    size_t sampleSize = HPAE::GetSizeFromFormat(format_);
     CHECK_AND_RETURN_RET_LOG(sampleSize != 0, SUCCESS, "sampleSize is zero, invalid format");
     for (size_t i = 0; i < callBackStremInfo.requestDataLen / sampleSize; i++) {
         switch (format_) {
@@ -64,7 +63,7 @@ int32_t WriteFixedDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInf
 
 int32_t WriteFixedValueCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
 {
-    size_t sampleSize = GetSizeFromFormat(format_);
+    size_t sampleSize = HPAE::GetSizeFromFormat(format_);
     CHECK_AND_RETURN_RET_LOG(sampleSize != 0, SUCCESS, "sampleSize is zero, invalid format");
     for (size_t i = 0; i < callBackStremInfo.requestDataLen / sampleSize; i++) {
         switch (format_) {
@@ -100,7 +99,8 @@ int32_t WriteFixedValueCb::OnStreamData(AudioCallBackStreamInfo& callBackStremIn
 
 int32_t WriteIncDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
 {
-    for (size_t i = 0; i < callBackStremInfo.requestDataLen / GetSizeFromFormat(format_); i++) {
+    for (size_t i = 0; i < callBackStremInfo.requestDataLen /
+        HPAE::GetSizeFromFormat(format_); i++) {
         switch (format_) {
             case AudioSampleFormat::SAMPLE_U8: {
                 *(callBackStremInfo.inputData + i) = i;
@@ -183,6 +183,5 @@ int32_t ReadDataCb::OnReadData(std::vector<char>& outputData, size_t requestData
     fwrite(outputData.data(), 1, requestDataLen, testFile_);
     return SUCCESS;
 }
-} // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
