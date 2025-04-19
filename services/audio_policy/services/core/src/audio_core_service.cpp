@@ -398,8 +398,10 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
 
 int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    audioSceneManager_.SetAudioScenePre(audioScene, uid, pid);
-    audioStateManager_.SetAudioSceneOwnerPid(audioScene == 0 ? 0 : pid);
+    AUDIO_INFO_LOG("Set audio scene start: %{public}d, lastScene: %{public}d, uid: %{public}d, pid: %{public}d",
+        audioScene, audioSceneManager_.GetLastAudioScene(), uid, pid);
+    audioSceneManager_.SetAudioScenePre(audioScene);
+    audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
 
     FetchDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
 
@@ -427,9 +429,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetDevices
     return audioConnectedDevice_.GetDevicesInner(deviceFlag);
 }
 
-int32_t AudioCoreService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
+int32_t AudioCoreService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
-    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active, pid);
+    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active, uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
     FetchDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
@@ -604,13 +606,12 @@ void AudioCoreService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const De
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
 }
 
-int32_t AudioCoreService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+int32_t AudioCoreService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+    const int32_t uid)
 {
-    AUDIO_WARNING_LOG("Device type[%{public}d] flag[%{public}d] address[%{public}s]",
-        deviceType, active, GetEncryptAddr(address).c_str());
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
-    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address);
+    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address, uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetCallDeviceActive failed");
     ret = FetchDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchDeviceAndRoute failed");

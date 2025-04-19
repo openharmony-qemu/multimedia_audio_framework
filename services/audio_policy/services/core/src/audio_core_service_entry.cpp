@@ -200,10 +200,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
     return coreService_->GetDevices(deviceFlag);
 }
 
-int32_t AudioCoreService::EventEntry::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
+int32_t AudioCoreService::EventEntry::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->SetDeviceActive(deviceType, active, pid);
+    return coreService_->SetDeviceActive(deviceType, active, uid);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredOutputDeviceDescriptors(
@@ -237,10 +237,10 @@ void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
 }
 
 int32_t AudioCoreService::EventEntry::SetCallDeviceActive(
-    InternalDeviceType deviceType, bool active, std::string address)
+    InternalDeviceType deviceType, bool active, std::string address, const int32_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->SetCallDeviceActive(deviceType, active, address);
+    coreService_->SetCallDeviceActive(deviceType, active, address, uid);
     return SUCCESS;
 }
 

@@ -122,7 +122,7 @@ bool AudioPolicyManagerListenerProxy::OnQueryClientType(const std::string &bundl
     return reply.ReadBool();
 }
 
-bool AudioPolicyManagerListenerProxy::OnCheckClientInfo(const std::string &bundleName, uint32_t uid, int32_t &pid)
+bool AudioPolicyManagerListenerProxy::OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid)
 {
     AUDIO_DEBUG_LOG("In");
 
@@ -133,7 +133,7 @@ bool AudioPolicyManagerListenerProxy::OnCheckClientInfo(const std::string &bundl
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), false,
         "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
     data.WriteString(bundleName);
-    data.WriteUint32(uid);
+    data.WriteInt32(uid);
     data.WriteInt32(pid);
 
     int error = Remote()->SendRequest(ON_CHECK_CLIENT_INFO, data, reply, option);

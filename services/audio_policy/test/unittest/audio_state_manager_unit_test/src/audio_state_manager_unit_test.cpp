@@ -62,11 +62,10 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_002, TestSize.Leve
     shared_ptr<AudioDeviceDescriptor> deviceDesc =
         AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
     EXPECT_NE(deviceDesc, nullptr);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(789);
-    AudioStateManager::GetAudioStateManager().GetAudioSceneOwnerPid();
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(789);
     deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
     EXPECT_NE(deviceDesc, nullptr);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(790);
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(790);
     deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
     EXPECT_NE(deviceDesc, nullptr);
 }
