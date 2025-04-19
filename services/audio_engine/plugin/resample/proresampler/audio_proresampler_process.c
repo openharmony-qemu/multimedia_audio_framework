@@ -330,7 +330,8 @@ static void MultiplyFilterSymmetricEvenUpMultichannel(SingleStagePolyphaseResamp
 {
     const int32_t n = state->filterLength;
     const int32_t numChannels = state->numChannels;
-    int32_t ch, j;
+    int32_t ch;
+    int32_t j;
     float sum[MAX_NUM_CHANNEL];
     float h;
 
@@ -876,7 +877,9 @@ static int32_t PolyphaseDownsamplerHalfbandStereo(SingleStagePolyphaseResamplerS
     float hCenter = filterCoefficients[indCenter];
     int32_t i;
     int32_t j;
-    float sumL, sumR, h;
+    float sumL;
+    float sumR;
+    float h;
 
     if (inputIndex < (int32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
@@ -1001,8 +1004,12 @@ static int32_t PolyphaseDownsamplerThirdbandStereo(SingleStagePolyphaseResampler
     int32_t outSample = 0;
     int32_t inputIndex = state->inputIndex;
     const float* filterCoefficients = state->filterCoefficients;
-    int32_t i, j;
-    float sumL, sumR, h;
+    int32_t i;
+    int32_t j;
+    float sumL;
+    float sumR;
+    float h;
+
     int32_t rem = indCenter % THREE_STEPS;
     float hCenter = filterCoefficients[indCenter];
 
@@ -1051,8 +1058,11 @@ static int32_t PolyphaseDownsamplerThirdbandMultichannel(SingleStagePolyphaseRes
     int32_t outSample = 0;
     int32_t inputIndex = state->inputIndex;
     const float* filterCoefficients = state->filterCoefficients;
-    int32_t i, j, ch;
-    float h1, h2;
+    int32_t i;
+    int32_t j;
+    int32_t ch;
+    float h1;
+    float h2;
     float sum[MAX_NUM_CHANNEL];
     const int32_t numChannels = state->numChannels;
     int32_t rem = indCenter % THREE_STEPS;

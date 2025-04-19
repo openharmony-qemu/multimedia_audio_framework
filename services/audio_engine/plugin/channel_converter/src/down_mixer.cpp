@@ -204,12 +204,12 @@ void DownMixer::NormalizeDMixTable()
         maxx = std::max(maxx, summ);
     }
 
-    if (maxx != 0.0f) {
-        maxx = 1.0f / maxx;
-    } else {
+    if (maxx < 1e-6) {
         AUDIO_ERR_LOG("invalid channel num: in_ch = %{public}u, out_ch = %{public}u",
             inChannels_, outChannels_);
         maxx = 1.0f;
+    } else {
+        maxx = 1.0f / maxx;
     }
 
     for (uint32_t i = 0; i < outChannels_; i++) {
