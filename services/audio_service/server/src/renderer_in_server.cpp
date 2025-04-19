@@ -652,7 +652,6 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
             return ERR_INVALID_PARAM;
         }
         VolumeHandle(bufferDesc);
-        Trace::CountVolume(traceTag_, *bufferDesc.buffer);
         if (processConfig_.streamType != STREAM_ULTRASONIC) {
             if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
                 DoFadingOut(bufferDesc);
