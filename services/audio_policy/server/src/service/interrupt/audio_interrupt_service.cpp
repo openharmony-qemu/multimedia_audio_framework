@@ -676,7 +676,6 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
@@ -797,7 +796,6 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
@@ -811,7 +809,6 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
@@ -829,7 +826,6 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
@@ -847,7 +843,6 @@ int32_t AudioInterruptService::InjectInterruptToAudiotZone(const int32_t zoneId,
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
     return SUCCESS;
 }
 
@@ -1341,7 +1336,6 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
         UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-        AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(targetAudioScene == 0 ? 0 : ownerPid_);
         shouldReturnSuccess = true;
         return;
     }
@@ -1528,6 +1522,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
             audioScene = itAudioScene;
             audioScenePriority = itAudioScenePriority;
             ownerPid_ = interrupt.pid;
+            ownerUid_ = interrupt.uid;
         }
     }
     return audioScene;
@@ -1623,6 +1618,7 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
             break;
         case DEACTIVATE_AUDIO_INTERRUPT:
             if (GetAudioScenePriority(audioScene) >= GetAudioScenePriority(currentAudioScene)) {
+                AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(audioScene == 0 ? 0 : ownerUid_);
                 return;
             }
             break;
@@ -1630,7 +1626,7 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
             AUDIO_ERR_LOG("unexpected changeType: %{public}d", changeType);
             return;
     }
-    policyServer_->SetAudioSceneInternal(audioScene);
+    policyServer_->SetAudioSceneInternal(audioScene, ownerUid_, ownerPid_);
 }
 
 bool AudioInterruptService::EvaluateWhetherContinue(const AudioInterrupt &incoming, const AudioInterrupt
@@ -1827,7 +1823,6 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
     }
 
     UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
-    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerPid(highestPriorityAudioScene == 0 ? 0 : ownerPid_);
 }
 
 AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
@@ -1837,6 +1832,7 @@ AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const Audi
     if (GetAudioScenePriority(targetAudioScene) >= GetAudioScenePriority(highestPriorityAudioScene)) {
         highestPriorityAudioScene = targetAudioScene;
         ownerPid_ = audioInterrupt.pid;
+        ownerUid_ = audioInterrupt.uid;
     }
     return highestPriorityAudioScene;
 }

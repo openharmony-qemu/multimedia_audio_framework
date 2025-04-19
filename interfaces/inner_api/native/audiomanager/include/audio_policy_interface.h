@@ -68,7 +68,7 @@ public:
 class AudioClientInfoMgrCallback {
 public:
     virtual ~AudioClientInfoMgrCallback() = default;
-    virtual bool OnCheckClientInfo(const std::string &bundleName, uint32_t uid, int32_t &pid) = 0;
+    virtual bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) = 0;
 };
 
 class AudioPreferredOutputDeviceChangeCallback {

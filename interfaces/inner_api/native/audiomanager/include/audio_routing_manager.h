@@ -56,7 +56,7 @@ public:
     int32_t UnsetAudioDeviceRefinerCallback();
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        const int32_t pid = INVALID_PID);
+        const int32_t uid = INVALID_UID);
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
 private:

@@ -816,7 +816,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t SetDeviceActive(DeviceType deviceType, bool flag) const;
+    int32_t SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientUid = -1) const;
 
     /**
      * @brief get device active.
@@ -1261,7 +1261,8 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 11
      */
-    int32_t SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address) const;
+    int32_t SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address,
+        const int32_t clientUid = -1) const;
 
     /**
      * @brief get the effect algorithmic latency value for a specified audio stream.
