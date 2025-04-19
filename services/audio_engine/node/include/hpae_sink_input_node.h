@@ -51,6 +51,7 @@ public:
     int32_t RewindHistoryBuffer(uint64_t rewindTime);
 
 private:
+    int32_t GetDataFromSharedBuffer();
     void CheckAndDestoryHistoryBuffer();
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     std::weak_ptr<IStreamCallback> writeCallback_;

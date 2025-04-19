@@ -106,7 +106,8 @@ private:
     void DeleteProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
     std::shared_ptr<HpaeProcessCluster> CreateProcessCluster(HpaeNodeInfo &nodeInfo);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
-
+    std::shared_ptr<HpaeProcessCluster> CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;

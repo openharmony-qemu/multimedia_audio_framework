@@ -86,9 +86,6 @@ void HpaeSinkOutputNode::DoProcess()
     timer.Start();
     intervalTimer_.Stop();
     uint64_t interval = intervalTimer_.Elapsed();
-    AUDIO_DEBUG_LOG("HpaeSinkOutputNode: name %{public}s, RenderFrame interval: %{public}" PRIu64 " ms",
-        sinkOutAttr_.adapterName.c_str(),
-        interval);
     outputPcmDumper_->CheckAndReopenHandlde();
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());

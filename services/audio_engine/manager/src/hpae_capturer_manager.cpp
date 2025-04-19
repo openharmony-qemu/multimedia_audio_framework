@@ -451,9 +451,8 @@ int32_t HpaeCapturerManager::PrepareCapturerMicRef(HpaeNodeInfo &micRefNodeInfo)
     return SUCCESS;
 }
 
-int32_t HpaeCapturerManager::InitCapturer()
+void HpaeCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
 {
-    IAudioSourceAttr attr;
     attr.adapterName = sourceInfo_.adapterName.c_str();
     attr.sampleRate = sourceInfo_.samplingRate;
     attr.channel = sourceInfo_.channels;
@@ -467,6 +466,13 @@ int32_t HpaeCapturerManager::InitCapturer()
     attr.sourceType = static_cast<int32_t>(sourceInfo_.sourceType);
     attr.openMicSpeaker = sourceInfo_.openMicSpeaker;
     attr.hasEcConfig = mainMicType_ == HPAE_SOURCE_MIC_EC;
+    return;
+}
+
+int32_t HpaeCapturerManager::InitCapturer()
+{
+    IAudioSourceAttr attr;
+    CreateSourceAttr(attr);
     if (attr.hasEcConfig) {
         attr.formatEc = sourceInfo_.ecFormat;
         attr.sampleRateEc = sourceInfo_.ecSamplingRate;

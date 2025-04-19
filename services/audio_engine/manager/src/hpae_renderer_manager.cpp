@@ -148,6 +148,22 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     }
 }
 
+std::shared_ptr<HpaeProcessCluster> HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
+{
+    AUDIO_INFO_LOG("use default processCluster");
+    std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster = nullptr;
+    if (sceneClusterMap_.find(HPAE_SCENE_DEFAULT) == sceneClusterMap_.end()) {
+        AUDIO_INFO_LOG("default processCluster is null, create default processCluster");
+        hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+        sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
+        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
+    } else {
+        hpaeProcessCluster = sceneClusterMap_[HPAE_SCENE_DEFAULT];
+        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
+    }
+    return hpaeProcessCluster;
+}
+
 std::shared_ptr<HpaeProcessCluster> HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
 {
     Trace trace("HpaeRendererManager::CreateProcessCluster");
@@ -173,16 +189,7 @@ std::shared_ptr<HpaeProcessCluster> HpaeRendererManager::CreateProcessCluster(Hp
             sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
             break;
         case USE_DEFAULT_PROCESSCLUSTER:
-            AUDIO_INFO_LOG("use default processCluster");
-            if (sceneClusterMap_.find(HPAE_SCENE_DEFAULT) == sceneClusterMap_.end()) {
-                AUDIO_INFO_LOG("default processCluster is null, create default processCluster");
-                hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
-                sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
-                sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
-            } else {
-                hpaeProcessCluster = sceneClusterMap_[HPAE_SCENE_DEFAULT];
-                sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
-            }
+            hpaeProcessCluster = CreateDefaultProcessCluster(nodeInfo);
             break;
         case USE_NONE_PROCESSCLUSTER:
             AUDIO_INFO_LOG("use none processCluster");
@@ -643,6 +650,20 @@ void HpaeRendererManager::HandleMsg()
     hpaeNoLockQueue_.HandleRequests();
 }
 
+void HpaeRendererManager::CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo)
+{
+    nodeInfo.channels = sinkInfo_.channels;
+    nodeInfo.format = sinkInfo_.format;
+    nodeInfo.frameLen = sinkInfo_.frameLen;
+    nodeInfo.nodeId = 0;
+    nodeInfo.samplingRate = sinkInfo_.samplingRate;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
+    nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.statusCallback = weak_from_this();
+    return;
+}
+
 int32_t HpaeRendererManager::Init()
 {
     Trace trace("HpaeRendererManager::Init");
@@ -650,15 +671,7 @@ int32_t HpaeRendererManager::Init()
     auto request = [this] {
         AUDIO_INFO_LOG("HpaeRendererManager::init devicename:%{public}s", sinkInfo_.deviceName.c_str());
         HpaeNodeInfo nodeInfo;
-        nodeInfo.channels = sinkInfo_.channels;
-        nodeInfo.format = sinkInfo_.format;
-        nodeInfo.frameLen = sinkInfo_.frameLen;
-        nodeInfo.nodeId = 0;
-        nodeInfo.samplingRate = sinkInfo_.samplingRate;
-        nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
-        nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-        nodeInfo.deviceClass = sinkInfo_.deviceClass;
-        nodeInfo.statusCallback = weak_from_this();
+        CreateOutputClusterNodeInfo(nodeInfo);
         outputCluster_ = std::make_unique<HpaeOutputCluster>(nodeInfo);
         outputCluster_->SetTimeoutStopThd(sinkInfo_.suspendTime);
         int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);

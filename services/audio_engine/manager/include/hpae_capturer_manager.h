@@ -90,7 +90,7 @@ private:
     int32_t CaptureEffectCreate(const HpaeProcessorType &sceneType, const AudioEnhanceScene &enhanceScene);
     int32_t CaptureEffectRelease(const HpaeProcessorType &sceneType);
     int32_t InitCapturerManager();
-
+    void CreateSourceAttr(IAudioSourceAttr &attr);
 private:
     void SendRequest(Request &&request, bool isInit = false);
     HpaeNoLockQueue hpaeNoLockQueue_;

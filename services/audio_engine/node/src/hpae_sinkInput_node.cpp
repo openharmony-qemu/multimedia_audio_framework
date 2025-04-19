@@ -79,6 +79,18 @@ void HpaeSinkInputNode::CheckAndDestoryHistoryBuffer()
     }
 }
 
+int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
+{
+    streamInfo_ = {.framesWritten = framesWritten_.load(),
+        .inputData = interleveData_.data(),
+        .requestDataLen = interleveData_.size(),
+        .deviceClass = GetDeviceClass(),
+        .deviceNetId = GetDeviceNetId(),
+        .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
+    GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
+    return writeCallback_.lock()->OnStreamData(streamInfo_);
+}
+
 void HpaeSinkInputNode::DoProcess()
 {
     CHECK_AND_RETURN_LOG(
@@ -89,15 +101,7 @@ void HpaeSinkInputNode::DoProcess()
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
 
-    streamInfo_ = {.framesWritten = framesWritten_.load(),
-        .inputData = interleveData_.data(),
-        .requestDataLen = interleveData_.size(),
-        .deviceClass = GetDeviceClass(),
-        .deviceNetId = GetDeviceNetId(),
-        .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
-    GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
-    int32_t ret = writeCallback_.lock()->OnStreamData(streamInfo_);
-
+    int32_t ret = GetDataFromSharedBuffer();
     // if historyBuffer has enough data, write to outputStream
     if (!streamInfo_.needData) {
         historyBuffer_->GetFrameData(inputAudioBuffer_);
