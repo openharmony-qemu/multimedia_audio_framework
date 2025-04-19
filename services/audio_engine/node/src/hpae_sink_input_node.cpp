@@ -105,7 +105,6 @@ std::string HpaeSinkInputNode::GetTraceInfo()
 
 void HpaeSinkInputNode::DoProcess()
 {
-    
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " +
     GetTraceInfo());
     CHECK_AND_RETURN_LOG(
