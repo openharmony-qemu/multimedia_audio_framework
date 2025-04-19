@@ -23,6 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace HPAE {
 
 int32_t WriteFixedDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
 {
@@ -182,5 +183,6 @@ int32_t ReadDataCb::OnReadData(std::vector<char>& outputData, size_t requestData
     fwrite(outputData.data(), 1, requestDataLen, testFile_);
     return SUCCESS;
 }
+} // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
