@@ -54,6 +54,7 @@ private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestoryHistoryBuffer();
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
+    std::string GetTraceInfo();
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;
     PcmBufferInfo pcmBufferInfo_;

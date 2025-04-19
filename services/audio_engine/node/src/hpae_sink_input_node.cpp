@@ -82,14 +82,32 @@ void HpaeSinkInputNode::CheckAndDestoryHistoryBuffer()
     }
 }
 
-void HpaeSinkInputNode::DoProcess()
+int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
+{
+    streamInfo_ = {.framesWritten = framesWritten_.load(),
+        .inputData = interleveData_.data(),
+        .requestDataLen = interleveData_.size(),
+        .deviceClass = GetDeviceClass(),
+        .deviceNetId = GetDeviceNetId(),
+        .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
+    GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
+    return writeCallback_.lock()->OnStreamData(streamInfo_);
+}
+
+std::string HpaeSinkInputNode::GetTraceInfo()
 {
     auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
     auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
     auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
     auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
+    return rate + ch + len + format;
+}
+
+void HpaeSinkInputNode::DoProcess()
+{
+    
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " +
-       rate + ch + len + format);
+    GetTraceInfo());
     CHECK_AND_RETURN_LOG(
         writeCallback_.lock(), "HpaeSinkInputNode writeCallback_ is nullptr, SessionId:%{public}d", GetSessionId());
 
@@ -98,15 +116,7 @@ void HpaeSinkInputNode::DoProcess()
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
 
-    streamInfo_ = {.framesWritten = framesWritten_.load(),
-        .inputData = interleveData_.data(),
-        .requestDataLen = interleveData_.size(),
-        .deviceClass = GetDeviceClass(),
-        .deviceNetId = GetDeviceNetId(),
-        .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
-    GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
-    int32_t ret = writeCallback_.lock()->OnStreamData(streamInfo_);
-
+    int32_t ret = GetDataFromSharedBuffer();
     // if historyBuffer has enough data, write to outputStream
     if (!streamInfo_.needData) {
         historyBuffer_->GetFrameData(inputAudioBuffer_);
