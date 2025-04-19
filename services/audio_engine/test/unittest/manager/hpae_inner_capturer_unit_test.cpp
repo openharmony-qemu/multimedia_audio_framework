@@ -99,17 +99,17 @@ static HpaeStreamInfo GetInCapRecordStreamInfo()
 static void WaitForMsgProcessing(std::shared_ptr<HpaeInnerCapturerManager>& hpaeInnerCapturerManager)
 {
     int waitCount = 0;
-    const int32_t WAIT_COUNT_THD = 5;
+    const int32_t waitCountThd = 5;
     while(hpaeInnerCapturerManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 20ms frameLen, need optimize
         waitCount++;
-        if (waitCount >= WAIT_COUNT_THD) {
+        if (waitCount >= waitCountThd) {
             break;
         }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(40));  // 40ms wait time, need optimize
     EXPECT_EQ(hpaeInnerCapturerManager->IsMsgProcessing(), false);
-    EXPECT_EQ(waitCount < WAIT_COUNT_THD, true);
+    EXPECT_EQ(waitCount < waitCountThd, true);
 }
 
 /**

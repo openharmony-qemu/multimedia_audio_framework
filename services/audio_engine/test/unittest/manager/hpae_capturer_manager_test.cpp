@@ -58,17 +58,17 @@ static void TestCheckSourceOutputInfo(HpaeSourceOutputInfo& sourceOutputInfo, co
 static void WaitForMsgProcessing(std::shared_ptr<IHpaeCapturerManager> &capturerManager)
 {
     int waitCount = 0;
-    const int WAIT_COUNT_THD = 5;
+    const int waitCountThd = 5;
     while (capturerManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 20 for sleep
         waitCount++;
-        if (waitCount >= WAIT_COUNT_THD) {
+        if (waitCount >= waitCountThd) {
             break;
         }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(40));  // 40 for sleep
     EXPECT_EQ(capturerManager->IsMsgProcessing(), false);
-    EXPECT_EQ(waitCount < WAIT_COUNT_THD, true);
+    EXPECT_EQ(waitCount < waitCountThd, true);
 }
 
 TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerConstructTest)

@@ -54,17 +54,17 @@ void HpaeManagerUnitTest::TearDown()
 void WaitForMsgProcessing(std::shared_ptr<HpaeManager> &hpaeManager)
 {
     int waitCount = 0;
-    const int WAIT_COUNT_THD = 5;
+    const int waitCountThd = 5;
     while (hpaeManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
         waitCount++;
-        if (waitCount >= WAIT_COUNT_THD) {
+        if (waitCount >= waitCountThd) {
             break;
         }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
     EXPECT_EQ(hpaeManager->IsMsgProcessing(), false);
-    EXPECT_EQ(waitCount < WAIT_COUNT_THD, true);
+    EXPECT_EQ(waitCount < waitCountThd, true);
 }
 
 AudioModuleInfo GetSinkAudioModeInfo()
