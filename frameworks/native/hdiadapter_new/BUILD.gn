@@ -53,6 +53,7 @@ ohos_shared_library("hdiadapter_new") {
     "manager/hdi_adapter_manager.cpp",
     "sink/audio_render_sink.cpp",
     "sink/bluetooth_audio_render_sink.cpp",
+    "sink/direct_audio_render_sink.cpp",
     "sink/fast_audio_render_sink.cpp",
     "sink/file_audio_render_sink.cpp",
     "sink/multichannel_audio_render_sink.cpp",

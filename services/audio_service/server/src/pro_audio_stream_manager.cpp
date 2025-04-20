@@ -21,6 +21,7 @@
 #include <atomic>
 #include "audio_service_log.h"
 #include "audio_errors.h"
+#include "direct_playback_engine.h"
 #include "policy_handler.h"
 #include "pro_renderer_stream_impl.h"
 #include "audio_engine_manager.h"
@@ -32,8 +33,13 @@ namespace AudioStandard {
 using namespace std;
 
 ProAudioStreamManager::ProAudioStreamManager(ManagerType type)
-    : managerType_(type), playbackEngine_(std::make_unique<NoneMixEngine>())
+    : managerType_(type)
 {
+    if (type == EAC3_PLAYBACK) {
+        playbackEngine_ = std::make_unique<DirectPlayBackEngine>();
+    } else {
+        playbackEngine_ = std::make_unique<NoneMixEngine>();
+    }
     AUDIO_DEBUG_LOG("ProAudioStreamManager");
 }
 
