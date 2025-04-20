@@ -168,7 +168,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
                     callStreamUsage;
                 AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
                     callStreamUsage);
-                desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType, GetBypassWithSco(audioScene));
+                desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType,
+                    GetBypassWithSco(audioScene));
             }
         } else {
             desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType, bypassType);
