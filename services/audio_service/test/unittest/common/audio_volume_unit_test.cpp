@@ -788,7 +788,7 @@ HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_002, TestSize.Level1)
     AudioVolume::GetInstance()->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
     int32_t ret = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(volumeType, sessionId);
     EXPECT_EQ(ret, doNotDisturbStatusVolume);
- }
+}
 
  /**
  * @tc.name  : Test AudioVolume API
@@ -805,6 +805,6 @@ HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_002, TestSize.Level1)
     AudioVolume::GetInstance()->SetDoNotDisturbStatus(isDoNotDisturbStatus);
     int32_t ret = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(volumeType, sessionId);
     EXPECT_EQ(ret, doNotDisturbStatusVolume);
- }
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
