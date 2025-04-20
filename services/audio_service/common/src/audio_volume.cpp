@@ -107,7 +107,6 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
 
 uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId)
 {
-    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     if (!isDoNotDisturbStatus_) {
         return 1;
     }
