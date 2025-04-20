@@ -59,6 +59,8 @@ public:
     ErrCode GetLongValue(const std::string &key, int64_t &value, std::string tableType = "");
     ErrCode GetFloatValue(const std::string &key, float &value, std::string tableType = "");
     ErrCode GetBoolValue(const std::string &key, bool &value, std::string tableType = "");
+    ErrCode GetMapValue(const std::string &key, std::vector<std::map<std::string, std::string>> &value,
+        std::string tableType = "");
     ErrCode PutStringValue(const std::string &key, const std::string &value,
         std::string tableType = "", bool needNotify = true);
     ErrCode PutIntValue(const std::string &key, int32_t value, std::string tableType = "", bool needNotify = true);
@@ -70,6 +72,9 @@ public:
     static void ExecRegisterCb(const sptr<AudioSettingObserver> &observer);
     ErrCode RegisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
     ErrCode UnregisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
+    std::vector<std::map<std::string, std::string>> parseJsonArray(const std::string &input);
+    std::string parseFirstOfKey(size_t &pos, size_t len, std::string input);
+    std::string parseSeconfOfValue(size_t &pos, size_t len, std::string input);
 
 protected:
     ~AudioSettingProvider() override;

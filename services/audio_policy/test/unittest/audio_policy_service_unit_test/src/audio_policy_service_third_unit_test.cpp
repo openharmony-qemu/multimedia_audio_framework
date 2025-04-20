@@ -1347,6 +1347,39 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnAudioBalanceChanged_001, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test onDoNotDisturbStatusChanged.
+ * @tc.number: onDoNotDisturbStatusChanged_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+ HWTEST_F(AudioPolicyServiceThirdUnitTest, onPDoNotDisturbStatusChanged_001, TestSize.Level1)
+ {
+     auto server = GetServerPtr();
+     ASSERT_NE(nullptr, server);
+ 
+     bool isDoNotDisturb = false;
+     server->audioPolicyService_.onDoNotDisturbStatusChanged(isDoNotDisturb);
+     EXPECT_NE(server, nullptr);
+ }
+
+ /**
+ * @tc.name  : Test onDoNotDisturbStatusWhiteListChanged.
+ * @tc.number: onDoNotDisturbStatusWhiteListChanged_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+ HWTEST_F(AudioPolicyServiceThirdUnitTest, onDoNotDisturbStatusWhiteListChanged_001, TestSize.Level1)
+ {
+     auto server = GetServerPtr();
+     ASSERT_NE(nullptr, server);
+ 
+     std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
+     std::map<std::string, std::string> obj;
+     obj["123"] = "1";
+     doNotDisturbStatusWhiteList.push_back(obj);
+     server->audioPolicyService_.onDoNotDisturbStatusWhiteListChanged(doNotDisturbStatusWhiteList);
+     EXPECT_NE(server, nullptr);
+ }
+
+/**
  * @tc.name  : Test SetAudioClientInfoMgrCallback.
  * @tc.number: SetAudioClientInfoMgrCallback_001
  * @tc.desc  : Test AudioPolicyService interfaces.

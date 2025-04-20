@@ -262,6 +262,11 @@ public:
 
     void OnAudioBalanceChanged(float audioBalance);
 
+    void onDoNotDisturbStatusChanged(bool isDoNotDisturb);
+
+    void onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
+        doNotDisturbStatusWhiteList);
+
     void LoadEffectLibrary();
 
     int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback);
@@ -553,6 +558,10 @@ private:
     void RegisterAccessiblilityBalance();
 
     void RegisterAccessiblilityMono();
+
+    void RegisterDoNotDisturbStatus();
+
+    void RegisterDoNotDisturbStatusWhiteList();
 
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
 

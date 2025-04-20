@@ -130,6 +130,104 @@ ErrCode AudioSettingProvider::GetBoolValue(const std::string &key, bool &value,
     return ERR_OK;
 }
 
+ErrCode AudioSettingProvider::GetMapValue(const std::string &key,
+    std::vector<std::map<std::string, std::string>> &value, std::string tableType)
+{
+    std::string valueStr;
+    ErrCode ret = GetStringValue(key, valueStr, tableType);
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    value = parseJsonArray(valueStr);
+    return ERR_OK;
+}
+
+std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonArray(const std::string &input)
+{
+    using namespace std;
+    vector<map<string, string>> result;
+    size_t pos = 0;
+    const size_t len = input.length();
+    //skip the space value
+    auto skipWhitespace = [&]() {
+        while (pos < len && isspace(input[pos])) pos++;
+    }
+
+    skipWhitespace();
+    if (input[pos++] != '[') return {};
+    while (pos < len) {
+        skipWhitespace();
+        if (input[pos] == ']') break;
+        if (input[pos++]!= '{') retun {};
+        map<String, Struing) obj;
+        while (pos < len) {
+            skipWhitespace();
+            if (input[pos] == '}') {
+                pos++;
+                break;
+            }
+            string key = parseFirstOfKey(pos,len, input);
+            if (key != "uid") {
+                while (input[pos] != ',')  pos++;
+                pos++;
+                continue;
+            }
+            skipWhitespace();
+            if (input[pos++] != ':') return {};
+            string value = parseSeconfOfValue(pos,len, input);
+            if (!key.empty() || !value.empty()) //循序空键值对
+            obj[value] = "1";
+            skipWhitespace();
+            if (input[pos] == ',') pos++;
+
+        }
+        result.push_back(obj);
+        skipWhitespace();
+        if (input[pos] == ',') pos++;
+    }
+    return result;
+}
+
+std::string parseFirstOfKey(size_t &pos, size_t len, std::string input) {
+    using namespace std;
+    // parse the key of input
+    while (pos < len && isspace(input[pos])) {
+        pos++;
+    }
+    if (pos >= len) {
+        return "";
+    }
+    size_t start = ++pos;
+    while (pos < len && input[pos] != '"') {
+        pos++;
+    }
+    string str = input.subStr(start, pos - start);
+    if (pos < len) {
+        pos++;
+    }
+    return str;
+}
+
+std::string parseSecondOfValue(size_t &pos, size_t len, std::string input) {
+    using namespace std;
+    // parse the value of input
+    while (pos < len && isspace(input[pos])) {
+        pos++;
+    }
+    if (pos >= len) {
+        return "";
+    }
+    size_t start = pos;
+    while (pos < len && input[pos] != ',') {
+        pos++;
+    }
+    string str = input.subStr(start, pos - start);
+    if (pos < len) {
+        pos++;
+    }
+    return str;
+}
+
 ErrCode AudioSettingProvider::PutIntValue(const std::string &key, int32_t value,
     std::string tableType, bool needNotify)
 {
