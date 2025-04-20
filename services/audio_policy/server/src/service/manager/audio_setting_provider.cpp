@@ -168,7 +168,7 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
             }
             string key = parseFirstOfKey(pos, len, input);
             if (key != "uid") {
-                while (input[pos] != ',')  pos++;
+                pos = input.find(',', pos);
                 pos++;
                 continue;
             }
