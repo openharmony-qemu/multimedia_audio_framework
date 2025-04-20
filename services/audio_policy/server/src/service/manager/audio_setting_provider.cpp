@@ -151,14 +151,14 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
     //skip the space value
     auto skipWhitespace = [&]() {
         while (pos < len && isspace(input[pos])) pos++;
-    }
+    };
 
     skipWhitespace();
     if (input[pos++] != '[') return {};
     while (pos < len) {
         skipWhitespace();
         if (input[pos] == ']') break;
-        if (input[pos++]!= '{') retun {};
+        if (input[pos++]!= '{') return {};
         map<String, String) obj;
         while (pos < len) {
             skipWhitespace();
