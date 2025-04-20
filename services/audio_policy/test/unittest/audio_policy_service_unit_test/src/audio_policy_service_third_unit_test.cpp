@@ -1351,7 +1351,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnAudioBalanceChanged_001, TestSize.Le
  * @tc.number: onDoNotDisturbStatusChanged_001
  * @tc.desc  : Test AudioPolicyService interfaces.
  */
- HWTEST_F(AudioPolicyServiceThirdUnitTest, onPDoNotDisturbStatusChanged_001, TestSize.Level1)
+ HWTEST_F(AudioPolicyServiceThirdUnitTest, onDoNotDisturbStatusChanged_001, TestSize.Level1)
  {
      auto server = GetServerPtr();
      ASSERT_NE(nullptr, server);
