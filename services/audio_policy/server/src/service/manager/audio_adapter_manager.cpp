@@ -38,6 +38,18 @@ static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_ASSISTANT,
     STREAM_ALARM,
     STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC,
+    STREAM_VOICE_CALL_ASSISTANT,
+    STREAM_MUSIC
+};
+
+static const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {
+    // all volume types except STREAM_ALL
+    STREAM_RING,
+    STREAM_VOICE_CALL,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ALARM,
+    STREAM_ACCESSIBILITY,
     STREAM_SYSTEM,
     STREAM_ULTRASONIC,
     STREAM_VOICE_CALL_ASSISTANT,
@@ -84,7 +96,10 @@ bool AudioAdapterManager::Init()
     }
 
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
-    if (!audiovolumeParser->LoadConfig(streamVolumeInfos_)) {
+    CHECK_AND_RETURN_RET_LOG(audiovolumeParser, false, "audiovolumeParser is null");
+    auto lret = audiovolumeParser->LoadConfig(streamVolumeInfos_);
+    defaultVolumeTypeList_ = (VolumeUtils::IsPCVolumeEnable()) ? PC_VOLUME_TYPE_LIST : VOLUME_TYPE_LIST;
+    if (!lret) {
         AUDIO_INFO_LOG("Audio Volume Config Load Configuration successfully");
         useNonlinearAlgo_ = 1;
         UpdateVolumeMapIndex();
@@ -201,8 +216,8 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
     }
 
     // Make sure that the volume value is applied.
-    auto iter = VOLUME_TYPE_LIST.begin();
-    while (iter != VOLUME_TYPE_LIST.end()) {
+    auto iter = defaultVolumeTypeList_.begin();
+    while (iter != defaultVolumeTypeList_.end()) {
         SetVolumeDb(*iter);
         iter++;
     }
@@ -795,7 +810,7 @@ bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute, 
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioVolume, false, "SetSinkMute audioVolume handle null");
     auto it = sinkNameMap.find(sinkName);
-    for (auto &volumeType : VOLUME_TYPE_LIST) {
+    for (auto &volumeType : defaultVolumeTypeList_) {
         if (it != sinkNameMap.end()) {
             if ((it->second == OFFLOAD_CLASS && volumeType == STREAM_MUSIC) ||
                 it->second != OFFLOAD_CLASS) {
@@ -934,8 +949,8 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
         }
     }
 
-    auto iter = VOLUME_TYPE_LIST.begin();
-    while (iter != VOLUME_TYPE_LIST.end()) {
+    auto iter = defaultVolumeTypeList_.begin();
+    while (iter != defaultVolumeTypeList_.end()) {
         // update volume level and mute status for each stream type
         SetVolumeDb(*iter);
         AUDIO_INFO_LOG("SetVolumeForSwitchDevice: volume: %{public}d, mute: %{public}d for stream type %{public}d",
@@ -1838,7 +1853,7 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     AUDIO_INFO_LOG("InitVolumeMap: Wrote default stream volumes to KvStore");
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMapTemp = volumeDataMaintainer_.GetVolumeMap();
     for (auto &deviceType: VOLUME_GROUP_TYPE_LIST) {
-        for (auto &streamType: VOLUME_TYPE_LIST) {
+        for (auto &streamType: defaultVolumeTypeList_) {
             // if GetVolume failed, wirte default value
             if (!volumeDataMaintainer_.GetVolume(deviceType, streamType)) {
                 int32_t volumeLevel = GetDefaultVolumeLevel(volumeLevelMapTemp, streamType, deviceType);
@@ -1900,7 +1915,7 @@ int32_t AudioAdapterManager::GetDefaultVolumeLevel(
 
 void AudioAdapterManager::ResetRemoteCastDeviceVolume()
 {
-    for (auto &streamType: VOLUME_TYPE_LIST) {
+    for (auto &streamType: defaultVolumeTypeList_) {
         AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
         volumeDataMaintainer_.SaveVolume(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
@@ -1912,7 +1927,7 @@ void AudioAdapterManager::ResetRemoteCastDeviceVolume()
 
 void AudioAdapterManager::SetMaxVolumeForDeviceChange()
 {
-    for (auto &streamType: VOLUME_TYPE_LIST) {
+    for (auto &streamType: defaultVolumeTypeList_) {
         AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
         volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
@@ -1960,7 +1975,7 @@ void AudioAdapterManager::CloneVolumeMap(void)
     // read volume from private Kvstore
     AUDIO_INFO_LOG("Copy Volume from private database to shareDatabase");
     for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
-        for (auto &streamType : VOLUME_TYPE_LIST) {
+        for (auto &streamType : defaultVolumeTypeList_) {
             std::string volumeKey = GetVolumeKeyForKvStore(deviceType, streamType);
             Key key = volumeKey;
             Value value;
@@ -1986,7 +2001,7 @@ bool AudioAdapterManager::LoadVolumeMap(void)
     }
 
     bool result = false;
-    for (auto &streamType: VOLUME_TYPE_LIST) {
+    for (auto &streamType: defaultVolumeTypeList_) {
         if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_.deviceType_ != DEVICE_TYPE_REMOTE_CAST) {
             result = volumeDataMaintainer_.GetVolume(DEVICE_TYPE_SPEAKER, streamType);
         } else {
@@ -2018,7 +2033,7 @@ void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 {
     if (isFirstBoot) {
         for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
-            for (auto &streamType : VOLUME_TYPE_LIST) {
+            for (auto &streamType : defaultVolumeTypeList_) {
                 CheckAndDealMuteStatus(deviceType, streamType);
             }
         }
@@ -2052,7 +2067,7 @@ void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, 
 
 void AudioAdapterManager::SetVolumeCallbackAfterClone()
 {
-    for (auto &streamType : VOLUME_TYPE_LIST) {
+    for (auto &streamType : defaultVolumeTypeList_) {
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = streamType;
         volumeEvent.volume = GetSystemVolumeLevel(streamType);
@@ -2071,7 +2086,7 @@ void AudioAdapterManager::CloneMuteStatusMap(void)
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "clone mute status failed, audioPolicyKvStore_ nullptr");
     AUDIO_INFO_LOG("Copy mute from private database to shareDatabase");
     for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
-        for (auto &streamType : VOLUME_TYPE_LIST) {
+        for (auto &streamType : defaultVolumeTypeList_) {
             std::string muteKey = GetMuteKeyForKvStore(deviceType, streamType);
             Key key = muteKey;
             Value value;
@@ -2100,7 +2115,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
 
     TransferMuteStatus();
 
-    for (auto &streamType: VOLUME_TYPE_LIST) {
+    for (auto &streamType: defaultVolumeTypeList_) {
         bool result = volumeDataMaintainer_.GetMuteStatus(currentActiveDevice_.deviceType_, streamType);
         if (!result) {
             AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
@@ -2523,7 +2538,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
 void AudioAdapterManager::InitVolumeMapIndex()
 {
     useNonlinearAlgo_ = 0;
-    for (auto streamType : VOLUME_TYPE_LIST) {
+    for (auto streamType : defaultVolumeTypeList_) {
         minVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)] = MIN_VOLUME_LEVEL;
         maxVolumeIndexMap_[VolumeUtils::GetVolumeTypeFromStreamType(streamType)] = MAX_VOLUME_LEVEL;
         volumeDataMaintainer_.SetStreamVolume(streamType, DEFAULT_VOLUME_LEVEL);
@@ -2663,8 +2678,8 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     LoadVolumeMap();
     LoadMuteStatusMap();
 
-    auto iter = VOLUME_TYPE_LIST.begin();
-    while (iter != VOLUME_TYPE_LIST.end()) {
+    auto iter = defaultVolumeTypeList_.begin();
+    while (iter != defaultVolumeTypeList_.end()) {
         SetVolumeDb(*iter);
         AUDIO_INFO_LOG("NotifyAccountsChanged: volume: %{public}d, mute: %{public}d for stream type %{public}d",
             volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
@@ -2713,7 +2728,7 @@ void AudioAdapterManager::SetFirstBoot(bool isFirst)
 void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
 {
     dumpString += "SafeVolume info:\n";
-    for (auto &streamType : VOLUME_TYPE_LIST) {
+    for (auto &streamType : defaultVolumeTypeList_) {
         AppendFormat(dumpString, "  - samplingAudioStreamTypeate: %d", streamType);
         AppendFormat(dumpString, "   volumeLevel: %d\n", volumeDataMaintainer_.GetStreamVolume(streamType));
         AppendFormat(dumpString, "  - AudioStreamType: %d", streamType);
@@ -2756,6 +2771,7 @@ std::vector<AdjustStreamVolumeInfo> AudioAdapterManager::GetStreamVolumeInfo(Adj
 {
     return AudioVolume::GetInstance()->GetStreamVolumeInfo(volumeType);
 }
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
