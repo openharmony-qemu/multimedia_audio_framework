@@ -138,6 +138,7 @@ public:
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     uint32_t supportFlags_ = AUDIO_FLAG_NONE;
     int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
+    bool supportEncodingEac3_ = false;
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos_ {};

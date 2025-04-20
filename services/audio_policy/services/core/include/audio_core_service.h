@@ -220,6 +220,7 @@ private:
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
     bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
 
     // Called by Others - without lock
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
@@ -327,6 +328,7 @@ private:
     bool IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc);
 
     bool IsPaRoute(uint32_t routeFlag);
     int32_t HandleScoOutputDeviceFetched(

@@ -75,6 +75,7 @@ private:
     void HandleUpdateRouteSupportParsed(std::string &value);
     void HandleUpdateAnahsSupportParsed(std::string &value);
     void HandleDefaultAdapterSupportParsed(std::string &value);
+    void HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> pipeInfo, const std::string &value);
     
     void ConvertAdapterInfoToGroupInfo(std::unordered_map<std::string, std::string> &volumeGroupMap,
         std::unordered_map<std::string, std::string> &interruptGroupMap);

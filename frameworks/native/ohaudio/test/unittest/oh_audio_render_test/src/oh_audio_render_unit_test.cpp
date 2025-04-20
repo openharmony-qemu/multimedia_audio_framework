@@ -3259,5 +3259,32 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_034, TestSize.Level0)
 
     oHAudioRendererErrorCallback->OnError(errorCode);
 }
+
+/**
+* @tc.name  : Test OHAudioRendererErrorCallback API
+* @tc.number: OHAudioRenderer_035
+* @tc.desc  : Test OHAudioRendererErrorCallback::GetErrorResult()
+*/
+HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_035, TestSize.Level0)
+{
+    OH_AudioRenderer_OnErrorCallback errorCallback;
+    errorCallback =
+        [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
+        void { return; };
+
+    OHAudioRenderer oHAudioRenderer;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
+    EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
+    void* userData = nullptr;
+
+    auto oHAudioRendererErrorCallback =
+        std::make_shared<OHAudioRendererErrorCallback>(errorCallback, oH_AudioRenderer, userData);
+    EXPECT_NE(oHAudioRendererErrorCallback, nullptr);
+    AudioErrors errorCode = ERROR_UNSUPPORTED_FORMAT;
+
+    auto ret = oHAudioRendererErrorCallback->GetErrorResult(errorCode);
+    EXPECT_EQ(ret, AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT);
+}
 } // namespace AudioStandard
 } // namespace OHOS

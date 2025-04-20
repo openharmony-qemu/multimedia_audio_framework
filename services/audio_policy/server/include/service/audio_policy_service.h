@@ -594,6 +594,7 @@ private:
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
     void SetDefaultAdapterEnable(bool isEnable);
+    bool IsDevicePlaybackSupport(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
 private:
 
     static bool isBtListenerRegistered;
