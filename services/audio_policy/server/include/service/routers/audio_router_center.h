@@ -106,7 +106,8 @@ private:
     shared_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE);
     shared_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
-        RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE);
+        RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE,
+        const RouterType &bypassWithSco = RouterType::ROUTER_TYPE_NONE);
     bool HasScoDevice();
     vector<shared_ptr<AudioDeviceDescriptor>> FetchRingRenderDevices(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType);

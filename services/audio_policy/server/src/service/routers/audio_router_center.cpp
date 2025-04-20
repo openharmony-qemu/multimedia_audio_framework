@@ -48,12 +48,13 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
     return make_shared<AudioDeviceDescriptor>();
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(
-    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType, const RouterType &bypassType)
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    RouterType &routerType, const RouterType &bypassType, const RouterType &bypassWithSco)
 {
     for (auto &router : callRenderRouters_) {
-        if (router->GetRouterType() == bypassType) {
-            AUDIO_INFO_LOG("Fetch call render device bypass %{public}d", bypassType);
+        if (router->GetRouterType() == bypassType || router->GetRouterType() == bypassWithSco) {
+            AUDIO_INFO_LOG("Fetch call render device bypass %{public}d, bypassWithSco %{public}d",
+                bypassType, bypassWithSco);
             continue;
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
@@ -152,13 +153,18 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
             ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
             AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+            RouterType bypassWithSco = RouterType::ROUTER_TYPE_NONE;
+            if (audioscene == AUDIO_SCENE_DEFAULT && AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+                AUDIO_INFO_LOG("Audio scene default and sco state is true, bypassWithSco set to user select");
+                bypassWithSco = RouterType::ROUTER_TYPE_USER_SELECT;
+            }
             if (desc->deviceType_ == DEVICE_TYPE_NONE) {
                 callStreamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
                 callStreamUsage = (callStreamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
                     callStreamUsage;
                 AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
                     callStreamUsage);
-                desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType);
+                desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType, bypassWithSco);
             }
         } else {
             desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType, bypassType);
