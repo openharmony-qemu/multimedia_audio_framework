@@ -159,7 +159,7 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
         skipWhitespace();
         if (input[pos] == ']') break;
         if (input[pos++]!= '{') return {};
-        map<String, String) obj;
+        map<string, string) obj;
         while (pos < len) {
             skipWhitespace();
             if (input[pos] == '}') {
