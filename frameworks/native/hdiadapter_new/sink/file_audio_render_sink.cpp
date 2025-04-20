@@ -30,6 +30,9 @@ FileAudioRenderSink::~FileAudioRenderSink()
 
 int32_t FileAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
+    if (attr.filePath == nullptr) {
+        return ERROR;
+    }
     filePath_.assign(attr.filePath);
     return SUCCESS;
 }
@@ -179,7 +182,8 @@ void FileAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("not support");
 }
 
-int32_t FileAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
+int32_t FileAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+    bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return SUCCESS;

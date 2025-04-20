@@ -278,7 +278,8 @@ void RemoteFastAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("not support");
 }
 
-int32_t RemoteFastAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
+int32_t RemoteFastAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+    bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return SUCCESS;

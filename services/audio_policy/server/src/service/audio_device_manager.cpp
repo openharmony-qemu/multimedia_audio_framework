@@ -815,6 +815,7 @@ void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usa
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     for (auto &deviceInfo : deviceInfos) {
+        CHECK_AND_BREAK_LOG(dev != nullptr, "dev is nullptr");
         if (dev->deviceType_ != deviceInfo.deviceType ||
             IsExistedDevice(dev, audioDeviceDescriptors)) {
             continue;
@@ -970,6 +971,7 @@ bool AudioDeviceManager::GetScoState()
 void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &d,
     const DeviceInfoUpdateCommand updateCommand)
 {
+    CHECK_AND_RETURN_LOG(d != nullptr, "desc is nullptr");
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(d);
     bool ret = false;
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);

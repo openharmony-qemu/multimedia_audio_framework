@@ -341,7 +341,8 @@ int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &re
     }
     DeviceType activeInputDevice = (static_cast<DeviceType>(data.ReadInt32()));
     BluetoothOffloadState a2dpOffloadFlag =  static_cast<BluetoothOffloadState>(data.ReadInt32());
-    int32_t result = SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag);
+    bool scoExcludeFlag = data.ReadBool();
+    int32_t result = SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag, scoExcludeFlag);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }

@@ -71,7 +71,8 @@ public:
     virtual void SetAudioBalanceValue(float audioBalance) = 0;
     virtual int32_t SetSinkMuteForSwitchDevice(bool mute) SUCCESS_RET
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+        bool scoExcludeFlag = false) = 0;
     virtual int32_t GetAudioScene(void) = 0;
 
     virtual int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) = 0;

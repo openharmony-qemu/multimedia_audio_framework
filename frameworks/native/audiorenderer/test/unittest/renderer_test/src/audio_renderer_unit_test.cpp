@@ -8769,5 +8769,19 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_007, TestSize
 
     audioRenderer->Release();
 }
+
+/**
+ * @tc.name  : Test InitFormatUnsupportedErrorCallback API.
+ * @tc.number: Audio_Renderer_InitFormatUnsupportedErrorCallback_001
+ * @tc.desc  : Test InitFormatUnsupportedErrorCallback interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_InitFormatUnsupportedErrorCallback_001, TestSize.Level2)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    int32_t ret = audioRendererPrivate->InitFormatUnsupportedErrorCallback();
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -220,6 +220,7 @@ private:
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
     bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
 
     // Called by Others - without lock
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
@@ -262,7 +263,7 @@ private:
         SourceType sourceType);
     bool IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo);
 #ifdef BLUETOOTH_ENABLE
-    const sptr<IStandardAudioService> RegisterBluetoothDeathCallback();
+    void RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
     int32_t FetchDeviceAndRoute(
@@ -327,6 +328,7 @@ private:
     bool IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc);
 
     bool IsPaRoute(uint32_t routeFlag);
     int32_t HandleScoOutputDeviceFetched(
@@ -400,6 +402,7 @@ private:
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     static bool isBtListenerRegistered;
+    static bool isBtCrashed;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     bool isCurrentRemoteRenderer_ = false;

@@ -58,6 +58,9 @@ namespace {
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t DEFAULT_SPAN_SIZE = 1;
     constexpr size_t MSEC_PER_SEC = 1000;
+    const int32_t DUP_OFFLOAD_LEN = 7000;
+    const int32_t DUP_COMMON_LEN = 40;
+    const int32_t DUP_DEFAULT_LEN = 20;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -86,7 +89,12 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    totalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        totalSizeInFrame_ = spanSizeInFrame_ * 2; // 2 * 2 = 4 frames
+    } else {
+        totalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
+    }
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
@@ -317,6 +325,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
+    int32_t engineFlag = GetEngineFlag();
     switch (operation) {
         case OPERATION_RELEASED:
             stateListener->OnOperationHandled(RELEASE_STREAM, 0);
@@ -344,6 +353,11 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             offloadEnable_ = operation == OPERATION_SET_OFFLOAD_ENABLE ? true : false;
+            if (engineFlag == 1 && offloadEnable_ == true && dupStreamCallback_ != nullptr &&
+                dupStreamCallback_->GetDupRingBuffer() != nullptr) {
+                dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
+                dupStreamCallback_->GetDupRingBuffer()->ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
+            }
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
         default:
@@ -626,6 +640,59 @@ int32_t RendererInServer::WriteData()
     return SUCCESS;
 }
 
+int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
+{
+    uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
+    uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
+    Trace trace1(traceTag_ + " WriteData"); // RendererInServer::sessionid:100001 WriteData
+    if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
+        Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
+        FutexTool::FutexWake(audioServerBuffer_->GetFutex());
+        if (!offloadEnable_) {
+            CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+                "invalid write and read position.");
+            uint64_t dataSize = currentWriteFrame - currentReadFrame;
+            AUDIO_INFO_LOG("sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
+                streamIndex_, dataSize);
+        }
+        return ERR_OPERATION_FAILED;
+    }
+
+    BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
+    if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
+        if (bufferDesc.buffer == nullptr) {
+            AUDIO_ERR_LOG("The buffer is null!");
+            return ERR_INVALID_PARAM;
+        }
+        VolumeHandle(bufferDesc);
+        Trace::CountVolume(traceTag_, *bufferDesc.buffer);
+        if (processConfig_.streamType != STREAM_ULTRASONIC) {
+            if (currentReadFrame + spanSizeInFrame_ == currentWriteFrame) {
+                DoFadingOut(bufferDesc);
+            }
+        }
+        memcpy_s(inputData, requestDataLen, bufferDesc.buffer, bufferDesc.bufLength);
+        if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+            DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+            AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+                static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+        }
+
+        OtherStreamEnqueue(bufferDesc);
+
+        WriteMuteDataSysEvent(bufferDesc);
+        memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
+        uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
+        audioServerBuffer_->SetCurReadFrame(nextReadFrame);
+    } else {
+        Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
+    }
+    FutexTool::FutexWake(audioServerBuffer_->GetFutex());
+    standByCounter_ = 0;
+    lastWriteTime_ = ClockTime::GetCurNano();
+    return SUCCESS;
+}
+
 void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
 {
     // for inner capture
@@ -642,21 +709,36 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
     }
 }
 
+void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo)
+{
+    int32_t engineFlag = GetEngineFlag();
+    if (renderEmptyCountForInnerCap_ > 0) {
+        size_t emptyBufferSize = static_cast<size_t>(renderEmptyCountForInnerCap_) * spanSizeInByte_;
+        auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
+        BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
+        memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
+        if (engineFlag == 1) {
+            WriteDupBufferInner(emptyBufferDesc);
+        } else {
+            captureInfo.dupStream->EnqueueBuffer(emptyBufferDesc);
+        }
+        renderEmptyCountForInnerCap_ = 0;
+    }
+    if (engineFlag == 1) {
+        AUDIO_INFO_LOG("OtherStreamEnqueue running");
+        WriteDupBufferInner(bufferDesc);
+    } else {
+        captureInfo.dupStream->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+    }
+}
+
 void RendererInServer::InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo)
 {
     if (captureInfo.isInnerCapEnabled) {
         Trace traceDup("RendererInServer::WriteData DupSteam write");
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (captureInfo.dupStream != nullptr) {
-            if (renderEmptyCountForInnerCap_ > 0) {
-                size_t emptyBufferSize = static_cast<size_t>(renderEmptyCountForInnerCap_) * spanSizeInByte_;
-                auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
-                BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
-                memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
-                captureInfo.dupStream->EnqueueBuffer(emptyBufferDesc);
-                renderEmptyCountForInnerCap_ = 0;
-            }
-            captureInfo.dupStream->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+            InnerCaptureEnqueueBuffer(bufferDesc, captureInfo);
         }
     }
 }
@@ -865,6 +947,7 @@ int32_t RendererInServer::Pause()
             }
         }
     }
+    pausedTime_ = ClockTime::GetCurNano();
     if (isDualToneEnabled_ && dualToneStream_ != nullptr) {
         //Joint judgment ensures that there is a double ring and there is a stream to enter.
         stream_->SetAudioEffectMode(effectModeWhenDual_);
@@ -915,7 +998,7 @@ int32_t RendererInServer::Flush()
             "writeFrame: %{public}" PRIu64 "", readFrame, spanSizeInFrame_, writeFrame);
         audioServerBuffer_->SetCurReadFrame(readFrame);
     }
-
+    flushedTime_ = ClockTime::GetCurNano();
     int ret = stream_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush stream failed, reason: %{public}d", ret);
     {
@@ -957,6 +1040,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
         fadeoutFlag_ = DO_FADINGOUT;
     }
     DrainAudioBuffer();
+    drainedTime_ = ClockTime::GetCurNano();
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
     int ret = stream_->Drain(stopFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
@@ -1205,6 +1289,10 @@ int32_t RendererInServer::DisableInnerCap(int32_t innerCapId)
         AudioVolume::GetInstance()->RemoveStreamVolume(dupStreamIndex);
         captureInfos_[innerCapId].dupStream = nullptr;
     }
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        DumpFileUtil::CloseDumpFile(&dumpDupIn_);
+    }
     return SUCCESS;
 }
 
@@ -1223,6 +1311,15 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
         isSystemApp, processConfig_.rendererInfo.volumeMode);
 
+    dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        ret = CreateDupBufferInner(innerCapId);
+        dumpDupInFileName_ = std::to_string(dupStreamIndex) + "_dup_in_" + ".pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupInFileName_, &dumpDupIn_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Config dup buffer failed");
+    }
+    // todo check index
     dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex);
     capInfo.dupStream->RegisterStatusCallback(dupStreamCallback_);
     capInfo.dupStream->RegisterWriteCallback(dupStreamCallback_);
@@ -1325,6 +1422,19 @@ int32_t RendererInServer::InitDualToneStream()
 StreamCallbacks::StreamCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
 {
     AUDIO_INFO_LOG("DupStream %{public}u create StreamCallbacks", streamIndex_);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        dumpDupOutFileName_ = std::to_string(streamIndex_) + "_dup_out_" + ".pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupOutFileName_, &dumpDupOut_);
+    }
+}
+ 
+StreamCallbacks::~StreamCallbacks()
+{
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        DumpFileUtil::CloseDumpFile(&dumpDupOut_);
+    }
 }
 
 void StreamCallbacks::OnStatusUpdate(IOperation operation)
@@ -1336,6 +1446,35 @@ int32_t StreamCallbacks::OnWriteData(size_t length)
 {
     Trace trace("DupStream::OnWriteData length " + std::to_string(length));
     return SUCCESS;
+}
+
+int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
+{
+    Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen));
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        std::unique_ptr<AudioRingCache> &dupBuffer =
+            AudioService::GetInstance()->GetRendererBySessionID(streamIndex_)->GetDupRingBuffer();
+        // no need mutex
+        // todo wait readable
+        AUDIO_INFO_LOG("StreamCallbacks::OnWriteData running");
+        OptResult result = dupBuffer->GetReadableSize();
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
+            "dupBuffer get readable size failed, size is:%{public}zu", result.size);
+        CHECK_AND_RETURN_RET_LOG((result.size != 0) && (result.size >= requestDataLen), ERROR,
+            "Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu",
+            result.size, requestDataLen);
+        AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
+        result = dupBuffer->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");\
+        DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
+    }
+    return SUCCESS;
+}
+
+std::unique_ptr<AudioRingCache>& StreamCallbacks::GetDupRingBuffer()
+{
+    return dupRingBuffer_;
 }
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
@@ -1541,11 +1680,17 @@ int32_t RendererInServer::SetStreamVolumeInfoForEnhanceChain()
 {
     uint32_t sessionId = streamIndex_;
     float streamVolume = audioServerBuffer_->GetStreamVolume();
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
-    int32_t ret = audioEnhanceChainManager->SetStreamVolumeInfo(sessionId, streamVolume);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetStreamVolumeInfo failed");
-    return ret;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        AUDIO_DEBUG_LOG("HPAE SetStreamVolumeInfoForEnhanceChain");
+        return SUCCESS;
+    } else {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+        int32_t ret = audioEnhanceChainManager->SetStreamVolumeInfo(sessionId, streamVolume);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetStreamVolumeInfo failed");
+        return ret;
+    }
 }
 
 void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
@@ -1699,6 +1844,62 @@ int32_t RendererInServer::SetDefaultOutputDevice(const DeviceType defaultOutputD
 int32_t RendererInServer::SetSourceDuration(int64_t duration)
 {
     sourceDuration_ = duration;
+    return SUCCESS;
+}
+
+std::unique_ptr<AudioRingCache>& RendererInServer::GetDupRingBuffer()
+{
+    return dupRingBuffer_;
+}
+ 
+int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
+{
+    // todo dynamic
+    if (dupStreamCallback_->GetDupRingBuffer() != nullptr) {
+        AUDIO_INFO_LOG("dup buffer already configed!");
+        return SUCCESS;
+    }
+
+    auto &capInfo = captureInfos_[innerCapId];
+    capInfo.dupStream->GetSpanSizePerFrame(dupSpanSizeInFrame_);
+    // todo offload 350 frames primary 1 frame
+    dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN/DUP_DEFAULT_LEN);
+    capInfo.dupStream->GetByteSizePerFrame(dupByteSizePerFrame_);
+    if (dupSpanSizeInFrame_ == 0 || dupByteSizePerFrame_ == 0) {
+        AUDIO_ERR_LOG("ERR_INVALID_PARAM");
+        return ERR_INVALID_PARAM;
+    }
+    dupSpanSizeInByte_ = dupSpanSizeInFrame_ * dupByteSizePerFrame_;
+    CHECK_AND_RETURN_RET_LOG(dupSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config dup buffer failed");
+    AUDIO_INFO_LOG("dupTotalSizeInFrame_: %{public}zu, dupSpanSizeInFrame_: %{public}zu,"
+        "dupByteSizePerFrame_:%{public}zu dupSpanSizeInByte_: %{public}zu,",
+        dupTotalSizeInFrame_, dupSpanSizeInFrame_, dupByteSizePerFrame_, dupSpanSizeInByte_);
+ 
+    // create dupBuffer in server
+    dupStreamCallback_->GetDupRingBuffer() = AudioRingCache::Create(dupTotalSizeInFrame_ * dupByteSizePerFrame_);
+    CHECK_AND_RETURN_RET_LOG(dupStreamCallback_->GetDupRingBuffer() != nullptr, ERR_OPERATION_FAILED,
+        "Create dup buffer failed");
+    return SUCCESS;
+}
+ 
+int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc)
+{
+    size_t targetSize = bufferDesc.bufLength;
+    OptResult result = dupStreamCallback_->GetDupRingBuffer()->GetWritableSize();
+    // todo get writeable size failed
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
+        "DupRingBuffer write invalid size is:%{public}zu", result.size);
+    size_t writableSize = result.size;
+    AUDIO_DEBUG_LOG("targetSize: %{public}zu, writableSize: %{public}zu", targetSize, writableSize);
+    size_t writeSize = std::min(writableSize, targetSize);
+    BufferWrap bufferWrap = {bufferDesc.buffer, writeSize};
+    if (writeSize > 0) {
+        result = dupStreamCallback_->GetDupRingBuffer()->Enqueue(bufferWrap);
+        if (result.ret != OPERATION_SUCCESS) {
+            AUDIO_ERR_LOG("RingCache Enqueue failed ret:%{public}d size:%{public}zu", result.ret, result.size);
+        }
+        DumpFileUtil::WriteDumpFile(dumpDupIn_, static_cast<void *>(bufferDesc.buffer), writeSize);
+    }
     return SUCCESS;
 }
 

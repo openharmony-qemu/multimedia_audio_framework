@@ -308,6 +308,7 @@ config("audio_service_config") {
     "client/include",
     "server/include",
     "server/include/config",
+    "../audio_policy/server/include/service/common",
     "../audio_policy/common/definitions/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/server/include/service/effect",

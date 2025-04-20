@@ -137,8 +137,9 @@ void AudioEnhanceChainManager::ResetInfo()
     isMute_ = false;
 }
 
-void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(std::vector<EffectChain> &enhanceChains,
-    const EffectChainManagerParam &managerParam, std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
+void AudioEnhanceChainManager::ConstructEnhanceChainMgrMaps(const std::vector<EffectChain> &enhanceChains,
+    const EffectChainManagerParam &managerParam,
+    const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
     std::set<std::string> enhanceSet;
     for (EffectChain enhanceChain : enhanceChains) {
@@ -240,8 +241,9 @@ void AudioEnhanceChainManager::UpdateEnhancePropertyMapFromDb(DeviceType deviceT
     }
 }
 
-void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
-    const EffectChainManagerParam &managerParam, std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
+void AudioEnhanceChainManager::InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
+    const EffectChainManagerParam &managerParam,
+    const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
     normalSceneLimit_ = managerParam.maxExtraNum;
@@ -913,6 +915,21 @@ int32_t AudioEnhanceChainManager::WriteEnhancePropertyToDb(const std::string &ke
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Write Enhance Property to Database failed");
     AUDIO_INFO_LOG("success, write Enhance_&_DeviceType:%{public}s is Property:%{public}s to Database",
         key.c_str(), property.c_str());
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChainManager::SetAccessoryDeviceState(bool state)
+{
+    ErrCode ret;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), ERROR, "os account not ready");
+    if (state) {
+        ret = settingProvider.PutStringValue("hw.pencil.mic_ack.state", "1", "global");
+    } else {
+        ret = settingProvider.PutStringValue("hw.pencil.mic_ack.state", "0", "global");
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Write Accessory state to Database failed");
+    AUDIO_INFO_LOG("success write hw.pencil.mic_ack.state %{public}d to Database", state);
     return SUCCESS;
 }
 

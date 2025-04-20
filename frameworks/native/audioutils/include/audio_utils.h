@@ -218,6 +218,8 @@ bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>
 bool GetSysPara(const char *key, T &value);
 
+int32_t GetEngineFlag();
+
 enum AudioDumpFileType {
     AUDIO_APP = 0,
     OTHER_NATIVE_SERVICE = 1,

@@ -16,7 +16,6 @@
 #define LOG_TAG "AudioEffectHdiParam"
 #endif
 
-#include "audio_effect.h"
 #include "audio_effect_hdi_param.h"
 #include "audio_errors.h"
 #include "audio_effect_log.h"

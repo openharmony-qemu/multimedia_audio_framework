@@ -22,6 +22,7 @@
 #include "oh_audio_buffer.h"
 #include "i_stream_manager.h"
 #include "audio_effect.h"
+#include "audio_ring_cache.h"
 
 #include "player_dfx_writer.h"
 
@@ -30,11 +31,16 @@ namespace AudioStandard {
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
 public:
     explicit StreamCallbacks(uint32_t streamIndex);
-    virtual ~StreamCallbacks() = default;
+    virtual ~StreamCallbacks();
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
+    int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
+    std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 private:
     uint32_t streamIndex_ = 0;
+    FILE *dumpDupOut_ = nullptr;
+    std::string dumpDupOutFileName_ = "";
+    std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
 };
 
 class RendererInServer : public IStatusCallback, public IWriteCallback,
@@ -47,6 +53,7 @@ public:
     void HandleOperationFlushed();
     void HandleOperationStarted();
     int32_t OnWriteData(size_t length) override;
+    int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
@@ -91,6 +98,7 @@ public:
     int32_t EnableInnerCap(int32_t innerCapId);
     int32_t DisableInnerCap(int32_t innerCapId);
     int32_t InitDupStream(int32_t innerCapId);
+    std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 
     // for dual tone
     int32_t EnableDualTone();
@@ -129,8 +137,11 @@ private:
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
     void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo);
+    void InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo);
     int32_t StartInner();
     int64_t GetLastAudioDuration();
+    int32_t CreateDupBufferInner(int32_t innerCapId);
+    int32_t WriteDupBufferInner(const BufferDesc &bufferDesc);
 
 private:
     std::mutex statusLock_;
@@ -146,8 +157,15 @@ private:
 
     // for inner-cap
     std::mutex dupMutex_;
+    size_t dupTotalSizeInFrame_ = 0;
+    size_t dupSpanSizeInFrame_ = 0;
+    size_t dupSpanSizeInByte_ = 0;
+    size_t dupByteSizePerFrame_ = 0;
+    FILE *dumpDupIn_ = nullptr;
+    std::string dumpDupInFileName_ = "";
     std::shared_ptr<StreamCallbacks> dupStreamCallback_ = nullptr;
     std::unordered_map<int32_t, CaptureInfo> captureInfos_;
+    std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
 
     // for dual sink tone
     std::mutex dualToneMutex_;
@@ -171,6 +189,10 @@ private:
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
     int64_t startedTime_ = 0;
+    int64_t pausedTime_ = 0;
+    int64_t stopedTime_ = 0;
+    int64_t flushedTime_ = 0;
+    int64_t drainedTime_ = 0;
     uint32_t underrunCount_ = 0;
     std::atomic<uint32_t> standByCounter_ = 0;
     int64_t enterStandbyTime_ = 0;

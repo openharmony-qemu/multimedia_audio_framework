@@ -251,6 +251,13 @@ public:
 
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
 
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const;
+
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const;
+
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) const;
+
     int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType);
 
     void UpdateSafeVolumeByS4();
@@ -361,14 +368,15 @@ private:
         return *reinterpret_cast<T *>(const_cast<uint8_t *>(&data[0]));
     }
 
-    std::unique_ptr<AudioServiceAdapter> audioServiceAdapter_;
+    std::shared_ptr<AudioServiceAdapter> audioServiceAdapter_;
+    std::vector<AudioStreamType> defaultVolumeTypeList_;
     std::unordered_map<AudioStreamType, int> minVolumeIndexMap_;
     std::unordered_map<AudioStreamType, int> maxVolumeIndexMap_;
     std::mutex systemSoundMutex_;
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
     AudioDeviceDescriptor currentActiveDevice_;
-    AudioRingerMode ringerMode_;
+    AudioRingerMode ringerMode_ = RINGER_MODE_NORMAL;
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
     SafeStatus safeStatusBt_ = SAFE_ACTIVE;

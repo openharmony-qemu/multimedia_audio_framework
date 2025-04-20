@@ -44,18 +44,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-// for phone
 const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
-    STREAM_MUSIC,
-    STREAM_VOICE_CALL,
-    STREAM_RING,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_ALARM,
-    STREAM_ACCESSIBILITY,
-    STREAM_ULTRASONIC
-};
-
-const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
     STREAM_VOICE_ASSISTANT,
     STREAM_VOICE_CALL,
     STREAM_ACCESSIBILITY,
@@ -1096,9 +1085,7 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
         streamType, mute, isUpdateUi);
 
     if (streamType == STREAM_ALL) {
-        const std::vector<AudioStreamType> &streamTypeArray =
-            (VolumeUtils::IsPCVolumeEnable())? GET_PC_STREAM_ALL_VOLUME_TYPES : GET_STREAM_ALL_VOLUME_TYPES;
-        for (auto audioStreamType : streamTypeArray) {
+        for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
             AUDIO_INFO_LOG("SetMute of STREAM_ALL for StreamType = %{public}d ", audioStreamType);
             int32_t setResult = SetSingleStreamMute(audioStreamType, mute, isUpdateUi, deviceType);
             if (setResult != SUCCESS) {
@@ -1255,9 +1242,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
     }
     bool mute = GetStreamMuteInternal(streamType);
     if (streamType == STREAM_ALL) {
-        const std::vector<AudioStreamType> &streamTypeArray =
-            (VolumeUtils::IsPCVolumeEnable()) ? GET_PC_STREAM_ALL_VOLUME_TYPES : GET_STREAM_ALL_VOLUME_TYPES;
-        for (auto audioStreamType : streamTypeArray) {
+        for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
             AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d, mute = %{public}d, level = %{public}d",
                 audioStreamType, mute, volumeLevel);
             int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi, mute);
@@ -3990,6 +3975,12 @@ int32_t AudioPolicyServer::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObj
     CHECK_AND_RETURN_RET_LOG(callerUid == avSessionUid, ERROR,
         "SetQueryAllowedPlaybackCallback callerUid is error: not av_session");
     return audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
+}
+
+DirectPlaybackMode AudioPolicyServer::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    return coreService_->GetDirectPlaybackSupport(streamInfo, streamUsage);
 }
 
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)

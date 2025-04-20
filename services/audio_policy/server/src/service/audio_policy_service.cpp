@@ -59,18 +59,6 @@ static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 }
 
-static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
-    STREAM_VOICE_CALL,
-    STREAM_RING,
-    STREAM_MUSIC,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_ALARM,
-    STREAM_ACCESSIBILITY,
-    STREAM_ULTRASONIC,
-    STREAM_SYSTEM,
-    STREAM_VOICE_CALL_ASSISTANT,
-    STREAM_ALL
-};
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
@@ -1300,6 +1288,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.networkId_ = curOutputDeviceDesc.networkId_;
         deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
+        CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupport(config, deviceInfo), ERROR, "device not support playback");
     } else {
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             AudioCapturerInfo capturerInfo = config.capturerInfo;
@@ -1807,7 +1796,12 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
 int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
     int32_t ret = AUDIO_OK;
-    ret = AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
+    } else {
+        ret = AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
     auto oIter = propertyArray.property.begin();
     while (oIter != propertyArray.property.end()) {
@@ -1822,7 +1816,12 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &
 
 int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
-    return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
+    } else {
+        return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    }
 }
 
 int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
@@ -1873,7 +1872,12 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
 
 int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
+    } else {
+        return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    }
 }
 
 int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
@@ -1907,7 +1911,12 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
 int32_t AudioPolicyService::GetAudioEnhancePropertyByDevice(DeviceType deviceType,
     AudioEnhancePropertyArray &propertyArray)
 {
-    return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray, deviceType);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEnhanceProperty(propertyArray, deviceType);
+    } else {
+        return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray, deviceType);
+    }
 }
 
 void AudioPolicyService::UpdateEffectBtOffloadSupported(const bool &isSupported)
@@ -2112,6 +2121,17 @@ int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteOb
     lock_guard<mutex> lock(g_policyMgrListenerMutex);
     policyManagerListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
     return SUCCESS;
+}
+
+bool AudioPolicyService::IsDevicePlaybackSupport(const AudioProcessConfig &config,
+    const AudioDeviceDescriptor &deviceInfo)
+{
+    if (audioPolicyServerHandler_ && config.streamInfo.encoding == ENCODING_EAC3 &&
+        deviceInfo.deviceType_ != DEVICE_TYPE_HDMI && deviceInfo.deviceType_ != DEVICE_TYPE_LINE_DIGITAL) {
+        audioPolicyServerHandler_->SendFormatUnsupportedErrorEvent(ERROR_UNSUPPORTED_FORMAT);
+        return false;
+    }
+    return true;
 }
 
 void AudioPolicyService::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,

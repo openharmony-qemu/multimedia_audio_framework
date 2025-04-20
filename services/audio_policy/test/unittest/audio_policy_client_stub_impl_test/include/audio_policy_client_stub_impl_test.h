@@ -130,6 +130,10 @@ class ConcreteAudioManagerAppVolumeChangeCallback : public AudioManagerAppVolume
 class ConcreteAudioManagerAudioSceneChangedCallback : public AudioManagerAudioSceneChangedCallback {
     void OnAudioSceneChange(const AudioScene audioScene) override {};
 };
+
+class ConcreteAudioFormatUnsupportedErrorCallback : public AudioFormatUnsupportedErrorCallback {
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override {};
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_CLIENT_STUB_IMPL_TEST_H

@@ -53,6 +53,7 @@ static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
+static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
@@ -595,6 +596,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     ret = InitOutputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");
 
+    ret = InitFormatUnsupportedErrorCallback();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitFormatUnsupportedErrorCallback Failed");
+
     return InitAudioInterruptCallback();
 }
 
@@ -858,7 +862,14 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     audioStream_->GetRestoreInfo(restoreInfo);
     IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
     SetClientInfo(restoreInfo.routeFlag, targetClass);
- 
+
+    // Block interrupt calback, avoid pausing wrong stream.
+    std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl = nullptr;
+    if (audioInterruptCallback_ != nullptr) {
+        interruptCbImpl = std::static_pointer_cast<AudioRendererInterruptCallbackImpl>(audioInterruptCallback_);
+        interruptCbImpl->StartSwitch();
+    }
+
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
     AUDIO_INFO_LOG("Before %{public}s, restore audiorenderer %{public}u", callingFunc.c_str(), sessionID_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
@@ -868,7 +879,18 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         AUDIO_INFO_LOG("Deactivate audio interrupt after switch to target stream");
         AudioInterrupt audioInterrupt = audioInterrupt_;
         int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "DeactivateAudioInterrupt Failed");
+        if (ret != SUCCESS) {
+            if (interruptCbImpl) {
+                interruptCbImpl->FinishSwitch();
+            }
+            AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
+    // Unblock interrupt callback.
+    if (interruptCbImpl) {
+        interruptCbImpl->FinishSwitch();
     }
     return SUCCESS;
 }
@@ -1132,6 +1154,8 @@ bool AudioRendererPrivate::Release()
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
+    (void)AudioPolicyManager::GetInstance().UnsetAudioFormatUnsupportedErrorCallback();
+
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
@@ -1288,6 +1312,21 @@ void AudioRendererInterruptCallbackImpl::UpdateAudioStream(const std::shared_ptr
     audioStream_ = audioStream;
 }
 
+void AudioRendererInterruptCallbackImpl::StartSwitch()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    switching_ = true;
+    AUDIO_INFO_LOG("SwitchStream start, block interrupt callback");
+}
+
+void AudioRendererInterruptCallbackImpl::FinishSwitch()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    switching_ = false;
+    switchStreamCv_.notify_all();
+    AUDIO_INFO_LOG("SwitchStream finish, notify interrupt callback");
+}
+
 void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     if (cb_ != nullptr && interruptEvent.callbackToApp) {
@@ -1382,6 +1421,15 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 {
     std::unique_lock<std::mutex> lock(mutex_);
 
+    if (switching_) {
+        AUDIO_INFO_LOG("Wait for SwitchStream");
+        bool res = switchStreamCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
+            [this] {return !switching_;});
+        if (!res) {
+            switching_ = false;
+            AUDIO_WARNING_LOG("Wait for SwitchStream time out, could handle interrupt event with old stream");
+        }
+    }
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
 
@@ -2437,6 +2485,25 @@ int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timest
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetAudioTimestampInfo(timestamp, base);
+}
+
+int32_t AudioRendererPrivate::InitFormatUnsupportedErrorCallback()
+{
+    if (!formatUnsupportedErrorCallback_) {
+        formatUnsupportedErrorCallback_ = std::make_shared<FormatUnsupportedErrorCallbackImpl>();
+        CHECK_AND_RETURN_RET_LOG(formatUnsupportedErrorCallback_ != nullptr, ERROR, "Memory allocation failed");
+    }
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioFormatUnsupportedErrorCallback(
+        formatUnsupportedErrorCallback_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register failed");
+    return SUCCESS;
+}
+
+void FormatUnsupportedErrorCallbackImpl::OnFormatUnsupportedError(const AudioErrors &errorCode)
+{
+    std::shared_ptr<AudioRendererErrorCallback> cb = callback_.lock();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
+    cb->OnError(errorCode);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

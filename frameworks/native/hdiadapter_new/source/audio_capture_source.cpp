@@ -156,6 +156,13 @@ int32_t AudioCaptureSource::Start(void)
     int32_t ret = audioCapture_->Start(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     started_ = true;
+
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
+    if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        audioEnhanceChainManager->SetAccessoryDeviceState(true);
+    }
+
     return SUCCESS;
 }
 
@@ -171,6 +178,13 @@ int32_t AudioCaptureSource::Stop(void)
     });
     futurePromiseEnsureLock.get();
     stopThread.detach();
+
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
+    if (halName_ == HDI_ID_INFO_ACCESSORY) {
+        audioEnhanceChainManager->SetAccessoryDeviceState(false);
+    }
+
     return SUCCESS;
 }
 
@@ -842,9 +856,6 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
         attr_.adapterName.c_str(), inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(adapterNameCase_, inputDevice, streamId, inputType);
-    if (inputDevice == DEVICE_TYPE_ACCESSORY) {
-        SetAudioRouteInfoForEnhanceChain();
-    }
     return ret;
 }
 
@@ -1048,6 +1059,9 @@ int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice
     int32_t ret = DoSetInputRoute(inputDevice);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     currentActiveDevice_ = inputDevice;
+    if (inputDevice == DEVICE_TYPE_ACCESSORY) {
+        SetAudioRouteInfoForEnhanceChain();
+    }
     return SUCCESS;
 }
 

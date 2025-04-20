@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "audio_effect.h"
+#include "audio_module_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,7 +43,7 @@ public:
      * @param cb callback reference for AudioServiceAdapterCallback class
      * @return Returns instance of class that extends AudioServiceAdapter
     */
-    static std::unique_ptr<AudioServiceAdapter> CreateAudioAdapter(std::unique_ptr<AudioServiceAdapterCallback> cb);
+    static std::shared_ptr<AudioServiceAdapter> CreateAudioAdapter(std::unique_ptr<AudioServiceAdapterCallback> cb);
 
     /**
      * @brief Connect to underlining audio server
@@ -62,6 +63,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     virtual uint32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) = 0;
+    virtual int32_t OpenAudioPort(std::string audioPortName, const AudioModuleInfo& audioModuleInfo) = 0;
 
     /**
      * @brief closes/unloads the audio modules loaded.
@@ -176,6 +178,36 @@ public:
      * @return int32_t the result.
      */
     virtual int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) = 0;
+
+    /**
+     * @brief Get current effect property.
+     *
+     * @return int32_t the result.
+     */
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
+
+    /**
+     * @brief Get current effect property.
+     *
+     * @return int32_t the result.
+     */
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
+
+    /**
+     * @brief Get current enhance property.
+     *
+     * @return int32_t the result.
+     */
+    virtual int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
+
+    /**
+     * @brief Get current enhance property.
+     *
+     * @return int32_t the result.
+     */
+    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual ~AudioServiceAdapter();
 };

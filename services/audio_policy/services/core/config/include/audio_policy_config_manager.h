@@ -51,6 +51,7 @@ public:
     void OnUpdateRouteSupport(bool isSupported);
     void OnUpdateDefaultAdapter(bool isEnable);
     void OnUpdateAnahsSupport(std::string anahsShowType);
+    void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
     
     // update
@@ -88,6 +89,9 @@ public:
         AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels);
     bool SupportImplicitConversion(uint32_t routeFlag);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo);
+    DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
+        const AudioStreamInfo &streamInfo);
+    bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
 
     AudioPolicyConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
@@ -103,6 +107,7 @@ private:
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;
     bool isDefaultAdapterEnable_ = false;
+    bool isSupportEac3_ = false;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     PolicyGlobalConfigs globalConfigs_;
