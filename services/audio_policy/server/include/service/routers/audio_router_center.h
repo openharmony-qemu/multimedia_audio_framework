@@ -121,6 +121,7 @@ private:
         RouterType &routerType, const uint32_t sessionID = 0);
     bool NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    RouterType GetBypassWithSco(AudioScene audioScene);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;
