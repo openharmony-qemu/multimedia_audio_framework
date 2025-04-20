@@ -166,7 +166,7 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
                 pos++;
                 break;
             }
-            string key = parseFirstOfKey(pos,len, input);
+            string key = parseFirstOfKey(pos, len, input);
             if (key != "uid") {
                 while (input[pos] != ',')  pos++;
                 pos++;
@@ -174,13 +174,12 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
             }
             skipWhitespace();
             if (input[pos++] != ':') return {};
-            string value = parseSeconfOfValue(pos,len, input);
+            string value = parseSeconfOfValue(pos, len, input);
             if (!key.empty() || !value.empty()) { //循序空键值对
                 obj[value] = "1";
             }
             skipWhitespace();
             if (input[pos] == ',') pos++;
-
         }
         result.push_back(obj);
         skipWhitespace();
@@ -189,7 +188,8 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
     return result;
 }
 
-std::string parseFirstOfKey(size_t &pos, size_t len, std::string input) {
+std::string parseFirstOfKey(size_t &pos, size_t len, std::string input)
+{
     using namespace std;
     // parse the key of input
     while (pos < len && isspace(input[pos])) {
@@ -209,7 +209,8 @@ std::string parseFirstOfKey(size_t &pos, size_t len, std::string input) {
     return str;
 }
 
-std::string parseSecondOfValue(size_t &pos, size_t len, std::string input) {
+std::string parseSecondOfValue(size_t &pos, size_t len, std::string input)
+{
     using namespace std;
     // parse the value of input
     while (pos < len && isspace(input[pos])) {
