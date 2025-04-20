@@ -773,10 +773,10 @@ HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_002, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
- * @tc.number: SetDoNotDisturbStatusWhiteListVolume_002
+ * @tc.number: SetDoNotDisturbStatusWhiteListVolume_001
  * @tc.desc  : Test AudioVolume interface.
  */
- HWTEST_F(AudioVolumeUnitTest, SetDoNotDisturbStatusWhiteListVolume_002, TestSize.Level1)
+ HWTEST_F(AudioVolumeUnitTest, SetDoNotDisturbStatusWhiteListVolume_001, TestSize.Level1)
  {
     std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
     std::map<std::string, std::string> obj;
@@ -793,10 +793,10 @@ HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_002, TestSize.Level1)
  /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
- * @tc.number: SetDoNotDisturbStatus_002
+ * @tc.number: SetDoNotDisturbStatus_001
  * @tc.desc  : Test AudioVolume interface.
  */
- HWTEST_F(AudioVolumeUnitTest, SetDoNotDisturbStatus_002, TestSize.Level1)
+ HWTEST_F(AudioVolumeUnitTest, SetDoNotDisturbStatus_001, TestSize.Level1)
  {
     bool isDoNotDisturbStatus = true;
     int32_t doNotDisturbStatusVolume = 0;
