@@ -74,6 +74,11 @@
 
 char *g_splitArr[MAX_PARTS];
 int g_splitNums = 0;
+
+// count the num of empty chunk sent in each stream.
+int16_t g_noDataCount[MAX_PARTS];
+const int16_t MAX_EMPTY_CHUNK_NUM = 150;
+
 const char *SPLIT_MODE;
 const uint32_t SPLIT_ONE_STREAM = 1;
 const uint32_t SPLIT_TWO_STREAM = 2;
@@ -820,6 +825,26 @@ static void SendStreamData(struct userdata *u, int num, pa_memchunk chunk)
     }
 }
 
+static bool ShouldSendChunk(int idx, unsigned numNotSilence)
+{
+    if (numNotSilence == 0) {
+        if (g_noDataCount[idx] == -1) {
+            AUDIO_DEBUG_LOG("stream idx: %d, stream suspend, don't send", idx);
+            return false;
+        }
+        g_noDataCount[idx]++;
+        AUDIO_DEBUG_LOG("stream idx: %d, current empty count: %d, sending...", idx, g_noDataCount[idx]);
+        if (g_noDataCount[idx] >= MAX_EMPTY_CHUNK_NUM) {
+            g_noDataCount[idx] = -1;
+        }
+        return true;
+    } else {
+        AUDIO_DEBUG_LOG("stream idx: %d, not empty chunk, sending...", idx);
+        g_noDataCount[idx] = 0;
+        return true;
+    }
+}
+
 static void ProcessRender(struct userdata *u, pa_usec_t now)
 {
     AUTO_CTRACE("module_split_stream_sink: ProcessRender");
@@ -827,7 +852,6 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     /* Fill the buffer up the latency size */
-    int count = 0;
     for (int i = 0; i < g_splitNums; i++) {
         AUTO_CTRACE("module_split_stream_sink::ProcessRender:streamType:%s", g_splitArr[i]);
         AUDIO_DEBUG_LOG("module_split_stream_sink: ProcessRender:streamType:%{public}s", g_splitArr[i]);
@@ -835,17 +859,9 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
         pa_memchunk chunk;
         struct NumPeekedInfo resInfo = SplitPaSinkRenderFull(u->sink, u->sink->thread_info.max_request, &chunk,
             g_splitArr[i]);
-        if (resInfo.numNotSilence == 0) {
-            count++;
-            if (count != g_splitNums) {
-                continue;
-            }
-            for (int j = 0; j < g_splitNums; j++) {
-                SendStreamData(u, j, chunk);
-            }
-            break;
+        if (ShouldSendChunk(i, resInfo.numNotSilence)) {
+            SendStreamData(u, i, chunk);
         }
-        SendStreamData(u, i, chunk);
     }
     u->timestamp += pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
 }
@@ -859,6 +875,18 @@ static bool MonitorLinkedState(pa_sink *si, bool isRunning)
     } else {
         return si->monitor_source && PA_SOURCE_IS_LINKED(si->monitor_source->thread_info.state);
     }
+}
+
+static bool HavePaSinkAction(struct userdata *u)
+{
+    CHECK_AND_RETURN_RET_LOG(u != NULL, false, "HavePaSinkAction: userdata ptr is null");
+    bool isIdle = u->sink->thread_info.state == PA_SINK_IDLE;
+    bool wasSuspended = u->previousState == PA_SINK_SUSPENDED;
+    bool wasInit = u->previousState == PA_SINK_INIT;
+
+    return (((u->renderInIdleState && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
+        (!u->renderInIdleState && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
+        !(isIdle && wasSuspended) && !(isIdle && wasInit)) || (isIdle && MonitorLinkedState(u->sink, true));
 }
 
 static void ThreadFunc(void *userdata)
@@ -880,12 +908,7 @@ static void ThreadFunc(void *userdata)
         if (PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
             now = pa_rtclock_now();
         }
-        
-        bool flag = (((u->renderInIdleState && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
-            (!u->renderInIdleState && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
-            !(u->sink->thread_info.state == PA_SINK_IDLE && u->previousState == PA_SINK_SUSPENDED) &&
-            !(u->sink->thread_info.state == PA_SINK_IDLE && u->previousState == PA_SINK_INIT)) ||
-            (u->sink->thread_info.state == PA_SINK_IDLE && MonitorLinkedState(u->sink, true));
+        bool flag = HavePaSinkAction(u);
         if (flag) {
             now = pa_rtclock_now();
         }
@@ -901,6 +924,10 @@ static void ThreadFunc(void *userdata)
             }
             pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp);
         } else {
+            AUDIO_INFO_LOG("all stream suspend");
+            for (size_t i = 0; i < MAX_PARTS; i++) {
+                g_noDataCount[i] = -1;
+            }
             pa_rtpoll_set_timer_disabled(u->rtpoll);
         }
         /* Hmm, nothing to do. Let's sleep */
@@ -1029,8 +1056,24 @@ static ssize_t SplitRenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pc
     return count;
 }
 
+static void FillSinkFunc(struct userdata *u)
+{
+    CHECK_AND_RETURN_LOG(u != NULL, "FillSinkFunc: userdata ptr is null");
+    u->sink->parent.process_msg = SinkProcessMsg;
+    u->sink->set_state_in_io_thread = SinkSetStateInIoThreadCb;
+    u->sink->update_requested_latency = SinkUpdateRequestedLatencyCb;
+    u->sink->reconfigure = SinkReconfigureCb;
+    u->sink->get_formats = SinkGetFormatsCb;
+    u->sink->set_formats = SinkSetFormatsCb;
+    u->sink->userdata = u;
+}
+
 static int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
 {
+    AUDIO_DEBUG_LOG("CreateSink Start");
+    for (size_t i = 0; i < MAX_PARTS; i++) {
+        g_noDataCount[i] = -1;
+    }
     pa_sample_spec ss;
     pa_channel_map map;
     pa_sink_new_data data;
@@ -1072,15 +1115,7 @@ static int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
         AUDIO_ERR_LOG("Failed to create sink.");
         return PA_ERR;
     }
-
-    u->sink->parent.process_msg = SinkProcessMsg;
-    u->sink->set_state_in_io_thread = SinkSetStateInIoThreadCb;
-    u->sink->update_requested_latency = SinkUpdateRequestedLatencyCb;
-    u->sink->reconfigure = SinkReconfigureCb;
-    u->sink->get_formats = SinkGetFormatsCb;
-    u->sink->set_formats = SinkSetFormatsCb;
-    u->sink->userdata = u;
-
+    FillSinkFunc(u);
     return 0;
 }
 
