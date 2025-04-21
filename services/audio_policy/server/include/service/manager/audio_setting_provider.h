@@ -72,7 +72,7 @@ public:
     static void ExecRegisterCb(const sptr<AudioSettingObserver> &observer);
     ErrCode RegisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
     ErrCode UnregisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
-    std::vector<std::map<std::string, std::string>> ParseJsonArray(const std::string &input);
+    std::vector<std::map<std::string, std::string>> ParseJsonArray(const std::string& input);
     std::string ParseFirstOfKey(size_t &pos, size_t len, std::string input);
     std::string ParseSecondOfValue(size_t &pos, size_t len, std::string input);
 
