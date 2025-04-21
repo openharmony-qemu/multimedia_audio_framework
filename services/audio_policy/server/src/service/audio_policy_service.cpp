@@ -969,7 +969,7 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 
 void AudioPolicyService::onDoNotDisturbStatusChanged(bool isDoNotDisturb)
 {
-    AUDIO_INFO_LOG("doNotDisturbStatus = %{public}f", isDoNotDisturb ? "true" : "false");
+    AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb ? "true" : "false");
     ErrCode ret = audioPolicyManager_.SetDoNotDisturbStatus(isDoNotDisturb);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "set doNotDisturbStatus filed");
 }
