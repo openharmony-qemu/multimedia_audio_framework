@@ -202,7 +202,7 @@ std::string parseFirstOfKey(size_t &pos, size_t len, std::string input)
     while (pos < len && input[pos] != '"') {
         pos++;
     }
-    string str = input.subStr(start, pos - start);
+    string str = input.substr(start, pos - start);
     if (pos < len) {
         pos++;
     }
@@ -223,7 +223,7 @@ std::string parseSecondOfValue(size_t &pos, size_t len, std::string input)
     while (pos < len && input[pos] != ',') {
         pos++;
     }
-    string str = input.subStr(start, pos - start);
+    string str = input.substr(start, pos - start);
     if (pos < len) {
         pos++;
     }
