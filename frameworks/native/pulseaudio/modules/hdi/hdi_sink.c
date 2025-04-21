@@ -98,6 +98,7 @@
 #define DEFAULT_BLOCK_USEC 20000
 #define EFFECT_PROCESS_RATE 48000
 #define EFFECT_FRAME_LENGTH_MONO 960 // 48000Hz * 0.02s for 1 channel
+#define MCH_SINK_STANDBY_TIMES 160000 // 160ms
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 const uint64_t DEFAULT_GETLATENCY_LOG_THRESHOLD_MS = 100;
@@ -1407,6 +1408,20 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     return n;
 }
 
+static bool IsSilentData(pa_memblock *pchunk)
+{
+    CHECK_AND_RETURN_RET_LOG(pchunk != NULL, false, "pchunk is null");
+    char *data = pa_memblock_acquire_chunk(pchunk);
+    for (szie_t i = 0; i < pchunk->length; i++) {
+        if (data[i] != 0) {
+            pa_memblock_release(pchunk->memblock);
+            return false;
+        }
+    }
+    pa_memblock_release(pchunk->memblock);
+    return true;
+}
+
 static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_sink *si)
 {
     CHECK_AND_RETURN_LOG(sinkIn != NULL, "sinkIn is null");
@@ -1428,6 +1443,10 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
         u->multiChannel.multiChannelSinkInIndex == (int32_t)sinkIn->index) {
         if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
             AUDIO_DEBUG_LOG("pa_memblock_is_silence");
+            return;
+        }
+        if (IsSilentData(&infoIn->chunk)) {
+            AUDIO_PRERELEASE_LOGI("silent data, no need to fade in");
             return;
         }
         //do fading in
@@ -1474,9 +1493,9 @@ static void SinkRenderMultiChannelStateCheck(pa_sink *si, pa_mix_info *infoIn, p
         AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_not_silence");
         RecordPaSilenceState(sessionID, false, PA_PIPE_TYPE_MULTICHANNEL);
         pa_atomic_store(&sinkIn->isFirstReaded, 1);
-        PrepareMultiChannelFading(sinkIn, infoIn, si);
-        CheckMultiChannelFadeinIsDone(si, sinkIn);
     }
+    PrepareMultiChannelFading(sinkIn, infoIn, si);
+    CheckMultiChannelFadeinIsDone(si, sinkIn);
 }
 
 static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
@@ -3105,6 +3124,7 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
     }
     if (u->multiChannel.isHDISinkInited) {
         if (u->multiChannel.sample_attrs.channel != (uint32_t)u->multiChannel.sinkChannel) {
+            usleep(MCH_SINK_STANDBY_TIMES);
             u->multiChannel.sinkAdapter->SinkAdapterStop(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkStarted = false;
             u->multiChannel.sinkAdapter->SinkAdapterDeInit(u->multiChannel.sinkAdapter);
@@ -3116,8 +3136,6 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
             u->multiChannel.isHDISinkInited = true;
         } else {
             if (u->multiChannel.isHDISinkStarted) {
-                pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 1);
-                u->multiChannel.multiChannelFadingInDone = 0;
                 u->multiChannel.multiChannelSinkInIndex = u->multiChannel.multiChannelTmpSinkInIndex;
                 return;
             }
