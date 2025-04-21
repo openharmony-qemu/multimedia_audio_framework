@@ -93,8 +93,8 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     volumes->volumeSystem = GetSystemVolumeInternal(volumeType, deviceClass, volumeLevel);
     volumes->volumeApp = GetAppVolume(appUid, volumeMode);
     int32_t doNotDisturbStatusVolume = GetDoNotDisturbStatusVolume(volumeType, appUid);
-    float volumeFloat = volumes->volumeSystem * volumes->volumeStream * volumes->volumeApp
-        * doNotDisturbStatusVolume;
+    float volumeFloat = volumes->volumeSystem * volumes->volumeStream * volumes->volumeApp *
+        doNotDisturbStatusVolume;
     if (IsChangeVolume(sessionId, volumeFloat, volumeLevel)) {
         AUDIO_INFO_LOG("volume, sessionId:%{public}u, volume:%{public}f, volumeType:%{public}d, devClass:%{public}s,"
             " system volume:%{public}f, stream volume:%{public}f app volume:%{public}f,"
