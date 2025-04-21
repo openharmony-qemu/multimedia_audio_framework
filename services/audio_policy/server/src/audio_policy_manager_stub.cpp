@@ -1971,9 +1971,9 @@ void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, Mes
 void AudioPolicyManagerStub::SetPreferredDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     PreferredType preferredType = static_cast<PreferredType>(data.ReadInt32());
-    int32_t pid = static_cast<int32_t>(data.ReadInt32());
+    int32_t uid = static_cast<int32_t>(data.ReadInt32());
     std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
-    int32_t result = SetPreferredDevice(preferredType, desc, pid);
+    int32_t result = SetPreferredDevice(preferredType, desc, uid);
     reply.WriteInt32(result);
 }
 

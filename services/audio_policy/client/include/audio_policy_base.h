@@ -89,7 +89,7 @@ public:
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter) = 0;
 
-    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID) = 0;
+    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID) = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
@@ -376,7 +376,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
 
     virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = INVALID_PID) = 0;
+        const int32_t uid = INVALID_UID) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() = 0;
 
@@ -408,7 +408,7 @@ public:
     virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
     virtual int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid = INVALID_UID) = 0;
 
     virtual int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) = 0;
 

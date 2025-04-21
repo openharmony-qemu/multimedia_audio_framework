@@ -121,7 +121,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter);
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
 
@@ -482,7 +482,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = INVALID_PID);
+        const int32_t uid = INVALID_UID);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
@@ -521,7 +521,7 @@ public:
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        const int32_t pid = INVALID_PID);
+        const int32_t uid = INVALID_UID);
 
     int32_t SetAudioDeviceAnahsCallback(const std::shared_ptr<AudioDeviceAnahs> &callback);
 

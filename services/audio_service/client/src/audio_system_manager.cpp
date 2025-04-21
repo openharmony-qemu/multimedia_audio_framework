@@ -261,17 +261,16 @@ AudioScene AudioSystemManager::GetAudioScene() const
     }
 }
 
-int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientPid) const
+int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientUid) const
 {
-    int32_t pid = clientPid == -1 ? GetCallingPid() : clientPid;
-    AUDIO_INFO_LOG("device: %{public}d pid: %{public}d", deviceType, pid);
+    int32_t uid = clientUid == -1 ? getuid() : clientUid;
     if (!IsActiveDeviceType(deviceType)) {
         AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
         return ERR_NOT_SUPPORTED;
     }
 
     /* Call Audio Policy SetDeviceActive */
-    return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, pid));
+    return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, uid));
 }
 
 bool AudioSystemManager::IsDeviceActive(DeviceType deviceType) const
@@ -1746,12 +1745,11 @@ AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImp
 }
 
 int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address,
-    const int32_t clientPid) const
+    const int32_t clientUid) const
 {
-    int32_t pid = clientPid == -1 ? GetCallingPid() : clientPid;
-    AUDIO_INFO_LOG("device: %{public}d pid: %{public}d", deviceType, pid);
+    int32_t uid = clientUid == -1 ? getuid() : clientUid;
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
-        flag, address, pid));
+        flag, address, uid));
 }
 
 uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)

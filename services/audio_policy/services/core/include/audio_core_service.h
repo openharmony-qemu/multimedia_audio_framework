@@ -81,10 +81,11 @@ public:
         void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress) override;
 
         // Functions related to assignment operations - device related
-        int32_t SetAudioScene(AudioScene audioScene);
+        int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-        int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid);
-        int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+        int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
+        int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+            const int32_t uid = INVALID_UID);
         int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
             const sptr<IRemoteObject> &object, const int32_t apiVersion);
         int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
@@ -175,10 +176,11 @@ private:
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
 
     // Functions related to assignment operations - device related
-    int32_t SetAudioScene(AudioScene audioScene);
+    int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
     bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid);
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+        const int32_t uid = INVALID_UID);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object, const int32_t apiVersion);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);

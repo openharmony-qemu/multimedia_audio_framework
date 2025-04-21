@@ -605,9 +605,9 @@ std::string AudioPolicyService::GetSystemSoundUri(const std::string &key)
     return audioPolicyManager_.GetSystemSoundUri(key);
 }
 
-int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
+int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
-    return audioDeviceLock_.SetDeviceActive(deviceType, active, pid);
+    return audioDeviceLock_.SetDeviceActive(deviceType, active, uid);
 }
 
 bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType)
@@ -658,9 +658,9 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
     return audioPolicyManager_.GetRingerMode();
 }
 
-int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
+int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    return audioDeviceLock_.SetAudioScene(audioScene);
+    return audioDeviceLock_.SetAudioScene(audioScene, uid, pid);
 }
 
 AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const
@@ -1602,9 +1602,9 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
 }
 
 int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-    const int32_t pid)
+    const int32_t uid)
 {
-    return audioDeviceLock_.SetCallDeviceActive(deviceType, active, address, pid);
+    return audioDeviceLock_.SetCallDeviceActive(deviceType, active, address, uid);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDevice()
