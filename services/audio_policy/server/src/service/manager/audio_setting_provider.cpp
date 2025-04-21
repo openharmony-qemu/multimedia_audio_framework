@@ -138,11 +138,11 @@ ErrCode AudioSettingProvider::GetMapValue(const std::string &key,
     if (ret != ERR_OK) {
         return ret;
     }
-    value = parseJsonArray(valueStr);
+    value = ParseJsonArray(valueStr);
     return ERR_OK;
 }
 
-std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonArray(const std::string &input)
+std::vector<std::map<std::string, std::string>> AudioSettingProvider::ParseJsonArray(const std::string &input)
 {
     using namespace std;
     vector<map<string, string>> result;
@@ -166,7 +166,7 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
                 pos++;
                 break;
             }
-            string key = parseFirstOfKey(pos, len, input);
+            string key = ParseFirstOfKey(pos, len, input);
             if (key != "uid") {
                 pos = input.find(',', pos);
                 pos++;
@@ -174,7 +174,7 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
             }
             skipWhitespace();
             if (input[pos++] != ':') return {};
-            string value = parseSecondOfValue(pos, len, input);
+            string value = ParseSecondOfValue(pos, len, input);
             if (!key.empty() || !value.empty()) { //循序空键值对
                 obj[value] = "1";
             }
@@ -188,7 +188,7 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
     return result;
 }
 
-std::string AudioSettingProvider::parseFirstOfKey(size_t &pos, size_t len, std::string input)
+std::string AudioSettingProvider::ParseFirstOfKey(size_t &pos, size_t len, std::string input)
 {
     using namespace std;
     // parse the key of input
@@ -209,7 +209,7 @@ std::string AudioSettingProvider::parseFirstOfKey(size_t &pos, size_t len, std::
     return str;
 }
 
-std::string AudioSettingProvider::parseSecondOfValue(size_t &pos, size_t len, std::string input)
+std::string AudioSettingProvider::ParseSecondOfValue(size_t &pos, size_t len, std::string input)
 {
     using namespace std;
     // parse the value of input
