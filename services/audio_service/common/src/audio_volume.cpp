@@ -110,10 +110,10 @@ uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId)
     if (!isDoNotDisturbStatus_) {
         return 1;
     }
-    if (volumeType == STRTEAM_SYSTEM || volumeType == STRTEAM_DTMF) {
+    if (volumeType == STREAM_SYSTEM || volumeType == STREAM_DTMF) {
         return 0;
     }
-    if (CkeckoutSystemAppUrtil::CheckoutSystemApp(sessionId) || sessionId == VOIP_CALL_VOICE_SERVICE) {
+    if (CheckoutSystemAppUrtil::CheckoutSystemApp(sessionId) || sessionId == VOIP_CALL_VOICE_SERVICE) {
         return 1;
     }
     AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast(volumeType));
