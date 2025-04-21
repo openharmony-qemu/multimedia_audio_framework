@@ -425,7 +425,7 @@ int32_t AudioAdapterManager::SetDoNotDisturbStatusWhiteList(std::vector<std::map
     doNotDisturbStatusWhiteList)
 {
     auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, "audioVolume handle null");
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
     audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
     return SUCCESS;
 }
@@ -433,7 +433,7 @@ int32_t AudioAdapterManager::SetDoNotDisturbStatusWhiteList(std::vector<std::map
 int32_t AudioAdapterManager::SetDoNotDisturbStatus(bool isDoNotDisturb)
 {
     auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, "audioVolume handle null");
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
     audioVolume->SetDoNotDisturbStatus(isDoNotDisturb);
     return SUCCESS;
 }
