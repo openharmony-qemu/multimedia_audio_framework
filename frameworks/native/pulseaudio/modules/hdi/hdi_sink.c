@@ -1412,7 +1412,7 @@ static bool IsSilentData(pa_memchunk *pchunk)
 {
     CHECK_AND_RETURN_RET_LOG(pchunk != NULL, false, "pchunk is null");
     char *data = pa_memblock_acquire_chunk(pchunk);
-    for (szie_t i = 0; i < pchunk->length; i++) {
+    for (size_t i = 0; i < pchunk->length; i++) {
         if (data[i] != 0) {
             pa_memblock_release(pchunk->memblock);
             return false;
@@ -1446,7 +1446,7 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
             return;
         }
         if (IsSilentData(&infoIn->chunk)) {
-            AUDIO_PRERELEASE_LOGI("silent data, no need to fade in");
+            AUDIO_PRERELEASE_LOGI("silent data, no need to fade in.");
             return;
         }
         //do fading in
