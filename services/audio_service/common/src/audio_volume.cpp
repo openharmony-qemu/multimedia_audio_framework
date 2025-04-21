@@ -105,7 +105,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     return volumeFloat;
 }
 
-uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId)
+uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId)
 {
     if (!isDoNotDisturbStatus_) {
         return 1;
@@ -120,7 +120,7 @@ uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId)
     return (doNotDisturbStatusWhiteListVolume_[sessionId] == 1) ? 1 : (volumeMapType != STREAM_RING ? 1 : 0);
 }
 
-void SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
+void AudioVolume::SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
     doNotDisturbStatusWhiteList)
 {
     doNotDisturbStatusWhiteListVolume_.clear();
@@ -131,7 +131,7 @@ void SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std:
     }
 }
 
-void SetDoNotDisturbStatus(bool isDoNotDisturb)
+void AudioVolume::SetDoNotDisturbStatus(bool isDoNotDisturb)
 {
     isDoNotDisturbStatus_ = isDoNotDisturb;
 }
