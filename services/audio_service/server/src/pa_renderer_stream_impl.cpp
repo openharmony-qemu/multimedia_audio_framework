@@ -208,6 +208,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
             fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
         palock.Relock();
+        CHECK_AND_RETURN_RET_LOG(releasedFlag_ == false, ERR_ILLEGAL_STATE, "paStream has been released");
     }
 
     isStandbyPause_ = isStandby;
@@ -317,6 +318,7 @@ int32_t PaRendererStreamImpl::Stop()
             fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
         palock.Relock();
+        CHECK_AND_RETURN_RET_LOG(releasedFlag_ == false, ERR_ILLEGAL_STATE, "paStream has been released");
     }
     isDoFadeOut = false;
 
