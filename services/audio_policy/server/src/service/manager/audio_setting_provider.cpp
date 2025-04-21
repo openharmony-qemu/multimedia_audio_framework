@@ -144,8 +144,7 @@ ErrCode AudioSettingProvider::GetMapValue(const std::string &key,
 
 std::vector<std::map<std::string, std::string>> AudioSettingProvider::ParseJsonArray(const std::string& input)
 {
-    using namespace std;
-    vector<map<string, string>> result;
+    std::vector<std::map<std::string, std::string>> result;
     size_t pos = 0;
     const size_t len = input.length();
     //skip the space value
@@ -159,15 +158,15 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::ParseJsonA
         skipWhitespace();
         if (input[pos] == ']') break;
         if (input[pos++]!= '{') return {};
-        map<string, string> obj;
+        std::map<std::string, std::string> obj;
         while (pos < len) {
             skipWhitespace();
             if (input[pos] == '}') {
                 pos++;
                 break;
             }
-            string key = ParseFirstOfKey(pos, len, input);
-            if (key != "uid" && input.find(',', pos) != string::npos) {
+            std::string key = ParseFirstOfKey(pos, len, input);
+            if (key != "uid" && input.find(',', pos) != std::string::npos) {
                 pos = input.find(',', pos);
                 pos++;
                 continue;
@@ -177,7 +176,7 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::ParseJsonA
             }
             skipWhitespace();
             if (input[pos++] != ':') return {};
-            string value = ParseSecondOfValue(pos, len, input);
+            std::string value = ParseSecondOfValue(pos, len, input);
             if (!key.empty() || !value.empty()) {
                 obj[value] = "1";
             }
@@ -193,7 +192,6 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::ParseJsonA
 
 std::string AudioSettingProvider::ParseFirstOfKey(size_t &pos, size_t len, std::string input)
 {
-    using namespace std;
     // parse the key of input
     while (pos < len && isspace(input[pos])) {
         pos++;
@@ -205,7 +203,7 @@ std::string AudioSettingProvider::ParseFirstOfKey(size_t &pos, size_t len, std::
     while (pos < len && input[pos] != '"') {
         pos++;
     }
-    string str = input.substr(start, pos - start);
+    std::string str = input.substr(start, pos - start);
     if (pos < len) {
         pos++;
     }
@@ -214,7 +212,6 @@ std::string AudioSettingProvider::ParseFirstOfKey(size_t &pos, size_t len, std::
 
 std::string AudioSettingProvider::ParseSecondOfValue(size_t &pos, size_t len, std::string input)
 {
-    using namespace std;
     // parse the value of input
     while (pos < len && isspace(input[pos])) {
         pos++;
@@ -226,7 +223,7 @@ std::string AudioSettingProvider::ParseSecondOfValue(size_t &pos, size_t len, st
     while (pos < len && input[pos] != ',') {
         pos++;
     }
-    string str = input.substr(start, pos - start);
+    std::string str = input.substr(start, pos - start);
     if (pos < len) {
         pos++;
     }
