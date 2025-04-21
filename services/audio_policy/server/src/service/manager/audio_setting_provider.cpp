@@ -174,7 +174,7 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
             }
             skipWhitespace();
             if (input[pos++] != ':') return {};
-            string value = parseSeconfOfValue(pos, len, input);
+            string value = parseSecondOfValue(pos, len, input);
             if (!key.empty() || !value.empty()) { //循序空键值对
                 obj[value] = "1";
             }
