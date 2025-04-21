@@ -793,7 +793,9 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBit(attr_.format) * param.channelCount / PCM_8_BIT;
-    param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    }
 }
 
 void AudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
@@ -820,14 +822,14 @@ void AudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, Audi
         sceneDesc.scene.id = AUDIO_IN_COMMUNICATION;
     }
 
-    AudioPortPin pin = GetAudioPortPin();
+    AudioPortPin port = GetAudioPortPin();
     if (halName_ == HDI_ID_INFO_USB) {
-        pin = PIN_OUT_USB_HEADSET;
+        port = PIN_OUT_USB_HEADSET;
     } else if (halName_ == HDI_ID_INFO_DP) {
-        pin = PIN_OUT_DP;
+        port = PIN_OUT_DP;
     }
-    AUDIO_DEBUG_LOG("pin is %{public}d", pin);
-    sceneDesc.desc.pins = pin;
+    AUDIO_DEBUG_LOG("port: %{public}d", port);
+    sceneDesc.desc.pins = port;
     sceneDesc.desc.desc = const_cast<char *>("");
 }
 

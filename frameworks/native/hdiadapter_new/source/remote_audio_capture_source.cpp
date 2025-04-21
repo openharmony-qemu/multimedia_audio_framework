@@ -394,7 +394,9 @@ void RemoteAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes 
     param.channelCount = attr_.channel;
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
-    param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    }
     param.sourceType = attr_.sourceType;
 }
 

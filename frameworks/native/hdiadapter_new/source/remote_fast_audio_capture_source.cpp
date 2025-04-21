@@ -456,7 +456,9 @@ void RemoteFastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttribu
     param.frameSize = param.format * param.channelCount;
     param.isBigEndian = attr_.isBigEndian;
     param.isSignedData = true;
-    param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    }
     param.stopThreshold = INT_MAX;
     param.silenceThreshold = attr_.bufferSize;
     param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_REMOTE_FAST));
