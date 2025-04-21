@@ -436,6 +436,23 @@ int32_t AudioAdapterManager::SaveSpecifiedDeviceVolume(AudioStreamType streamTyp
     return SUCCESS;
 }
 
+int32_t AudioAdapterManager::SetDoNotDisturbStatusWhiteList(std::vector<std::map<std::string, std::string>>
+    doNotDisturbStatusWhiteList)
+{
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
+    audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::SetDoNotDisturbStatus(bool isDoNotDisturb)
+{
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
+    audioVolume->SetDoNotDisturbStatus(isDoNotDisturb);
+    return SUCCESS;
+}
+
 int32_t AudioAdapterManager::GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType)
 {
     return volumeDataMaintainer_.GetDeviceVolume(deviceType, streamType);

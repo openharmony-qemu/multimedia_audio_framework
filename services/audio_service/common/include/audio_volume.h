@@ -88,6 +88,11 @@ public:
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t code);
     void SetCurrentActiveDevice(DeviceType currentActiveDevice);
+    void SetDoNotDisturbStatusVolume(uint32_t sessionId, float volume);
+    uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId);
+    void SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
+        doNotDisturbStatusWhiteList);
+    void SetDoNotDisturbStatus(bool isDoNotDisturb);
 private:
     AudioVolume();
     float GetStreamVolumeInternal(uint32_t sessionId, int32_t& volumeType,
@@ -117,6 +122,8 @@ private:
         std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
 
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    std::unordered_map<uint32_t, float> doNotDisturbStatusWhiteListVolume_ {};
+    bool isDoNotDisturbStatus_ = false;
 };
 
 class StreamVolume {

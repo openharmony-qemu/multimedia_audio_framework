@@ -1315,16 +1315,18 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
         bool muteFlag = processList_[i]->GetMuteState();
         bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
+        int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(volumeType,
+            clientConfig_.appInfo.appUid);
         if (deviceInfo_.networkId_ == LOCAL_NETWORK_ID &&
             !(deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && volumeType == STREAM_MUSIC &&
                 PolicyHandler::GetInstance().IsAbsVolumeSupported()) && getVolumeRet) {
             streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat *
                 AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
-                clientConfig_.rendererInfo.volumeMode));
+                clientConfig_.rendererInfo.volumeMode) * doNotDisturbStatusVolume);
         } else {
             streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart *
                 AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
-                clientConfig_.rendererInfo.volumeMode));
+                clientConfig_.rendererInfo.volumeMode) * doNotDisturbStatusVolume);
         }
         Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
             " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()) + (muteFlag ? " muted" : " unmuted"));

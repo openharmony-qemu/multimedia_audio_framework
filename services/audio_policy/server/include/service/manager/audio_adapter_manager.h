@@ -265,6 +265,11 @@ public:
     bool IsVgsVolumeSupported() const;
 
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+
+    int32_t SetDoNotDisturbStatusWhiteList(std::vector<std::map<std::string, std::string>>
+        doNotDisturbStatusWhiteList);
+
+    int32_t SetDoNotDisturbStatus(bool isDoNotDisturb);
 private:
     friend class PolicyCallbackImpl;
 

@@ -210,6 +210,11 @@ public:
 
     virtual int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType deviceType) = 0;
+
+    virtual int32_t SetDoNotDisturbStatusWhiteList(std::vector<std::map<std::string, std::string>>
+        doNotDisturbStatusWhiteList) = 0;
+
+    virtual int32_t SetDoNotDisturbStatus(bool isDoNotDisturb) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

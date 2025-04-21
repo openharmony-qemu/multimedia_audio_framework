@@ -62,6 +62,8 @@ constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
+static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
+static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
 const int32_t UID_AUDIO = 1041;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
@@ -826,6 +828,8 @@ void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
     RegisterAccessiblilityBalance();
     RegisterAccessiblilityMono();
+    RegisterDoNotDisturbStatus();
+    RegisterDoNotDisturbStatusWhiteList();
 }
 
 void AudioPolicyService::RegisterAccessiblilityBalance()
@@ -868,6 +872,44 @@ void AudioPolicyService::RegisterAccessiblilityMono()
     AUDIO_INFO_LOG("Register accessibility mono successfully");
 }
 
+void AudioPolicyService::RegisterDoNotDisturbStatus()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturb = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int32_t isDoNotDisturb = 0;
+        int32_t ret = settingProvider.GetIntValue(DO_NOT_DISTURB_STATUS, isDoNotDisturb, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus failed");
+        onDoNotDisturbStatusChanged(isDoNotDisturb != 0);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS, updateFuncDoNotDisturb);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus failed");
+    }
+    AUDIO_INFO_LOG("Register doNotDisturbStatus successfully");
+}
+
+void AudioPolicyService::RegisterDoNotDisturbStatusWhiteList()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturbWhiteList = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        std::vector<std::map<std::string, std::string>> doNotDisturbWhiteList;
+        int32_t ret = settingProvider.GetMapValue(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+            doNotDisturbWhiteList, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus WhiteList failed");
+        onDoNotDisturbStatusWhiteListChanged(doNotDisturbWhiteList);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+        updateFuncDoNotDisturbWhiteList);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed");
+    }
+    AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
+}
+
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
     audioDeviceLock_.OnDeviceStatusUpdated(statusInfo, isStop);
@@ -898,6 +940,21 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
     AUDIO_INFO_LOG("audioBalance = %{public}f", audioBalance);
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
+}
+
+void AudioPolicyService::onDoNotDisturbStatusChanged(bool isDoNotDisturb)
+{
+    AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb ? "true" : "false");
+    ErrCode ret = audioPolicyManager_.SetDoNotDisturbStatus(isDoNotDisturb);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set doNotDisturbStatus filed");
+}
+
+void AudioPolicyService::onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
+    doNotDisturbStatusWhiteList)
+{
+    AUDIO_INFO_LOG("doNotDisturbStatusWhiteList changed");
+    ErrCode ret = audioPolicyManager_.SetDoNotDisturbStatusWhiteList(doNotDisturbStatusWhiteList);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set doNotDisturbStatus WhiteList filed");
 }
 
 void AudioPolicyService::LoadEffectLibrary()
