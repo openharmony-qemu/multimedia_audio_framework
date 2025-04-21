@@ -66,10 +66,6 @@ const int32_t UID_AUDIO = 1041;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
 
-static int16_t IsDistributedOutput(const AudioDeviceDescriptor &desc)
-{
-    return (desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID) ? 1 : 0;
-}
 mutex g_dataShareHelperMutex;
 bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;
@@ -422,15 +418,6 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
     Trace trace("AudioPolicyService::SelectOutputDevice");
-    if (!selectedDesc.empty() && selectedDesc[0]) {
-        int16_t isDistOld = IsDistributedOutput(audioActiveDevice_.GetCurrentOutputDevice());
-        int16_t isDistNew = IsDistributedOutput(selectedDesc[0]);
-        AUDIO_INFO_LOG("Entry. Check Distributed Output Change[%{public}d-->%{public}d]", isDistOld, isDistNew);
-        int16_t flag = isDistNew - isDistOld;
-        if (audioPolicyServerHandler_ && flag != 0) {
-            audioPolicyServerHandler_->SendDistribuitedOutputChangeEvent(selectedDesc[0], flag > 0);
-        }
-    }
     return audioDeviceLock_.SelectOutputDevice(audioRendererFilter, selectedDesc);
 }
 
@@ -1417,7 +1404,7 @@ void AudioPolicyService::RegisterBluetoothListener()
         Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
         Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
     }
-    
+
     isBtListenerRegistered = true;
     isBtCrashed = false;
 #endif
@@ -2062,7 +2049,7 @@ void AudioPolicyService::CheckConnectedDevice()
         audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_USB_HEADSET);
     auto isUsbArmHeadsetConnected =
         audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_USB_ARM_HEADSET);
-    
+
     bool flag = (isUsbHeadsetConnected != nullptr || isUsbArmHeadsetConnected != nullptr) ? true : false;
     AudioServerProxy::GetInstance().SetDeviceConnectedFlag(flag);
 }
@@ -2139,13 +2126,13 @@ void AudioPolicyService::SaveSystemVolumeLevelInfo(AudioStreamType streamType, i
 {
     audioVolumeManager_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, callerName, invocationTime);
 }
-    
+
 void AudioPolicyService::SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName,
     std::string invocationTime)
 {
     audioPolicyManager_.SaveRingerModeInfo(ringMode, callerName, invocationTime);
 }
-    
+
 void AudioPolicyService::SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime,
     int32_t subscriptionId, bool registrationResult)
 {
