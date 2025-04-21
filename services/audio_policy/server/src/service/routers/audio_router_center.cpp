@@ -18,6 +18,7 @@
 
 #include "audio_router_center.h"
 #include "audio_policy_service.h"
+#include "audio_zone_service.h"
 
 using namespace std;
 
@@ -143,11 +144,26 @@ RouterType AudioRouterCenter::GetBypassWithSco(AudioScene audioScene)
     }
     return bypassWithSco;
 }
+
+bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
+{
+    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
+        ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
+        AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+        return true;
+    }
+    return false;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(StreamUsage streamUsage,
     int32_t clientUID, const RouterType &bypassType)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
+    if (zoneId != 0) {
+        return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
+    }
     if (streamUsage == STREAM_USAGE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetRunningStreamUsageNoUltrasonic() == STREAM_USAGE_INVALID) {
         AUDIO_INFO_LOG("Stream ULTRASONIC always choose spk");
@@ -159,18 +175,14 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
-        if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
-            ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
-            AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
-            if (desc->deviceType_ == DEVICE_TYPE_NONE) {
-                callStreamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
-                callStreamUsage = (callStreamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
-                    callStreamUsage;
-                AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
-                    callStreamUsage);
-                desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType,
-                    GetBypassWithSco(audioScene));
-            }
+        if (IsMediaFollowCallStrategy(audioScene)) {
+            callStreamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+            callStreamUsage = (callStreamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
+                callStreamUsage;
+            AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
+                callStreamUsage);
+            desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType,
+                GetBypassWithSco(audioScene));
         } else {
             desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType, bypassType);
         }
@@ -223,31 +235,56 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
     }
 }
 
+
+bool AudioRouterCenter::IsConfigRouterStrategy(SourceType sourceType)
+{
+    if (capturerConfigMap_[sourceType] == "RecordCaptureRouters" ||
+        capturerConfigMap_[sourceType] == "CallCaptureRouters" ||
+        capturerConfigMap_[sourceType] == "VoiceMessages") {
+        return true;
+    }
+    return false;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(SourceType sourceType,
+    int32_t clientUID, RouterType &routerType, const uint32_t sessionID)
+{
+    AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+    if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+            return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        } else {
+            return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        }
+    } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+            return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        } else {
+            return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        }
+    } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
+        return FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+    }
+    return make_shared<AudioDeviceDescriptor>();
+}
+
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType sourceType, int32_t clientUID,
     const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
     RouterType routerType = ROUTER_TYPE_NONE;
-    AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
+    if (zoneId != 0) {
+        AUDIO_INFO_LOG("FetchInputDevice zoneId %{public}d", zoneId);
+        return AudioZoneService::GetInstance().FetchInputDevice(zoneId, sourceType, clientUID);
+    }
     if (sourceType == SOURCE_TYPE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetRunningSourceTypeNoUltrasonic() == SOURCE_TYPE_INVALID) {
         AUDIO_INFO_LOG("Source ULTRASONIC always choose mic");
         return AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     }
-    if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
-            desc = FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
-        } else {
-            desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
-        }
-    } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
-            desc = FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
-        } else {
-            desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
-        }
-    } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
-        desc = FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+    if (IsConfigRouterStrategy(sourceType)) {
+        desc = FetchCapturerInputDevice(sourceType, clientUID, routerType, sessionID);
     } else {
         AUDIO_INFO_LOG("sourceType %{public}d didn't config router strategy, skipped", sourceType);
         return desc;
