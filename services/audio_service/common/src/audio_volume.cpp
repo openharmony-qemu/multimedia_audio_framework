@@ -121,12 +121,12 @@ uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId)
 }
 
 void SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
-    doNotDisturbStatusWhiteList) {
-        doNotDisturbStatusWhiteListVolume_.clear();
-        for (const auto& obj : doNotDisturbStatusWhiteList) {
-            for (const auto& [key, val] : obj) {
-                doNotDisturbStatusWhiteListVolume_[atoi(key.c_str())] = 1;
-            }
+    doNotDisturbStatusWhiteList)
+{
+    doNotDisturbStatusWhiteListVolume_.clear();
+    for (const auto& obj : doNotDisturbStatusWhiteList) {
+        for (const auto& [key, val] : obj) {
+            doNotDisturbStatusWhiteListVolume_[atoi(key.c_str())] = 1;
         }
     }
 }
