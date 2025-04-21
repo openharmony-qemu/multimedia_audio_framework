@@ -335,6 +335,7 @@ int32_t CapturerInServer::OnReadData(std::vector<char>& outputData, size_t reque
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
+    VolumeTools::DfxOperation(dstBuffer, processConfig_.streamInfo, traceTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
