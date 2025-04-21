@@ -142,7 +142,7 @@ ErrCode AudioSettingProvider::GetMapValue(const std::string &key,
     return ERR_OK;
 }
 
-std::vector<std::map<std::string, std::string>> AudioSettingProvider::ParseJsonArray(const std::string &input)
+std::vector<std::map<std::string, std::string>> AudioSettingProvider::ParseJsonArray(const std::string& input)
 {
     using namespace std;
     vector<map<string, string>> result;
@@ -167,9 +167,12 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::ParseJsonA
                 break;
             }
             string key = ParseFirstOfKey(pos, len, input);
-            if (key != "uid") {
+            if (key != "uid" && input.find(',', pos) != string::npos) {
                 pos = input.find(',', pos);
                 pos++;
+                continue;
+            }
+            if (key != "uid") {
                 continue;
             }
             skipWhitespace();
