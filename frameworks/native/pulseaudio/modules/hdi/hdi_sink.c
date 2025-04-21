@@ -1408,7 +1408,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     return n;
 }
 
-static bool IsSilentData(pa_memblock *pchunk)
+static bool IsSilentData(pa_memchunk *pchunk)
 {
     CHECK_AND_RETURN_RET_LOG(pchunk != NULL, false, "pchunk is null");
     char *data = pa_memblock_acquire_chunk(pchunk);
