@@ -74,7 +74,7 @@ public:
     ErrCode UnregisterObserver(const sptr<AudioSettingObserver> &observer, std::string tableType = "");
     std::vector<std::map<std::string, std::string>> parseJsonArray(const std::string &input);
     std::string parseFirstOfKey(size_t &pos, size_t len, std::string input);
-    std::string parseSeconfOfValue(size_t &pos, size_t len, std::string input);
+    std::string parseSecondOfValue(size_t &pos, size_t len, std::string input);
 
 protected:
     ~AudioSettingProvider() override;
