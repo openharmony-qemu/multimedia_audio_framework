@@ -96,7 +96,7 @@ void AudioEnhanceChainManagerUnitTest::TearDown(void)
  * tc.number : CreateAudioEnhanceChainDynamic_001
  * tc.desc   : Test CreateAudioEnhanceChainDynamic interface(using wrong input case).
  */
-HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_001, TestSize.Level1)
+HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainDynamic_001, TestSize.Level0)
 {
     uint64_t invalidKeyCode = INVALID_SCENEKEY_CODE;
     int32_t result = manager_->CreateAudioEnhanceChainDynamic(invalidKeyCode, deviceAttr);

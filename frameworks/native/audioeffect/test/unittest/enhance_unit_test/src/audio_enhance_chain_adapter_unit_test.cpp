@@ -93,7 +93,7 @@ void AudioEnhanceChainAdapterUnitTest::TearDown(void)
 * @tc.number : EnhanceChainManagerCreateCb_001
 * @tc.desc   : Test EnhanceChainManagerCreateCb interface with invalid scene key code.
 */
-HWTEST_F(AudioEnhanceChainAdapterUnitTest, EnhanceChainManagerCreateCb_001, TestSize.Level1)
+HWTEST_F(AudioEnhanceChainAdapterUnitTest, EnhanceChainManagerCreateCb_001, TestSize.Level0)
 {
     int32_t result = EnhanceChainManagerCreateCb(INVALID_SCENEKEY, &validAdapter);
     EXPECT_EQ(ERROR, result);
