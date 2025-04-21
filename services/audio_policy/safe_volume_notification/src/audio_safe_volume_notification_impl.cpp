@@ -211,7 +211,7 @@ void AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification(int32_t noti
     SetBasicOption(notificationId, request);
     request.SetContent(content);
     request.SetNotificationId(notificationId);
-    request.SetIsSkipDoNotDisturbMode(true);
+    request.SetIsDoNotDisturbByPassed(true);
     GetPixelMap();
     if (iconPixelMap_ != nullptr) {
         request.SetLittleIcon(iconPixelMap_);
