@@ -188,7 +188,7 @@ std::vector<std::map<std::string, std::string>> AudioSettingProvider::parseJsonA
     return result;
 }
 
-std::string parseFirstOfKey(size_t &pos, size_t len, std::string input)
+std::string AudioSettingProvider::parseFirstOfKey(size_t &pos, size_t len, std::string input)
 {
     using namespace std;
     // parse the key of input
@@ -209,7 +209,7 @@ std::string parseFirstOfKey(size_t &pos, size_t len, std::string input)
     return str;
 }
 
-std::string parseSecondOfValue(size_t &pos, size_t len, std::string input)
+std::string AudioSettingProvider::parseSecondOfValue(size_t &pos, size_t len, std::string input)
 {
     using namespace std;
     // parse the value of input
