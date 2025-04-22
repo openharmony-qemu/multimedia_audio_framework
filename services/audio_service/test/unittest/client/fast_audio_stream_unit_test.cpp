@@ -1453,5 +1453,83 @@ HWTEST(FastSystemStreamUnitTest, GetBufQueueState_001, TestSize.Level1)
     auto ret = fastAudioStream->GetBufQueueState(bufState);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test InitCallbackHandler API
+ * @tc.type  : FUNC
+ * @tc.number: InitCallbackHandler_002
+ * @tc.desc  : Test InitCallbackHandler interface.
+ */
+HWTEST(FastSystemStreamUnitTest, InitCallbackHandler_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_TRUE(fastAudioStream != nullptr);
+
+    fastAudioStream->InitCallbackHandler();
+    EXPECT_NE(fastAudioStream->callbackHandler_, nullptr);
+    fastAudioStream->InitCallbackHandler();
+}
+
+/**
+ * @tc.name  : Test OnHandleData API
+ * @tc.type  : FUNC
+ * @tc.number: OnHandleData_002
+ * @tc.desc  : Test OnHandleData interface.
+ */
+HWTEST(FastSystemStreamUnitTest, OnHandleData_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    std::shared_ptr<FastAudioStreamRenderCallback> fastAudioStreamRenderCallback;
+    fastAudioStreamRenderCallback = std::make_shared<FastAudioStreamRenderCallback>(callback, *audioStream);
+    ASSERT_TRUE(fastAudioStreamRenderCallback != nullptr);
+
+    fastAudioStreamRenderCallback->rendererWriteCallback_ = std::make_shared<AudioRendererWriteCallbackTest>();
+    size_t length = 0;
+    fastAudioStreamRenderCallback->OnHandleData(length);
+    fastAudioStreamRenderCallback->OnHandleData(length);
+    EXPECT_TRUE(fastAudioStreamRenderCallback->hasFirstFrameWrited_);
+}
+
+/**
+ * @tc.name  : Test InitCallbackHandler API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream_001
+ * @tc.desc  : Test InitCallbackHandler interface.
+ */
+HWTEST(FastSystemStreamUnitTest, FetchDeviceForSplitStream_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_TRUE(fastAudioStream != nullptr);
+
+    fastAudioStream->FetchDeviceForSplitStream();
+}
+
+/**
+ * @tc.name  : Test InitCallbackHandler API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioStream_002
+ * @tc.desc  : Test InitCallbackHandler interface.
+ */
+HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_TRUE(fastAudioStream != nullptr);
+
+    std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
+    fastAudioStream->proxyObj_ = proxyObj;
+    if (fastAudioStream->proxyObj_ == nullptr) {
+        std::cout<<"cxk_001"<<std::endl;
+    }
+    fastAudioStream->state_ = RUNNING;
+    fastAudioStream->RestoreAudioStream();
+}
 } // namespace AudioStandard
 } // namespace OHOS
