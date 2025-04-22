@@ -370,6 +370,7 @@ private:
         AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     int32_t ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void OnAudioSceneChange(const AudioScene& audioScene);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;

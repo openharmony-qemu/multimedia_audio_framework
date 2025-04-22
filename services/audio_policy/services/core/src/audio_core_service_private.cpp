@@ -1920,5 +1920,13 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
     }
     return SUCCESS;
 }
+
+void AudioCoreService::OnAudioSceneChange(const AudioScene& audioScene)
+{
+    Trace trace("AudioCoreService::OnAudioSceneChange:" + std::to_string(audioScene));
+    AUDIO_INFO_LOG("Start");
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audio policy server handler is null");
+    audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
+}
 }
 }
