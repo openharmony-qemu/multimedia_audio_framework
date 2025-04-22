@@ -1429,7 +1429,10 @@ ohos_unittest("audio_policy_server_unit_test") {
     "safwk:system_ability_fwk",
   ]
 
-  sources = [ "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp",
+    "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test_second.cpp",
+  ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 
