@@ -38,7 +38,7 @@ public:
 
     bool operator==(const AudioScheduleGuard&) const;
 
-    AudioScheduleGuard& operator=(AudioScheduleGuard&& audioScheduleGuard);
+    AudioScheduleGuard& operator=(AudioScheduleGuard&& audioScheduleGuard) = delete;
 
     ~AudioScheduleGuard();
 private:
