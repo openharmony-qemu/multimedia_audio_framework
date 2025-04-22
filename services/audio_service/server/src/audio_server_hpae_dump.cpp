@@ -67,7 +67,7 @@ void AudioServerHpaeDump::GetDeviceSinkInfo(std::string &dumpString, std::string
     lock_guard<mutex> lock(lock_);
     AUDIO_INFO_LOG("GetDeviceSinkInfo %{public}s start", deviceName.c_str());
     isFinishGetSinkInfo_ = false;
-    IHpaeManager::GetHpaeManager()->DumpSinkInfo(deviceName);
+    IHpaeManager::GetHpaeManager().DumpSinkInfo(deviceName);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     dumpHpaeSinkInfo_.clear();
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
@@ -111,7 +111,7 @@ void AudioServerHpaeDump::GetDeviceSourceInfo(std::string &dumpString, std::stri
     lock_guard<mutex> lock(lock_);
     AUDIO_INFO_LOG("GetDeviceSourceInfo %{public}s start", deviceName.c_str());
     isFinishGetSourceInfo_ = false;
-    IHpaeManager::GetHpaeManager()->DumpSourceInfo(deviceName);
+    IHpaeManager::GetHpaeManager().DumpSourceInfo(deviceName);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     dumpHpaeSourceInfo_.clear();
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
@@ -188,7 +188,7 @@ void AudioServerHpaeDump::HelpInfoDump(string &dumpString)
 int32_t AudioServerHpaeDump::Initialize()
 {
     AUDIO_INFO_LOG("AudioServerHpaeDump Initialize");
-    IHpaeManager::GetHpaeManager()->RegisterHpaeDumpCallback(weak_from_this());
+    IHpaeManager::GetHpaeManager().RegisterHpaeDumpCallback(weak_from_this());
     return SUCCESS;
 }
 }  // namespace AudioStandard

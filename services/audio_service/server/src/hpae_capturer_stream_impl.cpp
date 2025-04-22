@@ -66,7 +66,7 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
     streamInfo.deviceName = deviceName;
-    int32_t ret = IHpaeManager::GetHpaeManager()->CreateStream(streamInfo);
+    int32_t ret = IHpaeManager::GetHpaeManager().CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR_INVALID_PARAM, "CreateStream is error");
     return SUCCESS;
 }
@@ -74,7 +74,7 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
 int32_t HpaeCapturerStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Start");
-    int32_t ret = IHpaeManager::GetHpaeManager()->Start(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "Start failed");
     state_ = RUNNING;
     return SUCCESS;
@@ -83,7 +83,7 @@ int32_t HpaeCapturerStreamImpl::Start()
 int32_t HpaeCapturerStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Pause");
-    int32_t ret = IHpaeManager::GetHpaeManager()->Pause(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Pause error");
     return SUCCESS;
 }
@@ -111,7 +111,7 @@ int32_t HpaeCapturerStreamImpl::GetLatency(uint64_t &latency)
 int32_t HpaeCapturerStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("Flush");
-    int32_t ret = IHpaeManager::GetHpaeManager()->Flush(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Flush error");
     return SUCCESS;
 }
@@ -119,7 +119,7 @@ int32_t HpaeCapturerStreamImpl::Flush()
 int32_t HpaeCapturerStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Stop");
-    int32_t ret = IHpaeManager::GetHpaeManager()->Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Stop failed");
     state_ = STOPPING;
     return SUCCESS;
@@ -129,10 +129,10 @@ int32_t HpaeCapturerStreamImpl::Release()
 {
     if (state_ == RUNNING) {
         AUDIO_ERR_LOG("%{public}u Release state_ is RUNNING", processConfig_.originalSessionId);
-        IHpaeManager::GetHpaeManager()->Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
+        IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     }
     AUDIO_INFO_LOG("Release Enter");
-    int32_t ret = IHpaeManager::GetHpaeManager()->Release(HPAE_STREAM_CLASS_TYPE_RECORD,
+    int32_t ret = IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_RECORD,
         processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Release is error");
     state_ = RELEASED;
@@ -146,7 +146,7 @@ int32_t HpaeCapturerStreamImpl::Release()
 // to do callback data report
 void HpaeCapturerStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
-    IHpaeManager::GetHpaeManager()->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD,
+    IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD,
         processConfig_.originalSessionId, callback);
     statusCallback_ = callback;
 }
@@ -154,7 +154,7 @@ void HpaeCapturerStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusC
 void HpaeCapturerStreamImpl::RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback)
 {
     AUDIO_INFO_LOG("RegisterReadCallback start");
-    IHpaeManager::GetHpaeManager()->RegisterReadCallback(processConfig_.originalSessionId, callback);
+    IHpaeManager::GetHpaeManager().RegisterReadCallback(processConfig_.originalSessionId, callback);
     readCallback_ = callback;
 }
 

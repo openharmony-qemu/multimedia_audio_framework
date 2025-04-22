@@ -362,7 +362,7 @@ void AudioServer::OnStart()
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        HPAE::IHpaeManager::GetHpaeManager()->Init();
+        HPAE::IHpaeManager::GetHpaeManager().Init();
         AUDIO_INFO_LOG("IHpaeManager Init\n");
     } else {
 #ifdef PA

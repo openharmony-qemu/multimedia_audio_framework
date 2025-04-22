@@ -30,7 +30,7 @@ class IHpaeManager {
 public:
     virtual ~IHpaeManager() = default;
 
-    static std::shared_ptr<IHpaeManager> GetHpaeManager();
+    static IHpaeManager& GetHpaeManager();
 
     virtual int32_t Init() = 0;
     virtual int32_t DeInit() = 0;

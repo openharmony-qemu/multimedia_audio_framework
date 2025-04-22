@@ -86,7 +86,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     AUDIO_INFO_LOG("InitParams sessionId %{public}u  end", streamInfo.sessionId);
     AUDIO_INFO_LOG("InitParams streamClassType %{public}u  end", streamInfo.streamClassType);
     AUDIO_INFO_LOG("InitParams sourceType %{public}d  end", streamInfo.sourceType);
-    int32_t ret = IHpaeManager::GetHpaeManager()->CreateStream(streamInfo);
+    int32_t ret = IHpaeManager::GetHpaeManager().CreateStream(streamInfo);
     if (ret != 0) {
         AUDIO_ERR_LOG("CreateStream is error");
         return ERR_INVALID_PARAM;
@@ -97,7 +97,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
 int32_t HpaeRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Start");
-    int32_t ret = IHpaeManager::GetHpaeManager()->Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Start is error");
         return ERR_INVALID_PARAM;
@@ -108,7 +108,7 @@ int32_t HpaeRendererStreamImpl::Start()
 int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Pause");
-    int32_t ret = IHpaeManager::GetHpaeManager()->Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Pause is error");
         return ERR_INVALID_PARAM;
@@ -119,7 +119,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 int32_t HpaeRendererStreamImpl::Flush()
 {
     AUDIO_PRERELEASE_LOGI("Flush Enter");
-    int32_t ret = IHpaeManager::GetHpaeManager()->Flush(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Flush is error");
         return ERR_INVALID_PARAM;
@@ -130,7 +130,7 @@ int32_t HpaeRendererStreamImpl::Flush()
 int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
 {
     AUDIO_INFO_LOG("Drain Enter %{public}d", stopFlag);
-    int32_t ret = IHpaeManager::GetHpaeManager()->Drain(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().Drain(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Drain is error");
         return ERR_INVALID_PARAM;
@@ -141,7 +141,7 @@ int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
 int32_t HpaeRendererStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Stop Enter");
-    int32_t ret = IHpaeManager::GetHpaeManager()->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Stop is error");
         return ERR_INVALID_PARAM;
@@ -154,10 +154,10 @@ int32_t HpaeRendererStreamImpl::Release()
 {
     if (state_ == RUNNING) {
         AUDIO_ERR_LOG("%{public}u Release state_ is RUNNING", processConfig_.originalSessionId);
-        IHpaeManager::GetHpaeManager()->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+        IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     }
     AUDIO_INFO_LOG("Release Enter");
-    int32_t ret = IHpaeManager::GetHpaeManager()->DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Release is error");
         return ERR_INVALID_PARAM;
@@ -249,7 +249,7 @@ int32_t HpaeRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
 void HpaeRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterStatusCallback in");
-    int32_t ret = IHpaeManager::GetHpaeManager()->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId, callback);
+    int32_t ret = IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId, callback);
     if (ret != 0) {
         AUDIO_ERR_LOG("RegisterStatusCallback is error");
         return;
@@ -260,7 +260,7 @@ void HpaeRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusC
 void HpaeRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterWriteCallback in");
-    int32_t ret = IHpaeManager::GetHpaeManager()->RegisterWriteCallback(processConfig_.originalSessionId, shared_from_this());
+    int32_t ret = IHpaeManager::GetHpaeManager().RegisterWriteCallback(processConfig_.originalSessionId, shared_from_this());
     if (ret != 0) {
         AUDIO_ERR_LOG("RegisterStatusCallback is error");
         return;
@@ -388,7 +388,7 @@ int32_t HpaeRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
 
     offloadEnable_ = true;
     SyncOffloadMode();
-    auto ret = IHpaeManager::GetHpaeManager()->SetOffloadPolicy(processConfig_.originalSessionId, statePolicy);
+    auto ret = IHpaeManager::GetHpaeManager().SetOffloadPolicy(processConfig_.originalSessionId, statePolicy);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
         "SetOffloadPolicy failed, errcode is %{public}d", ret);
     offloadStatePolicy_.store(statePolicy);
@@ -435,7 +435,7 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 {
     
     AUDIO_PRERELEASE_LOGI("set client volume success");
-    int32_t ret = IHpaeManager::GetHpaeManager()->SetClientVolume(processConfig_.originalSessionId, clientVolume);
+    int32_t ret = IHpaeManager::GetHpaeManager().SetClientVolume(processConfig_.originalSessionId, clientVolume);
     if (ret != 0) {
         AUDIO_ERR_LOG("SetClientVolume is error");
         return ERR_INVALID_PARAM;

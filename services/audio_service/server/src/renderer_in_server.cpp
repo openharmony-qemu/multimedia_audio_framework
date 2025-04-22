@@ -1682,7 +1682,7 @@ int32_t RendererInServer::SetStreamVolumeInfoForEnhanceChain()
     float streamVolume = audioServerBuffer_->GetStreamVolume();
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager()->SetStreamVolumeInfo(sessionId, streamVolume);
+        return HPAE::IHpaeManager::GetHpaeManager().SetStreamVolumeInfo(sessionId, streamVolume);
     } else {
         AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
         CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
