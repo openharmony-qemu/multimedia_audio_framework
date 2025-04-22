@@ -201,7 +201,7 @@ private:
     void ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
         const std::string &effectMode, std::string &sceneType);
     int32_t NotifyAndCreateAudioEffectChain(const std::string &sceneType);
-    void WaitAndReleaseEffectChain(const std::string &sceneType, const std::string &sceneTypeAndDeviceKey, 
+    void WaitAndReleaseEffectChain(const std::string &sceneType, const std::string &sceneTypeAndDeviceKey,
         const std::string &defaultSceneTypeAndDeviceKey, int32_t ret);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
