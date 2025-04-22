@@ -45,6 +45,8 @@ enum InnerCapFilterPolicy : uint32_t {
 };
 } // anonymous namespace
 
+using MuteStateChangeCallbck = std::function<void(bool)>;
+
 #ifdef SUPPORT_LOW_LATENCY
 class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener
 #else
@@ -107,6 +109,9 @@ public:
     void SetDefaultAdapterEnable(bool isEnable);
     bool GetDefaultAdapterEnable();
     RestoreStatus RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo);
+    void RegisterMuteStateChangeCallback(uint32_t sessionId, const MuteStateChangeCallbck &callback);
+    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
+    void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
@@ -182,6 +187,9 @@ private:
     std::condition_variable allRunningSinksCV_;
     std::set<uint32_t> allRunningSinks_;
     bool onHibernate_ = false;
+    std::map<uint32_t, MuteStateChangeCallbck> muteStateCallbacks_{};
+    std::mutex muteStateMapMutex_;
+    std::map<uint32_t, bool> muteStateMap_{};
 };
 } // namespace AudioStandard
 } // namespace OHOS

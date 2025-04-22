@@ -17,6 +17,8 @@
 #define SHARED_AUDIO_CAPTURER_WRAPPER_H
 
 #include "audio_capturer.h"
+#include "audio_errors.h"
+#include "audio_capturer_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -242,6 +244,13 @@ public:
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override
     {
         return sharedAudioCapturer_->SetAudioSourceConcurrency(targetSources);
+    }
+
+    int32_t SetInterruptStrategy(InterruptStrategy strategy) override
+    {
+        CHECK_AND_RETURN_RET_LOG(sharedAudioCapturer_ != nullptr,
+            ERR_MEMORY_ALLOC_FAILED, "sharedAudioCapturer_ is nullptr");
+        return sharedAudioCapturer_->SetInterruptStrategy(strategy);
     }
 
     void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override

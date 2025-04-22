@@ -66,6 +66,12 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, sessionId_);
     recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, sessionId_);
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        AudioService::GetInstance()->RegisterMuteStateChangeCallback(sessionId_, [this](bool flag) {
+            AUDIO_INFO_LOG("recv mute state change flag %{public}d", flag ? 1 : 0);
+            muteFlag_ = flag;
+        });
+    }
 }
 
 AudioProcessInServer::~AudioProcessInServer()

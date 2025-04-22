@@ -159,6 +159,10 @@ int32_t CapturerInServer::Init()
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpS2C_);
     recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, streamIndex_);
+    AudioService::GetInstance()->RegisterMuteStateChangeCallback(streamIndex_, [this](bool flag) {
+        AUDIO_INFO_LOG("recv mute state change flag %{public}d", flag ? 1 : 0);
+        muteFlag_ = flag;
+    });
 
     return SUCCESS;
 }

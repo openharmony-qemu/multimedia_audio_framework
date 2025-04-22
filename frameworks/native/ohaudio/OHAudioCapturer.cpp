@@ -609,6 +609,12 @@ void OHAudioCapturer::SetCapturerStreamEventCallbackType(StreamEventCallbackType
     streamEventCallbackType_ = streamEventCallbackType;
 }
 
+void OHAudioCapturer::SetCapturerWillMuteWhenInterrupted(InterruptStrategy strategy)
+{
+    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "capturer client is nullptr");
+    audioCapturer_->SetInterruptStrategy(strategy);
+}
+
 ReadDataCallbackType OHAudioCapturer::GetCapturerReadDataCallbackType()
 {
     return readDataCallbackType_;

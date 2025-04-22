@@ -314,6 +314,7 @@ void AudioService::RemoveCapturer(uint32_t sessionId)
         return;
     }
     allCapturerMap_.erase(sessionId);
+    muteStateCallbacks_.erase(sessionId);
     RemoveIdFromMuteControlSet(sessionId);
 }
 
@@ -1345,6 +1346,42 @@ RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo resto
 #endif
     AUDIO_WARNING_LOG("Session not exists, restore failed");
     return RESTORE_ERROR;
+}
+
+void AudioService::RegisterMuteStateChangeCallback(uint32_t sessionId, const MuteStateChangeCallbck &callback)
+{
+    std::unique_lock<std::mutex> lock(muteStateMapMutex_);
+    if (muteStateCallbacks_.count(sessionId) != 0) {
+        if (muteStateMap_.count(sessionId) != 0) {
+            AUDIO_INFO_LOG("session:%{public}u may start again, invoke callback now", sessionId);
+            bool flag = muteStateMap_[sessionId];
+            callback(flag);
+        } else {
+            AUDIO_WARNING_LOG("session:%{public}u mute state update failed...", sessionId);
+        }
+    }
+    muteStateCallbacks_[sessionId] = callback;
+}
+
+void AudioService::SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag)
+{
+    std::unique_lock<std::mutex> lock(muteStateMapMutex_);
+    if (!insert) {
+        muteStateMap_.erase(sessionId);
+    } else {
+        muteStateMap_[sessionId] = muteFlag;
+    }
+}
+
+void AudioService::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
+{
+    std::unique_lock<std::mutex> lock(muteStateMapMutex_);
+    if (muteStateCallbacks_.count(sessionId) == 0) {
+        AUDIO_ERR_LOG("send mute flag to session:%{public}u failed", sessionId);
+        return;
+    }
+    AUDIO_INFO_LOG("session:%{public}u muteflag=%{public}d", sessionId, muteFlag ? 1 : 0);
+    muteStateCallbacks_[sessionId](muteFlag);
 }
 } // namespace AudioStandard
 } // namespace OHOS

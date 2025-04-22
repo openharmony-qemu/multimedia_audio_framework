@@ -399,6 +399,19 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerInterruptCallback(OH_Audi
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerErrorCallback(OH_AudioStreamBuilder* builder,
     OH_AudioCapturer_OnErrorCallback callback, void* userData);
+
+/**
+ * @brief Set audio capturer configuration, if app want its recorder only to be muted instead of interrupted.
+ *
+ * @param builder reference provided by OH_AudioStreamBuilder_Create()
+ * @param muteWhenInterrupted use {@code true} if application want to be muted instead of interrupted.
+ * @return function result code:
+ *     {@link AUDIOSTREAM_SUCCESS} if the execution is successful.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} the param of builder is nullptr.
+ * @since 20
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerWillMuteWhenInterrupted(OH_AudioStreamBuilder* builder,
+    bool muteWhenInterrupted);
 #ifdef __cplusplus
 }
 #endif
