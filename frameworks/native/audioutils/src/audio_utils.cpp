@@ -65,7 +65,6 @@ constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
-constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
@@ -101,7 +100,6 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
-    UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
     UID_THPEXTRA_SA,
     UID_TELEPHONY_SA // used in distributed communication call
