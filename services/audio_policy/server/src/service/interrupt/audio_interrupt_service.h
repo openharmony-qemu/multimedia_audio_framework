@@ -113,6 +113,8 @@ public:
     ClientType GetClientTypeByStreamId(int32_t streamId);
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
+    void SetDefaultVolumeType(AudioStreamType volumeType);
+    AudioStreamType GetDefaultVolumeType();
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -122,6 +124,7 @@ private:
     static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
     std::mutex audioServerProxyMutex_;
     void HandleAppStreamType(AudioInterrupt &audioInterrupt);
+    AudioStreamType defaultVolumeType = STREAM_MUSIC;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
 

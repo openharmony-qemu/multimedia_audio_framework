@@ -942,7 +942,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
             streamInFocus = (iter->first).audioFocusType.streamType;
         }
     }
-    return streamInFocus == STREAM_DEFAULT ? STREAM_MUSIC : streamInFocus;
+    return streamInFocus == STREAM_DEFAULT ? defaultVolumeType : streamInFocus;
 }
 
 int32_t AudioInterruptService::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId)
@@ -2225,6 +2225,17 @@ void AudioInterruptService::ForceStopAudioInterruptZone(std::shared_ptr<AudioInt
         ForceStopAudioInterrupt(zone->zoneId, it->first);
         zone->audioFocusInfoList.erase(it++);
     }
+}
+
+void AudioInterruptService::SetDefaultVolumeType(AudioStreamType volumeType)
+{
+    defaultVolumeType = volumeType;
+    AUDIO_INFO_LOG("defaultVolumeType: %{public}d", defaultVolumeType);
+}
+
+AudioStreamType AudioInterruptService::GetDefaultVolumeType()
+{
+    return defaultVolumeType;
 }
 
 // LCOV_EXCL_STOP
