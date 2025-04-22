@@ -143,14 +143,6 @@ napi_value NapiAudioVolumeGroupManager::Init(napi_env env, napi_value exports)
 
 napi_value NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(napi_env env, int32_t groupId)
 {
-    // Check whether the group id is valid.
-    auto groupManager = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-    if (groupManager == nullptr) {
-        AUDIO_ERR_LOG("Failed to get group manager!");
-        NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
-
     napi_status status;
     napi_value result = nullptr;
     napi_value constructor;
