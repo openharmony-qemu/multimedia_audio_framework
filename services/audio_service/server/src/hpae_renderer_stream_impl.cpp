@@ -28,26 +28,22 @@
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
+#include "i_hpae_manager.h"
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
 
+using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {
 
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_ON_MS = 20;
-const int32_t MSEC_PER_SEC = 1000;
-
-static inline int32_t GetSizeFromFormat(int32_t format)
-{
-    return format != SAMPLE_F32LE ? ((format) + 1) : (4); // float 4
-}
-
+const int32_t FRAME_LEN_10MS = 2;
+static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels);
+static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_ON_MS *
-        (static_cast<float>(processConfig.streamInfo.samplingRate) / MSEC_PER_SEC));
+    spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / 100);
     byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
 }
@@ -58,36 +54,98 @@ HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 
 int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
 {
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = processConfig_.streamInfo.channels;
+    streamInfo.samplingRate = processConfig_.streamInfo.samplingRate;
+    streamInfo.format = processConfig_.streamInfo.format;
+    if (processConfig_.streamInfo.channelLayout == CH_LAYOUT_UNKNOWN) {
+        streamInfo.channelLayout = SetDefaultChannelLayout(streamInfo.channels);
+    }
+    streamInfo.frameLen = spanSizeInFrame_;
+    streamInfo.sessionId = processConfig_.originalSessionId;
+    streamInfo.streamType = processConfig_.streamType;
+    streamInfo.fadeType = FadeType::DEFAULT_FADE; // to be passed from processConfig
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    streamInfo.uid = processConfig_.appInfo.appUid;
+    streamInfo.pid = processConfig_.appInfo.appPid;
+    streamInfo.effectInfo.effectMode = (effectMode_ != EFFECT_DEFAULT && effectMode_ != EFFECT_NONE) ? EFFECT_DEFAULT :
+        static_cast<AudioEffectMode>(effectMode_);
+    const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
+    streamInfo.effectInfo.effectScene = static_cast<AudioEffectScene>(GetKeyFromValue(
+        audioSupportedSceneTypes, processConfig_.rendererInfo.sceneType));
+    streamInfo.effectInfo.volumeType = STREAM_MUSIC;
+    streamInfo.effectInfo.streamUsage = processConfig_.rendererInfo.streamUsage;
+    streamInfo.sourceType = processConfig_.isInnerCapturer == true ? SOURCE_TYPE_PLAYBACK_CAPTURE : SOURCE_TYPE_INVALID;
+    streamInfo.deviceName = deviceName;
+    AUDIO_INFO_LOG("InitParams channels %{public}u  end", streamInfo.channels);
+    AUDIO_INFO_LOG("InitParams channelLayout %{public}" PRIu64 " end", streamInfo.channelLayout);
+    AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.samplingRate);
+    AUDIO_INFO_LOG("InitParams format %{public}u  end", streamInfo.format);
+    AUDIO_INFO_LOG("InitParams frameLen %{public}zu  end", streamInfo.frameLen);
+    AUDIO_INFO_LOG("InitParams streamType %{public}u  end", streamInfo.streamType);
+    AUDIO_INFO_LOG("InitParams sessionId %{public}u  end", streamInfo.sessionId);
+    AUDIO_INFO_LOG("InitParams streamClassType %{public}u  end", streamInfo.streamClassType);
+    AUDIO_INFO_LOG("InitParams sourceType %{public}d  end", streamInfo.sourceType);
+    int32_t ret = IHpaeManager::GetHpaeManager()->CreateStream(streamInfo);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("CreateStream is error");
+        return ERR_INVALID_PARAM;
+    }
     return SUCCESS;
 }
 
 int32_t HpaeRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Start");
+    int32_t ret = IHpaeManager::GetHpaeManager()->Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Start is error");
+        return ERR_INVALID_PARAM;
+    }
     return SUCCESS;
 }
 
 int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Pause");
+    int32_t ret = IHpaeManager::GetHpaeManager()->Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Pause is error");
+        return ERR_INVALID_PARAM;
+    }
     return SUCCESS;
 }
 
 int32_t HpaeRendererStreamImpl::Flush()
 {
     AUDIO_PRERELEASE_LOGI("Flush Enter");
+    int32_t ret = IHpaeManager::GetHpaeManager()->Flush(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Flush is error");
+        return ERR_INVALID_PARAM;
+    }
     return SUCCESS;
 }
 
 int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
 {
     AUDIO_INFO_LOG("Drain Enter %{public}d", stopFlag);
+    int32_t ret = IHpaeManager::GetHpaeManager()->Drain(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Drain is error");
+        return ERR_INVALID_PARAM;
+    }
     return SUCCESS;
 }
 
 int32_t HpaeRendererStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Stop Enter");
+    int32_t ret = IHpaeManager::GetHpaeManager()->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Stop is error");
+        return ERR_INVALID_PARAM;
+    }
     state_ = STOPPING;
     return SUCCESS;
 }
@@ -96,8 +154,14 @@ int32_t HpaeRendererStreamImpl::Release()
 {
     if (state_ == RUNNING) {
         AUDIO_ERR_LOG("%{public}u Release state_ is RUNNING", processConfig_.originalSessionId);
+        IHpaeManager::GetHpaeManager()->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     }
     AUDIO_INFO_LOG("Release Enter");
+    int32_t ret = IHpaeManager::GetHpaeManager()->DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Release is error");
+        return ERR_INVALID_PARAM;
+    }
     state_ = RELEASED;
     return SUCCESS;
 }
@@ -124,16 +188,6 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     return SUCCESS;
 }
 
-static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)
-{
-    uint32_t renderId = HDI_INVALID_ID;
-    if (deviceNetId.empty()) {
-        renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, false);
-    } else {
-        renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, false);
-    }
-    return HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
-}
 
 int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
 {
@@ -152,8 +206,8 @@ int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
     auto timestamp = static_cast<uint64_t>(tm.tv_sec) * 1000000000ll + static_cast<uint64_t>(tm.tv_nsec);
     auto interval = (timestamp - timestamp_) / 1000;
     latency = latency_ > interval ? latency_ - interval : 0;
-    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}" PRIu64 ","
-        "interval %{public}llu latency %{public}" PRIu64, latency_, interval, latency);
+    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}" PRIu64 ", \
+        interval %{public}llu latency %{public}" PRIu64, latency_, interval, latency);
     return SUCCESS;
 }
 
@@ -195,12 +249,22 @@ int32_t HpaeRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
 void HpaeRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterStatusCallback in");
+    int32_t ret = IHpaeManager::GetHpaeManager()->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId, callback);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("RegisterStatusCallback is error");
+        return;
+    }
     statusCallback_ = callback;
 }
 
 void HpaeRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterWriteCallback in");
+    int32_t ret = IHpaeManager::GetHpaeManager()->RegisterWriteCallback(processConfig_.originalSessionId, shared_from_this());
+    if (ret != 0) {
+        AUDIO_ERR_LOG("RegisterStatusCallback is error");
+        return;
+    }
     writeCallback_ = callback;
 }
 
@@ -324,6 +388,9 @@ int32_t HpaeRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
 
     offloadEnable_ = true;
     SyncOffloadMode();
+    auto ret = IHpaeManager::GetHpaeManager()->SetOffloadPolicy(processConfig_.originalSessionId, statePolicy);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "SetOffloadPolicy failed, errcode is %{public}d", ret);
     offloadStatePolicy_.store(statePolicy);
 #else
     AUDIO_INFO_LOG("SetStreamOffloadMode not available, FEATURE_POWER_MANAGER no define");
@@ -366,10 +433,58 @@ void HpaeRendererStreamImpl::BlockStream() noexcept
 
 int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 {
+    
     AUDIO_PRERELEASE_LOGI("set client volume success");
+    int32_t ret = IHpaeManager::GetHpaeManager()->SetClientVolume(processConfig_.originalSessionId, clientVolume);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("SetClientVolume is error");
+        return ERR_INVALID_PARAM;
+    }
     clientVolume_ = clientVolume;
     return SUCCESS;
 }
 
+static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels)
+{
+    if (channels < MONO || channels > CHANNEL_16) {
+        return CH_LAYOUT_UNKNOWN;
+    }
+    switch (channels) {
+        case MONO:
+            return CH_LAYOUT_MONO;
+        case STEREO:
+            return CH_LAYOUT_STEREO;
+        case CHANNEL_3:
+            return CH_LAYOUT_SURROUND;
+        case CHANNEL_4:
+            return CH_LAYOUT_3POINT1;
+        case CHANNEL_5:
+            return CH_LAYOUT_4POINT1;
+        case CHANNEL_6:
+            return CH_LAYOUT_5POINT1;
+        case CHANNEL_7:
+            return CH_LAYOUT_6POINT1;
+        case CHANNEL_8:
+            return CH_LAYOUT_5POINT1POINT2;
+        case CHANNEL_10:
+            return CH_LAYOUT_7POINT1POINT2;
+        case CHANNEL_12:
+            return CH_LAYOUT_7POINT1POINT4;
+        case CHANNEL_14:
+            return CH_LAYOUT_9POINT1POINT4;
+        case CHANNEL_16:
+            return CH_LAYOUT_9POINT1POINT6;
+        default:
+            return CH_LAYOUT_UNKNOWN;
+    }
+}
+
+static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)
+{
+    uint32_t renderId = HDI_INVALID_ID;
+    renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
+        deviceNetId.empty() ? HDI_ID_INFO_DEFAULT : deviceNetId, false);
+    return HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

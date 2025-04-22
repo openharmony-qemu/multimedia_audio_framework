@@ -360,6 +360,14 @@ void HpaeSourceInputNode::SetSourceInputNodeType(HpaeSourceInputNodeType type)
 {
     sourceInputNodeType_ = type;
 }
+
+HpaeNodeInfo &HpaeSourceInputNode::GetNodeInfoWithInfo(HpaeSourceBufferType &type)
+{
+    auto it = nodeInfoMap_.find(type);
+    CHECK_AND_RETURN_RET_LOG(it != nodeInfoMap_.end(), nodeInfoMap_.begin()->second,
+        "can't find nodeKey in nodeInfoMap_.\n");
+    return it->second;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

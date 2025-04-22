@@ -87,6 +87,8 @@ public:
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     void DumpSinkInfo() override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();
@@ -95,6 +97,7 @@ private:
     int32_t DisConnectInputSession();
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds, bool isMoveAll);
+    void InitSinkInner();
 
     HpaeRenderSessionInfo sessionInfo_;
     std::shared_ptr<HpaeSinkInputNode> sinkInputNode_ = nullptr;

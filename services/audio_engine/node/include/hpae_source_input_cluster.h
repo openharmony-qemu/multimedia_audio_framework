@@ -52,7 +52,11 @@ public:
     // for test
     uint32_t GetConverterNodeCount();
     uint32_t GetSourceInputNodeUseCount();
+    int32_t WriteCapturerData(char *data, int32_t dataSize);
+    OutputPort<HpaePcmBuffer *> *GetSourceInputNodeOutputPort();
 private:
+    HpaeNodeInfo &GetNodeInfoWithInfo(HpaeSourceBufferType &type);
+
     std::shared_ptr<HpaeSourceInputNode> sourceInputNode_;
     std::unordered_map<std::string, std::shared_ptr<HpaeAudioFormatConverterNode>> fmtConverterNodeMap_;
 };

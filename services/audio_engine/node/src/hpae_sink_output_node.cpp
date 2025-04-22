@@ -28,7 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-constexpr uint32_t SLEEP_TIME_IN_US = 2000;
+constexpr uint32_t SLEEP_TIME_IN_US = 20000;
 }
 
 HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)

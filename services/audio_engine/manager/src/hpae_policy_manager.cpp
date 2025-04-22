@@ -16,6 +16,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaePolicyManager"
 #endif
+
 #include "hpae_policy_manager.h"
 #include <string>
 #include "audio_errors.h"

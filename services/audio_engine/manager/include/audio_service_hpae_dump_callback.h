@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_SERVICE_HAPE_DUMP_CALLBACK_H
-#define AUDIO_SERVICE_HAPE_DUMP_CALLBACK_H
+#ifndef AUDIO_SERVICE_HPAE_DUMP_CALLBACK_H
+#define AUDIO_SERVICE_HPAE_DUMP_CALLBACK_H
 #include <string>
 namespace OHOS {
 namespace AudioStandard {
@@ -28,4 +28,4 @@ public:
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // AUDIO_SERVICE_HAPE_CALLBACK_H
+#endif // AUDIO_SERVICE_HPAE_DUMP_CALLBACK_H

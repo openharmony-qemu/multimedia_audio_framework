@@ -110,7 +110,7 @@ bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInf
            preNodeInfo.channelLayout == curNodeInfo.channelLayout;
 }
 
-std::string TransHpaeResampleNodeInfoToStringKey(HpaeNodeInfo& nodeInfo)
+std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo)
 {
     std::string nodeKey = std::to_string(nodeInfo.sourceBufferType) + "_" +
                           std::to_string(nodeInfo.samplingRate) + "_" +

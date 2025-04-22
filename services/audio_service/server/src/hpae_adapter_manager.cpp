@@ -196,7 +196,8 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
     uint32_t sessionId = 0;
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
-        AUDIO_ERR_LOG("Create capturer originalSessionId is error %{public}d", processConfig.originalSessionId);
+        AUDIO_ERR_LOG("Create capturer originalSessionId is error %{public}d, get new sessionId:%{public}u",
+            processConfig.originalSessionId, sessionId);
     } else {
         sessionId = processConfig.originalSessionId;
     }
@@ -217,6 +218,9 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
 
 int32_t HpaeAdapterManager::AddUnprocessStream(int32_t appUid)
 {
+    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    AUDIO_INFO_LOG("unprocessAppUidSet_ add appUid:%{public}d", appUid);
+    unprocessAppUidSet_.insert(appUid);
     return SUCCESS;
 }
 
@@ -265,6 +269,10 @@ std::shared_ptr<ICapturerStream> HpaeAdapterManager::CreateCapturerStream(AudioP
     const std::string &deviceName)
 {
     std::lock_guard<std::mutex> lock(paElementsMutex_);
+    if (unprocessAppUidSet_.find(processConfig.appInfo.appUid) != unprocessAppUidSet_.end()) {
+        processConfig.capturerInfo.sourceType = SOURCE_TYPE_UNPROCESSED;
+        AUDIO_INFO_LOG("app uid:%{public}d sourcetype set to unprocessed", processConfig.appInfo.appUid);
+    }
     std::shared_ptr<HpaeCapturerStreamImpl> capturerStream =
         std::make_shared<HpaeCapturerStreamImpl>(processConfig);
     if (capturerStream->InitParams(deviceName) != SUCCESS) {

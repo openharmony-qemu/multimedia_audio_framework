@@ -308,6 +308,7 @@ config("audio_service_config") {
     "client/include",
     "server/include",
     "server/include/config",
+    "../audio_engine/manager/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/common/definitions/include",
     "../audio_policy/server/include/service/common",
@@ -397,6 +398,7 @@ audio_ohos_library("audio_process_service") {
 
   deps = [
     ":audio_common",
+    "../audio_engine:audio_engine_manager",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioschedule:audio_schedule",
@@ -476,6 +478,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server.cpp",
     "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
+    "server/src/audio_server_hpae_dump.cpp",
     "server/src/audio_server_effect.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
@@ -485,6 +488,7 @@ audio_ohos_library("audio_service") {
   deps = [
     ":audio_common",
     ":audio_process_service",
+    "../audio_engine:audio_engine_manager",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioschedule:audio_schedule",

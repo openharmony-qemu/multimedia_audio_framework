@@ -57,6 +57,7 @@ public:
     size_t GetOutputPortNum(HpaeNodeInfo &nodeInfo);
     HpaeSourceInputNodeType GetSourceInputNodeType();
     void SetSourceInputNodeType(HpaeSourceInputNodeType type);
+    HpaeNodeInfo& GetNodeInfoWithInfo(HpaeSourceBufferType &type);
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);

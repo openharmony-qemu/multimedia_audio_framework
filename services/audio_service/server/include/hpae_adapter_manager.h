@@ -18,6 +18,7 @@
 
 #include <map>
 #include <mutex>
+#include <set>
 
 #include "audio_timer.h"
 #include "i_stream_manager.h"
@@ -57,6 +58,7 @@ private:
     std::map<int32_t, std::shared_ptr<ICapturerStream>> capturerStreamMap_;
     std::mutex sinkInputsMutex_;
     std::vector<SinkInput> sinkInputs_;
+    std::set<int32_t> unprocessAppUidSet_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -70,7 +70,7 @@ public:
     int32_t Init() override;
     int32_t DeInit() override;
     int32_t RegisterSerivceCallback(const std::weak_ptr<AudioServiceHpaeCallback> &callback) override;
-    int32_t RegisterHpaeDumpCallback(AudioServiceHpaeDumpCallback *callback) override;
+    int32_t RegisterHpaeDumpCallback(const std::weak_ptr<AudioServiceHpaeDumpCallback> &callback) override;
     void DumpSinkInfo(std::string deviceName) override;
     void DumpSourceInfo(std::string deviceName) override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
@@ -165,6 +165,7 @@ public:
 
 private:
     void TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
+    bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
     void TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
     AudioSampleFormat TransFormatFromStringToEnum(std::string format);
     int32_t CloseOutAudioPort(std::string &sinkName);
@@ -199,6 +200,7 @@ private:
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo);
 
     void MoveToPreferSink(const std::string& name);
+    void ReloadRenderManager(const AudioModuleInfo &audioModuleInfo);
     void AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>> &sinkIdMap,
         const std::pair<uint32_t, std::string> &id, const std::string &name);
 private:
@@ -226,7 +228,7 @@ private:
 
     std::atomic<int32_t> receiveMsgCount_ = 0;
     std::weak_ptr<AudioServiceHpaeCallback> serviceCallback_;
-    AudioServiceHpaeDumpCallback *dumpCallback_ = nullptr;
+    std::weak_ptr<AudioServiceHpaeDumpCallback> dumpCallback_;
     std::unordered_map<std::string, std::string> deviceDumpSinkInfoMap_;
     std::unordered_map<HpaeMsgCode, std::function<void(const std::any &)>> handlers_;
 };
