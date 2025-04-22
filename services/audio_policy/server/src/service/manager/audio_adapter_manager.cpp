@@ -1736,9 +1736,11 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     StoreId storeId;
     storeId.storeId = "audiopolicy";
     Status status = Status::SUCCESS;
+    std::vector<StoreId> storeIds;
+    status = manager.GetAllKvStoreId(appId, storeIds);
 
     // open and initialize kvstore instance.
-    if (audioPolicyKvStore_ == nullptr) {
+    if (audioPolicyKvStore_ == nullptr && storeIds.size() != static_cast<size_t>(0)) {
         uint32_t retries = 0;
 
         do {
