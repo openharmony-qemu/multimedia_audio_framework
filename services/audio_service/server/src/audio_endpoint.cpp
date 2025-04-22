@@ -1483,9 +1483,10 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
     int64_t readtime = 0;
     if (readTimeModel_.GetFrameStamp(readFrame, readtime)) {
         if (readFrame != posInFrame_) {
-            if (readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == CHECK_FAILED) {
+            CheckPosTimeRes res = readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
+            if (res == CHECK_FAILED) {
                 updateThreadCV_.notify_all();
-            } else if (readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == NEED_MODIFY) {
+            } else if (res == NEED_MODIFY) {
                 needReSyncPosition_ = true;
             }
         }
@@ -1507,9 +1508,10 @@ int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
     int64_t writetime = 0;
     if (writeTimeModel_.GetFrameStamp(writeFrame, writetime)) {
         if (writeFrame != posInFrame_) {
-            if (writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == CHECK_FAILED) {
+            CheckPosTimeRes res = writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
+            if (res == CHECK_FAILED) {
                 updateThreadCV_.notify_all();
-            } else if (writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_) == NEED_MODIFY) {
+            } else if (res == NEED_MODIFY) {
                 needReSyncPosition_ = true;
             }
         }
