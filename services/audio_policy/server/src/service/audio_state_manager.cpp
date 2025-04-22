@@ -70,10 +70,12 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
         if (callerUid == SYSTEM_UID && ownerUid_ != 0) {
             RemoveForcedDeviceMapData(ownerUid_);
             currentDeviceMap = {{ownerUid_, deviceDescriptor}};
-        } else {
-            RemoveForcedDeviceMapData(callerUid);
-            currentDeviceMap = {{callerUid, deviceDescriptor}};
+            forcedDeviceMapList_.push_back(currentDeviceMap);
         }
+
+        RemoveForcedDeviceMapData(callerUid);
+        currentDeviceMap = {{callerUid, deviceDescriptor}};
+        
         forcedDeviceMapList_.push_back(currentDeviceMap);
     }
 }
