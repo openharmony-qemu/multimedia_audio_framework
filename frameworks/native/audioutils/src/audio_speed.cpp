@@ -118,6 +118,13 @@ int32_t AudioSpeed::SetSpeed(float speed)
     return SUCCESS;
 }
 
+int32_t AudioSpeed::SetPitch(float pitch)
+{
+    AUDIO_INFO_LOG("SetPitch %{public}f", pitch);
+    sonicSetPitch(sonicStream_, pitch);
+    return SUCCESS;
+}
+
 float AudioSpeed::GetSpeed()
 {
     return speed_;

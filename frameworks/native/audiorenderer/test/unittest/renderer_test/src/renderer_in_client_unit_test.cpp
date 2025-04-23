@@ -1514,5 +1514,24 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_058, TestSize.Level1
     ptrRendererInClientInner->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(mode, clientUid);
     ptrRendererInClientInner->FetchDeviceForSplitStream();
 }
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_059
+ * @tc.desc  : Test RendererInClientInner::SetDuckVolume.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_059, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    float pitch = 2.0f;
+    auto ret = ptrRendererInClientInner->SetPitch(pitch);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

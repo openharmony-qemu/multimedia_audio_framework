@@ -572,6 +572,12 @@ int32_t FastAudioStream::SetSpeed(float speed)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t FastAudioStream::SetPitch(float pitch)
+{
+    AUDIO_ERR_LOG("SetPitch is not supported");
+    return ERR_OPERATION_FAILED;
+}
+
 float FastAudioStream::GetSpeed()
 {
     AUDIO_ERR_LOG("GetSpeed is not supported");

@@ -1791,6 +1791,10 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
         audioStream->SetSpeed(speed_.value());
     }
 
+    if (pitch_.has_value()) {
+        audioStream->SetPitch(pitch_.value());
+    }
+
     if (info.lastCallStartByUserTid.has_value()) {
         audioStream->SetCallStartByUserTid(info.lastCallStartByUserTid.value());
     }
@@ -2350,6 +2354,20 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     audioStream_->SetSpeed(speed);
 #endif
     speed_ = speed;
+    return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::SetPitch(float pitch)
+{
+    AUDIO_INFO_LOG("set pitch %{public}f", pitch);
+    CHECK_AND_RETURN_RET_LOG((pitch >= MIN_STREAM_SPEED_LEVEL) && (pitch <= MAX_STREAM_SPEED_LEVEL),
+        ERR_INVALID_PARAM, "invaild pitch index");
+    std::lock_guard lock(rendererMutex_);
+#ifdef SONIC_ENABLE
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    audioStream_->SetPitch(pitch);
+#endif
+    pitch_ = pitch;
     return SUCCESS;
 }
 
