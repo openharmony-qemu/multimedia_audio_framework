@@ -47,9 +47,9 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     AUDIO_INFO_LOG("render effect node created, scene type: %{public}s", sceneType_.c_str());
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeRenderEffectNodeInput_id_" + std::to_string(GetNodeId()) + ".pcm");
+        "HpaeRenderEffectNodeInput_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeRenderEffectNodeOutput_id_" + std::to_string(GetNodeId()) + ".pcm");
+        "HpaeRenderEffectNodeOutput_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
 #endif
 }
 

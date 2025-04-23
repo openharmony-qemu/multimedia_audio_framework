@@ -95,14 +95,13 @@ void HpaeOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *
     HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
     HpaeNodeInfo &curNodeInfo = GetNodeInfo();
     HpaeProcessorType sceneType = preNodeInfo.sceneType;
-    AUDIO_INFO_LOG("HpaeOutputCluster input sceneType is %{public}u", preNodeInfo.sceneType);
-    AUDIO_INFO_LOG("HpaeOutputCluster input rate is %{public}u, ch is %{public}u",
-        preNodeInfo.samplingRate, preNodeInfo.channels);
-    AUDIO_INFO_LOG(" HpaeOutputCluster output rate is %{public}u, ch is %{public}u",
-        curNodeInfo.samplingRate, curNodeInfo.channels);
-    AUDIO_INFO_LOG(" HpaeOutputCluster preNode name %{public}s, curNode name is %{public}s",
-        preNodeInfo.nodeName.c_str(), curNodeInfo.nodeName.c_str());
-    AUDIO_INFO_LOG("HpaeOutputCluster mixer id %{public}u, SinkOut id %{public}u",
+    AUDIO_INFO_LOG("HpaeOutputCluster input sceneType is %{public}u, "
+        "input:[%{public}u_%{public}u], output:[%{public}u_%{public}u], "
+        "preNode name %{public}s, curNode name %{public}s, "
+        "mixer id %{public}u, SinkOut id %{public}u", preNodeInfo.sceneType,
+        preNodeInfo.samplingRate, preNodeInfo.channels,
+        curNodeInfo.samplingRate, curNodeInfo.channels,
+        preNodeInfo.nodeName.c_str(), curNodeInfo.nodeName.c_str(),
         mixerNode_->GetNodeId(), hpaeSinkOutputNode_->GetNodeId());
 
 #ifdef ENABLE_HIDUMP_DFX

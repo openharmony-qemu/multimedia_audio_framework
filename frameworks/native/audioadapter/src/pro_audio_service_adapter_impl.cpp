@@ -375,6 +375,7 @@ void ProAudioServiceAdapterImpl::OnOpenAudioPortCb(int32_t portId)
     AudioPortIndex_ = portId;
     callbackCV_.notify_all();
 }
+
 void ProAudioServiceAdapterImpl::OnCloseAudioPortCb(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);

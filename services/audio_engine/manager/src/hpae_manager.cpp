@@ -1074,10 +1074,6 @@ void HpaeManager::SendRequest(Request &&request)
 int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
 {
     auto request = [this, streamInfo]() {
-        AUDIO_INFO_LOG("defaultSink_ is %{public}s defaultSource_ is %{public}s streamClassType %{public}u",
-            defaultSink_.c_str(),
-            defaultSource_.c_str(),
-            streamInfo.streamClassType);
         AUDIO_INFO_LOG("streamType is %{public}d sessionId %{public}u sourceType is %{public}d",
             streamInfo.streamType,
             streamInfo.sessionId,
@@ -1112,8 +1108,8 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
         }
     };
     SendRequest(request);
-    AUDIO_WARNING_LOG(
-        "defaultSink_ is %{public}s streamClassType %{public}u", defaultSink_.c_str(), streamInfo.sessionId);
+    AUDIO_INFO_LOG("defaultSink_ is %{public}s defaultSource_ is %{public}s streamClassType %{public}u",
+        defaultSink_.c_str(), defaultSource_.c_str(), streamInfo.streamClassType);
     return SUCCESS;
 }
 
