@@ -20,6 +20,20 @@
 #include "OHAudioCommon.h"
 #include "OHAudioStreamManager.h"
 
+namespace {
+const std::set<OH_AudioStream_SourceType> VALID_OH_SOURCE_TYPES = {
+    AUDIOSTREAM_SOURCE_TYPE_MIC,
+    AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION,
+    AUDIOSTREAM_SOURCE_TYPE_PLAYBACK_CAPTURE,
+    AUDIOSTREAM_SOURCE_TYPE_VOICE_CALL,
+    AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION,
+    AUDIOSTREAM_SOURCE_TYPE_VOICE_MESSAGE,
+    AUDIOSTREAM_SOURCE_TYPE_CAMCORDER,
+    AUDIOSTREAM_SOURCE_TYPE_UNPROCESSED,
+    AUDIOSTREAM_SOURCE_TYPE_LIVE
+};
+}
+
 using OHOS::AudioStandard::OHAudioStreamManager;
 using OHOS::AudioStandard::AudioStreamManager;
 using OHOS::AudioStandard::AudioStreamInfo;
@@ -30,6 +44,7 @@ using OHOS::AudioStandard::AudioChannel;
 using OHOS::AudioStandard::AudioChannelLayout;
 using OHOS::AudioStandard::StreamUsage;
 using OHOS::AudioStandard::DirectPlaybackMode;
+using OHOS::AudioStandard::SourceType;
 
 static OHOS::AudioStandard::OHAudioStreamManager *convertManager(OH_AudioStreamManager* manager)
 {
@@ -69,6 +84,20 @@ OH_AudioCommon_Result OH_AudioStreamManager_GetDirectPlaybackSupport(
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
+OH_AudioCommon_Result OH_AudioStreamManager_IsAcousticEchoCancelerSupported(OH_AudioStreamManager *audioStreamManager,
+    OH_AudioStream_SourceType sourceType, bool *supported)
+{
+    CHECK_AND_RETURN_RET_LOG(supported != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "supported is nullptr");
+    OHAudioStreamManager *ohAudioStreamManager = convertManager(audioStreamManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioStreamManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioStreamManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(VALID_OH_SOURCE_TYPES.count(sourceType) != 0,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "sourceType is invalid");
+    SourceType type = static_cast<SourceType>(sourceType);
+    *supported = ohAudioStreamManager->IsAcousticEchoCancelerSupported(type);
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -91,5 +120,11 @@ OH_AudioStream_DirectPlaybackMode OHAudioStreamManager::GetDirectPlaybackSupport
     return static_cast<OH_AudioStream_DirectPlaybackMode>(mode);
 }
 
+bool OHAudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, AUDIOSTREAM_DIRECT_PLAYBACK_NOT_SUPPORTED,
+        "failed, audioStreamManager_ is null");
+    return audioStreamManager_->IsAcousticEchoCancelerSupported(sourceType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -3994,5 +3994,9 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
 }
+bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    return audioPolicyService_.IsAcousticEchoCancelerSupported(sourceType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

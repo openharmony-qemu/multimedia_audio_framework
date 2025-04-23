@@ -37,6 +37,8 @@ public:
     }
 
     OH_AudioStream_DirectPlaybackMode GetDirectPlaybackSupport(AudioStreamInfo streamInfo, StreamUsage usage);
+    
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 
 private:
     OHAudioStreamManager();
