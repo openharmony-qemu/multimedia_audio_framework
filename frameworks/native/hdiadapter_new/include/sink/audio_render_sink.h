@@ -81,6 +81,8 @@ public:
     void SetAddress(const std::string &address) override;
 
     void DumpInfo(std::string &dumpString) override;
+    // for a2dp_offload connection state
+    int32_t UpdatePrimaryConnectionState(uint32_t operation) override;
 
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
@@ -130,7 +132,9 @@ private:
     static constexpr const char *RUNNING_LOCK_NAME_BASE = "AudioPrimaryBackgroundPlay";
     static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
-
+    static constexpr uint32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000;
+    static constexpr uint32_t DATA_LINK_CONNECTING = 10; // DATA_LINK_CONNECTING in audio_a2dp_offload_manager.cpp
+    static constexpr uint32_t DATA_LINK_CONNECTED = 11; // DATA_LINK_CONNECTED in audio_a2dp_offload_manager.cpp
     uint32_t renderId_ = HDI_INVALID_ID;
     const std::string halName_ = "";
     IAudioSinkAttr attr_ = {};
@@ -183,6 +187,11 @@ private:
     std::mutex sinkMutex_;
     // for setdeviceconnect flag
     bool deviceConnectedFlag_ = false;
+
+    // for a2dp_offload datalink connection
+    std::mutex dataConnectionMutex_;
+    bool isDataLinkConnected_ = false;
+    std::condition_variable dataConnectionCV_;
 };
 
 } // namespace AudioStandard
