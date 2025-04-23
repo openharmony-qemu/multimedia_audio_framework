@@ -592,6 +592,7 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

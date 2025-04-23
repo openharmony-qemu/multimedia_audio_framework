@@ -326,6 +326,14 @@ public:
      */
     int32_t UnsetAudioFormatUnsupportedErrorCallback();
 
+    /**
+     * Query whether Acoustic Echo Canceler is supported on input SourceType.
+     * @param { SourceType } sourceType - Audio source type.
+     * @returns { bool } Promise used to return the support status of Acoustic Echo Canceler.
+     * The value true means that Acoustic Echo Canceler is supported, and false means the opposite.
+     * @since 20
+     */
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

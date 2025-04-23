@@ -445,6 +445,8 @@ public:
 
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) override;
+
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

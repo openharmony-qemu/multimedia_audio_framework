@@ -226,6 +226,7 @@ private:
     void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetDirectPlaybackSupportInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

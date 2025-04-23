@@ -2339,6 +2339,13 @@ DirectPlaybackMode AudioPolicyManager::GetDirectPlaybackSupport(const AudioStrea
     return gsp->GetDirectPlaybackSupport(streamInfo, streamUsage);
 }
 
+bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    return gsp->IsAcousticEchoCancelerSupported(sourceType);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;
