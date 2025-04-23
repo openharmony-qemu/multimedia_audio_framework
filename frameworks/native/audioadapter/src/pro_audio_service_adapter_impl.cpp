@@ -39,7 +39,7 @@ using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
-static const int32_t OPERATION_TIMEOUT_IN_MS = 1000;  // 1000ms
+static const int32_t OPERATION_TIMEOUT_IN_MS = 10000;  // 10s
 
 ProAudioServiceAdapterImpl::~ProAudioServiceAdapterImpl() = default;
 
