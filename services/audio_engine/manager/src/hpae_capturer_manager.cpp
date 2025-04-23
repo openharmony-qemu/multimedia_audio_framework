@@ -278,14 +278,14 @@ int32_t HpaeCapturerManager::CapturerSourceStart()
     CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_]->GetSourceState() != CAPTURER_RUNNING,
         SUCCESS, "capturer source is already opened");
     int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceStart();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,"capturer source start error, ret = %{public}d.\n", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capturer source start error, ret = %{public}d.", ret);
     if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER) {
         ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceStart();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ec capturer source start error, ret = %{public}d.\n", ret);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ec capturer source start error, ret = %{public}d.", ret);
     }
     if (sourceInfo_.micRef == HPAE_REF_ON) {
         ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStart();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "micref capturer source start error, ret = %{public}d.\n", ret);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "micref capturer source start error, ret = %{public}d.", ret);
     }
     return SUCCESS;
 }

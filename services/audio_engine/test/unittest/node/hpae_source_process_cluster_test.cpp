@@ -80,7 +80,8 @@ TEST_F(HpaeSourceProcessClusterTest, constructHpaeSourceProcessClusterNode)
     sourceInputNodeInfo.channels = STEREO;
     sourceInputNodeInfo.format = SAMPLE_F32LE;
     sourceInputNodeInfo.statusCallback = g_testStatuscallback->GetWeakPtr();
-    std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(sourceInputNodeInfo);
+    std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster =
+        std::make_shared<HpaeSourceInputCluster>(sourceInputNodeInfo);
     EXPECT_EQ(hpaeSourceProcessCluster->GetPreOutNum(), 0);
     hpaeSourceProcessCluster->ConnectWithInfo(hpaeSourceInputCluster, hpaeSourceProcessCluster->GetNodeInfo());
     EXPECT_EQ(hpaeSourceProcessCluster->GetPreOutNum(), 1);
@@ -90,4 +91,4 @@ TEST_F(HpaeSourceProcessClusterTest, constructHpaeSourceProcessClusterNode)
 
 }  // namespace HPAE
 }  // namespace AudioStandard
-}  // namespace OHOS
+}  // namespace OHOS

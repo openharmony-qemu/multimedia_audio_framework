@@ -38,12 +38,13 @@ namespace AudioStandard {
 
 const int32_t MIN_BUFFER_SIZE = 2;
 const int32_t FRAME_LEN_10MS = 2;
+const int32_t TENMS_PER_SEC = 100;
 static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels);
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / 100);
+    spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / TENMS_PER_SEC);
     byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
 }
@@ -157,7 +158,8 @@ int32_t HpaeRendererStreamImpl::Release()
         IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     }
     AUDIO_INFO_LOG("Release Enter");
-    int32_t ret = IHpaeManager::GetHpaeManager().DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    int32_t ret = IHpaeManager::GetHpaeManager().DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY,
+        processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Release is error");
         return ERR_INVALID_PARAM;
@@ -249,7 +251,8 @@ int32_t HpaeRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
 void HpaeRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterStatusCallback in");
-    int32_t ret = IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId, callback);
+    int32_t ret = IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY,
+        processConfig_.originalSessionId, callback);
     if (ret != 0) {
         AUDIO_ERR_LOG("RegisterStatusCallback is error");
         return;
@@ -260,7 +263,8 @@ void HpaeRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusC
 void HpaeRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterWriteCallback in");
-    int32_t ret = IHpaeManager::GetHpaeManager().RegisterWriteCallback(processConfig_.originalSessionId, shared_from_this());
+    int32_t ret = IHpaeManager::GetHpaeManager().RegisterWriteCallback(processConfig_.originalSessionId,
+        shared_from_this());
     if (ret != 0) {
         AUDIO_ERR_LOG("RegisterStatusCallback is error");
         return;
@@ -433,7 +437,6 @@ void HpaeRendererStreamImpl::BlockStream() noexcept
 
 int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 {
-    
     AUDIO_PRERELEASE_LOGI("set client volume success");
     int32_t ret = IHpaeManager::GetHpaeManager().SetClientVolume(processConfig_.originalSessionId, clientVolume);
     if (ret != 0) {

@@ -120,21 +120,6 @@ public:
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
-    // return int32_t
-    template<typename Func, typename... Args>
-    auto SafeCall(Func&& func, Args&&... args) -> int32_t
-    {
-        CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, 
-            "manager is nullptr");
-        return (manager_->*std::forward<Func>(func))(std::forward<Args>(args)...);
-    }
-    // return void
-    template<typename Func, typename... Args>
-    auto SafeCallVoid(Func&& func, Args&&... args)
-    {
-        CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-        (manager_->*std::forward<Func>(func))(std::forward<Args>(args)...);
-    }
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

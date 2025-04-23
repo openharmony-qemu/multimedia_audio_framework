@@ -104,13 +104,14 @@ std::shared_ptr<HpaeNode> HpaeSourceInputCluster::GetSharedInstance(HpaeNodeInfo
         return sourceInputNode_;
     }
     if (!SafeGetMap(fmtConverterNodeMap_, preNodeKey)) {
-        fmtConverterNodeMap_[preNodeKey] = 
+        fmtConverterNodeMap_[preNodeKey] =
             std::make_shared<HpaeAudioFormatConverterNode>(GetNodeInfoWithInfo(nodeInfo.sourceBufferType), nodeInfo);
         nodeInfo.nodeName = "HpaeAudioFormatConverterNode";
         nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
         fmtConverterNodeMap_[preNodeKey]->SetNodeInfo(nodeInfo);
     }
-    fmtConverterNodeMap_[preNodeKey]->ConnectWithInfo(sourceInputNode_, fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
+    fmtConverterNodeMap_[preNodeKey]->ConnectWithInfo(sourceInputNode_,
+        fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = sourceInputNode_->GetNodeInfo().statusCallback.lock()) {
         callback->OnNotifyDfxNodeInfo(
