@@ -1907,10 +1907,29 @@ AudioScene AudioPolicyServer::GetAudioScene()
 int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
     uint32_t clientUid, const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        return interruptService_->SetAudioInterruptCallback(zoneID, sessionID, object, clientUid);
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("The interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
     }
-    return ERR_UNKNOWN;
+    if (coreService_ == nullptr) {
+        AUDIO_ERR_LOG("The coreService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid != MEDIA_SERVICE_UID && callingUid != MCU_UID) {
+        // if the callingUid is not media or mcu, it is necessary to verify whether the parameters are valid.
+        if (callingUid != clientUid) {
+            AUDIO_ERR_LOG("The callingUid is not equal to clientUid and is not MEDIA_SERVICE_UID!");
+            return ERR_UNKNOWN;
+        }
+        if (!coreService_->IsStreamBelongToUid(callingUid, sessionID)) {
+            AUDIO_ERR_LOG("The sessionId %{public}u does not belong to uid %{public}u!", sessionID, callingUid);
+            return ERR_UNKNOWN;
+        }
+    }
+
+    return interruptService_->SetAudioInterruptCallback(zoneID, sessionID, object, clientUid);
 }
 
 int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID)

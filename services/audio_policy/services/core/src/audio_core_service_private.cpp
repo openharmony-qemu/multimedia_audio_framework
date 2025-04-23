@@ -25,6 +25,7 @@
 #include "audio_usb_manager.h"
 #include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +33,7 @@ namespace {
 static const int32_t MEDIA_SERVICE_UID = 1013;
 const int32_t DATA_LINK_CONNECTED = 11;
 const uint32_t FIRST_SESSIONID = 100000;
+const uid_t MCU_UID = 7500;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
@@ -688,6 +690,46 @@ uint32_t AudioCoreService::GenerateSessionId()
         g_sessionId = FIRST_SESSIONID;
     }
     return sessionId;
+}
+
+void AudioCoreService::AddSessionId(const uint32_t sessionId)
+{
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    AUDIO_INFO_LOG("AddSessionId: %{public}u, callingUid: %{public}u", sessionId, callingUid);
+    if (callingUid == MCU_UID) {
+        // There is no audio stream for the session id of MCU. So no need to save it.
+        return;
+    }
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
+    sessionIdMap_[sessionId] = callingUid;
+}
+
+void AudioCoreService::DeleteSessionId(const uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("DeleteSessionId: %{public}u", sessionId);
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
+    if (sessionIdMap_.count(sessionId) == 0) {
+        AUDIO_INFO_LOG("The sessionId has been deleted from sessionIdMap_!");
+    } else {
+        sessionIdMap_.erase(sessionId);
+    }
+}
+
+bool AudioCoreService::IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
+    if (sessionIdMap_.count(sessionId) == 0) {
+        AUDIO_INFO_LOG("The sessionId %{public}u is invalid!", sessionId);
+        return false;
+    }
+
+    if (sessionIdMap_[sessionId] != uid) {
+        AUDIO_INFO_LOG("The sessionId %{public}u does not belong to uid %{public}u!", sessionId, uid);
+        return false;
+    }
+
+    AUDIO_DEBUG_LOG("The sessionId %{public}u belongs to uid %{public}u!", sessionId, uid);
+    return true;
 }
 
 void AudioCoreService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
