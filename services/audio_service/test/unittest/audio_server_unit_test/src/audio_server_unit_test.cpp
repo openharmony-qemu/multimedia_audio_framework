@@ -453,6 +453,23 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetAudioScene API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetAudioScene_002
+ * @tc.desc  : Test SetAudioScene interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<DeviceType> activeOutputDevices;
+    activeOutputDevices.push_back(DEVICE_TYPE_ACCESSORY);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_ACCESSORY,
+        NO_A2DP_DEVICE);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test SetIORoutes API
  * @tc.type  : FUNC
  * @tc.number: AudioServerSetIORoutes_001

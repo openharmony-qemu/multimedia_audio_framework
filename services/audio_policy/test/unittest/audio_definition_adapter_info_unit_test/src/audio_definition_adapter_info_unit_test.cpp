@@ -56,6 +56,9 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, PolicyAdapterInfo_001, TestSize.Level
     ret = policyAdapter->GetAdapterType(ADAPTER_TYPE_SLE);
     EXPECT_EQ(AudioAdapterType::TYPE_SLE, ret);
 
+    ret = policyAdapter->GetAdapterType(ADAPTER_TYPE_ACCESSORY);
+    EXPECT_EQ(AudioAdapterType::TYPE_ACCESSORY, ret);
+
     ret = policyAdapter->GetAdapterType("");
     EXPECT_EQ(AudioAdapterType::TYPE_INVALID, ret);
 }
