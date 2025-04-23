@@ -366,7 +366,6 @@ void HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo)
     sinkInfo.suspendTime = DEFAULT_SUSPEND_TIME_IN_MS;
     TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
     rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo);
-    MoveToPreferSink(audioModuleInfo.name);
 }
 
 uint32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
@@ -391,7 +390,6 @@ uint32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo
     sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
     rendererManager->Init();
     rendererManager->RegisterSendMsgCallback(weak_from_this());
-    MoveToPreferSink(audioModuleInfo.name);
     AUDIO_INFO_LOG(
         "open sink name: %{public}s end sinkIndex is %{public}u", audioModuleInfo.name.c_str(), sinkSourceIndex);
     uint32_t renderId = GetRenderId(sinkInfo.deviceClass);
@@ -875,7 +873,8 @@ void HpaeManager::RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(A
 
 void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName)
 {
-    AUDIO_INFO_LOG("move to new sink:%{public}s", sinkName.c_str());
+    uint32_t sessionId = sinkInputNode->GetNodeInfo().sessionId;
+    AUDIO_INFO_LOG("move session:%{public}u to new sink:%{public}s", sessionId, sinkName.c_str());
     std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByNmae(sinkName);
     if (rendererManager == nullptr) {
         AUDIO_ERR_LOG("can not find sink by new name:%{public}s", sinkName.c_str());
@@ -884,7 +883,6 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
         }
         return;
     }
-    uint32_t sessionId = sinkInputNode->GetNodeInfo().sessionId;
     rendererManager->AddNodeToSink(sinkInputNode);
     rendererIdSinkNameMap_[sessionId] = sinkName;
     idPreferSinkNameMap_[sessionId] = sinkName;
@@ -899,7 +897,8 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
 
 void HpaeManager::HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std::string sourceName)
 {
-    AUDIO_INFO_LOG("move to new source:%{public}s", sourceName.c_str());
+    uint32_t sessionId = moveInfo.sessionId;
+    AUDIO_INFO_LOG("move capture:%{public}u to new source:%{public}s", sessionId, sourceName.c_str());
     std::shared_ptr<IHpaeCapturerManager> catpureManager = GetCapturerManagerByName(sourceName);
     if (catpureManager == nullptr) {
         AUDIO_ERR_LOG("can not find source by name:%{public}s", sourceName.c_str());
@@ -908,7 +907,6 @@ void HpaeManager::HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std
         }
         return;
     }
-    uint32_t sessionId = moveInfo.sessionId;
     catpureManager->AddNodeToSource(moveInfo);
     capturerIdSourceNameMap_[sessionId] = sourceName;
     if (sourceOutputs_.find(sessionId) != sourceOutputs_.end()) {
@@ -1012,6 +1010,7 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
     if (serviceCallback && result == SUCCESS) {
         if (sinkNameSinkIdMap_.find(deviceName) != sinkNameSinkIdMap_.end()) {
             serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[deviceName]);
+            MoveToPreferSink(deviceName);
         } else if (sourceNameSourceIdMap_.find(deviceName) != sourceNameSourceIdMap_.end()) {
             serviceCallback->OnOpenAudioPortCb(sourceNameSourceIdMap_[deviceName]);
         } else {
@@ -1146,23 +1145,39 @@ void HpaeManager::AddStreamToCollection(const HpaeStreamInfo &streamInfo)
     }
 }
 
+void HpaeManager::DestroyCapture(uint32_t sessionId)
+{
+    if (capturerIdSourceNameMap_.find(sessionId) == capturerIdSourceNameMap_.end()) {
+        AUDIO_WARNING_LOG("can not find capture by id:%{public}u", sessionId);
+        return;
+    }
+    std::string captureName = capturerIdSourceNameMap_[sessionId];
+    if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
+        std::shared_ptr<IHpaeRendererManager> renderManager = GetRendererManagerByNmae(captureName);
+        if (renderManager != nullptr) {
+            renderManager->DestroyStream(sessionId);
+        }
+    } else {
+        std::shared_ptr<IHpaeCapturerManager> capManager = GetCapturerManagerByName(captureName);
+        capManager->DestroyStream(sessionId);
+    }
+}
+
 int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
     auto request = [this, streamClassType, sessionId]() {
         AUDIO_INFO_LOG("DestroyStream streamClassType %{public}d, sessionId %{public}u", streamClassType, sessionId);
-        if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
-            rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-            rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->DestroyStream(sessionId);
+        if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
+            std::shared_ptr<IHpaeRendererManager> renderManager = GetRendererManagerById(sessionId);
+            if (renderManager!= nullptr) {
+                renderManager->DestroyStream(sessionId);
+            }
             rendererIdSinkNameMap_.erase(sessionId);
             rendererIdStreamInfoMap_.erase(sessionId);
             sinkInputs_.erase(sessionId);
-        } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
-                   capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
-            if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
-                rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->DestroyStream(sessionId);
-            } else {
-                capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->DestroyStream(sessionId);
-            }
+            idPreferSinkNameMap_.erase(sessionId);
+        } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
+            DestroyCapture(sessionId);
             capturerIdSourceNameMap_.erase(sessionId);
             capturerIdStreamInfoMap_.erase(sessionId);
             sourceOutputs_.erase(sessionId);

@@ -203,6 +203,8 @@ private:
     void ReloadRenderManager(const AudioModuleInfo &audioModuleInfo);
     void AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>> &sinkIdMap,
         const std::pair<uint32_t, std::string> &id, const std::string &name);
+    void DestroyCapture(uint32_t sessionId);
+
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
     std::unique_ptr<HpaePolicyManager> hpaePolicyManager_ = nullptr;
