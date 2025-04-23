@@ -46,6 +46,7 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
 constexpr int32_t TIME_OUT_SECONDS = 10;
+static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
 
 static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
 {
@@ -962,6 +963,21 @@ void AudioRendererInterruptCallbackImpl::UpdateAudioStream(const std::shared_ptr
     audioStream_ = audioStream;
 }
 
+void AudioRendererInterruptCallbackImpl::StartSwitch()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    switching_ = true;
+    AUDIO_INFO_LOG("SwitchStream start, block interrupt callback");
+}
+
+void AudioRendererInterruptCallbackImpl::FinishSwitch()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    switching_ = false;
+    switchStreamCv_.notify_all();
+    AUDIO_INFO_LOG("SwitchStream finish, notify interrupt callback");
+}
+
 void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &interruptEvent)
 {
     if (cb_ != nullptr && interruptEvent.callbackToApp) {
@@ -1052,6 +1068,15 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 {
     std::unique_lock<std::mutex> lock(mutex_);
 
+    if (switching_) {
+        AUDIO_INFO_LOG("Wait for SwitchStream");
+        bool res = switchStreamCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
+            [this] {return !switching_;});
+        if (!res) {
+            switching_ = false;
+            AUDIO_WARNING_LOG("Wait for SwitchStream time out, could handle interrupt event with old stream");
+        }
+    }
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
 
@@ -1546,8 +1571,7 @@ void AudioRendererPrivate::WriteSwitchStreamLogMsg()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
-    const AudioStreamDeviceChangeReasonExt reason)
+IAudioStream::StreamClass AudioRendererPrivate::GetTargetClass(const int32_t streamFlag)
 {
     IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
     switch (streamFlag) {
@@ -1576,14 +1600,37 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         targetClass = IAudioStream::PA_STREAM;
     }
+    return targetClass;
+}
+
+void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
+    const AudioStreamDeviceChangeReasonExt reason)
+{
+    IAudioStream::StreamClass targetClass = GetTargetClass(streamFlag);
 
     uint32_t newSessionId = 0;
+    // Block interrupt calback, avoid pausing wrong stream.
+    std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl = nullptr;
+    if (audioInterruptCallback_ != nullptr) {
+        interruptCbImpl = std::static_pointer_cast<AudioRendererInterruptCallbackImpl>(audioInterruptCallback_);
+        interruptCbImpl->StartSwitch();
+    }
     if (!SwitchToTargetStream(targetClass, newSessionId, reason)) {
         int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
-        CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
+        if (ret != 0) {
+            if (interruptCbImpl) {
+                interruptCbImpl->FinishSwitch();
+            }
+            AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
+            return;
+        }
         if (audioRendererErrorCallback_) {
             audioRendererErrorCallback_->OnError(ERROR_SYSTEM);
         }
+    }
+    // Unblock interrupt callback.
+    if (interruptCbImpl) {
+        interruptCbImpl->FinishSwitch();
     }
     usedSessionId_.push_back(newSessionId);
     int32_t ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(newSessionId,

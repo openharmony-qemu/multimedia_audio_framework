@@ -97,6 +97,7 @@ public:
     uint32_t GetUnderflowCount() const override;
     void SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
+    IAudioStream::StreamClass GetTargetClass(const int32_t streamFlag);
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
@@ -249,6 +250,8 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
     void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
+    void StartSwitch();
+    void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     InterruptCallbackEvent HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
@@ -263,6 +266,8 @@ private:
     bool isForceDucked_ = false;
     uint32_t sessionID_ = INVALID_SESSION_ID;
     std::mutex mutex_;
+    bool switching_ = false;
+    std::condition_variable switchStreamCv_;
 };
 
 class AudioStreamCallbackRenderer : public AudioStreamCallback {
