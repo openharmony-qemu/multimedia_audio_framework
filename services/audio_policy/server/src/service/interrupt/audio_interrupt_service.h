@@ -124,7 +124,6 @@ private:
     static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
     std::mutex audioServerProxyMutex_;
     void HandleAppStreamType(AudioInterrupt &audioInterrupt);
-    AudioStreamType defaultVolumeType = STREAM_MUSIC;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
 
@@ -301,6 +300,9 @@ private:
     mutable int32_t ownerUid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
+
+    // settingsdata members
+    AudioStreamType defaultVolumeType_ = STREAM_MUSIC;
 };
 } // namespace AudioStandard
 } // namespace OHOS
