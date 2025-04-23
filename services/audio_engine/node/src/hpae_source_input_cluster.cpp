@@ -95,6 +95,7 @@ std::shared_ptr<HpaeNode> HpaeSourceInputCluster::GetSharedInstance()
 
 std::shared_ptr<HpaeNode> HpaeSourceInputCluster::GetSharedInstance(HpaeNodeInfo &nodeInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, nullptr, "sourceInputNode_ is nullptr");
     std::string preNodeKey = TransNodeInfoToStringKey(nodeInfo);
     std::string inputNodeKey = TransNodeInfoToStringKey(GetNodeInfoWithInfo(nodeInfo.sourceBufferType));
     AUDIO_INFO_LOG("sourceInput:[%{public}s] preNode:[%{public}s]",
@@ -128,6 +129,7 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort()
 
 OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort(HpaeNodeInfo &nodeInfo, bool isDisConnect)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, nullptr, "sourceInputNode_ is nullptr");
     std::string preNodeKey = TransNodeInfoToStringKey(nodeInfo);
     std::string inputNodeKey = TransNodeInfoToStringKey(GetNodeInfoWithInfo(nodeInfo.sourceBufferType));
     AUDIO_INFO_LOG("sourceinput:[%{public}s] preNodeKey:[%{public}s]",
@@ -151,71 +153,85 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort(HpaeNodeInfo 
 int32_t HpaeSourceInputCluster::GetCapturerSourceInstance(const std::string &deviceClass,
     const std::string &deviceNetId, const SourceType &sourceType, const std::string &sourceName)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName);
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceInit(IAudioSourceAttr &attr)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceInit(attr);
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceDeInit()
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceDeInit();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceFlush(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceFlush();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourcePause(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourcePause();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceReset(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceReset();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceResume(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceResume();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceStart(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceStart();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceStop(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceStop();
 }
 
 CapturerState HpaeSourceInputCluster::GetSourceState(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, CAPTURER_INVALID, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetSourceState();
 }
 
 size_t HpaeSourceInputCluster::GetOutputPortNum()
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, 0, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetOutputPortNum();
 }
 
 size_t HpaeSourceInputCluster::GetOutputPortNum(HpaeNodeInfo &nodeInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, 0, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetOutputPortNum(nodeInfo);
 }
 
 HpaeSourceInputNodeType HpaeSourceInputCluster::GetSourceInputNodeType()
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, HPAE_SOURCE_DEFAULT, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetSourceInputNodeType();
 }
 
 void HpaeSourceInputCluster::SetSourceInputNodeType(HpaeSourceInputNodeType type)
 {
+    CHECK_AND_RETURN_LOG(sourceInputNode_, "sourceInputNode_ is nullptr");
     sourceInputNode_->SetSourceInputNodeType(type);
 }
  
@@ -237,11 +253,13 @@ uint32_t HpaeSourceInputCluster::GetSourceInputNodeUseCount()
 
 int32_t HpaeSourceInputCluster::WriteCapturerData(char *data, int32_t dataSize)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->WriteCapturerData(data, dataSize);
 }
 
 OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetSourceInputNodeOutputPort()
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, nullptr, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetOutputPort();
 }
 }  // namespace HPAE

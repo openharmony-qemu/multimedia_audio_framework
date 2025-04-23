@@ -275,15 +275,21 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
 
 int32_t HpaeCapturerManager::CapturerSourceStart()
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_], ERR_ILLEGAL_STATE,
+        "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
     CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_]->GetSourceState() != CAPTURER_RUNNING,
         SUCCESS, "capturer source is already opened");
     int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceStart();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capturer source start error, ret = %{public}d.", ret);
     if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER) {
+        CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[HPAE_SOURCE_EC], ERR_ILLEGAL_STATE,
+            "sourceInputClusterMap_[%{public}d] is nullptr", HPAE_SOURCE_EC);
         ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceStart();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ec capturer source start error, ret = %{public}d.", ret);
     }
     if (sourceInfo_.micRef == HPAE_REF_ON) {
+        CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[HPAE_SOURCE_MICREF], ERR_ILLEGAL_STATE,
+            "sourceInputClusterMap_[%{public}d] is nullptr", HPAE_SOURCE_MICREF);
         ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStart();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "micref capturer source start error, ret = %{public}d.", ret);
     }
@@ -367,15 +373,21 @@ int32_t HpaeCapturerManager::Drain(uint32_t sessionId)
 
 int32_t HpaeCapturerManager::CapturerSourceStop()
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_], ERR_ILLEGAL_STATE,
+        "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
     CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_]->GetSourceState() != CAPTURER_STOPPED,
         SUCCESS, "capturer source is already stopped");
     int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capturer source stop error, ret = %{public}d.\n", ret);
     if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER) {
+        CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[HPAE_SOURCE_EC], ERR_ILLEGAL_STATE,
+            "sourceInputClusterMap_[%{public}d] is nullptr", HPAE_SOURCE_EC);
         ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceStop();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ec capturer source stop error, ret = %{public}d.\n", ret);
     }
     if (sourceInfo_.micRef == HPAE_REF_ON) {
+        CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[HPAE_SOURCE_MICREF], ERR_ILLEGAL_STATE,
+            "sourceInputClusterMap_[%{public}d] is nullptr", HPAE_SOURCE_MICREF);
         ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStop();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ec capturer source stop error, ret = %{public}d.\n", ret);
     }

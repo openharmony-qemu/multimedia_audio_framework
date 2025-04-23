@@ -178,6 +178,7 @@ uint32_t HpaeSourceProcessCluster::GetConverterNodeCount()
 
 size_t HpaeSourceProcessCluster::GetPreOutNum()
 {
+    CHECK_AND_RETURN_RET_LOG(captureEffectNode_, 0, "captureEffectNode_ is nullptr");
     return captureEffectNode_->GetPreOutNum();
 }
 }  // namespace HPAE

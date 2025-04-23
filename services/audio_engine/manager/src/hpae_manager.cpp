@@ -1159,7 +1159,9 @@ void HpaeManager::DestroyCapture(uint32_t sessionId)
         }
     } else {
         std::shared_ptr<IHpaeCapturerManager> capManager = GetCapturerManagerByName(captureName);
-        capManager->DestroyStream(sessionId);
+        if (capManager != nullptr) {
+            capManager->DestroyStream(sessionId);
+        }
     }
 }
 

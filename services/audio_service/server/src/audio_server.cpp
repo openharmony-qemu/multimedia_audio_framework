@@ -311,17 +311,18 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     }
     std::string dumpString;
     int32_t engineFlag = GetEngineFlag();
+    int32_t res = 0;
     if (engineFlag == 1) {
         if (hpaeDumpObj_ == nullptr) {
             hpaeDumpObj_ = std::make_shared<AudioServerHpaeDump>();
         }
-        int32_t res = hpaeDumpObj_->Initialize();
+        res = hpaeDumpObj_->Initialize();
         CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
             "Audio Service Hpae Dump Not Initialed");
         hpaeDumpObj_->AudioDataDump(dumpString, argQue);
     } else {
         AudioServerDump dumpObj;
-        int32_t res = dumpObj.Initialize();
+        res = dumpObj.Initialize();
         CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
             "Audio Service Dump Not initialised\n");
         dumpObj.AudioDataDump(dumpString, argQue);
