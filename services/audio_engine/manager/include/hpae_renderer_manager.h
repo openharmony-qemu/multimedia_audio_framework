@@ -106,9 +106,9 @@ private:
     void ConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DisConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DeleteProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
-    std::shared_ptr<HpaeProcessCluster> CreateProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
-    std::shared_ptr<HpaeProcessCluster> CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
     void InitManager();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);

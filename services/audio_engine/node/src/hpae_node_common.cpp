@@ -86,6 +86,7 @@ bool CheckSceneTypeNeedMicRef(HpaeProcessorType processorType)
 }
 
 static std::unordered_map<HpaeProcessorType, std::string> g_processorTypeToEffectSceneTypeMap = {
+    {HPAE_SCENE_DEFAULT, "HPAE_SCENE_DEFAULT"},
     {HPAE_SCENE_OTHERS, "SCENE_OTHERS"},
     {HPAE_SCENE_MUSIC, "SCENE_MUSIC"},
     {HPAE_SCENE_GAME, "SCENE_GAME"},
