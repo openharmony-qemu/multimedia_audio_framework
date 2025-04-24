@@ -2150,13 +2150,13 @@ void AudioInterruptService::WriteStopDfxMsg(const AudioInterrupt &audioInterrupt
     }
 }
 
-void AudioInterruptService::SetDefaultVolumeType(AudioStreamType volumeType)
+void AudioInterruptService::SetDefaultVolumeType(const AudioStreamType volumeType)
 {
     defaultVolumeType_ = volumeType;
     AUDIO_INFO_LOG("defaultVolumeType: %{public}d", defaultVolumeType_);
 }
 
-AudioStreamType AudioInterruptService::GetDefaultVolumeType()
+const AudioStreamType AudioInterruptService::GetDefaultVolumeType()
 {
     return defaultVolumeType_;
 }
