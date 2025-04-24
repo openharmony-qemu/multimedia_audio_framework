@@ -1550,9 +1550,8 @@ void AudioPolicyServerHandler::HandleAudioZoneEvent(const AppExecFwk::InnerEvent
     std::unique_lock<std::mutex> lock(handleMapMutex_);
     std::shared_ptr<IAudioZoneEventDispatcher> dispatcher = audioZoneEventDispatcher_.lock();
     lock.unlock();
-    if (dispatcher != nullptr) {
-        dispatcher->DispatchEvent(eventContextObj->audioZoneEvent);
-    }
+    CHECK_AND_RETURN_LOG(dispatcher != nullptr, "dispatcher is nullptr");
+    dispatcher->DispatchEvent(eventContextObj->audioZoneEvent);
 }
 } // namespace AudioStandard
 } // namespace OHOS

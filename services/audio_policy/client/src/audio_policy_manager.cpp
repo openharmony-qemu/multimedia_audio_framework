@@ -254,9 +254,8 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
     {
         std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
         for (auto func : serverDiedCbks_) {
-            if (func != nullptr) {
-                func();
-            }
+            CHECK_AND_CONTINUE(func != nullptr);
+            func();
         }
     }
 }

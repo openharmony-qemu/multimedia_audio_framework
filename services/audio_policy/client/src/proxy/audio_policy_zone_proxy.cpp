@@ -62,9 +62,7 @@ void AudioPolicyProxy::ReleaseAudioZone(int32_t zoneId)
     data.WriteInt32(zoneId);
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::RELEASE_AUDIO_ZONE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("ReleaseAudioZone failed, error: %{public}d", error);
-    }
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "ReleaseAudioZone failed, error: %{public}d", error);
 }
 
 const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioPolicyProxy::GetAllAudioZone()

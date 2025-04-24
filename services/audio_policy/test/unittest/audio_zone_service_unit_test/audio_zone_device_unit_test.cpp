@@ -74,6 +74,10 @@ HWTEST_F(AudioZoneDeviceUnitTest, AudioZoneDevice_001, TestSize.Level1)
     devices.push_back(device2);
     EXPECT_EQ(AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId1_, devices), 0);
 
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(device1);
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(device2);
+    AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(device1);
+    AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(device2);
     auto fechOutputDevice = AudioZoneService::GetInstance().FetchOutputDevices(zoneId1_,
         STREAM_USAGE_MUSIC, 0, ROUTER_TYPE_DEFAULT);
     auto fechInputDevice = AudioZoneService::GetInstance().FetchInputDevice(zoneId1_,

@@ -841,12 +841,9 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
 {
     std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.InjectInterruptToAudioZone(zoneId, interrupts);
-    if (ret != SUCCESS) {
-        return ret;
-    }
-    if (zoneId == ZONEID_DEFAULT) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InjectInterruptToAudioZone failed");
+    CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
+
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
@@ -858,12 +855,9 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
 {
     std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
-    if (ret != SUCCESS) {
-        return ret;
-    }
-    if (zoneId == ZONEID_DEFAULT) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InjectInterruptToAudioZone failed");
+    CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
+
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
@@ -1679,12 +1673,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
 void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audioScene,
     AudioInterruptChangeType changeType, int32_t zoneId)
 {
-    if (policyServer_ == nullptr) {
-        return;
-    }
-    if (zoneId != ZONEID_DEFAULT) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
+    CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId %{public}d is not default", zoneId);
     AudioScene currentAudioScene = policyServer_->GetAudioScene();
 
     AUDIO_PRERELEASE_LOGI("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
@@ -1933,9 +1923,8 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
     const AudioInterrupt &audioInterrupt)
 {
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    if (zoneId != ZONEID_DEFAULT) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId %{public}d is not default", zoneId);
+
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
