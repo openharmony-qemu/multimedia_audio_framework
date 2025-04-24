@@ -107,7 +107,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
         DisConnectRendererInputSessionInner(it);
     }
     AUDIO_INFO_LOG("sink input count:%{public}zu", sinkInputs.size());
-    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name);
+    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, !isMoveAll);
 }
 
 int32_t HpaeInnerCapturerManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,

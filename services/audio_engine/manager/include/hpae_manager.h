@@ -179,7 +179,8 @@ private:
     void HandleInitDeviceResult(std::string deviceName, int32_t result);
     void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
-    void HandleMoveAllSinkInputs(const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkNam);
+    void HandleMoveAllSinkInputs(const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
+        bool isConnect);
     void HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std::string sourceName);
     void HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);

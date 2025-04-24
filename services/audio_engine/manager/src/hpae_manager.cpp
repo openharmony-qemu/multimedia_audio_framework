@@ -918,7 +918,7 @@ void HpaeManager::HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std
 }
 
 void HpaeManager::HandleMoveAllSinkInputs(
-    const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName)
+    const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, bool isConnect)
 {
     AUDIO_INFO_LOG("sink name is :%{public}s", sinkName.c_str());
     if (sinkName.empty()) {
@@ -930,7 +930,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
         return;
     }
     AUDIO_INFO_LOG("sink input count:%{public}zu", sinkInputs.size());
-    rendererManagerMap_[sinkName]->AddAllNodesToSink(sinkInputs, false);
+    rendererManagerMap_[sinkName]->AddAllNodesToSink(sinkInputs, isConnect);
     for (const auto &sinkInput : sinkInputs) {
         uint32_t sessionId = sinkInput->GetNodeInfo().sessionId;
         rendererIdSinkNameMap_[sessionId] = sinkName;
