@@ -187,6 +187,7 @@ private:
     std::mutex capturerPolicyServiceDiedCbMutex_;
     std::mutex audioCapturerErrCallbackMutex_;
     std::mutex policyServiceDiedCallbackMutex_;
+    std::mutex audioInterruptMutex_;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

@@ -703,7 +703,9 @@ bool AudioCapturerPrivate::Start()
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         audioInterrupt_.streamId != INVALID_SESSION_ID, false);
+    std::unique_lock<std::mutex> audioInterruptLock(audioInterruptMutex_);
     AudioInterrupt audioInterrupt = audioInterrupt_;
+    audioInterruptLock.unlock();
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
 
@@ -833,6 +835,7 @@ bool AudioCapturerPrivate::Release()
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(isValid_, false, "Release when capturer invalid");
 
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audioStream_ is nullptr");
     audioInterrupt_.state = State::RELEASED;
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
@@ -1235,6 +1238,7 @@ void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
 
 void AudioCapturerPrivate::SetAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
+    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     audioInterrupt_ = audioInterrupt;
 }
 
