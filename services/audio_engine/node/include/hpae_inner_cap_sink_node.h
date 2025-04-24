@@ -48,7 +48,7 @@ public:
     int32_t InnerCapturerSinkResume();
     int32_t InnerCapturerSinkStart();
     int32_t InnerCapturerSinkStop();
-    RendererState GetSinkState();
+    StreamManagerState GetSinkState();
 private:
     OutputPort<HpaePcmBuffer*> outputStream_;
     InputPort<HpaePcmBuffer*> inputStream_;
@@ -56,7 +56,7 @@ private:
     HpaePcmBuffer silenceData_;
  
     HighResolutionTimer intervalTimer_;
-    RendererState state_ = RENDERER_NEW;
+    StreamManagerState state_ = STREAM_MANAGER_NEW;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

@@ -216,7 +216,7 @@ const char *HpaeOutputCluster::GetFrameData(void)
     return hpaeSinkOutputNode_->GetRenderFrameData();
 }
 
-RendererState HpaeOutputCluster::GetState(void)
+StreamManagerState HpaeOutputCluster::GetState(void)
 {
     return hpaeSinkOutputNode_->GetSinkState();
 }

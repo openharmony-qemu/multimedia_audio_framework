@@ -205,7 +205,7 @@ int32_t HpaeSourceInputCluster::CapturerSourceStop(void)
     return sourceInputNode_->CapturerSourceStop();
 }
 
-CapturerState HpaeSourceInputCluster::GetSourceState(void)
+StreamManagerState HpaeSourceInputCluster::GetSourceState(void)
 {
     CHECK_AND_RETURN_RET_LOG(sourceInputNode_, CAPTURER_INVALID, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetSourceState();

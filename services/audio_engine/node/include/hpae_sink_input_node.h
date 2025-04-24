@@ -43,8 +43,8 @@ public:
     bool RegisterWriteCallback(const std::weak_ptr<IStreamCallback> &callback);
     void Flush();
     bool Drain();
-    int32_t SetState(RendererState renderState);
-    RendererState GetState();
+    int32_t SetState(HpaeSessionState renderState);
+    HpaeSessionState GetState();
     uint64_t GetFramesWritten();
 
     int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp);
@@ -65,7 +65,7 @@ private:
     uint64_t totalFrames_;
     std::unique_ptr<LinearPosTimeModel> handleTimeModel_;
     bool isDrain_ = false;
-    RendererState state_ = RENDERER_NEW;
+    HpaeSessionState state_ = HPAE_SESSION_NEW;
 
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
 #ifdef ENABLE_HOOK_PCM
