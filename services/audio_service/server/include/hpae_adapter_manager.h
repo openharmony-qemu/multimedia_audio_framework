@@ -18,6 +18,7 @@
 
 #include <map>
 #include <mutex>
+#include <set>
 
 #include "audio_timer.h"
 #include "i_stream_manager.h"
@@ -49,6 +50,8 @@ private:
         const std::string &deviceName = "");
     std::shared_ptr<ICapturerStream> CreateCapturerStream(AudioProcessConfig processConfig,
         const std::string &deviceName = "");
+    void SetHighResolution(AudioProcessConfig &processConfig, uint32_t sessionId);
+    bool CheckHighResolution(const AudioProcessConfig &processConfig) const;
 
     ManagerType managerType_ = PLAYBACK;
     std::mutex streamMapMutex_;
@@ -57,6 +60,9 @@ private:
     std::map<int32_t, std::shared_ptr<ICapturerStream>> capturerStreamMap_;
     std::mutex sinkInputsMutex_;
     std::vector<SinkInput> sinkInputs_;
+    std::set<int32_t> unprocessAppUidSet_;
+    uint32_t highResolutionIndex_ = 0;
+    bool isHighResolutionExist_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

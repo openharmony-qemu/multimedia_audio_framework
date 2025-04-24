@@ -86,6 +86,8 @@ public:
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     void DumpSinkInfo() override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();
@@ -108,6 +110,9 @@ private:
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     std::shared_ptr<HpaeProcessCluster> CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
+    void InitManager();
+    void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
+
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;

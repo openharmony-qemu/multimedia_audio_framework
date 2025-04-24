@@ -174,7 +174,7 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
 int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        CHECK_AND_RETURN_LOG(
+        CHECK_AND_RETURN_LOG(sinkInputNode_ &&
             sessionId == sinkInputNode_->GetSessionId(), "Start not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Start sessionId %{public}u", sessionId);
         sinkInputNode_->SetState(RENDERER_RUNNING);
@@ -206,7 +206,7 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
 int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        CHECK_AND_RETURN_LOG(
+        CHECK_AND_RETURN_LOG(sinkInputNode_ &&
             sessionId == sinkInputNode_->GetSessionId(), "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
         DisConnectInputSession();
@@ -222,7 +222,7 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
 int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        CHECK_AND_RETURN_LOG(
+        CHECK_AND_RETURN_LOG(sinkInputNode_ &&
             sessionId == sinkInputNode_->GetSessionId(), "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Flush sessionId %{public}u", sessionId);
         // flush history buffer
@@ -238,7 +238,7 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
 int32_t HpaeOffloadRendererManager::Drain(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        CHECK_AND_RETURN_LOG(
+        CHECK_AND_RETURN_LOG(sinkInputNode_ &&
             sessionId == sinkInputNode_->GetSessionId(), "Drain not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Drain sessionId %{public}u", sessionId);
         sinkInputNode_->Drain();
@@ -254,7 +254,7 @@ int32_t HpaeOffloadRendererManager::Drain(uint32_t sessionId)
 int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        CHECK_AND_RETURN_LOG(
+        CHECK_AND_RETURN_LOG(sinkInputNode_ &&
             sessionId == sinkInputNode_->GetSessionId(), "Stop not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Stop sessionId %{public}u", sessionId);
         DisConnectInputSession();
@@ -336,10 +336,8 @@ int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
 {
     auto request = [this, isSuspend]() {
         if (isSuspend) {
-            // todo fadout
             sinkOutputNode_->RenderSinkStop();
         } else {
-            // todo fadin
             sinkOutputNode_->RenderSinkStart();
         }
     };
@@ -361,48 +359,65 @@ void HpaeOffloadRendererManager::HandleMsg()
     hpaeNoLockQueue_.HandleRequests();
 }
 
-int32_t HpaeOffloadRendererManager::Init()
+int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
-    auto request = [this] {
-        AUDIO_INFO_LOG("HpaeOffloadRendererManager::init");
-        HpaeNodeInfo nodeInfo;
-        nodeInfo.channels = sinkInfo_.channels;
-        nodeInfo.format = sinkInfo_.format;
-        nodeInfo.frameLen = sinkInfo_.frameLen;
-        nodeInfo.nodeId = 0;
-        nodeInfo.samplingRate = sinkInfo_.samplingRate;
-        nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
-        nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-        nodeInfo.deviceClass = sinkInfo_.deviceClass;
-        nodeInfo.statusCallback = weak_from_this();
-        nodeInfo.nodeName = "HpaeOffloadSinkOutputNode";
-        nodeInfo.nodeId = OnGetNodeId();
-        sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
-        OnNotifyDfxNodeInfo(true, 0, nodeInfo);
-        sinkOutputNode_->SetTimeoutStopThd(sinkInfo_.suspendTime);
-        // if failed, RenderSinkInit will failed either, so no need to deal ret
-        AUDIO_INFO_LOG("HpaeOffloadRendererManager::GetRenderSinkInstance");
-        sinkOutputNode_->GetRenderSinkInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
-        IAudioSinkAttr attr;
-        attr.adapterName = sinkInfo_.adapterName.c_str();
-        attr.sampleRate = sinkInfo_.samplingRate;
-        attr.channel = sinkInfo_.channels;
-        attr.format = sinkInfo_.format;
-        attr.channelLayout = sinkInfo_.channelLayout;
-        attr.deviceType = sinkInfo_.deviceType;
-        attr.volume = sinkInfo_.volume;
-        attr.openMicSpeaker = sinkInfo_.openMicSpeaker;
-        attr.deviceNetworkId = sinkInfo_.deviceNetId.c_str();
-        attr.filePath = sinkInfo_.filePath.c_str();
-        int32_t ret = sinkOutputNode_->RenderSinkInit(attr);
-        isInit_.store(true);
-        TriggerCallback(INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
-        AUDIO_INFO_LOG("HpaeOffloadRendererManager::inited");
+    auto request = [this, sinkInfo]() {
+        sinkInfo_ = sinkInfo;
+        InitSinkInner();
     };
     SendRequest(request, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
+}
+
+int32_t HpaeOffloadRendererManager::Init()
+{
+    hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    auto request = [this] {
+        InitSinkInner();
+    };
+    SendRequest(request, true);
+    hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    return SUCCESS;
+}
+
+void HpaeOffloadRendererManager::InitSinkInner()
+{
+    AUDIO_INFO_LOG("HpaeOffloadRendererManager::init");
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.channels = sinkInfo_.channels;
+    nodeInfo.format = sinkInfo_.format;
+    nodeInfo.frameLen = sinkInfo_.frameLen;
+    nodeInfo.nodeId = 0;
+    nodeInfo.samplingRate = sinkInfo_.samplingRate;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
+    nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.statusCallback = weak_from_this();
+    nodeInfo.nodeName = "HpaeOffloadSinkOutputNode";
+    nodeInfo.nodeId = OnGetNodeId();
+    sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+    OnNotifyDfxNodeInfo(true, 0, nodeInfo);
+    sinkOutputNode_->SetTimeoutStopThd(sinkInfo_.suspendTime);
+    // if failed, RenderSinkInit will failed either, so no need to deal ret
+    AUDIO_INFO_LOG("HpaeOffloadRendererManager::GetRenderSinkInstance");
+    sinkOutputNode_->GetRenderSinkInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
+    IAudioSinkAttr attr;
+    attr.adapterName = sinkInfo_.adapterName.c_str();
+    attr.sampleRate = sinkInfo_.samplingRate;
+    attr.channel = sinkInfo_.channels;
+    attr.format = sinkInfo_.format;
+    attr.channelLayout = sinkInfo_.channelLayout;
+    attr.deviceType = sinkInfo_.deviceType;
+    attr.volume = sinkInfo_.volume;
+    attr.openMicSpeaker = sinkInfo_.openMicSpeaker;
+    attr.deviceNetworkId = sinkInfo_.deviceNetId.c_str();
+    attr.filePath = sinkInfo_.filePath.c_str();
+    int32_t ret = sinkOutputNode_->RenderSinkInit(attr);
+    isInit_.store(true);
+    TriggerCallback(INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
+    AUDIO_INFO_LOG("HpaeOffloadRendererManager::inited");
 }
 
 bool HpaeOffloadRendererManager::DeactivateThread()

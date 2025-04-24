@@ -12,16 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "hpae_manager.h"
+#include "hpae_manager_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-std::shared_ptr<IHpaeManager> IHpaeManager::GetHpaeManager()
+IHpaeManager& IHpaeManager::GetHpaeManager()
 {
-    static auto hpaeManager = std::make_shared<HpaeManager>();
-    return hpaeManager;
+    static HpaeManagerImpl hpaeManagerImpl;
+    return hpaeManagerImpl;
 }
 
 }  // namespace HPAE

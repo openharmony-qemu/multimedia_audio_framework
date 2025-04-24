@@ -136,7 +136,7 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
 
 class INodeFormatInfoCallback {
 public:
-   virtual int32_t GetEffectNodeInputChannelInfo(uint32_t &channels, uint64_t &channelLayout) = 0;
+    virtual int32_t GetEffectNodeInputChannelInfo(uint32_t &channels, uint64_t &channelLayout) = 0;
 };
 
 } // namespace HPAE

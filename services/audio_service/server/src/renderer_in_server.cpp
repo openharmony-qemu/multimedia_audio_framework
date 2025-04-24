@@ -39,6 +39,7 @@
 #include "audio_volume_c.h"
 #include "core_service_handler.h"
 #include "audio_service_enum.h"
+#include "i_hpae_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1682,8 +1683,7 @@ int32_t RendererInServer::SetStreamVolumeInfoForEnhanceChain()
     float streamVolume = audioServerBuffer_->GetStreamVolume();
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        AUDIO_DEBUG_LOG("HPAE SetStreamVolumeInfoForEnhanceChain");
-        return SUCCESS;
+        return HPAE::IHpaeManager::GetHpaeManager().SetStreamVolumeInfo(sessionId, streamVolume);
     } else {
         AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
         CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");

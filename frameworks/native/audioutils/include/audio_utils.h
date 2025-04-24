@@ -348,6 +348,14 @@ T *ObjectRefMap<T>::GetPtr()
     return obj_;
 }
 
+template <typename Key, typename T>
+auto SafeGetMap(const std::unordered_map<Key, std::shared_ptr<T>>& map, Key key)
+    -> std::shared_ptr<T>
+{
+    auto it = map.find(key);
+    return (it != map.end() && it->second) ? it->second : nullptr;
+}
+
 std::string GetTime();
 
 int32_t GetFormatByteSize(int32_t format);

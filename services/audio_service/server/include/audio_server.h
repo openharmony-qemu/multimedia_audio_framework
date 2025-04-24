@@ -29,6 +29,7 @@
 #include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
 #include "audio_server_dump.h"
+#include "i_audio_server_hpae_dump.h"
 #include "audio_system_manager.h"
 #include "audio_inner_call.h"
 #include "common/hdi_adapter_info.h"
@@ -328,6 +329,7 @@ private:
     std::condition_variable isAudioPolicyReadyCv_;
 
     int32_t waitCreateStreamInServerCount_ = 0;
+    std::shared_ptr<IAudioServerHpaeDump> hpaeDumpObj_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

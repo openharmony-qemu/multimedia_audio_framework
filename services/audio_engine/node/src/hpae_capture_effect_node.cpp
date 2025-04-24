@@ -172,9 +172,7 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     enhanceAttr.ecChannels = attr.ecChannels;
     enhanceAttr.micRefChannels = attr.micRefChannels;
     int32_t ret = audioEnhanceChainManager->CreateAudioEnhanceChainDynamic(sceneKeyCode, enhanceAttr);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("CreateAudioEnhanceChainDynamic failed, ret:%{public}d", ret);
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "CreateAudioEnhanceChainDynamic failed, ret:%{public}d", ret);
     audioEnhanceChainManager->InitEnhanceBuffer();
 
     AudioBufferConfig micConfig = {};

@@ -26,7 +26,7 @@ HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType);
 HpaeProcessorType TransSourceTypeToSceneType(SourceType sourceType);
 bool CheckSceneTypeNeedEc(HpaeProcessorType processorType);
 bool CheckSceneTypeNeedMicRef(HpaeProcessorType processorType);
-std::string TransHpaeResampleNodeInfoToStringKey(HpaeNodeInfo& nodeInfo);
+std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo);
 AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &processorType);
 std::string TransProcessorTypeToSceneType(HpaeProcessorType processorType);
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo);

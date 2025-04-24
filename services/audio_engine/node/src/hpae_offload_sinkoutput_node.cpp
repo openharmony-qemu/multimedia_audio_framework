@@ -43,7 +43,7 @@ namespace {
     constexpr uint32_t OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS = 7000;
     constexpr uint32_t OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS = 200;
     // hdi fallback, modify when hdi change
-    constexpr uint32_t OFFLOAD_FAD_INTERVAL_IN_US = 180;
+    constexpr uint32_t OFFLOAD_FAD_INTERVAL_IN_US = 180000;
     constexpr uint32_t OFFLOAD_SET_BUFFER_SIZE_NUM = 5;
     constexpr uint32_t POLICY_STATE_DELAY_IN_SEC = 3;
 

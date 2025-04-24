@@ -186,5 +186,10 @@ int32_t ReadDataCb::OnReadData(std::vector<char>& outputData, size_t requestData
     }
     return SUCCESS;
 }
+
+std::weak_ptr<HPAE::INodeCallback> NodeStatusCallback::GetWeakPtr()
+{
+    return weak_from_this();
+}
 } // namespace AudioStandard
 } // namespace OHOS

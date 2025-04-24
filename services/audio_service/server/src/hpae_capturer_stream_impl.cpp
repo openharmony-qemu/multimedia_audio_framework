@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,24 +24,19 @@
 #include "policy_handler.h"
 #include <iostream>
 #include <cinttypes>
-
+#include "i_hpae_manager.h"
+using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {
 static SafeMap<void *, std::weak_ptr<HpaeCapturerStreamImpl>> paCapturerMap_;
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_ON_MS = 20;
-const int32_t MSEC_PER_SEC = 1000;
-
-static inline int32_t GetSizeFromFormat(int32_t format)
-{
-    return format != SAMPLE_F32LE ? ((format) + 1) : (4); // float 4
-}
+const int32_t FRAME_LEN_10MS = 2;
+const int32_t TENMS_PER_SEC = 100;
 
 HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_ON_MS *
-        (static_cast<float>(processConfig.streamInfo.samplingRate) / MSEC_PER_SEC));
+    spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / TENMS_PER_SEC);
     byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
 }
@@ -60,12 +55,28 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
 {
     paCapturerMap_.Insert(this, weak_from_this());
 
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = processConfig_.streamInfo.channels;
+    streamInfo.samplingRate = processConfig_.streamInfo.samplingRate;
+    streamInfo.format = processConfig_.streamInfo.format;
+    streamInfo.frameLen = spanSizeInFrame_;
+    streamInfo.sessionId = processConfig_.originalSessionId;
+    streamInfo.streamType = processConfig_.streamType;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
+    streamInfo.sourceType = processConfig_.capturerInfo.sourceType;
+    streamInfo.uid = processConfig_.appInfo.appUid;
+    streamInfo.pid = processConfig_.appInfo.appPid;
+    streamInfo.deviceName = deviceName;
+    int32_t ret = IHpaeManager::GetHpaeManager().CreateStream(streamInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR_INVALID_PARAM, "CreateStream is error");
     return SUCCESS;
 }
 
 int32_t HpaeCapturerStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Start");
+    int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "Start failed");
     state_ = RUNNING;
     return SUCCESS;
 }
@@ -73,6 +84,8 @@ int32_t HpaeCapturerStreamImpl::Start()
 int32_t HpaeCapturerStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Pause");
+    int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Pause error");
     return SUCCESS;
 }
 
@@ -99,12 +112,16 @@ int32_t HpaeCapturerStreamImpl::GetLatency(uint64_t &latency)
 int32_t HpaeCapturerStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("Flush");
+    int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Flush error");
     return SUCCESS;
 }
 
 int32_t HpaeCapturerStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Stop");
+    int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Stop failed");
     state_ = STOPPING;
     return SUCCESS;
 }
@@ -113,8 +130,12 @@ int32_t HpaeCapturerStreamImpl::Release()
 {
     if (state_ == RUNNING) {
         AUDIO_ERR_LOG("%{public}u Release state_ is RUNNING", processConfig_.originalSessionId);
+        IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     }
     AUDIO_INFO_LOG("Release Enter");
+    int32_t ret = IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_RECORD,
+        processConfig_.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Release is error");
     state_ = RELEASED;
     // to do check closeaudioport
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) {
@@ -126,12 +147,15 @@ int32_t HpaeCapturerStreamImpl::Release()
 // to do callback data report
 void HpaeCapturerStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
+    IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD,
+        processConfig_.originalSessionId, callback);
     statusCallback_ = callback;
 }
 
 void HpaeCapturerStreamImpl::RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback)
 {
     AUDIO_INFO_LOG("RegisterReadCallback start");
+    IHpaeManager::GetHpaeManager().RegisterReadCallback(processConfig_.originalSessionId, callback);
     readCallback_ = callback;
 }
 
@@ -184,6 +208,5 @@ void HpaeCapturerStreamImpl::AbortCallback(int32_t abortTimes)
 {
     abortFlag_ += abortTimes;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

@@ -23,11 +23,12 @@
 #include "hpae_process_cluster.h"
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo)
+HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)), sinkInfo_(sinkInfo)
 {
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA") {
@@ -147,7 +148,7 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
         preNodeInfo.sessionId, preNodeInfo.streamType, preNodeInfo.samplingRate, preNodeInfo.channels,
         preNodeInfo.nodeId, preNodeInfo.nodeName.c_str());
     ConnectMixerNode();
-    if (idGainMap_.find(sessionId) == idGainMap_.end()) {
+    if (!SafeGetMap(idGainMap_, sessionId)) {
         HpaeNodeInfo gainNodeInfo = preNodeInfo;
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
@@ -194,12 +195,12 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         sessionId, preNode->GetNodeInfo().streamType);
 #ifdef ENABLE_HIDUMP_DFX
     auto callBack = mixerNode_->GetNodeStatusCallback().lock();
-    if (callBack != nullptr && idConverterMap_.find(sessionId) != idConverterMap_.end()) {
+    if (callBack != nullptr && SafeGetMap(idConverterMap_, sessionId)) {
         callBack->OnNotifyDfxNodeInfo(false, idConverterMap_[sessionId]->GetNodeId(),
             idConverterMap_[sessionId]->GetNodeInfo());
     }
 #endif
-    if (idConverterMap_.find(sessionId) != idConverterMap_.end()) {
+    if (SafeGetMap(idConverterMap_, sessionId)) {
         idGainMap_[sessionId]->DisConnect(preNode);
         idConverterMap_[sessionId]->DisConnect(idGainMap_[sessionId]);
         mixerNode_->DisConnect(idConverterMap_[sessionId]);
@@ -261,20 +262,12 @@ int32_t HpaeProcessCluster::AudioRendererRelease(HpaeNodeInfo &nodeInfo)
 
 std::shared_ptr<HpaeGainNode> HpaeProcessCluster::GetGainNodeById(uint32_t sessionId) const
 {
-    auto it = idGainMap_.find(sessionId);
-    if (it != idGainMap_.end()) {
-        return it->second;
-    }
-    return nullptr;
+    return SafeGetMap(idGainMap_, sessionId);
 }
 
 std::shared_ptr<HpaeAudioFormatConverterNode> HpaeProcessCluster::GetConverterNodeById(uint32_t sessionId) const
 {
-    auto it = idConverterMap_.find(sessionId);
-    if (it != idConverterMap_.end()) {
-        return it->second;
-    }
-    return nullptr;
+    return SafeGetMap(idConverterMap_, sessionId);
 }
 
 }  // namespace HPAE

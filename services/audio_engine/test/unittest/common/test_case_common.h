@@ -20,6 +20,7 @@
 #include "i_capturer_stream.h"
 #include "audio_errors.h"
 #include "hpae_info.h"
+#include "hpae_msg_channel.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -93,6 +94,12 @@ public:
     int32_t OnReadData(std::vector<char>& outputData, size_t requestDataLen) override;
 private:
     FILE *testFile_ = nullptr;
+};
+
+class NodeStatusCallback : public HPAE::INodeCallback, public std::enable_shared_from_this<NodeStatusCallback> {
+public:
+    std::weak_ptr<HPAE::INodeCallback> GetWeakPtr();
+    virtual ~NodeStatusCallback() = default;
 };
 } // namespace AudioStandard
 } // namespace OHOS
