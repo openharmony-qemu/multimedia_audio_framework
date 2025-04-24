@@ -455,7 +455,7 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
     if (!openSpeaker_) {
         return SUCCESS;
     }
-
+    bool isRingingToDefaultScene = false;
     if (audioScene != currentAudioScene_) {
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
@@ -463,10 +463,18 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
         int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
-        currentAudioScene_ = audioScene;
-        if (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT) {
+        if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {
             forceSetRouteFlag_ = true;
         }
+        if (audioScene == AUDIO_SCENE_DEFAULT &&
+            (currentAudioScene_ == AUDIO_SCENE_RINGING || currentAudioScene_ == AUDIO_SCENE_VOICE_RINGING)) {
+            isRingingToDefaultScene = true;
+        }
+        currentAudioScene_ = audioScene;
+    }
+    if (isRingingToDefaultScene) {
+        AUDIO_INFO_LOG("ringing scene to default scene");
+        return SUCCESS;
     }
     int32_t ret = UpdateActiveDevice(activeDevices);
     if (ret != SUCCESS) {
