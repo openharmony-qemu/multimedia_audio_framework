@@ -52,7 +52,7 @@ public:
     // for ut test
     const char *GetRenderFrameData(void);
     StreamManagerState GetSinkState(void);
-    int32 SetSinkState(StreamManagerState sinkState);
+    int32_t SetSinkState(StreamManagerState sinkState);
 
 private:
     void HandleRemoteTiming();

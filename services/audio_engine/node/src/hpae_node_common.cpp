@@ -57,7 +57,7 @@ static std::unordered_map<HpaeProcessorType, AudioEnhanceScene> g_processorTypeT
     {HPAE_SCENE_VOICE_MESSAGE, SCENE_VOICE_MESSAGE}
 };
 
-static std::unordered_map<HpaseSessionState, std::string> g_sessionStateToStrMap = {
+static std::unordered_map<HpaeSessionState, std::string> g_sessionStateToStrMap = {
     {HPAE_SESSION_NEW, "NEW"},
     {HPAE_SESSION_PREPARED, "PREPARED"},
     {HPAE_SESSION_RUNNING, "RUNNING"},

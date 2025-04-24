@@ -160,11 +160,13 @@ void HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
     return;
 }
 
-std::shared_ptr<HpaeProcessCluster> HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
+void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
 {
     Trace trace("HpaeRendererManager::CreateProcessCluster");
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    HpaeNodeInfo temp = nodeInfo;
+    std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster = nullptr;
     switch (processClusterDecision) {
         case NO_NEED_TO_CREATE_PROCESSCLUSTER:
             AUDIO_INFO_LOG("no need to create processCluster");
@@ -178,10 +180,9 @@ std::shared_ptr<HpaeProcessCluster> HpaeRendererManager::CreateProcessCluster(Hp
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
             break;
         case CREATE_DEFAULT_PROCESSCLUSTER:
-            HpaeNodeInfo temp = nodeInfo;
             temp.sceneType = HPAE_SCENE_DEFAULT;
             AUDIO_INFO_LOG("begin control, create default processCluster");
-            auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
+            hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
             sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
             sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
             sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
@@ -426,7 +427,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
     std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNodeMap_[sessionId];
     HpaeSessionState inputState = inputNode->GetState();
     if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {
-        HpaeSessionState state = inputState == HPAE_SESSION_PAUSING ? HPAE_SESSION_PAUSED : HPAE_SESSION_STOPED;
+        HpaeSessionState state = inputState == HPAE_SESSION_PAUSING ? HPAE_SESSION_PAUSED : HPAE_SESSION_STOPPED;
         IOperation operation = inputState == HPAE_SESSION_PAUSING ? OPERATION_PAUSED : OPERATION_STOPPED;
         SetSessionState(sessionId, state);
         inputNode->SetState(state);
@@ -678,10 +679,10 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo)
         InitManager();
 
         for (const auto &it : sinkInputNodeMap_) {
-            if (it.second->GetState() == RENDERER_RUNNING) {
-                AUDIO_INFO_LOG("connect node :%{public}d to sink:%{public}s", it.second, sinkInfo_.deviceClass.c_str());
+            if (it.second->GetState() == HPAE_SESSION_RUNNING) {
+                AUDIO_INFO_LOG("connect node :%{public}u to sink:%{public}s", it.first, sinkInfo_.deviceClass.c_str());
                 ConnectInputSession(it.first);
-                if (outputCluster_->GetState() != RENDERER_RUNNING) {
+                if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
                     outputCluster_->Start();
                 }
             }

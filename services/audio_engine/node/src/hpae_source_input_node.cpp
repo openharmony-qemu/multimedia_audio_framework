@@ -327,7 +327,7 @@ int32_t HpaeSourceInputNode::CapturerSourceStop(void)
     return SUCCESS;
 }
 
-CapturerState HpaeSourceInputNode::GetSourceState(void)
+StreamManagerState HpaeSourceInputNode::GetSourceState(void)
 {
     return state_;
 }

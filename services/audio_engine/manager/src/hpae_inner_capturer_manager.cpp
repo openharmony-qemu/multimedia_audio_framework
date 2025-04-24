@@ -726,7 +726,7 @@ void HpaeInnerCapturerManager::SetSessionStateForRenderer(uint32_t sessionId, Hp
     rendererSessionNodeMap_[sessionId].state = renderState;
 }
 
-void HpaeInnerCapturerManager::SetSessionStateForCapturer(uint32_t sessionId,  HpaeSessionState capturerState)
+void HpaeInnerCapturerManager::SetSessionStateForCapturer(uint32_t sessionId, HpaeSessionState capturerState)
 {
     capturerSessionNodeMap_[sessionId].state = capturerState;
 }

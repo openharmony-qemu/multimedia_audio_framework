@@ -234,7 +234,7 @@ int32_t HpaeSinkOutputNode::RenderSinkPause(void)
         return ERROR;
     }
     audioRendererSink_->Pause();
-    SetSinkState(STREAM_MANAGER_SUSPENDED)
+    SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 
@@ -317,8 +317,7 @@ StreamManagerState HpaeSinkOutputNode::GetSinkState(void)
     return state_;
 }
 
-()
-int32 HpaeSinkOutputNode::SetSinkState(StreamManagerState sinkState)
+int32_t HpaeSinkOutputNode::SetSinkState(StreamManagerState sinkState)
 {
     AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
