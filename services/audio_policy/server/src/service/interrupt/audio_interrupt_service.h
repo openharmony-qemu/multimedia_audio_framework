@@ -113,6 +113,8 @@ public:
     ClientType GetClientTypeByStreamId(int32_t streamId);
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
+    void SetDefaultVolumeType(const AudioStreamType volumeType);
+    AudioStreamType GetDefaultVolumeType() const;
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -294,6 +296,9 @@ private:
     mutable int32_t ownerUid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
+
+    // settingsdata members
+    AudioStreamType defaultVolumeType_ = STREAM_MUSIC;
 };
 } // namespace AudioStandard
 } // namespace OHOS

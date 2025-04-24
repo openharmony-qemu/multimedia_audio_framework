@@ -694,6 +694,7 @@ private:
     void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
     void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);
+    void RegisterDefaultVolumeTypeListener();
 
     void InitPolicyDumpMap();
     void PolicyDataDump(std::string &dumpString);
