@@ -1157,6 +1157,11 @@ static void UserdataFree(struct userdata *u)
         pa_thread_free(u->thread);
     }
 
+    if (u->thread_split_hdi) {
+        pa_asyncmsgq_post(u->dq, NULL, QUIT, NULL, 0, NULL, NULL);
+        pa_thread_free(u->thread_split_hdi);
+    }
+
     if (u->sinkAdapter) {
         u->sinkAdapter->SinkAdapterStop(u->sinkAdapter);
         u->sinkAdapter->SinkAdapterDeInit(u->sinkAdapter);
