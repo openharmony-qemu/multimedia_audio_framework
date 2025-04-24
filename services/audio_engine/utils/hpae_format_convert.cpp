@@ -38,6 +38,13 @@ static void Write24Bit(uint8_t *p, uint32_t u)
     p[0] = (uint8_t) u;
 }
 
+static void ConvertFromU8ToFloat(unsigned n, const uint8_t *a, float *b)
+{
+    for (; n > 0; n--, a++, b++) {
+        *b = (float)(*a - (uint8_t)0x80U) * (1.0 / 0x80U);
+    }
+}
+
 static void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b)
 {
     for (; n > 0; n--) {
@@ -73,6 +80,14 @@ static float CapMax(float v)
     return value;
 }
 
+static void ConvertFromFloatToU8(unsigned, const float *a, uint8_t *b)
+{
+    for (; n > 0; n--) {
+        float v = *(a++);
+        *(b++) = (uint8_t)(CapMax(v) * 127.0f + 128.0f);
+    }
+}
+
 static void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
 {
     for (; n > 0; n--) {
@@ -105,6 +120,9 @@ void ConvertToFloat(AudioSampleFormat format, unsigned n, void *src, float *dst)
 {
     int32_t ret;
     switch (format) {
+        case SAMPLE_U8:
+            ConvertFromU8ToFloat(n, (const uint8_t *)src, dst);
+            break;
         case SAMPLE_S16LE:
             ConvertFrom16BitToFloat(n, (const int16_t *)src, dst);
             break;
@@ -130,6 +148,9 @@ void ConvertFromFloat(AudioSampleFormat format, unsigned n, float *src, void *ds
 {
     int32_t ret;
     switch (format) {
+        case SAMPLE_U8:
+            ConvertFromFloatToU8(n, src, (uint8_t *)dst);
+            break;
         case SAMPLE_S16LE:
             ConvertFromFloatTo16Bit(n, src, (int16_t *)dst);
             break;
