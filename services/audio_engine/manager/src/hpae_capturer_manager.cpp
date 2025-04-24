@@ -184,9 +184,9 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
     return SUCCESS;
 }
 
-void HpaeCapturerManager::SetSessionState(uint32_t sessionId,  HpaeSessionState HpaeSessionState)
+void HpaeCapturerManager::SetSessionState(uint32_t sessionId,  HpaeSessionState capturerState)
 {
-    sessionNodeMap_[sessionId].state = HpaeSessionState;
+    sessionNodeMap_[sessionId].state = capturerState;
 }
 
 int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
