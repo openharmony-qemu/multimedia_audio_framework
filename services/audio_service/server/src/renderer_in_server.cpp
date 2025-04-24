@@ -862,7 +862,7 @@ int32_t RendererInServer::StartInner()
     needForceWrite_ = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_IDLE && status_ != I_STATUS_PAUSED && status_ != I_STATUS_STOPPED) {
-        AUDIO_ERR_LOG("RendererInServer::Start failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("RendererInServer::Start failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STARTING;
@@ -919,7 +919,7 @@ int32_t RendererInServer::Pause()
     AUDIO_INFO_LOG("Pause.");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED) {
-        AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_PAUSING;
@@ -977,7 +977,7 @@ int32_t RendererInServer::Flush()
     } else if (status_ == I_STATUS_STOPPED) {
         status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
-        AUDIO_ERR_LOG("RendererInServer::Flush failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("RendererInServer::Flush failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -1027,7 +1027,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED) {
-            AUDIO_ERR_LOG("RendererInServer::Drain failed, Illegal state: %{public}u", status_);
+            AUDIO_ERR_LOG("RendererInServer::Drain failed, Illegal state: %{public}u", status_.load());
             return ERR_ILLEGAL_STATE;
         }
         status_ = I_STATUS_DRAINING;
@@ -1067,7 +1067,7 @@ int32_t RendererInServer::Stop()
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
             status_ != I_STATUS_STARTING) {
-            AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_);
+            AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_.load());
             return ERR_ILLEGAL_STATE;
         }
         status_ = I_STATUS_STOPPING;
@@ -1280,7 +1280,7 @@ int32_t RendererInServer::DisableInnerCap(int32_t innerCapId)
         return ERR_INVALID_OPERATION;
     }
     captureInfos_[innerCapId].isInnerCapEnabled = false;
-    AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_);
+    AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_.load());
     // in plan: call stop?
     if (captureInfos_[innerCapId].dupStream != nullptr) {
         uint32_t dupStreamIndex = captureInfos_[innerCapId].dupStream->GetStreamIndex();
@@ -1323,7 +1323,7 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
     capInfo.dupStream->RegisterStatusCallback(dupStreamCallback_);
     capInfo.dupStream->RegisterWriteCallback(dupStreamCallback_);
 
-    AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_);
+    AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_.load());
     capInfo.isInnerCapEnabled = true;
 
     if (audioServerBuffer_ != nullptr) {
@@ -1366,7 +1366,8 @@ int32_t RendererInServer::DisableDualTone()
         return ERR_INVALID_OPERATION;
     }
     isDualToneEnabled_ = false;
-    AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d", dualToneStreamIndex_, status_);
+    AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d",
+        dualToneStreamIndex_, status_.load());
     IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(dualToneStreamIndex_);
     dualToneStream_ = nullptr;
@@ -1793,7 +1794,7 @@ bool RendererInServer::Dump(std::string &dumpString)
     AppendFormat(dumpString, "  - sink type: %s\n", GetManagerTypeStr(managerType_).c_str());
 
     // dump status info
-    AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_).c_str());
+    AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_.load()).c_str());
     if (audioServerBuffer_ != nullptr) {
         AppendFormat(dumpString, "  - Current read position: %u\n", audioServerBuffer_->GetCurReadFrame());
         AppendFormat(dumpString, "  - Current write position: %u\n", audioServerBuffer_->GetCurWriteFrame());

@@ -86,8 +86,8 @@ OptResult AudioRingCache::ReConfig(size_t cacheSize, bool copyRemained)
         return result;
     }
     if (!copyRemained) {
-        cacheTotalSize_ = cacheSize;
         std::lock_guard<std::mutex> lock(cacheMutex_); // need lock as we operation buffer in Init
+        cacheTotalSize_ = cacheSize;
         if (Init() != true) {
             result.ret = OPERATION_FAILED;
             return result;

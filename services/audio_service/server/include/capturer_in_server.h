@@ -77,7 +77,7 @@ private:
     std::shared_ptr<ICapturerStream> stream_ = nullptr;
     uint32_t streamIndex_ = -1;
     IOperation operation_ = OPERATION_INVALID;
-    IStatus status_ = I_STATUS_IDLE;
+    std::atomic<IStatus> status_ = I_STATUS_IDLE;
 
     bool needCheckBackground_ = false;
     bool isMicIndicatorOn_ = false;
