@@ -20,6 +20,7 @@
 #include "audio_process_proxy.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
+#include "audio_parcel_helper.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -199,7 +200,7 @@ int32_t AudioProcessProxy::RegisterProcessCb(sptr<IRemoteObject> object)
     return reply.ReadInt32();
 }
 
-int32_t AudioProcessProxy::RegisterThreadPriority(uint32_t tid, const std::string &bundleName,
+int32_t AudioProcessProxy::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
     BoostTriggerMethod method)
 {
     MessageParcel data;
@@ -207,7 +208,7 @@ int32_t AudioProcessProxy::RegisterThreadPriority(uint32_t tid, const std::strin
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-    data.WriteUint32(tid);
+    AudioParcelHelper<MessageParcel, pid_t>::MarShalling(data, tid);
     data.WriteString(bundleName);
     data.WriteUint32(method);
     int ret = Remote()->SendRequest(IAudioProcessMsg::ON_REGISTER_THREAD_PRIORITY, data, reply, option);

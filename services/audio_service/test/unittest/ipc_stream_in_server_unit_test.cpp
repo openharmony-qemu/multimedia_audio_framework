@@ -605,7 +605,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_024, TestSize.Level1)
     AudioProcessConfig configRet;
     AudioMode modeRet = AUDIO_MODE_RECORD;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    uint32_t tidRet = 0;
+    pid_t tidRet = 0;
     std::string clientBundleNameRet;
 
     auto ret = ipcStreamInServerRet.RegisterThreadPriority(tidRet, clientBundleNameRet, METHOD_START);

@@ -473,10 +473,10 @@ int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName,
+int32_t IpcStreamInServer::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
     BoostTriggerMethod method)
 {
-    uint32_t pid = IPCSkeleton::GetCallingPid();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
     auto sharedGuard = SharedAudioScheduleGuard::Create(pid, tid, bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);

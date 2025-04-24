@@ -20,6 +20,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_parcel_helper.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -179,7 +180,7 @@ int32_t AudioProcessStub::HandleRegisterProcessCb(MessageParcel &data, MessagePa
 
 int32_t AudioProcessStub::HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t tid = data.ReadUint32();
+    pid_t tid = AudioParcelHelper<MessageParcel, pid_t>::UnMarShalling(data);
     std::string bundleName = data.ReadString();
     BoostTriggerMethod method = static_cast<BoostTriggerMethod>(data.ReadUint32());
     reply.WriteInt32(RegisterThreadPriority(tid, bundleName, method));
