@@ -147,7 +147,9 @@ void HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
     AUDIO_INFO_LOG("use default processCluster");
     if (sceneClusterMap_.find(HPAE_SCENE_DEFAULT) == sceneClusterMap_.end()) {
         AUDIO_INFO_LOG("default processCluster is null, create default processCluster");
-        auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+        HpaeNodeInfo temp = nodeInfo;
+        temp.sceneType = HPAE_SCENE_DEFAULT;
+        auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
         sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
         sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
         sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
