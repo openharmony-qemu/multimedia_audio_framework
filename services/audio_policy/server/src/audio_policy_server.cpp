@@ -306,7 +306,7 @@ void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
 {
     if (interruptService_ == nullptr) {
         AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener interruptService_ is nullptr!");
-        return false;
+        return;
     }
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
