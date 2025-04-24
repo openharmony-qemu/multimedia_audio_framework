@@ -932,6 +932,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
     AUDIO_INFO_LOG("sink input count:%{public}zu", sinkInputs.size());
     rendererManagerMap_[sinkName]->AddAllNodesToSink(sinkInputs, isConnect);
     for (const auto &sinkInput : sinkInputs) {
+        CHECK_AND_CONTINUE_LOG(sinkInput, "sinkInput is nullptr");
         uint32_t sessionId = sinkInput->GetNodeInfo().sessionId;
         rendererIdSinkNameMap_[sessionId] = sinkName;
         if (sinkInputs_.find(sessionId) != sinkInputs_.end()) {
