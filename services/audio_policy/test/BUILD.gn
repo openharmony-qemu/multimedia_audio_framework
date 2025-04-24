@@ -166,7 +166,6 @@ ohos_unittest("audio_zone_service_unit_test") {
     "./unittest/audio_zone_service_unit_test/audio_zone_device_unit_test.cpp",
     "./unittest/audio_zone_service_unit_test/audio_zone_interrupt_unit_test.cpp",
     "./unittest/audio_zone_service_unit_test/audio_zone_unit_test.cpp",
-    "./unittest/audio_zone_service_unit_test/audio_zone_volume_unit_test.cpp",
   ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]

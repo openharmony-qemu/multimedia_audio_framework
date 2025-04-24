@@ -35,8 +35,8 @@ public:
         std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
         AudioZoneService::GetInstance().Init(handler, interruptService);
         AudioZoneContext context;
-        auto zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
-        auto zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
+        zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+        zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
     }
 
     void TearDown() override
