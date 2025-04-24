@@ -24,7 +24,7 @@ class AudioParcelHelper {
 public:
     static bool Marshalling(Parcelable &parcel, const T &t);
 
-    static T UnmarShalling(Parcelable &parcel);
+    static T Unmarshalling(Parcelable &parcel);
 };
 
 template<typename Parcelable>
@@ -35,7 +35,7 @@ public:
         return parcel.WriteInt32(t);
     }
 
-    static int32_t UnmarShalling(Parcelable &parcel)
+    static int32_t Unmarshalling(Parcelable &parcel)
     {
         return parcel.ReadInt32();
     }
@@ -49,7 +49,7 @@ public:
         return parcel.WriteUint32(t);
     }
 
-    static uint32_t UnmarShalling(Parcelable &parcel)
+    static uint32_t Unmarshalling(Parcelable &parcel)
     {
         return parcel.ReadUInt32();
     }
@@ -63,7 +63,7 @@ public:
         return parcel.WriteInt64(t);
     }
 
-    static int64_t UnmarShalling(Parcelable &parcel)
+    static int64_t Unmarshalling(Parcelable &parcel)
     {
         return parcel.ReadInt64();
     }
@@ -77,7 +77,7 @@ public:
         return parcel.WriteUint64(t);
     }
 
-    static uint64_t UnmarShalling(Parcelable &parcel)
+    static uint64_t Unmarshalling(Parcelable &parcel)
     {
         return parcel.ReadUInt64();
     }

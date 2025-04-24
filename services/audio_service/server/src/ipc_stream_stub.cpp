@@ -423,7 +423,7 @@ int32_t IpcStreamStub::HandleSetDuckFactor(MessageParcel &data, MessageParcel &r
 
 int32_t IpcStreamStub::HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply)
 {
-    pid_t tid = AudioParcelHelper<MessageParcel, pid_t>::UnmarShalling(data);
+    pid_t tid = AudioParcelHelper<MessageParcel, pid_t>::Unmarshalling(data);
     std::string bundleName = data.ReadString();
     BoostTriggerMethod method = static_cast<BoostTriggerMethod>(data.ReadUint32());
     reply.WriteInt32(RegisterThreadPriority(tid, bundleName, method));
