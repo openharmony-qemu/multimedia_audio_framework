@@ -180,7 +180,7 @@ int32_t AudioProcessStub::HandleRegisterProcessCb(MessageParcel &data, MessagePa
 
 int32_t AudioProcessStub::HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply)
 {
-    pid_t tid = AudioParcelHelper<MessageParcel, pid_t>::UnMarShalling(data);
+    pid_t tid = AudioParcelHelper<MessageParcel, pid_t>::UnmarShalling(data);
     std::string bundleName = data.ReadString();
     BoostTriggerMethod method = static_cast<BoostTriggerMethod>(data.ReadUint32());
     reply.WriteInt32(RegisterThreadPriority(tid, bundleName, method));
