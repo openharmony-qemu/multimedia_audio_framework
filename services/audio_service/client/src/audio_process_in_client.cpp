@@ -138,7 +138,7 @@ public:
 
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code) override;
 
-    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
@@ -1899,7 +1899,7 @@ void AudioProcessInClientInner::SaveAdjustStreamVolumeInfo(float volume, uint32_
     processProxy_->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
 }
 
-int32_t AudioProcessInClientInner::RegisterThreadPriority(uint32_t tid, const std::string &bundleName,
+int32_t AudioProcessInClientInner::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
     BoostTriggerMethod method)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");

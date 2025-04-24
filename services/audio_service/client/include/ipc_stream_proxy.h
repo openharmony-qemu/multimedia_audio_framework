@@ -90,7 +90,7 @@ public:
 
     int32_t SetDuckFactor(float duckFactor) override;
 
-    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 

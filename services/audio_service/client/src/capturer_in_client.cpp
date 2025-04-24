@@ -222,7 +222,7 @@ public:
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
 
-    void SetCallStartByUserTid(uint32_t tid) override;
+    void SetCallStartByUserTid(pid_t tid) override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -2071,7 +2071,7 @@ void CapturerInClientInner::FetchDeviceForSplitStream()
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
 }
 
-void CapturerInClientInner::SetCallStartByUserTid(uint32_t tid)
+void CapturerInClientInner::SetCallStartByUserTid(pid_t tid)
 {
     AUDIO_WARNING_LOG("not supported in capturer");
 }
