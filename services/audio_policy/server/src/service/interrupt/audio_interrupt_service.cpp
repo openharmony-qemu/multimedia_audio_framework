@@ -2156,7 +2156,7 @@ void AudioInterruptService::SetDefaultVolumeType(const AudioStreamType volumeTyp
     AUDIO_INFO_LOG("defaultVolumeType: %{public}d", defaultVolumeType_);
 }
 
-const AudioStreamType AudioInterruptService::GetDefaultVolumeType()
+AudioStreamType AudioInterruptService::GetDefaultVolumeType()
 {
     return defaultVolumeType_;
 }
