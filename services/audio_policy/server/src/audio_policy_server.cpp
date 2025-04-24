@@ -326,7 +326,7 @@ void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
         AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener mono failed");
     }
     int32_t result = STREAM_MUSIC;
-    ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, result，"system");
+    ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, result, "system");
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("DEFAULT_VOLUME_KEY GetIntValue failed");
         return;
