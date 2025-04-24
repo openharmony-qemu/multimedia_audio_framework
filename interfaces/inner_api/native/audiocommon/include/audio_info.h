@@ -40,6 +40,8 @@ namespace {
 constexpr int32_t INVALID_PID = -1;
 constexpr int32_t CLEAR_PID = 0;
 constexpr int32_t SYSTEM_PID = 1;
+constexpr int32_t CLEAR_UID = 0;
+constexpr int32_t SYSTEM_UID = 1;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
@@ -231,6 +233,7 @@ enum AudioErrors {
     ERROR_ILLEGAL_STATE = 6800103,
     ERROR_UNSUPPORTED   = 6800104,
     ERROR_TIMEOUT       = 6800105,
+    ERROR_UNSUPPORTED_FORMAT = 6800106,
     /**
      * Audio specific errors.
      */
@@ -298,6 +301,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_AUDIO_SCENE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
+    CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_MAX,
 };
 
@@ -337,6 +341,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SET_AUDIO_SCENE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
+    CALLBACK_FORMAT_UNSUPPORTED_ERROR,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),

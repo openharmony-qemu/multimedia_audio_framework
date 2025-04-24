@@ -218,6 +218,8 @@ bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>
 bool GetSysPara(const char *key, T &value);
 
+int32_t GetEngineFlag();
+
 enum AudioDumpFileType {
     AUDIO_APP = 0,
     OTHER_NATIVE_SERVICE = 1,
@@ -548,6 +550,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_DP = 10,
     HDI_RENDER_OFFSET_USB = 11,
     HDI_RENDER_OFFSET_VOIP_FAST = 12,
+    HDI_RENDER_OFFSET_EAC3 = 13,
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

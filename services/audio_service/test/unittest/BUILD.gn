@@ -600,6 +600,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/server/src/capturer_in_server.cpp",
     "../../../../services/audio_service/server/src/core_service_handler.cpp",
     "../../../../services/audio_service/server/src/core_service_provider_proxy.cpp",
+    "../../../../services/audio_service/server/src/direct_playback_engine.cpp",
     "../../../../services/audio_service/server/src/i_stream_manager.cpp",
     "../../../../services/audio_service/server/src/ipc_offline_stream_stub.cpp",
     "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",

@@ -445,9 +445,9 @@ HWTEST(AudioServerUnitTest, ParseAudioParameter_001, TestSize.Level1)
     int32_t systemAbilityId = 100;
     std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
-    ASSERT_TRUE(!audioServer->isAudioParameterParsed_);
+    EXPECT_FALSE(audioServer->isAudioParameterParsed_);
     audioServer->ParseAudioParameter();
-    ASSERT_TRUE(audioServer->isAudioParameterParsed_);
+    EXPECT_TRUE(audioServer->isAudioParameterParsed_);
 }
 
 /**
@@ -462,16 +462,16 @@ HWTEST(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level1)
     int32_t systemAbilityId = 100;
     std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
-    ASSERT_TRUE(!audioServer->isAudioParameterParsed_);
+    EXPECT_FALSE(audioServer->isAudioParameterParsed_);
     const std::string key = "key-test";
     const std::vector<std::pair<std::string, std::string>> kvpairs = {
         {"key1", "value1"},
         {"key2", "value2"}
     };
     audioServer->CacheExtraParameters(key, kvpairs);
-    ASSERT_TRUE(!audioServer->audioExtraParameterCacheVector_.empty());
-    audioServer->audioExtraParameterCacheVector_.clear();
-    ASSERT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
+    EXPECT_FALSE(audioServer->audioExtraParameterCacheVector_.empty());
+    audioServer->ParseAudioParameter();
+    EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
 }
 
 } // namespace AudioStandard

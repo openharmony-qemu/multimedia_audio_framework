@@ -63,6 +63,7 @@ public:
     void OnNnStateChange(const int32_t &state) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
     void OnAudioSceneChange(const AudioScene &audioScene) override;
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
     
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;

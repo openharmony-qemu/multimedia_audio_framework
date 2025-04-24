@@ -271,7 +271,7 @@ void AudioZoneClient::Restore()
             std::string deviceTag = it.first.substr(pos + 1);
             int32_t zoneId = 0;
             auto [ptr, ec] = std::from_chars(zoneIdStr.data(), zoneIdStr.data() + zoneIdStr.size(), zoneId);
-            void(ptr);
+            (void)ptr;
             if (ec == std::errc::invalid_argument) {
                 AUDIO_ERR_LOG("%{public}s is not a number", zoneIdStr.c_str());
             } else if (ec == std::errc::result_out_of_range) {

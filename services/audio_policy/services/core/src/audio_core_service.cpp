@@ -39,8 +39,8 @@ static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 bool AudioCoreService::isBtListenerRegistered = false;
+bool AudioCoreService::isBtCrashed = false;
 #ifdef BLUETOOTH_ENABLE
-static sptr<IStandardAudioService> g_btProxy = nullptr;
 mutex g_btProxyMutex;
 #endif
 
@@ -139,6 +139,7 @@ int32_t AudioCoreService::CreateRendererClient(
         sessionId = GenerateSessionId();
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, GetRealUid(streamDesc));
+        AddSessionId(sessionId);
         return SUCCESS;
     }
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
@@ -156,7 +157,7 @@ int32_t AudioCoreService::CreateRendererClient(
     // Fetch pipe
     ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
-
+    AddSessionId(sessionId);
     return SUCCESS;
 }
 
@@ -179,7 +180,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     // Fetch pipe
     ret = FetchCapturerPipeAndExecute(streamDesc, audioFlag, sessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
-
+    AddSessionId(sessionId);
     return SUCCESS;
 }
 
@@ -393,18 +394,23 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.ResetOffloadStatus(sessionId);
     RemoveUnusedPipe();
+    DeleteSessionId(sessionId);
 
     return SUCCESS;
 }
 
-int32_t AudioCoreService::SetAudioScene(AudioScene audioScene)
+int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
+    AUDIO_INFO_LOG("Set audio scene start: %{public}d, lastScene: %{public}d, uid: %{public}d, pid: %{public}d",
+        audioScene, audioSceneManager_.GetLastAudioScene(), uid, pid);
     audioSceneManager_.SetAudioScenePre(audioScene);
+    audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
 
     FetchDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
 
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
+    OnAudioSceneChange(audioScene);
 
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
@@ -427,9 +433,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetDevices
     return audioConnectedDevice_.GetDevicesInner(deviceFlag);
 }
 
-int32_t AudioCoreService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
+int32_t AudioCoreService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
-    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active, pid);
+    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active, uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
     FetchDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
@@ -604,13 +610,12 @@ void AudioCoreService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const De
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
 }
 
-int32_t AudioCoreService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+int32_t AudioCoreService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+    const int32_t uid)
 {
-    AUDIO_WARNING_LOG("Device type[%{public}d] flag[%{public}d] address[%{public}s]",
-        deviceType, active, GetEncryptAddr(address).c_str());
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
-    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address);
+    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address, uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetCallDeviceActive failed");
     ret = FetchDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchDeviceAndRoute failed");
@@ -906,10 +911,13 @@ void AudioCoreService::RegisterBluetoothListener()
         AUDIO_INFO_LOG("audio policy service already register bt listerer, return");
         return;
     }
-    Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
-    Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+    if (!isBtCrashed) {
+        Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
+        Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
+    }
     isBtListenerRegistered = true;
-    const sptr<IStandardAudioService> gsp = RegisterBluetoothDeathCallback();
+    isBtCrashed = false;
+    RegisterBluetoothDeathCallback();
     AudioPolicyUtils::GetInstance().SetBtConnecting(true);
     Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
     Bluetooth::AudioHfpManager::CheckHfpDeviceReconnect();
@@ -1055,44 +1063,46 @@ void AudioCoreService::SetAudioServerProxy()
     audioPolicyManager_.SetAudioServerProxy(gsp);
 }
 
+DirectPlaybackMode AudioCoreService::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(
+        streamUsage, getuid());
+    CHECK_AND_RETURN_RET_LOG(!descs.empty(), DIRECT_PLAYBACK_NOT_SUPPORTED, "find output device failed");
+    return policyConfigMananger_.GetDirectPlaybackSupport(descs.front(), streamInfo);
+}
+
 #ifdef BLUETOOTH_ENABLE
-const sptr<IStandardAudioService> AudioCoreService::RegisterBluetoothDeathCallback()
+void AudioCoreService::RegisterBluetoothDeathCallback()
 {
     lock_guard<mutex> lock(g_btProxyMutex);
-    if (g_btProxy == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr,
-            "get sa manager failed");
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
-        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr,
-            "get audio service remote object failed");
-        g_btProxy = iface_cast<IStandardAudioService>(object);
-        CHECK_AND_RETURN_RET_LOG(g_btProxy != nullptr, nullptr,
-            "get audio service proxy failed");
-
-        // register death recipent
-        sptr<AudioServerDeathRecipient> asDeathRecipient =
-            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
-        if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
-                AudioCoreService::BluetoothServiceCrashedCallback(pid, uid);
-            });
-            bool result = object->AddDeathRecipient(asDeathRecipient);
-            if (!result) {
-                AUDIO_ERR_LOG("failed to add deathRecipient");
-            }
+    AUDIO_INFO_LOG("Enter");
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_LOG(samgr != nullptr,
+        "get sa manager failed");
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_LOG(object != nullptr,
+        "get audio service remote object failed");
+    // register death recipent
+    sptr<AudioServerDeathRecipient> asDeathRecipient =
+        new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
+    if (asDeathRecipient != nullptr) {
+        asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
+            BluetoothServiceCrashedCallback(pid, uid);
+        });
+        bool result = object->AddDeathRecipient(asDeathRecipient);
+        if (!result) {
+            AUDIO_ERR_LOG("failed to add deathRecipient");
         }
     }
-    sptr<IStandardAudioService> gasp = g_btProxy;
-    return gasp;
 }
 
 void AudioCoreService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
 {
     AUDIO_INFO_LOG("Bluetooth sa crashed, will restore proxy in next call");
     lock_guard<mutex> lock(g_btProxyMutex);
-    g_btProxy = nullptr;
     isBtListenerRegistered = false;
+    isBtCrashed = true;
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSource();
     Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();

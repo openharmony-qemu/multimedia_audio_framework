@@ -316,8 +316,8 @@ int32_t AudioZoneService::RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid,
 {
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
-        AUDIO_DEBUG_LOG("remove key %{public}d,%{public}d,%{public}s from zone %{public}d",
-            uid, deviceTag, streamTag.c_str(), zoneId);
+        AUDIO_DEBUG_LOG("remove key %{public}d,%{public}s,%{public}s from zone %{public}d",
+            uid, deviceTag.c_str(), streamTag.c_str(), zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         auto zone = FindZone(zoneId);
         if (zone == nullptr) {
@@ -428,7 +428,7 @@ int32_t AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
         tmp = interruptService_;
     }
 
-    CHECK_AND_RETURN_RET_LOG(tmp!= nullptr, ERROR, "interruptService_ tmp is nullptr");
+    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ tmp is nullptr");
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_,
         AudioZoneInterruptReason::REMOTE_INJECT);
@@ -456,7 +456,7 @@ int32_t AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
         tmp = interruptService_;
     }
     
-    CHECK_AND_RETURN_RET_LOG(tmp!= nullptr, ERROR, "interruptService_ tmp is nullptr");
+    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ tmp is nullptr");
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_,
         AudioZoneInterruptReason::REMOTE_INJECT);
@@ -490,7 +490,7 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, const std::
         tmp = interruptService_;
     }
     
-    CHECK_AND_RETURN_RET_LOG(tmp!= nullptr, ERROR, "interruptService_ tmp is nullptr");
+    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ tmp is nullptr");
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_,
         AudioZoneInterruptReason::REMOTE_INJECT);
@@ -556,7 +556,7 @@ int32_t AudioZoneService::UpdateDeviceFromGlobalForAllZone(std::shared_ptr<Audio
     std::lock_guard<std::mutex> lock(zoneMutex_);
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is nullptr!");
     for (const auto &it : zoneMaps_) {
-        CHECK_AND_CONTINUE_LOG(it.second!= nullptr, "zone id %{public}d is nullptr", it.first);
+        CHECK_AND_CONTINUE_LOG(it.second != nullptr, "zone id %{public}d is nullptr", it.first);
         int32_t res = it.second->UpdateDeviceDescriptor(device);
         if (res == SUCCESS) {
             AUDIO_INFO_LOG("zone id %{public}d enable device %{public}d success", it.first, device->deviceType_);

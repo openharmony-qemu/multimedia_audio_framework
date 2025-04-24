@@ -3256,5 +3256,25 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_165, TestSize.Level1)
     server->isFirstAudioServiceStart_.store(false);
     server->AddAudioServiceOnStart();
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_0166
+* @tc.desc  : Test SetDeviceConnectionStatus.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_166, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc->deviceName_ = "Speaker_Out";
+    desc->deviceRole_ = OUTPUT_DEVICE;
+
+    bool isConnected = true;
+    int32_t ret = server->SetDeviceConnectionStatus(desc, isConnected);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
+}
 } // AudioStandard
 } // OHOS

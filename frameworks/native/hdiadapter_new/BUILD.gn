@@ -48,23 +48,19 @@ ohos_shared_library("hdiadapter_new") {
   sources = [
     "adapter/bluetooth_device_manager.cpp",
     "adapter/local_device_manager.cpp",
-    "adapter/remote_device_manager.cpp",
     "manager/hdi_adapter_factory.cpp",
     "manager/hdi_adapter_manager.cpp",
     "sink/audio_render_sink.cpp",
     "sink/bluetooth_audio_render_sink.cpp",
+    "sink/direct_audio_render_sink.cpp",
     "sink/fast_audio_render_sink.cpp",
     "sink/file_audio_render_sink.cpp",
     "sink/multichannel_audio_render_sink.cpp",
     "sink/offload_audio_render_sink.cpp",
-    "sink/remote_audio_render_sink.cpp",
-    "sink/remote_fast_audio_render_sink.cpp",
     "source/audio_capture_source.cpp",
     "source/bluetooth_audio_capture_source.cpp",
     "source/fast_audio_capture_source.cpp",
     "source/file_audio_capture_source.cpp",
-    "source/remote_audio_capture_source.cpp",
-    "source/remote_fast_audio_capture_source.cpp",
     "source/wakeup_audio_capture_source.cpp",
     "util/callback_wrapper.cpp",
     "util/id_handler.cpp",
@@ -82,7 +78,6 @@ ohos_shared_library("hdiadapter_new") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
-    "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
     "drivers_peripheral_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
     "hilog:libhilog",
@@ -99,6 +94,15 @@ ohos_shared_library("hdiadapter_new") {
     defines += [ "FEATURE_FILE_IO" ]
   }
   if (audio_framework_feature_distributed_audio) {
+    sources += [
+      "adapter/remote_device_manager.cpp",
+      "sink/remote_audio_render_sink.cpp",
+      "sink/remote_fast_audio_render_sink.cpp",
+      "source/remote_audio_capture_source.cpp",
+      "source/remote_fast_audio_capture_source.cpp",
+    ]
+    external_deps +=
+        [ "drivers_interface_distributed_audio:libdaudio_proxy_1.0" ]
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
   }
   if (use_libfuzzer || use_clang_coverage) {

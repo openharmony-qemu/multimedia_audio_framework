@@ -56,6 +56,8 @@ AudioRendererStateChangeCallbackTest::AudioRendererStateChangeCallbackTest(const
     : testCaseName_(testCaseName) {}
 AudioCapturerStateChangeCallbackTest::AudioCapturerStateChangeCallbackTest(const std::string &testCaseName)
     : testCaseName_(testCaseName) {}
+AudioFormatUnsupportedErrorCallbackTest::AudioFormatUnsupportedErrorCallbackTest(const std::string &testCaseName)
+    : testCaseName_(testCaseName) {}
 
 void AudioStreamManagerUnitTest::SetUpTestCase(void)
 {
@@ -1573,6 +1575,38 @@ HWTEST_F(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_003, TestSize
         }
         EXPECT_EQ(VALUE_NEGATIVE, ret);
     }
+}
+
+/**
+* @tc.name  : Test SetAudioFormatUnsupportedErrorCallback API
+* @tc.number: SetAudioFormatUnsupportedErrorCallback_001
+* @tc.desc  : Test SetAudioFormatUnsupportedErrorCallback interface
+*/
+HWTEST_F(AudioStreamManagerUnitTest, SetAudioFormatUnsupportedErrorCallback_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    std::string testCaseName("SetAudioFormatUnsupportedErrorCallback_001");
+    auto audioFormatUnsupportedErrorCallbackTest = nullptr;
+    ret = g_audioManagerInstance->SetAudioFormatUnsupportedErrorCallback(audioFormatUnsupportedErrorCallbackTest);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    ret = g_audioManagerInstance->UnsetAudioFormatUnsupportedErrorCallback();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test SetAudioFormatUnsupportedErrorCallback API
+* @tc.number: SetAudioFormatUnsupportedErrorCallback_002
+* @tc.desc  : Test SetAudioFormatUnsupportedErrorCallback interface
+*/
+HWTEST_F(AudioStreamManagerUnitTest, SetAudioFormatUnsupportedErrorCallback_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    std::string testCaseName("SetAudioFormatUnsupportedErrorCallback_002");
+    auto audioFormatUnsupportedErrorCallbackTest = make_shared<AudioFormatUnsupportedErrorCallbackTest>(testCaseName);
+    ret = g_audioManagerInstance->SetAudioFormatUnsupportedErrorCallback(audioFormatUnsupportedErrorCallbackTest);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = g_audioManagerInstance->UnsetAudioFormatUnsupportedErrorCallback();
+    EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

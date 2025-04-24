@@ -34,6 +34,7 @@ namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
+class FormatUnsupportedErrorCallbackImpl;
 
 class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
 public:
@@ -216,6 +217,7 @@ private:
     uint32_t GetUnderflowCountInner() const;
     int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
+    int32_t InitFormatUnsupportedErrorCallback();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -229,6 +231,7 @@ private:
     std::mutex audioRendererErrCallbackMutex_;
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
+    std::shared_ptr<FormatUnsupportedErrorCallbackImpl> formatUnsupportedErrorCallback_ = nullptr;
     std::atomic<bool> isFastRenderer_ = false;
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
@@ -264,6 +267,8 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
     void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
+    void StartSwitch();
+    void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
     InterruptCallbackEvent HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
@@ -278,6 +283,8 @@ private:
     bool isForceDucked_ = false;
     uint32_t sessionID_ = INVALID_SESSION_ID;
     std::mutex mutex_;
+    bool switching_ = false;
+    std::condition_variable switchStreamCv_;
 };
 
 class AudioStreamCallbackRenderer : public AudioStreamCallback {
@@ -354,6 +361,15 @@ private:
     void RestoreTheadLoop();
 
     std::atomic<int32_t> taskCount_ = 0;
+};
+
+class FormatUnsupportedErrorCallbackImpl : public AudioFormatUnsupportedErrorCallback {
+public:
+    FormatUnsupportedErrorCallbackImpl() = default;
+    virtual ~FormatUnsupportedErrorCallbackImpl() = default;
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
+private:
+    std::weak_ptr<AudioRendererErrorCallback> callback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

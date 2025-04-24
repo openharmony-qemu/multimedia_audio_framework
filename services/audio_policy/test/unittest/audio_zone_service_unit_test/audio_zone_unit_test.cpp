@@ -172,8 +172,9 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_005, TestSize.Level1)
  */
 HWTEST_F(AudioZoneUnitTest, AudioZone_006, TestSize.Level1)
 {
+    ClearZone();
     AudioZoneContext context;
-    EXPECT_NE(AudioZoneService::GetInstance().EnableAudioZoneChangeReport(TEST_PID_1000, true), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().EnableAudioZoneChangeReport(TEST_PID_1000, 1, true), 0);
     auto client = RegisterTestClient(TEST_PID_1000);
     EXPECT_NE(client, nullptr);
     auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);

@@ -64,7 +64,8 @@ public:
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
     int32_t SetDeviceConnectedFlag(bool flag) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+        bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
@@ -173,7 +174,7 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
-    AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
+    AudioScene currentAudioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t currentDevicesSize_ = 0;
     bool forceSetRouteFlag_ = false;
     int32_t paStatus_ = 1;

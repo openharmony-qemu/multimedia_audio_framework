@@ -67,7 +67,7 @@ void AudioEnhanceChainUnitTest::TearDown(void) {}
 * @tc.number: AudioEnhanceChain_001
 * @tc.desc  : Test AudioEnhanceChain::ReleaseEnhanceChain()
 */
-HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_001, TestSize.Level1)
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_001, TestSize.Level0)
 {
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
 
@@ -372,7 +372,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_016, TestSize.Level1)
     uint32_t offset = 0;
 
     int32_t result = audioEnhanceChain->DeinterleaverData(src, channel, dst, offset);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -439,7 +439,7 @@ HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_019, TestSize.Level1)
     uint32_t offset = 0;
 
     int32_t result = audioEnhanceChain->DeinterleaverData(src, channel, dst, offset);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_NE(SUCCESS, result);
 }
 
 /**

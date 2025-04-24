@@ -106,7 +106,8 @@ private:
     shared_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE);
     shared_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
-        RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE);
+        RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE,
+        const RouterType &bypassWithSco = RouterType::ROUTER_TYPE_NONE);
     bool HasScoDevice();
     vector<shared_ptr<AudioDeviceDescriptor>> FetchRingRenderDevices(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType);
@@ -120,6 +121,11 @@ private:
         RouterType &routerType, const uint32_t sessionID = 0);
     bool NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    RouterType GetBypassWithSco(AudioScene audioScene);
+    bool IsMediaFollowCallStrategy(AudioScene audioScene);
+    bool IsConfigRouterStrategy(SourceType sourceType);
+    shared_ptr<AudioDeviceDescriptor> FetchCapturerInputDevice(SourceType sourceType,
+        int32_t clientUID, RouterType &routerType, const uint32_t sessionID);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;

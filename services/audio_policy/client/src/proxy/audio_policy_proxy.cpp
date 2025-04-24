@@ -418,7 +418,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetInputDe
     return deviceInfo;
 }
 
-int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
+int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -428,7 +428,7 @@ int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool ac
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(deviceType));
     data.WriteBool(active);
-    data.WriteInt32(pid);
+    data.WriteInt32(uid);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set device active failed, error: %d", error);
@@ -1827,7 +1827,7 @@ int32_t AudioPolicyProxy::ReleaseAudioInterruptZone(const int32_t zoneID)
 }
 
 int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-    const int32_t pid)
+    const int32_t uid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1838,7 +1838,7 @@ int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, boo
     data.WriteInt32(static_cast<int32_t>(deviceType));
     data.WriteBool(active);
     data.WriteString(address);
-    data.WriteInt32(pid);
+    data.WriteInt32(uid);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALL_DEVICE_ACTIVE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
@@ -1996,7 +1996,7 @@ int32_t AudioPolicyProxy::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt re
 }
 
 int32_t AudioPolicyProxy::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2006,7 +2006,7 @@ int32_t AudioPolicyProxy::SetPreferredDevice(const PreferredType preferredType,
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(preferredType));
-    data.WriteInt32(static_cast<int32_t>(pid));
+    data.WriteInt32(static_cast<int32_t>(uid));
     bool result = desc->Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(result, -1, "Desc Marshalling() faild");
 
@@ -2353,8 +2353,49 @@ int32_t AudioPolicyProxy::SetDeviceConnectionStatus(const std::shared_ptr<AudioD
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_CONNECTION_STATUS), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
+}
+
+DirectPlaybackMode AudioPolicyProxy::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, DIRECT_PLAYBACK_NOT_SUPPORTED, "WriteInterfaceToken failed");
+
+    bool res = streamInfo.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(res, DIRECT_PLAYBACK_NOT_SUPPORTED, "streamInfo Marshalling() failed");
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DIRECT_PLAYBACK_SUPPORT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, DIRECT_PLAYBACK_NOT_SUPPORTED, "SendRequest failed, error: %{public}d",
+        error);
+    return static_cast<DirectPlaybackMode>(reply.ReadInt32());
+}
+
+bool AudioPolicyProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    
+    data.WriteInt32(static_cast<int32_t>(sourceType));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d",
+        error);
+    
+    return reply.ReadBool();
 }
 } // namespace AudioStandard
 } // namespace OHOS

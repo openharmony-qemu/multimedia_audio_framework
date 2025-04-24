@@ -401,7 +401,7 @@ void AudioEnhanceChain::WriteDumpFile(std::unique_ptr<EnhanceBuffer> &enhanceBuf
             buffer.insert(buffer.end(), enhanceBuffer->ecBuffer.begin() + offset,
                 enhanceBuffer->ecBuffer.begin() + offset + ecLen);
         }
-        offset= i * micLen;
+        offset = i * micLen;
         buffer.insert(buffer.end(), enhanceBuffer->micBufferIn.begin() + offset,
             enhanceBuffer->micBufferIn.begin() + offset + micLen);
         if (needMicRefFlag_) {

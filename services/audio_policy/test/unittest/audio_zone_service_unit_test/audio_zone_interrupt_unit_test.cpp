@@ -166,7 +166,7 @@ static void ActivateInterrupt(int32_t zoneId, InterruptInfo info)
     interrupt.streamId = info.streamId;
     interrupt.pid = info.pid;
     interrupt.uid = info.uid;
-    interrupt.deviceId = info.deviceId;
+    interrupt.deviceTag = info.deviceTag;
     AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, interrupt);
 }
 

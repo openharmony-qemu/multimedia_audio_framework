@@ -909,5 +909,45 @@ HWTEST_F(AudioCoreServiceUnitTest, EventEntry_GetVolumeGroupInfos_001, TestSize.
     std::vector<sptr<VolumeGroupInfo>> infos = server->eventEntry_->GetVolumeGroupInfos();
     EXPECT_GT(infos.size(), 0);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetDirectPlaybackSupport_001
+ * @tc.desc  : Test GetDirectPlaybackSupport interfaces. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetDirectPlaybackSupport_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.encoding = ENCODING_PCM;
+    streamInfo.format = SAMPLE_S24LE;
+    streamInfo.channels = STEREO;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    auto result = server->coreService_->GetDirectPlaybackSupport(streamInfo, streamUsage);
+    EXPECT_EQ(result, DIRECT_PLAYBACK_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetDirectPlaybackSupport_002
+ * @tc.desc  : Test GetDirectPlaybackSupport interfaces. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetDirectPlaybackSupport_002, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_24000;
+    streamInfo.encoding = ENCODING_EAC3;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.channels = STEREO;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    auto result = server->coreService_->GetDirectPlaybackSupport(streamInfo, streamUsage);
+    EXPECT_EQ(result, DIRECT_PLAYBACK_NOT_SUPPORTED);
+}
 } // namespace AudioStandard
 } // namespace OHOS

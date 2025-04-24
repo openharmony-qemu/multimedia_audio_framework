@@ -322,7 +322,7 @@ void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const 
 
 void AudioInterruptZoneManager::TryActiveAudioFocusForZone(int32_t zoneId, AudioFocusList &activeFocusList)
 {
-    CHECK_AND_RETURN_LOG(service_!= nullptr, "service is nullptr");
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
     AUDIO_DEBUG_LOG("focus list size is %{public}zu for zone %{public}d before active",
         service_->zonesMap_[zoneId]->audioFocusInfoList.size(), zoneId);
     if (activeFocusList.size() > 0) {
@@ -340,7 +340,7 @@ void AudioInterruptZoneManager::TryActiveAudioFocusForZone(int32_t zoneId, Audio
 
 void AudioInterruptZoneManager::TryResumeAudioFocusForZone(int32_t zoneId)
 {
-    CHECK_AND_RETURN_LOG(service_!= nullptr, "service is nullptr");
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
     AUDIO_DEBUG_LOG("try resume audio focus list for zone %{public}d", zoneId);
     auto &focusList = service_->zonesMap_[zoneId]->audioFocusInfoList;
     if (focusList.size() == 0) {
@@ -356,7 +356,7 @@ void AudioInterruptZoneManager::TryResumeAudioFocusForZone(int32_t zoneId)
 
 int32_t AudioInterruptZoneManager::FindZoneByPid(int32_t pid)
 {
-    CHECK_AND_RETURN_RET_LOG(service_!= nullptr, AudioInterruptService::ZONEID_DEFAULT, "service is nullptr");
+    CHECK_AND_RETURN_RET_LOG(service_ != nullptr, AudioInterruptService::ZONEID_DEFAULT, "service is nullptr");
     for (const auto &zone : service_->zonesMap_) {
         if (zone.second == nullptr) {
             continue;

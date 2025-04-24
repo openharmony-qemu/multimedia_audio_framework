@@ -221,6 +221,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "ACTIVATE_PREEMPT_MODE",
     "DEACTIVATE_PREEMPT_MODE",
     "GET_DM_DEVICE_TYPE",
+    "GET_DIRECT_PLAYBACK_SUPPORT",
+    "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1243,6 +1245,12 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_QUERY_BUNDLE_NAME_LIST_CALLBACK):
             SetQueryBundleNameListCallbackInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DIRECT_PLAYBACK_SUPPORT):
+            GetDirectPlaybackSupportInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED):
+            IsAcousticEchoCancelerSupportedInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1965,9 +1973,9 @@ void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, Mes
 void AudioPolicyManagerStub::SetPreferredDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     PreferredType preferredType = static_cast<PreferredType>(data.ReadInt32());
-    int32_t pid = static_cast<int32_t>(data.ReadInt32());
+    int32_t uid = static_cast<int32_t>(data.ReadInt32());
     std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
-    int32_t result = SetPreferredDevice(preferredType, desc, pid);
+    int32_t result = SetPreferredDevice(preferredType, desc, uid);
     reply.WriteInt32(result);
 }
 
@@ -2221,6 +2229,22 @@ void AudioPolicyManagerStub::SetQueryAllowedPlaybackCallbackInternal(MessageParc
     CHECK_AND_RETURN_LOG(object != nullptr, "SetQueryAllowedPlaybackCallback is null");
     int32_t result = SetQueryAllowedPlaybackCallback(object);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetDirectPlaybackSupportInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamInfo streamInfo;
+    streamInfo.Unmarshalling(data);
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    DirectPlaybackMode mode = GetDirectPlaybackSupport(streamInfo, streamUsage);
+    reply.WriteInt32(static_cast<int32_t>(mode));
+}
+
+void AudioPolicyManagerStub::IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    bool result = IsAcousticEchoCancelerSupported(sourceType);
+    reply.WriteBool(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

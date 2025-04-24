@@ -1322,5 +1322,59 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_061, TestSize.Le
     audioPolicyClient->OnSpatializationEnabledChangeForCurrentDevice(enabled);
     EXPECT_NE(audioPolicyClient, nullptr);
 }
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_062
+* @tc.desc  : Test AddAudioFormatUnsupportedErrorCallback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_062, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioFormatUnsupportedErrorCallback>();
+    int32_t ret = audioPolicyClient->AddAudioFormatUnsupportedErrorCallback(cb);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto size = audioPolicyClient->GetAudioFormatUnsupportedErrorCallbackSize();
+    EXPECT_EQ(size, 1);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_063
+* @tc.desc  : Test RemoveAudioFormatUnsupportedErrorCallback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_063, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb1 = std::make_shared<ConcreteAudioFormatUnsupportedErrorCallback>();
+    auto cb2 = std::make_shared<ConcreteAudioFormatUnsupportedErrorCallback>();
+    int32_t ret = audioPolicyClient->AddAudioFormatUnsupportedErrorCallback(cb1);
+    ret = audioPolicyClient->AddAudioFormatUnsupportedErrorCallback(cb2);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioPolicyClient->RemoveAudioFormatUnsupportedErrorCallback();
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto size = audioPolicyClient->GetAudioFormatUnsupportedErrorCallbackSize();
+    EXPECT_EQ(size, 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_064
+* @tc.desc  : Test OnFormatUnsupportedError.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_064, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioFormatUnsupportedErrorCallback>();
+    int32_t ret = audioPolicyClient->AddAudioFormatUnsupportedErrorCallback(cb);
+    EXPECT_EQ(ret, SUCCESS);
+
+    AudioErrors errorCode = ERROR_UNSUPPORTED_FORMAT;
+    audioPolicyClient->OnFormatUnsupportedError(errorCode);
+    EXPECT_NE(audioPolicyClient, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

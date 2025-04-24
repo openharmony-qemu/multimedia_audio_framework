@@ -25,6 +25,7 @@
 #include "audio_usb_manager.h"
 #include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +33,7 @@ namespace {
 static const int32_t MEDIA_SERVICE_UID = 1013;
 const int32_t DATA_LINK_CONNECTED = 11;
 const uint32_t FIRST_SESSIONID = 100000;
+const uid_t MCU_UID = 7500;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
@@ -690,6 +692,46 @@ uint32_t AudioCoreService::GenerateSessionId()
     return sessionId;
 }
 
+void AudioCoreService::AddSessionId(const uint32_t sessionId)
+{
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    AUDIO_INFO_LOG("AddSessionId: %{public}u, callingUid: %{public}u", sessionId, callingUid);
+    if (callingUid == MCU_UID) {
+        // There is no audio stream for the session id of MCU. So no need to save it.
+        return;
+    }
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
+    sessionIdMap_[sessionId] = callingUid;
+}
+
+void AudioCoreService::DeleteSessionId(const uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("DeleteSessionId: %{public}u", sessionId);
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
+    if (sessionIdMap_.count(sessionId) == 0) {
+        AUDIO_INFO_LOG("The sessionId has been deleted from sessionIdMap_!");
+    } else {
+        sessionIdMap_.erase(sessionId);
+    }
+}
+
+bool AudioCoreService::IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
+    if (sessionIdMap_.count(sessionId) == 0) {
+        AUDIO_INFO_LOG("The sessionId %{public}u is invalid!", sessionId);
+        return false;
+    }
+
+    if (sessionIdMap_[sessionId] != uid) {
+        AUDIO_INFO_LOG("The sessionId %{public}u does not belong to uid %{public}u!", sessionId, uid);
+        return false;
+    }
+
+    AUDIO_DEBUG_LOG("The sessionId %{public}u belongs to uid %{public}u!", sessionId, uid);
+    return true;
+}
+
 void AudioCoreService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role, bool hasPair)
 {
@@ -750,8 +792,22 @@ void AudioCoreService::MoveStreamSink(std::shared_ptr<AudioStreamDescriptor> str
     auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
         : MoveToRemoteOutputDevice(targetSinkInputs, newDeviceDesc);
+    audioIOHandleMap_.NotifyUnmutePort();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Move sink input %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, newDeviceDesc->deviceType_);
+}
+
+bool AudioCoreService::IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), false,
+        "invalid streamDesc");
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = streamDesc->newDeviceDescs_.front();
+    if (streamDesc->streamInfo_.encoding == ENCODING_EAC3 && newDeviceDesc->deviceType_ != DEVICE_TYPE_HDMI &&
+        newDeviceDesc->deviceType_ != DEVICE_TYPE_LINE_DIGITAL && audioPolicyServerHandler_) {
+        audioPolicyServerHandler_->SendFormatUnsupportedErrorEvent(ERROR_UNSUPPORTED_FORMAT);
+        return false;
+    }
+    return true;
 }
 
 void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -781,6 +837,8 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     MuteSinkForSwitchGeneralDevice(streamDesc, reason);
 
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(newDeviceDesc->deviceType_);
+
+    CHECK_AND_RETURN_LOG(IsNewDevicePlaybackSupported(streamDesc), "new device not support playback");
 
     auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
@@ -1903,6 +1961,14 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
         BluetoothScoFetch(streamDesc);
     }
     return SUCCESS;
+}
+
+void AudioCoreService::OnAudioSceneChange(const AudioScene& audioScene)
+{
+    Trace trace("AudioCoreService::OnAudioSceneChange:" + std::to_string(audioScene));
+    AUDIO_INFO_LOG("Start");
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audio policy server handler is null");
+    audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
 }
 }
 }

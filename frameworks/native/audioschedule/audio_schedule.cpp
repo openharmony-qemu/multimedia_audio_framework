@@ -177,21 +177,6 @@ AudioScheduleGuard::AudioScheduleGuard(AudioScheduleGuard&& audioScheduleGuard)
     audioScheduleGuard.isReported_ = false;
 }
 
-AudioScheduleGuard& AudioScheduleGuard::operator=(AudioScheduleGuard&& audioScheduleGuard)
-{
-    if (*this == audioScheduleGuard) {
-        audioScheduleGuard.isReported_ = false;
-        return *this;
-    }
-    AudioScheduleGuard temp(std::move(*this));
-    this->bundleName_ = std::move(audioScheduleGuard.bundleName_);
-    this->isReported_ = audioScheduleGuard.isReported_;
-    this->pid_ = audioScheduleGuard.pid_;
-    this->tid_ = audioScheduleGuard.tid_;
-    audioScheduleGuard.isReported_ = false;
-    return *this;
-}
-
 bool AudioScheduleGuard::operator==(const AudioScheduleGuard&) const = default;
 
 AudioScheduleGuard::~AudioScheduleGuard()
