@@ -1222,6 +1222,32 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_044, TestSize.Level1
 }
 
 /**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_020
+* @tc.desc  : Test UpdateCapturerStreamInternal.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_045, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioCapturerChangeInfo.clientUID = 1001;
+    streamChangeInfo.audioCapturerChangeInfo.sessionId = 2001;
+    streamChangeInfo.audioCapturerChangeInfo.prerunningState = false;
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+
+    int32_t ret = collector.UpdateCapturerStreamInternal(streamChangeInfo);
+    EXPECT_EQ(ERROR, ret);
+
+    capturerChangeInfo->clientUID = 1001;
+    capturerChangeInfo->sessionId = 2001;
+    capturerChangeInfo->prerunningState = false;
+    collector.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    ret = collector.UpdateCapturerStreamInternal(streamChangeInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
 * @tc.name  : IsMediaPlaying_Test01
 * @tc.number: AudioStreamCollectorUnitTest_IsMediaPlaying_Test01
 * @tc.desc  : Test IsMediaPlaying function when there is at least one media renderer running.

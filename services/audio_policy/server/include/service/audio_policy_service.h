@@ -262,6 +262,11 @@ public:
 
     void OnAudioBalanceChanged(float audioBalance);
 
+    void onDoNotDisturbStatusChanged(bool isDoNotDisturb);
+
+    void onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
+        doNotDisturbStatusWhiteList);
+
     void LoadEffectLibrary();
 
     int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback);
@@ -501,6 +506,7 @@ public:
     void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
         bool registrationResult);
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -553,6 +559,10 @@ private:
     void RegisterAccessiblilityBalance();
 
     void RegisterAccessiblilityMono();
+
+    void RegisterDoNotDisturbStatus();
+
+    void RegisterDoNotDisturbStatusWhiteList();
 
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
 

@@ -122,6 +122,7 @@ public:
         AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
     virtual void UpdateExtraSceneType(
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) = 0;
+    virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

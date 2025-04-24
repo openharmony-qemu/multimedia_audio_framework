@@ -138,6 +138,7 @@ int32_t AudioCoreService::CreateRendererClient(
         sessionId = GenerateSessionId();
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, GetRealUid(streamDesc));
+        AddSessionId(sessionId);
         return SUCCESS;
     }
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
@@ -155,7 +156,7 @@ int32_t AudioCoreService::CreateRendererClient(
     // Fetch pipe
     ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
-
+    AddSessionId(sessionId);
     return SUCCESS;
 }
 
@@ -178,7 +179,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     // Fetch pipe
     ret = FetchCapturerPipeAndExecute(streamDesc, audioFlag, sessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
-
+    AddSessionId(sessionId);
     return SUCCESS;
 }
 
@@ -392,6 +393,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.ResetOffloadStatus(sessionId);
     RemoveUnusedPipe();
+    DeleteSessionId(sessionId);
 
     return SUCCESS;
 }
@@ -407,6 +409,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
 
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
+    OnAudioSceneChange(audioScene);
 
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.

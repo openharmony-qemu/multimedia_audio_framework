@@ -183,7 +183,7 @@ private:
     int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
     std::shared_ptr<AudioEffectChain> CreateAudioEffectChain(const std::string &sceneType, bool isPriorScene);
     bool CheckIfSpkDsp();
-    void CheckAndReleaseCommonEffectChain(const std::string &sceneType);
+    int32_t CheckAndReleaseCommonEffectChain(const std::string &sceneType);
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
     void UpdateCurrSceneTypeAndStreamUsageForDsp();
@@ -212,6 +212,9 @@ private:
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
         const std::string &effectMode, std::string &sceneType);
+    int32_t NotifyAndCreateAudioEffectChain(const std::string &sceneType);
+    void WaitAndReleaseEffectChain(const std::string &sceneType, const std::string &sceneTypeAndDeviceKey,
+        const std::string &defaultSceneTypeAndDeviceKey, int32_t ret);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> effectChainToEffectsMap_;
@@ -250,6 +253,8 @@ private:
     uint32_t maxSessionID_ = 0;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     bool hasLoadedEffectProperties_ = false;
+    std::condition_variable cv_;
+    bool defaultEffectChainCreated_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

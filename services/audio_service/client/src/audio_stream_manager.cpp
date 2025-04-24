@@ -260,5 +260,10 @@ int32_t AudioStreamManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
 {
     return AudioPolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray);
 }
+
+bool AudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    return AudioPolicyManager::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

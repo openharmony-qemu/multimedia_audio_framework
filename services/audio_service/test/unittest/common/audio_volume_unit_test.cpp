@@ -769,5 +769,42 @@ HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_002, TestSize.Level1)
     ret = GetFadeStrategy(expectedPlaybackDurationMs);
     EXPECT_EQ(ret, FADE_STRATEGY_SHORTER);
 }
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetDoNotDisturbStatusWhiteListVolume_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+ HWTEST_F(AudioVolumeUnitTest, SetDoNotDisturbStatusWhiteListVolume_001, TestSize.Level1)
+ {
+    std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
+    std::map<std::string, std::string> obj;
+    obj["123"] = "1";
+    doNotDisturbStatusWhiteList.push_back(obj);
+    int32_t doNotDisturbStatusVolume = 1;
+    int32_t volumeType = 5;
+    int32_t sessionId = 123;
+    AudioVolume::GetInstance()->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
+    int32_t ret = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(volumeType, sessionId);
+    EXPECT_EQ(ret, doNotDisturbStatusVolume);
+}
+
+ /**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetDoNotDisturbStatus_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+ HWTEST_F(AudioVolumeUnitTest, SetDoNotDisturbStatus_001, TestSize.Level1)
+ {
+    bool isDoNotDisturbStatus = true;
+    int32_t doNotDisturbStatusVolume = 0;
+    int32_t volumeType = 5;
+    int32_t sessionId = 123;
+    AudioVolume::GetInstance()->SetDoNotDisturbStatus(isDoNotDisturbStatus);
+    int32_t ret = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(volumeType, sessionId);
+    EXPECT_EQ(ret, doNotDisturbStatusVolume);
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

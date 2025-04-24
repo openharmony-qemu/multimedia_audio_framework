@@ -57,6 +57,7 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
 uint64_t DURATION_TIME_DEFAULT = 40;
 uint64_t DURATION_TIME_SHORT = 10;
 static const float DEFAULT_APP_VOLUME = 1.0f;
+uint32_t VOIP_CALL_VOICE_SERVICE = 5523;
 
 AudioVolume *AudioVolume::GetInstance()
 {
@@ -76,6 +77,7 @@ AudioVolume::~AudioVolume()
     systemVolume_.clear();
     historyVolume_.clear();
     monitorVolume_.clear();
+    doNotDisturbStatusWhiteListVolume_.clear();
 }
 
 float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass,
@@ -90,14 +92,48 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     volumes->volumeStream = GetStreamVolumeInternal(sessionId, volumeType, appUid, volumeMode);
     volumes->volumeSystem = GetSystemVolumeInternal(volumeType, deviceClass, volumeLevel);
     volumes->volumeApp = GetAppVolume(appUid, volumeMode);
-    float volumeFloat = volumes->volumeSystem * volumes->volumeStream * volumes->volumeApp;
+    int32_t doNotDisturbStatusVolume = GetDoNotDisturbStatusVolume(volumeType, appUid);
+    float volumeFloat = volumes->volumeSystem * volumes->volumeStream * volumes->volumeApp *
+        doNotDisturbStatusVolume;
     if (IsChangeVolume(sessionId, volumeFloat, volumeLevel)) {
         AUDIO_INFO_LOG("volume, sessionId:%{public}u, volume:%{public}f, volumeType:%{public}d, devClass:%{public}s,"
-            " system volume:%{public}f, stream volume:%{public}f app volume:%{public}f",
+            " system volume:%{public}f, stream volume:%{public}f app volume:%{public}f,"
+            " doNotDisturbStatusVolume: %{public}d,",
             sessionId, volumeFloat, volumeType, deviceClass.c_str(),
-            volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp);
+            volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp, doNotDisturbStatusVolume);
     }
     return volumeFloat;
+}
+
+uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId)
+{
+    if (!isDoNotDisturbStatus_) {
+        return 1;
+    }
+    if (volumeType == STREAM_SYSTEM || volumeType == STREAM_DTMF) {
+        return 0;
+    }
+    if (CheckoutSystemAppUtil::CheckoutSystemApp(sessionId) || sessionId == VOIP_CALL_VOICE_SERVICE) {
+        return 1;
+    }
+    AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(volumeType));
+    return (doNotDisturbStatusWhiteListVolume_[sessionId] == 1) ? 1 : (volumeMapType != STREAM_RING ? 1 : 0);
+}
+
+void AudioVolume::SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
+    doNotDisturbStatusWhiteList)
+{
+    doNotDisturbStatusWhiteListVolume_.clear();
+    for (const auto& obj : doNotDisturbStatusWhiteList) {
+        for (const auto& [key, val] : obj) {
+            doNotDisturbStatusWhiteListVolume_[atoi(key.c_str())] = 1;
+        }
+    }
+}
+
+void AudioVolume::SetDoNotDisturbStatus(bool isDoNotDisturb)
+{
+    isDoNotDisturbStatus_ = isDoNotDisturb;
 }
 
 bool AudioVolume::IsChangeVolume(uint32_t sessionId, float volumeFloat, int32_t volumeLevel)

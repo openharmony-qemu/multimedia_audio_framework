@@ -142,6 +142,7 @@ private:
     void DeInit();
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
+    bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
 
     // Called by EventEntry - with lock
     // Stream operations
@@ -332,6 +333,9 @@ private:
     bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc);
 
+    void AddSessionId(const uint32_t sessionId);
+    void DeleteSessionId(const uint32_t sessionId);
+
     bool IsPaRoute(uint32_t routeFlag);
     int32_t HandleScoOutputDeviceFetched(
         shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason);
@@ -370,6 +374,7 @@ private:
         AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     int32_t ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void OnAudioSceneChange(const AudioScene& audioScene);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -401,6 +406,10 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+
+    // Save the relationship of uid and session id.
+    std::map<uint32_t, uid_t> sessionIdMap_;
+    std::mutex sessionIdMutex_;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     static bool isBtListenerRegistered;

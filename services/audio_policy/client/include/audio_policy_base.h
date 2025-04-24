@@ -462,6 +462,8 @@ public:
 
     virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) = 0;
+    
+    virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };
