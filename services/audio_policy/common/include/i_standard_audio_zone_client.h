@@ -53,7 +53,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
         AudioZoneInterruptReason reason) = 0;
 
-    virtual void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
+    virtual void OnInterruptEvent(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
         AudioZoneInterruptReason reason) = 0;
 

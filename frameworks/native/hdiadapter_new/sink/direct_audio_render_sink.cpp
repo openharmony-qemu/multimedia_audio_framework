@@ -84,16 +84,17 @@ int32_t DirectAudioRenderSink::Start(void)
     std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     if (testFlag_) {
+        started_ = true;
         lock.unlock();
         StartTestThread();
-    } else {
-        AudioXCollie audioXCollie("DirectAudioRenderSink::Start", TIMEOUT_SECONDS_10,
-            nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-        CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-        int32_t ret = audioRender_->Start(audioRender_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
-        started_ = true;
+        return SUCCESS;
     }
+    AudioXCollie audioXCollie("DirectAudioRenderSink::Start", TIMEOUT_SECONDS_10,
+        nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    int32_t ret = audioRender_->Start(audioRender_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
+    started_ = true;
     return SUCCESS;
 }
 

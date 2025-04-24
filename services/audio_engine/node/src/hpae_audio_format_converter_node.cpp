@@ -117,7 +117,8 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
             converterOuput_.GetFrameLen() * sizeof(float) * channelConverter_.GetOutChannelInfo().numChannels);
     }
 #endif
-    AUDIO_DEBUG_LOG("NodeId %{public}d, buffer valid %{public}d", GetSessionId(), converterOuput_.IsValid());
+    // pass valid tag to next node
+    converterOuput_.SetBufferValid(inputs[0]->IsValid());
     return &converterOuput_;
 }
 

@@ -308,6 +308,7 @@ config("audio_service_config") {
     "client/include",
     "server/include",
     "server/include/config",
+    "../audio_engine/manager/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/common/definitions/include",
     "../audio_policy/server/include/service/common",
@@ -402,6 +403,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../audio_engine:audio_engine_manager",
     "../audio_policy:audio_foundation",
   ]
 
@@ -477,6 +479,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
     "server/src/audio_server_effect.cpp",
+    "server/src/audio_server_hpae_dump.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
 
@@ -491,6 +494,7 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioutils:audio_xml_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../audio_engine:audio_engine_manager",
   ]
 
   external_deps = [

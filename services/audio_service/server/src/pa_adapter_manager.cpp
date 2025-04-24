@@ -162,7 +162,7 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
 
 void PaAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
-    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
     sinkInputs = sinkInputs_;
     Trace trace("PaAdapterManager::GetAllSinkInputs size:" + std::to_string(sinkInputs.size()));
 }

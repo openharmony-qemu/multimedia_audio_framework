@@ -89,12 +89,12 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
                 *(event->descriptor), event->zoneChangeReason);
             break;
         case AudioZoneEventType::AUDIO_ZONE_INTERRUPT_EVENT:
-            if (event->deviceId == -1) {
+            if (event->deviceTag.empty()) {
                 clients_[event->clientPid]->OnInterruptEvent(event->zoneId,
                     event->interrupts, event->zoneInterruptReason);
             } else {
                 clients_[event->clientPid]->OnInterruptEvent(event->zoneId,
-                    event->deviceId, event->interrupts, event->zoneInterruptReason);
+                    event->deviceTag, event->interrupts, event->zoneInterruptReason);
             }
             break;
         default:
@@ -156,7 +156,7 @@ void AudioZoneClientManager::SendZoneChangeEvent(pid_t clientPid, std::shared_pt
         descriptor->zoneId_, clientPid);
 }
 
-void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zoneId, int32_t deviceId,
+void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zoneId, const std::string &deviceTag,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
     AudioZoneInterruptReason reason)
 {
@@ -168,7 +168,7 @@ void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zon
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
     event->clientPid = clientPid;
     event->zoneId = zoneId;
-    event->deviceId = deviceId;
+    event->deviceTag = deviceTag;
     event->type = AudioZoneEventType::AUDIO_ZONE_INTERRUPT_EVENT;
     event->interrupts = interrupts;
     event->zoneInterruptReason = reason;

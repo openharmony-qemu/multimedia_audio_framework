@@ -219,42 +219,6 @@ int32_t AudioPolicyProxy::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-    const int32_t volumeLevel, const int32_t volumeFlag)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
-
-    (void)data.WriteInt32(zoneId);
-    (void)data.WriteInt32(static_cast<int32_t>(volumeType));
-    (void)data.WriteInt32(volumeLevel);
-    (void)data.WriteInt32(volumeFlag);
-    int32_t error = Remote()->SendRequest(
-        static_cast<int32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUME_LEVEL_FOR_ZONE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
-    return reply.ReadInt32();
-}
-
-
-int32_t AudioPolicyProxy::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
-
-    (void)data.WriteInt32(zoneId);
-    (void)data.WriteInt32(static_cast<int32_t>(volumeType));
-    int32_t error = Remote()->SendRequest(
-        static_cast<int32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUME_LEVEL_FOR_ZONE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "SendRequest failed, error: %{public}d", error);
-    int32_t retCode = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(retCode == ERR_NONE, -1, "GetSystemVolumeLevelForZone failed, error: %{public}d", retCode);
-    return reply.ReadInt32();
-}
-
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::GetAudioInterruptForZone(
     int32_t zoneId)
 {
@@ -283,7 +247,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::GetAudioI
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::GetAudioInterruptForZone(
-    int32_t zoneId, int32_t deviceId)
+    int32_t zoneId, const std::string &deviceTag)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -292,7 +256,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::GetAudioI
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), interrupts, "WriteInterfaceToken failed");
 
     (void)data.WriteInt32(zoneId);
-    (void)data.WriteInt32(deviceId);
+    (void)data.WriteString(deviceTag);
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::GET_AUDIO_INTERRUPT_OF_DEVICE_FOR_ZONE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, interrupts, "SendRequest failed, error: %{public}d", error);
@@ -310,7 +274,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyProxy::GetAudioI
     return interrupts;
 }
 
-int32_t AudioPolicyProxy::EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable)
+int32_t AudioPolicyProxy::EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -318,7 +282,7 @@ int32_t AudioPolicyProxy::EnableAudioZoneInterruptReport(int32_t zoneId, int32_t
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
 
     (void)data.WriteInt32(zoneId);
-    (void)data.WriteInt32(deviceId);
+    (void)data.WriteString(deviceTag);
     (void)data.WriteBool(enable);
     int32_t error = Remote()->SendRequest(
         static_cast<int32_t>(AudioPolicyInterfaceCode::ENABLE_AUDIO_ZONE_INTERRUPT_REPORT), data, reply, option);
@@ -346,7 +310,7 @@ int32_t AudioPolicyProxy::InjectInterruptToAudioZone(int32_t zoneId,
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+int32_t AudioPolicyProxy::InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts)
 {
     MessageParcel data;
@@ -355,7 +319,7 @@ int32_t AudioPolicyProxy::InjectInterruptToAudioZone(int32_t zoneId, int32_t dev
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
 
     (void)data.WriteInt32(zoneId);
-    (void)data.WriteInt32(deviceId);
+    (void)data.WriteString(deviceTag);
     (void)data.WriteInt32(static_cast<int32_t>(interrupts.size()));
     for (auto &it : interrupts) {
         AudioInterrupt::Marshalling(data, it.first);

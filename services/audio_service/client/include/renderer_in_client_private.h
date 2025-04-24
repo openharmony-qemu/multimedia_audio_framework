@@ -205,7 +205,7 @@ public:
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
-    void SetCallStartByUserTid(uint32_t tid) override;
+    void SetCallStartByUserTid(pid_t tid) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -441,7 +441,7 @@ private:
     StreamSwitchingInfo switchingInfo_ {false, INVALID};
 
     std::mutex lastCallStartByUserTidMutex_;
-    std::optional<uint32_t> lastCallStartByUserTid_ = std::nullopt;
+    std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

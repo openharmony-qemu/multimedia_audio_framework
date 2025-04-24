@@ -20,11 +20,12 @@
 #include <vector>
 #include "audio_service_adapter.h"
 #include "audio_module_info.h"
+#include "audio_service_hpae_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class ProAudioServiceAdapterImpl : public AudioServiceAdapter,
+class ProAudioServiceAdapterImpl : public AudioServiceAdapter, public AudioServiceHpaeCallback,
                                    public std::enable_shared_from_this<ProAudioServiceAdapterImpl> {
 public:
     explicit ProAudioServiceAdapterImpl(std::unique_ptr<AudioServiceAdapterCallback> &cb);
@@ -56,6 +57,23 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
     // callback Member functions
+    virtual void OnOpenAudioPortCb(int32_t portId) override;
+    virtual void OnCloseAudioPortCb(int32_t result) override;
+    virtual void OnSetSinkMuteCb(int32_t result) override;
+    virtual void OnSetSourceOutputMuteCb(int32_t result) override;
+
+    virtual void OnGetAllSinkInputsCb(int32_t result, std::vector<SinkInput> &sinkInputs) override;
+    virtual void OnGetAllSourceOutputsCb(int32_t result, std::vector<SourceOutput> &sourceOutputs) override;
+    virtual void OnGetAllSinksCb(int32_t result, std::vector<SinkInfo> &sinks) override;
+
+    virtual void OnMoveSinkInputByIndexOrNameCb(int32_t result) override;
+    virtual void OnMoveSourceOutputByIndexOrNameCb(int32_t result) override;
+
+    virtual void OnGetAudioEffectPropertyCbV3(int32_t result) override;
+    virtual void OnGetAudioEffectPropertyCb(int32_t result) override;
+    virtual void OnGetAudioEnhancePropertyCbV3(int32_t result) override;
+    virtual void OnGetAudioEnhancePropertyCb(int32_t result) override;
+    virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
 
 private:
     std::mutex lock_;

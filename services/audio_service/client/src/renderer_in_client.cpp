@@ -878,7 +878,7 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
 
 void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 {
-    uint32_t tid;
+    pid_t tid;
     switch (rendererInfo_.playerType) {
         case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
             // main thread

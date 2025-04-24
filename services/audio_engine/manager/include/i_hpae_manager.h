@@ -30,12 +30,12 @@ class IHpaeManager {
 public:
     virtual ~IHpaeManager() = default;
 
-    static std::shared_ptr<IHpaeManager> GetHpaeManager();
+    static IHpaeManager& GetHpaeManager();
 
     virtual int32_t Init() = 0;
     virtual int32_t DeInit() = 0;
     virtual int32_t RegisterSerivceCallback(const std::weak_ptr<AudioServiceHpaeCallback> &callback) = 0;
-    virtual int32_t RegisterHpaeDumpCallback(AudioServiceHpaeDumpCallback *callback) = 0;
+    virtual int32_t RegisterHpaeDumpCallback(const std::weak_ptr<AudioServiceHpaeDumpCallback> &callback) = 0;
     virtual void DumpSinkInfo(std::string deviceName) = 0;
     virtual void DumpSourceInfo(std::string deviceName) = 0;
     virtual uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
@@ -122,6 +122,7 @@ public:
         AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
     virtual void UpdateExtraSceneType(
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) = 0;
+    virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

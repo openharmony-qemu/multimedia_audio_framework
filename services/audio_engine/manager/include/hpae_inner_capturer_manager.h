@@ -88,6 +88,7 @@ public:
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo) override;
     std::vector<SourceOutput> GetAllSourceOutputsInfo() override;
     std::string GetThreadName() override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
 
 private:
     void TransStreamInfoToNodeInfoInner(const HpaeStreamInfo &streamInfo, HpaeNodeInfo &nodeInfo);
@@ -105,6 +106,7 @@ private:
     uint32_t GetSinkInputNodeIdInner();
     void AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds, bool isMoveAll);
+    void InitSinkInner();
     uint32_t sinkInputNodeCounter_ = 0;
     std::atomic<bool> isInit_ = false;
     std::atomic<bool> isMute_ = false;

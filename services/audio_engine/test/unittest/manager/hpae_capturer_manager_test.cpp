@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-std::string g_rootCapturerPath = "/data/data/.pulse_dir/";
+std::string g_rootCapturerPath = "/data/";
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_SESSION_ID = 123456;
 

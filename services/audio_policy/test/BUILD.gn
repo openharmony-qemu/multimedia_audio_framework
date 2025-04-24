@@ -166,7 +166,6 @@ ohos_unittest("audio_zone_service_unit_test") {
     "./unittest/audio_zone_service_unit_test/audio_zone_device_unit_test.cpp",
     "./unittest/audio_zone_service_unit_test/audio_zone_interrupt_unit_test.cpp",
     "./unittest/audio_zone_service_unit_test/audio_zone_unit_test.cpp",
-    "./unittest/audio_zone_service_unit_test/audio_zone_volume_unit_test.cpp",
   ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
@@ -1429,7 +1428,10 @@ ohos_unittest("audio_policy_server_unit_test") {
     "safwk:system_ability_fwk",
   ]
 
-  sources = [ "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp",
+    "./unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test_second.cpp",
+  ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 

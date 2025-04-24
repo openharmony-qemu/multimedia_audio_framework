@@ -444,7 +444,7 @@ int32_t CapturerInServer::StartInner()
     std::unique_lock<std::mutex> lock(statusLock_);
 
     if (status_ != I_STATUS_IDLE && status_ != I_STATUS_PAUSED && status_ != I_STATUS_STOPPED) {
-        AUDIO_ERR_LOG("CapturerInServer::Start failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Start failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -475,7 +475,7 @@ int32_t CapturerInServer::Pause()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED) {
-        AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     if (needCheckBackground_) {
@@ -498,7 +498,7 @@ int32_t CapturerInServer::Flush()
     } else if (status_ == I_STATUS_STOPPED) {
         status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
-        AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -533,7 +533,7 @@ int32_t CapturerInServer::Stop()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
-        AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;

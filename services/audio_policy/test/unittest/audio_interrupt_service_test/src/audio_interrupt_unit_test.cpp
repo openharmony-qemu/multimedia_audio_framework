@@ -525,8 +525,8 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_024, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
     int32_t zoneId = 1;
 
-    auto getZoneFunc = [](int32_t uid, int32_t deviceId,
-        const std::string &tag)->int32_t {
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag)->int32_t {
         return 0;
     };
 
@@ -554,8 +554,8 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_025, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
     int32_t zoneId = 0;
 
-    auto getZoneFunc = [](int32_t uid, int32_t deviceId,
-        const std::string &tag)->int32_t {
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag)->int32_t {
         return 0;
     };
 
@@ -1626,7 +1626,7 @@ HWTEST(AudioInterruptUnitTest, SendSessionTimeOutStopEvent_005, TestSize.Level1)
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
     interruptServiceTest->SendSessionTimeOutStopEvent(1, audioInterrupt, audioFocusInfoList);
     auto it = interruptServiceTest->zonesMap_.find(1);
-    EXPECT_EQ(it->second->pids.find(1), it->second->pids.end());
+    EXPECT_NE(it->second->pids.find(1), it->second->pids.end());
 }
 
 /**
@@ -1821,8 +1821,8 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_001, TestSize.Level1)
     server->interruptService_->Init(server);
     auto interruptServiceTest = server->interruptService_;
 
-    auto getZoneFunc = [](int32_t uid, int32_t deviceId,
-        const std::string &tag)->int32_t {
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag)->int32_t {
         return 1;
     };
 
@@ -1843,8 +1843,8 @@ HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_003, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
 
-    auto getZoneFunc = [](int32_t uid, int32_t deviceId,
-        const std::string &tag)->int32_t {
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag)->int32_t {
         return 1;
     };
 
@@ -1902,12 +1902,15 @@ static void AddVoipInterruptToList(AudioFocusList &list, int32_t streamId, int32
 HWTEST(AudioInterruptUnitTest, MigrateAudioInterruptZone_006, TestSize.Level1)
 {
     sptr<AudioPolicyServer> server = new (std::nothrow) AudioPolicyServer(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    server->coreService_ = AudioCoreService::GetCoreService();
+    server->coreService_->Init();
+    server->eventEntry_ = server->coreService_->GetEventEntry();
     server->interruptService_ = std::make_shared<AudioInterruptService>();
     server->interruptService_->Init(server);
     auto interruptServiceTest = server->interruptService_;
 
-    auto getZoneFunc = [](int32_t uid, int32_t deviceId,
-        const std::string &tag)->int32_t {
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag)->int32_t {
         if (uid == 2) {
             return 1;
         }
@@ -1974,10 +1977,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_002, TestSize.Level1)
 */
 HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_003, TestSize.Level1)
 {
-    sptr<AudioPolicyServer> server = new (std::nothrow) AudioPolicyServer(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    server->interruptService_ = std::make_shared<AudioInterruptService>();
-    server->interruptService_->Init(server);
-    auto interruptServiceTest = server->interruptService_;
+    auto interruptServiceTest = GetTnterruptServiceTest();
     AudioFocusList interrupts;
 
     interruptServiceTest->zonesMap_.clear();
@@ -2000,7 +2000,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_004, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
     AudioFocusList interrupts;
     interruptServiceTest->zonesMap_.clear();
-    auto ret = interruptServiceTest->InjectInterruptToAudioZone(0, -1, interrupts);
+    auto ret = interruptServiceTest->InjectInterruptToAudioZone(0, "", interrupts);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
@@ -2019,10 +2019,10 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_005, TestSize.Level1)
     interruptServiceTest->zonesMap_[1] = nullptr;
 
     SetUid1041();
-    auto ret = interruptServiceTest->InjectInterruptToAudioZone(2, -1, interrupts);
+    auto ret = interruptServiceTest->InjectInterruptToAudioZone(2, "", interrupts);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
     SetUid1041();
-    ret = interruptServiceTest->InjectInterruptToAudioZone(1, -1, interrupts);
+    ret = interruptServiceTest->InjectInterruptToAudioZone(1, "", interrupts);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
@@ -2041,7 +2041,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_006, TestSize.Level1)
     interruptServiceTest->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
 
     SetUid1041();
-    auto ret = interruptServiceTest->InjectInterruptToAudioZone(1, -1, interrupts);
+    auto ret = interruptServiceTest->InjectInterruptToAudioZone(1, "", interrupts);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
@@ -2053,6 +2053,9 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_006, TestSize.Level1)
 HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_007, TestSize.Level1)
 {
     sptr<AudioPolicyServer> server = new (std::nothrow) AudioPolicyServer(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    server->coreService_ = AudioCoreService::GetCoreService();
+    server->coreService_->Init();
+    server->eventEntry_ = server->coreService_->GetEventEntry();
     server->interruptService_ = std::make_shared<AudioInterruptService>();
     server->interruptService_->Init(server);
     auto interruptServiceTest = server->interruptService_;
@@ -2064,7 +2067,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_007, TestSize.Level1)
     
     SetUid1041();
     EXPECT_NO_THROW(
-        interruptServiceTest->InjectInterruptToAudioZone(1, 1, interrupts);
+        interruptServiceTest->InjectInterruptToAudioZone(1, "1", interrupts);
     );
 }
 
@@ -2122,7 +2125,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_009, TestSize.Level1)
 
     SetUid1041();
     EXPECT_NO_THROW(
-        interruptServiceTest->InjectInterruptToAudioZone(0, 1, interrupts);
+        interruptServiceTest->InjectInterruptToAudioZone(0, "1", interrupts);
     );
     EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
 }
@@ -2152,9 +2155,9 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_010, TestSize.Level1)
 
     SetUid1041();
     EXPECT_NO_THROW(
-        interruptServiceTest->InjectInterruptToAudioZone(0, 1, interrupts);
+        interruptServiceTest->InjectInterruptToAudioZone(0, "1", interrupts);
     );
-    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 1);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
 }
 
 /**

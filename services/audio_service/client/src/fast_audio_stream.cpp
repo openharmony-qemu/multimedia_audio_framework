@@ -581,7 +581,7 @@ float FastAudioStream::GetSpeed()
 // only call from StartAudioStream
 void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 {
-    uint32_t tid;
+    pid_t tid;
     switch (rendererInfo_.playerType) {
         case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
             // main thread
@@ -1124,7 +1124,7 @@ void FastAudioStream::FetchDeviceForSplitStream()
     }
 }
 
-void FastAudioStream::SetCallStartByUserTid(uint32_t tid)
+void FastAudioStream::SetCallStartByUserTid(pid_t tid)
 {
     std::lock_guard lock(lastCallStartByUserTidMutex_);
     lastCallStartByUserTid_ = tid;

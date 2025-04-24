@@ -295,6 +295,7 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -432,22 +433,17 @@ public:
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
 
-    int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-        const int32_t volumeLevel, const int32_t volumeFlag = 0) override;
-
-    int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) override;
-
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) override;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
-        int32_t zoneId, int32_t deviceId) override;
+        int32_t zoneId, const std::string &deviceTag) override;
 
-    int32_t EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable) override;
+    int32_t EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable) override;
 
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
     
-    int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+    int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
@@ -603,6 +599,7 @@ private:
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
     static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 0;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
+    static constexpr int32_t MCU_UID = 7500;
     static constexpr int32_t EDM_SERVICE_UID = 3057;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';

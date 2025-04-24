@@ -56,6 +56,7 @@ public:
     virtual int32_t SetPrivacyType(uint32_t sessionId, int32_t privacyType) = 0;
     virtual int32_t GetPrivacyType(uint32_t sessionId, int32_t &privacyType) = 0;
     virtual int32_t RegisterWriteCallback(uint32_t sessionId, const std::weak_ptr<IStreamCallback> &callback) = 0;
+    virtual int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) = 0;
 
     virtual int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state)
     {

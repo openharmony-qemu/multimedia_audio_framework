@@ -84,16 +84,16 @@ HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_003, TestSize.Level
     ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
     std::shared_ptr<AudioInterruptZone> audioInterruptZone = std::make_shared<AudioInterruptZone>();
     AudioInterrupt audioInterrupt;
-    audioInterrupt.deviceId = 1;
+    audioInterrupt.deviceTag = "1";
     AudioFocuState audioFocuState = AudioFocuState::ACTIVE;
     audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt, audioFocuState);
     audioInterruptZoneManager->service_->zonesMap_.insert({0, audioInterruptZone});
 
     int32_t zoneId = 0;
-    int32_t deviceId = 1;
+    std::string deviceTag = "1";
     AudioFocusList focusInfoList;
 
-    auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceId, focusInfoList);
+    auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(focusInfoList.size(), 1);
 }
@@ -112,16 +112,16 @@ HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_004, TestSize.Level
     ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
     std::shared_ptr<AudioInterruptZone> audioInterruptZone = std::make_shared<AudioInterruptZone>();
     AudioInterrupt audioInterrupt;
-    audioInterrupt.deviceId = 1;
+    audioInterrupt.deviceTag = "1";
     AudioFocuState audioFocuState = AudioFocuState::ACTIVE;
     audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt, audioFocuState);
     audioInterruptZoneManager->service_->zonesMap_.insert({0, audioInterruptZone});
 
     int32_t zoneId = 0;
-    int32_t deviceId = 0;
+    std::string deviceTag = "0";
     AudioFocusList focusInfoList;
 
-    auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceId, focusInfoList);
+    auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(focusInfoList.size(), 0);
 }
@@ -142,10 +142,10 @@ HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_005, TestSize.Level
     audioInterruptZoneManager->service_->zonesMap_.insert({0, audioInterruptZone});
 
     int32_t zoneId = 0;
-    int32_t deviceId = 0;
+    std::string deviceTag = "0";
     AudioFocusList focusInfoList;
 
-    auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceId, focusInfoList);
+    auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(focusInfoList.size(), 0);
 }
@@ -166,10 +166,10 @@ HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_006, TestSize.Level
     audioInterruptZoneManager->service_->zonesMap_.insert({0, audioInterruptZone});
 
     int32_t zoneId = 1;
-    int32_t deviceId = 0;
+    std::string deviceTag = "0";
     AudioFocusList focusInfoList;
 
-    auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceId, focusInfoList);
+    auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(focusInfoList.size(), 0);
 }

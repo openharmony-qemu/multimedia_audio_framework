@@ -19,6 +19,7 @@
 
 #include "hpae_source_input_cluster.h"
 #include "hpae_node_common.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -94,29 +95,31 @@ std::shared_ptr<HpaeNode> HpaeSourceInputCluster::GetSharedInstance()
 
 std::shared_ptr<HpaeNode> HpaeSourceInputCluster::GetSharedInstance(HpaeNodeInfo &nodeInfo)
 {
-    // todo: change function name
-    std::string nodeKey = TransHpaeResampleNodeInfoToStringKey(nodeInfo);
-    std::string inputNodeKey = TransHpaeResampleNodeInfoToStringKey(GetNodeInfo());
-    AUDIO_INFO_LOG("sourceinput nodekey:[%{public}s] effectnodekey:[%{public}s]",
-        inputNodeKey.c_str(), nodeKey.c_str());
-    if (CheckHpaeNodeInfoIsSame(nodeInfo, GetNodeInfo())) {
-        AUDIO_INFO_LOG("sourceinputnode nodekey is same as capture effect");
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, nullptr, "sourceInputNode_ is nullptr");
+    std::string preNodeKey = TransNodeInfoToStringKey(nodeInfo);
+    std::string inputNodeKey = TransNodeInfoToStringKey(GetNodeInfoWithInfo(nodeInfo.sourceBufferType));
+    AUDIO_INFO_LOG("sourceInput:[%{public}s] preNode:[%{public}s]",
+        inputNodeKey.c_str(), preNodeKey.c_str());
+    if (CheckHpaeNodeInfoIsSame(nodeInfo, GetNodeInfoWithInfo(nodeInfo.sourceBufferType))) {
+        AUDIO_INFO_LOG("Specification of sourceInputNode is same with preNode");
         return sourceInputNode_;
     }
-    if (fmtConverterNodeMap_.find(nodeKey) == fmtConverterNodeMap_.end()) {
-        fmtConverterNodeMap_[nodeKey] = std::make_shared<HpaeAudioFormatConverterNode>(GetNodeInfo(), nodeInfo);
+    if (!SafeGetMap(fmtConverterNodeMap_, preNodeKey)) {
+        fmtConverterNodeMap_[preNodeKey] =
+            std::make_shared<HpaeAudioFormatConverterNode>(GetNodeInfoWithInfo(nodeInfo.sourceBufferType), nodeInfo);
         nodeInfo.nodeName = "HpaeAudioFormatConverterNode";
         nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
-        fmtConverterNodeMap_[nodeKey]->SetNodeInfo(nodeInfo);
+        fmtConverterNodeMap_[preNodeKey]->SetNodeInfo(nodeInfo);
     }
-    fmtConverterNodeMap_[nodeKey]->ConnectWithInfo(sourceInputNode_, fmtConverterNodeMap_[nodeKey]->GetNodeInfo());
+    fmtConverterNodeMap_[preNodeKey]->ConnectWithInfo(sourceInputNode_,
+        fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = sourceInputNode_->GetNodeInfo().statusCallback.lock()) {
         callback->OnNotifyDfxNodeInfo(
-            true, sourceInputNode_->GetNodeId(), fmtConverterNodeMap_[nodeKey]->GetNodeInfo());
+            true, sourceInputNode_->GetNodeId(), fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
     }
 #endif
-    return fmtConverterNodeMap_[nodeKey];
+    return fmtConverterNodeMap_[preNodeKey];
 }
 
 OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort()
@@ -126,94 +129,115 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort()
 
 OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort(HpaeNodeInfo &nodeInfo, bool isDisConnect)
 {
-    std::string nodeKey = TransHpaeResampleNodeInfoToStringKey(nodeInfo);
-    std::string inputNodeKey = TransHpaeResampleNodeInfoToStringKey(GetNodeInfo());
-    AUDIO_INFO_LOG("sourceinput nodekey:[%{public}s] effectnodekey:[%{public}s]",
-        inputNodeKey.c_str(), nodeKey.c_str());
-    if (CheckHpaeNodeInfoIsSame(nodeInfo, GetNodeInfo())) {
-        AUDIO_INFO_LOG("sourceinputnode nodekey is same as capture effect");
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, nullptr, "sourceInputNode_ is nullptr");
+    std::string preNodeKey = TransNodeInfoToStringKey(nodeInfo);
+    std::string inputNodeKey = TransNodeInfoToStringKey(GetNodeInfoWithInfo(nodeInfo.sourceBufferType));
+    AUDIO_INFO_LOG("sourceinput:[%{public}s] preNodeKey:[%{public}s]",
+        inputNodeKey.c_str(), preNodeKey.c_str());
+    if (CheckHpaeNodeInfoIsSame(nodeInfo, GetNodeInfoWithInfo(nodeInfo.sourceBufferType))) {
+        AUDIO_INFO_LOG("sourceInputNode is same as preNode");
         return sourceInputNode_->GetOutputPort(nodeInfo);
     }
-    CHECK_AND_RETURN_RET_LOG(fmtConverterNodeMap_.find(nodeKey) != fmtConverterNodeMap_.end(), nullptr,
-        "HpaeSourceProcessCluster not find the nodeKey = %{public}s", nodeKey.c_str());
-    if (isDisConnect && fmtConverterNodeMap_[nodeKey]->GetOutputPortNum() <= 1) {
-        AUDIO_INFO_LOG("disconnect fmtConverterNode between effectnode[[%{public}s] and sourceinputnode[%{public}s]",
-            nodeKey.c_str(), inputNodeKey.c_str());
-        fmtConverterNodeMap_[nodeKey]->DisConnectWithInfo(
-            sourceInputNode_, fmtConverterNodeMap_[nodeKey]->GetNodeInfo());
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(fmtConverterNodeMap_, preNodeKey),
+        sourceInputNode_->GetOutputPort(nodeInfo),
+        "HpaeSourceProcessCluster not find the preNodeKey = %{public}s", preNodeKey.c_str());
+    if (isDisConnect && fmtConverterNodeMap_[preNodeKey]->GetOutputPortNum() <= 1) {
+        AUDIO_INFO_LOG("disconnect fmtConverterNode between preNode[%{public}s] and sourceInputNode[%{public}s]",
+            preNodeKey.c_str(), inputNodeKey.c_str());
+        fmtConverterNodeMap_[preNodeKey]->DisConnectWithInfo(
+            sourceInputNode_, fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
     }
-    return fmtConverterNodeMap_[nodeKey]->GetOutputPort();
+    return fmtConverterNodeMap_[preNodeKey]->GetOutputPort();
 }
 
 int32_t HpaeSourceInputCluster::GetCapturerSourceInstance(const std::string &deviceClass,
     const std::string &deviceNetId, const SourceType &sourceType, const std::string &sourceName)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName);
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceInit(IAudioSourceAttr &attr)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceInit(attr);
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceDeInit()
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceDeInit();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceFlush(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceFlush();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourcePause(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourcePause();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceReset(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceReset();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceResume(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceResume();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceStart(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceStart();
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceStop(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
     return sourceInputNode_->CapturerSourceStop();
 }
 
 CapturerState HpaeSourceInputCluster::GetSourceState(void)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, CAPTURER_INVALID, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetSourceState();
 }
 
 size_t HpaeSourceInputCluster::GetOutputPortNum()
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, 0, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetOutputPortNum();
 }
 
 size_t HpaeSourceInputCluster::GetOutputPortNum(HpaeNodeInfo &nodeInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, 0, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetOutputPortNum(nodeInfo);
 }
 
 HpaeSourceInputNodeType HpaeSourceInputCluster::GetSourceInputNodeType()
 {
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, HPAE_SOURCE_DEFAULT, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetSourceInputNodeType();
 }
 
 void HpaeSourceInputCluster::SetSourceInputNodeType(HpaeSourceInputNodeType type)
 {
+    CHECK_AND_RETURN_LOG(sourceInputNode_, "sourceInputNode_ is nullptr");
     sourceInputNode_->SetSourceInputNodeType(type);
+}
+ 
+HpaeNodeInfo &HpaeSourceInputCluster::GetNodeInfoWithInfo(HpaeSourceBufferType &type)
+{
+    return sourceInputNode_->GetNodeInfoWithInfo(type);
 }
 
 // for test
@@ -227,6 +251,17 @@ uint32_t HpaeSourceInputCluster::GetSourceInputNodeUseCount()
     return sourceInputNode_.use_count();
 }
 
+int32_t HpaeSourceInputCluster::WriteCapturerData(char *data, int32_t dataSize)
+{
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
+    return sourceInputNode_->WriteCapturerData(data, dataSize);
+}
+
+OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetSourceInputNodeOutputPort()
+{
+    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, nullptr, "sourceInputNode_ is nullptr");
+    return sourceInputNode_->GetOutputPort();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

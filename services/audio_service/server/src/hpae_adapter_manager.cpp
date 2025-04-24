@@ -59,6 +59,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
+    SetHighResolution(processConfig, sessionId);
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     rendererStreamMap_[sessionId] = rendererStream;
@@ -97,6 +98,10 @@ int32_t HpaeAdapterManager::ReleaseRender(uint32_t streamIndex)
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
+    }
+
+    if (isHighResolutionExist_ && highResolutionIndex_ == streamIndex) {
+        isHighResolutionExist_ = false;
     }
 
     std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
@@ -196,7 +201,8 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
     uint32_t sessionId = 0;
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
-        AUDIO_ERR_LOG("Create capturer originalSessionId is error %{public}d", processConfig.originalSessionId);
+        AUDIO_ERR_LOG("Create capturer originalSessionId is error %{public}d, get new sessionId:%{public}u",
+            processConfig.originalSessionId, sessionId);
     } else {
         sessionId = processConfig.originalSessionId;
     }
@@ -217,6 +223,9 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
 
 int32_t HpaeAdapterManager::AddUnprocessStream(int32_t appUid)
 {
+    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    AUDIO_INFO_LOG("unprocessAppUidSet_ add appUid:%{public}d", appUid);
+    unprocessAppUidSet_.insert(appUid);
     return SUCCESS;
 }
 
@@ -265,6 +274,10 @@ std::shared_ptr<ICapturerStream> HpaeAdapterManager::CreateCapturerStream(AudioP
     const std::string &deviceName)
 {
     std::lock_guard<std::mutex> lock(paElementsMutex_);
+    if (unprocessAppUidSet_.find(processConfig.appInfo.appUid) != unprocessAppUidSet_.end()) {
+        processConfig.capturerInfo.sourceType = SOURCE_TYPE_UNPROCESSED;
+        AUDIO_INFO_LOG("app uid:%{public}d sourcetype set to unprocessed", processConfig.appInfo.appUid);
+    }
     std::shared_ptr<HpaeCapturerStreamImpl> capturerStream =
         std::make_shared<HpaeCapturerStreamImpl>(processConfig);
     if (capturerStream->InitParams(deviceName) != SUCCESS) {
@@ -284,6 +297,41 @@ void HpaeAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     sinkInputs = sinkInputs_;
     return;
+}
+
+void HpaeAdapterManager::SetHighResolution(AudioProcessConfig &processConfig, uint32_t sessionId)
+{
+    if (processConfig.audioMode != AUDIO_MODE_PLAYBACK) {
+        return;
+    }
+    bool spatializationEnabled = processConfig.rendererInfo.spatializationEnabled;
+    AUDIO_DEBUG_LOG("spatializationEnabled : %{public}d, isHighResolutionExist_ : %{public}d",
+        spatializationEnabled, isHighResolutionExist_);
+
+    if (spatializationEnabled == false && isHighResolutionExist_ == false && CheckHighResolution(processConfig)) {
+        AUDIO_INFO_LOG("current stream marked as high resolution");
+        isHighResolutionExist_ = true;
+        highResolutionIndex_ = sessionId;
+    } else {
+        AUDIO_INFO_LOG("current stream marked as non-high resolution");
+    }
+}
+
+bool HpaeAdapterManager::CheckHighResolution(const AudioProcessConfig &processConfig) const
+{
+    DeviceType deviceType = processConfig.deviceType;
+    AudioStreamType streamType = processConfig.streamType;
+    AudioSamplingRate sampleRate = processConfig.streamInfo.samplingRate;
+    AudioSampleFormat sampleFormat = processConfig.streamInfo.format;
+
+    AUDIO_DEBUG_LOG("deviceType:%{public}d, streamType:%{public}d, sampleRate:%{public}d, sampleFormat:%{public}d",
+        deviceType, streamType, sampleRate, sampleFormat);
+
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && streamType == STREAM_MUSIC &&
+        sampleRate >= SAMPLE_RATE_48000 && sampleFormat >= SAMPLE_S24LE) {
+        return true;
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

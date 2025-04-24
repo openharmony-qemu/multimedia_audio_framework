@@ -176,16 +176,16 @@ TEST_F(HpaeManagerUnitTest, GetHpaeRenderManagerTest)
 
 TEST_F(HpaeManagerUnitTest, IHpaeRenderManagerTest)
 {
-    IHpaeManager::GetHpaeManager()->Init();
-    EXPECT_EQ(IHpaeManager::GetHpaeManager()->IsInit(), true);
+    IHpaeManager::GetHpaeManager().Init();
+    EXPECT_EQ(IHpaeManager::GetHpaeManager().IsInit(), true);
     sleep(1);
-    EXPECT_EQ(IHpaeManager::GetHpaeManager()->IsRunning(), true);
+    EXPECT_EQ(IHpaeManager::GetHpaeManager().IsRunning(), true);
 
     AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    EXPECT_EQ(IHpaeManager::GetHpaeManager()->OpenAudioPort(audioModuleInfo), SUCCESS);
-    IHpaeManager::GetHpaeManager()->DeInit();
-    EXPECT_EQ(IHpaeManager::GetHpaeManager()->IsInit(), false);
-    EXPECT_EQ(IHpaeManager::GetHpaeManager()->IsRunning(), false);
+    EXPECT_EQ(IHpaeManager::GetHpaeManager().OpenAudioPort(audioModuleInfo), SUCCESS);
+    IHpaeManager::GetHpaeManager().DeInit();
+    EXPECT_EQ(IHpaeManager::GetHpaeManager().IsInit(), false);
+    EXPECT_EQ(IHpaeManager::GetHpaeManager().IsRunning(), false);
 }
 
 TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest)

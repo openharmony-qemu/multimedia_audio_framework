@@ -44,6 +44,11 @@ public:
     size_t GetOutputPortNum();
     int32_t CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr);
     int32_t CaptureEffectRelease(uint64_t sceneKeyCode);
+
+    // for ut test
+    uint32_t GetCapturerEffectNodeUseCount();
+    uint32_t GetConverterNodeCount();
+    size_t GetPreOutNum();
 private:
     std::shared_ptr<HpaeCaptureEffectNode> captureEffectNode_;
     std::unordered_map<std::string, std::shared_ptr<HpaeAudioFormatConverterNode>> fmtConverterNodeMap_;

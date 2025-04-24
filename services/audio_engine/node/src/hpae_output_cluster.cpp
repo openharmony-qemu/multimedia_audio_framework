@@ -112,7 +112,7 @@ void HpaeOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *
     }
 #endif
     
-    if (sceneConverterMap_.find(sceneType) == sceneConverterMap_.end()) {
+    if (!SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
     } else {
 #ifdef ENABLE_HIDUMP_DFX
@@ -141,7 +141,7 @@ void HpaeOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffe
     HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
     HpaeProcessorType sceneType = preNodeInfo.sceneType;
     AUDIO_INFO_LOG("HpaeOutputCluster input sceneType is %{public}u", preNodeInfo.sceneType);
-    if (sceneConverterMap_.find(sceneType) != sceneConverterMap_.end()) {
+    if (SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType]->DisConnect(preNode);
         mixerNode_->DisConnect(sceneConverterMap_[sceneType]);
 #ifdef ENABLE_HIDUMP_DFX

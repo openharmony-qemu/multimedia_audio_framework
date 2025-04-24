@@ -32,7 +32,6 @@
 #include <unordered_map>
 
 #include "pulse_audio_service_adapter_impl.h"
-#include "pro_audio_service_adapter_impl.h"
 
 using namespace std;
 

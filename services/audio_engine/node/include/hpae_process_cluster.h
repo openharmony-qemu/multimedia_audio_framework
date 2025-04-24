@@ -26,7 +26,7 @@ namespace HPAE {
 class HpaeProcessCluster : public OutputNode<HpaePcmBuffer*>, public InputNode<HpaePcmBuffer*>,
     public INodeFormatInfoCallback {
 public:
-    HpaeProcessCluster(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo);
+    HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo);
     virtual ~HpaeProcessCluster();
     virtual void DoProcess() override;
     virtual bool Reset() override;

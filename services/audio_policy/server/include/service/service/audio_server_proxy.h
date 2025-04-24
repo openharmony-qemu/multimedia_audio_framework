@@ -111,6 +111,7 @@ public:
     void DestroyHdiPortProxy(uint32_t id);
     void SetDeviceConnectedFlag(bool flag);
     void NotifySettingsDataReady();
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}
