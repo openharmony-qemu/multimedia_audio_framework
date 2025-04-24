@@ -286,7 +286,7 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
             DisConnectInputSession();
         }
     }
-    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name);
+    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, !isMoveAll);
 }
 
 int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,

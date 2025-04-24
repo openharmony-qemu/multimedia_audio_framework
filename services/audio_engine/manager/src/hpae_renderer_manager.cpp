@@ -396,7 +396,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
         DisConnectInputSession(it);
     }
     AUDIO_INFO_LOG("sink input count:%{public}zu", sinkInputs.size());
-    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name);
+    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, !isMoveAll);
 }
 
 int32_t HpaeRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
@@ -660,6 +660,16 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo)
         AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", sinkInfo.deviceName.c_str());
         sinkInfo_ = sinkInfo;
         InitManager();
+
+        for (const auto &it : sinkInputNodeMap_) {
+            if (it.second->GetState() == RENDERER_RUNNING) {
+                AUDIO_INFO_LOG("connect node :%{public}d to sink:%{public}s", it.second, sinkInfo_.deviceClass.c_str());
+                ConnectInputSession(it.first);
+                if (outputCluster_->GetState() != RENDERER_RUNNING) {
+                    outputCluster_->Start();
+                }
+            }
+        }
     };
     SendRequest(request, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
@@ -668,7 +678,7 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo)
 
 void HpaeRendererManager::InitManager()
 {
-    AUDIO_INFO_LOG("HpaeRendererManager::init devicename:%{public}s", sinkInfo_.deviceName.c_str());
+    AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
