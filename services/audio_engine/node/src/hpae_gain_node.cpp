@@ -168,7 +168,10 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     }
     if (fadeInState_) {
         CHECK_AND_RETURN_LOG(input->IsValid(), "GainNode: invalid data no need to do fade in");
-        CHECK_AND_RETURN_LOG(!IsSilentData(input), "GainNode: silent data no need to do fade in");
+        if (IsSilentData(input)) {
+            AUDIO_DEBUG_LOG("GainNode: silent data no need to do fade in");
+            return;
+        }
         AUDIO_INFO_LOG("GainNode: fade in started!");
         ProcessVol(data, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
         fadeInState_ = false;

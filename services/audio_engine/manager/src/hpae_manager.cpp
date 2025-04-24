@@ -963,7 +963,7 @@ void HpaeManager::HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveIn
 }
 
 void HpaeManager::HandleUpdateStatus(
-    HpaeStreamClassType streamClassType, uint32_t sessionId, uint32_t status, IOperation operation)
+    HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionState status, IOperation operation)
 {
     AUDIO_INFO_LOG("HpaeManager::HandleUpdateStatus sessionid:%{public}u "
                    "status:%{public}d operation:%{public}d",

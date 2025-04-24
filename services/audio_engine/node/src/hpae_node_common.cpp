@@ -57,6 +57,42 @@ static std::unordered_map<HpaeProcessorType, AudioEnhanceScene> g_processorTypeT
     {HPAE_SCENE_VOICE_MESSAGE, SCENE_VOICE_MESSAGE}
 };
 
+static std::unordered_map<HpaseSessionState, std::string> g_sessionStateToStrMap = {
+    {HPAE_SESSION_NEW, "NEW"},
+    {HPAE_SESSION_PREPARED, "PREPARED"},
+    {HPAE_SESSION_RUNNING, "RUNNING"},
+    {HPAE_SESSION_PAUSING, "PAUSING"},
+    {HPAE_SESSION_PAUSED, "PAUSED"},
+    {HPAE_SESSION_STOPPING, "STOPPING"},
+    {HPAE_SESSION_STOPPED, "STOPPED"},
+    {HPAE_SESSION_RELEASED, "RELEASED"}
+};
+
+static std::unordered_map<StreamManagerState, std::string> g_streamMgrStateToStrMap = {
+    {STREAM_MANAGER_NEW, "NEW"},
+    {STREAM_MANAGER_IDLE, "IDLE"},
+    {STREAM_MANAGER_RUNNING, "RUNNING"},
+    {STREAM_MANAGER_SUSPENDED, "SUSPENDED"},
+    {STREAM_MANAGER_RELEASED, "RELEASED"}
+
+};
+
+std::string ConvertSessionState2Str(HpaeSessionState state)
+{
+    if (g_sessionStateToStrMap.find(state) == g_sessionStateToStrMap.end()) {
+        return "UNKNOWN";
+    }
+    return g_sessionStateToStrMap[state];
+}
+
+std::string ConvertStreamManagerState2Str(StreamManagerState state)
+{
+    if (g_streamMgrStateToStrMap.find(state) == g_streamMgrStateToStrMap.end()) {
+        return "UNKNOWN";
+    }
+    return g_streamMgrStateToStrMap[state];
+}
+
 HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType)
 {
     if (g_streamTypeToSceneTypeMap.find(streamType) == g_streamTypeToSceneTypeMap.end()) {

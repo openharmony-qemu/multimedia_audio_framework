@@ -99,7 +99,7 @@ private:
     int32_t ConnectMchInputSession(uint32_t sessionId);
     int32_t DisConnectMchInputSession(uint32_t sessionId);
     int32_t DeleteMchInputSession(uint32_t sessionId);
-    void SetSessionState(uint32_t sessionId, RendererState renderState);
+    void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds, bool isMoveAll);
     void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);

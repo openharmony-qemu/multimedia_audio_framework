@@ -51,7 +51,8 @@ public:
     size_t GetPreOutNum();
     // for ut test
     const char *GetRenderFrameData(void);
-    RendererState GetSinkState(void);
+    StreamManagerState GetSinkState(void);
+    int32 SetSinkState(StreamManagerState sinkState);
 
 private:
     void HandleRemoteTiming();
@@ -61,7 +62,7 @@ private:
     std::shared_ptr<IAudioRenderSink> audioRendererSink_ = nullptr;
     uint32_t renderId_ = HDI_INVALID_ID;
     IAudioSinkAttr sinkOutAttr_;
-    RendererState state_ = RENDERER_NEW;
+    StreamManagerState state_ = STREAM_MANAGER_NEW;
     HighResolutionTimer remoteTimer_;
     TimePoint remoteTimePoint_;
     std::chrono::milliseconds remoteSleepTime_ = std::chrono::milliseconds(0);

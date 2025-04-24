@@ -35,7 +35,7 @@ constexpr int32_t SCENE_TYPE_NUM = 9;
 struct HpaeRenderSessionInfo {
     uint32_t sinkInputNodeId;
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
-    uint32_t state = I_STATUS_IDLE;
+    HpaeSessionState state = HPAE_SESSION_NEW;
 };
 
 struct HpaeSinkInputInfo {
@@ -68,7 +68,7 @@ struct HpaeSinkInfo {
 
 struct HpaeCapturerSessionInfo {
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
-    uint32_t state = I_STATUS_IDLE;
+    HpaeSessionState state = HPAE_SESSION_NEW;
 };
 
 struct HpaeSourceOutputInfo {
