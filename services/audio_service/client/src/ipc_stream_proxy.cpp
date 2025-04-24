@@ -537,7 +537,7 @@ int32_t IpcStreamProxy::RegisterThreadPriority(pid_t tid, const std::string &bun
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-    AudioParcelHelper<MessageParcel, pid_t>::MarShalling(data, tid);
+    AudioParcelHelper<MessageParcel, pid_t>::Marshalling(data, tid);
     data.WriteString(bundleName);
     data.WriteUint32(method);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_REGISTER_THREAD_PRIORITY, data, reply, option);

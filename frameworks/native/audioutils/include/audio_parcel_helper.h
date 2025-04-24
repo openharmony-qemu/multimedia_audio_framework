@@ -22,7 +22,7 @@ namespace AudioStandard {
 template<typename Parcelable, typename T>
 class AudioParcelHelper {
 public:
-    static bool MarShalling(Parcelable &parcel, const T &t);
+    static bool Marshalling(Parcelable &parcel, const T &t);
 
     static T UnmarShalling(Parcelable &parcel);
 };
@@ -30,7 +30,7 @@ public:
 template<typename Parcelable>
 class AudioParcelHelper<Parcelable, int32_t> {
 public:
-    static bool MarShalling(Parcelable &parcel, const int32_t &t)
+    static bool Marshalling(Parcelable &parcel, const int32_t &t)
     {
         return parcel.WriteInt32(t);
     }
@@ -44,7 +44,7 @@ public:
 template<typename Parcelable>
 class AudioParcelHelper<Parcelable, uint32_t> {
 public:
-    static bool MarShalling(Parcelable &parcel, const uint32_t &t)
+    static bool Marshalling(Parcelable &parcel, const uint32_t &t)
     {
         return parcel.WriteUint32(t);
     }
@@ -58,7 +58,7 @@ public:
 template<typename Parcelable>
 class AudioParcelHelper<Parcelable, int64_t> {
 public:
-    static bool MarShalling(Parcelable &parcel, const int64_t &t)
+    static bool Marshalling(Parcelable &parcel, const int64_t &t)
     {
         return parcel.WriteInt64(t);
     }
@@ -72,7 +72,7 @@ public:
 template<typename Parcelable>
 class AudioParcelHelper<Parcelable, uint64_t> {
 public:
-    static bool MarShalling(Parcelable &parcel, const uint64_t &t)
+    static bool Marshalling(Parcelable &parcel, const uint64_t &t)
     {
         return parcel.WriteUint64(t);
     }
