@@ -113,8 +113,8 @@ public:
     ClientType GetClientTypeByStreamId(int32_t streamId);
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
-    void SetDefaultVolumeType(AudioStreamType volumeType);
-    AudioStreamType GetDefaultVolumeType();
+    void SetDefaultVolumeType(const AudioStreamType volumeType);
+    const AudioStreamType GetDefaultVolumeType();
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
