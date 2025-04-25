@@ -1331,9 +1331,8 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Config dup buffer failed");
     }
     // todo check index
-    dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex);
-    capInfo.dupStream->RegisterStatusCallback(dupStreamCallback_);
-    capInfo.dupStream->RegisterWriteCallback(dupStreamCallback_);
+    capInfo.dupStream->RegisterStatusCallback(innerCapIdToDupStreamCallbackMap_[innerCapId]);
+    capInfo.dupStream->RegisterWriteCallback(innerCapIdToDupStreamCallbackMap_[innerCapId]);
 
     AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_.load());
     capInfo.isInnerCapEnabled = true;
