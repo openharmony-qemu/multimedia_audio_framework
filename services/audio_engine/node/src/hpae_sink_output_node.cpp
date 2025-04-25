@@ -23,6 +23,7 @@
 #include "hpae_format_convert.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
+#include "hpae_node_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -174,7 +175,7 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     }
 
     sinkOutAttr_ = attr;
-    state_ = RENDERER_PREPARED;
+    SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
@@ -201,7 +202,7 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
     if (audioRendererSink_ == nullptr) {
         return ERROR;
     }
-    state_ = RENDERER_INVALID;
+    SetSinkState(STREAM_MANAGER_RELEASED);
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
@@ -233,7 +234,7 @@ int32_t HpaeSinkOutputNode::RenderSinkPause(void)
         return ERROR;
     }
     audioRendererSink_->Pause();
-    state_ = RENDERER_PAUSED;
+    SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 
@@ -254,7 +255,7 @@ int32_t HpaeSinkOutputNode::RenderSinkResume(void)
     if (ret != SUCCESS) {
         return ret;
     }
-    state_ = RENDERER_RUNNING;
+    SetSinkState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
 }
 
@@ -280,7 +281,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
-    state_ = RENDERER_RUNNING;
+    SetSinkState(STREAM_MANAGER_RUNNING);
     if (GetDeviceClass() == "remote") {
         remoteTimePoint_ = std::chrono::high_resolution_clock::now();
     }
@@ -307,13 +308,22 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
     AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRIu64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    state_ = RENDERER_STOPPED;
+    SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 
-RendererState HpaeSinkOutputNode::GetSinkState(void)
+StreamManagerState HpaeSinkOutputNode::GetSinkState(void)
 {
     return state_;
+}
+
+int32_t HpaeSinkOutputNode::SetSinkState(StreamManagerState sinkState)
+{
+    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+        GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
+        ConvertStreamManagerState2Str(sinkState).c_str());
+        state_ = sinkState;
+        return SUCCESS;
 }
 
 size_t HpaeSinkOutputNode::GetPreOutNum()

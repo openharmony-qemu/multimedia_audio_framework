@@ -45,6 +45,8 @@ public:
     int32_t GetEffectNodeInputChannelInfo(uint32_t &channels, uint64_t &channelLayout) override;
     std::shared_ptr<HpaeGainNode> GetGainNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
+    void SetConnectedFlag(bool flag);
+    bool GetConnectedFlag() const;
 private:
     void ConnectMixerNode();
     std::shared_ptr<HpaeMixerNode> mixerNode_;
@@ -52,6 +54,7 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idConverterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> idGainMap_;
     HpaeSinkInfo sinkInfo_;
+    bool isConnectedToOutputCluster = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

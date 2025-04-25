@@ -46,7 +46,7 @@ public:
     int32_t Stop(void);
     int32_t SetTimeoutStopThd(uint32_t timeoutThdMs);
     const char *GetFrameData(void);
-    RendererState GetState(void);
+    StreamManagerState GetState(void);
     bool IsProcessClusterConnected(HpaeProcessorType sceneType);
 private:
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;

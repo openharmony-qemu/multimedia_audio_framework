@@ -129,9 +129,9 @@ TEST_F(HpaeSourceOutputNodeTest, connectHpaeSourceInputAndOutputNode)
     attr.audioStreamFlag = 0;
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), ERROR);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStart(), 0);
-    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == CAPTURER_RUNNING, true);
+    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == STREAM_MANAGER_RUNNING, true);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStop(), 0);
-    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == CAPTURER_STOPPED, true);
+    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
     TestCapturerSourceFrame(testData.data(), requestBytes, &replyBytes);
     hpaeSoruceInputNode->WriteCapturerData(testData.data(), requestBytes);
     std::shared_ptr<HpaeSourceOutputNode> hpaeSoruceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);

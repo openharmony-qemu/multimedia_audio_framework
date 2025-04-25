@@ -126,14 +126,14 @@ void HpaeInnerCapSinkNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBu
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkInit()
 {
     AUDIO_INFO_LOG("Init");
-    state_ = RENDERER_NEW;
+    state_ = STREAM_MANAGER_IDLE;
     return SUCCESS;
 }
 
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkDeInit()
 {
     AUDIO_INFO_LOG("DeInit");
-    state_ = RENDERER_INVALID;
+    state_ = STREAM_MANAGER_RELEASED;
     return SUCCESS;
 }
 
@@ -146,7 +146,7 @@ int32_t HpaeInnerCapSinkNode::InnerCapturerSinkFlush()
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkPause()
 {
     AUDIO_INFO_LOG("Pause");
-    state_ = RENDERER_PAUSED;
+    state_ = STREAM_MANAGER_SUSPENDED;
     return SUCCESS;
 }
 
@@ -159,25 +159,25 @@ int32_t HpaeInnerCapSinkNode::InnerCapturerSinkReset()
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkResume()
 {
     AUDIO_INFO_LOG("Resume");
-    state_ = RENDERER_RUNNING;
+    state_ = STREAM_MANAGER_RUNNING;
     return SUCCESS;
 }
 
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkStart()
 {
     AUDIO_INFO_LOG("Start");
-    state_ = RENDERER_RUNNING;
+    state_ = STREAM_MANAGER_RUNNING;
     return SUCCESS;
 }
 
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkStop()
 {
     AUDIO_INFO_LOG("Stop");
-    state_ = RENDERER_STOPPED;
+    state_ = STREAM_MANAGER_SUSPENDED;
     return SUCCESS;
 }
 
-RendererState HpaeInnerCapSinkNode::GetSinkState(void)
+StreamManagerState HpaeInnerCapSinkNode::GetSinkState(void)
 {
     return state_;
 }

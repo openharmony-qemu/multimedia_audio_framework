@@ -91,7 +91,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
     EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == RENDERER_NEW, true);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
     IAudioSinkAttr attr;
     attr.adapterName = "file_io";
     attr.openMicSpeaker = 0;
@@ -106,13 +106,13 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
     attr.audioStreamFlag = 0;
 
     EXPECT_EQ(hpaeSinkOutputNode->RenderSinkInit(attr), ERROR);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == RENDERER_PREPARED, true);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_IDLE, true);
     EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), ERROR);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == RENDERER_RUNNING, false);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_RUNNING, false);
     EXPECT_EQ(hpaeSinkOutputNode->RenderSinkPause(), SUCCESS);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == RENDERER_PAUSED, true);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_SUSPENDED, true);
     EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStop(), SUCCESS);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == RENDERER_STOPPED, true);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_SUSPENDED, true);
     hpaeSinkOutputNode->DoProcess();
     TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
