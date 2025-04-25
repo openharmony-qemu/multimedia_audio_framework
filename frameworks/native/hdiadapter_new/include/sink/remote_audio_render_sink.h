@@ -123,6 +123,7 @@ private:
     SinkCallbackWrapper callback_ = {};
     std::atomic<bool> sinkInited_ = false;
     std::atomic<bool> renderInited_ = false;
+    std::atomic<bool> isThreadRunning = false;
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
