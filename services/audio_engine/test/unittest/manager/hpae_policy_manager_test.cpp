@@ -37,7 +37,8 @@ void HpaePolicyManagerTest::SetUp()
 void HpaePolicyManagerTest::TearDown()
 {}
 
-TEST_F(HpaePolicyManagerTest, allTestForHpaePolicyManager) {
+TEST_F(HpaePolicyManagerTest, allTestForHpaePolicyManager)
+{
     AudioSpatializationState spatializationState = {};
     int32_t ret = hpaePolicyManager_->UpdateSpatializationState(spatializationState);
     EXPECT_EQ(ret, 0);

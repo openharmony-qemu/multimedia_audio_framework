@@ -68,7 +68,8 @@ public:
     virtual int32_t RegisterStatusCallback(
         HpaeStreamClassType streamClassType, uint32_t sessionId, const std::weak_ptr<IStatusCallback> &callback) = 0;
 
-    virtual int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) = 0;
+    virtual int32_t RegisterReadCallback(uint32_t sessionId,
+        const std::weak_ptr<ICapturerStreamCallback> &callback) = 0;
     virtual int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo) = 0;
 
     virtual int32_t SetClientVolume(uint32_t sessionId, float volume) = 0;

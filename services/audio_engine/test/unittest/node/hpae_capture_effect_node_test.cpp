@@ -187,7 +187,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003)
     EXPECT_EQ(hpaeCaptureEffectNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeCaptureEffectNode->GetBitWidth(), nodeInfo.format);
     CaptureEffectAttr attr = {
-        .micChannels = STEREO, 
+        .micChannels = STEREO,
         .ecChannels = STEREO,
         .micRefChannels = STEREO,
     };

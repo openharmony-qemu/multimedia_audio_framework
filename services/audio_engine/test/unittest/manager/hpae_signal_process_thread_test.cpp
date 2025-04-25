@@ -49,10 +49,3 @@ TEST_F(HpaeSignalProcessThreadTest, ActivateDeactivateThread)
     hpaeSignalProcessThread->DeactivateThread();
     EXPECT_EQ(hpaeSignalProcessThread->IsRunning(), false);
 }
-
-// Unit test for void OHOS::AudioStandard::HPAE::HpaeSignalProcessThread::Run();
-// 1. Input: void;
-// 2. Expect: return == void;
-TEST_F(HpaeSignalProcessThreadTest, Run_1) {
-    
-}
