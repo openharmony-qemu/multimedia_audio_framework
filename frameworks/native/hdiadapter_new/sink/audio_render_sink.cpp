@@ -234,8 +234,9 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
             dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
                 return isDataLinkConnected_;
             });
+        AUDIO_INFO_LOG("data-connection blocking ends");
         if (!stopWaiting) {
-            AUDIO_INFO_LOG("data-connection time out, start RenderFrame anyway.");
+            AUDIO_WARNING_LOG("data-connection time out, start RenderFrame anyway.");
         }
         isDataLinkConnected_ = true;
     }
@@ -1180,6 +1181,7 @@ int32_t AudioRenderSink::UpdatePrimaryConnectionState(uint32_t operation)
     if (operation == DATA_LINK_CONNECTED) {
         AUDIO_INFO_LOG("Primary sink is connected");
         isDataLinkConnected_ = true;
+        dataConnectionCV_.notify_all();
     }
     return SUCCESS;   
 }
