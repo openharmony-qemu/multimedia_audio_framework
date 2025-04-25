@@ -1485,7 +1485,6 @@ int32_t AudioServer::CheckAndWaitAudioPolicyReady()
 void AudioServer::NotifyProcessStatus()
 {
     // when audio_server start, set audio_server rssThresHold
-    int pid = getpid();
     void *libMemMgrClientHandle = dlopen("libmemmgrclient.z.so", RTLD_NOW);
     if (!libMemMgrClientHandle) {
         AUDIO_INFO_LOG("dlopen libmemmgrclient library failed");
@@ -1501,6 +1500,7 @@ void AudioServer::NotifyProcessStatus()
     }
     auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
     AUDIO_INFO_LOG("notify to memmgr when audio_server is started");
+    int pid = getpid();
     notifyProcessStatus(pid, 1, RSS_THRESHOLD, 0);
 #ifndef TEST_COVERAGE
     dlclose(libMemMgrClientHandle);
