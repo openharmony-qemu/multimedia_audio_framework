@@ -766,7 +766,7 @@ int32_t HpaeCapturerManager::AddNodeToSource(const HpaeCaptureMoveInfo &moveInfo
 void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect)
 {
     uint32_t sessionId = moveInfo.sessionId;
-    AUDIO_INFO_LOG("Add node to source:%{public}d", sessionId);
+    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:[%{public}s].", sessionId, sourceInfo_.sourceName.c_str());
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
@@ -779,12 +779,9 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
         }
     }
     if (CaptureEffectCreate(sceneType, enhanceScene) != SUCCESS) {
+        AUDIO_WARNING_LOG("[FinishMove] session :%{public}u,create effect failed.", sessionId);
         sceneClusterMap_.erase(sceneType);
     }
-    if (!isConnect) {
-        AUDIO_INFO_LOG("not need connect session:%{public}d", sessionId);
-    }
-    AUDIO_INFO_LOG("connect node :%{public}d to sink:%{public}s", sessionId, sourceInfo_.deviceClass.c_str());
     ConnectOutputSession(sessionId);
     if (moveInfo.sessionInfo.state == HPAE_SESSION_RUNNING) {
         CHECK_AND_RETURN_LOG(CapturerSourceStart() == SUCCESS, "CapturerSourceStart error.");
@@ -813,11 +810,15 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
 {
     std::string name = sourceName;
     std::vector<HpaeCaptureMoveInfo> moveInfos;
+    std::string idStr;
     for (const auto &it : sourceOutputNodeMap_) {
         if (isMoveAll || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
             HpaeCaptureMoveInfo moveInfo;
             moveInfo.sessionId = it.first;
             moveInfo.sourceOutputNode = it.second;
+            idStr.append("[");
+            idStr.append(std::to_string(it.first));
+            idStr.append("],");
             if (sessionNodeMap_.find(it.first) != sessionNodeMap_.end()) {
                 moveInfo.sessionInfo = sessionNodeMap_[it.first];
                 moveInfos.emplace_back(moveInfo);
@@ -828,40 +829,37 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
     for (const auto &it : moveInfos) {
         DeleteOutputSession(it.sessionId);
     }
-
-    AUDIO_INFO_LOG("move source count: %{public}zu,source name:%{public}s", moveInfos.size(), sourceName.c_str());
+    AUDIO_INFO_LOG("[StartMove] session:%{public}s to source name:%{public}s, isMoveAll:%{public}d",
+        idStr.c_str(), name.c_str(), isMoveAll);
     TriggerCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
 }
 
 int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& sourceName)
 {
-    AUDIO_INFO_LOG("soft stop session:%{public}d,source name:%{public}s", sessionId, sourceName.c_str());
     auto request = [this, sessionId, sourceName]() {
-        AUDIO_ERR_LOG("trigger call back1, source name:%{public}s", sourceName.c_str());
         if (!SafeGetMap(sourceOutputNodeMap_, sessionId)) {
-            AUDIO_ERR_LOG("could not find session:%{public}d,source name:%{public}s", sessionId, sourceName.c_str());
+            AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,not find session,move %{public}s --> %{public}s",
+                sessionId, sourceInfo_.sourceName.c_str(), sourceName.c_str());
             return;
         }
-        AUDIO_ERR_LOG("trigger call back2, source name:%{public}s", sourceName.c_str());
         std::shared_ptr<HpaeSourceOutputNode> sourceNode = sourceOutputNodeMap_[sessionId];
         if (sessionNodeMap_.find(sessionId)==sessionNodeMap_.end()) {
-            AUDIO_ERR_LOG("can not find session node:%{public}d,source name:%{public}s", sessionId, sourceName.c_str());
+            AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,not find session node,move %{public}s --> %{public}s",
+                sessionId, sourceInfo_.sourceName.c_str(), sourceName.c_str());
             return;
         }
+        CHECK_AND_RETURN_LOG(!sourceName.empty(), "[StartMove] session:%{public}u failed,sourceName is empty",
+            sessionId);
+        AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
+            sessionId, sourceInfo_.sourceName.c_str(), sourceName.c_str());
         HpaeCapturerSessionInfo sessionInfo = sessionNodeMap_[sessionId];
-        if (sessionInfo.state == HPAE_SESSION_RUNNING) {
-            // todo: do fade out
-        }
         HpaeCaptureMoveInfo moveInfo;
         moveInfo.sessionId = sessionId;
         moveInfo.sourceOutputNode = sourceNode;
         moveInfo.sessionInfo = sessionInfo;
         DeleteOutputSession(sessionId);
-        if (!sourceName.empty()) {
-            std::string name = sourceName;
-            AUDIO_ERR_LOG("trigger call back, source name:%{public}s", sourceName.c_str());
-            TriggerCallback(MOVE_SOURCE_OUTPUT, moveInfo, name);
-        }
+        std::string name = sourceName;
+        TriggerCallback(MOVE_SOURCE_OUTPUT, moveInfo, name);
     };
     SendRequest(request);
     return SUCCESS;
