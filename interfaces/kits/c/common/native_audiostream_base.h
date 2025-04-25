@@ -478,6 +478,12 @@ typedef enum {
      */
     AUDIOSTREAM_SOURCE_TYPE_VOICE_MESSAGE = 10,
     /**
+     * Camcorder source type.
+     *
+     * @since 13
+     */
+    AUDIOSTREAM_SOURCE_TYPE_CAMCORDER = 13,
+    /**
      * Unprocessed source type.
      *
      * @since 15
