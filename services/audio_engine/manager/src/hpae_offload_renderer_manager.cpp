@@ -277,8 +277,8 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
 {
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
-    uint32_t sessionId = sinkInputNode_->GetSessionId();
     if (sinkInputNode_) {
+        uint32_t sessionId = sinkInputNode_->GetSessionId();
         if (isMoveAll || std::find(moveIds.begin(), moveIds.end(), sessionId) != moveIds.end()) {
             sinkInputs.emplace_back(sinkInputNode_);
             DisConnectInputSession();
