@@ -602,7 +602,7 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
         CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
         tid = lastCallStartByUserTid_.value();
     } else {
-        AUDIO_ERR_LOG("illeagl param");
+        AUDIO_ERR_LOG("illegal param");
         return;
     }
 
