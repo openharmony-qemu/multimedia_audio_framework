@@ -57,6 +57,9 @@ private:
  
     HighResolutionTimer intervalTimer_;
     RendererState state_ = RENDERER_NEW;
+    std::chrono::high_resolution_clock::time_point historyTime_;
+    std::chrono::high_resolution_clock::time_point endTime_;
+    std::chrono::nanoseconds sleepTime_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
