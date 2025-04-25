@@ -132,6 +132,7 @@ int32_t AudioRenderSink::Start(void)
     UpdateSinkState(true);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     started_ = true;
+    isDataLinkConnected_ = false;
     return SUCCESS;
 }
 
@@ -226,6 +227,7 @@ int32_t AudioRenderSink::Reset(void)
 
 int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+    WaitForDataLinkConnected();
     int64_t stamp = ClockTime::GetCurNano();
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     if (!started_) {
@@ -1155,6 +1157,39 @@ void AudioRenderSink::WriteSmartPAStatusSysEvent(int32_t status)
 void AudioRenderSink::UpdateSinkState(bool started)
 {
     callback_.OnRenderSinkStateChange(GetUniqueId(), started);
+}
+
+int32_t AudioRenderSink::UpdatePrimaryConnectionState(uint32_t operation)
+{
+    if (operation == DATA_LINK_CONNECTING) {
+        AUDIO_INFO_LOG("Primary sink is connecting");
+        isDataLinkConnected_ = false;
+    }
+    if (operation == DATA_LINK_CONNECTED) {
+        AUDIO_INFO_LOG("Primary sink is connected");
+        isDataLinkConnected_ = true;
+        dataConnectionCV_.notify_all();
+    }
+    return SUCCESS;
+}
+
+void AudioRenderSink::WaitForDataLinkConnected()
+{
+    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
+    if (!isDataLinkConnected_ && (halName_ == "primary") && (sinkType_ == ADAPTER_TYPE_PRIMARY)) {
+        AUDIO_INFO_LOG("data-connection blocking starts");
+        bool stopWaiting = dataConnectionCV_.wait_for(
+            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
+                return isDataLinkConnected_;
+            });
+        if (stopWaiting) {
+            AUDIO_INFO_LOG("data-connection blocking ends");
+        } else {
+            AUDIO_WARNING_LOG("data-connection time out, start RenderFrame anyway.");
+        }
+        isDataLinkConnected_ = true;
+    }
+    dataConnectionWaitLock.unlock();
 }
 
 } // namespace AudioStandard
