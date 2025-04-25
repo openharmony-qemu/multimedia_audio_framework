@@ -150,11 +150,8 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     uint32_t byteLength = 0;
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     switch (GetNodeInfo().fadeType) {
-        case FadeType::NONE_FADE: {
-            break;
-        }
         case FadeType::SHORT_FADE: {
-            byteLength = (float)GetSampleRate() * SHORT_FADE_PERIOD * rawFormat.channels * sizeof(float);
+            byteLength = static_cast<float>(GetSampleRate()) * SHORT_FADE_PERIOD * rawFormat.channels * sizeof(float);
             AUDIO_DEBUG_LOG("GainNode: short fade length in Bytes: %{public}u", byteLength);
             break;
         }
