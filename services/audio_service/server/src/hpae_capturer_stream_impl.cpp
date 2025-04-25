@@ -91,20 +91,21 @@ int32_t HpaeCapturerStreamImpl::Pause(bool isStandby)
 
 int32_t HpaeCapturerStreamImpl::GetStreamFramesRead(uint64_t &framesRead)
 {
-    // to do callback data report
-    framesRead = 0;
+    framesRead = framesRead_;
     return SUCCESS;
 }
 
 int32_t HpaeCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 {
-    timestamp = 0;
+    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+    timestamp = timestamp_;
     return SUCCESS;
 }
 
 int32_t HpaeCapturerStreamImpl::GetLatency(uint64_t &latency)
 {
-    latency = 0;
+    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+    latency = latency_;
     AUDIO_DEBUG_LOG("total latency:  %{public}" PRIu64 "ms", latency);
     return SUCCESS;
 }
@@ -144,19 +145,36 @@ int32_t HpaeCapturerStreamImpl::Release()
     return SUCCESS;
 }
 
-// to do callback data report
 void HpaeCapturerStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
-    IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD,
+    AUDIO_DEBUG_LOG("RegisterStatusCallback in");
+    int32_t ret = IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD,
         processConfig_.originalSessionId, callback);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterStatusCallback is error");
     statusCallback_ = callback;
 }
 
 void HpaeCapturerStreamImpl::RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback)
 {
     AUDIO_INFO_LOG("RegisterReadCallback start");
-    IHpaeManager::GetHpaeManager().RegisterReadCallback(processConfig_.originalSessionId, callback);
+    int32_t ret = IHpaeManager::GetHpaeManager().RegisterReadCallback(processConfig_.originalSessionId,
+        shared_from_this());
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterReadCallback is error");
     readCallback_ = callback;
+}
+
+int32_t HpaeCapturerStreamImpl::OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo)
+{
+    {
+        std::unique_lock<std::shared_mutex> lock(latencyMutex_);
+        timestamp_ = callBackStreamInfo.timestamp;
+        latency_ = callBackStreamInfo.latency;
+        framesRead_ = callBackStreamInfo.framesRead;
+    }
+    if (readCallback_.lock()) {
+        return readCallback_.lock()->OnReadData(callBackStreamInfo.outputData, callBackStreamInfo.requestDataLen);
+    }
+    return SUCCESS;
 }
 
 BufferDesc HpaeCapturerStreamImpl::DequeueBuffer(size_t length)

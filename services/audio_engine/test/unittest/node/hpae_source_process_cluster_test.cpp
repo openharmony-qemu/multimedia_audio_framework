@@ -43,14 +43,14 @@ void HpaeSourceProcessClusterTest::TearDown()
 
 TEST_F(HpaeSourceProcessClusterTest, constructHpaeSourceProcessClusterNode)
 {
-    std::shared_ptr<NodeStatusCallback> g_testStatuscallback = std::make_shared<NodeStatusCallback>();
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     HpaeNodeInfo nodeInfo;
     nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_VOIP_UP;
-    nodeInfo.statusCallback = g_testStatuscallback->GetWeakPtr();
+    nodeInfo.statusCallback = testStatuscallback;
     std::shared_ptr<HpaeSourceProcessCluster> hpaeSourceProcessCluster =
         std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
     EXPECT_EQ(hpaeSourceProcessCluster->GetSampleRate(), nodeInfo.samplingRate);
@@ -79,7 +79,7 @@ TEST_F(HpaeSourceProcessClusterTest, constructHpaeSourceProcessClusterNode)
     sourceInputNodeInfo.samplingRate = SAMPLE_RATE_48000;
     sourceInputNodeInfo.channels = STEREO;
     sourceInputNodeInfo.format = SAMPLE_F32LE;
-    sourceInputNodeInfo.statusCallback = g_testStatuscallback->GetWeakPtr();
+    sourceInputNodeInfo.statusCallback = testStatuscallback;
     std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster =
         std::make_shared<HpaeSourceInputCluster>(sourceInputNodeInfo);
     EXPECT_EQ(hpaeSourceProcessCluster->GetPreOutNum(), 0);

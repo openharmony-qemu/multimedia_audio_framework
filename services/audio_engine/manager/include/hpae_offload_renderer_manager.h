@@ -66,7 +66,7 @@ public:
     int32_t SetPrivacyType(uint32_t sessionId, int32_t privacyType) override;
     int32_t GetPrivacyType(uint32_t sessionId, int32_t &privacyType) override;
     int32_t RegisterWriteCallback(uint32_t sessionId, const std::weak_ptr<IStreamCallback> &callback) override;
-    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) override;
+    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
 
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
     size_t GetWritableSize(uint32_t sessionId) override;

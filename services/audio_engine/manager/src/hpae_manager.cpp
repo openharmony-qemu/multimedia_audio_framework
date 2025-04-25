@@ -1394,7 +1394,7 @@ int32_t HpaeManager::RegisterStatusCallback(
 }
 
 // record stream interface
-void HpaeManager::RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback)
+int32_t HpaeManager::RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
         AUDIO_INFO_LOG("RegisterReadCallback sessionId %{public}u", sessionId);
@@ -1412,7 +1412,7 @@ void HpaeManager::RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<I
         }
     };
     SendRequest(request);
-    return;
+    return SUCCESS;
 }
 
 int32_t HpaeManager::GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo)
@@ -1420,6 +1420,7 @@ int32_t HpaeManager::GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &str
     // to do
     return SUCCESS;
 }
+
 // play stream interface
 int32_t HpaeManager::SetClientVolume(uint32_t sessionId, float volume)
 {
@@ -1485,6 +1486,7 @@ int32_t HpaeManager::GetPrivacyType(uint32_t sessionId, int32_t &privacyType)
 {
     return SUCCESS;
 }
+
 int32_t HpaeManager::RegisterWriteCallback(uint32_t sessionId, const std::weak_ptr<IStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
@@ -1501,6 +1503,7 @@ int32_t HpaeManager::RegisterWriteCallback(uint32_t sessionId, const std::weak_p
     SendRequest(request);
     return SUCCESS;
 }
+
 int32_t HpaeManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 {
     auto request = [this, sessionId, state]() {

@@ -79,7 +79,7 @@ public:
     int32_t AddAllNodesToSink(
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect) override;
 
-    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) override;
+    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnFadeDone(uint32_t sessionId, IOperation operation) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;

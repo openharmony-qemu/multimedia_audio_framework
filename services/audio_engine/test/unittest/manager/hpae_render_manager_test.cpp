@@ -29,7 +29,7 @@ using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
 namespace {
-static std::string g_rootPath = "/data/data/.pulse_dir/";
+static std::string g_rootPath = "/data/";
 constexpr int32_t FRAME_LENGTH_882 = 882;
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;

@@ -512,7 +512,7 @@ int32_t HpaeOffloadRendererManager::RegisterWriteCallback(
 }
 
 int32_t HpaeOffloadRendererManager::RegisterReadCallback(
-    uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback)
+    uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     return ERR_NOT_SUPPORTED;
 }

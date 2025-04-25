@@ -25,10 +25,13 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+static constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
+
 HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
-      sourceOuputData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
-      interleveData_(nodeInfo.frameLen * nodeInfo.channels)
+      sourceOutputData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
+      interleveData_(nodeInfo.frameLen * nodeInfo.channels),
+      framesRead_(0), totalFrames(0)
 {
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
@@ -44,9 +47,9 @@ void HpaeSourceOutputNode::DoProcess()
     auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
     auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " +
-       rate + ch + len + format);
+        rate + ch + len + format);
     if (readCallback_.lock() == nullptr) {
-        AUDIO_WARNING_LOG("HpaeSourceOutputNode readCallback_ is nullptr");
+        AUDIO_WARNING_LOG("HpaeSourceOutputNode readCallback_ is nullptr, sessionId:%{public}d", GetSessionId());
         return;
     }
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
@@ -55,18 +58,37 @@ void HpaeSourceOutputNode::DoProcess()
     }
     HpaePcmBuffer *outputData = outputVec.front();
     ConvertFromFloat(
-        GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), sourceOuputData_.data());
+        GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), sourceOutputData_.data());
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump(
-            (int8_t *)sourceOuputData_.data(), GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
+            (int8_t *)sourceOutputData_.data(), GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
     }
 #endif
-    int32_t ret = readCallback_.lock()->OnReadData(sourceOuputData_, sourceOuputData_.size());
+    auto nodeCallback = GetNodeStatusCallback().lock();
+    if (nodeCallback) {
+        nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
+    }
+    streamInfo_ = {
+        .framesRead = framesRead_.load(),
+        .timestamp = GetTimestamp(),
+        .outputData = (int8_t *)sourceOutputData_.data(),
+        .requestDataLen = sourceOutputData_.size(),
+    };
+    int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
     if (ret != 0) {
         AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ write read data error", GetSessionId());
     }
+    totalFrames += GetFrameLen();
+    framesRead_.store(totalFrames);
     return;
+}
+
+uint64_t HpaeSourceOutputNode::GetTimestamp()
+{
+    timespec tm{};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    return static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
 }
 
 bool HpaeSourceOutputNode::Reset()
@@ -92,7 +114,7 @@ bool HpaeSourceOutputNode::ResetAll()
     return true;
 }
 
-bool HpaeSourceOutputNode::RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback)
+bool HpaeSourceOutputNode::RegisterReadCallback(const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     if (callback.lock() == nullptr) {
         return false;
