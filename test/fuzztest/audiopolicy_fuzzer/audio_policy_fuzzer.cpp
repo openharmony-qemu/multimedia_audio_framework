@@ -22,6 +22,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "access_token.h"
+#include "dfx_msg_manager.h"
 using namespace std;
 
 namespace OHOS {
@@ -111,7 +112,11 @@ void AudioFuzzTestGetPermission()
 
 void ReleaseServer()
 {
+    if (GetServerPtr() == nullptr) {
+        return;
+    }
     GetServerPtr()->OnStop();
+    DfxMsgManager::GetInstance().HandleThreadExit();
     g_hasServerInit = false;
 }
 

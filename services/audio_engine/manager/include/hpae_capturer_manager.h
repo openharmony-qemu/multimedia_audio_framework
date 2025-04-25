@@ -81,7 +81,7 @@ private:
     int32_t ConnectOutputSession(uint32_t sessionId);
     int32_t DisConnectOutputSession(uint32_t sessionId);
     void DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType);
-    void SetSessionState(uint32_t sessionId, CapturerState capturerState);
+    void SetSessionState(uint32_t sessionId, HpaeSessionState capturerState);
     int32_t PrepareCapturerEc(HpaeNodeInfo &ecNodeInfo);
     int32_t PrepareCapturerMicRef(HpaeNodeInfo &micRefNodeInfo);
     int32_t InitCapturer();

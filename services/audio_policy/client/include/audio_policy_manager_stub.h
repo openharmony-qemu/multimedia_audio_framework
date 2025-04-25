@@ -167,8 +167,6 @@ private:
     void HandleAddUidToAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleRemoveUidFromAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply);
-    void HandleSetSystemVolumeLevelForZone(MessageParcel &data, MessageParcel &reply);
-    void HandleGetSystemVolumeLevelForZone(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZone(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZoneDevice(MessageParcel &data, MessageParcel &reply);
     void HandleEnableAudioZoneInterruptReport(MessageParcel &data, MessageParcel &reply);
@@ -226,6 +224,7 @@ private:
     void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetDirectPlaybackSupportInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

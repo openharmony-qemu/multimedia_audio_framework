@@ -504,6 +504,8 @@ public:
 
     virtual void NotifyAudioPolicyReady() = 0;
 
+    virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
      * set inner capture limit.
@@ -704,6 +706,7 @@ private:
     int HandleCreateSourcePort(MessageParcel &data, MessageParcel &reply);
     int HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply);
     int HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply);
+    int HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

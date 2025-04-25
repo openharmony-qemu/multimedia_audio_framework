@@ -100,8 +100,8 @@ private:
     int32_t ConnectCapturerOutputSessionInner(uint32_t sessionId);
     int32_t DisConnectRendererInputSessionInner(uint32_t sessionId);
     int32_t DisConnectCapturerInputSessionInner(uint32_t sessionId);
-    void SetSessionStateInner(uint32_t sessionId, RendererState renderState);
-    void SetSessionStateInner(uint32_t sessionId, CapturerState capturerState);
+    void SetSessionStateForRenderer(uint32_t sessionId, HpaeSessionState renderState);
+    void SetSessionStateForCapturer(uint32_t sessionId, HpaeSessionState capturerState);
     void SendRequestInner(Request &&request, bool isInit = false);
     uint32_t GetSinkInputNodeIdInner();
     void AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);

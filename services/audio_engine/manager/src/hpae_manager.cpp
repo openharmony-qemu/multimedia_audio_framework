@@ -947,6 +947,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
     }
     rendererManagerMap_[sinkName]->AddAllNodesToSink(sinkInputs, isConnect);
     for (const auto &sinkInput : sinkInputs) {
+        CHECK_AND_CONTINUE_LOG(sinkInput, "sinkInput is nullptr");
         uint32_t sessionId = sinkInput->GetNodeInfo().sessionId;
         rendererIdSinkNameMap_[sessionId] = sinkName;
         if (sinkInputs_.find(sessionId) != sinkInputs_.end()) {
@@ -977,7 +978,7 @@ void HpaeManager::HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveIn
 }
 
 void HpaeManager::HandleUpdateStatus(
-    HpaeStreamClassType streamClassType, uint32_t sessionId, uint32_t status, IOperation operation)
+    HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionState status, IOperation operation)
 {
     AUDIO_INFO_LOG("HpaeManager::HandleUpdateStatus sessionid:%{public}u "
                    "status:%{public}d operation:%{public}d",
@@ -1088,10 +1089,6 @@ void HpaeManager::SendRequest(Request &&request)
 int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
 {
     auto request = [this, streamInfo]() {
-        AUDIO_INFO_LOG("defaultSink_ is %{public}s defaultSource_ is %{public}s streamClassType %{public}u",
-            defaultSink_.c_str(),
-            defaultSource_.c_str(),
-            streamInfo.streamClassType);
         AUDIO_INFO_LOG("streamType is %{public}d sessionId %{public}u sourceType is %{public}d",
             streamInfo.streamType,
             streamInfo.sessionId,
@@ -1126,8 +1123,8 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
         }
     };
     SendRequest(request);
-    AUDIO_WARNING_LOG(
-        "defaultSink_ is %{public}s streamClassType %{public}u", defaultSink_.c_str(), streamInfo.sessionId);
+    AUDIO_INFO_LOG("defaultSink_ is %{public}s defaultSource_ is %{public}s streamClassType %{public}u",
+        defaultSink_.c_str(), defaultSource_.c_str(), streamInfo.streamClassType);
     return SUCCESS;
 }
 
@@ -1978,6 +1975,12 @@ void HpaeManager::UpdateExtraSceneType(
     };
     SendRequest(request);
     return;
+}
+
+bool HpaeManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    AUDIO_INFO_LOG("Is_sSupported SourceType %{public}d", sourceType);
+    return true;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

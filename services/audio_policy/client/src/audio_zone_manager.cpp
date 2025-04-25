@@ -62,32 +62,27 @@ public:
 
     int32_t UnRegisterSystemVolumeProxy(int32_t zoneId) override;
 
-    int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-        const int32_t volumeLevel, const int32_t volumeFlag) override;
-    
-    int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) override;
-
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId) override;
     
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
-        int32_t zoneId, int32_t deviceId) override;
+        int32_t zoneId, const std::string &deviceTag) override;
     
     int32_t RegisterAudioZoneInterruptCallback(int32_t zoneId,
         const std::shared_ptr<AudioZoneInterruptCallback> &callback) override;
     
     int32_t UnRegisterAudioZoneInterruptCallback(int32_t zoneId) override;
 
-    int32_t RegisterAudioZoneInterruptCallback(int32_t zoneId, int32_t deviceId,
+    int32_t RegisterAudioZoneInterruptCallback(int32_t zoneId, const std::string &deviceTag,
         const std::shared_ptr<AudioZoneInterruptCallback> &callback) override;
     
     int32_t UnRegisterAudioZoneInterruptCallback(int32_t zoneId,
-        int32_t deviceId) override;
+        const std::string &deviceTag) override;
     
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
     
-    int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+    int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
 
 private:
@@ -105,7 +100,7 @@ AudioZoneManager *AudioZoneManager::GetInstance()
 
 int32_t AudioZoneManagerInner::RegisterAudioZoneClient()
 {
-    CHECK_AND_RETURN_RET_LOG(client_ != nullptr, ERROR, "client_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(client_ == nullptr, SUCCESS, "client_ has registered!");
     sptr<AudioZoneClient> temp = new(std::nothrow) AudioZoneClient();
     CHECK_AND_RETURN_RET_LOG(temp != nullptr, ERROR, "temp client is nullptr!");
     sptr<IRemoteObject> object = temp->AsObject();
@@ -278,27 +273,6 @@ int32_t AudioZoneManagerInner::UnRegisterSystemVolumeProxy(int32_t zoneId)
     return SUCCESS;
 }
 
-int32_t AudioZoneManagerInner::SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-    const int32_t volumeLevel, const int32_t volumeFlag)
-{
-    AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
-    
-    int32_t result = AudioPolicyManager::GetInstance().SetSystemVolumeLevelForZone(zoneId,
-        volumeType, volumeLevel, volumeFlag);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
-        "SetSystemVolumeLevelForZone result:%{public}d", result);
-    return result;
-}
-
-int32_t AudioZoneManagerInner::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
-{
-    AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
-
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevelForZone(zoneId, volumeType);
-}
-
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(
     int32_t zoneId)
 {
@@ -309,11 +283,11 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetA
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(
-    int32_t zoneId, int32_t deviceId)
+    int32_t zoneId, const std::string &deviceTag)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, {}, "zoneId is invalid");
-    return AudioPolicyManager::GetInstance().GetAudioInterruptForZone(zoneId, deviceId);
+    return AudioPolicyManager::GetInstance().GetAudioInterruptForZone(zoneId, deviceTag);
 }
 
 int32_t AudioZoneManagerInner::RegisterAudioZoneInterruptCallback(int32_t zoneId,
@@ -343,7 +317,7 @@ int32_t AudioZoneManagerInner::UnRegisterAudioZoneInterruptCallback(int32_t zone
     return SUCCESS;
 }
 
-int32_t AudioZoneManagerInner::RegisterAudioZoneInterruptCallback(int32_t zoneId, int32_t deviceId,
+int32_t AudioZoneManagerInner::RegisterAudioZoneInterruptCallback(int32_t zoneId, const std::string &deviceTag,
     const std::shared_ptr<AudioZoneInterruptCallback> &callback)
 {
     AUDIO_INFO_LOG("in");
@@ -352,20 +326,20 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneInterruptCallback(int32_t zoneId
     
     std::unique_lock<std::mutex> lock(clientMutex_);
     if (RegisterAudioZoneClient() == SUCCESS && client_ != nullptr) {
-        client_->AddAudioInterruptCallback(zoneId, deviceId, callback);
+        client_->AddAudioInterruptCallback(zoneId, deviceTag, callback);
         return SUCCESS;
     }
     return ERROR;
 }
 
-int32_t AudioZoneManagerInner::UnRegisterAudioZoneInterruptCallback(int32_t zoneId, int32_t deviceId)
+int32_t AudioZoneManagerInner::UnRegisterAudioZoneInterruptCallback(int32_t zoneId, const std::string &deviceTag)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
     if (client_ != nullptr) {
-        client_->RemoveAudioInterruptCallback(zoneId, deviceId);
+        client_->RemoveAudioInterruptCallback(zoneId, deviceTag);
     }
     return SUCCESS;
 }
@@ -382,13 +356,13 @@ int32_t AudioZoneManagerInner::InjectInterruptToAudioZone(int32_t zoneId,
     return result;
 }
 
-int32_t AudioZoneManagerInner::InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+int32_t AudioZoneManagerInner::InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
-    int32_t result = AudioPolicyManager::GetInstance().InjectInterruptToAudioZone(zoneId, deviceId, interrupts);
+    int32_t result = AudioPolicyManager::GetInstance().InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "InjectInterruptToAudioZone result:%{public}d", result);
     return result;

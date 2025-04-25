@@ -182,7 +182,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
         "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
 
     sinkOutAttr_ = attr;
-    state_ = RENDERER_PREPARED;
+    state_ = STREAM_MANAGER_IDLE;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
@@ -203,7 +203,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkDeInit(void)
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_, ERR_ILLEGAL_STATE,
         "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
-    state_ = RENDERER_INVALID;
+    state_ = STREAM_MANAGER_RELEASED;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
@@ -264,7 +264,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStart(void)
     AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRIu64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    state_ = RENDERER_RUNNING;
+    state_ = STREAM_MANAGER_RUNNING;
     return SUCCESS;
 }
 
@@ -288,7 +288,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
     AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRIu64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    state_ = RENDERER_STOPPED;
+    state_ = STREAM_MANAGER_SUSPENDED;
     return SUCCESS;
 }
 
@@ -302,9 +302,9 @@ size_t HpaeOffloadSinkOutputNode::GetPreOutNum()
     return inputStream_.GetPreOutputNum();
 }
 
-RendererState HpaeOffloadSinkOutputNode::GetSinkState(void)
+StreamManagerState HpaeOffloadSinkOutputNode::GetSinkState(void)
 {
-    return isHdiFull_.load() ? RENDERER_PAUSED : state_;
+    return isHdiFull_.load() ? STREAM_MANAGER_SUSPENDED : state_;
 }
 
 const char *HpaeOffloadSinkOutputNode::GetRenderFrameData(void)

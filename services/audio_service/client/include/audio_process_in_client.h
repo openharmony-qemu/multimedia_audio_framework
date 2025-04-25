@@ -134,7 +134,7 @@ public:
     virtual void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
         uint32_t code) = 0;
 
-    virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName, BoostTriggerMethod method) = 0;
+    virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

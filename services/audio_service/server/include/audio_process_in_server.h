@@ -102,7 +102,7 @@ public:
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
 
-    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName,
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName,
         BoostTriggerMethod method) override;
 
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;

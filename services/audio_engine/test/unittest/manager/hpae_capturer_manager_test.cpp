@@ -151,7 +151,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest)
     HpaeSourceOutputInfo sourceOutputInfo;
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     TestCheckSourceOutputInfo(sourceOutputInfo, streamInfo);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, CAPTURER_NEW);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_NEW);
     EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(
@@ -164,25 +164,25 @@ static void StateControlTest(std::shared_ptr<IHpaeCapturerManager> &capturerMana
     EXPECT_EQ(capturerManager->Start(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, CAPTURER_RUNNING);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(capturerManager->IsRunning(), true);
     
     EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, CAPTURER_PAUSED);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(capturerManager->IsRunning(), false);
 
     EXPECT_EQ(capturerManager->Start(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, CAPTURER_RUNNING);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(capturerManager->IsRunning(), true);
 
     EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, CAPTURER_STOPPED);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_STOPPED);
     EXPECT_EQ(capturerManager->IsRunning(), false);
 
     EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
@@ -228,7 +228,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest)
     HpaeSourceOutputInfo sourceOutputInfo;
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     TestCheckSourceOutputInfo(sourceOutputInfo, streamInfo);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, CAPTURER_NEW);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_NEW);
     EXPECT_EQ(capturerManager->IsRunning(), false);
 
     std::shared_ptr<ReadDataCb> readDataCb =
@@ -296,7 +296,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest)
     HpaeSourceOutputInfo sourceOutputInfo;
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     TestCheckSourceOutputInfo(sourceOutputInfo, streamInfo);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, CAPTURER_NEW);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_NEW);
     EXPECT_EQ(capturerManager->ReloadCaptureManager(newSourceInfo) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);

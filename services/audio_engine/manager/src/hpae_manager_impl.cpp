@@ -477,6 +477,12 @@ void HpaeManagerImpl::UpdateExtraSceneType(
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
     manager_->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
 }
+
+bool HpaeManagerImpl::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->IsAcousticEchoCancelerSupported(sourceType);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

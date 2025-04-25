@@ -604,7 +604,9 @@ void OffloadAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &p
     }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBit(attr_.format) * param.channelCount / PCM_8_BIT;
-    param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    }
 
     param.offloadInfo.format = ConvertToHdiFormat(attr_.format);
 }

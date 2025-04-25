@@ -158,19 +158,25 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
 #endif
         idGainMap_[sessionId] = std::make_shared<HpaeGainNode>(gainNodeInfo);
     }
-    HpaeNodeInfo outNodeInfo = preNodeInfo;
-    outNodeInfo.frameLen = sinkInfo_.frameLen;
-    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
-    outNodeInfo.channels = sinkInfo_.channels;
-    outNodeInfo.channelLayout = (AudioChannelLayout)sinkInfo_.channelLayout;
-    outNodeInfo.format = sinkInfo_.format;
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    if (renderEffectNode_ != nullptr) {
+        renderEffectNode_->GetExpectedInputChannelInfo(channels, channelLayout);
+    }
+    HpaeNodeInfo effectNodeInfo = preNodeInfo;
+    effectNodeInfo.frameLen = sinkInfo_.frameLen;
+    effectNodeInfo.samplingRate = sinkInfo_.samplingRate;
+    effectNodeInfo.format = sinkInfo_.format;
+    effectNodeInfo.channels = channels == 0 ? sinkInfo_.channels : static_cast<AudioChannel>(channels);
+    effectNodeInfo.channelLayout = channelLayout == 0 ? static_cast<AudioChannelLayout>(sinkInfo_.channelLayout) :
+        static_cast<AudioChannelLayout>(channelLayout);
 #ifdef ENABLE_HIDUMP_DFX
-    outNodeInfo.nodeName = "HpaeAudioFormatConverterNode";
+    effectNodeInfo.nodeName = "HpaeAudioFormatConverterNode";
     if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
-        outNodeInfo.nodeId = callBack->OnGetNodeId();
+        effectNodeInfo.nodeId = callBack->OnGetNodeId();
     }
 #endif
-    idConverterMap_[sessionId] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outNodeInfo);
+    idConverterMap_[sessionId] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, effectNodeInfo);
     if (renderEffectNode_ != nullptr) {
         idConverterMap_[sessionId]->RegisterCallback(this);
     }
@@ -270,6 +276,15 @@ std::shared_ptr<HpaeAudioFormatConverterNode> HpaeProcessCluster::GetConverterNo
     return SafeGetMap(idConverterMap_, sessionId);
 }
 
+void HpaeProcessCluster::SetConnectedFlag(bool flag)
+{
+    isConnectedToOutputCluster = flag;
+}
+
+bool HpaeProcessCluster::GetConnectedFlag() const
+{
+    return isConnectedToOutputCluster;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -266,7 +266,7 @@ void HpaeRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCal
     int32_t ret = IHpaeManager::GetHpaeManager().RegisterWriteCallback(processConfig_.originalSessionId,
         shared_from_this());
     if (ret != 0) {
-        AUDIO_ERR_LOG("RegisterStatusCallback is error");
+        AUDIO_ERR_LOG("RegisterWriteCallback is error");
         return;
     }
     writeCallback_ = callback;

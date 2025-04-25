@@ -48,6 +48,7 @@ struct ContextBase {
     napi_value self = nullptr;
     void* native = nullptr;
     std::string taskName;
+    std::shared_ptr<AudioGroupManager> audioGroupManager = nullptr;
 
 private:
     napi_deferred deferred = nullptr;

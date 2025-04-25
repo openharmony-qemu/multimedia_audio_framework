@@ -25,6 +25,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_core_service.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -122,6 +123,13 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
         AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
             AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
         UnloadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
+    }
+    // remove device from golbal when device has been added to audio zone in superlanch-dual
+    int32_t res = AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(
+        audioConnectedDevice_.GetConnectedDeviceByType(LOCAL_NETWORK_ID, DEVICE_TYPE_REMOTE_CAST));
+    if (res == SUCCESS) {
+        AUDIO_INFO_LOG("Enable remotecast device for audio zone, remove from global list");
+        audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     }
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
