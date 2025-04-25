@@ -19,15 +19,6 @@
 #include "audio_endpoint.h"
 #include "audio_endpoint_private.h"
 
-#include <atomic>
-#include <cinttypes>
-#include <condition_variable>
-#include <thread>
-#include <vector>
-#include <mutex>
-#include <numeric>
-
-#include "securec.h"
 #include "xcollie/watchdog.h"
 
 #include "audio_errors.h"
@@ -36,10 +27,7 @@
 #include "audio_qosmanager.h"
 #include "audio_utils.h"
 #include "manager/hdi_adapter_manager.h"
-#include "sink/i_audio_render_sink.h"
-#include "source/i_audio_capture_source.h"
 #include "format_converter.h"
-#include "linear_pos_time_model.h"
 #include "policy_handler.h"
 #include "media_monitor_manager.h"
 #include "volume_tools.h"
