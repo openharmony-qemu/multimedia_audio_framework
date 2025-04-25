@@ -62,7 +62,7 @@
             "distributed_notification_service",
             "drivers_interface_audio",
             "drivers_interface_distributed_audio",
-            "drivers_peripheral_bluetooth",
+            "drivers_interface_bluetooth",
             "eventhandler",
             "ffrt",
             "hdf_core",

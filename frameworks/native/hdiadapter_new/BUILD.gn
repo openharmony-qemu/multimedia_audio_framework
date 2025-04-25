@@ -83,7 +83,7 @@ ohos_shared_library("hdiadapter_new") {
     "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
     "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
-    "drivers_peripheral_bluetooth:hdi_audio_bluetooth_header",
+    "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
     "hilog:libhilog",
     "init:libbegetutil",
