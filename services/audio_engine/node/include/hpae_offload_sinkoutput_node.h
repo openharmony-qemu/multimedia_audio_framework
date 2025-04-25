@@ -45,7 +45,7 @@ public:
     int32_t RenderSinkStart();
     int32_t RenderSinkStop();
     size_t GetPreOutNum();
-    RendererState GetSinkState(void);
+    StreamManagerState GetSinkState(void);
     const char* GetRenderFrameData(void);
     // need flush hdi cache and rewind
     void StopStream();
@@ -84,7 +84,7 @@ private:
     std::shared_ptr<IAudioRenderSink> audioRendererSink_ = nullptr;
     uint32_t renderId_ = HDI_INVALID_ID;
     IAudioSinkAttr sinkOutAttr_;
-    RendererState state_ = RENDERER_NEW;
+    StreamManagerState state_ = STREAM_MANAGER_NEW;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;

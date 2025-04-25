@@ -150,11 +150,8 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     uint32_t byteLength = 0;
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     switch (GetNodeInfo().fadeType) {
-        case FadeType::NONE_FADE: {
-            break;
-        }
         case FadeType::SHORT_FADE: {
-            byteLength = (float)GetSampleRate() * SHORT_FADE_PERIOD * rawFormat.channels * sizeof(float);
+            byteLength = static_cast<float>(GetSampleRate()) * SHORT_FADE_PERIOD * rawFormat.channels * sizeof(float);
             AUDIO_DEBUG_LOG("GainNode: short fade length in Bytes: %{public}u", byteLength);
             break;
         }
@@ -168,7 +165,10 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     }
     if (fadeInState_) {
         CHECK_AND_RETURN_LOG(input->IsValid(), "GainNode: invalid data no need to do fade in");
-        CHECK_AND_RETURN_LOG(!IsSilentData(input), "GainNode: silent data no need to do fade in");
+        if (IsSilentData(input)) {
+            AUDIO_DEBUG_LOG("GainNode: silent data no need to do fade in");
+            return;
+        }
         AUDIO_INFO_LOG("GainNode: fade in started!");
         ProcessVol(data, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
         fadeInState_ = false;

@@ -276,8 +276,8 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseChange_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSourceOutputInfo(recordStreamInfo.sessionId, sourceOutoputInfo), SUCCESS);
-    EXPECT_EQ(sourceOutoputInfo.capturerSessionInfo.state, CAPTURER_PAUSED);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, RENDERER_PAUSED);
+    EXPECT_EQ(sourceOutoputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(recordStreamInfo.sessionId) == SUCCESS, true);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
 }
@@ -322,8 +322,8 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopChange_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSourceOutputInfo(recordStreamInfo.sessionId, sourceOutoputInfo), SUCCESS);
-    EXPECT_EQ(sourceOutoputInfo.capturerSessionInfo.state, CAPTURER_STOPPED);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, RENDERER_STOPPED);
+    EXPECT_EQ(sourceOutoputInfo.capturerSessionInfo.state, HPAE_SESSION_STOPPED);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPED);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(recordStreamInfo.sessionId) == SUCCESS, true);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
 }

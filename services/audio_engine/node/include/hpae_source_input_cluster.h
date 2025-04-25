@@ -43,7 +43,7 @@ public:
     int32_t CapturerSourceResume(void);
     int32_t CapturerSourceStart(void);
     int32_t CapturerSourceStop(void);
-    CapturerState GetSourceState(void);
+    StreamManagerState GetSourceState(void);
     size_t GetOutputPortNum();
     size_t GetOutputPortNum(HpaeNodeInfo &nodeInfo);
     HpaeSourceInputNodeType GetSourceInputNodeType();

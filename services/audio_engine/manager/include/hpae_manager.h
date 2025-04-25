@@ -175,11 +175,12 @@ private:
     template <typename... Args>
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
     void HandleUpdateStatus(
-        HpaeStreamClassType streamClassType, uint32_t sessionId, uint32_t status, IOperation operation);
+        HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionState status, IOperation operation);
     void HandleInitDeviceResult(std::string deviceName, int32_t result);
     void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
-    void HandleMoveAllSinkInputs(const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkNam);
+    void HandleMoveAllSinkInputs(const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
+        bool isConnect);
     void HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std::string sourceName);
     void HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
