@@ -1829,11 +1829,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_118, TestSize.Level1
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     ASSERT_NE(streamDesc, nullptr);
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(streamDesc, nullptr);
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_HDMI;
-    streamDesc->streamInfo_.encoding = ENCODING_EAC3;
-
+    streamDesc->newDeviceDescs_.push_back(nullptr);
     bool ret = audioCoreService->IsNewDevicePlaybackSupported(streamDesc);
     EXPECT_EQ(ret, false);
 }
@@ -1850,13 +1846,36 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_119, TestSize.Level1
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     ASSERT_NE(streamDesc, nullptr);
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(streamDesc, nullptr);
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(newDeviceDesc, nullptr);
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
     streamDesc->streamInfo_.encoding = ENCODING_EAC3;
 
     bool ret = audioCoreService->IsNewDevicePlaybackSupported(streamDesc);
     EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_120
+ * @tc.desc  : Test AudioCoreService::IsNewDevicePlaybackSupported()
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_120, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(newDeviceDesc, nullptr);
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_HDMI;
+    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    streamDesc->streamInfo_.encoding = ENCODING_EAC3;
+
+    bool ret = audioCoreService->IsNewDevicePlaybackSupported(streamDesc);
+    EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
