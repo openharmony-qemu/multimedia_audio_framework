@@ -1614,7 +1614,7 @@ void AudioEffectChainManager::WaitAndReleaseEffectChain(const std::string &scene
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
         sceneTypeToSpecialEffectSet_.erase(sceneType);
         sceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
-        if (ret == SUCCESS) {
+        if (ret == SUCCESS && defaultEffectChainCount_ == 0) {
             sceneTypeToEffectChainMap_.erase(defaultSceneTypeAndDeviceKey);
             AUDIO_INFO_LOG("default effect chain is released");
         }
