@@ -112,6 +112,7 @@ private:
     std::string GetRouting(void) const;
     void WriteSmartPAStatusSysEvent(int32_t status);
     void UpdateSinkState(bool started);
+    void WaitForDataLinkConnected();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
