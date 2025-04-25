@@ -137,6 +137,7 @@ ohos_unittest("hdiadapter_unit_test") {
     "test/unittest/manager_unit_test.cpp",
     "test/unittest/sink/audio_render_sink_unit_test.cpp",
     "test/unittest/sink/bluetooth_audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/direct_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/fast_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/file_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/multichannel_audio_render_sink_unit_test.cpp",

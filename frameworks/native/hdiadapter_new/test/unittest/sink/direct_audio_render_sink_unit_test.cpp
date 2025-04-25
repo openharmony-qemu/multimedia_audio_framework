@@ -1,0 +1,137 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <iostream>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include "audio_utils.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
+
+using namespace testing::ext;
+
+namespace OHOS {
+namespace AudioStandard {
+class DirectAudioRenderSinkUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase();
+    static void TearDownTestCase();
+    virtual void SetUp();
+    virtual void TearDown();
+
+protected:
+    static uint32_t id_;
+    static std::shared_ptr<IAudioRenderSink> sink_;
+    static IAudioSinkAttr attr_;
+};
+
+uint32_t DirectAudioRenderSinkUnitTest::id_ = HDI_INVALID_ID;
+std::shared_ptr<IAudioRenderSink> DirectAudioRenderSinkUnitTest::sink_ = nullptr;
+IAudioSinkAttr DirectAudioRenderSinkUnitTest::attr_ = {};
+
+void DirectAudioRenderSinkUnitTest::SetUpTestCase()
+{
+    id_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_EAC3, HDI_ID_INFO_DEFAULT, true);
+}
+
+void DirectAudioRenderSinkUnitTest::TearDownTestCase()
+{
+    HdiAdapterManager::GetInstance().ReleaseId(id_);
+}
+
+void DirectAudioRenderSinkUnitTest::SetUp()
+{
+    sink_ = HdiAdapterManager::GetInstance().GetRenderSink(id_, true);
+    if (sink_ == nullptr) {
+        return;
+    }
+    attr_.channel = 2; // 2:channel
+    sink_->Init(attr_);
+}
+
+void DirectAudioRenderSinkUnitTest::TearDown()
+{
+    if (sink_ && sink_->IsInited()) {
+        sink_->DeInit();
+    }
+    sink_ = nullptr;
+}
+
+/**
+ * @tc.name   : Test DirectSink API
+ * @tc.number : DirectSinkUnitTest_001
+ * @tc.desc   : Test direct sink create
+ */
+HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_001, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_ != nullptr);
+}
+
+/**
+ * @tc.name   : Test DirectSink API
+ * @tc.number : DirectSinkUnitTest_002
+ * @tc.desc   : Test direct sink deinit
+ */
+HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_002, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_ != nullptr);
+    sink_->DeInit();
+    (void)sink_->Init(attr_);
+    (void)sink_->Init(attr_);
+    sink_->DeInit();
+    EXPECT_FALSE(sink_->IsInited());
+}
+
+/**
+ * @tc.name   : Test DirectSink API
+ * @tc.number : DirectSinkUnitTest_003
+ * @tc.desc   : Test direct sink start, stop, resume, pause, flush, reset
+ */
+HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_003, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_ != nullptr);
+    int32_t ret = sink_->Start();
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    ret = sink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = sink_->Resume();
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    ret = sink_->Pause();
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    ret = sink_->Flush();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = sink_->Reset();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = sink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test DirectSink API
+ * @tc.number : DirectSinkUnitTest_004
+ * @tc.desc   : Test direct sink set/get volume
+ */
+HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_004, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_ != nullptr);
+    int32_t ret = sink_->SetVolume(0.0f, 0.0f);
+    EXPECT_EQ(ret, SUCCESS);
+    float left;
+    float right;
+    ret = sink_->GetVolume(left, right);
+    EXPECT_EQ(ret, SUCCESS);
+}
+} // namespace AudioStandard
+} // namespace OHOS

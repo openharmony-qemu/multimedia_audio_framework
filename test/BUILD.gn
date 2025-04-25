@@ -102,6 +102,7 @@ group("audio_unit_test") {
     deps += [
       "../frameworks/native/hdiadapter_new:hdiadapter_unit_test",
       "../services/audio_service/test/unittest:none_mix_engine_unit_test",
+      "../services/audio_service/test/unittest:direct_playback_engine_unit_test",
     ]
 
     if (audio_framework_feature_low_latency) {
