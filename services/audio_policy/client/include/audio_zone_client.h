@@ -54,10 +54,10 @@ public:
     void RemoveAudioZoneVolumeProxy(int32_t zoneId);
 
     int32_t AddAudioInterruptCallback(int32_t zoneId, const std::shared_ptr<AudioZoneInterruptCallback> &callback);
-    int32_t AddAudioInterruptCallback(int32_t zoneId, int32_t deviceId,
+    int32_t AddAudioInterruptCallback(int32_t zoneId, const std::string &deviceTag,
         const std::shared_ptr<AudioZoneInterruptCallback> &callback);
     void RemoveAudioInterruptCallback(int32_t zoneId);
-    void RemoveAudioInterruptCallback(int32_t zoneId, int32_t deviceId);
+    void RemoveAudioInterruptCallback(int32_t zoneId, const std::string &deviceTag);
 
     void Restore();
 
@@ -68,10 +68,10 @@ private:
         mutable std::mutex audioZoneChangeMutex_;
         std::unordered_map<int32_t, std::shared_ptr<AudioZoneVolumeProxy>> audioZoneVolumeProxyMap_;
         mutable std::mutex audioZoneVolumeProxyMutex_;
-        std::unordered_map<int64_t, std::shared_ptr<AudioZoneInterruptCallback>> audioZoneInterruptCallbackMap_;
+        std::unordered_map<std::string, std::shared_ptr<AudioZoneInterruptCallback>> audioZoneInterruptCallbackMap_;
         mutable std::mutex audioZoneInterruptMutex_;
 
-        int64_t GetInterruptKeyId(int32_t zoneId, int32_t deviceId);
+        std::string GetInterruptKeyId(int32_t zoneId, const std::string &deviceTag);
 
         void OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor) override;
         void OnAudioZoneRemove(int32_t zoneId) override;
@@ -79,7 +79,7 @@ private:
             AudioZoneChangeReason reason) override;
         void OnInterruptEvent(int32_t zoneId, const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
             AudioZoneInterruptReason reason) override;
-        void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
+        void OnInterruptEvent(int32_t zoneId, const std::string &deviceTag,
             const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
             AudioZoneInterruptReason reason) override;
         int32_t SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,

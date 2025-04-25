@@ -167,8 +167,6 @@ private:
     void HandleAddUidToAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleRemoveUidFromAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply);
-    void HandleSetSystemVolumeLevelForZone(MessageParcel &data, MessageParcel &reply);
-    void HandleGetSystemVolumeLevelForZone(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZone(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZoneDevice(MessageParcel &data, MessageParcel &reply);
     void HandleEnableAudioZoneInterruptReport(MessageParcel &data, MessageParcel &reply);

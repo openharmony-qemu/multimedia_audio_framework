@@ -103,7 +103,7 @@ public:
         bool silentModeAndMixWithOthers = false;
         DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
 
-        std::optional<uint32_t> lastCallStartByUserTid = std::nullopt;
+        std::optional<pid_t> lastCallStartByUserTid = std::nullopt;
     };
 
     virtual ~IAudioStream() = default;
@@ -300,7 +300,7 @@ public:
 
     virtual void FetchDeviceForSplitStream() = 0;
 
-    virtual void SetCallStartByUserTid(uint32_t tid) = 0;
+    virtual void SetCallStartByUserTid(pid_t tid) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

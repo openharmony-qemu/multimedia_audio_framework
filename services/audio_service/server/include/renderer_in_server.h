@@ -150,7 +150,7 @@ private:
     uint32_t streamIndex_ = -1;
     std::string traceTag_;
     mutable int64_t volumeDataCount_ = 0;
-    IStatus status_ = I_STATUS_IDLE;
+    std::atomic<IStatus> status_ = I_STATUS_IDLE;
     bool offloadEnable_ = false;
     std::atomic<bool> standByEnable_ = false;
     std::atomic<bool> muteFlag_ = false;

@@ -49,7 +49,7 @@ static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
 constexpr int64_t g_value = 0;
 
-void ConfigPayload(uint32_t pid, uint32_t tid, const char *bundleName, int32_t qosLevel,
+void ConfigPayload(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel,
     std::unordered_map<std::string, std::string> &mapPayload)
 {
     std::string strBundleName = bundleName;
@@ -61,7 +61,7 @@ void ConfigPayload(uint32_t pid, uint32_t tid, const char *bundleName, int32_t q
     mapPayload["bundleName"] = strBundleName;
 }
 
-void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName)
+void ScheduleReportData(pid_t pid, pid_t tid, const char *bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportData with qos level 7, pid " + std::to_string(pid) +
         ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
@@ -73,7 +73,7 @@ void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName)
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(g_type, g_value, mapPayload);
 }
 
-void UnscheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
+void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportData with qos level -1, pid " + std::to_string(pid) +
         ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
@@ -84,7 +84,7 @@ void UnscheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(g_type, g_value, mapPayload);
 }
 
-void UnscheduleThreadInServer(uint32_t pid, uint32_t tid)
+void UnscheduleThreadInServer(pid_t pid, pid_t tid)
 {
     std::lock_guard<std::mutex> lock(g_rssMutex);
     if (g_tidToReport.find(tid) != g_tidToReport.end()) {
@@ -94,7 +94,7 @@ void UnscheduleThreadInServer(uint32_t pid, uint32_t tid)
     UnscheduleReportData(pid, tid, "audio_server");
 }
 
-void ScheduleThreadInServer(uint32_t pid, uint32_t tid)
+void ScheduleThreadInServer(pid_t pid, pid_t tid)
 {
     std::lock_guard<std::mutex> lock(g_rssMutex);
     if (g_tidToReport.find(tid) == g_tidToReport.end()) {
@@ -141,8 +141,8 @@ bool ResetEndpointThreadPriority()
 };
 #else
 void ScheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
-void ScheduleThreadInServer(uint32_t pid, uint32_t tid) {};
-void UnscheduleThreadInServer(uint32_t tid) {};
+void ScheduleThreadInServer(pid_t pid, pid_t tid) {};
+void UnscheduleThreadInServer(pid_t tid) {};
 void OnAddResSchedService(uint32_t audioServerPid) {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 bool SetEndpointThreadPriority() { return false; };
@@ -158,12 +158,12 @@ namespace AudioStandard {
 namespace {
 static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
 }
-std::map<std::pair<uint32_t, uint32_t>,
+std::map<std::pair<pid_t, pid_t>,
     std::weak_ptr<SharedAudioScheduleGuard>> SharedAudioScheduleGuard::guardMap_;
 std::mutex SharedAudioScheduleGuard::mutex_;
 std::condition_variable SharedAudioScheduleGuard::cv_;
 
-AudioScheduleGuard::AudioScheduleGuard(uint32_t pid, uint32_t tid, const std::string &bundleName)
+AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, const std::string &bundleName)
     : pid_(pid), tid_(tid), bundleName_(bundleName)
 {
     ScheduleReportData(pid, tid, bundleName.c_str());
@@ -186,7 +186,7 @@ AudioScheduleGuard::~AudioScheduleGuard()
     }
 }
 
-std::shared_ptr<SharedAudioScheduleGuard> SharedAudioScheduleGuard::Create(uint32_t pid, uint32_t tid,
+std::shared_ptr<SharedAudioScheduleGuard> SharedAudioScheduleGuard::Create(pid_t pid, pid_t tid,
     const std::string &bundleName)
 {
     std::shared_ptr<SharedAudioScheduleGuard> sharedGuard = nullptr;

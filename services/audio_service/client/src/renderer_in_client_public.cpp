@@ -1794,7 +1794,7 @@ void RendererInClientInner::FetchDeviceForSplitStream()
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
 }
 
-void RendererInClientInner::SetCallStartByUserTid(uint32_t tid)
+void RendererInClientInner::SetCallStartByUserTid(pid_t tid)
 {
     std::lock_guard lock(lastCallStartByUserTidMutex_);
     lastCallStartByUserTid_ = tid;

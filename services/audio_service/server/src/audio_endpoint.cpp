@@ -653,8 +653,13 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const AudioDeviceDescriptor &dev
     spanDuration_ = static_cast<int64_t>(dstSpanSizeInframe_) * AUDIO_NS_PER_SECOND /
         static_cast<int64_t>(dstStreamInfo_.samplingRate);
     int64_t temp = spanDuration_ / 5 * 3; // 3/5 spanDuration
+    int64_t setTime = -1;
+    int64_t maxSetTime = (static_cast<int64_t>(dstTotalSizeInframe_ - dstSpanSizeInframe_)) *
+        AUDIO_NS_PER_SECOND / static_cast<int64_t>(dstStreamInfo_.samplingRate);
+    GetSysPara("persist.multimedia.serveraheadreadtime", setTime);
+    temp = setTime > 0 && setTime < maxSetTime ? setTime : temp;
     serverAheadReadTime_ = temp < ONE_MILLISECOND_DURATION ? ONE_MILLISECOND_DURATION : temp; // at least 1ms ahead.
-    AUDIO_DEBUG_LOG("panDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
+    AUDIO_INFO_LOG("spanDuration %{public}" PRIu64" ns, serverAheadReadTime %{public}" PRIu64" ns.",
         spanDuration_, serverAheadReadTime_);
 
     CHECK_AND_RETURN_RET_LOG(spanDuration_ > 0 && spanDuration_ < MAX_SPAN_DURATION_NS,

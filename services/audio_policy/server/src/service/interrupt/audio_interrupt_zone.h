@@ -30,7 +30,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-using GetZoneIdFunc = std::function<int32_t(int32_t uid, int32_t deviceId, const std::string &tag)>;
+using GetZoneIdFunc = std::function<int32_t(int32_t uid, const std::string &, const std::string &)>;
 using AudioFocusList = std::list<std::pair<AudioInterrupt, AudioFocuState>>;
 using AudioFocusIterator = std::list<AudioFocusList::iterator>;
 
@@ -59,10 +59,10 @@ protected:
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
-    int32_t InjectInterruptToAudioZone(const int32_t zoneId, const int32_t deviceId,
+    int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,
         const AudioFocusList &interrupts);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
-    int32_t GetAudioFocusInfoList(const int32_t zoneId, const int32_t deviceId,
+    int32_t GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
         AudioFocusList &focusInfoList);
 
 private:
@@ -71,7 +71,7 @@ private:
     void RemoveAudioZoneInterrupts(int32_t zoneId, const AudioFocusIterator &focus);
     void TryActiveAudioFocusForZone(int32_t zoneId, AudioFocusList &activeFocusList);
     void TryResumeAudioFocusForZone(int32_t zoneId);
-    AudioFocusIterator QueryAudioFocusFromZone(int32_t zoneId, const int32_t deviceId);
+    AudioFocusIterator QueryAudioFocusFromZone(int32_t zoneId, const std::string &deviceTag);
     void ForceStopAudioFocusInZone(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     void ForceStopAllAudioFocusInZone(std::shared_ptr<AudioInterruptZone> &zone);
 

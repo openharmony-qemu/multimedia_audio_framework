@@ -20,6 +20,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_process_config.h"
+#include "audio_parcel_helper.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -529,14 +530,14 @@ int32_t IpcStreamProxy::SetDuckFactor(float duckFactor)
     return reply.ReadInt32();
 }
 
-int32_t IpcStreamProxy::RegisterThreadPriority(uint32_t tid, const std::string &bundleName, BoostTriggerMethod method)
+int32_t IpcStreamProxy::RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-    data.WriteUint32(tid);
+    AudioParcelHelper<MessageParcel, pid_t>::Marshalling(data, tid);
     data.WriteString(bundleName);
     data.WriteUint32(method);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_REGISTER_THREAD_PRIORITY, data, reply, option);
