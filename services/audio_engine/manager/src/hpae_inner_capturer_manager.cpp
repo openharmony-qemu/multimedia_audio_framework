@@ -52,7 +52,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
 {
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     uint32_t sessionId = nodeInfo.sessionId;
-    AUDIO_INFO_LOG("add node :%{public}d to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
+    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
@@ -67,12 +67,14 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     }
 
     if (!isConnect) {
-        AUDIO_INFO_LOG("not need connect session:%{public}d", sessionId);
+        AUDIO_INFO_LOG("[FinishMove] not need connect session:%{public}d", sessionId);
         return;
     }
+
     if (node->GetState() == RENDERER_RUNNING) {
-        AUDIO_INFO_LOG("connect node :%{public}d to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
-        ConnectRendererInputSessionInner(sessionId); // todo: fadein
+        AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:%{public}s",
+            sessionId, sinkInfo_.deviceClass.c_str());
+        ConnectRendererInputSessionInner(sessionId);
         if (hpaeInnerCapSinkNode_->GetSinkState() != RENDERER_RUNNING) {
             hpaeInnerCapSinkNode_->InnerCapturerSinkStart();
         }
@@ -97,16 +99,21 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
     std::vector<uint32_t> sessionIds;
+    std::string idStr;
     for (const auto &it : sinkInputNodeMap_) {
         if (isMoveAll || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
             sinkInputs.emplace_back(it.second);
             sessionIds.emplace_back(it.first);
+            idStr.append("[");
+            idStr.append(std::to_string(it.first));
+            idStr.append("],");
         }
     }
     for (const auto &it : sessionIds) {
         DisConnectRendererInputSessionInner(it);
     }
-    AUDIO_INFO_LOG("sink input count:%{public}zu", sinkInputs.size());
+    AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, isMoveAll:%{public}d",
+        idStr.c_str(), name.c_str(), isMoveAll);
     TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, !isMoveAll);
 }
 
@@ -131,19 +138,22 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
     AUDIO_INFO_LOG("move session:%{public}d,sink name:%{public}s", sessionId, sinkName.c_str());
     auto request = [this, sessionId, sinkName]() {
         if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
-            AUDIO_ERR_LOG("could not find session:%{public}d,sink name:%{public}s", sessionId, sinkName.c_str());
+            AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,can not find session,move %{public}s --> %{public}s",
+                sessionId, sinkName.c_str(), sinkInfo_.deviceName.c_str());
             return;
         }
+
+        if(sinkName.empty()) {
+            AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
+            return;
+        }
+
+        AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
+            sessionId, sinkName.c_str(), sinkInfo_.deviceName.c_str());
         std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNodeMap_[sessionId];
-        if (inputNode->GetState() == RENDERER_RUNNING) {
-            // todo: do fade out
-        }
         DisConnectRendererInputSessionInner(sessionId);
-        if (!sinkName.empty()) {
-            std::string name = sinkName;
-            AUDIO_ERR_LOG("trigger call back, sink name:%{public}s", sinkName.c_str());
-            TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
-        }
+        std::string name = sinkName;
+        TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
     };
     SendRequestInner(request);
     return SUCCESS;
