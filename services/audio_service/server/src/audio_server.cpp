@@ -107,6 +107,7 @@ static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
 };
+const int32_t RSS_THRESHOLD = 2;
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;
 enum PermissionStatus {
@@ -1483,6 +1484,7 @@ int32_t AudioServer::CheckAndWaitAudioPolicyReady()
 
 void AudioServer::NotifyProcessStatus()
 {
+    // when audio_server start, set audio_server rssThresHold
     int pid = getpid();
     void *libMemMgrClientHandle = dlopen("libmemmgrclient.z.so", RTLD_NOW);
     if (!libMemMgrClientHandle) {
@@ -1499,7 +1501,7 @@ void AudioServer::NotifyProcessStatus()
     }
     auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
     AUDIO_INFO_LOG("notify to memmgr when audio_server is started");
-    notifyProcessStatus(pid, 1, 2, 0);
+    notifyProcessStatus(pid, 1, RSS_THRESHOLD, 0);
 #ifndef TEST_COVERAGE
     dlclose(libMemMgrClientHandle);
 #endif
