@@ -145,9 +145,9 @@ TEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase)
     attr.audioStreamFlag = 0;
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), ERROR);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStart(), SUCCESS);
-    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == CAPTURER_RUNNING, true);
+    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == STREAM_MANAGER_RUNNING, true);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStop(), SUCCESS);
-    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == CAPTURER_STOPPED, true);
+    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
     TestCapturerSourceFrame(testData.data(), requestBytes, &replyBytes);
     hpaeSoruceInputNode->WriteCapturerData(testData.data(), requestBytes);
     OutputPort<HpaePcmBuffer *> *outputPort = hpaeSoruceInputNode->GetOutputPort();

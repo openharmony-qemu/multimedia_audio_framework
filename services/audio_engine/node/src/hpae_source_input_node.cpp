@@ -255,7 +255,7 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 
     audioSourceAttr_ = attr;
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Init(attr) == SUCCESS, ERROR, "Source init fail");
-    state_ = CAPTURER_NEW;
+    state_ = STREAM_MANAGER_IDLE;
     return SUCCESS;
 }
 
@@ -285,7 +285,7 @@ int32_t HpaeSourceInputNode::CapturerSourcePause(void)
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Pause() == SUCCESS, ERROR, "Source pause fail");
-    state_ = CAPTURER_PAUSED;
+    state_ = STREAM_MANAGER_SUSPENDED;
     return SUCCESS;
 }
 
@@ -303,7 +303,7 @@ int32_t HpaeSourceInputNode::CapturerSourceResume(void)
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Resume() == SUCCESS, ERROR, "Source resume fail");
-    state_ = CAPTURER_RUNNING;
+    state_ = STREAM_MANAGER_RUNNING;
     return SUCCESS;
 }
 
@@ -313,7 +313,7 @@ int32_t HpaeSourceInputNode::CapturerSourceStart(void)
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Start() == SUCCESS, ERROR, "Source start fail");
-    state_ = CAPTURER_RUNNING;
+    state_ = STREAM_MANAGER_RUNNING;
     return SUCCESS;
 }
 
@@ -323,11 +323,11 @@ int32_t HpaeSourceInputNode::CapturerSourceStop(void)
         return ERROR;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Stop() == SUCCESS, ERROR, "Source stop fail");
-    state_ = CAPTURER_STOPPED;
+    state_ = STREAM_MANAGER_SUSPENDED;
     return SUCCESS;
 }
 
-CapturerState HpaeSourceInputNode::GetSourceState(void)
+StreamManagerState HpaeSourceInputNode::GetSourceState(void)
 {
     return state_;
 }
