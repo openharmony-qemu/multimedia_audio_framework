@@ -380,6 +380,7 @@ void AudioServer::OnStart()
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();
     ParseAudioParameter();
+    NotifyProcessStatus();
     DlopenUtils::DeInit();
 }
 
@@ -1478,6 +1479,30 @@ int32_t AudioServer::CheckAndWaitAudioPolicyReady()
     }
 
     return SUCCESS;
+}
+
+void AudioServer::NotifyProcessStatus()
+{
+    int pid = getpid();
+    void *libMemMgrClientHandle = dlopen("libmemmgrclient.z.so", RTLD_NOW);
+    if (!libMemMgrClientHandle) {
+        AUDIO_INFO_LOG("dlopen libmemmgrclient library failed");
+        return;
+    }
+    void *notifyProcessStatusFunc = dlsym(libMemMgrClientHandle, "notify_process_status");
+    if (!notifyProcessStatusFunc) {
+        AUDIO_INFO_LOG("dlsm notify_process_status failed");
+#ifndef TEST_COVERAGE
+        dlclose(libMemMgrClientHandle);
+#endif
+        return;
+    }
+    auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
+    AUDIO_INFO_LOG("notify to memmgr when audio_server is started");
+    notifyProcessStatus(pid, 1, 2, 0);
+#ifndef TEST_COVERAGE
+    dlclose(libMemMgrClientHandle);
+#endif
 }
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
