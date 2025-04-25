@@ -142,11 +142,9 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
                 sessionId, sinkName.c_str(), sinkInfo_.deviceName.c_str());
             return;
         }
-
-        if(sinkName.empty()) {
-            AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
-            return;
-        }
+        
+        CHECK_AND_RETURN_LOG(!sinkName.empty(), "[StartMove] session:%{public}u failed,sinkName is empty",
+            sessionId);
 
         AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
             sessionId, sinkName.c_str(), sinkInfo_.deviceName.c_str());

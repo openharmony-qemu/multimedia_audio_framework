@@ -685,7 +685,7 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo)
 
         for (const auto &it : sinkInputNodeMap_) {
             if (it.second && it.second->GetState() == HPAE_SESSION_RUNNING) {
-                AUDIO_INFO_LOG("connect node :%{public}d to sink:%{public}s", it.first, sinkInfo_.deviceClass.c_str());
+                AUDIO_INFO_LOG("connect node :%{public}u to sink:%{public}s", it.first, sinkInfo_.deviceClass.c_str());
                 ConnectInputSession(it.first);
             }
         }

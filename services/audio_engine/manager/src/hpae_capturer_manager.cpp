@@ -848,10 +848,8 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
                 sessionId, sourceInfo_.sourceName.c_str(), sourceName.c_str());
             return;
         }
-        if(sourceName.empty()) {
-            AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sourceName is empty", sessionId);
-            return;
-        }
+        CHECK_AND_RETURN_LOG(!sourceName.empty(), "[StartMove] session:%{public}u failed,sourceName is empty",
+            sessionId);
         AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
             sessionId, sourceInfo_.sourceName.c_str(), sourceName.c_str());
         HpaeCapturerSessionInfo sessionInfo = sessionNodeMap_[sessionId];
