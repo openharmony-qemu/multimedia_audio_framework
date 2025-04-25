@@ -212,7 +212,6 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
     if (audioBalanceState_) {
         AdjustAudioBalance(&data, len);
     }
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     CheckUpdateState(&data, len);
     if (switchDeviceMute_) {
         Trace trace("MultichannelAudioRenderSink::RenderFrame::switch");
