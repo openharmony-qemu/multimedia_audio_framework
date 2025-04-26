@@ -357,7 +357,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->capturerInfo_ = capturerInfo_;
     streamDesc->appInfo_ = appInfo_;
-    streamDesc->callerUid_ = getuid();
+    streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     return streamDesc;
 }
 
