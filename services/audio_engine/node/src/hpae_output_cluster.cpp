@@ -43,6 +43,9 @@ HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo &nodeInfo)
         nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(true, hpaeSinkOutputNode_->GetNodeId(), nodeInfo);
     }
 #endif
+    if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
+        AUDIO_INFO_LOG("HpaeOutputCluster mixerNode SetupAudioLimiter failed!");
+    }
     hpaeSinkOutputNode_->Connect(mixerNode_);
     frameLenMs_ = nodeInfo.frameLen * MILLISECOND_PER_SECOND / nodeInfo.samplingRate;
     AUDIO_INFO_LOG(

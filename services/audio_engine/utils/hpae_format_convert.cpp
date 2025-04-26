@@ -80,7 +80,7 @@ static float CapMax(float v)
     return value;
 }
 
-static void ConvertFromFloatToU8(unsigned, const float *a, uint8_t *b)
+static void ConvertFromFloatToU8(unsigned n, const float *a, uint8_t *b)
 {
     for (; n > 0; n--) {
         float v = *(a++);
