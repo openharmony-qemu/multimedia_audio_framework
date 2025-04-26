@@ -73,9 +73,8 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
     }
 
     std::lock_guard<std::mutex> lock(clientMutex_);
-    if (handler_ == nullptr || clients_.find(event->clientPid) == clients_.end()) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
+    CHECK_AND_RETURN_LOG(clients_.find(event->clientPid) != clients_.end(), "client not register");
 
     switch (event->type) {
         case AudioZoneEventType::AUDIO_ZONE_ADD_EVENT:
@@ -106,9 +105,9 @@ void AudioZoneClientManager::SendZoneAddEvent(pid_t clientPid, std::shared_ptr<A
 {
     CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is null");
     std::lock_guard<std::mutex> lock(clientMutex_);
-    if (handler_ == nullptr || clients_.find(clientPid) == clients_.end()) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
     event->clientPid = clientPid;
@@ -123,9 +122,9 @@ void AudioZoneClientManager::SendZoneAddEvent(pid_t clientPid, std::shared_ptr<A
 void AudioZoneClientManager::SendZoneRemoveEvent(pid_t clientPid, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(clientMutex_);
-    if (handler_ == nullptr || clients_.find(clientPid) == clients_.end()) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
     event->clientPid = clientPid;
@@ -141,9 +140,9 @@ void AudioZoneClientManager::SendZoneChangeEvent(pid_t clientPid, std::shared_pt
 {
     CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is null");
     std::lock_guard<std::mutex> lock(clientMutex_);
-    if (handler_ == nullptr || clients_.find(clientPid) == clients_.end()) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
     event->clientPid = clientPid;
@@ -161,9 +160,9 @@ void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zon
     AudioZoneInterruptReason reason)
 {
     std::lock_guard<std::mutex> lock(clientMutex_);
-    if (handler_ == nullptr || clients_.find(clientPid) == clients_.end()) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
     event->clientPid = clientPid;
@@ -183,9 +182,7 @@ int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, cons
     sptr<IStandardAudioZoneClient> client = nullptr;
     {
         std::lock_guard<std::mutex> lock(clientMutex_);
-        if (clients_.find(clientPid) == clients_.end()) {
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET(clients_.find(clientPid) != clients_.end(), ERROR);
         client = clients_[clientPid];
     }
     AUDIO_DEBUG_LOG("set audio zone %{public}d volume %{public}d to client %{public}d",
@@ -199,9 +196,7 @@ int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, cons
     sptr<IStandardAudioZoneClient> client = nullptr;
     {
         std::lock_guard<std::mutex> lock(clientMutex_);
-        if (clients_.find(clientPid) == clients_.end()) {
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET(clients_.find(clientPid) != clients_.end(), ERROR);
         client = clients_[clientPid];
     }
     AUDIO_DEBUG_LOG("get audio zone %{public}d volume from client %{public}d",
