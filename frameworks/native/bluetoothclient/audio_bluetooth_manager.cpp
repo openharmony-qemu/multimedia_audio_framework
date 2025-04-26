@@ -149,6 +149,7 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSink()
 
 void AudioA2dpManager::DisconnectBluetoothA2dpSource()
 {
+    CHECK_AND_RETURN_LOG(a2dpListener_ != nullptr, "a2dpListener_ is nullptr");
     int captureConnectionState = static_cast<int>(BTHdapConnectState::DISCONNECTED);
     auto a2dpInList = A2dpInBluetoothDeviceManager::GetAllA2dpInBluetoothDevice();
     A2dpCodecInfo defaultCodecInfo = {};
@@ -289,6 +290,7 @@ void AudioA2dpManager::CheckA2dpDeviceReconnect()
         a2dpInstance_ = A2dpSource::GetProfile();
     }
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
+    CHECK_AND_RETURN_LOG(a2dpListener_ != nullptr, "a2dpListener_ is nullptr");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
     a2dpInstance_->GetDevicesByStates(states, devices);
