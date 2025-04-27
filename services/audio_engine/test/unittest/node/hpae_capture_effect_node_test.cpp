@@ -154,7 +154,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002)
     hpaeSourceInputCluster->CapturerSourceInit(attr);
     hpaeSourceInputCluster->CapturerSourceStart();
 
-    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GET_SIZE_FROM_FORMAT(nodeInfo.format);
+    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
     uint64_t replyBytes = 0;
     std::vector<char> testData(requestBytes);
 
