@@ -85,7 +85,7 @@ TEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_002)
 {
     AudioEffectPropertyArrayV3 propertyArray2;
     propertyArray2.property.push_back({"invalidEffect", "property1"});
-    ret = hpaePolicyManager_->SetAudioEnhanceProperty(propertyArray2, DEVICE_TYPE_SPEAKER);
+    int32_t ret = hpaePolicyManager_->SetAudioEnhanceProperty(propertyArray2, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
     AudioEffectPropertyArrayV3 propertyArray3;
