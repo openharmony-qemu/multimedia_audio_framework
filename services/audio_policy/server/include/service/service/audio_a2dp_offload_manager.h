@@ -89,7 +89,7 @@ private:
     void GetA2dpOffloadCodecAndSendToDsp();
     int32_t HandleA2dpDeviceInOffload(BluetoothOffloadState a2dpOffloadFlag);
     int32_t HandleA2dpDeviceOutOffload(BluetoothOffloadState a2dpOffloadFlag);
-    int32_t HandleActiveDevice(DeviceType deviceType);
+    int32_t HandleActiveDevice(AudioDeviceDescriptor deviceDescriptor);
     void FetchStreamForA2dpOffload(const bool &requireReset);
     void GetAllRunningStreamSession(std::vector<int32_t> &allSessions, bool doStop = false);
     std::string GetVolumeGroupType(DeviceType deviceType);
