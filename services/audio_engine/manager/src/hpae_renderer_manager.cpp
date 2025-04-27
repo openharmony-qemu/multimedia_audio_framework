@@ -969,20 +969,24 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
     }
     if (sessionGainNode == nullptr) {
         AUDIO_WARNING_LOG("session %{public}d do not have gain node!", sessionId);
-        HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
-        SetSessionState(sessionId, state);
-        sinkInputNodeMap_[sessionId]->SetState(state);
-        TriggerCallback(UPDATE_STATUS,
-            HPAE_STREAM_CLASS_TYPE_PLAY,
-            sessionId,
-            sessionNodeMap_[sessionId].state,
-            operation);
+        if (operation != OPERATION_STARTED) {
+            HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
+            SetSessionState(sessionId, state);
+            sinkInputNodeMap_[sessionId]->SetState(state);
+            TriggerCallback(UPDATE_STATUS,
+                HPAE_STREAM_CLASS_TYPE_PLAY,
+                sessionId,
+                sessionNodeMap_[sessionId].state,
+                operation);
+        }
         return false;
     }
     AUDIO_INFO_LOG("get gain node of session %{public}d.", sessionId);
-    HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPING : HPAE_SESSION_PAUSING;
-    SetSessionState(sessionId, state);
-    sinkInputNodeMap_[sessionId]->SetState(state);
+    if (operation != OPERATION_STARTED) {
+        HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPING : HPAE_SESSION_PAUSING;
+        SetSessionState(sessionId, state);
+        sinkInputNodeMap_[sessionId]->SetState(state);
+    }
     sessionGainNode->SetFadeState(operation);
     return true;
 }
