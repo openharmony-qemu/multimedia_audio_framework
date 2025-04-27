@@ -566,7 +566,7 @@ typedef enum {
      */
     AUDIOSTREAM_SOURCE_TYPE_UNPROCESSED = 14,
     /**
-     * Unprocessed source type.
+     * live broadcast source type. 
      *
      * @since 20
      */
