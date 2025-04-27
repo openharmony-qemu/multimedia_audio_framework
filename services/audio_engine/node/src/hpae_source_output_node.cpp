@@ -31,7 +31,7 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       sourceOutputData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels),
-      framesRead_(0), totalFrames(0)
+      framesRead_(0), totalFrames_(0)
 {
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
@@ -79,8 +79,8 @@ void HpaeSourceOutputNode::DoProcess()
     if (ret != 0) {
         AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ write read data error", GetSessionId());
     }
-    totalFrames += GetFrameLen();
-    framesRead_.store(totalFrames);
+    totalFrames_ += GetFrameLen();
+    framesRead_.store(totalFrames_);
     return;
 }
 

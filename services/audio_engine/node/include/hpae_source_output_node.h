@@ -48,7 +48,7 @@ private:
     std::vector<char> sourceOutputData_;
     std::vector<float> interleveData_;
     std::atomic<uint64_t> framesRead_;
-    uint64_t totalFrames;
+    uint64_t totalFrames_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
