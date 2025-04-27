@@ -159,13 +159,14 @@ HWTEST_F(RendererInServerExtUnitTest, InnerCaptureOtherStream_001, TestSize.Leve
     CaptureInfo captureInfo;
     captureInfo.isInnerCapEnabled = true;
     captureInfo.dupStream = nullptr;
-    server->InnerCaptureOtherStream(bufferDesc, captureInfo);
+    int32_t innerCapId = 1;
+    server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
 
     captureInfo.dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
-    server->InnerCaptureOtherStream(bufferDesc, captureInfo);
+    server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
 
     server->renderEmptyCountForInnerCap_ = 1;
-    server->InnerCaptureOtherStream(bufferDesc, captureInfo);
+    server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
 }
 
 /**

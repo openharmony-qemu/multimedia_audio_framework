@@ -29,14 +29,15 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-const int32_t DEFAULT_NANO_SECONDS = 20000000;
-const int32_t NANO_SECONDS = 1000000;
+constexpr auto DEFAULT_NANO_SECONDS = std::chrono::nanoseconds(20000000); // 20000000ns = 20ms
 
 HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), outputStream_(this),
       pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate), silenceData_(pcmBufferInfo_)
 {
     silenceData_.Reset();
+    historyTime_ = std::chrono::high_resolution_clock::now();
+    sleepTime_ = std::chrono::nanoseconds(0);
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeInnerCapSinkNode_bit_" +
                        std::to_string(GetBitWidth()) + "_ch_" + std::to_string(GetChannelCount()) +
@@ -61,11 +62,18 @@ void HpaeInnerCapSinkNode::DoProcess()
         outputStream_.WriteDataToOutput(outputVec[0]);
     }
     // sleep
-    intervalTimer_.Stop();
-    auto elapsed = intervalTimer_.Elapsed<std::chrono::nanoseconds>();
-    std::this_thread::sleep_for(std::chrono::nanoseconds(DEFAULT_NANO_SECONDS - elapsed));
-    AUDIO_DEBUG_LOG("sleeptime : %{public}f", DEFAULT_NANO_SECONDS - ((static_cast<float>(elapsed))/NANO_SECONDS));
-    intervalTimer_.Start();
+    endTime_ = std::chrono::high_resolution_clock::now();
+    std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::nanoseconds>(DEFAULT_NANO_SECONDS -
+        (endTime_ - historyTime_ - sleepTime_)));
+    AUDIO_DEBUG_LOG("sleeptime : %{public} " PRIi64"", static_cast<int64_t>(std::chrono::duration_cast
+        <std::chrono::nanoseconds>(DEFAULT_NANO_SECONDS - (endTime_ - historyTime_ - sleepTime_)).count()));
+    if (static_cast<int64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(DEFAULT_NANO_SECONDS -
+        (endTime_ - historyTime_ - sleepTime_)).count()) <= 0) {
+        sleepTime_ = std::chrono::nanoseconds(0);
+    } else {
+        sleepTime_ = DEFAULT_NANO_SECONDS - (endTime_ - historyTime_ - sleepTime_);
+    }
+    historyTime_ = endTime_;
 }
 
 bool HpaeInnerCapSinkNode::Reset()
