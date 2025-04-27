@@ -583,6 +583,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     HpaeNodeInfo nodeInfo;
     HpaeNodeInfo ecNodeInfo;
     HpaeNodeInfo micRefNodeInfo;
+    nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.channels = sourceInfo_.channels;
     nodeInfo.format = sourceInfo_.format;
     nodeInfo.frameLen = sourceInfo_.frameLen;

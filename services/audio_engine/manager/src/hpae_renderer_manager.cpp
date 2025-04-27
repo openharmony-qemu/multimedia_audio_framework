@@ -572,8 +572,8 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
 
 int32_t HpaeRendererManager::Drain(uint32_t sessionId)
 {
-    Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::Drain");
     auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::Drain");
         AUDIO_INFO_LOG("Drain sessionId %{public}u deviceName %{public}s ", sessionId, sinkInfo_.deviceName.c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Drain not find sessionId %{public}u", sessionId);

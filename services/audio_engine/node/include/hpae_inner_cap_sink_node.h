@@ -49,6 +49,7 @@ public:
     int32_t InnerCapturerSinkStart();
     int32_t InnerCapturerSinkStop();
     StreamManagerState GetSinkState();
+    int32_t SetSinkState(StreamManagerState sinkState);
 private:
     OutputPort<HpaePcmBuffer*> outputStream_;
     InputPort<HpaePcmBuffer*> inputStream_;

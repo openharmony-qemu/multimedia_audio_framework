@@ -182,7 +182,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
         "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
 
     sinkOutAttr_ = attr;
-    state_ = STREAM_MANAGER_IDLE;
+    SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
@@ -203,7 +203,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkDeInit(void)
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_, ERR_ILLEGAL_STATE,
         "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
-    state_ = STREAM_MANAGER_RELEASED;
+    SetSinkState(STREAM_MANAGER_RELEASED);
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
@@ -264,7 +264,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStart(void)
     AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRIu64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    state_ = STREAM_MANAGER_RUNNING;
+    SetSinkState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
 }
 
@@ -288,7 +288,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
     AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRIu64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    state_ = STREAM_MANAGER_SUSPENDED;
+    SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 
@@ -305,6 +305,15 @@ size_t HpaeOffloadSinkOutputNode::GetPreOutNum()
 StreamManagerState HpaeOffloadSinkOutputNode::GetSinkState(void)
 {
     return isHdiFull_.load() ? STREAM_MANAGER_SUSPENDED : state_;
+}
+
+int32_t HpaeOffloadSinkOutputNode::SetSinkState(StreamManagerState sinkState)
+{
+    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+        GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
+        ConvertStreamManagerState2Str(sinkState).c_str());
+    state_ = sinkState;
+    return SUCCESS;
 }
 
 const char *HpaeOffloadSinkOutputNode::GetRenderFrameData(void)
