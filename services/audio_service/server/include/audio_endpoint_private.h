@@ -153,7 +153,7 @@ private:
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
     bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
     bool RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wakeUpTime);
-    int32_t InitDupBufferinnerCapId(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex);
+    int32_t InitDupBuffer(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex);
 
     /**
      * @brief Get the current read position in frame and the read-time with it.
