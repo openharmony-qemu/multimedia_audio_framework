@@ -69,8 +69,8 @@ int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const Au
     AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
     Trace trace("OpenAudioPort");
     lock_guard<mutex> lock(lock_);
-    IHpaeManager::GetHpaeManager().OpenAudioPort(audioModuleInfo);
     isFinishOpenAudioPort_ = false;
+    IHpaeManager::GetHpaeManager().OpenAudioPort(audioModuleInfo);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishOpenAudioPort_;  // will be true when got notified.
