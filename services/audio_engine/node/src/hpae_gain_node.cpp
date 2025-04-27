@@ -143,6 +143,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
         statusCallback->OnFadeDone(GetSessionId(), operation_);
+        return;
     }
     AudioRawFormat rawFormat;
     rawFormat.format = SAMPLE_F32LE; // for now PCM in gain node is float32

@@ -246,6 +246,12 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
         Trace trace("HpaeRendererManager::DestroyStream id[" +
             std::to_string(sessionId) + "]");
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
+            "Release not find sessionId %{public}u", sessionId);
+        SetSessionState(sessionId, HPAE_SESSION_RELEASED);
+        if (sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RELEASED) {
+            sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RELEASED);
+        }
         DeleteInputSession(sessionId);
     };
     SendRequest(request);
@@ -543,6 +549,8 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
             sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
         }
         if (sessionGainNode == nullptr) {
+            SetSessionState(sessionId, HPAE_SESSION_PAUSED);
+            sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_PAUSED);
             TriggerCallback(UPDATE_STATUS,
                 HPAE_STREAM_CLASS_TYPE_PLAY,
                 sessionId,
@@ -609,6 +617,8 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
         }
         if (sessionGainNode == nullptr) {
+            SetSessionState(sessionId, HPAE_SESSION_STOPPED);
+            sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_STOPPED);
             TriggerCallback(UPDATE_STATUS,
                 HPAE_STREAM_CLASS_TYPE_PLAY,
                 sessionId,
