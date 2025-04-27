@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include "hpae_node.h"
 #include "hpae_plugin_node.h"
+#include "audio_limiter.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif

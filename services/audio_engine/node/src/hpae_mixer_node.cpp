@@ -20,6 +20,7 @@
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
 #include "cinttypes"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,7 +28,7 @@ namespace HPAE {
 HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
-    mixedOutput_(pcmBufferInfo_)
+    mixedOutput_(pcmBufferInfo_), tmpOutput_(pcmBufferInfo_)
 {
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ =  std::make_unique<HpaePcmDumper>("HpaeMixerNodeOut_ch_" +
@@ -44,18 +45,18 @@ bool HpaeMixerNode::Reset()
 
 int32_t HpaeMixerNode::SetupAudioLimiter()
 {
-    if (limiter != nullptr) {
+    if (limiter_ != nullptr) {
         AUDIO_INFO_LOG("NodeId: %{public}d, limiter has already been setup!", GetNodeId());
         return ERROR;
     }
     limiter_ = std::make_unique<AudioLimiter>(GetNodeId());
     // limiter only supports float format
-    int32_t ret = limiter->SetConfig(GetFrameLen() * GetChannelCount() * sizeof(float), sizeof(float), GetSampleRate(),
+    int32_t ret = limiter_->SetConfig(GetFrameLen() * GetChannelCount() * sizeof(float), sizeof(float), GetSampleRate(),
         GetChannelCount());
     if (ret == SUCCESS) {
-        AUDIO_INFO_LOG("NodeId: %{public}d, limiter setup sucess!");
+        AUDIO_INFO_LOG("NodeId: %{public}d, limiter setup sucess!", GetNodeId());
     } else {
-        AUDIO_INFO_LOG("Limiter setup fail!");
+        AUDIO_INFO_LOG("NodeId: %{public}d, limiter setup fail!!", GetNodeId());
     }
     return ret;
 }
