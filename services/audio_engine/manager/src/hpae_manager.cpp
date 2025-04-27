@@ -734,37 +734,44 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
     uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName)
 {
     auto request = [this, sourceOutputId, sourceName]() {
-        AUDIO_INFO_LOG("start to move id:%{public}d, source name:%{public}s", sourceOutputId, sourceName.c_str());
+        AUDIO_INFO_LOG("move session:%{public}d, source name:%{public}s", sourceOutputId, sourceName.c_str());
         if (sourceName.empty()) {
-            AUDIO_ERR_LOG("source name is empty.");
+            AUDIO_ERR_LOG("move session:%{public}u failed,source name is empty.", sourceOutputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
             return;
         }
 
+        if (!SafeGetMap(capturerManagerMap_, sourceName)) {
+            AUDIO_ERR_LOG("move session:%{public}u failed,can not find source:%{public}s.",
+                sourceOutputId, sourceName.c_str());
+            if (auto serviceCallback = serviceCallback_.lock()) {
+                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
+            }
+            return;
+        }
+        
         std::shared_ptr<IHpaeCapturerManager> oldCaptureManager = GetCapturerManagerById(sourceOutputId);
         if (oldCaptureManager == nullptr) {
-            AUDIO_ERR_LOG("can not find source by id:%{public}d.", sourceOutputId);
+            AUDIO_ERR_LOG("move session:%{public}u failed,can not find source.", sourceOutputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
             return;
         }
-        if (!SafeGetMap(capturerManagerMap_, sourceName)) {
-            AUDIO_ERR_LOG("can not find source by name:%{public}s.", sourceName.c_str());
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
-        }
-        if (sourceName == capturerIdSourceNameMap_[sourceOutputId]) {
-            AUDIO_INFO_LOG("source is the same, no need move,source name:%{public}s", sourceName.c_str());
+
+        std::string name = capturerIdSourceNameMap_[sourceOutputId];
+        if (sourceName == name) {
+            AUDIO_INFO_LOG("move session:%{public}u,source:%{public}s is the same, no need move",
+                sourceOutputId, sourceName.c_str());
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSourceOutputByIndexOrNameCb(SUCCESS);
             }
             return;
         }
+        AUDIO_INFO_LOG("start move session:%{public}u, [%{public}s] --> [%{public}s]",
+            sourceOutputId, name.c_str(), sourceName.c_str());
         oldCaptureManager->MoveStream(sourceOutputId, sourceName);
     };
     SendRequest(request);
@@ -774,43 +781,52 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
 int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
 {
     auto request = [this, sinkInputId, sinkName]() {
-        AUDIO_INFO_LOG("start to move id:%{public}d, sink name:%{public}s", sinkInputId, sinkName.c_str());
         if (sinkName.empty()) {
-            AUDIO_ERR_LOG("sink name is empty.");
+            AUDIO_ERR_LOG("move session:%{public}u failed,sink name is empty.", sinkInputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
             return;
         }
+
+        if (!SafeGetMap(rendererManagerMap_, sinkName)) {
+            AUDIO_ERR_LOG("move session:%{public}u failed, can not find sink:%{public}s.", sinkInputId,
+                sinkName.c_str());
+            if (auto serviceCallback = serviceCallback_.lock()) {
+                serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
+            }
+            return;
+        }
+
         std::shared_ptr<IHpaeRendererManager> oldRendererManager = GetRendererManagerById(sinkInputId);
         if (oldRendererManager == nullptr) {
-            AUDIO_ERR_LOG("can not find sink by id:%{public}d", sinkInputId);
+            AUDIO_ERR_LOG("move session:%{public}u failed,can not find sink", sinkInputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
             return;
         }
-        if (sinkName == rendererIdSinkNameMap_[sinkInputId]) {
-            AUDIO_INFO_LOG("sink is the same, no need move,sink:%{public}s", sinkName.c_str());
+
+        std::string name = rendererIdSinkNameMap_[sinkInputId];
+        if (sinkName == name) {
+            AUDIO_INFO_LOG("sink:%{public}s is the same, no need move session:%{public}u", sinkName.c_str(),
+                sinkInputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(SUCCESS);
             }
             return;
         }
-        if (!SafeGetMap(rendererManagerMap_, sinkName)) {
-            AUDIO_ERR_LOG("can not find sink:%{public}s.", sinkName.c_str());
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
-        }
+
         if (rendererIdStreamInfoMap_.find(sinkInputId) == rendererIdStreamInfoMap_.end()) {
-            AUDIO_ERR_LOG("can not find session info:%{public}d", sinkInputId);
+            AUDIO_ERR_LOG("move session:%{public}u failed,can not find session", sinkInputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
             return;
         }
+
+        AUDIO_INFO_LOG("start move session:%{public}u, [%{public}s] --> [%{public}s]",
+            sinkInputId, name.c_str(), sinkName.c_str());
         oldRendererManager->MoveStream(sinkInputId, sinkName);
     };
     SendRequest(request);
@@ -874,10 +890,11 @@ void HpaeManager::RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(A
 void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName)
 {
     uint32_t sessionId = sinkInputNode->GetNodeInfo().sessionId;
-    AUDIO_INFO_LOG("move session:%{public}u to new sink:%{public}s", sessionId, sinkName.c_str());
+    AUDIO_INFO_LOG("handle move session:%{public}u to new sink:%{public}s", sessionId, sinkName.c_str());
     std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByNmae(sinkName);
     if (rendererManager == nullptr) {
-        AUDIO_ERR_LOG("can not find sink by new name:%{public}s", sinkName.c_str());
+        AUDIO_ERR_LOG("handle move session:%{public}u failed,can not find sink by name:%{public}s",
+            sessionId, sinkName.c_str());
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
         }
@@ -898,10 +915,11 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
 void HpaeManager::HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std::string sourceName)
 {
     uint32_t sessionId = moveInfo.sessionId;
-    AUDIO_INFO_LOG("move capture:%{public}u to new source:%{public}s", sessionId, sourceName.c_str());
+    AUDIO_INFO_LOG("handle move session:%{public}u to new source:%{public}s", sessionId, sourceName.c_str());
     std::shared_ptr<IHpaeCapturerManager> catpureManager = GetCapturerManagerByName(sourceName);
     if (catpureManager == nullptr) {
-        AUDIO_ERR_LOG("can not find source by name:%{public}s", sourceName.c_str());
+        AUDIO_ERR_LOG("handle move session:%{public}u failed,can not find source by name:%{public}s",
+            sessionId, sourceName.c_str());
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
         }
@@ -920,7 +938,7 @@ void HpaeManager::HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std
 void HpaeManager::HandleMoveAllSinkInputs(
     const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, bool isConnect)
 {
-    AUDIO_INFO_LOG("sink name is :%{public}s", sinkName.c_str());
+    AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", sinkInputs.size(), sinkName.c_str());
     if (sinkName.empty()) {
         AUDIO_INFO_LOG("sink name is empty, move to default sink:%{public}s", defaultSink_.c_str());
         sinkName = defaultSink_;
@@ -929,7 +947,6 @@ void HpaeManager::HandleMoveAllSinkInputs(
         AUDIO_WARNING_LOG("can not find sink: %{public}s", sinkName.c_str());
         return;
     }
-    AUDIO_INFO_LOG("sink input count:%{public}zu", sinkInputs.size());
     rendererManagerMap_[sinkName]->AddAllNodesToSink(sinkInputs, isConnect);
     for (const auto &sinkInput : sinkInputs) {
         CHECK_AND_CONTINUE_LOG(sinkInput, "sinkInput is nullptr");
@@ -944,7 +961,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
 
 void HpaeManager::HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName)
 {
-    AUDIO_INFO_LOG("move all source to :%{public}s", sourceName.c_str());
+    AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", moveInfos.size(), sourceName.c_str());
     if (sourceName.empty()) {
         AUDIO_INFO_LOG("source is empty, move to default source:%{public}s", defaultSource_.c_str());
         sourceName = defaultSource_;
@@ -953,7 +970,6 @@ void HpaeManager::HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveIn
         AUDIO_WARNING_LOG("can not find source: %{public}s", sourceName.c_str());
         return;
     }
-    AUDIO_INFO_LOG("sink input count:%{public}zu", moveInfos.size());
     capturerManagerMap_[sourceName]->AddAllNodesToSource(moveInfos, false);
     for (const auto &it : moveInfos) {
         capturerIdSourceNameMap_[it.sessionId] = sourceName;
