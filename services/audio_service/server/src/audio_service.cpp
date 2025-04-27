@@ -943,6 +943,16 @@ void AudioService::CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord)
     }
 }
 
+// must be called with processListMutex_ lock hold
+ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey)
+{
+    if (endpointList_.find(deviceKey) == endpointList_.end()) {
+        return ReuseEndpointType::CREATE_ENDPOINT;
+    }
+    bool reuse = deviceInfo.audioStreamInfo_ == endpointList_[deviceKey]->GetDeviceInfo().audioStreamInfo_;
+    return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
+}
+
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
     const AudioProcessConfig &clientConfig, bool isVoipStream)
 {
@@ -951,23 +961,38 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
     if (deviceInfo.deviceRole_ == INPUT_DEVICE || deviceInfo.networkId_ != LOCAL_NETWORK_ID ||
         deviceInfo.deviceRole_ == OUTPUT_DEVICE || endpointSeparateFlag == 1) {
         // Create shared stream.
-        int32_t endpointFlag = AUDIO_FLAG_MMAP;
-        if (isVoipStream) {
-            endpointFlag = AUDIO_FLAG_VOIP_FAST;
-        }
+        int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
         std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
-        if (endpointList_.find(deviceKey) != endpointList_.end()) {
-            AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
-            return endpointList_[deviceKey];
-        } else {
-            CheckBeforeVoipEndpointCreate(isVoipStream, clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
-            std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ?
-                AudioEndpoint::TYPE_VOIP_MMAP : AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
-            CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
-            AUDIO_INFO_LOG("Add endpoint %{public}s to endpointList_", deviceKey.c_str());
-            endpointList_[deviceKey] = endpoint;
-            return endpoint;
+        ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey);
+        std::shared_ptr<AudioEndpoint> endpoint = nullptr;
+
+        switch (type) {
+            case ReuseEndpointType::REUSE_ENDPOINT: {
+                AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
+                endpoint = endpointList_[deviceKey];
+                break;
+            }
+            case ReuseEndpointType::RECREATE_ENDPOINT: {
+                std::string endpointName = endpointList_[deviceKey]->GetEndpointName();
+                AUDIO_INFO_LOG("Release endpoint %{public}s change to now", endpointName.c_str());
+                DelayCallReleaseEndpoint(endpointName, 0);
+                [[fallthrough]];
+            }
+            case ReuseEndpointType::CREATE_ENDPOINT: {
+                CheckBeforeVoipEndpointCreate(isVoipStream, clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
+                endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ? AudioEndpoint::TYPE_VOIP_MMAP :
+                    AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
+                CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
+                AUDIO_INFO_LOG("Add endpoint %{public}s to endpointList_", deviceKey.c_str());
+                endpointList_[deviceKey] = endpoint;
+                break;
+            }
+            default:
+                AUDIO_ERR_LOG("Create mmap AudioEndpoint failed.");
+                break;
         }
+
+        return endpoint;
     } else {
         // Create Independent stream.
         std::string deviceKey = deviceInfo.networkId_ + std::to_string(deviceInfo.deviceId_) + "_" +
