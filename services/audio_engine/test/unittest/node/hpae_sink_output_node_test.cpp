@@ -107,8 +107,8 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
 
     EXPECT_EQ(hpaeSinkOutputNode->RenderSinkInit(attr), ERROR);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_IDLE, true);
-    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), ERROR);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_RUNNING, false);
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_RUNNING, true);
     EXPECT_EQ(hpaeSinkOutputNode->RenderSinkPause(), SUCCESS);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_SUSPENDED, true);
     EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStop(), SUCCESS);

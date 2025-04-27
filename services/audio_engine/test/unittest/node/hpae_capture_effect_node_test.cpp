@@ -51,7 +51,7 @@ static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
 
 static void GetTestAudioSourceAttr(IAudioSourceAttr &attr)
 {
-    attr.adapterName = NULL;
+    attr.adapterName = "";
     attr.openMicSpeaker = 0;
     attr.format = AudioSampleFormat::INVALID_WIDTH;
     attr.sampleRate = SAMPLE_RATE_48000;

@@ -176,7 +176,7 @@ void TestIRendererManagerCreateDestoryStream()
     EXPECT_EQ(hpaeRendererManager.use_count() == 1, true);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     TestCheckSinkInputInfo(sinkInputInfo, streamInfo);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_NEW);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PREPARED);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);

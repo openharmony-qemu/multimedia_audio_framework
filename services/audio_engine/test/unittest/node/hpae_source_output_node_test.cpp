@@ -104,7 +104,7 @@ TEST_F(HpaeSourceOutputNodeTest, connectHpaeSourceInputAndOutputNode)
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSoruceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
     IAudioSourceAttr attr;
-    attr.adapterName = NULL;
+    attr.adapterName = "";
     attr.openMicSpeaker = 0;
     attr.format = AudioSampleFormat::INVALID_WIDTH;
     attr.sampleRate = nodeInfo.samplingRate;

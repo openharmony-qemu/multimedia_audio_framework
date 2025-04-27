@@ -543,6 +543,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
             sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
         }
         if (sessionGainNode == nullptr) {
+            SetSessionState(sessionId, HPAE_SESSION_PAUSED),
             TriggerCallback(UPDATE_STATUS,
                 HPAE_STREAM_CLASS_TYPE_PLAY,
                 sessionId,
@@ -609,6 +610,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
         }
         if (sessionGainNode == nullptr) {
+            SetSessionState(sessionId, HPAE_SESSION_STOPPED),
             TriggerCallback(UPDATE_STATUS,
                 HPAE_STREAM_CLASS_TYPE_PLAY,
                 sessionId,
