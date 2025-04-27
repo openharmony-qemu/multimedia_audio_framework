@@ -28,6 +28,7 @@
 #include "i_standard_audio_routing_manager_listener.h"
 #include "i_audio_interrupt_event_dispatcher.h"
 #include "i_audio_concurrency_event_dispatcher.h"
+#include "i_audio_zone_event_dispatcher.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,6 +50,7 @@ public:
         ABANDON_CATEGORY_EVENT,
         FOCUS_INFOCHANGE,
         RINGER_MODEUPDATE_EVENT,
+        APP_VOLUME_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
         INTERRUPT_EVENT,
@@ -75,6 +77,11 @@ public:
         AUDIO_SESSION_DEACTIVE_EVENT,
         MICROPHONE_BLOCKED,
         NN_STATE_CHANGE,
+        AUDIO_SCENE_CHANGE,
+        SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        DISTRIBUTED_OUTPUT_CHANGE,
+        AUDIO_ZONE_EVENT,
+        FORMAT_UNSUPPORTED_ERROR,
     };
     /* event data */
     class EventContextObj {
@@ -93,13 +100,18 @@ public:
         CastType type;
         bool spatializationEnabled;
         bool headTrackingEnabled;
+        AudioScene audioScene;
         int32_t nnState;
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
         int32_t streamFlag;
+        int32_t appUid;
         std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
         std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
+        std::shared_ptr<AudioZoneEvent> audioZoneEvent;
+        uint32_t routeFlag;
+        AudioErrors errorCode;
     };
 
     struct RendererDeviceChangeEvent {
@@ -113,6 +125,15 @@ public:
         const uint32_t sessionId_;
         const AudioDeviceDescriptor outputDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    };
+
+    struct DistributedOutputChangeEvent {
+        DistributedOutputChangeEvent() = delete;
+        DistributedOutputChangeEvent(const AudioDeviceDescriptor &deviceDesc, const bool isRemote)
+            : deviceDesc_(deviceDesc), isRemote_(isRemote) {}
+
+        const AudioDeviceDescriptor &deviceDesc_;
+        const bool isRemote_;
     };
 
     struct CapturerCreateEvent {
@@ -149,6 +170,7 @@ public:
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
+    bool SendAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent);
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
     bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
@@ -164,13 +186,14 @@ public:
     bool SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
         const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason);
+    bool SendDistribuitedOutputChangeEvent(const AudioDeviceDescriptor &desc, bool isRemote);
     bool SendCapturerCreateEvent(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint64_t sessionId, bool isSync, int32_t &error);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
     bool SendWakeupCloseEvent(bool isSync);
-    bool SendRecreateRendererStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag,
+    bool SendRecreateRendererStreamEvent(int32_t clientId, uint32_t sessionID, uint32_t routeFlag,
         const AudioStreamDeviceChangeReasonExt reason);
-    bool SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag,
+    bool SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, uint32_t routeFlag,
         const AudioStreamDeviceChangeReasonExt reason);
     bool SendHeadTrackingDeviceChangeEvent(const std::unordered_map<std::string, bool> &changeInfo);
     void AddAudioDeviceRefinerCb(const sptr<IStandardAudioRoutingManagerListener> &callback);
@@ -178,6 +201,7 @@ public:
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
     bool SendSpatializatonEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
+    bool SendSpatializatonEnabledChangeForCurrentDeviceEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
@@ -186,8 +210,12 @@ public:
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
+    bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
     bool SendNnStateChangeCallback(const int32_t &state);
+    void SetAudioZoneEventDispatcher(const std::shared_ptr<IAudioZoneEventDispatcher> dispatcher);
+    bool SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> event);
+    bool SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -212,6 +240,7 @@ private:
     void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleDistributedOutputChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event);
@@ -220,18 +249,21 @@ private:
     void HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializatonEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleSpatializatonEnabledChangeForCurrentDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
-
-    void ResetRingerModeMute(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
 
     std::vector<AudioRendererInfo> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
@@ -242,6 +274,7 @@ private:
     std::mutex clientCbCapturerInfoMapMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
+    std::weak_ptr<IAudioZoneEventDispatcher> audioZoneEventDispatcher_;
 
     std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
     std::string pidsStrForPrinting_ = "[]";

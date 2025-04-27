@@ -15,20 +15,69 @@
 
 #include "audio_state_manager.h"
 #include "audio_policy_log.h"
+#include "audio_utils.h"
+
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+#include "ipc_skeleton.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 
+static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+const int32_t AUDIO_UID = 1041;
+const int32_t ANCO_SERVICE_BROKER_UID = 5557;
+
 void AudioStateManager::SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredMediaRenderDevice_ = deviceDescriptor;
 }
 
-void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
+void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+    const int32_t uid, const std::string caller)
 {
-    preferredCallRenderDevice_ = deviceDescriptor;
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    int32_t callerUid = uid;
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    std::string bundleName = GetBundleNameFromUid(callerUid);
+    AUDIO_INFO_LOG(
+        "deviceType: %{public}d, uid: %{public}d, callerPid: %{public}d, bundle name: %{public}s, caller: %{public}s",
+        deviceDescriptor->deviceType_, callerUid, callerPid, bundleName.c_str(), caller.c_str());
+    if (audioClientInfoMgrCallback_ != nullptr) {
+        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid);
+    }
+    AUDIO_INFO_LOG("check result uid: %{public}d", callerUid);
+    if (deviceDescriptor->deviceType_ == DEVICE_TYPE_NONE) {
+        if (callerUid == CLEAR_UID) {
+            // clear all
+            forcedDeviceMapList_.clear();
+        } else if (callerUid == SYSTEM_UID) {
+            // clear equal ownerUid_ and SYSTEM_UID
+            RemoveForcedDeviceMapData(ownerUid_);
+            RemoveForcedDeviceMapData(SYSTEM_UID);
+        } else {
+            // clear equal uid
+            RemoveForcedDeviceMapData(callerUid);
+        }
+    } else {
+        std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> currentDeviceMap;
+        if (callerUid == SYSTEM_UID && ownerUid_ != 0) {
+            RemoveForcedDeviceMapData(ownerUid_);
+            currentDeviceMap = {{ownerUid_, deviceDescriptor}};
+            forcedDeviceMapList_.push_back(currentDeviceMap);
+        }
+
+        RemoveForcedDeviceMapData(callerUid);
+        currentDeviceMap = {{callerUid, deviceDescriptor}};
+        
+        forcedDeviceMapList_.push_back(currentDeviceMap);
+    }
 }
 
 void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -39,16 +88,19 @@ void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<Audi
 
 void AudioStateManager::SetPreferredRingRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredRingRenderDevice_ = deviceDescriptor;
 }
 
 void AudioStateManager::SetPreferredRecordCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredRecordCaptureDevice_ = deviceDescriptor;
 }
 
 void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     preferredToneRenderDevice_ = deviceDescriptor;
 }
 
@@ -77,27 +129,57 @@ void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
-            mediaExcludedDevices_.erase(desc);
+            auto it = mediaExcludedDevices_.find(desc);
+            if (it != mediaExcludedDevices_.end()) {
+                mediaExcludedDevices_.erase(it);
+            }
         }
     } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
-            callExcludedDevices_.erase(desc);
+            auto it = callExcludedDevices_.find(desc);
+            if (it != callExcludedDevices_.end()) {
+                callExcludedDevices_.erase(it);
+            }
         }
     }
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredMediaRenderDevice_);
     return devDesc;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
 {
-    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredCallRenderDevice_);
-    return devDesc;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (ownerUid_ == 0) {
+        if (!forcedDeviceMapList_.empty()) {
+            AUDIO_INFO_LOG("ownerUid_: 0, deviceType: %{public}d, Uid: %{public}d",
+                forcedDeviceMapList_.rbegin()->begin()->second->deviceType_,
+                forcedDeviceMapList_.rbegin()->begin()->first);
+            return make_shared<AudioDeviceDescriptor>(std::move(forcedDeviceMapList_.rbegin()->begin()->second));
+        }
+    } else {
+        for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+            if (ownerUid_ == it->begin()->first) {
+                AUDIO_INFO_LOG("deviceType: %{public}d, ownerUid_: %{public}d", it->begin()->second->deviceType_,
+                    ownerUid_);
+                return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
+            }
+        }
+        for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+            if (SYSTEM_UID == it->begin()->first) {
+                AUDIO_INFO_LOG("bluetooth already force selected, deviceType: %{public}d",
+                    it->begin()->second->deviceType_);
+                return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
+            }
+        }
+    }
+    return std::make_shared<AudioDeviceDescriptor>();
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevice()
@@ -109,18 +191,21 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevi
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRingRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRingRenderDevice_);
     return devDesc;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecordCaptureDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredRecordCaptureDevice_);
     return devDesc;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredToneRenderDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredToneRenderDevice_);
     return devDesc;
 }
@@ -149,7 +234,7 @@ void AudioStateManager::UpdatePreferredRecordCaptureDeviceConnectState(ConnectSt
     preferredRecordCaptureDevice_->connectState_ = state;
 }
 
-vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedOutputDevices(AudioDeviceUsage usage)
+vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(AudioDeviceUsage usage)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> devices;
     if (usage == MEDIA_OUTPUT_DEVICES) {
@@ -169,7 +254,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedOutputDe
 }
 
 bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
-    shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
+    const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     CHECK_AND_RETURN_RET(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES, false);
 
@@ -182,6 +267,59 @@ bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
     }
 
     return false;
+}
+
+void AudioStateManager::SetAudioSceneOwnerUid(const int32_t uid)
+{
+    AUDIO_INFO_LOG("ownerUid_: %{public}d, uid: %{public}d", ownerUid_, uid);
+    ownerUid_ = uid;
+    if (uid == AUDIO_UID) {
+        ownerUid_ = ANCO_SERVICE_BROKER_UID;
+    }
+}
+
+int32_t AudioStateManager::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
+{
+    audioClientInfoMgrCallback_ = callback;
+    return 0;
+}
+
+const std::string AudioStateManager::GetBundleNameFromUid(int32_t uid)
+{
+    AudioXCollie audioXCollie("AudioRecoveryDevice::GetBundleNameFromUid",
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    std::string bundleName {""};
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
+    guard.CheckCurrTimeout();
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
+
+    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
+    bundleMgrProxy->GetNameForUid(uid, bundleName);
+    reguard.CheckCurrTimeout();
+
+    return bundleName;
+}
+
+void AudioStateManager::RemoveForcedDeviceMapData(int32_t uid)
+{
+    if (forcedDeviceMapList_.empty()) {
+        return;
+    }
+    auto it = forcedDeviceMapList_.begin();
+    while (it != forcedDeviceMapList_.end()) {
+        if (uid == it->begin()->first) {
+            it = forcedDeviceMapList_.erase(it);
+        } else {
+            it++;
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

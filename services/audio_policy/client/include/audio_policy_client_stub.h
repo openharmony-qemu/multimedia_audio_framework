@@ -30,6 +30,7 @@ public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
         MessageOption &option) override;
 private:
+    void HandleAppVolumeChange(MessageParcel &data, MessageParcel &reply);
     void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply);
     void HandleAudioFocusInfoChange(MessageParcel &data, MessageParcel &reply);
     void HandleAudioFocusRequested(MessageParcel &data, MessageParcel &reply);
@@ -43,16 +44,20 @@ private:
     void HandleRendererStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleCapturerStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleRendererDeviceChange(MessageParcel &data, MessageParcel &reply);
+    void HandleDistribuitedOutputChange(MessageParcel &data, MessageParcel &reply);
     void HandleRecreateRendererStreamEvent(MessageParcel &data, MessageParcel &reply);
     void HandleRecreateCapturerStreamEvent(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply);
     void HandleSpatializationEnabledChange(MessageParcel &data, MessageParcel &reply);
     void HandleSpatializationEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply);
+    void HandleSpatializationEnabledChangeForCurrentDevice(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply);
     void HandleNnStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleAudioSessionCallback(MessageParcel &data, MessageParcel &reply);
-
+    void HandleAudioSceneChange(MessageParcel &data, MessageParcel &reply);
+    void HandleFormatUnsupportedError(MessageParcel &data, MessageParcel &reply);
+    
     void OnMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
     void OnFirMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
 };

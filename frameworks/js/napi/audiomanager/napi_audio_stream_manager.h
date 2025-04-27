@@ -79,13 +79,17 @@ private:
     static napi_value GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
+    static napi_value IsAcousticEchoCancelerSupported(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *args, const std::string &cbName);
     static void RegisterCapturerStateChangeCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
     static void RegisterRendererStateChangeCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioStreamMgr *napiStreamMgr);
-    static void  UnregisterCallback(napi_env env, napi_value jsThis, const std::string &cbName);
+    static void UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
+        const std::string &cbName);
+    static void UnregisterRendererChangeCallback(NapiAudioStreamMgr *napiStreamMgr, size_t argc, napi_value *args);
+    static void UnregisterCapturerChangeCallback(NapiAudioStreamMgr *napiStreamMgr, size_t argc, napi_value *args);
 
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;

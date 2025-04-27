@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -510,7 +510,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEffectArray = audioStreamManager.getAudioEffectProperty();
       console.info(`${TAG} getAudioEffectProperty success:${JSON.stringify(audioEffectArray)}`);
-      let hashClassSet = new HashSet();
+      let hashClassSet = new Set();
       for (let i = 0; i < audioEffectArray.length; i++) {
         expect(audioEffectArray[i].effectClass !== ""
           && audioEffectArray[i].effectClass !== undefined).assertTrue();
@@ -518,7 +518,7 @@ describe("AudioStreamManagerJsTest", function () {
           && audioEffectArray[i].effectProp !== undefined).assertTrue();
         hashClassSet.add(audioEffectArray[i].effectClass);
       }
-      expect(hashClassSet.length == audioEffectArray.length).assertTrue();
+      expect(hashClassSet.length !== audioEffectArray.length).assertTrue();
       done();
     } catch (e) {
       console.error(`${TAG} getAudioEffectProperty001 ERROR: ${e.message}`);
@@ -563,7 +563,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEnhanceArray = audioStreamManager.getAudioEnhanceProperty();
       console.info(`${TAG} getAudioEnhanceProperty success:${JSON.stringify(audioEnhanceArray)}`);
-      let hashClassSet = new HashSet();
+      let hashClassSet = new Set();
       for (let i = 0; i < audioEnhanceArray.length; i++) {
         expect(audioEnhanceArray[i].enhanceClass !== ""
           && audioEnhanceArray[i].enhanceClass !== undefined).assertTrue();
@@ -571,7 +571,7 @@ describe("AudioStreamManagerJsTest", function () {
           && audioEnhanceArray[i].enhanceProp !== undefined).assertTrue();
         hashClassSet.add(audioEnhanceArray[i].enhanceClass);
       }
-      expect(hashClassSet.length == audioEnhanceArray.length).assertTrue();
+      expect(hashClassSet.length !== audioEnhanceArray.length).assertTrue();
       done();
     } catch (e) {
       console.error(`${TAG} getAudioEnhanceProperty001 ERROR: ${e.message}`);

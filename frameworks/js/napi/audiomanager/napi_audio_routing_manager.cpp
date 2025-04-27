@@ -111,7 +111,7 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getPreferredInputDeviceByFilter", GetPreferredInputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("getAvailableMicrophones", GetAvailableMicrophones),
         DECLARE_NAPI_FUNCTION("getAvailableDevices", GetAvailableDevices),
-        DECLARE_NAPI_FUNCTION("getExcludedOutputDevices", GetExcludedOutputDevices),
+        DECLARE_NAPI_FUNCTION("getExcludedDevices", GetExcludedDevices),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
 #if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
@@ -948,12 +948,15 @@ napi_value NapiAudioRoutingManager::GetAvailableDevices(napi_env env, napi_callb
     return result;
 }
 
-napi_value NapiAudioRoutingManager::GetExcludedOutputDevices(napi_env env, napi_callback_info info)
+napi_value NapiAudioRoutingManager::GetExcludedDevices(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr, result, "napiAudioRoutingManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager->audioMngr_ != nullptr, result,
+        "audioMngr_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
         "mandatory parameters are left unspecified"), "argCount invalid");
 
@@ -963,7 +966,7 @@ napi_value NapiAudioRoutingManager::GetExcludedOutputDevices(napi_env env, napi_
         "parameter verification failed: The param of deviceUsage must be enum DeviceUsage"),
         "exclude output devices failed");
     vector<shared_ptr<AudioDeviceDescriptor>> excludedDevices =
-        napiAudioRoutingManager->audioMngr_->GetExcludedOutputDevices(audioDevUsage);
+        napiAudioRoutingManager->audioMngr_->GetExcludedDevices(audioDevUsage);
     NapiParamUtils::SetDeviceDescriptors(env, excludedDevices, result);
     return result;
 }

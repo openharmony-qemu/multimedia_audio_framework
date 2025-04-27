@@ -17,6 +17,7 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <parcel.h>
 
@@ -160,15 +161,26 @@ enum AudioStreamType {
      * Indicates audio streams for camcorder.
      */
     STREAM_CAMCORDER = 27,
+
+    /**
+     * Indicates audio streams type is APP.
+     */
+    STREAM_APP = 28,
+
     /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_CAMCORDER,
+    STREAM_TYPE_MAX = STREAM_APP,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.
      */
-    STREAM_ALL = 100
+    STREAM_ALL = 100,
+};
+
+enum AudioVolumeMode {
+    AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL,
+    AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL
 };
 
 /**
@@ -202,25 +214,6 @@ enum StreamUsage {
     STREAM_USAGE_VOICE_RINGTONE,
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
     STREAM_USAGE_MAX = STREAM_USAGE_VOICE_CALL_ASSISTANT
-};
-
-/**
-* background mute StreamUsage type.
-*/
-const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
-    STREAM_USAGE_MUSIC,
-    STREAM_USAGE_MOVIE,
-    STREAM_USAGE_GAME,
-    STREAM_USAGE_AUDIOBOOK
-};
-
-/**
-* background not playback StreamUsage type.
-*/
-const std::vector<StreamUsage> BACKGROUND_NOSTART_STREAM_USAGE {
-    STREAM_USAGE_MUSIC,
-    STREAM_USAGE_MOVIE,
-    STREAM_USAGE_AUDIOBOOK
 };
 
 /**
@@ -258,6 +251,12 @@ enum AudioPipeType {
     PIPE_TYPE_DIRECT_VOIP = 14,
 };
 
+enum AudioPreloadType {
+    PRELOAD_TYPE_UNKNOWN = -1,
+    PRELOAD_TYPE_NOTSUPPORT = 0,
+    PRELOAD_TYPE_SUPPORT = 1,
+};
+
 struct AudioStreamParams {
     uint32_t samplingRate = 0;
     uint8_t encoding = 0;
@@ -288,7 +287,14 @@ enum AudioSamplingRate {
 enum AudioEncodingType {
     ENCODING_INVALID = -1,
     ENCODING_PCM = 0,
-    ENCODING_AUDIOVIVID = 1
+    ENCODING_AUDIOVIVID = 1,
+    ENCODING_EAC3 = 2
+};
+
+enum DirectPlaybackMode {
+    DIRECT_PLAYBACK_NOT_SUPPORTED = 0,
+    DIRECT_PLAYBACK_BITSTREAM_SUPPORTED = 1,
+    DIRECT_PLAYBACK_PCM_SUPPORTED = 2
 };
 
 
@@ -304,6 +310,7 @@ enum AudioSampleFormat : uint8_t {
 
 // channel
 enum AudioChannel : uint8_t {
+    CHANNEL_UNKNOW = 0,
     MONO = 1,
     STEREO = 2,
     CHANNEL_3 = 3,
@@ -494,7 +501,8 @@ const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
 
 const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
     ENCODING_PCM,
-    ENCODING_AUDIOVIVID
+    ENCODING_AUDIOVIVID,
+    ENCODING_EAC3
 };
 
 const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
@@ -541,60 +549,6 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
 };
 
-const std::set<std::string> STREAM_USAGE_SET = {
-    "STREAM_USAGE_UNKNOWN",
-    "STREAM_USAGE_MEDIA",
-    "STREAM_USAGE_MUSIC",
-    "STREAM_USAGE_VOICE_COMMUNICATION",
-    "STREAM_USAGE_VOICE_ASSISTANT",
-    "STREAM_USAGE_VOICE_CALL_ASSISTANT",
-    "STREAM_USAGE_ALARM",
-    "STREAM_USAGE_VOICE_MESSAGE",
-    "STREAM_USAGE_NOTIFICATION_RINGTONE",
-    "STREAM_USAGE_RINGTONE",
-    "STREAM_USAGE_NOTIFICATION",
-    "STREAM_USAGE_ACCESSIBILITY",
-    "STREAM_USAGE_SYSTEM",
-    "STREAM_USAGE_MOVIE",
-    "STREAM_USAGE_GAME",
-    "STREAM_USAGE_AUDIOBOOK",
-    "STREAM_USAGE_NAVIGATION",
-    "STREAM_USAGE_DTMF",
-    "STREAM_USAGE_ENFORCED_TONE",
-    "STREAM_USAGE_ULTRASONIC",
-    "STREAM_USAGE_VIDEO_COMMUNICATION",
-    "STREAM_USAGE_RANGING",
-    "STREAM_USAGE_VOICE_MODEM_COMMUNICATION",
-    "STREAM_USAGE_VOICE_RINGTONE"
-};
-
-const std::unordered_map<StreamUsage, std::string> STREAM_USAGE_MAP = {
-    {STREAM_USAGE_UNKNOWN, "STREAM_USAGE_UNKNOWN"},
-    // STREAM_USAGE_MUSIC(1), STREAM_USAGE_MEDIA(1), both mapped to STREAM_USAGE_MUSIC
-    {STREAM_USAGE_MUSIC, "STREAM_USAGE_MUSIC"},
-    {STREAM_USAGE_VOICE_COMMUNICATION, "STREAM_USAGE_VOICE_COMMUNICATION"},
-    {STREAM_USAGE_VOICE_ASSISTANT, "STREAM_USAGE_VOICE_ASSISTANT"},
-    {STREAM_USAGE_ALARM, "STREAM_USAGE_ALARM"},
-    {STREAM_USAGE_VOICE_MESSAGE, "STREAM_USAGE_VOICE_MESSAGE"},
-    // STREAM_USAGE_RINGTONE(6), STREAM_USAGE_NOTIFICATION_RINGRONE(6) both mapped to STREAM_USAGE_RINGTONE
-    {STREAM_USAGE_RINGTONE, "STREAM_USAGE_RINGTONE"},
-    {STREAM_USAGE_NOTIFICATION, "STREAM_USAGE_NOTIFICATION"},
-    {STREAM_USAGE_ACCESSIBILITY, "STREAM_USAGE_ACCESSIBILITY"},
-    {STREAM_USAGE_SYSTEM, "STREAM_USAGE_SYSTEM"},
-    {STREAM_USAGE_MOVIE, "STREAM_USAGE_MOVIE"},
-    {STREAM_USAGE_GAME, "STREAM_USAGE_GAME"},
-    {STREAM_USAGE_AUDIOBOOK, "STREAM_USAGE_AUDIOBOOK"},
-    {STREAM_USAGE_NAVIGATION, "STREAM_USAGE_NAVIGATION"},
-    {STREAM_USAGE_DTMF, "STREAM_USAGE_DTMF"},
-    {STREAM_USAGE_ENFORCED_TONE, "STREAM_USAGE_ENFORCED_TONE"},
-    {STREAM_USAGE_ULTRASONIC, "STREAM_USAGE_ULTRASONIC"},
-    {STREAM_USAGE_VIDEO_COMMUNICATION, "STREAM_USAGE_VIDEO_COMMUNICATION"},
-    {STREAM_USAGE_VOICE_CALL_ASSISTANT, "STREAM_USAGE_VOICE_CALL_ASSISTANT"},
-    {STREAM_USAGE_RANGING, "STREAM_USAGE_RANGING"},
-    {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, "STREAM_USAGE_VOICE_MODEM_COMMUNICATION"},
-    {STREAM_USAGE_VOICE_RINGTONE, "STREAM_USAGE_VOICE_RINGTONE"},
-};
-
 struct BufferDesc {
     uint8_t *buffer;
     size_t bufLength;
@@ -637,8 +591,26 @@ struct AudioStreamData {
     BufferDesc bufferDesc;
     int32_t volumeStart;
     int32_t volumeEnd;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCapeds;
 };
+
+struct AudioCallBackStreamInfo {
+    uint64_t framePosition;
+    uint64_t framesWritten;
+    uint64_t timestamp;
+    uint64_t latency = 0;
+    int8_t *inputData;
+    size_t requestDataLen;
+    std::string deviceClass;
+    std::string deviceNetId;
+    bool needData;
+};
+
+struct AudioChannelInfo {
+    AudioChannelLayout channelLayout;
+    uint32_t numChannels;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STREAM_INFO_H

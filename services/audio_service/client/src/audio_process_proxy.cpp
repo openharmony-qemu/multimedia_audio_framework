@@ -20,6 +20,7 @@
 #include "audio_process_proxy.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
+#include "audio_parcel_helper.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -199,15 +200,17 @@ int32_t AudioProcessProxy::RegisterProcessCb(sptr<IRemoteObject> object)
     return reply.ReadInt32();
 }
 
-int32_t AudioProcessProxy::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
+int32_t AudioProcessProxy::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
+    BoostTriggerMethod method)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-    data.WriteUint32(tid);
+    AudioParcelHelper<MessageParcel, pid_t>::Marshalling(data, tid);
     data.WriteString(bundleName);
+    data.WriteUint32(method);
     int ret = Remote()->SendRequest(IAudioProcessMsg::ON_REGISTER_THREAD_PRIORITY, data, reply, option);
     CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     ret = reply.ReadInt32();
@@ -237,6 +240,49 @@ int32_t AudioProcessProxy::SetSilentModeAndMixWithOthers(bool on)
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
     data.WriteBool(on);
     int ret = Remote()->SendRequest(IAudioProcessMsg::ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
+int32_t AudioProcessProxy::SetSourceDuration(int64_t duration)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt64(duration);
+    int ret = Remote()->SendRequest(IAudioProcessMsg::ON_SET_SOURCE_DURATION, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
+int32_t AudioProcessProxy::SetUnderrunCount(uint32_t underrunCnt)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteUint32(underrunCnt);
+    int ret = Remote()->SendRequest(IAudioProcessMsg::ON_SET_UNDERRUN_CNT, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
+int32_t AudioProcessProxy::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteFloat(volume);
+    data.WriteUint32(sessionId);
+    data.WriteString(adjustTime);
+    data.WriteUint32(code);
+    int ret = Remote()->SendRequest(IAudioProcessMsg::ON_SAVE_STREAM_VOLUME_INFO, data, reply, option);
     CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }

@@ -61,7 +61,8 @@ public:
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj) override;
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
@@ -75,7 +76,9 @@ public:
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
     int32_t SetDuckVolume(float volume) override;
+    float GetDuckVolume() override;
     int32_t SetMute(bool mute) override;
+    bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -84,11 +87,10 @@ public:
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
-        int32_t &outBufferSize) override;
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
+    void InitCallbackLoop();
     AudioRenderMode GetRenderMode() override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
@@ -108,6 +110,7 @@ public:
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
     int64_t GetFramesWritten() override;
     int64_t GetFramesRead() override;
+    int32_t SetSourceDuration(int64_t duration) override;
 
     void SetInnerCapturerState(bool isInnerCapturer) override;
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
@@ -197,9 +200,18 @@ public:
 
     void SetSwitchingStatus(bool isSwitching) override;
 
+    void GetRestoreInfo(RestoreInfo &restoreInfo) override;
+    void SetRestoreInfo(RestoreInfo &restoreInfo) override;
+    RestoreStatus CheckRestoreStatus() override;
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+    void FetchDeviceForSplitStream() override;
+    void SetCallStartByUserTid(pid_t tid) override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
+
+    void  FlushBeforeStart();
 
     int32_t DeinitIpcStream();
 
@@ -218,16 +230,17 @@ private:
     int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
-    void WatchingWriteCallbackFunc();
-    void WriteCallbackFunc();
+    bool WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
-    bool CheckBuffer(uint8_t *buffer, size_t bufferSize);
+    bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
+    void HandleStatusChangeOperation(Operation operation);
+    void UpdateDataLinkState(bool isConnected, bool needNotify);
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -250,6 +263,8 @@ private:
     bool DrainAudioStreamInner(bool stopFlag = false);
 
     bool ProcessVolume();
+
+    void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
@@ -299,7 +314,6 @@ private:
 
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
-    std::thread callbackLoop_; // thread for callback to client and write.
     std::atomic<bool> cbThreadReleased_ = true;
     std::mutex writeCbMutex_;
     std::condition_variable cbThreadCv_;
@@ -327,6 +341,8 @@ private:
     float muteVolume_ = 1.0;
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
+    
+    bool flushAfterStop_ = false;
 
     uint64_t clientWrittenBytes_ = 0;
     // ipc stream related
@@ -364,6 +380,8 @@ private:
     std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
+    std::atomic<bool> speedEnable_ = false;
+    std::mutex speedMutex_;
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
@@ -417,11 +435,13 @@ private:
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
 
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
-    std::atomic_bool writeCallbackFuncThreadStatusFlag_ { false };
     DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
 
     std::mutex switchingMutex_;
     StreamSwitchingInfo switchingInfo_ {false, INVALID};
+
+    std::mutex lastCallStartByUserTidMutex_;
+    std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

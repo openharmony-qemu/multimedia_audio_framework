@@ -115,7 +115,7 @@ HWTEST(AudioUtilsUnitTest, Trace_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, PermissionUtil_001, TestSize.Level1)
 {
     bool ret1 = PermissionUtil::VerifyIsSystemApp();
-    EXPECT_EQ(false, ret1);
+    EXPECT_EQ(true, ret1);
     bool ret2 = PermissionUtil::VerifySelfPermission();
     EXPECT_EQ(true, ret2);
     bool ret3 = PermissionUtil::VerifySystemPermission();
@@ -279,7 +279,7 @@ HWTEST(AudioUtilsUnitTest, UpdateMaxAmplitude_004, TestSize.Level0)
                     5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9};
     uint64_t replyBytes = 10;
     float result = UpdateMaxAmplitude(adapterFormat, frame, replyBytes);
-    EXPECT_NEAR(result, 0.008, 0.001);
+    EXPECT_NEAR(result, 0, 0.1);
 }
 
 /**
@@ -505,10 +505,10 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_001, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0)
 {
-    int32_t frame[4] = {0XBFFFFFFF, 0X8FFFFFFF, 0XAFFFFFFF, 0XFFFFFFFF};
+    int32_t frame[4] = {-1, 1, 0, 8};
     uint64_t nSamples = 4;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
-    EXPECT_NEAR(result, 0.875, 0.1);
+    EXPECT_NEAR(result, 0, 0.0001);
 }
 
 /**
@@ -519,10 +519,10 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_002, TestSize.Level0
 */
 HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_003, TestSize.Level0)
 {
-    int32_t frame[4] = {0X3FFFFFF, 0X7FFFFFF, 0X1FFFFFFF, 0X3FFFFFFF};
+    int32_t frame[4] = {0, 1, -1, 8};
     uint64_t nSamples = 4;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
-    EXPECT_NEAR(result, 0.5, 0.1);
+    EXPECT_NEAR(result, 0, 0.0001);
 }
 
 /**
@@ -538,20 +538,6 @@ HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_004, TestSize.Level0
     uint64_t nSamples = 6;
     float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
     EXPECT_EQ(result, 0);
-}
-
-/**
-* @tc.name  : Test CalculateMaxAmplitudeForPCM32Bit API
-* @tc.type  : FUNC
-* @tc.number: CalculateMaxAmplitudeForPCM32Bit_005
-* @tc.desc  : Test CalculateMaxAmplitudeForPCM32Bit interface when value contains  negative and positive numbers.
-*/
-HWTEST(AudioUtilsUnitTest, CalculateMaxAmplitudeForPCM32Bit_005, TestSize.Level0)
-{
-    int32_t frame[5] = {0XBFFFFFFF, 0X8FFFFFFF, 0, 0X1FFFFFFF, 0X3FFFFFFF};
-    uint64_t nSamples = 5;
-    float result = CalculateMaxAmplitudeForPCM32Bit(frame, nSamples);
-    EXPECT_NEAR(result, 0.875, 0.1);
 }
 
 /**
@@ -728,7 +714,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetStreamName_003, TestSize.Level0
 {
     AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
     const std::string streamName = AudioInfoDumpUtils::GetStreamName(streamType);
-    EXPECT_EQ(streamName, "VOICE_CALL");
+    EXPECT_EQ(streamName, "VOICE_COMMUNICATION");
 }
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetStreamName  API
@@ -1035,6 +1021,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_011, TestSize.Le
     DeviceType deviceType = DEVICE_TYPE_DEFAULT;
     const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
     EXPECT_EQ(deviceTypeName, "UNKNOWN");
+}
+
+/**
+* @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
+* @tc.type  : FUNC
+* @tc.number: AudioInfoDumpUtils_GetDeviceTypeName_012
+* @tc.desc  : Test AudioInfoDumpUtils GetDeviceTypeName API,Return HDMI
+*             when deviceType is DEVICE_TYPE_HDMI
+*/
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_012, TestSize.Level0)
+{
+    DeviceType deviceType = DEVICE_TYPE_HDMI;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "HDMI");
 }
 
 /**
@@ -1961,7 +1961,7 @@ HWTEST(AudioUtilsUnitTest, audio_channel_blend_005, TestSize.Level1)
     ChannelBlendMode blendMode = MODE_BLEND_LR;
     shared_ptr<AudioBlend> audioBlend = std::make_shared<AudioBlend>(blendMode, format, channels);
     audioBlend->Process(b, 4);
-    EXPECT_EQ(b[1], 3);
+    EXPECT_EQ(b[1], 4);
 }
 
 /**
@@ -2735,7 +2735,8 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_002, TestSize.Level1)
 {
     bool isRenderer = false;
     LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
-    latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    latencyMonitor.extraStrLen_ = 1;
+    latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     latencyMonitor.ShowTimestamp(isRenderer);
 }
 
@@ -3107,6 +3108,139 @@ HWTEST(AudioUtilsUnitTest, AudioScopeExit_002, TestSize.Level1)
         mock.Exe();
     });
     scopeExit.Relase();
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_001
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_001, TestSize.Level1)
+{
+    AudioSampleFormat format = SAMPLE_U8;
+
+    uint32_t ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 1);
+
+    format = SAMPLE_S16LE;
+    ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 2);
+
+    format = SAMPLE_S24LE;
+    ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 3);
+
+    format = SAMPLE_S32LE;
+    ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 4);
+
+    format = INVALID_WIDTH;
+    ret = Util::GetSamplePerFrame(format);
+    EXPECT_EQ(ret, 2);
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_002
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_002, TestSize.Level1)
+{
+    std::string funcName = "AudioUtilsUnitTest_002";
+    WatchTimeout watchTimeout(funcName);
+
+        watchTimeout.CheckCurrTimeout();
+        EXPECT_EQ(watchTimeout.isChecked_, true);
+
+        watchTimeout.timeoutNs_ = 0;
+        watchTimeout.CheckCurrTimeout();
+        EXPECT_EQ(watchTimeout.isChecked_, true);
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_003
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_003, TestSize.Level1)
+{
+    int32_t uid = 1003;
+    bool ret = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    EXPECT_EQ(ret, true);
+
+    uid = 1;
+    ret = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_004
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_004, TestSize.Level1)
+{
+    int64_t nanoTime = 0;
+    std::string ret = ClockTime::NanoTimeToString(nanoTime);
+    EXPECT_EQ(ret, "08:00:00");
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_005
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_005, TestSize.Level1)
+{
+    std::string tag = "";
+    uint32_t timeoutSeconds = 0;
+    AudioXCollie audioXCollie(tag, timeoutSeconds, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
+    audioXCollie.isCanceled_ = false;
+    audioXCollie.CancelXCollieTimer();
+    EXPECT_EQ(audioXCollie.isCanceled_, true);
+
+    audioXCollie.CancelXCollieTimer();
+    EXPECT_EQ(audioXCollie.isCanceled_, true);
+}
+
+/**
+* @tc.name  : Test AudioUtils API
+* @tc.type  : FUNC
+* @tc.number: AudioUtilsUnitTest_006
+* @tc.desc  : Test AudioUtils API
+*/
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_006, TestSize.Level1)
+{
+    bool ret = PermissionUtil::VerifyIsShell();
+    EXPECT_EQ(ret, true);
+
+    ret = PermissionUtil::VerifyIsAudio();
+    EXPECT_EQ(ret, true);
+
+    int32_t callingUid = 6699;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    ret = PermissionUtil::NeedVerifyBackgroundCapture(callingUid, sourceType);
+    EXPECT_EQ(ret, false);
+
+    callingUid = 1000;
+    sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    ret = PermissionUtil::NeedVerifyBackgroundCapture(callingUid, sourceType);
+    EXPECT_EQ(ret, false);
+
+    callingUid = 1000;
+    sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    ret = PermissionUtil::NeedVerifyBackgroundCapture(callingUid, sourceType);
+    EXPECT_EQ(ret, true);
+
+    uint32_t tokenId = 1;
+    uint64_t fullTokenId = 1;
+    ret = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
+    EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -29,6 +29,7 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
+#include "audio_config_manager.h"
 
 #include "audio_server_proxy.h"
 
@@ -101,7 +102,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailab
 }
 
 int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid, const std::string caller)
 {
     if (desc == nullptr) {
         AUDIO_ERR_LOG("desc is null");
@@ -113,7 +114,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             audioStateManager_.SetPreferredMediaRenderDevice(desc);
             break;
         case AUDIO_CALL_RENDER:
-            audioStateManager_.SetPreferredCallRenderDevice(desc);
+            audioStateManager_.SetPreferredCallRenderDevice(desc, uid, caller);
             break;
         case AUDIO_CALL_CAPTURE:
             audioStateManager_.SetPreferredCallCaptureDevice(desc);
@@ -211,6 +212,9 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
             portName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
             break;
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
+            portName = ACCESSORY_SOURCE;
+            break;
         default:
             portName = PORT_NONE;
             break;
@@ -246,11 +250,13 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
                 portName = OFFLOAD_PRIMARY_SPEAKER;
             } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
                 portName = MCH_PRIMARY_SPEAKER;
-            } else if (pipeType == PIPE_TYPE_CALL_OUT) {
-                portName = PRIMARY_DIRECT_VOIP;
             } else {
                 portName = PRIMARY_SPEAKER;
             }
+            break;
+        case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
+            portName = AudioPolicyConfigManager::GetInstance().GetDefaultAdapterEnable() ? DP_SINK : PRIMARY_SPEAKER;
             break;
         default:
             portName = GetNewSinkPortName(deviceType);
@@ -287,6 +293,17 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
     }
 }
 
+std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId)
+{
+    if (desc->networkId_ == LOCAL_NETWORK_ID) {
+        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+        streamCollector_.GetPipeType(sessionId, pipeType);
+        return GetSinkPortName(desc->deviceType_, pipeType);
+    } else {
+        return GetRemoteModuleName(desc->networkId_, desc->deviceRole_);
+    }
+}
+
 std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
 {
     std::string portName = PORT_NONE;
@@ -306,12 +323,53 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             portName = BLUETOOTH_MIC;
             break;
+        case InternalDeviceType::DEVICE_TYPE_ACCESSORY:
+            portName = ACCESSORY_SOURCE;
+            break;
         default:
             portName = PORT_NONE;
             break;
     }
 
     return portName;
+}
+
+std::string AudioPolicyUtils::GetOutputDeviceClassBySinkPortName(std::string sinkPortName)
+{
+    std::map<std::string, std::string> sinkPortStrToClassStrMap_ = {
+        {PRIMARY_SPEAKER, PRIMARY_CLASS},
+        {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
+        {BLUETOOTH_SPEAKER, A2DP_CLASS},
+        {USB_SPEAKER, USB_CLASS},
+        {PRIMARY_DIRECT_VOIP, DIRECT_VOIP_CLASS},
+        {DP_SINK, DP_CLASS},
+        {FILE_SINK, FILE_CLASS},
+        {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CLASS},
+        {MCH_PRIMARY_SPEAKER, MCH_CLASS},
+        {PORT_NONE, INVALID_CLASS}
+    };
+    std::string deviceClass = INVALID_CLASS;
+    if (sinkPortStrToClassStrMap_.count(sinkPortName) > 0) {
+        deviceClass = sinkPortStrToClassStrMap_.at(sinkPortName);
+    }
+    return deviceClass;
+}
+
+std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string sourcePortName)
+{
+    std::map<std::string, std::string> sourcePortStrToClassStrMap_ = {
+        {PRIMARY_MIC, PRIMARY_CLASS},
+        {USB_MIC, USB_CLASS},
+        {PRIMARY_WAKEUP, PRIMARY_CLASS},
+        {FILE_SOURCE, FILE_CLASS},
+        {BLUETOOTH_MIC, A2DP_CLASS},
+        {PORT_NONE, INVALID_CLASS}
+    };
+    std::string deviceClass = INVALID_CLASS;
+    if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
+        deviceClass = sourcePortStrToClassStrMap_.at(sourcePortName);
+    }
+    return deviceClass;
 }
 
 std::shared_ptr<DataShare::DataShareHelper> AudioPolicyUtils::CreateDataShareHelperInstance()
@@ -432,7 +490,9 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_DP:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL: {
             std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
             AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
             break;
@@ -451,9 +511,11 @@ AudioModuleInfo AudioPolicyUtils::ConstructRemoteAudioModuleInfo(std::string net
         audioModuleInfo.format = "s16le"; // 16bit little endian
         audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
         audioModuleInfo.renderInIdleState = "1";
+        audioModuleInfo.role = "sink";
     } else if (deviceRole == DeviceRole::INPUT_DEVICE) {
         audioModuleInfo.lib = "libmodule-hdi-source.z.so";
         audioModuleInfo.format = "s16le"; // we assume it is bigger endian
+        audioModuleInfo.role = "source";
     } else {
         AUDIO_WARNING_LOG("Invalid flag provided %{public}d", static_cast<int32_t>(deviceType));
     }
@@ -474,6 +536,14 @@ AudioModuleInfo AudioPolicyUtils::ConstructRemoteAudioModuleInfo(std::string net
     audioModuleInfo.rate = "48000";
     audioModuleInfo.bufferSize = "3840";
 
+    if (deviceType == DEVICE_TYPE_SPEAKER) {
+        std::string splitInfo = "";
+        if ((AudioRouterCenter::GetAudioRouterCenter().GetSplitInfo(splitInfo) == SUCCESS) && (splitInfo != "")) {
+            audioModuleInfo.lib = "libmodule-split-stream-sink.z.so";
+            audioModuleInfo.extra = splitInfo;
+        }
+    }
+
     return audioModuleInfo;
 }
 
@@ -490,9 +560,12 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_DP:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+        case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
             return DeviceRole::OUTPUT_DEVICE;
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
             return DeviceRole::INPUT_DEVICE;
         default:
             return DeviceRole::DEVICE_ROLE_NONE;
@@ -527,6 +600,8 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(AudioPin pin) const
         case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
         case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
         case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_PENCIL:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_UWB:
         case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
             return DeviceRole::INPUT_DEVICE;
         default:
@@ -608,5 +683,16 @@ int32_t AudioPolicyUtils::UnexcludeOutputDevices(std::vector<std::shared_ptr<Aud
 
     return SUCCESS;
 }
+
+void AudioPolicyUtils::SetScoExcluded(bool scoExcluded)
+{
+    isScoExcluded_ = scoExcluded;
+}
+
+bool AudioPolicyUtils::GetScoExcluded()
+{
+    return isScoExcluded_;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

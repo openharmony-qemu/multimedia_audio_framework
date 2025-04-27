@@ -38,7 +38,7 @@
 
 #include "audio_a2dp_device.h"
 #include "audio_a2dp_offload_flag.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_active_device.h"
 #include "audio_iohandle_map.h"
 #include "audio_router_map.h"
@@ -63,12 +63,13 @@ public:
     void DeInit();
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
+    void OnAudioSceneChange(const AudioScene& audioScene);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
-        std::string &networkId, AudioSamplingRate &samplingRate);
+        std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate = true);
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
         const std::string &networkId, const AudioSamplingRate &samplingRate);
     void UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
@@ -117,6 +118,7 @@ public:
     void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
     int32_t SetVirtualCall(const bool isVirtual);
+    void NotifyDistributedOutputChange(const vector<shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -126,7 +128,7 @@ private:
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioSceneManager_(AudioSceneManager::GetInstance()),
         audioVolumeManager_(AudioVolumeManager::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
@@ -143,7 +145,10 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
 
-    void MuteSinkPort(const std::string &oldSinkname, const std::string &newSinkName,
+    void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
+    void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
+        AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
 
     void UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -188,10 +193,12 @@ private:
         const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName,
         SourceType sourceType);
     int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    int32_t RingToneVoiceControl(const InternalDeviceType &deviceType);
 
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
     void FetchOutputDeviceWhenNoRunningStream();
+    void SetDeviceConnectedFlagWhenFetchOutputDevice();
     int32_t HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
@@ -201,6 +208,9 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
         const AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void MuteSinkForSwitchDistributedDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> &desc,
@@ -221,8 +231,8 @@ private:
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const int32_t sessionId);
-    bool IsBlueToothOnPrimarySpeaker(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsRingOverPlayback(AudioMode &mode, RendererState rendererState);
+    bool IsDualStreamWhenRingDual(AudioStreamType streamType);
 
     // fetchInput
     void FetchInputDeviceInner(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
@@ -242,6 +252,8 @@ private:
         int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    void SetHeadsetUnpluggedToSpeakerFlag(DeviceType oldDeviceType, DeviceType newDeviceType);
+
 private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     bool isCurrentRemoteRenderer = false;
@@ -252,7 +264,8 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFirstScreenOn_ = false;
     bool isRingDualToneOnPrimarySpeaker_ = false;
-    int32_t ringDualToneOnPrimarySpeakerSessionId_ = -1;
+    bool isHeadsetUnpluggedToSpeakerFlag_ = false;
+    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;
@@ -262,7 +275,7 @@ private:
     AudioAffinityManager &audioAffinityManager_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioActiveDevice& audioActiveDevice_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioSceneManager& audioSceneManager_;
     AudioVolumeManager& audioVolumeManager_;
     AudioRouteMap& audioRouteMap_;

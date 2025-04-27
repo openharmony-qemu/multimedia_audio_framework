@@ -112,6 +112,9 @@ AudioSampleFormat ProRendererStreamImpl::GetDirectFormat(AudioSampleFormat forma
     // Both SAMPLE_S16LE and SAMPLE_S32LE are supported for direct VoIP stream.
     if (format == SAMPLE_S16LE || format == SAMPLE_S32LE) {
         return format;
+    } else if (format == SAMPLE_F32LE) {
+        // Direct VoIP not support SAMPLE_F32LE format.It needs to be converted to S16.
+        return AudioSampleFormat::SAMPLE_S16LE;
     } else {
         AUDIO_WARNING_LOG("The format %{public}u is unsupported for direct VoIP. Use 32Bit.", format);
         return AudioSampleFormat::SAMPLE_S32LE;
@@ -396,29 +399,34 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     }
     std::lock_guard lock(peekMutex);
     GetStreamVolume();
-    if (isNeedMcr_ && !isNeedResample_) {
-        ConvertSrcToFloat(bufferDesc);
-        downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleDesBuffer.data());
-        ConvertFloatToDes(writeIndex);
-    } else if (isNeedMcr_ && isNeedResample_) {
-        ConvertSrcToFloat(bufferDesc);
-        downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleSrcBuffer.data());
-    }
-    if (isNeedResample_) {
-        if (!isNeedMcr_) {
+    if (processConfig_.streamInfo.encoding == ENCODING_EAC3) {
+        memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
+            bufferDesc.bufLength);
+    } else {
+        if (isNeedMcr_ && !isNeedResample_) {
             ConvertSrcToFloat(bufferDesc);
+            downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleDesBuffer.data());
+            ConvertFloatToDes(writeIndex);
+        } else if (isNeedMcr_ && isNeedResample_) {
+            ConvertSrcToFloat(bufferDesc);
+            downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleSrcBuffer.data());
         }
-        resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
-        DumpFileUtil::WriteDumpFile(dumpFile_, resampleDesBuffer.data(), resampleDesBuffer.size() * sizeof(float));
-        ConvertFloatToDes(writeIndex);
-    } else if (!isNeedMcr_) {
-        bufferInfo_.bufLength = bufferDesc.bufLength;
-        bufferInfo_.frameSize = bufferDesc.bufLength / bufferInfo_.samplePerFrame;
-        bufferInfo_.buffer = bufferDesc.buffer;
-        if (desFormat_ == AudioSampleFormat::SAMPLE_S16LE) {
-            AudioCommonConverter::ConvertBufferTo16Bit(bufferInfo_, sinkBuffer_[writeIndex]);
-        } else {
-            AudioCommonConverter::ConvertBufferTo32Bit(bufferInfo_, sinkBuffer_[writeIndex]);
+        if (isNeedResample_) {
+            if (!isNeedMcr_) {
+                ConvertSrcToFloat(bufferDesc);
+            }
+            resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
+            DumpFileUtil::WriteDumpFile(dumpFile_, resampleDesBuffer.data(), resampleDesBuffer.size() * sizeof(float));
+            ConvertFloatToDes(writeIndex);
+        } else if (!isNeedMcr_) {
+            bufferInfo_.bufLength = bufferDesc.bufLength;
+            bufferInfo_.frameSize = bufferDesc.bufLength / bufferInfo_.samplePerFrame;
+            bufferInfo_.buffer = bufferDesc.buffer;
+            if (desFormat_ == AudioSampleFormat::SAMPLE_S16LE) {
+                AudioCommonConverter::ConvertBufferTo16Bit(bufferInfo_, sinkBuffer_[writeIndex]);
+            } else {
+                AudioCommonConverter::ConvertBufferTo32Bit(bufferInfo_, sinkBuffer_[writeIndex]);
+            }
         }
     }
     readQueue_.emplace(writeIndex);
@@ -654,7 +662,8 @@ void ProRendererStreamImpl::GetStreamVolume()
     }
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     bufferInfo_.volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
-    bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+    bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME, &volumes);
     if (bufferInfo_.volumeBg != bufferInfo_.volumeEd) {
         AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, bufferInfo_.volumeEd);
         AudioVolume::GetInstance()->Monitor(streamIndex_, true);

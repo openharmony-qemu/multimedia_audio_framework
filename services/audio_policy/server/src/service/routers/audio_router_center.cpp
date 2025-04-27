@@ -18,6 +18,7 @@
 
 #include "audio_router_center.h"
 #include "audio_policy_service.h"
+#include "audio_zone_service.h"
 
 using namespace std;
 
@@ -48,12 +49,13 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
     return make_shared<AudioDeviceDescriptor>();
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(
-    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType, const RouterType &bypassType)
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    RouterType &routerType, const RouterType &bypassType, const RouterType &bypassWithSco)
 {
     for (auto &router : callRenderRouters_) {
-        if (router->GetRouterType() == bypassType) {
-            AUDIO_INFO_LOG("Fetch call render device bypass %{public}d", bypassType);
+        if (router->GetRouterType() == bypassType || router->GetRouterType() == bypassWithSco) {
+            AUDIO_INFO_LOG("Fetch call render device bypass %{public}d, bypassWithSco %{public}d",
+                bypassType, bypassWithSco);
             continue;
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
@@ -126,11 +128,31 @@ bool AudioRouterCenter::NeedSkipSelectAudioOutputDeviceRefined(StreamUsage strea
         return false;
     }
     CHECK_AND_RETURN_RET(descs.front() != nullptr, false);
-    if (descs.front()->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (descs.front()->deviceType_ == DEVICE_TYPE_SPEAKER) {
         return false;
     }
-    AUDIO_INFO_LOG("Don't add ring ext device when ringer mode is not normal and sco added");
+    AUDIO_INFO_LOG("Don't add ring ext device when ringer mode is not normal and no speaker added");
     return true;
+}
+
+RouterType AudioRouterCenter::GetBypassWithSco(AudioScene audioScene)
+{
+    RouterType bypassWithSco = RouterType::ROUTER_TYPE_NONE;
+    if (audioScene == AUDIO_SCENE_DEFAULT && AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+        AUDIO_INFO_LOG("Audio scene default and sco state is true, bypassWithSco set to user select");
+        bypassWithSco = RouterType::ROUTER_TYPE_USER_SELECT;
+    }
+    return bypassWithSco;
+}
+
+bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
+{
+    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
+        ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
+        AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+        return true;
+    }
+    return false;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(StreamUsage streamUsage,
@@ -138,26 +160,29 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
+    if (zoneId != 0) {
+        return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
+    }
     if (streamUsage == STREAM_USAGE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetRunningStreamUsageNoUltrasonic() == STREAM_USAGE_INVALID) {
         AUDIO_INFO_LOG("Stream ULTRASONIC always choose spk");
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
         return descs;
     }
+    StreamUsage callStreamUsage = streamUsage;
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
-        if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
-            ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
-            AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
-            if (desc->deviceType_ == DEVICE_TYPE_NONE) {
-                StreamUsage callStreamUsage =
-                    AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
-                AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
-                    callStreamUsage);
-                desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType);
-            }
+        if (IsMediaFollowCallStrategy(audioScene)) {
+            callStreamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+            callStreamUsage = (callStreamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
+                callStreamUsage;
+            AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
+                callStreamUsage);
+            desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType,
+                GetBypassWithSco(audioScene));
         } else {
             desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType, bypassType);
         }
@@ -174,7 +199,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     if (audioDeviceRefinerCb_ != nullptr &&
         !NeedSkipSelectAudioOutputDeviceRefined(streamUsage, descs)) {
         audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType,
-            streamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
+            callStreamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
     }
     int32_t audioId_ = descs[0]->deviceId_;
     DeviceType type = descs[0]->deviceType_;
@@ -201,35 +226,65 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
             desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType);
         }
         descs.push_back(move(desc));
+    } else if ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) &&
+        streamUsage == STREAM_USAGE_ALARM) {
+            AUDIO_INFO_LOG("alarm follow ring strategy, replace usage alarm to ringtone");
+            descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, clientUID, routerType);
     } else {
         descs = FetchRingRenderDevices(streamUsage, clientUID, routerType);
     }
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType sourceType, int32_t clientUID)
+
+bool AudioRouterCenter::IsConfigRouterStrategy(SourceType sourceType)
+{
+    if (capturerConfigMap_[sourceType] == "RecordCaptureRouters" ||
+        capturerConfigMap_[sourceType] == "CallCaptureRouters" ||
+        capturerConfigMap_[sourceType] == "VoiceMessages") {
+        return true;
+    }
+    return false;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(SourceType sourceType,
+    int32_t clientUID, RouterType &routerType, const uint32_t sessionID)
+{
+    AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+    if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+            return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        } else {
+            return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        }
+    } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+            return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        } else {
+            return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        }
+    } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
+        return FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+    }
+    return make_shared<AudioDeviceDescriptor>();
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
     RouterType routerType = ROUTER_TYPE_NONE;
-    AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
+    if (zoneId != 0) {
+        AUDIO_INFO_LOG("FetchInputDevice zoneId %{public}d", zoneId);
+        return AudioZoneService::GetInstance().FetchInputDevice(zoneId, sourceType, clientUID);
+    }
     if (sourceType == SOURCE_TYPE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetRunningSourceTypeNoUltrasonic() == SOURCE_TYPE_INVALID) {
         AUDIO_INFO_LOG("Source ULTRASONIC always choose mic");
         return AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     }
-    if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT) {
-            desc = FetchCallCaptureDevice(sourceType, clientUID, routerType);
-        } else {
-            desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType);
-        }
-    } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT) {
-            desc = FetchCallCaptureDevice(sourceType, clientUID, routerType);
-        } else {
-            desc = FetchRecordCaptureDevice(sourceType, clientUID, routerType);
-        }
-    } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
-        desc = FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType);
+    if (IsConfigRouterStrategy(sourceType)) {
+        desc = FetchCapturerInputDevice(sourceType, clientUID, routerType, sessionID);
     } else {
         AUDIO_INFO_LOG("sourceType %{public}d didn't config router strategy, skipped", sourceType);
         return desc;
@@ -247,10 +302,10 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallCaptureDevice(SourceType sourceType,
-    int32_t clientUID, RouterType &routerType)
+    int32_t clientUID, RouterType &routerType, const uint32_t sessionID)
 {
     for (auto &router : callCaptureRouters_) {
-        shared_ptr<AudioDeviceDescriptor> desc = router->GetCallCaptureDevice(sourceType, clientUID);
+        shared_ptr<AudioDeviceDescriptor> desc = router->GetCallCaptureDevice(sourceType, clientUID, sessionID);
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
             routerType = router->GetRouterType();
             return desc;
@@ -260,10 +315,13 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallCaptureDevice(Sour
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchRecordCaptureDevice(SourceType sourceType,
-    int32_t clientUID, RouterType &routerType)
+    int32_t clientUID, RouterType &routerType, const uint32_t sessionID)
 {
     for (auto &router : recordCaptureRouters_) {
-        shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID);
+        shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+        if (desc == nullptr) {
+            continue;
+        }
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
             routerType = router->GetRouterType();
             return desc;
@@ -273,10 +331,10 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchRecordCaptureDevice(So
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchVoiceMessageCaptureDevice(SourceType sourceType,
-    int32_t clientUID, RouterType &routerType)
+    int32_t clientUID, RouterType &routerType, const uint32_t sessionID)
 {
     for (auto &router : voiceMessageRouters_) {
-        shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID);
+        shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID, sessionID);
         if (desc->deviceType_ != DEVICE_TYPE_NONE) {
             routerType = router->GetRouterType();
             return desc;
@@ -307,12 +365,14 @@ bool AudioRouterCenter::isCallRenderRouter(StreamUsage streamUsage)
     return renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS;
 }
 
-void AudioRouterCenter::SetAlarmFollowRingRouter(const bool flag)
+int32_t AudioRouterCenter::GetSplitInfo(std::string &splitInfo)
 {
-    for (auto &router : ringRenderRouters_) {
-        CHECK_AND_CONTINUE_LOG(router != nullptr, "Invalid router.");
-        router->SetAlarmFollowRingRouter(flag);
+    if (audioDeviceRefinerCb_ == nullptr) {
+        AUDIO_INFO_LOG("nullptr");
+        return ERROR;
     }
+
+    return audioDeviceRefinerCb_->GetSplitInfoRefined(splitInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

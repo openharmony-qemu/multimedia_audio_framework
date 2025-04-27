@@ -143,14 +143,6 @@ napi_value NapiAudioVolumeGroupManager::Init(napi_env env, napi_value exports)
 
 napi_value NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(napi_env env, int32_t groupId)
 {
-    // Check whether the group id is valid.
-    auto groupManager = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-    if (groupManager == nullptr) {
-        AUDIO_ERR_LOG("Failed to get group manager!");
-        NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
-
     napi_status status;
     napi_value result = nullptr;
     napi_value constructor;
@@ -1269,39 +1261,60 @@ napi_value NapiAudioVolumeGroupManager::UnregisterCallback(napi_env env, napi_va
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     if (!cbName.compare(RINGERMODE_CALLBACK_NAME)) {
-        if (napiAudioVolumeGroupManager->ringerModecallbackNapi_ == nullptr) {
-            napiAudioVolumeGroupManager->ringerModecallbackNapi_ = std::make_shared<NapiAudioRingerModeCallback>(env);
-            std::shared_ptr<NapiAudioRingerModeCallback> cb = std::static_pointer_cast<NapiAudioRingerModeCallback>(
-                napiAudioVolumeGroupManager->ringerModecallbackNapi_);
-            bool isSameCallback = cb->IsSameCallback(args[PARAM1]);
-            CHECK_AND_RETURN_RET_LOG(isSameCallback == true, undefinedResult,
-                "The callback need to be unregistered is not the same as the registered callback");
-            int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->UnsetRingerModeCallback(
-                napiAudioVolumeGroupManager->cachedClientId_, napiAudioVolumeGroupManager->ringerModecallbackNapi_);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "UnsetRingerModeCallback Failed");
-            cb->RemoveCallbackReference(args[PARAM1]);
-        }
+        UnregisterRingerModeCallback(napiAudioVolumeGroupManager, argc, args);
     } else if (!cbName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
-        if (!napiAudioVolumeGroupManager->micStateChangeCallbackNapi_) {
-            napiAudioVolumeGroupManager->micStateChangeCallbackNapi_ =
-                std::make_shared<NapiAudioManagerMicStateChangeCallback>(env);
-            std::shared_ptr<NapiAudioManagerMicStateChangeCallback> cb =
-                std::static_pointer_cast<NapiAudioManagerMicStateChangeCallback>(napiAudioVolumeGroupManager->
-                    micStateChangeCallbackNapi_);
-            bool isSameCallback = cb->IsSameCallback(args[PARAM1]);
-            CHECK_AND_RETURN_RET_LOG(isSameCallback == true, undefinedResult,
-                "The callback need to be unregistered is not the same as the registered callback");
-            int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->UnsetMicStateChangeCallback(
-                napiAudioVolumeGroupManager->micStateChangeCallbackNapi_);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "UnsetRingerModeCallback Failed");
-            cb->RemoveCallbackReference(args[PARAM1]);
-        }
+        UnregisterMicStateChangeCallback(napiAudioVolumeGroupManager, argc, args);
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported");
     }
     return undefinedResult;
+}
+
+void NapiAudioVolumeGroupManager::UnregisterRingerModeCallback(
+    NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager, size_t argc, napi_value *args)
+{
+    CHECK_AND_RETURN_LOG(napiAudioVolumeGroupManager->ringerModecallbackNapi_ != nullptr,
+        "ringerModecallbackNapi is null");
+    std::shared_ptr<NapiAudioRingerModeCallback> cb = std::static_pointer_cast<NapiAudioRingerModeCallback>(
+        napiAudioVolumeGroupManager->ringerModecallbackNapi_);
+    
+    napi_value callback = nullptr;
+    if (argc == ARGS_TWO) {
+        callback = args[PARAM1];
+        CHECK_AND_RETURN_LOG(cb->IsSameCallback(callback),
+            "The callback need to be unregistered is not the same as the registered callback");
+    }
+    int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->UnsetRingerModeCallback(
+        napiAudioVolumeGroupManager->cachedClientId_, cb);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetRingerModeCallback failed");
+    cb->RemoveCallbackReference(callback);
+    napiAudioVolumeGroupManager->ringerModecallbackNapi_ = nullptr;
+    AUDIO_INFO_LOG("UnregisterRingerModeCallback success");
+}
+
+void NapiAudioVolumeGroupManager::UnregisterMicStateChangeCallback(
+    NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager, size_t argc, napi_value *args)
+{
+    CHECK_AND_RETURN_LOG(napiAudioVolumeGroupManager->micStateChangeCallbackNapi_ != nullptr,
+        "micStateChangeCallbackNapi is null");
+    std::shared_ptr<NapiAudioManagerMicStateChangeCallback> cb =
+        std::static_pointer_cast<NapiAudioManagerMicStateChangeCallback>(
+        napiAudioVolumeGroupManager->micStateChangeCallbackNapi_);
+    
+    napi_value callback = nullptr;
+    if (argc == ARGS_TWO) {
+        callback = args[PARAM1];
+        CHECK_AND_RETURN_LOG(cb->IsSameCallback(callback),
+            "The callback need to be unregistered is not the same as the registered callback");
+    }
+    int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->UnsetMicStateChangeCallback(
+        napiAudioVolumeGroupManager->micStateChangeCallbackNapi_);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterMicStateChangeCallback failed");
+    cb->RemoveCallbackReference(callback);
+    napiAudioVolumeGroupManager->micStateChangeCallbackNapi_ = nullptr;
+    AUDIO_INFO_LOG("UnregisterMicStateChangeCallback success");
 }
 
 napi_value NapiAudioVolumeGroupManager::On(napi_env env, napi_callback_info info)

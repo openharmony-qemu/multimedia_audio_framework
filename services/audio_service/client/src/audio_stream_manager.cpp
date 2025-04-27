@@ -198,12 +198,37 @@ int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioD
 
     if (desc == nullptr) {
         std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "GetHardwareOutputSamplingRate fail");
         desc->deviceType_ = DEVICE_TYPE_SPEAKER;
         desc->deviceRole_ = OUTPUT_DEVICE;
     }
 
     result = AudioPolicyManager::GetInstance().GetHardwareOutputSamplingRate(desc);
     return result;
+}
+
+DirectPlaybackMode AudioStreamManager::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage > STREAM_USAGE_UNKNOWN && streamUsage < STREAM_USAGE_MAX,
+        DIRECT_PLAYBACK_NOT_SUPPORTED, "invalid streamUsage: %{public}d", streamUsage);
+    return AudioPolicyManager::GetInstance().GetDirectPlaybackSupport(streamInfo, streamUsage);
+}
+
+int32_t AudioStreamManager::SetAudioFormatUnsupportedErrorCallback(
+    const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioFormatUnsupportedErrorCallback(callback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioStreamManager::UnsetAudioFormatUnsupportedErrorCallback()
+{
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetAudioFormatUnsupportedErrorCallback();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
+    return ret;
 }
 
 int32_t AudioStreamManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
@@ -234,6 +259,11 @@ int32_t AudioStreamManager::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
 int32_t AudioStreamManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
 {
     return AudioPolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray);
+}
+
+bool AudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    return AudioPolicyManager::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

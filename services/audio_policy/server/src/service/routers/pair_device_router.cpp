@@ -20,6 +20,8 @@
 
 #include "audio_policy_service.h"
 
+#include "audio_bluetooth_manager.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -35,13 +37,15 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallRenderDevice(StreamUs
     return make_shared<AudioDeviceDescriptor>();
 }
 
-shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> desc =
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;
+    bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
     if (pairDevice != nullptr && pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&
-        pairDevice->isEnable_) {
+        (pairDevice->isEnable_ || isScoStateConnect)) {
         AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
             pairDevice->deviceType_);
         return make_shared<AudioDeviceDescriptor>(*pairDevice);
@@ -56,7 +60,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::GetRingRenderDe
     return descs;
 }
 
-shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }

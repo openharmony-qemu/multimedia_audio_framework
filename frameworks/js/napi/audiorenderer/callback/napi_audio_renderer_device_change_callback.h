@@ -20,22 +20,32 @@
 #include "napi/native_node_api.h"
 #include "napi_async_work.h"
 #include "audio_renderer.h"
+#include "napi_audio_renderer_callback_inner.h"
+#include "napi_audio_renderer_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class NapiAudioRendererDeviceChangeCallback : public AudioRendererOutputDeviceChangeCallback {
+class NapiAudioRendererDeviceChangeCallback : public AudioRendererOutputDeviceChangeCallback,
+    public NapiAudioRendererCallbackInner {
 public:
     explicit NapiAudioRendererDeviceChangeCallback(napi_env env);
-    virtual ~NapiAudioRendererDeviceChangeCallback();
+    ~NapiAudioRendererDeviceChangeCallback() override;
     void AddCallbackReference(napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value args);
     void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
+    void OnStateChange(const AudioDeviceDescriptor &deviceInfo);
     int32_t GetCallbackListSize() const;
     void CreateRendererDeviceChangeTsfn(napi_env env);
     bool GetRendererDeviceChangeTsfnFlag();
-
+    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
+    void RemoveCallbackReference(const std::string &callbackName, napi_env env,
+        napi_value callback, napi_value args = nullptr) override;
+    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
+protected:
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
+    napi_env &GetEnv() override;
 private:
     struct AudioRendererDeviceChangeJsCallback {
         napi_ref callback_;
@@ -54,10 +64,11 @@ private:
     napi_threadsafe_function arDevInfoTsfn_ = nullptr;
 };
 
-class NapiAudioRendererOutputDeviceChangeWithInfoCallback : public AudioRendererOutputDeviceChangeCallback {
+class NapiAudioRendererOutputDeviceChangeWithInfoCallback : public AudioRendererOutputDeviceChangeCallback,
+    public NapiAudioRendererCallbackInner {
 public:
     explicit NapiAudioRendererOutputDeviceChangeWithInfoCallback(napi_env env);
-    virtual ~NapiAudioRendererOutputDeviceChangeWithInfoCallback();
+    ~NapiAudioRendererOutputDeviceChangeWithInfoCallback() override;
     void AddCallbackReference(napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value args);
     void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
@@ -66,6 +77,14 @@ public:
     int32_t GetCallbackListSize() const;
     void CreateOutputDeviceChangeTsfn(napi_env env);
     bool GetOutputDeviceChangeTsfnFlag();
+    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
+    void RemoveCallbackReference(const std::string &callbackName, napi_env env, napi_value callback,
+        napi_value args = nullptr) override;
+    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
+
+protected:
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
+    napi_env &GetEnv() override;
 
 private:
     struct AudioRendererOutputDeviceChangeWithInfoJsCallback {

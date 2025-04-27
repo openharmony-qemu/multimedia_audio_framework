@@ -23,11 +23,15 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 namespace {
+constexpr int32_t RECOVERY_ATTEMPT_LIMIT = 5;
+constexpr uint32_t INITIAL_STREAM_RESTORATION_WAIT_US = 1000000;
+constexpr uint32_t RETRY_INTERVAL_US = 300000;
 constexpr int32_t EXCLUDED = 0;
 constexpr int32_t UNEXCLUDED = 1;
 } // namespace
@@ -61,16 +65,17 @@ void AudioRecoveryDevice::DeInit()
 void AudioRecoveryDevice::RecoveryPreferredDevices()
 {
     AUDIO_DEBUG_LOG("Start recovery preferred devices.");
-    int32_t tryCounter = 5;
+    int32_t tryCounter = RECOVERY_ATTEMPT_LIMIT;
     // Waiting for 1000000 μs. Ensure that the playback/recording stream is restored first
-    uint32_t firstSleepTime = 1000000;
+    uint32_t firstSleepTime = INITIAL_STREAM_RESTORATION_WAIT_US;
     // Retry interval
-    uint32_t sleepTime = 300000;
+    uint32_t sleepTime = RETRY_INTERVAL_US;
     int32_t result = -1;
     std::map<Media::MediaMonitor::PreferredType,
         std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> preferredDevices;
     usleep(firstSleepTime);
-    while (result != SUCCESS && tryCounter-- > 0) {
+    while (result != SUCCESS && tryCounter > 0) {
+        tryCounter--;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioRouteMsg(preferredDevices);
         if (preferredDevices.size() == 0) {
             continue;
@@ -80,7 +85,7 @@ void AudioRecoveryDevice::RecoveryPreferredDevices()
                 iter->second->usageOrSourceType_);
             if (result != SUCCESS) {
                 AUDIO_ERR_LOG("Handle recovery preferred devices failed"
-		    ", deviceType:%{public}d, usageOrSourceType:%{public}d, tryCounter:%{public}d",
+            ", deviceType:%{public}d, usageOrSourceType:%{public}d, tryCounter:%{public}d",
                     iter->second->deviceType_, iter->second->usageOrSourceType_, tryCounter);
             }
         }
@@ -103,6 +108,7 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
             preferredType == Media::MediaMonitor::RING_RENDER ||
             preferredType == Media::MediaMonitor::TONE_RENDER) {
             sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+            CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, result, "audioRendererFilter is nullptr.");
             audioRendererFilter->uid = -1;
             audioRendererFilter->rendererInfo.streamUsage =
                 static_cast<StreamUsage>(usageOrSourceType);
@@ -110,6 +116,7 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
         } else if (preferredType == Media::MediaMonitor::CALL_CAPTURE ||
                     preferredType == Media::MediaMonitor::RECORD_CAPTURE) {
             sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+            CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, result, "audioCapturerFilter is nullptr.");
             audioCapturerFilter->uid = -1;
             audioCapturerFilter->capturerInfo.sourceType =
                 static_cast<SourceType>(usageOrSourceType);
@@ -122,16 +129,17 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
 void AudioRecoveryDevice::RecoverExcludedOutputDevices()
 {
     AUDIO_INFO_LOG("Start recover excluded output devices.");
-    int32_t tryCounter = 5;
+    int32_t tryCounter = RECOVERY_ATTEMPT_LIMIT;
     // Waiting for 1000000 μs. Ensure that the playback/recording stream is restored first
-    uint32_t firstSleepTime = 1000000;
+    uint32_t firstSleepTime = INITIAL_STREAM_RESTORATION_WAIT_US;
     // Retry interval
-    uint32_t sleepTime = 300000;
+    uint32_t sleepTime = RETRY_INTERVAL_US;
     int32_t result = -1;
     map<Media::MediaMonitor::AudioDeviceUsage,
         vector<shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>>> excludedDevicesMap;
     usleep(firstSleepTime);
-    while (result != SUCCESS && tryCounter-- > 0) {
+    while (result != SUCCESS && tryCounter > 0) {
+        tryCounter--;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioExcludedDevicesMsg(excludedDevicesMap);
         for (auto iter = excludedDevicesMap.begin(); iter != excludedDevicesMap.end(); ++iter) {
             result = HandleExcludedOutputDevicesRecovery(static_cast<AudioDeviceUsage>(iter->first), iter->second);
@@ -164,13 +172,13 @@ int32_t AudioRecoveryDevice::HandleExcludedOutputDevicesRecovery(AudioDeviceUsag
 int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    AUDIO_WARNING_LOG("uid[%{public}d] type[%{public}d] mac[%{public}s] streamUsage[%{public}d] pid[%{public}d]",
+    AUDIO_WARNING_LOG("uid[%{public}d] type[%{public}d] mac[%{public}s] streamUsage[%{public}d] callerUid[%{public}d]",
         audioRendererFilter->uid, selectedDesc[0]->deviceType_, GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
-        audioRendererFilter->rendererInfo.streamUsage, IPCSkeleton::GetCallingPid());
+        audioRendererFilter->rendererInfo.streamUsage, IPCSkeleton::GetCallingUid());
 
     CHECK_AND_RETURN_RET_LOG((selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE) &&
         (selectedDesc.size() == 1), ERR_INVALID_OPERATION, "DeviceCheck no success");
-
+    audioDeviceCommon_.NotifyDistributedOutputChange(selectedDesc);
     int32_t res = SUCCESS;
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     auto audioDevUsage = AudioPolicyUtils::GetInstance().GetAudioDeviceUsageByStreamUsage(strUsage);
@@ -218,8 +226,8 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
 void AudioRecoveryDevice::HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason,
     const std::string &caller)
 {
-    audioDeviceCommon_.FetchDevice(true, reason);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     auto currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     auto currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(
@@ -242,7 +250,7 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceForFastInner(sptr<AudioRendererFi
     res = SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
         "AddFastRouteMapInfo failed! fastRouteMap is too large!");
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
     return true;
 }
 
@@ -269,7 +277,13 @@ int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage,
     // set preferred device
     std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>(**itr);
     CHECK_AND_RETURN_RET_LOG(descriptor != nullptr, ERR_INVALID_OPERATION, "Create device descriptor failed");
-    AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor);
+
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (preferredType == AUDIO_CALL_RENDER) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor, callerUid, "SelectOutputDevice");
+    } else {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType, descriptor);
+    }
     return SUCCESS;
 }
 
@@ -332,7 +346,9 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceByFilterInner(sptr<AudioRendererF
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     for (auto &changeInfo : rendererChangeInfos) {
         if (changeInfo->clientUID == audioRendererFilter->uid && changeInfo->sessionId != 0) {
-            AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, true);
+            RestoreInfo restoreInfo;
+            restoreInfo.restoreReason = STREAM_SPLIT;
+            AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, restoreInfo);
         }
     }
     return SUCCESS;
@@ -353,7 +369,9 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
         for (auto &changeInfo : capturerChangeInfos) {
             if (changeInfo->clientUID == audioCapturerFilter->uid && changeInfo->sessionId != 0) {
-                AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, false);
+                RestoreInfo restoreInfo;
+                restoreInfo.restoreReason = STREAM_SPLIT;
+                AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, restoreInfo);
             }
         }
         return SUCCESS;
@@ -368,7 +386,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
             "AddFastRouteMapInfo failed! fastRouteMap is too large!");
         AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",
             audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
-        audioDeviceCommon_.FetchDevice(false);
+        AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
         audioCapturerSession_.ReloadSourceForDeviceChange(
             audioActiveDevice_.GetCurrentInputDevice(),
             audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice fast");
@@ -382,8 +400,11 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectedDesc[0]);
     }
-    audioDeviceCommon_.FetchDevice(false);
+    audioActiveDevice_.DisconnectScoWhenUserSelectInput(selectedDesc[0]);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
+    audioDeviceCommon_.OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(),
+        audioActiveDevice_.GetCurrentInputDevice().networkId_);
     WriteSelectInputSysEvents(selectedDesc, srcType, scene);
     audioCapturerSession_.ReloadSourceForDeviceChange(
         audioActiveDevice_.GetCurrentInputDevice(),
@@ -400,6 +421,12 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
 
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0, ERR_INVALID_PARAM, "No device to exclude");
 
+    if (audioDeviceDescriptors.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        audioDeviceDescriptors.front()->macAddress_.empty()) {
+        AudioPolicyUtils::GetInstance().SetScoExcluded(true);
+        return SUCCESS;
+    }
+
     audioStateManager_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     shared_ptr<AudioDeviceDescriptor> userSelectedDevice = nullptr;
     PreferredType preferredType = AUDIO_MEDIA_RENDER;
@@ -413,13 +440,13 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
         if (userSelectedDevice != nullptr && desc->IsSameDeviceDesc(*userSelectedDevice)) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType,
-                make_shared<AudioDeviceDescriptor>());
+                make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ExcludeOutputDevices");
         }
         WriteExcludeOutputSysEvents(audioDevUsage, desc);
     }
 
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(
@@ -437,11 +464,16 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
 int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
+    if (audioDeviceDescriptors.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        audioDeviceDescriptors.front()->macAddress_.empty()) {
+        AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+        return SUCCESS;
+    }
     int32_t ret = UnexcludeOutputDevicesInner(audioDevUsage, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Unexclude devices failed");
 
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioDeviceCommon_.FetchDevice(false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     audioCapturerSession_.ReloadSourceForDeviceChange(

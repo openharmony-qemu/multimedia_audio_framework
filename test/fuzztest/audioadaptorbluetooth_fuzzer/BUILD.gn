@@ -24,9 +24,7 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
     "../../../../../communication/bluetooth/interfaces/inner_api/include",
-    "../../../frameworks/native/hdiadapter/common/include",
-    "../../../frameworks/native/hdiadapter/sink/bluetooth",
-    "../../../frameworks/native/hdiadapter/sink/common",
+    "../../../frameworks/native/hdiadapter_new/include",
   ]
   cflags = [
     "-g",
@@ -41,7 +39,7 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
-    "../../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
+    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../services/audio_policy:audio_policy_service_static",
   ]
 

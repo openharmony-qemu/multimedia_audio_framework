@@ -63,6 +63,13 @@ public:
         RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) = 0;
     virtual int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
+    virtual int32_t GetSplitInfoRefined(std::string &splitInfo) = 0;
+};
+
+class AudioClientInfoMgrCallback {
+public:
+    virtual ~AudioClientInfoMgrCallback() = default;
+    virtual bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) = 0;
 };
 
 class AudioPreferredOutputDeviceChangeCallback {
@@ -98,6 +105,19 @@ public:
      * @since 8
      */
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
+};
+
+class AudioDistribuitedOutputChangeCallback {
+public:
+    virtual ~AudioDistribuitedOutputChangeCallback() = default;
+    /**
+     * Called when Distribuited output device changed
+     *
+     * @param deviceDesc selected device
+     * @param isRemote is cast direction remote
+     * @since 16
+     */
+    virtual void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) = 0;
 };
 
 class AudioQueryClientTypeCallback {
@@ -141,6 +161,24 @@ public:
      */
     virtual void OnRendererStateChange(
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
+};
+
+class AudioQueryAllowedPlaybackCallback {
+    public:
+        virtual ~AudioQueryAllowedPlaybackCallback() = default;
+        virtual bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) = 0;
+};
+
+class AudioManagerAudioSceneChangedCallback {
+public:
+    virtual ~AudioManagerAudioSceneChangedCallback() = default;
+    /**
+     * Called when AudioScene changed.
+     *
+     * @param AudioScene audio scene
+     * @since 16
+     */
+    virtual void OnAudioSceneChange(const AudioScene audioScene) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

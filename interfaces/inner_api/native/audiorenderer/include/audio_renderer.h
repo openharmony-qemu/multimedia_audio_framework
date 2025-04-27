@@ -406,7 +406,7 @@ public:
      * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
      * @since 11
      */
-    virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
+    virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
 
     /**
      * @brief Obtains the latency in microseconds.
@@ -526,6 +526,8 @@ public:
      * @since 8
      */
     virtual int32_t SetVolume(float volume) const = 0;
+
+    virtual int32_t SetVolumeMode(int32_t mode) {return 0;};
 
     /**
      * @brief Obtains the current track volume
@@ -649,6 +651,19 @@ public:
     static std::vector<AudioEncodingType> GetSupportedEncodingTypes();
 
     /**
+     * @brief Mute the buffer form (addr + offset) to (addr + offset + length). Make sure the buffer is valid!
+     *
+     * @param addr Indicates the buffer.
+     * @param offset Indicates the offset base, which can be zero.
+     * @param length Indicates the length to be mute.
+     * @param format Indicates the format.
+     *
+     * @return Returns {@link SUCCESS} or an error code defined in {@link audio_errors.h}.
+     * @since 8
+     */
+    static int32_t MuteAudioBuffer(uint8_t *addr, size_t offset, size_t length, AudioSampleFormat format);
+
+    /**
      * @brief Sets the render mode. By default the mode is RENDER_MODE_NORMAL.
      * This API is needs to be used only if RENDER_MODE_CALLBACK is required.
      *
@@ -690,7 +705,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
 
     /**
      * @brief Enqueues the buffer to the bufferQueue.
@@ -702,7 +717,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
+    virtual int32_t Enqueue(const BufferDesc &bufDesc) = 0;
 
     /**
      * @brief Clears the bufferQueue.
@@ -932,6 +947,14 @@ public:
      */
     virtual float GetSpeed() = 0;
 
+    /**
+    * @brief Get offload status.
+    *
+    * @return Returns <b>true</b> if offload is enabled.
+    * @since 15
+    */
+    virtual bool IsOffloadEnable() { return false; }
+
     virtual bool IsFastRenderer() = 0;
 
     virtual ~AudioRenderer();
@@ -943,6 +966,10 @@ public:
     virtual void EnableVoiceModemCommunicationStartStream(bool enable) = 0;
 
     virtual bool IsNoStreamRenderer() const = 0;
+
+    virtual int64_t GetSourceDuration() const { return -1; }
+
+    virtual void SetSourceDuration(int64_t duration) {}
 
     /**
      * @brief Temporarily changes the current audio route.

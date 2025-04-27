@@ -28,7 +28,7 @@ public:
     virtual ~AudioPolicyClientProxy();
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object);
     void UnregisterPolicyCallbackClient();
-
+    void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
     void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
@@ -47,6 +47,7 @@ public:
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void OnRendererDeviceChange(const uint32_t sessionId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
+    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override;
     void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt) override;
     void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
@@ -55,12 +56,15 @@ public:
     void OnSpatializationEnabledChange(const bool &enabled) override;
     void OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override;
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
     void OnNnStateChange(const int32_t &state) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
-
+    void OnAudioSceneChange(const AudioScene &audioScene) override;
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
+    
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;
 };

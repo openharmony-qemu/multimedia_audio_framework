@@ -40,6 +40,7 @@ ohos_shared_library("audio") {
   if (audio_framework_feature_new_napi) {
     sources = [
       "asrcontroller/napi_asr_processing_controller.cpp",
+      "audiocapturer/callback/napi_audio_capturer_callback_inner.cpp",
       "audiocapturer/callback/napi_audio_capturer_callbacks.cpp",
       "audiocapturer/callback/napi_audio_capturer_device_change_callback.cpp",
       "audiocapturer/callback/napi_audio_capturer_info_change_callback.cpp",
@@ -47,6 +48,7 @@ ohos_shared_library("audio") {
       "audiocapturer/callback/napi_capturer_period_position_callback.cpp",
       "audiocapturer/callback/napi_capturer_position_callback.cpp",
       "audiocapturer/napi_audio_capturer.cpp",
+      "audiomanager/callback/napi_appvolume_change_callback.cpp",
       "audiomanager/callback/napi_audio_capturer_state_callback.cpp",
       "audiomanager/callback/napi_audio_manager_callbacks.cpp",
       "audiomanager/callback/napi_audio_manager_interrupt_callback.cpp",
@@ -68,6 +70,7 @@ ohos_shared_library("audio") {
       "audiomanager/napi_audio_volume_group_manager.cpp",
       "audiomanager/napi_audio_volume_manager.cpp",
       "audiorenderer/callback/napi_audio_renderer_callback.cpp",
+      "audiorenderer/callback/napi_audio_renderer_callback_inner.cpp",
       "audiorenderer/callback/napi_audio_renderer_device_change_callback.cpp",
       "audiorenderer/callback/napi_audio_renderer_policy_service_died_callback.cpp",
       "audiorenderer/callback/napi_audio_renderer_write_data_callback.cpp",

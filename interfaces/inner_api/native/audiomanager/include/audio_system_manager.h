@@ -189,6 +189,12 @@ private:
     std::shared_ptr<AudioManagerCallback> cb_;
 };
 
+class AudioQueryBundleNameListCallback {
+public:
+    virtual ~AudioQueryBundleNameListCallback() = default;
+    virtual bool OnQueryBundleNameIsInList(const std::string &bundleName) = 0;
+};
+
 class AudioManagerAvailableDeviceChangeCallback {
 public:
     virtual ~AudioManagerAvailableDeviceChangeCallback() = default;
@@ -348,6 +354,113 @@ public:
      */
     int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
 
+    /**
+     * @brief Set the stream volume.
+     *
+     * @param volumeType Enumerates the audio volume type.
+     * @param volume The volume to be set for the current stream.
+     * @param deviceType The volume to be set for the device.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType) const;
+
+   /**
+     * @brief Set the app volume.
+     *
+     * @param appUid app uid.
+     * @param volume The volume to be set for the current uid app.
+     * @param flag Is need update ui
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAppVolume(const int32_t appUid, const int32_t volume, const int32_t flag = 0);
+
+    /**
+     * @brief Set self app volume.
+     *
+     * @param volume The volume to be set for the current app.
+     * @param flag Is need update ui
+     * @return self app volume level
+     */
+    int32_t SetSelfAppVolume(const int32_t volume, const int32_t flag = 0);
+
+    /**
+     * @brief Get uid app volume.
+     *
+     * @param appUid App uid.
+     * @param volumeLevel App volume level.
+     * @return Get app volume result
+     */
+    int32_t GetAppVolume(int32_t appUid, int32_t &volumeLevel) const;
+
+    /**
+     * @brief Get the uid app volume.
+     *
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t GetSelfAppVolume(int32_t &volumeLevel) const;
+
+    /**
+     * @brief Set self app volume change callback.
+     *
+     * @param callback callback when app volume change.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
+
+    /**
+     * @brief Unset self app volume change callback.
+     *
+     * @param callback Unset the callback.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t UnsetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
+    
+    /**
+     * @brief Set app volume change callback.
+     *
+     * @param appUid app uid.
+     * @param callback callback when app volume changed
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAppVolumeCallbackForUid(const int32_t appUid,
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
+
+    /**
+     * @brief Unset app volume change callback.
+     *
+     * @param callback Unset the callback.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t UnsetAppVolumeCallbackForUid(
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
+    
+    /**
+     * @brief Set the uid app volume muted.
+     * @param appUid app uid
+     * @param muted muted or unmuted.
+     * @param flag Is need update ui
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
+
+    /**
+     * @brief Check the uid app volume is muted.
+     * @param appUid app uid
+     * @param owned If true is passed, the result will be indicated your owned muted statesettings to
+     * this app. Otherwise if false is passed, the result will be indicated the real muted state.
+     *  @param isMute App mute state has seted
+     * @return the app uid muted status
+     */
+    int32_t IsAppVolumeMute(const int32_t appUid, const bool owned, bool &isMute);
     /**
      * @brief Obtains the current stream volume.
      *
@@ -538,7 +651,7 @@ public:
      * @return Returns the device list is obtained.
      * @since 16
      */
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
         AudioDeviceUsage audioDevUsage) const;
 
     /**
@@ -707,11 +820,12 @@ public:
      *
      * @param deviceType device type.
      * @param flag Device activation status.
+     * @param clientPid pid of caller.
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    int32_t SetDeviceActive(DeviceType deviceType, bool flag) const;
+    int32_t SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientUid = -1) const;
 
     /**
      * @brief get device active.
@@ -919,6 +1033,24 @@ public:
      * @since 8
      */
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const;
+
+    /**
+     * @brief Activactivate preempt audio focus mode
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 18
+     */
+    int32_t ActivatePreemptMode() const;
+
+    /**
+     * @brief Deactivactivate preempt audio focus mode
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 18
+     */
+    int32_t DeactivatePreemptMode() const;
 
     /**
      * @brief registers the Interrupt callback listener
@@ -1152,11 +1284,13 @@ public:
      * @param deviceType device type.
      * @param flag Device activation status.
      * @param address Device address
+     * @param clientPid pid of caller.
      * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * in {@link audio_errors.h} otherwise.
      * @since 11
      */
-    int32_t SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address) const;
+    int32_t SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address,
+        const int32_t clientUid = -1) const;
 
     /**
      * @brief get the effect algorithmic latency value for a specified audio stream.
@@ -1182,10 +1316,32 @@ public:
 
     int32_t SetMicrophoneBlockedCallback(const std::shared_ptr<AudioManagerMicrophoneBlockedCallback>& callback);
     int32_t UnsetMicrophoneBlockedCallback(std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = nullptr);
+    
+    /**
+     * @brief Registers the audioScene change callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t SetAudioSceneChangeCallback(const std::shared_ptr<AudioManagerAudioSceneChangedCallback>& callback);
+
+    /**
+     * @brief Registers the audioScene change callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 16
+     */
+    int32_t UnsetAudioSceneChangeCallback(std::shared_ptr<AudioManagerAudioSceneChangedCallback> callback = nullptr);
 
     std::string GetSelfBundleName(int32_t uid);
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
+    int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
+    int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
+
+    int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
 
     /**
      * @brief inject interruption event.
@@ -1231,6 +1387,27 @@ public:
     */
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
 
+#ifdef HAS_FEATURE_INNERCAPTURER
+    /**
+    * @brief check capture limit
+    *
+    * @param AudioPlaybackCaptureConfig inner capture filter info
+    * @param innerCapId unique identifier of inner capture
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @test
+    */
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
+    
+    /**
+    * @brief release capture limit
+    *
+    * @param innerCapId unique identifier of inner capture
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @test
+    */
+    int32_t ReleaseCaptureLimit(int32_t innerCapId);
+#endif
+
     int32_t GenerateSessionId(uint32_t &sessionId);
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const std::shared_ptr<AudioInterruptCallback> &callback,
         uint32_t clientUid, const int32_t zoneID);
@@ -1239,6 +1416,8 @@ public:
     int32_t SetVirtualCall(const bool isVirtual);
 
     int32_t OnVoiceWakeupState(bool state);
+
+    uint16_t GetDmDeviceType() const;
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:
@@ -1274,11 +1453,12 @@ private:
 
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
-    int32_t GetCallingPid();
+    int32_t GetCallingPid() const;
     std::string GetSelfBundleName();
 
     int32_t RegisterWakeupSourceCallback();
     void OtherDeviceTypeCases(DeviceType deviceType) const;
+    AudioPin GetPinValueForPeripherals(DeviceType deviceType, DeviceRole deviceRole, uint16_t dmDeviceType) const;
 
     int32_t cbClientId_ = -1;
     int32_t volumeChangeClientPid_ = -1;

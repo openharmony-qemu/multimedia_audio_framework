@@ -99,17 +99,6 @@ bool AudioActiveDevice::CheckActiveOutputDeviceSupportOffload()
         dev == DEVICE_TYPE_USB_HEADSET;
 }
 
-void AudioActiveDevice::SetCurrenInputDevice(const AudioDeviceDescriptor &desc)
-{
-    std::lock_guard<std::mutex> lock(curInputDevice_);
-    currentActiveInputDevice_ = AudioDeviceDescriptor(desc);
-}
-
-void AudioActiveDevice::SetCurrenOutputDevice(const AudioDeviceDescriptor &desc)
-{
-    currentActiveDevice_ = AudioDeviceDescriptor(desc);
-}
-
 void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
@@ -183,14 +172,22 @@ std::string AudioActiveDevice::GetCurrentOutputDeviceMacAddr()
     return currentActiveDevice_.macAddress_;
 }
 
-float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId)
+float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId, AudioInterrupt audioInterrupt)
 {
-    if (deviceId == GetCurrentOutputDevice().deviceId_) {
-        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true, GetCurrentOutputDeviceType());
+    AudioDeviceDescriptor descriptor = GetCurrentOutputDevice();
+    if (deviceId == descriptor.deviceId_) {
+        uint32_t sessionId = audioInterrupt.streamId;
+        std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(descriptor, static_cast<int32_t>(sessionId));
+        std::string deviceClass = AudioPolicyUtils::GetInstance().GetOutputDeviceClassBySinkPortName(sinkName);
+        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true, deviceClass);
     }
 
-    if (deviceId == GetCurrentInputDevice().deviceId_) {
-        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, GetCurrentInputDeviceType());
+    descriptor = GetCurrentInputDevice();
+    if (deviceId == descriptor.deviceId_) {
+        std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(GetCurrentInputDeviceType());
+        std::string deviceClass = AudioPolicyUtils::GetInstance().GetInputDeviceClassBySourcePortName(sourceName);
+        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, deviceClass,
+            audioInterrupt.audioFocusType.sourceType);
     }
 
     return 0;
@@ -216,6 +213,21 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
             audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
+    }
+#endif
+}
+
+void AudioActiveDevice::DisconnectScoWhenUserSelectInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+{
+    if (audioDeviceDescriptor == nullptr) {
+        AUDIO_ERR_LOG("nullptr audioDeviceDescriptor");
+        return;
+    }
+#ifdef BLUETOOTH_ENABLE
+    DeviceType curInputDeviceType = GetCurrentInputDeviceType();
+    if (curInputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        AUDIO_INFO_LOG("user select ready to disconnect");
+        Bluetooth::AudioHfpManager::DisconnectSco();
     }
 #endif
 }
@@ -313,9 +325,8 @@ void AudioActiveDevice::UpdateInputDeviceInfo(DeviceType deviceType)
     AUDIO_INFO_LOG("Input device updated to %{public}d", curType);
 }
 
-int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
+int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active, const int32_t uid)
 {
-    AUDIO_WARNING_LOG("Device type[%{public}d] flag[%{public}d]", deviceType, active);
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     // Activate new device if its already connected
@@ -337,19 +348,21 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active)
         "Requested device not available %{public}d ", deviceType);
     if (!active) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
+            std::make_shared<AudioDeviceDescriptor>(), uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
         HandleNegtiveBt(deviceType);
 #endif
     } else {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, *itr);
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, *itr, uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     }
     return SUCCESS;
 }
-int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool active, std::string address)
+
+int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool active, std::string address,
+    const int32_t uid)
 {
     // Activate new device if its already connected
     auto isPresent = [&deviceType, &address] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
@@ -369,13 +382,13 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
             AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(address);
         }
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(**itr));
+            std::make_shared<AudioDeviceDescriptor>(**itr), uid, "SetCallDeviceActive");
 #ifdef BLUETOOTH_ENABLE
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>());
+            std::make_shared<AudioDeviceDescriptor>(), uid, "SetCallDeviceActive");
 #ifdef BLUETOOTH_ENABLE
         HandleNegtiveBt(deviceType);
 #endif

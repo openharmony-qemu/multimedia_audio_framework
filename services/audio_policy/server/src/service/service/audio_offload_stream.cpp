@@ -27,6 +27,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
+#include "audio_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -65,13 +66,7 @@ void AudioOffloadStream::HandlePowerStateChanged(PowerMgr::PowerState state)
 
 void AudioOffloadStream::SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo)
 {
-    if (moduleInfo.name == "Speaker") {
-        for (const auto &portInfo : moduleInfo.ports) {
-            if ((portInfo.adapterName == "primary") && (portInfo.offloadEnable == "1")) {
-                isOffloadAvailable_ = true;
-            }
-        }
-    }
+    isOffloadAvailable_ = true;
 }
 
 bool AudioOffloadStream::GetOffloadAvailableFromXml() const
@@ -103,15 +98,7 @@ void AudioOffloadStream::OffloadStreamSetCheck(uint32_t sessionId)
     std::string curOutputNetworkId = audioActiveDevice_.GetCurrentOutputDeviceNetworkId();
     std::string curOutputMacAddr = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    ret = streamCollector_.GetRendererDeviceInfo(sessionId, deviceInfo);
-    if (ret != SUCCESS || curOutputNetworkId != LOCAL_NETWORK_ID ||
-        curOutputDeviceType == DEVICE_TYPE_REMOTE_CAST ||
-        deviceInfo.deviceType_ != curOutputDeviceType ||
-        deviceInfo.networkId_ != curOutputNetworkId ||
-        deviceInfo.macAddress_ != curOutputMacAddr) {
-        AUDIO_INFO_LOG("sessionId[%{public}d] not fetch device, Offload Skipped", sessionId);
-        return;
-    }
+    streamCollector_.GetRendererDeviceInfo(sessionId, deviceInfo);
 
     AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
     if (!CheckStreamOffloadMode(sessionId, streamType)) {
@@ -157,11 +144,6 @@ bool AudioOffloadStream::CheckStreamOffloadMode(int64_t activateSessionId, Audio
 
     if (!audioActiveDevice_.CheckActiveOutputDeviceSupportOffload()) {
         AUDIO_PRERELEASE_LOGI("Offload not available on current output device, skipped");
-        return false;
-    }
-
-    if (!streamCollector_.IsOffloadAllowed(activateSessionId)) {
-        AUDIO_PRERELEASE_LOGI("Offload is not allowed, Skipped");
         return false;
     }
 
@@ -214,6 +196,8 @@ AudioModuleInfo AudioOffloadStream::ConstructMchAudioModuleInfo(DeviceType devic
     typeValue << static_cast<int32_t>(deviceType);
     audioModuleInfo.deviceType = typeValue.str();
 
+    bool isDefaultAdapterEnable = AudioPolicyConfigManager::GetInstance().GetDefaultAdapterEnable();
+    audioModuleInfo.defaultAdapterEnable = isDefaultAdapterEnable ? "1" : "0";
     audioModuleInfo.adapterName = "primary";
     audioModuleInfo.className = "multichannel"; // used in renderer_sink_adapter.c
     audioModuleInfo.fileName = "mch_dump_file";
@@ -304,15 +288,7 @@ int32_t AudioOffloadStream::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
 
 void AudioOffloadStream::ResetOffloadMode(int32_t sessionId)
 {
-    AUDIO_DEBUG_LOG("Doing reset offload mode!");
-
-    if (!audioActiveDevice_.CheckActiveOutputDeviceSupportOffload()) {
-        AUDIO_DEBUG_LOG("Resetting offload not available on this output device! Release.");
-        OffloadStreamReleaseCheck(*offloadSessionID_);
-        return;
-    }
-
-    OffloadStreamSetCheck(sessionId);
+    AUDIO_INFO_LOG("No need to reset offload mode! SKIPPED");
 }
 
 void AudioOffloadStream::OffloadStreamReleaseCheck(uint32_t sessionId)
@@ -453,7 +429,8 @@ void AudioOffloadStream::RemoteOffloadStreamRelease(uint32_t sessionId)
 
 int32_t AudioOffloadStream::MoveToOutputDevice(uint32_t sessionId, std::string portName)
 {
-    std::vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
+    std::vector<SinkInput> sinkInputs;
+    audioPolicyManager_.GetAllSinkInputs(sinkInputs);
     std::vector<SinkInput> sinkInputIds = FilterSinkInputs(sessionId, sinkInputs);
 
     if (portName == BLUETOOTH_SPEAKER) {
@@ -543,5 +520,43 @@ int32_t AudioOffloadStream::ActivateConcurrencyFromServer(AudioPipeType incoming
     return SUCCESS;
 }
 
+void AudioOffloadStream::ResetOffloadStatus(uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("Reset offload state for session: %{public}u", sessionId);
+    if (offloadSessionID_.has_value() && ((*offloadSessionID_) == sessionId)) {
+        AUDIO_INFO_LOG("Current offload session: %{public}u", (*offloadSessionID_));
+        std::lock_guard<std::mutex> lock(offloadMutex_);
+        AudioServerProxy::GetInstance().UnsetOffloadModeProxy(sessionId);
+        AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
+        streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
+        offloadSessionID_.reset();
+        audioPolicyManager_.ResetOffloadSessionId();
+    }
+}
+
+void AudioOffloadStream::SetOffloadStatus(uint32_t sessionId)
+{
+    AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    AUDIO_INFO_LOG("sessionId[%{public}d]  callingUid[%{public}d] StreamType[%{public}d] "
+        "Getting offload stream", sessionId, callingUid, streamType);
+    std::lock_guard<std::mutex> lock(offloadMutex_);
+
+    if (!offloadSessionID_.has_value()) {
+        offloadSessionID_ = sessionId;
+        audioPolicyManager_.SetOffloadSessionId(sessionId);
+        AUDIO_DEBUG_LOG("sessionId[%{public}d] try get offload stream", sessionId);
+        SetOffloadMode();
+        AudioPipeType offloadPipe = PIPE_TYPE_OFFLOAD;
+        streamCollector_.UpdateRendererPipeInfo(sessionId, offloadPipe);
+    } else {
+        if (sessionId == *(offloadSessionID_)) {
+            AUDIO_DEBUG_LOG("sessionId[%{public}d] is already get offload stream", sessionId);
+        } else {
+            AUDIO_DEBUG_LOG("sessionId[%{public}d] no get offload, current offload sessionId[%{public}d]",
+                sessionId, *(offloadSessionID_));
+        }
+    }
+}
 }
 }

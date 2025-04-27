@@ -29,6 +29,11 @@
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
+#include "core_service_handler.h"
+#ifdef RESSCHE_ENABLE
+#include "res_type.h"
+#include "res_sched_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -59,6 +64,8 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
         ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
+    playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, sessionId_);
+    recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, sessionId_);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -74,17 +81,7 @@ AudioProcessInServer::~AudioProcessInServer()
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_INVALID,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicIndicator(CAPTURER_INVALID);
     }
 }
 
@@ -132,6 +129,8 @@ void AudioProcessInServer::EnableStandby()
     CHECK_AND_RETURN_LOG(processBuffer_ != nullptr && processBuffer_->GetStreamStatus() != nullptr, "failed: nullptr");
     processBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     enterStandbyTime_ = ClockTime::GetCurNano();
+
+    WriterRenderStreamStandbySysEvent(sessionId_, 1);
 }
 
 int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
@@ -160,7 +159,82 @@ int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
     return SUCCESS;
 }
 
+bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
+    uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
+    SwitchStreamInfo info = {
+        sessionId_,
+        processConfig_.callerUid,
+        processConfig_.appInfo.appUid,
+        processConfig_.appInfo.appPid,
+        tokenId,
+        capturerState,
+    };
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
+            false, "VerifyBackgroundCapture failed!");
+    }
+    SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
+
+    if (isMicIndicatorOn_) {
+        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already on."
+            "No need to call NotifyPrivacyStart!", sessionId_);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
+            false, "NotifyPrivacyStart failed!");
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+            "after NotifyPrivacyStart success!", sessionId_);
+        isMicIndicatorOn_ = true;
+    }
+    return true;
+}
+
+bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
+    SwitchStreamInfo info = {
+        sessionId_,
+        processConfig_.callerUid,
+        processConfig_.appInfo.appUid,
+        processConfig_.appInfo.appPid,
+        tokenId,
+        capturerState,
+    };
+    SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+
+    if (isMicIndicatorOn_) {
+        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+        AUDIO_INFO_LOG("Turn off micIndicator of stream:%{public}d from on after NotifyPrivacyStop!", sessionId_);
+        isMicIndicatorOn_ = false;
+    } else {
+        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already off."
+            "No need to call NotifyPrivacyStop!", sessionId_);
+    }
+    return true;
+}
+
 int32_t AudioProcessInServer::Start()
+{
+    int32_t ret = StartInner();
+    if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
+        playerDfx_->WriteDfxStartMsg(sessionId_, stage, sourceDuration_, processConfig_);
+    } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        CapturerStage stage = ret == SUCCESS ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
+        recorderDfx_->WriteDfxStartMsg(sessionId_, stage, processConfig_);
+    }
+
+    lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    if (processBuffer_ != nullptr) {
+        lastWriteFrame_ = processBuffer_->GetCurReadFrame();
+    }
+    lastWriteMuteFrame_ = 0;
+    return ret;
+}
+
+int32_t AudioProcessInServer::StartInner()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
@@ -173,24 +247,14 @@ int32_t AudioProcessInServer::Start()
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
     }
+
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_RUNNING,
-        };
-        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
-                processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
-        }
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(processConfig_.appInfo.appTokenId, sessionId_),
-            ERR_PERMISSION_DENIED, "NotifyPrivacyStart failed!");
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
@@ -212,25 +276,33 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     (void)isFlush;
+
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
+
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_PAUSING,
         ERR_ILLEGAL_STATE, "Pause failed, invalid status.");
+        
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_PAUSED,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicIndicator(CAPTURER_PAUSED);
     }
+
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
     }
+
+    if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        playerDfx_->WriteDfxActionMsg(sessionId_, RENDERER_STAGE_PAUSE_OK);
+    } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK,
+            GetLastAudioDuration(), processConfig_);
+    }
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_PAUSE);
 
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
     return SUCCESS;
@@ -248,23 +320,8 @@ int32_t AudioProcessInServer::Resume()
         needCheckBackground_ = true;
     }
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_RUNNING,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
-        if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
-                ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
-        }
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_), ERR_PERMISSION_DENIED,
-            "NotifyPrivacyStart failed!");
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -279,25 +336,34 @@ int32_t AudioProcessInServer::Stop()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
+
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STOPPING,
         ERR_ILLEGAL_STATE, "Stop failed, invalid status.");
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_STOPPED,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicIndicator(CAPTURER_STOPPED);
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
     }
+
+    lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    if (processBuffer_ != nullptr) {
+        lastWriteFrame_ = processBuffer_->GetCurReadFrame() - lastWriteFrame_;
+    }
+    if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        playerDfx_->WriteDfxStopMsg(sessionId_, RENDERER_STAGE_STOP_OK,
+            {lastWriteFrame_, lastWriteMuteFrame_, GetLastAudioDuration(), underrunCount_}, processConfig_);
+    } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_STOP_OK,
+            GetLastAudioDuration(), processConfig_);
+    }
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_STOP);
 
     AUDIO_INFO_LOG("Stop in server success!");
     return SUCCESS;
@@ -306,26 +372,21 @@ int32_t AudioProcessInServer::Stop()
 int32_t AudioProcessInServer::Release(bool isSwitchStream)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
-    UnscheduleReportData(processConfig_.appInfo.appPid, clientTid_, clientBundleName_.c_str());
-    clientThreadPriorityRequested_ = false;
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_WRITE_OR_READ] = nullptr;
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
     isInited_ = false;
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        SwitchStreamInfo info = {
-            sessionId_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            CAPTURER_RELEASED,
-        };
-        uint32_t tokenId = processConfig_.appInfo.appTokenId;
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+        TurnOffMicIndicator(CAPTURER_RELEASED);
     }
-    int32_t ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+    ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
 }
@@ -357,15 +418,24 @@ int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
     return SUCCESS;
 }
 
-void AudioProcessInServer::SetInnerCapState(bool isInnerCapped)
+void AudioProcessInServer::SetInnerCapState(bool isInnerCapped, int32_t innerCapId)
 {
-    AUDIO_INFO_LOG("process[%{public}u] innercapped: %{public}s", sessionId_, isInnerCapped ? "true" : "false");
-    isInnerCapped_ = isInnerCapped;
+    AUDIO_INFO_LOG("process[%{public}u] innercapped: %{public}s, innerCapId:%{public}d",
+        sessionId_, isInnerCapped ? "true" : "false", innerCapId);
+    innerCapStates_[innerCapId] = isInnerCapped;
 }
 
-bool AudioProcessInServer::GetInnerCapState()
+bool AudioProcessInServer::GetInnerCapState(int32_t innerCapId)
 {
-    return isInnerCapped_;
+    if (innerCapStates_.count(innerCapId) && innerCapStates_[innerCapId]) {
+        return true;
+    }
+    return false;
+}
+
+std::unordered_map<int32_t, bool> AudioProcessInServer::GetInnerCapState()
+{
+    return  innerCapStates_;
 }
 
 AppInfo AudioProcessInServer::GetAppInfo()
@@ -556,17 +626,15 @@ int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProce
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
+int32_t AudioProcessInServer::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
+    BoostTriggerMethod method)
 {
-    if (!clientThreadPriorityRequested_) {
-        clientTid_ = tid;
-        clientBundleName_ = bundleName;
-        ScheduleReportData(processConfig_.appInfo.appPid, tid, bundleName.c_str());
-        return SUCCESS;
-    } else {
-        AUDIO_ERR_LOG("client thread priority requested");
-        return ERR_OPERATION_FAILED;
-    }
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, tid, bundleName);
+    std::lock_guard lock(scheduleGuardsMutex_);
+    scheduleGuards_[method].swap(sharedGuard);
+    return SUCCESS;
 }
 
 void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby)
@@ -577,6 +645,25 @@ void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId,
     bean->Add("STREAMID", static_cast<int32_t>(sessionId));
     bean->Add("STANDBY", standby);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+    payload["sessionId"] = std::to_string(sessionId);
+    payload["isStandby"] = std::to_string(standby);
+    ReportDataToResSched(payload, ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_STANDBY);
+
+    if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+        playerDfx_->WriteDfxActionMsg(sessionId_, standby == 0 ?
+            RENDERER_STAGE_STANDBY_END : RENDERER_STAGE_STANDBY_BEGIN);
+    }
+}
+
+void AudioProcessInServer::ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type)
+{
+#ifdef RESSCHE_ENABLE
+    AUDIO_INFO_LOG("report event to ResSched ,event type : %{public}d", type);
+    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
+#endif
 }
 
 void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
@@ -589,7 +676,7 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 
 int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
 {
-    return PolicyHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
+    return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
         processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
 }
 
@@ -600,5 +687,62 @@ int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
     return SUCCESS;
 }
 
+std::time_t AudioProcessInServer::GetStartMuteTime()
+{
+    return startMuteTime_;
+}
+ 
+void AudioProcessInServer::SetStartMuteTime(std::time_t time)
+{
+    startMuteTime_ = time;
+}
+ 
+bool AudioProcessInServer::GetSilentState()
+{
+    return isInSilentState_;
+}
+ 
+void AudioProcessInServer::SetSilentState(bool state)
+{
+    isInSilentState_ = state;
+}
+int32_t AudioProcessInServer::SetSourceDuration(int64_t duration)
+{
+    sourceDuration_ = duration;
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::SetUnderrunCount(uint32_t underrunCnt)
+{
+    underrunCount_ = underrunCnt;
+    return SUCCESS;
+}
+
+void AudioProcessInServer::AddMuteWriteFrameCnt(int64_t muteFrameCnt)
+{
+    lastWriteMuteFrame_ += muteFrameCnt;
+}
+
+int64_t AudioProcessInServer::GetLastAudioDuration()
+{
+    auto ret = lastStopTime_ - lastStartTime_;
+    return ret < 0 ? -1 : ret;
+}
+
+RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
+{
+    RestoreStatus restoreStatus = processBuffer_->SetRestoreStatus(NEED_RESTORE);
+    if (restoreStatus == NEED_RESTORE) {
+        processBuffer_->SetRestoreInfo(restoreInfo);
+    }
+    return restoreStatus;
+}
+
+int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    AudioService::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

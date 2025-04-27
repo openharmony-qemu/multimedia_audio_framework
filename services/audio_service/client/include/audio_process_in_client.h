@@ -23,6 +23,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+class FastAudioStream;
+
 class AudioDataCallback {
 public:
     virtual ~AudioDataCallback() = default;
@@ -50,7 +53,8 @@ class AudioProcessInClient {
 public:
     static constexpr int32_t PROCESS_VOLUME_MAX = 1 << 16; // 0 ~ 65536
     static bool CheckIfSupport(const AudioProcessConfig &config);
-    static std::shared_ptr<AudioProcessInClient> Create(const AudioProcessConfig &config);
+    static std::shared_ptr<AudioProcessInClient> Create(const AudioProcessConfig &config,
+        std::weak_ptr<FastAudioStream> weakStream);
 
     virtual ~AudioProcessInClient() = default;
 
@@ -63,6 +67,8 @@ public:
     virtual int32_t Enqueue(const BufferDesc &bufDesc) const = 0;
 
     virtual int32_t SetVolume(int32_t vol) = 0;
+
+    virtual int32_t SetSourceDuration(int64_t duration) = 0;
 
     virtual int32_t Start() = 0;
 
@@ -91,7 +97,11 @@ public:
 
     virtual int32_t SetDuckVolume(float vol) = 0;
 
+    virtual float GetDuckVolume() = 0;
+
     virtual int32_t SetMute(bool mute) = 0;
+
+    virtual bool GetMute() = 0;
 
     virtual uint32_t GetUnderflowCount() = 0;
 
@@ -112,6 +122,19 @@ public:
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual void GetRestoreInfo(RestoreInfo &restoreInfo) = 0;
+    
+    virtual void SetRestoreInfo(RestoreInfo &restoreInfo) = 0;
+
+    virtual RestoreStatus CheckRestoreStatus() = 0;
+
+    virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
+
+    virtual void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+        uint32_t code) = 0;
+
+    virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -35,9 +35,9 @@ public:
 
     virtual AudioStreamType GetAudioStreamType() = 0;
 
-    virtual void SetInnerCapState(bool isInnerCapped) = 0;
-
-    virtual bool GetInnerCapState() = 0;
+    virtual void SetInnerCapState(bool isInnerCapped, int32_t innerCapId) = 0;
+    virtual bool GetInnerCapState(int32_t innerCapId) = 0;
+    virtual std::unordered_map<int32_t, bool> GetInnerCapState() = 0;
 
     virtual AppInfo GetAppInfo() = 0;
 
@@ -49,13 +49,20 @@ public:
 
     virtual void WriteDumpFile(void *buffer, size_t bufferSize) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 
     virtual void EnableStandby();
 
     virtual ~IAudioProcessStream() = default;
+ 
+    virtual std::time_t GetStartMuteTime() = 0;
+    virtual void SetStartMuteTime(std::time_t time) = 0;
+ 
+    virtual bool GetSilentState() = 0;
+    virtual void SetSilentState(bool state) = 0;
+    virtual void AddMuteWriteFrameCnt(int64_t muteFrameCnt) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

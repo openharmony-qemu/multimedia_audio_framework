@@ -24,7 +24,7 @@ namespace AudioStandard {
 class AudioCapturerProxyObj : public AudioClientTracker {
 public:
     virtual ~AudioCapturerProxyObj() = default;
-    void SaveCapturerObj(const AudioCapturer *capturerObj);
+    void SaveCapturerObj(std::weak_ptr<const AudioCapturer> capturerObj);
 
     void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
     void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
@@ -38,7 +38,7 @@ public:
     void GetSingleStreamVolumeImpl(float &volume);
 
 private:
-    const AudioCapturer *capturer;
+    std::weak_ptr<const AudioCapturer> capturer;
 };
 } // namespace AudioStandard
 } // namespace OHOS

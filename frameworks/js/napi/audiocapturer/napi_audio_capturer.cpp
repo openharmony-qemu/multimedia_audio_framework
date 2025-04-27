@@ -30,6 +30,8 @@
 #include "napi_capturer_position_callback.h"
 #include "napi_capturer_period_position_callback.h"
 #include "napi_audio_capturer_read_data_callback.h"
+#include "napi_audio_capturer_device_change_callback.h"
+#include "napi_audio_capturer_info_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,7 +83,10 @@ napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &const
         DECLARE_NAPI_FUNCTION("getCurrentAudioCapturerChangeInfo", GetCurrentAudioCapturerChangeInfo),
         DECLARE_NAPI_FUNCTION("getCurrentMicrophones", GetCurrentMicrophones),
         DECLARE_NAPI_FUNCTION("getOverflowCount", GetOverflowCount),
+        DECLARE_NAPI_FUNCTION("setInputDeviceToAccessory", SetInputDeviceToAccessory),
         DECLARE_NAPI_FUNCTION("getOverflowCountSync", GetOverflowCountSync),
+        DECLARE_NAPI_FUNCTION("getAudioTimestampInfo", GetAudioTimestampInfo),
+        DECLARE_NAPI_FUNCTION("getAudioTimestampInfoSync", GetAudioTimestampInfoSync),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_GETTER("state", GetState),
@@ -130,6 +135,7 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
     if (capturerOptions.capturerInfo.capturerFlags != 0) {
         capturerOptions.capturerInfo.capturerFlags = 0;
     }
+    capturerOptions.capturerInfo.recorderType = RECORDER_TYPE_ARKTS_AUDIO_RECORDER;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     napiCapturer->audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
 #else
@@ -151,6 +157,81 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, napiCapturer, "Construct SetCapturerCallback failed");
     }
     return napiCapturer;
+}
+
+napi_value NapiAudioCapturer::GetCallback(size_t argc, napi_value *argv)
+{
+    napi_value callback = nullptr;
+
+    if (argc == ARGS_TWO) {
+        callback = argv[PARAM1];
+    }
+    return callback;
+}
+
+template <typename T>
+static void GetCapturerNapiCallback(napi_value callback, const std::string &cbName,
+    std::list<std::shared_ptr<NapiAudioCapturerCallbackInner>> audioCapturerCallbacks, std::shared_ptr<T> *cb)
+{
+    if (audioCapturerCallbacks.size() == 0) {
+        AUDIO_ERR_LOG("no callback to get");
+        return;
+    }
+    for (auto &iter:audioCapturerCallbacks) {
+        if (!iter->CheckIfTargetCallbackName(cbName)) {
+            continue;
+        }
+        std::shared_ptr<T> temp = std::static_pointer_cast<T>(iter);
+        if (temp->ContainSameJsCallbackInner(cbName, callback)) {
+            *cb = temp;
+            return;
+        }
+    }
+}
+
+template <typename T>
+static void UnregisterAudioCapturerSingletonCallbackTemplate(napi_env env, napi_value callback,
+    const std::string &cbName, std::shared_ptr<T> cb,
+    std::function<int32_t(std::shared_ptr<T> callbackPtr, napi_value callback)> removeFunction = nullptr)
+{
+    if (callback != nullptr) {
+        CHECK_AND_RETURN_LOG(cb->ContainSameJsCallbackInner(cbName, callback), "napi_get_cb_info failed");
+    }
+
+    cb->RemoveCallbackReference(cbName, env, callback);
+
+    if (removeFunction == nullptr) {
+        return;
+    }
+    int32_t ret = removeFunction(cb, callback);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unset of Capturer callback failed");
+    return;
+}
+
+template<typename T>
+static void UnregisterAudioCapturerCallbackTemplate(napi_env env, napi_value callback,
+    NapiAudioCapturer *napiCapturer, const std::string &cbName,
+    std::function<int32_t(std::shared_ptr<T> callbackPtr, napi_value callback)> removeFunction)
+{
+    if (callback != nullptr) {
+        std::shared_ptr<T> cb = nullptr;
+        GetCapturerNapiCallback(callback, cbName, napiCapturer->audioCapturerCallbacks_, &cb);
+        CHECK_AND_RETURN_LOG(cb != nullptr, "CapturerNapiCallback is null");
+        UnregisterAudioCapturerSingletonCallbackTemplate(env, callback, cbName, cb, removeFunction);
+        return;
+    }
+    
+    auto isPresent = [&env, &callback, &cbName, &removeFunction]
+        (std::shared_ptr<NapiAudioCapturerCallbackInner> &iter) {
+            if (!iter->CheckIfTargetCallbackName(cbName)) {
+                return false;
+            }
+            std::shared_ptr<T> cb = std::static_pointer_cast<T>(iter);
+            UnregisterAudioCapturerSingletonCallbackTemplate(env, callback, cbName, cb, removeFunction);
+            return true;
+        };
+    napiCapturer->audioCapturerCallbacks_.remove_if(isPresent);
+    AUDIO_DEBUG_LOG("UnregisterAudioCapturerCallback success");
 }
 
 napi_value NapiAudioCapturer::Construct(napi_env env, napi_callback_info info)
@@ -461,6 +542,38 @@ napi_status NapiAudioCapturer::ReadFromNative(shared_ptr<AudioCapturerAsyncConte
     context->buffer = buffer;
     status = napi_ok;
     return status;
+}
+
+napi_value NapiAudioCapturer::SetInputDeviceToAccessory(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, "SetInputDeviceToAccessory failed : no memory",
+            NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            "context object state is error.");
+        context->intValue = napiAudioCapturer->audioCapturer_->SetInputDevice(DEVICE_TYPE_ACCESSORY);
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetInputDeviceToAccessory", executor, complete);
 }
 
 napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
@@ -835,6 +948,56 @@ napi_value NapiAudioCapturer::GetOverflowCountSync(napi_env env, napi_callback_i
     return result;
 }
 
+napi_value NapiAudioCapturer::GetAudioTimestampInfo(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            "context object state is error.");
+        int32_t ret = napiAudioCapturer->audioCapturer_->GetAudioTimestampInfo(context->timeStamp,
+            Timestamp::Timestampbase::MONOTONIC);
+        if (ret != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetTimeStampInfo(env, context->timeStamp, output);
+    };
+
+    return NapiAsyncWork::Enqueue(env, context, "GetAudioTimestampInfo", executor, complete);
+}
+
+napi_value NapiAudioCapturer::GetAudioTimestampInfoSync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+
+    auto *napiAudioCapturer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invaild param");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr, result, "audioCapturer_ is nullptr");
+
+    Timestamp timeStamp;
+    int32_t ret = napiAudioCapturer->audioCapturer_->GetAudioTimestampInfo(timeStamp,
+        Timestamp::Timestampbase::MONOTONIC);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetAudioTimestampInfo failure!");
+    NapiParamUtils::SetTimeStampInfo(env, timeStamp, result);
+    return result;
+}
+
 napi_value NapiAudioCapturer::On(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_TWO;
@@ -904,9 +1067,9 @@ napi_value NapiAudioCapturer::RegisterCallback(napi_env env, napi_value jsThis,
     } else if (!cbName.compare(PERIOD_REACH_CALLBACK_NAME)) {
         result = RegisterPeriodPositionCallback(env, argv, cbName, napiCapturer);
     } else if (!cbName.compare(INPUTDEVICE_CHANGE_CALLBACK_NAME)) {
-        RegisterAudioCapturerDeviceChangeCallback(env, argv, napiCapturer);
+        RegisterAudioCapturerDeviceChangeCallback(env, argv, cbName, napiCapturer);
     } else if (!cbName.compare(AUDIO_CAPTURER_CHANGE_CALLBACK_NAME)) {
-        RegisterAudioCapturerInfoChangeCallback(env, argv, napiCapturer);
+        RegisterAudioCapturerInfoChangeCallback(env, argv, cbName, napiCapturer);
     } else if (!cbName.compare(READ_DATA_CALLBACK_NAME)) {
         RegisterCapturerReadDataCallback(env, argv, cbName, napiCapturer);
     } else {
@@ -956,6 +1119,7 @@ napi_value NapiAudioCapturer::RegisterPositionCallback(napi_env env, napi_value 
     int64_t markPosition = 0;
     NapiParamUtils::GetValueInt64(env, markPosition, argv[PARAM1]);
 
+    AUDIO_INFO_LOG("NapiAudioCapturer:RegisterPositionCallback start!");
     if (markPosition > 0) {
         napiCapturer->positionCbNapi_ = std::make_shared<NapiCapturerPositionCallback>(env);
         CHECK_AND_RETURN_RET_LOG(napiCapturer->positionCbNapi_ != nullptr,
@@ -989,100 +1153,68 @@ napi_value NapiAudioCapturer::RegisterPeriodPositionCallback(napi_env env, napi_
     int64_t frameCount = 0;
     napi_get_value_int64(env, argv[PARAM1], &frameCount);
 
-    if (frameCount > 0) {
-        if (napiCapturer->periodPositionCbNapi_ == nullptr) {
-            napiCapturer->periodPositionCbNapi_ = std::make_shared<NapiCapturerPeriodPositionCallback>(env);
-            CHECK_AND_RETURN_RET_LOG(napiCapturer->periodPositionCbNapi_ != nullptr,
-                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
-                "periodPositionCbNapi_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(frameCount > 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of frame is not supported"), "frameCount value not supported");
+    
+    CHECK_AND_RETURN_RET_LOG(napiCapturer->periodPositionCbNapi_ == nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+        "periodReach already subscribed.");
+    
+    std::shared_ptr<NapiCapturerPeriodPositionCallback> cb = std::make_shared<NapiCapturerPeriodPositionCallback>(env);
+    CHECK_AND_RETURN_RET_LOG(cb != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "periodPositionCbNapi_ id nullptr");
+    napiCapturer->periodPositionCbNapi_ = cb;
 
-            int32_t ret = napiCapturer->audioCapturer_->SetCapturerPeriodPositionCallback(frameCount,
-                napiCapturer->periodPositionCbNapi_);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-                "SetCapturerPeriodPositionCallback failed");
-
-            std::shared_ptr<NapiCapturerPeriodPositionCallback> cb =
-                std::static_pointer_cast<NapiCapturerPeriodPositionCallback>(napiCapturer->periodPositionCbNapi_);
-            cb->SaveCallbackReference(cbName, argv[PARAM2]);
-            cb->CreatePeriodPositionTsfn(env);
-        } else {
-            CHECK_AND_RETURN_RET_LOG(false,
-                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
-                "periodReach already subscribed.");
-        }
-    } else {
-        CHECK_AND_RETURN_RET_LOG(false, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of frame is not supported"), "frameCount value not supported!");
-    }
+    int32_t ret = napiCapturer->audioCapturer_->SetCapturerPeriodPositionCallback(frameCount, cb);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+        "SetCapturerPeriodPositionCallback failed");
+    
+    cb->SaveCallbackReference(cbName, argv[PARAM2]);
+    cb->CreatePeriodPositionTsfn(env);
 
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
     return result;
 }
 
-std::shared_ptr<NapiAudioCapturerDeviceChangeCallback> NapiAudioCapturer::GetDeviceChangeNapiCallback(napi_value argv,
-    NapiAudioCapturer *napiCapturer)
+void NapiAudioCapturer::RegisterAudioCapturerDeviceChangeCallback(napi_env env, napi_value *argv,
+    const std::string &cbName, NapiAudioCapturer *napiCapturer)
 {
     std::shared_ptr<NapiAudioCapturerDeviceChangeCallback> cb = nullptr;
-    for (auto &iter : napiCapturer->deviceChangeCallbacks_) {
-        if (iter->ContainSameJsCallback(argv)) {
-            cb = iter;
-        }
-    }
-    return cb;
-}
+    GetCapturerNapiCallback(argv[PARAM1], cbName, napiCapturer->audioCapturerCallbacks_, &cb);
+    CHECK_AND_RETURN_LOG(cb == nullptr, "Do not register same capturer device callback!");
 
-void NapiAudioCapturer::RegisterAudioCapturerDeviceChangeCallback(napi_env env, napi_value *argv,
-    NapiAudioCapturer *napiCapturer)
-{
-    CHECK_AND_RETURN_LOG(GetDeviceChangeNapiCallback(argv[PARAM1], napiCapturer) == nullptr,
-        "Do not register same capturer device callback!");
-
-    std::shared_ptr<NapiAudioCapturerDeviceChangeCallback> cb =
-        std::make_shared<NapiAudioCapturerDeviceChangeCallback>(env);
+    cb = std::make_shared<NapiAudioCapturerDeviceChangeCallback>(env);
     CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
 
-    cb->SaveCallbackReference(argv[PARAM1]);
+    cb->SaveCallbackReference(cbName, argv[PARAM1]);
     cb->CreateCaptureDeviceChangeTsfn(env);
     int32_t ret =
         napiCapturer->audioCapturer_->SetAudioCapturerDeviceChangeCallback(cb);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Registering of capturer device change callback failed");
 
-    napiCapturer->deviceChangeCallbacks_.push_back(cb);
+    napiCapturer->audioCapturerCallbacks_.push_back(cb);
 
     AUDIO_DEBUG_LOG("RegisterAudioCapturerDeviceChangeCallback is successful");
 }
 
-std::shared_ptr<NapiAudioCapturerInfoChangeCallback> NapiAudioCapturer::GetCapturerInfoChangeNapiCallback(
-    napi_value argv, NapiAudioCapturer *napiCapturer)
+void NapiAudioCapturer::RegisterAudioCapturerInfoChangeCallback(napi_env env, napi_value *argv,
+    const std::string &cbName, NapiAudioCapturer *napiCapturer)
 {
     std::shared_ptr<NapiAudioCapturerInfoChangeCallback> cb = nullptr;
-    for (auto &iter : napiCapturer->capturerInfoChangeCallbacks_) {
-        if (iter->ContainSameJsCallback(argv)) {
-            cb = iter;
-        }
-    }
-    return cb;
-}
+    GetCapturerNapiCallback(argv[PARAM1], cbName, napiCapturer->audioCapturerCallbacks_, &cb);
+    CHECK_AND_RETURN_LOG(cb == nullptr, "Do not register same capturer info change callback!");
+    cb = std::make_shared<NapiAudioCapturerInfoChangeCallback>(env);
 
-void NapiAudioCapturer::RegisterAudioCapturerInfoChangeCallback(napi_env env, napi_value *argv,
-    NapiAudioCapturer *napiCapturer)
-{
-    CHECK_AND_RETURN_LOG(GetCapturerInfoChangeNapiCallback(argv[PARAM1], napiCapturer) == nullptr,
-        "Do not register same capturer info change callback!");
-
-    std::shared_ptr<NapiAudioCapturerInfoChangeCallback> cb =
-        std::make_shared<NapiAudioCapturerInfoChangeCallback>(env);
     CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
 
-    cb->SaveCallbackReference(argv[PARAM1]);
+    cb->SaveCallbackReference(cbName, argv[PARAM1]);
     cb->CreateCaptureInfoChangeTsfn(env);
     int32_t ret =
         napiCapturer->audioCapturer_->SetAudioCapturerInfoChangeCallback(cb);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Registering of capturer info change callback failed");
 
-    napiCapturer->capturerInfoChangeCallbacks_.push_back(cb);
+    napiCapturer->audioCapturerCallbacks_.push_back(cb);
 
     AUDIO_DEBUG_LOG("RegisterAudioCapturerInfoChangeCallback is successful");
 }
@@ -1143,17 +1275,16 @@ napi_value NapiAudioCapturer::UnregisterCallback(napi_env env, napi_value jsThis
         NAPI_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
 
     if (!cbName.compare(MARK_REACH_CALLBACK_NAME)) {
-        napiCapturer->audioCapturer_->UnsetCapturerPositionCallback();
-        napiCapturer->positionCbNapi_ = nullptr;
+        UnregisterCapturerPositionCallback(env, argc, cbName, argv, napiCapturer);
     } else if (!cbName.compare(PERIOD_REACH_CALLBACK_NAME)) {
-        napiCapturer->audioCapturer_->UnsetCapturerPeriodPositionCallback();
-        napiCapturer->periodPositionCbNapi_ = nullptr;
-    } else if (!cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME)) {
-        UnregisterCapturerCallback(env, cbName, napiCapturer);
+        UnregisterCapturerPeriodPositionCallback(env, argc, cbName, argv, napiCapturer);
+    } else if (!cbName.compare(STATE_CHANGE_CALLBACK_NAME) ||
+        !cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME)) {
+        UnregisterCapturerCallback(env, argc, cbName, argv, napiCapturer);
     } else if (!cbName.compare(INPUTDEVICE_CHANGE_CALLBACK_NAME)) {
-        UnregisterAudioCapturerDeviceChangeCallback(env, argc, argv, napiCapturer);
+        UnregisterAudioCapturerDeviceChangeCallback(env, argc, cbName, argv, napiCapturer);
     } else if (!cbName.compare(AUDIO_CAPTURER_CHANGE_CALLBACK_NAME)) {
-        UnregisterAudioCapturerInfoChangeCallback(env, argc, argv, napiCapturer);
+        UnregisterAudioCapturerInfoChangeCallback(env, argc, cbName, argv, napiCapturer);
     } else if (!cbName.compare(READ_DATA_CALLBACK_NAME)) {
         UnregisterCapturerReadDataCallback(env, argc, argv, napiCapturer);
     } else {
@@ -1169,73 +1300,79 @@ napi_value NapiAudioCapturer::UnregisterCallback(napi_env env, napi_value jsThis
     return result;
 }
 
-void NapiAudioCapturer::UnregisterCapturerCallback(napi_env env, const std::string &cbName,
-    NapiAudioCapturer *napiCapturer)
+void NapiAudioCapturer::UnregisterCapturerPeriodPositionCallback(napi_env env, size_t argc,
+    const std::string &cbName, napi_value *argv, NapiAudioCapturer *napiCapturer)
+{
+    CHECK_AND_RETURN_LOG(napiCapturer->periodPositionCbNapi_ != nullptr, "capturerCallbackNapi is nullptr");
+
+    std::shared_ptr<NapiCapturerPeriodPositionCallback> cb =
+        std::static_pointer_cast<NapiCapturerPeriodPositionCallback>(napiCapturer->periodPositionCbNapi_);
+    std::function<int32_t(std::shared_ptr<NapiCapturerPeriodPositionCallback> callbackPtr,
+        napi_value callback)> removeFunction =
+        [&napiCapturer] (std::shared_ptr<NapiCapturerPeriodPositionCallback> callbackPtr, napi_value callback) {
+            napiCapturer->audioCapturer_->UnsetCapturerPeriodPositionCallback();
+            napiCapturer->periodPositionCbNapi_ = nullptr;
+            return SUCCESS;
+        };
+    auto callback = GetCallback(argc, argv);
+    UnregisterAudioCapturerSingletonCallbackTemplate(env, callback, cbName, cb, removeFunction);
+    AUDIO_INFO_LOG("UnregisterCapturerPeriodPositionCallback is successful");
+}
+
+void NapiAudioCapturer::UnregisterCapturerPositionCallback(napi_env env, size_t argc,
+    const std::string &cbName, napi_value *argv, NapiAudioCapturer *napiCapturer)
+{
+    CHECK_AND_RETURN_LOG(napiCapturer->positionCbNapi_ != nullptr, "capturerCallbackNapi is nullptr");
+
+    std::shared_ptr<NapiCapturerPositionCallback> cb =
+        std::static_pointer_cast<NapiCapturerPositionCallback>(napiCapturer->positionCbNapi_);
+    std::function<int32_t(std::shared_ptr<NapiCapturerPositionCallback> callbackPtr,
+        napi_value callback)> removeFunction =
+        [&napiCapturer] (std::shared_ptr<NapiCapturerPositionCallback> callbackPtr, napi_value callback) {
+            napiCapturer->audioCapturer_->UnsetCapturerPositionCallback();
+            napiCapturer->positionCbNapi_ = nullptr;
+            return SUCCESS;
+        };
+    auto callback = GetCallback(argc, argv);
+    UnregisterAudioCapturerSingletonCallbackTemplate(env, callback, cbName, cb, removeFunction);
+    AUDIO_INFO_LOG("UnregisterCapturerPositionCallback is successful");
+}
+
+void NapiAudioCapturer::UnregisterCapturerCallback(napi_env env, size_t argc,
+    const std::string &cbName, napi_value *argv, NapiAudioCapturer *napiCapturer)
 {
     CHECK_AND_RETURN_LOG(napiCapturer->callbackNapi_ != nullptr, "capturerCallbackNapi is nullptr");
-
     std::shared_ptr<NapiAudioCapturerCallback> cb =
         std::static_pointer_cast<NapiAudioCapturerCallback>(napiCapturer->callbackNapi_);
-    cb->RemoveCallbackReference(cbName);
+    auto callback = GetCallback(argc, argv);
+    UnregisterAudioCapturerSingletonCallbackTemplate(env, callback, cbName, cb);
+    AUDIO_INFO_LOG("Unregister CapturerCallback is successful");
 }
 
 void NapiAudioCapturer::UnregisterAudioCapturerDeviceChangeCallback(napi_env env, size_t argc,
-    napi_value *argv, NapiAudioCapturer *napiCapturer)
+    const std::string &cbName, napi_value *argv, NapiAudioCapturer *napiCapturer)
 {
-    napi_value callback = nullptr;
-
-    if (argc == ARGS_TWO) {
-        callback = argv[PARAM1];
-    }
-
-    if (callback != nullptr) {
-        std::shared_ptr<NapiAudioCapturerDeviceChangeCallback> cb =
-            GetDeviceChangeNapiCallback(callback, napiCapturer);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "CapturerCallbackNapi is nullptr");
-        int32_t ret = napiCapturer->audioCapturer_->RemoveAudioCapturerDeviceChangeCallback(cb);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unset of capturer device change callback failed");
-
-        napiCapturer->deviceChangeCallbacks_.remove(cb);
-        return;
-    }
-
-    for (auto &iter : napiCapturer->deviceChangeCallbacks_) {
-        int32_t ret = napiCapturer->audioCapturer_->RemoveAudioCapturerDeviceChangeCallback(iter);
-        if (ret) {
-            AUDIO_ERR_LOG("Unset one of capturer device change callback failed!");
-        }
-    }
-    napiCapturer->deviceChangeCallbacks_.clear();
-    AUDIO_DEBUG_LOG("UnegisterCapturerDeviceChangeCallback is successful");
+    std::function<int32_t(std::shared_ptr<NapiAudioCapturerDeviceChangeCallback> callbackptr,
+        napi_value callback)> removeFunction =
+        [&napiCapturer] (std::shared_ptr<NapiAudioCapturerDeviceChangeCallback> callbackPtr, napi_value callback) {
+            return napiCapturer->audioCapturer_->RemoveAudioCapturerDeviceChangeCallback(callbackPtr);
+        };
+    auto callback = GetCallback(argc, argv);
+    UnregisterAudioCapturerCallbackTemplate(env, callback, napiCapturer, cbName, removeFunction);
+    
+    AUDIO_INFO_LOG("UnregisterCapturerDeviceChangeCallback is successful");
 }
 
 void NapiAudioCapturer::UnregisterAudioCapturerInfoChangeCallback(napi_env env, size_t argc,
-    napi_value *argv, NapiAudioCapturer *napiCapturer)
+    const std::string &cbName, napi_value *argv, NapiAudioCapturer *napiCapturer)
 {
-    napi_value callback = nullptr;
-
-    if (argc == ARGS_TWO) {
-        callback = argv[PARAM1];
-    }
-
-    if (callback != nullptr) {
-        std::shared_ptr<NapiAudioCapturerInfoChangeCallback> cb =
-            GetCapturerInfoChangeNapiCallback(callback, napiCapturer);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "CapturerCallbackNapi is nullptr");
-        int32_t ret = napiCapturer->audioCapturer_->RemoveAudioCapturerInfoChangeCallback(cb);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unset of Capturer info change call failed");
-
-        napiCapturer->capturerInfoChangeCallbacks_.remove(cb);
-        return;
-    }
-
-    for (auto &iter : napiCapturer->capturerInfoChangeCallbacks_) {
-        int32_t ret = napiCapturer->audioCapturer_->RemoveAudioCapturerInfoChangeCallback(iter);
-        if (ret) {
-            AUDIO_ERR_LOG("Unset one of capturer device change callback failed!");
-        }
-    }
-    napiCapturer->capturerInfoChangeCallbacks_.clear();
+    std::function<int32_t(std::shared_ptr<NapiAudioCapturerInfoChangeCallback> callbackPtr,
+        napi_value callback)> removeFunction =
+        [&napiCapturer] (std::shared_ptr<NapiAudioCapturerInfoChangeCallback> callbackPtr, napi_value callback) {
+            return napiCapturer->audioCapturer_->RemoveAudioCapturerInfoChangeCallback(callbackPtr);
+        };
+    auto callback = GetCallback(argc, argv);
+    UnregisterAudioCapturerCallbackTemplate(env, callback, napiCapturer, cbName, removeFunction);
     AUDIO_DEBUG_LOG("UnregisterAudioCapturerInfoChangeCallback is successful");
 }
 

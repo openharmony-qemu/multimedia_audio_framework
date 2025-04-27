@@ -47,6 +47,8 @@ NapiRendererWriteDataCallback::~NapiRendererWriteDataCallback()
     }
 #endif
     if (napiRenderer_ != nullptr) {
+        std::lock_guard lock(napiRenderer_->writeCallbackMutex_);
+        napiRenderer_->enqueued_ = true;
         napiRenderer_->writeCallbackCv_.notify_all();
     }
     if (regArWriteDataTsfn_) {
@@ -65,7 +67,6 @@ void NapiRendererWriteDataCallback::AddCallbackReference(const std::string &call
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
     if (callbackName == WRITE_DATA_CALLBACK_NAME) {
         rendererWriteDataCallback_ = cb;
-        callback_ = callback;
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
@@ -93,14 +94,14 @@ void NapiRendererWriteDataCallback::RemoveCallbackReference(napi_env env, napi_v
     napi_value copyValue = nullptr;
 
     if (callback == nullptr) {
-        napi_status ret = napi_delete_reference(env, callback_);
+        napi_status ret = napi_delete_reference(env, rendererWriteDataCallback_->cb_);
         CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
         rendererWriteDataCallback_->cb_ = nullptr;
         AUDIO_INFO_LOG("Remove Js Callback");
         return;
     }
 
-    napi_get_reference_value(env, callback_, &copyValue);
+    napi_get_reference_value(env, rendererWriteDataCallback_->cb_, &copyValue);
     CHECK_AND_RETURN_LOG(copyValue != nullptr, "copyValue is nullptr");
     CHECK_AND_RETURN_LOG(napi_strict_equals(env, callback, copyValue, &isEquals) == napi_ok,
         "get napi_strict_equals failed");
@@ -155,6 +156,7 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
     NapiAudioRenderer *napiRenderer = ObjectRefMap<NapiAudioRenderer>::IncreaseRef(obj);
     if (napiRenderer == nullptr) {
         AUDIO_ERR_LOG("napiRenderer is null");
+        delete event;
         return;
     }
     
@@ -165,11 +167,14 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
         return;
     }
     std::unique_lock<std::mutex> writeCallbackLock(napiRenderer_->writeCallbackMutex_);
-    std::cv_status cvStatus = napiRenderer_->writeCallbackCv_.wait_for(writeCallbackLock,
-        std::chrono::milliseconds(WRITE_CALLBACK_TIMEOUT_IN_MS));
-    if (cvStatus == std::cv_status::timeout) {
+    bool ret = napiRenderer_->writeCallbackCv_.wait_for(writeCallbackLock,
+        std::chrono::milliseconds(WRITE_CALLBACK_TIMEOUT_IN_MS), [this] () {
+            return napiRenderer_->enqueued_;
+        });
+    if (!ret) {
         AUDIO_ERR_LOG("Client OnWriteData operation timed out");
     }
+    napiRenderer_->enqueued_ = false;
     writeCallbackLock.unlock();
 }
 
@@ -200,7 +205,10 @@ void NapiRendererWriteDataCallback::SafeJsCallbackWriteDataWork(
     });
     WorkCallbackRendererWriteDataInner(event);
     CHECK_AND_RETURN_LOG(event->rendererNapiObj != nullptr, "NapiAudioRenderer object is nullptr");
+    std::unique_lock<std::mutex> writeCallbackLock(event->rendererNapiObj->writeCallbackMutex_);
+    event->rendererNapiObj->enqueued_ = true;
     event->rendererNapiObj->writeCallbackCv_.notify_all();
+    writeCallbackLock.unlock();
     auto napiObj = static_cast<NapiAudioRenderer *>(event->rendererNapiObj);
     ObjectRefMap<NapiAudioRenderer>::DecreaseRef(napiObj);
 }

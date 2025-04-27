@@ -26,14 +26,22 @@ public:
         MessageParcel &reply, MessageOption &option) override;
     virtual bool IsArmUsbDevice(const AudioDeviceDescriptor &desc) = 0;
     virtual void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc) = 0;
-
+protected:
+    virtual int32_t GetApiTargetVersion() = 0;
 private:
     void GetMaxVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSystemVolumeLevelWithDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAppVolumeMutedInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply);
     void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAppVolumeIsMuteInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteLegacyInternal(MessageParcel &data, MessageParcel &reply);
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
@@ -41,6 +49,7 @@ private:
     void SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void GetDmDeviceTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
@@ -57,6 +66,8 @@ private:
     void UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
     void DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
+    void ActivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply);
+    void DeactivatePreemptModeInternal(MessageParcel &data, MessageParcel &reply);
     void SetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioManagerInterruptCbInternal(MessageParcel &data, MessageParcel &reply);
     void RequestAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
@@ -70,10 +81,12 @@ private:
     void SelectInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void ExcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void UnexcludeOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
-    void GetExcludedOutputDevicesInternal(MessageParcel &data, MessageParcel &reply);
+    void GetExcludedDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void CreateRendererClientInternal(MessageParcel &data, MessageParcel &reply);
+    void CreateCapturerClientInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
@@ -104,8 +117,6 @@ private:
     void AdjustSystemVolumeByStepInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemVolumeInDbInternal(MessageParcel &data, MessageParcel &reply);
     void QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply);
-    void SetPlaybackCapturerFilterInfosInternal(MessageParcel &data, MessageParcel &reply);
-    void SetCaptureSilentStateInternal(MessageParcel &data, MessageParcel &reply);
     void GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioCapturerMicrophoneDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetAvailableMicrophonesInternal(MessageParcel &data, MessageParcel &reply);
@@ -120,6 +131,7 @@ private:
     void UnsetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationEnabledForCurrentDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
@@ -142,6 +154,25 @@ private:
     void AddAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
     void RemoveAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
     void ReleaseAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply);
+
+    void HandleRegisterAudioZoneClient(MessageParcel &data, MessageParcel &reply);
+    void HandleCreateAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleReleaseAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleGetAllAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleGetAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleBindAudioZoneDevice(MessageParcel &data, MessageParcel &reply);
+    void HandleUnBindAudioZoneDevice(MessageParcel &data, MessageParcel &reply);
+    void HandleEnableAudioZoneReport (MessageParcel &data, MessageParcel &reply);
+    void HandleEnableAudioZoneChangeReport(MessageParcel &data, MessageParcel &reply);
+    void HandleAddUidToAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleRemoveUidFromAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply);
+    void HandleGetAudioInterruptForZone(MessageParcel &data, MessageParcel &reply);
+    void HandleGetAudioInterruptForZoneDevice(MessageParcel &data, MessageParcel &reply);
+    void HandleEnableAudioZoneInterruptReport(MessageParcel &data, MessageParcel &reply);
+    void HandleInjectInterruptToAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleInjectInterruptToAudioZoneDevice(MessageParcel &data, MessageParcel &reply);
+
     void SetCallDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void GetConverterConfigInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveBluetoothDeviceInternal(MessageParcel &data, MessageParcel &reply);
@@ -181,13 +212,21 @@ private:
     void InjectInterruptionInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
     void DeactivateAudioSessionInternal(MessageParcel &data, MessageParcel &reply);
+    void SetInputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsAudioSessionActivatedInternal(MessageParcel &data, MessageParcel &reply);
     void LoadSplitModuleInternal(MessageParcel &data, MessageParcel &reply);
     void IsAllowedPlaybackInternal(MessageParcel &data, MessageParcel &reply);
     void SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioClientInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetVirtualCallInternal(MessageParcel &data, MessageParcel &reply);
+    void SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply);
+    void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void GetDirectPlaybackSupportInternal(MessageParcel &data, MessageParcel &reply);
+    void SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEigRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
@@ -200,6 +239,8 @@ private:
     void OnMiddleFirRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddlesRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMidRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnAudioZoneRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnAudioZoneRemoteRequestExt(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

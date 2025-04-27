@@ -35,6 +35,9 @@ ohos_shared_library("audio_common") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
 
   install_enable = true
@@ -42,6 +45,9 @@ ohos_shared_library("audio_common") {
   include_dirs = [
     "common/include",
     "common/include/limiter",
+    "common/include/dfx",
+    "../audio_policy/server/include",
+    "../audio_policy/services/pipe/include",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -57,6 +63,11 @@ ohos_shared_library("audio_common") {
     "common/src/audio_thread_task.cpp",
     "common/src/audio_volume.cpp",
     "common/src/callback_handler.cpp",
+    "common/src/dfx/audio_capturer_dfx_collector.cpp",
+    "common/src/dfx/audio_renderer_dfx_collector.cpp",
+    "common/src/dfx/dfx_msg_manager.cpp",
+    "common/src/dfx/player_dfx_writer.cpp",
+    "common/src/dfx/recorder_dfx_writer.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
     "common/src/limiter/audio_limiter.cpp",
@@ -122,9 +133,13 @@ config("audio_client_public_config") {
     "../audio_policy/client/include",
     "../audio_policy/common/include",
     "../audio_policy/util/include",
+    "../audio_policy/server/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audiostream/include",
     "../../frameworks/native/audioutils/include",
+    "../../frameworks/native/hdiadapter_new/include",
+    "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocapturer/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
@@ -279,6 +294,7 @@ ohos_prebuilt_etc("audio_server_init") {
 config("audio_service_config") {
   visibility = [ ":*" ]
   visibility += [
+    "../../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
     "../../services/audio_service/test/unittest/audio_server_unit_test",
     "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
@@ -288,10 +304,17 @@ config("audio_service_config") {
   include_dirs = [
     "common/include",
     "common/include/limiter",
+    "common/include/dfx",
     "client/include",
     "server/include",
     "server/include/config",
+    "../audio_engine/manager/include",
+    "../audio_policy/server/include/service/common",
+    "../audio_policy/common/definitions/include",
+    "../audio_policy/server/include/service/common",
     "../audio_policy/server/include/service/effect",
+    "../audio_policy/services/pipe/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audioeffect/include",
     "../../frameworks/native/offlineaudioeffect/include",
     "../../frameworks/native/audioinnercall/include",
@@ -300,21 +323,8 @@ config("audio_service_config") {
     "../../frameworks/native/audioschedule/include",
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/playbackcapturer/include",
-    "../../frameworks/native/hdiadapter/common/include",
-    "../../frameworks/native/hdiadapter/sink/bluetooth",
-    "../../frameworks/native/hdiadapter/sink/common",
-    "../../frameworks/native/hdiadapter/sink/file",
-    "../../frameworks/native/hdiadapter/sink/fast",
-    "../../frameworks/native/hdiadapter/sink/remote",
-    "../../frameworks/native/hdiadapter/sink/remote_fast",
-    "../../frameworks/native/hdiadapter/sink/primary",
-    "../../frameworks/native/hdiadapter/sink/offload",
-    "../../frameworks/native/hdiadapter/source/bluetooth",
-    "../../frameworks/native/hdiadapter/source/common",
-    "../../frameworks/native/hdiadapter/source/fast",
-    "../../frameworks/native/hdiadapter/source/primary",
-    "../../frameworks/native/hdiadapter/source/remote",
-    "../../frameworks/native/hdiadapter/source/remote_fast",
+    "../../frameworks/native/hdiadapter_new/include",
+    "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
@@ -352,6 +362,12 @@ audio_ohos_library("audio_process_service") {
     "server/src/audio_process_stub.cpp",
     "server/src/audio_service.cpp",
     "server/src/capturer_in_server.cpp",
+    "server/src/core_service_handler.cpp",
+    "server/src/core_service_provider_proxy.cpp",
+    "server/src/direct_playback_engine.cpp",
+    "server/src/hpae_adapter_manager.cpp",
+    "server/src/hpae_capturer_stream_impl.cpp",
+    "server/src/hpae_renderer_stream_impl.cpp",
     "server/src/i_stream_manager.cpp",
     "server/src/ipc_offline_stream_stub.cpp",
     "server/src/ipc_stream_in_server.cpp",
@@ -372,6 +388,7 @@ audio_ohos_library("audio_process_service") {
   if (audio_framework_feature_low_latency) {
     sources += [
       "server/src/audio_endpoint.cpp",
+      "server/src/audio_endpoint_performance.cpp",
       "server/src/audio_endpoint_separate.cpp",
       "server/src/audio_process_in_server.cpp",
     ]
@@ -385,19 +402,10 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
-    "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
-    "../../frameworks/native/hdiadapter/source:audio_capturer_source",
+    "../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../audio_engine:audio_engine_manager",
     "../audio_policy:audio_foundation",
   ]
-
-  if (audio_framework_feature_distributed_audio == true) {
-    deps += [
-      "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
-      "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
-    ]
-  }
 
   external_deps = [
     "c_utils:utils",
@@ -439,10 +447,6 @@ audio_ohos_library("audio_process_service") {
   }
 
   if (audio_framework_feature_low_latency) {
-    deps += [
-      "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
-      "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    ]
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
@@ -475,6 +479,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
     "server/src/audio_server_effect.cpp",
+    "server/src/audio_server_hpae_dump.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
 
@@ -488,13 +493,8 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioutils:audio_xml_utils",
-    "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:offload_audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
-    "../../frameworks/native/hdiadapter/source:audio_capturer_source",
-    "../../frameworks/native/hdiadapter/source:bluetooth_capturer_source",
-    "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
+    "../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../audio_engine:audio_engine_manager",
   ]
 
   external_deps = [
@@ -561,10 +561,6 @@ audio_ohos_library("audio_service") {
   }
 
   if (audio_framework_feature_low_latency) {
-    deps += [
-      "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
-      "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    ]
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
@@ -594,12 +590,14 @@ ohos_shared_library("audio_sasdk") {
   include_dirs = [
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiosasdk/include",
+    "../../frameworks/native/audiodefinitions/include",
   ]
 
   public_configs = [ ":audio_sasdk_public_config" ]
 
   deps = [
     ":audio_common",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../audio_policy:audio_policy_client",
   ]
 
@@ -632,6 +630,7 @@ ohos_executable("audio_process_client_test") {
   install_enable = false
 
   include_dirs = [
+    "../../frameworks/native/audiostream/include",
     "../../frameworks/native/audioutils/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "client/include",
@@ -661,10 +660,7 @@ ohos_executable("audio_hdi_device_test") {
 
   include_dirs = [
     "../../frameworks/native/audioutils/include",
-    "../../frameworks/native/hdiadapter/common/include",
-    "../../frameworks/native/hdiadapter/sink",
-    "../../frameworks/native/hdiadapter/sink/common",
-    "../../frameworks/native/hdiadapter/sink/fast",
+    "../../frameworks/native/hdiadapter_new/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -674,8 +670,7 @@ ohos_executable("audio_hdi_device_test") {
 
   deps = [
     "../../frameworks/native/audioutils:audio_utils",
-    "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   external_deps = [

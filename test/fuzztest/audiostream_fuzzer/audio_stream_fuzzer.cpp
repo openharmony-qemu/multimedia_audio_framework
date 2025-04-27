@@ -327,7 +327,7 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     ipcStream->UpdatePosition();
 
     std::string name = "fuzz_test";
-    ipcStream->RegisterThreadPriority(0, name);
+    ipcStream->RegisterThreadPriority(0, name, METHOD_START);
     uint32_t sessionId = 0;
     ipcStream->GetAudioSessionID(sessionId);
     ipcStream->Start();
@@ -375,11 +375,7 @@ void DoStreamFuzzTest(const AudioProcessConfig &config, const uint8_t *rawData, 
         return;
     }
 
-    g_baseFuzzData = rawData;
-    g_baseFuzzSize = size;
-    g_baseFuzzPos = 0;
     uint32_t code = GetData<uint32_t>() % (IpcStream::IpcStreamMsg::IPC_STREAM_MAX_MSG);
-
     rawData = rawData + sizeof(uint32_t);
     size = size - sizeof(uint32_t);
 

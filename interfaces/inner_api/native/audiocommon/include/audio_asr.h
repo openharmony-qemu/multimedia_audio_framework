@@ -64,6 +64,13 @@ enum class AsrNoiseSuppressionMode {
      * @since 12
      */
     FULL_DUPLEX_NEAR_FIELD = 5,
+    /**
+     * ASR_WHISPER_MODE.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 19
+     */
+    ASR_WHISPER_MODE = 6,
 };
 
 /**
@@ -88,6 +95,20 @@ enum class AsrAecMode {
      * @since 12
      */
     STANDARD = 1,
+    /**
+     * Using expand AEC.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 16
+     */
+    EXPAND = 2,
+    /**
+     * Using folded AEC.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 16
+     */
+    FOLDED = 3,
 };
 
 /**

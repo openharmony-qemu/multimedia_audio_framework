@@ -35,6 +35,7 @@ public:
     AudioDeviceDescriptor outputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     bool prerunningState = false;
     bool backMute = false;
+    int32_t appVolume;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {
@@ -60,7 +61,8 @@ public:
             && parcel.WriteInt32(rendererInfo.format)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(rendererState))
-            && outputDeviceInfo.Marshalling(parcel);
+            && outputDeviceInfo.Marshalling(parcel)
+            && parcel.WriteInt32(appVolume);
     }
     bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
     {
@@ -81,7 +83,8 @@ public:
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
                 RENDERER_INVALID)
-            && outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion);
+            && outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
+            && parcel.WriteInt32(appVolume);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -104,6 +107,7 @@ public:
 
         rendererState = static_cast<RendererState>(parcel.ReadInt32());
         outputDeviceInfo.Unmarshalling(parcel);
+        appVolume = parcel.ReadInt32();
     }
 };
 
@@ -117,6 +121,7 @@ public:
     AudioCapturerInfo capturerInfo;
     CapturerState capturerState;
     AudioDeviceDescriptor inputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
+    bool prerunningState = false;
     bool muted;
     uint32_t appTokenId;
 

@@ -48,21 +48,21 @@ public:
         return instance;
     }
     bool CheckActiveOutputDeviceSupportOffload();
-    DeviceType GetActiveInputDevice();
-    void SetCurrenInputDevice(const AudioDeviceDescriptor &desc);
-    void SetCurrenOutputDevice(const AudioDeviceDescriptor &desc);
     bool IsDirectSupportedDevice();
     void NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+    void DisconnectScoWhenUserSelectInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+
     bool UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsDeviceActive(DeviceType deviceType);
-    float GetMaxAmplitude(const int32_t deviceId);
+    float GetMaxAmplitude(const int32_t deviceId, const AudioInterrupt audioInterrupt);
     void UpdateInputDeviceInfo(DeviceType deviceType);
     std::string GetActiveBtDeviceMac();
     void SetActiveBtDeviceMac(const std::string macAddress);
     void SetActiveBtInDeviceMac(const std::string macAddress);
-    int32_t SetDeviceActive(DeviceType deviceType, bool active);
-    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address);
+    int32_t SetDeviceActive(DeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
+    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address,
+        const int32_t uid = INVALID_UID);
     bool GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
 
     void SetCurrentInputDevice(const AudioDeviceDescriptor &desc);

@@ -28,6 +28,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_policy_service.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -123,10 +124,20 @@ bool AudioConfigManager::GetUpdateRouteSupport()
     return isUpdateRouteSupported_;
 }
 
+void AudioConfigManager::OnUpdateDefaultAdapter(bool isEnable)
+{
+    isDefaultAdapterEnable_ = isEnable;
+}
+
+bool AudioConfigManager::GetDefaultAdapterEnable()
+{
+    return isDefaultAdapterEnable_;
+}
+
 void AudioConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
-    AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
-    AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
+    AUDIO_INFO_LOG("Show type: %{public}s", anahsShowType.c_str());
+    AudioCoreService::GetCoreService()->OnUpdateAnahsSupport(anahsShowType);
 }
 
 void AudioConfigManager::OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData)
@@ -195,10 +206,16 @@ void AudioConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
     normalVoipFlag_ = normalVoipFlag;
 }
 
+bool AudioConfigManager::GetNormalVoipFlag()
+{
+    return normalVoipFlag_;
+}
+
 int32_t AudioConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
     const AudioSamplingRate &samplingRate)
 {
     // VoIP stream has three mode for different products.
+    AUDIO_INFO_LOG("enableFastVoip_: %{public}d", enableFastVoip_);
     if (enableFastVoip_ && (sinkPortName == PRIMARY_SPEAKER && networkId == LOCAL_NETWORK_ID)) {
         if (samplingRate != SAMPLE_RATE_48000 && samplingRate != SAMPLE_RATE_16000) {
             return AUDIO_FLAG_NORMAL;

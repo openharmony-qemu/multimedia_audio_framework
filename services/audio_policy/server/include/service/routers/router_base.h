@@ -21,6 +21,7 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_policy_log.h"
 #include "audio_state_manager.h"
+#include "audio_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -28,16 +29,17 @@ class RouterBase {
 public:
     std::string name_;
     IAudioPolicyInterface& audioPolicyManager_;
-    bool isAlarmFollowRingRouter_ = false;
     RouterBase() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()) {}
     virtual ~RouterBase() {};
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
     virtual std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+        const uint32_t sessionID = 0) = 0;
     virtual vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage streamUsage,
         int32_t clientUID) = 0;
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+        const uint32_t sessionID = 0) = 0;
     virtual std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
     virtual RouterType GetRouterType() = 0;
 
@@ -48,22 +50,24 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetLatestNonExcludedConnectDevice(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
     {
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> filteredDescs;
         // remove abnormal device or excluded device
-        for (size_t i = 0; i < descs.size(); i++) {
-            if (descs[i]->exceptionFlag_ || !descs[i]->isEnable_ ||
-                (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && descs[i]->connectState_ == SUSPEND_CONNECTED) ||
-                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, descs[i])) {
-                descs.erase(descs.begin() + i);
-                i--;
+        for (const auto &desc : descs) {
+            if (desc->exceptionFlag_ || !desc->isEnable_ ||
+                (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+                (desc->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded())) ||
+                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, desc)) {
+                continue;
             }
+            filteredDescs.push_back(desc);
         }
-        if (descs.size() > 0) {
+        if (filteredDescs.size() > 0) {
             auto compare = [&] (std::shared_ptr<AudioDeviceDescriptor> &desc1,
                 std::shared_ptr<AudioDeviceDescriptor> &desc2) {
                 return desc1->connectTimeStamp_ < desc2->connectTimeStamp_;
             };
-            sort(descs.begin(), descs.end(), compare);
-            return std::move(descs.back());
+            sort(filteredDescs.begin(), filteredDescs.end(), compare);
+            return std::move(filteredDescs.back());
         }
         return std::make_shared<AudioDeviceDescriptor>();
     }
@@ -91,10 +95,14 @@ public:
         return std::make_shared<AudioDeviceDescriptor>();
     }
 
-    void SetAlarmFollowRingRouter(const bool flag)
+    bool NeedLatestConnectWithDefaultDevices(DeviceType type)
     {
-        AUDIO_INFO_LOG("Set alarm follow ring router: %{public}d", flag);
-        isAlarmFollowRingRouter_ = flag;
+        return type == DEVICE_TYPE_WIRED_HEADSET ||
+            type == DEVICE_TYPE_WIRED_HEADPHONES ||
+            type == DEVICE_TYPE_BLUETOOTH_SCO ||
+            type == DEVICE_TYPE_USB_HEADSET ||
+            type == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            type == DEVICE_TYPE_USB_ARM_HEADSET;
     }
 };
 } // namespace AudioStandard

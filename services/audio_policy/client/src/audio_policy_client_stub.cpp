@@ -49,6 +49,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE):
             HandleSpatializationEnabledChangeForAnyDevice(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE):
+            HandleSpatializationEnabledChangeForCurrentDevice(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE):
             HandleHeadTrackingEnabledChange(data, reply);
             break;
@@ -60,6 +63,12 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
             break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_DEACTIVE):
             HandleAudioSessionCallback(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SCENE_CHANGED):
+            HandleAudioSceneChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_FORMAT_UNSUPPORTED_ERROR):
+            HandleFormatUnsupportedError(data, reply);
             break;
         default:
             break;
@@ -89,6 +98,9 @@ void AudioPolicyClientStub::OnMaxRemoteRequest(uint32_t updateCode, MessageParce
             break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERER_DEVICE_CHANGE):
             HandleRendererDeviceChange(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_DISTRIBUTED_OUTPUT_CHANGE):
+            HandleDistribuitedOutputChange(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_RECREATE_RENDERER_STREAM_EVENT):
             HandleRecreateRendererStreamEvent(data, reply);
@@ -134,6 +146,9 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
                 case static_cast<uint32_t>(AudioPolicyClientCode::ON_MICRO_PHONE_BLOCKED):
                     HandleMicrophoneBlocked(data, reply);
                     break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_APP_VOLUME_CHANGE):
+                    HandleAppVolumeChange(data, reply);
+                    break;
                 default:
                     OnMaxRemoteRequest(updateCode, data, reply);
                     break;
@@ -146,6 +161,15 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
         }
     }
     return SUCCESS;
+}
+
+void AudioPolicyClientStub::HandleAppVolumeChange(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("Handle AppVolume Change");
+    int32_t appUid = data.ReadInt32();
+    VolumeEvent volumeEvent;
+    volumeEvent.Unmarshalling(data);
+    OnAppVolumeChanged(appUid, volumeEvent);
 }
 
 void AudioPolicyClientStub::HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply)
@@ -200,6 +224,14 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
         deviceChange.deviceDescriptors.emplace_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
     }
     OnDeviceChange(deviceChange);
+}
+
+void AudioPolicyClientStub::HandleDistribuitedOutputChange(MessageParcel &data, MessageParcel &reply)
+{
+    auto descDesc = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    CHECK_AND_RETURN_LOG(descDesc, "descDesc is nullptr");
+    bool isRemote = data.ReadBool();
+    OnDistribuitedOutputChange(*descDesc, isRemote);
 }
 
 void AudioPolicyClientStub::HandleMicrophoneBlocked(MessageParcel &data, MessageParcel &reply)
@@ -345,12 +377,27 @@ void AudioPolicyClientStub::HandleSpatializationEnabledChange(MessageParcel &dat
     OnSpatializationEnabledChange(enabled);
 }
 
+void AudioPolicyClientStub::HandleAudioSceneChange(MessageParcel &data, MessageParcel &reply)
+{
+    AudioScene audioScene = static_cast<AudioScene>(data.ReadInt32());
+    CHECK_AND_RETURN_LOG(audioScene < AUDIO_SCENE_MAX && audioScene > AUDIO_SCENE_INVALID, \
+        "get invalid audioScene : %{public}d", audioScene);
+
+    OnAudioSceneChange(audioScene);
+}
+
 void AudioPolicyClientStub::HandleSpatializationEnabledChangeForAnyDevice(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
     bool enabled = data.ReadBool();
     OnSpatializationEnabledChangeForAnyDevice(audioDeviceDescriptor, enabled);
+}
+
+void AudioPolicyClientStub::HandleSpatializationEnabledChangeForCurrentDevice(MessageParcel &data, MessageParcel &reply)
+{
+    bool enabled = data.ReadBool();
+    OnSpatializationEnabledChangeForCurrentDevice(enabled);
 }
 
 void AudioPolicyClientStub::HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply)
@@ -379,6 +426,12 @@ void AudioPolicyClientStub::HandleAudioSessionCallback(MessageParcel &data, Mess
     AudioSessionDeactiveEvent deactiveEvent;
     deactiveEvent.deactiveReason = static_cast<AudioSessionDeactiveReason>(data.ReadInt32());
     OnAudioSessionDeactive(deactiveEvent);
+}
+
+void AudioPolicyClientStub::HandleFormatUnsupportedError(MessageParcel &data, MessageParcel &reply)
+{
+    AudioErrors code = static_cast<AudioErrors>(data.ReadInt32());
+    OnFormatUnsupportedError(code);
 }
 } // namespace AudioStandard
 } // namespace OHOS

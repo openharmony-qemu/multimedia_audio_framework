@@ -46,11 +46,18 @@ public:
 
     int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
 
-    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
+    int32_t SetSourceDuration(int64_t duration) override;
+
+    int32_t SetUnderrunCount(uint32_t underrunCnt) override;
+
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+        uint32_t code) override;
 
 private:
     static inline BrokerDelegator<AudioProcessProxy> delegator_;

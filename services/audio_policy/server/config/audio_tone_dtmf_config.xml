@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 <DTMF>
- <Tones>
+ <Default>
 	<ToneInfo name="TONE_TYPE_DIAL_0" toneType="0" >
 	  <RepeatCount value="INF"/>
 	  <RepeatSegment value="0"/>
@@ -252,5 +252,47 @@
 	  <Segment duration="0" freq="0" loopCount ="0"  loopIndex="0" />
 	</ToneInfo>
 
- </Tones>
+ </Default>
+
+ <Custom>
+    <!-- 新西兰回铃声定制 -->
+    <CountryInfo names="NZ">
+        <!-- 配置Call waiting tone -->
+        <ToneInfo name="TONE_TYPE_COMMON_SUPERVISORY_CALL_WAITING" toneType="106" >
+          <RepeatCount value="INF"/>
+          <RepeatSegment value="0"/>
+          <SegmentCount value="5" />
+          <Segment duration="250" freq="400, 0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="450" freq="0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="250" freq="400, 0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="3050" freq="0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="0" freq="0" loopCount ="0"  loopIndex="0" />
+        </ToneInfo>
+
+        <!-- 配置Ring tone -->
+        <ToneInfo name="TONE_TYPE_COMMON_SUPERVISORY_RINGTONE" toneType="107" >
+          <RepeatCount value="INF"/>
+          <RepeatSegment value="0"/>
+          <SegmentCount value="5" />
+          <Segment duration="400" freq="400, 450, 0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="200" freq="0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="400" freq="400, 450, 0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="2000" freq="0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="0" freq="0" loopCount ="0"  loopIndex="0" />
+        </ToneInfo>
+
+        <!-- 配置Call holding tone -->
+        <ToneInfo name="TONE_TYPE_COMMON_SUPERVISORY_CALL_HOLDING" toneType="108" >
+          <RepeatCount value="INF"/>
+          <RepeatSegment value="0"/>
+          <SegmentCount value="5" />
+          <Segment duration="500" freq="400, 0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="500" freq="0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="500" freq="400, 450, 0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="2500" freq="0" loopCount ="0"  loopIndex="0" />
+          <Segment duration="0" freq="0" loopCount ="0"  loopIndex="0" />
+        </ToneInfo>
+
+    </CountryInfo>
+ </Custom>
 </DTMF>

@@ -102,7 +102,7 @@ public:
     int32_t WriteData();
     void WriteDataWorker();
     void OnWriteData(size_t length) override;
-    AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat) const;
+    AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat, uint16_t audioFormat) const;
     bool OpenSpkFile(const std::string &spkFilePath);
     void CloseSpkFile();
 
@@ -128,7 +128,7 @@ private:
     };
 };
 
-AudioSampleFormat PaRendererTest::GetSampleFormat(int32_t wavSampleFormat) const
+AudioSampleFormat PaRendererTest::GetSampleFormat(int32_t wavSampleFormat, uint16_t audioFormat) const
 {
     switch (wavSampleFormat) {
         case SAMPLE_FORMAT_U8:
@@ -138,7 +138,11 @@ AudioSampleFormat PaRendererTest::GetSampleFormat(int32_t wavSampleFormat) const
         case SAMPLE_FORMAT_S24LE:
             return AudioSampleFormat::SAMPLE_S24LE;
         case SAMPLE_FORMAT_S32LE:
-            return AudioSampleFormat::SAMPLE_S32LE;
+            if (audioFormat == 3) { // 3 - IEEE float
+                return AudioSampleFormat::SAMPLE_F32LE;
+            } else {
+                return AudioSampleFormat::SAMPLE_S32LE;
+            }
         default:
             return AudioSampleFormat::INVALID_WIDTH;
     }
@@ -192,7 +196,7 @@ int32_t PaRendererTest::InitRenderer(RendererMode rendererMode, int32_t fileInde
     AudioRendererOptions rendererOptions = {};
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(wavHeader_.SamplesPerSec);
-    rendererOptions.streamInfo.format = GetSampleFormat(wavHeader_.bitsPerSample);
+    rendererOptions.streamInfo.format = GetSampleFormat(wavHeader_.bitsPerSample, wavHeader_.AudioFormat);
     rendererOptions.streamInfo.channels = static_cast<AudioChannel>(wavHeader_.NumOfChan);
     rendererOptions.rendererInfo.contentType = contentType;
     rendererOptions.rendererInfo.streamUsage = streamUsage;

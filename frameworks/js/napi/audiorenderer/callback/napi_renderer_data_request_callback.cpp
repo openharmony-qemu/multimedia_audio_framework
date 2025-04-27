@@ -45,17 +45,39 @@ NapiRendererDataRequestCallback::~NapiRendererDataRequestCallback()
 void NapiRendererDataRequestCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    napi_ref callback = nullptr;
-    const int32_t refCount = 1;
-    napi_status status = napi_create_reference(env_, args, refCount, &callback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr, "creating reference for callback fail");
+    // create function that will operate while save callback reference success.
+    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
+        [this](std::shared_ptr<AutoRef> generatedCallback) {
+        rendererDataRequestCallback_ = generatedCallback;
+    };
+    NapiAudioRendererCallbackInner::SaveCallbackReferenceInner(callbackName, args, successed);
+    AUDIO_DEBUG_LOG("SaveAudioRendererDataRequestCallback sucessful");
+}
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    if (callbackName == DATA_REQUEST_CALLBACK_NAME) {
-        rendererDataRequestCallback_ = cb;
-    } else {
-        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
-    }
+std::shared_ptr<AutoRef> NapiRendererDataRequestCallback::GetCallback(const std::string &callbackName)
+{
+    return rendererDataRequestCallback_;
+}
+
+void NapiRendererDataRequestCallback::RemoveCallbackReference(
+    const std::string &callbackName, napi_env env, napi_value callback, napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    //create function that will operate while save callback reference success.
+    std::function<void()> successed = [this]() {
+        rendererDataRequestCallback_ = nullptr;
+    };
+    RemoveCallbackReferenceInner(callbackName, env, callback, successed);
+}
+
+napi_env &NapiRendererDataRequestCallback::GetEnv()
+{
+    return env_;
+}
+
+bool NapiRendererDataRequestCallback::CheckIfTargetCallbackName(const std::string &callbackName)
+{
+    return (callbackName == DATA_REQUEST_CALLBACK_NAME);
 }
 
 void NapiRendererDataRequestCallback::CreateWriteDataTsfn(napi_env env)

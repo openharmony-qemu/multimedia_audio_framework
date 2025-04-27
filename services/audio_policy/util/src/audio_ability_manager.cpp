@@ -38,24 +38,22 @@ AudioAbilityManager *AudioAbilityManager::GetInstance()
     return &audioManager;
 }
 
-AudioAbilityManager::~AudioAbilityManager()
-{
-    if (g_asProxy != nullptr) {
-        g_asProxy = nullptr;
-    }
-}
+AudioAbilityManager::~AudioAbilityManager() {}
 
 static const sptr<IStandardAudioService> GetAudioAbilityManagerProxy()
 {
-    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioSystemManagerProxy", XCOLLIE_TIME_OUT_SECONDS);
+    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioSystemManagerProxy", XCOLLIE_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::mutex> lock(g_asProxyMutex);
     if (g_asProxy == nullptr) {
-        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS);
+        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get sa manager failed");
         xcollieGetSystemAbilityManager.CancelXCollieTimer();
 
-        AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS);
+        AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
         CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
         g_asProxy = iface_cast<IStandardAudioService>(object);

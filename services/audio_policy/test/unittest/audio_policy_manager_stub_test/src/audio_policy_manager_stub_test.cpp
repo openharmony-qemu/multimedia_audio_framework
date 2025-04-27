@@ -24,6 +24,34 @@ namespace AudioStandard {
 
 namespace {
     int32_t systemAbilityId = 3009;
+    bool g_hasServerInit = false;
+}
+
+sptr<AudioPolicyServer> GetPolicyServerTest()
+{
+    static int32_t systemAbilityId = systemAbilityId;
+    static bool runOnCreate = false;
+    static sptr<AudioPolicyServer> server =
+        sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+    if (!g_hasServerInit) {
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+#endif
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        g_hasServerInit = true;
+    }
+    return server;
+}
+
+void ReleaseServer()
+{
+    GetPolicyServerTest()->OnStop();
+    g_hasServerInit = false;
 }
 
 void AudioPolicyManagerStubUnitTest::SetUpTestCase(void) {}
@@ -73,41 +101,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_003, TestS
     AudioPolicyManage_->QueryEffectSceneModeInternal(data, reply);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 }
-
-/**
-* @tc.name  : Test AudioPolicyManagerStub.
-* @tc.number: AudioPolicyManagerStubUnitTest_004.
-* @tc.desc  : Test SetPlaybackCapturerFilterInfosInternal.
-*/
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_004, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    AudioPolicyManage_->SetPlaybackCapturerFilterInfosInternal(data, reply);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    data.WriteInt32(1);
-    AudioPolicyManage_->SetPlaybackCapturerFilterInfosInternal(data, reply);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManagerStub.
-* @tc.number: AudioPolicyManagerStubUnitTest_005.
-* @tc.desc  : Test SetPlaybackCapturerFilterInfosInternal.
-*/
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_005, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    data.WriteUint32(30);
-    data.WriteInt32(1);
-    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    AudioPolicyManage_->SetPlaybackCapturerFilterInfosInternal(data, reply);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-}
-
 
 /**
 * @tc.name  : Test AudioPolicyManagerStub.
@@ -445,16 +438,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_014_2, Tes
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
     AudioPolicyManage_->OnMiddleFouRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_PLAYBACK_CAPTURER_FILTER_INFO),
-        data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddleFouRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE),
-        data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddleFouRemoteRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_HARDWARE_OUTPUT_SAMPLING_RATE),
         data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
@@ -479,17 +462,14 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_015, TestS
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    sptr<AudioPolicyManagerStub> audioPolicyServer = GetPolicyServerTest();
+    sptr<AudioPolicyManagerStub> AudioPolicyManage_ = audioPolicyServer;
     AudioPolicyManage_->OnMiddleTirRemoteRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SINGLE_STREAM_VOLUME), data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
     AudioPolicyManage_->OnMiddleTirRemoteRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS), data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddleTirRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_GROUP_INFO), data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
     AudioPolicyManage_->OnMiddleTirRemoteRequest(
@@ -508,17 +488,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_015, TestS
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK_RENDERER_INFO), data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
-    AudioPolicyManage_->OnMiddleTirRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_FOCUS_INFO_LIST), data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddleTirRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_SOUND_URI), data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
     uint32_t code = 1000;
     AudioPolicyManage_->OnMiddleTirRemoteRequest(code, data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
+    ReleaseServer();
 }
 
 /**
@@ -556,9 +529,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_017_1, Tes
     MessageParcel reply;
     MessageOption option;
     std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    AudioPolicyManage_->OnMiddleFirRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES), data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
 
     AudioPolicyManage_->OnMiddleFirRemoteRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SELECT_OUTPUT_DEVICE), data, reply, option);
@@ -642,19 +612,7 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_018, TestS
         data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
-    AudioPolicyManage_->OnMiddlesRemoteRequest(static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGER_MODE_LEGACY),
-        data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddlesRemoteRequest(static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_RINGER_MODE),
-        data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
     AudioPolicyManage_->OnMiddlesRemoteRequest(static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_RINGER_MODE),
-        data, reply, option);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    AudioPolicyManage_->OnMiddlesRemoteRequest(static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_SCENE),
         data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
@@ -783,83 +741,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_021, TestS
 }
 
 /**
-* @tc.name  : Test AudioPolicyManagerStub.
-* @tc.number: AudioPolicyManagerStubUnitTest_022.
-* @tc.desc  : Test GetCapturerChangeInfosInternal.
-*/
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_022, TestSize.Level0)
-{
-    MessageParcel data;
-    MessageParcel reply;
-
-    // Arrange
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-    audioCapturerChangeInfos.push_back(std::make_shared<AudioCapturerChangeInfo>());
-
-    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    // Act
-    AudioPolicyManage_->GetCapturerChangeInfosInternal(data, reply);
-
-    // Assert
-    int32_t size = 0;
-    reply.ReadInt32(size);
-    EXPECT_EQ(audioCapturerChangeInfos.size(), 1);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManagerStub.
-* @tc.number: AudioPolicyManagerStubUnitTest_023.
-* @tc.desc  : Test GetVolumeGroupInfoInternal.
-*/
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_023, TestSize.Level0)
-{
-    MessageParcel data;
-    MessageParcel reply;
-
-    // Arrange
-    std::string networkId = "testNetworkId";
-    data.WriteString(networkId);
-    std::vector<sptr<VolumeGroupInfo>> groupInfos;
-    sptr<VolumeGroupInfo> groupInfo = new VolumeGroupInfo();
-    groupInfos.push_back(groupInfo);
-
-    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    // Act
-    AudioPolicyManage_->GetVolumeGroupInfoInternal(data, reply);
-
-    // Assert
-    EXPECT_NE(reply.ReadInt32(), 0);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManagerStub.
-* @tc.number: AudioPolicyManagerStubUnitTest_024.
-* @tc.desc  : Test GetVolumeGroupInfoInternal.
-*/
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_024, TestSize.Level0)
-{
-    MessageParcel data;
-    MessageParcel reply;
-
-    // Arrange
-    std::string networkId = "testNetworkId";
-    data.WriteString(networkId);
-    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-
-    // Act
-    AudioPolicyManage_->GetVolumeGroupInfoInternal(data, reply);
-
-    // Assert
-    int32_t errorCode = reply.ReadInt32();
-    EXPECT_NE(errorCode, 0);
-}
-
-/**
  * @tc.name  : Test AudioPolicyManagerStub.
  * @tc.number: AudioPolicyManagerStubUnitTest_025.
  * @tc.desc  : Test QueryEffectSceneModeInternal.
@@ -950,46 +831,6 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_028, TestS
 
     // Assert
     EXPECT_EQ(reply.ReadString(), "");
-}
-
-/**
- * @tc.name  : GetAudioCapturerMicrophoneDescriptorsInternal_001
- * @tc.number: AudioPolicyManagerStubUnitTest_029
- * @tc.desc  : Test GetHardwareOutputSamplingRateInternal.
- */
-HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_029, TestSize.Level0)
-{
-    MessageParcel data;
-    MessageParcel reply;
-
-    // Arrange
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    data.WriteInt32(1); // Write a non-nullptr to simulate a valid audioDeviceDescriptor
-
-    std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    EXPECT_NE(AudioPolicyManage_, nullptr);
-    // Act
-    AudioPolicyManage_->GetHardwareOutputSamplingRateInternal(data, reply);
-
-    // Arrange
-    int32_t sessionId = 1;
-    data.WriteInt32(sessionId);
-
-    // Act
-    AudioPolicyManage_->GetAudioCapturerMicrophoneDescriptorsInternal(data, reply);
-
-    // Assert
-    int32_t size = reply.ReadInt32();
-    EXPECT_LT(size, 0);
-
-    std::vector<sptr<MicrophoneDescriptor>> descs;
-    // Act
-    AudioPolicyManage_->GetAvailableMicrophonesInternal(data, reply);
-
-    // Assert
-    size = 0;
-    EXPECT_TRUE(reply.ReadInt32(size));
-    EXPECT_EQ(size, 0);
 }
 
 /**

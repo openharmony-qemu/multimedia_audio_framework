@@ -17,16 +17,19 @@
 #define AUDIO_SCHEDULE_H
 
 #include <inttypes.h>
+#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName);
-void ScheduleThreadInServer(uint32_t pid, uint32_t tid);
-void UnscheduleThreadInServer(uint32_t pid, uint32_t tid);
+void ScheduleReportData(pid_t pid, pid_t tid, const char *bundleName);
+void ScheduleThreadInServer(pid_t pid, pid_t tid);
+void UnscheduleThreadInServer(pid_t pid, pid_t tid);
 void OnAddResSchedService(uint32_t audioServerPid);
-void UnscheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName);
+void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName);
+bool SetEndpointThreadPriority();
+bool ResetEndpointThreadPriority();
 
 #ifdef __cplusplus
 }

@@ -16,10 +16,51 @@
 #define LOG_TAG "AudioEffectService"
 
 #include "audio_effect_service.h"
+
 #include <unordered_set>
+
+#include "audio_device_type.h"
+#include "audio_effect_map.h"
 
 namespace OHOS {
 namespace AudioStandard {
+const std::set<std::string> STREAM_USAGE_SET = {
+    "STREAM_USAGE_UNKNOWN",
+    "STREAM_USAGE_MEDIA",
+    "STREAM_USAGE_MUSIC",
+    "STREAM_USAGE_VOICE_COMMUNICATION",
+    "STREAM_USAGE_VOICE_ASSISTANT",
+    "STREAM_USAGE_VOICE_CALL_ASSISTANT",
+    "STREAM_USAGE_ALARM",
+    "STREAM_USAGE_VOICE_MESSAGE",
+    "STREAM_USAGE_NOTIFICATION_RINGTONE",
+    "STREAM_USAGE_RINGTONE",
+    "STREAM_USAGE_NOTIFICATION",
+    "STREAM_USAGE_ACCESSIBILITY",
+    "STREAM_USAGE_SYSTEM",
+    "STREAM_USAGE_MOVIE",
+    "STREAM_USAGE_GAME",
+    "STREAM_USAGE_AUDIOBOOK",
+    "STREAM_USAGE_NAVIGATION",
+    "STREAM_USAGE_DTMF",
+    "STREAM_USAGE_ENFORCED_TONE",
+    "STREAM_USAGE_ULTRASONIC",
+    "STREAM_USAGE_VIDEO_COMMUNICATION",
+    "STREAM_USAGE_RANGING",
+    "STREAM_USAGE_VOICE_MODEM_COMMUNICATION",
+    "STREAM_USAGE_VOICE_RINGTONE"
+};
+
+static void GetEnhancePropertyKey(const std::string &deviceType, const std::string &sceneType,
+    const std::string &sceneMode, std::string &key)
+{
+    if (deviceType == "DEVICE_TYPE_MIC") {
+        key = sceneType + "_&_" + sceneMode;
+    } else {
+        key = sceneType + "_&_" + sceneMode + "_&_" + deviceType;
+    }
+}
+
 AudioEffectService::AudioEffectService()
 {
     AUDIO_INFO_LOG("AudioEffectService ctor");
@@ -133,7 +174,9 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, PreStreamScen
 {
     bool isDuplicate = false;
     bool isSupported = false;
-    for (auto &[scene, stream] : AUDIO_ENHANCE_SUPPORTED_SCENE_TYPES) {
+    const std::unordered_map<AudioEnhanceScene, std::string> &audioEnhanceSupportedSceneTypes =
+        GetEnhanceSupportedSceneType();
+    for (auto &[scene, stream] : audioEnhanceSupportedSceneTypes) {
         if (pp.stream == stream) {
             isSupported = true;
             break;
@@ -161,7 +204,8 @@ static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, PostStreamS
 {
     bool isDuplicate = false;
     bool isSupported = false;
-    for (auto &[scene, stream] : AUDIO_SUPPORTED_SCENE_TYPES) {
+    const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
+    for (auto &[scene, stream] : audioSupportedSceneTypes) {
         if (ess.stream == stream) {
             isSupported = true;
             break;
@@ -607,6 +651,8 @@ void AudioEffectService::ConstructEffectChainMode(StreamEffectMode &mode, std::s
                                                   EffectChainManagerParam &effectChainMgrParam)
 {
     std::unordered_map<std::string, std::string> &map = effectChainMgrParam.sceneTypeToChainNameMap;
+    const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
+
     std::string sceneMode = mode.mode;
     std::string key;
     std::string defaultChain;
@@ -622,7 +668,7 @@ void AudioEffectService::ConstructEffectChainMode(StreamEffectMode &mode, std::s
         ConstructDefaultEffectProperty(device.chain, effectChainMgrParam.effectDefaultProperty);
     }
     if (defaultFlag) {
-        for (const auto &deviceType : SUPPORTED_DEVICE_TYPE) {
+        for (const auto &deviceType : supportDeviceType) {
             key = sceneType + "_&_" + sceneMode + "_&_" + deviceType.second;
             AddKeyValueIntoMap(map, key, defaultChain);
         }
@@ -704,7 +750,7 @@ void AudioEffectService::ConstructEnhanceChainManagerParam(EffectChainManagerPar
         for (auto &mode: scene.streamEffectMode) {
             sceneMode = mode.mode;
             for (auto &device: mode.devicePort) {
-                key = sceneType + "_&_" + sceneMode;
+                GetEnhancePropertyKey(device.type, sceneType, sceneMode, key);
                 AddKeyValueIntoMap(map, key, device.chain);
                 ConstructDefaultEffectProperty(device.chain, enhanceDefaultProperty);
             }
@@ -718,8 +764,9 @@ int32_t AudioEffectService::AddSupportedPropertyByDeviceInner(const DeviceType& 
     std::set<std::pair<std::string, std::string>> &mergedSet,
     const std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> &device2PropertySet)
 {
-    auto deviceIter = SUPPORTED_DEVICE_TYPE.find(deviceType);
-    if (deviceIter == SUPPORTED_DEVICE_TYPE.end()) {
+    const std::unordered_map<DeviceType, std::string> &supportDeviceType = GetSupportedDeviceType();
+    auto deviceIter = supportDeviceType.find(deviceType);
+    if (deviceIter == supportDeviceType.end()) {
         AUDIO_ERR_LOG("device not supported.");
         return -1;
     }

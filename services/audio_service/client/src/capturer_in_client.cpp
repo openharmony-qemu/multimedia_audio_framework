@@ -48,7 +48,6 @@
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
-#include "xcollie/watchdog.h"
 #include "audio_safe_block_queue.h"
 
 namespace OHOS {
@@ -65,8 +64,9 @@ const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t INVALID_FRAME_SIZE = -1;
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
-constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
-constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
+constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
+constexpr int32_t MAX_RETRY_COUNT = 8;
+const float ERROR_VOLUME = -0.1f;
 }
 
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
@@ -85,7 +85,8 @@ public:
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj) override;
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override;
     State GetState() override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
@@ -98,20 +99,21 @@ public:
     float GetVolume() override;
     int32_t SetVolume(float volume) override;
     int32_t SetDuckVolume(float volume) override;
+    float GetDuckVolume() override;
     int32_t SetMute(bool mute) override;
+    bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
-        int32_t &outBufferSize) override;
 
     // callback mode api
     AudioRenderMode GetRenderMode() override;
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
+    void InitCallbackLoop();
     AudioCaptureMode GetCaptureMode() override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
@@ -214,14 +216,20 @@ public:
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     void SetSwitchingStatus(bool isSwitching) override;
+    void GetRestoreInfo(RestoreInfo &restoreInfo) override;
+    void SetRestoreInfo(RestoreInfo &restoreInfo) override;
+    RestoreStatus CheckRestoreStatus() override;
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+    void FetchDeviceForSplitStream() override;
 
+    void SetCallStartByUserTid(pid_t tid) override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
 
     int32_t DeinitIpcStream();
 
-    int32_t InitIpcStream();
+    int32_t InitIpcStream(const AudioPlaybackCaptureConfig &filterConfig);
 
     const AudioProcessConfig ConstructConfig();
 
@@ -235,8 +243,7 @@ private:
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
-    void ReadCallbackFunc();
-    void WatchingReadData();
+    bool ReadCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
 
@@ -339,7 +346,7 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
 
     bool paramsIsSet_ = false;
-    std::atomic_bool threadStatusFlag_ { false };
+    int32_t innerCapId_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -411,6 +418,27 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
     notifiedResult_ = result;
+
+    if (notifiedResult_ == SUCCESS) {
+        std::unique_lock<std::mutex> lock(streamCbMutex_);
+        std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+        switch (operation) {
+            case START_STREAM :
+                state_ = RUNNING;
+                break;
+            case PAUSE_STREAM :
+                state_ = PAUSED;
+                break;
+            case STOP_STREAM :
+                state_ = STOPPED;
+            default :
+                break;
+        }
+        if (streamCb != nullptr) {
+            streamCb->OnStateChange(state_, CMD_FROM_SYSTEM);
+        }
+    }
+
     callServerCV_.notify_all();
     return SUCCESS;
 }
@@ -484,12 +512,14 @@ void CapturerInClientInner::UpdateTracker(const std::string &updateCase)
 }
 
 int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
-    const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj,
+    const AudioPlaybackCaptureConfig &config)
 {
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
         " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
         info.encoding);
-    AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND);
+    AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) || !IsSamplingRateValid(info.samplingRate)) {
         AUDIO_ERR_LOG("CapturerInClient: Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
@@ -511,7 +541,7 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
     streamParams_ = info; // keep it for later use
     paramsIsSet_ = true;
-    int32_t initRet = InitIpcStream();
+    int32_t initRet = InitIpcStream(config);
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
     logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalCapturer";
@@ -742,6 +772,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     config.isInnerCapturer = isInnerCapturer_;
     config.isWakeupCapturer = isWakeupCapturer_;
+    config.innerCapId = innerCapId_;
 
     clientConfig_ = config;
     return config;
@@ -790,7 +821,7 @@ int32_t CapturerInClientInner::InitCacheBuffer(size_t targetSize)
     return SUCCESS;
 }
 
-int32_t CapturerInClientInner::InitIpcStream()
+int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &filterConfig)
 {
     AUDIO_INFO_LOG("Init Ipc stream");
     AudioProcessConfig config = ConstructConfig();
@@ -798,7 +829,12 @@ int32_t CapturerInClientInner::InitIpcStream()
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode, filterConfig);
+    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
+        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, errorCode, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);
@@ -935,10 +971,22 @@ int32_t CapturerInClientInner::SetMute(bool mute)
     return ERROR;
 }
 
+bool CapturerInClientInner::GetMute()
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return false;
+}
+
 int32_t CapturerInClientInner::SetDuckVolume(float volume)
 {
     AUDIO_WARNING_LOG("only for renderer");
     return ERROR;
+}
+
+float CapturerInClientInner::GetDuckVolume()
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return ERROR_VOLUME;
 }
 
 int32_t CapturerInClientInner::SetSpeed(float speed)
@@ -951,13 +999,6 @@ float CapturerInClientInner::GetSpeed()
 {
     AUDIO_ERR_LOG("GetSpeed is not supported");
     return 1.0;
-}
-
-int32_t CapturerInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
-    int32_t &outBufferSize)
-{
-    AUDIO_ERR_LOG("ChangeSpeed is not supported");
-    return ERROR;
 }
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
@@ -1027,6 +1068,38 @@ void CapturerInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     cbBufferQueue_.Push(temp);
 }
 
+void CapturerInClientInner::InitCallbackLoop()
+{
+    cbThreadReleased_ = false;
+    auto weakRef = weak_from_this();
+
+    // OS_AudioWriteCB
+    callbackLoop_ = std::thread([weakRef] {
+        bool keepRunning = true;
+        std::shared_ptr<CapturerInClientInner> strongRef = weakRef.lock();
+        if (strongRef != nullptr) {
+            strongRef->cbThreadCv_.notify_one();
+            AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", strongRef->sessionId_);
+        } else {
+            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
+        }
+        strongRef = nullptr;
+        // start loop
+        while (keepRunning) {
+            strongRef = weakRef.lock();
+            if (strongRef == nullptr) {
+                AUDIO_INFO_LOG("CapturerInClientInner destroyed");
+                break;
+            }
+            keepRunning = strongRef->ReadCallbackFunc(); // Main operation in callback loop
+        }
+        if (strongRef != nullptr) {
+            AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", strongRef->sessionId_);
+        }
+    });
+    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioReadCb");
+}
+
 int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
 {
     AUDIO_INFO_LOG("Set mode to %{public}s", captureMode == CAPTURE_MODE_NORMAL ? "CAPTURE_MODE_NORMAL" :
@@ -1049,8 +1122,7 @@ int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
     capturerMode_ = captureMode;
 
     // init callbackLoop_
-    callbackLoop_ = std::thread([this] { this->ReadCallbackFunc(); });
-    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioReadCB");
+    InitCallbackLoop();
 
     std::unique_lock<std::mutex> threadStartlock(statusMutex_);
     bool stopWaiting = cbThreadCv_.wait_for(threadStartlock, std::chrono::milliseconds(SHORT_TIMEOUT_IN_MS), [this] {
@@ -1104,82 +1176,43 @@ bool CapturerInClientInner::WaitForRunning()
     return true;
 }
 
-void CapturerRemoveWatchdog(const std::string &message, const std::int32_t sessionId)
+bool CapturerInClientInner::ReadCallbackFunc()
 {
-    std::string watchDogMessage = message;
-    watchDogMessage += std::to_string(sessionId);
-    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
-    AUDIO_INFO_LOG("%{public}s end %{public}d", watchDogMessage.c_str(), sessionId);
-}
-
-void CapturerInClientInner::WatchingReadData()
-{
-    threadStatusFlag_ = true;
-    auto taskFunc = [this]() {
-        if (threadStatusFlag_) {
-            AUDIO_DEBUG_LOG("Set threadStatusFlag_ to false");
-            threadStatusFlag_ = false;
-        } else {
-            AUDIO_INFO_LOG("watchdog happened");
-        }
-    };
-    std::string watchDogMessage = "WatchingCaptureInClientReadData";
-    watchDogMessage += std::to_string(sessionId_);
-    AUDIO_INFO_LOG("watchdog start %{public}d", sessionId_);
-    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
-        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
-}
-
-void CapturerInClientInner::ReadCallbackFunc()
-{
-    AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", sessionId_);
-    cbThreadReleased_ = false;
-
-    // Modify thread priority is not need as first call read will do these work.
-    cbThreadCv_.notify_one();
-
-    // add watchdog
-    WatchingReadData();
-    // start loop
-    while (!cbThreadReleased_) {
-        Trace traceLoop("CapturerInClientInner::WriteCallbackFunc");
-        if (!WaitForRunning()) {
-            threadStatusFlag_ = true;
-            continue;
-        }
-
-        // If client didn't call GetBufferDesc/Enqueue in OnReadData, pop will block here.
-        BufferDesc temp = cbBufferQueue_.Pop();
-        if (temp.buffer == nullptr) {
-            AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
-            break;
-        }
-
-        std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
-        // call read here.
-        int32_t result = Read(*temp.buffer, temp.bufLength, true); // blocking read
-        if (result < 0 || result != static_cast<int32_t>(cbBufferSize_)) {
-            AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
-        }
-        if (state_ != RUNNING) {
-            threadStatusFlag_ = true;
-            continue;
-        }
-        lockBuffer.unlock();
-
-        // call client read
-        Trace traceCb("CapturerInClientInner::OnReadData");
-        std::unique_lock<std::mutex> lockCb(readCbMutex_);
-        if (readCb_ != nullptr) {
-            readCb_->OnReadData(cbBufferSize_);
-        }
-        threadStatusFlag_ = true;
-        lockCb.unlock();
-        traceCb.End();
+    if (cbThreadReleased_) {
+        return false;
     }
-    AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
-    // stop watchdog
-    CapturerRemoveWatchdog("WatchingCaptureInClientReadData", sessionId_);
+    Trace traceLoop("CapturerInClientInner::WriteCallbackFunc");
+    if (!WaitForRunning()) {
+        return true;
+    }
+
+    // If client didn't call GetBufferDesc/Enqueue in OnReadData, pop will block here.
+    BufferDesc temp = cbBufferQueue_.Pop();
+    if (temp.buffer == nullptr) {
+        AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
+        return false;
+    }
+
+    std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
+    // call read here.
+    int32_t result = Read(*temp.buffer, temp.bufLength, true); // blocking read
+    if (result < 0 || result != static_cast<int32_t>(cbBufferSize_)) {
+        AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
+    }
+    if (state_ != RUNNING) {
+        return true;
+    }
+    lockBuffer.unlock();
+
+    // call client read
+    Trace traceCb("CapturerInClientInner::OnReadData");
+    std::unique_lock<std::mutex> lockCb(readCbMutex_);
+    if (readCb_ != nullptr) {
+        readCb_->OnReadData(cbBufferSize_);
+    }
+    lockCb.unlock();
+    traceCb.End();
+    return true;
 }
 
 
@@ -1511,7 +1544,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         cbThreadCv_.notify_all();
         readDataCV_.notify_all();
         if (callbackLoop_.joinable()) {
-            callbackLoop_.join();
+            callbackLoop_.detach();
         }
     }
     paramsIsSet_ = false;
@@ -1687,7 +1720,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
         needSetThreadPriority_ = false;
     }
 
@@ -1993,10 +2026,52 @@ DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 // diffrence from GetAudioPosition only when set speed
 int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    return GetAudioTime(timestamp, base);
+    return GetAudioTime(timestamp, base) ? SUCCESS : ERROR;
 }
 
 void CapturerInClientInner::SetSwitchingStatus(bool isSwitching)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+}
+
+void CapturerInClientInner::GetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
+    clientBuffer_->GetRestoreInfo(restoreInfo);
+    return;
+}
+
+void CapturerInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
+{
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
+    clientBuffer_->SetRestoreInfo(restoreInfo);
+    return;
+}
+
+RestoreStatus CapturerInClientInner::CheckRestoreStatus()
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
+    return clientBuffer_->CheckRestoreStatus();
+}
+
+RestoreStatus CapturerInClientInner::SetRestoreStatus(RestoreStatus restoreStatus)
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
+    return clientBuffer_->SetRestoreStatus(restoreStatus);
+}
+
+void CapturerInClientInner::FetchDeviceForSplitStream()
+{
+    AUDIO_INFO_LOG("Fetch input device for split stream %{public}u", sessionId_);
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
+        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
+    } else {
+        AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
+    }
+    SetRestoreStatus(NO_NEED_FOR_RESTORE);
+}
+
+void CapturerInClientInner::SetCallStartByUserTid(pid_t tid)
 {
     AUDIO_WARNING_LOG("not supported in capturer");
 }

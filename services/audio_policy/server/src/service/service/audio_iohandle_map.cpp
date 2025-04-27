@@ -23,6 +23,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_async_action_handler.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -59,8 +60,7 @@ private:
     const std::string portName_;
 };
 
-static const int64_t WAIT_SET_MUTE_LATENCY_TIME_MS = 80; // 80ms
-static const int64_t WAIT_SET_MUTE_LATENCY_TIME_EXT_MS = 200; // 200ms
+static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
 static const int64_t US_PER_MS = 1000;
@@ -127,6 +127,7 @@ AudioIOHandle AudioIOHandleMap::GetSinkIOHandle(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_EARPIECE:
         case DeviceType::DEVICE_TYPE_SPEAKER:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_HDMI:
             ioHandle = IOHandles_[PRIMARY_SPEAKER];
             break;
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
@@ -165,6 +166,9 @@ AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             ioHandle = IOHandles_[BLUETOOTH_MIC];
             break;
+        case DeviceType::DEVICE_TYPE_ACCESSORY:
+            ioHandle = IOHandles_[ACCESSORY_SOURCE];
+            break;
         default:
             ioHandle = IOHandles_[PRIMARY_MIC];
             break;
@@ -175,9 +179,27 @@ AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
 int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleName,
     const AudioModuleInfo &moduleInfo)
 {
-    AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo);
+    AUDIO_INFO_LOG("In, name: %{public}s", moduleName.c_str());
+    uint32_t paIndex = 0;
+    AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
         "OpenAudioPort failed %{public}d", ioHandle);
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
+    pipeInfo_->id_ = ioHandle;
+    pipeInfo_->paIndex_ = paIndex;
+    if (moduleInfo.role == "sink") {
+        pipeInfo_->pipeRole_ = PIPE_ROLE_OUTPUT;
+        pipeInfo_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    } else {
+        pipeInfo_->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    }
+    pipeInfo_->adapterName_ = moduleInfo.adapterName;
+    pipeInfo_->moduleInfo_ = moduleInfo;
+    pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
+    
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo_);
 
     AddIOHandleInfo(moduleName, ioHandle);
     return SUCCESS;
@@ -190,8 +212,13 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
         "can not find %{public}s in io map", moduleName.c_str());
     DelIOHandleInfo(moduleName);
 
-    AUDIO_INFO_LOG("[close-module] %{public}s,id:%{public}d", moduleName.c_str(), ioHandle);
-    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, isSync);
+    std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t paIndex = pipeManager->GetPaIndexByIoHandle(ioHandle);
+    pipeManager->RemoveAudioPipeInfo(ioHandle);
+
+    AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        moduleName.c_str(), ioHandle, paIndex);
+    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, paIndex, isSync);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     return SUCCESS;
 }
@@ -206,22 +233,14 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
         // Mute by pa.
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, true, isSync);
     }
-    // primary set device earpiece od speaker need longer latency.
-    int64_t muteLatencyTime = WAIT_SET_MUTE_LATENCY_TIME_MS;
-    if ((portName == PRIMARY_SPEAKER || portName == USB_SPEAKER) && (oldOutputDevice_ != newOutputDevice_) &&
-        (oldOutputDevice_ == DEVICE_TYPE_USB_HEADSET || oldOutputDevice_ == DEVICE_TYPE_USB_ARM_HEADSET) &&
-        (newOutputDevice_ == DEVICE_TYPE_EARPIECE || newOutputDevice_ == DEVICE_TYPE_SPEAKER)) {
-        oldOutputDevice_ = DEVICE_TYPE_NONE;
-        newOutputDevice_ = DEVICE_TYPE_NONE;
-        muteLatencyTime = WAIT_SET_MUTE_LATENCY_TIME_EXT_MS;
-    }
 
     std::shared_ptr<WaitActiveDeviceAction> action = std::make_shared<WaitActiveDeviceAction>(duration, portName);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionDesc desc;
-    desc.delayTimeMs = muteLatencyTime;
     desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
     DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+
+    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
 }
 
 void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)
@@ -278,10 +297,36 @@ void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &por
     }
 }
 
-void AudioIOHandleMap::SetDeviceInfos(DeviceType oldOutputDevice, DeviceType newOutputDevice)
+int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    const AudioModuleInfo &moduleInfo, bool isSync)
 {
-    oldOutputDevice_ = oldOutputDevice;
-    newOutputDevice_ = newOutputDevice;
+    std::string oldModuleName = pipeInfo->moduleInfo_.name;
+    AudioIOHandle ioHandle;
+    CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(oldModuleName, ioHandle), ERROR,
+        "can not find %{public}s in io map", oldModuleName.c_str());
+    DelIOHandleInfo(oldModuleName);
+
+    AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        oldModuleName.c_str(), ioHandle, pipeInfo->paIndex_);
+    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle,
+        pipeInfo->paIndex_, isSync);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
+
+    uint32_t paIndex = 0;
+    ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
+        "OpenAudioPort failed %{public}d", ioHandle);
+    AUDIO_INFO_LOG("[open-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        moduleInfo.name.c_str(), ioHandle, paIndex);
+
+    pipeInfo->id_ = ioHandle;
+    pipeInfo->paIndex_ = paIndex;
+    pipeInfo->adapterName_ = moduleInfo.adapterName;
+    pipeInfo->moduleInfo_ = moduleInfo;
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+
+    AddIOHandleInfo(moduleInfo.name, ioHandle);
+    return SUCCESS;
 }
 }
 }

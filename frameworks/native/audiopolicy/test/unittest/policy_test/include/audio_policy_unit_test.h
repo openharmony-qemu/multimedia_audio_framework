@@ -42,6 +42,10 @@ class AudioCapturerStateChangeCallbackTest : public AudioCapturerStateChangeCall
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
 };
 
+class AudioFormatUnsupportedErrorCallbackTest : public AudioFormatUnsupportedErrorCallback {
+    virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) {}
+};
+
 class AudioRingerModeCallbackTest : public AudioRingerModeCallback {
 public:
     virtual ~AudioRingerModeCallbackTest() = default;
@@ -52,6 +56,17 @@ public:
      * For details, refer RingerMode enum in audio_info.h
      */
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) {};
+};
+
+class AudioDistribuitedOutputChangeCallbackTest : public AudioDistribuitedOutputChangeCallback {
+public:
+    /**
+     * Called when Distribuited Output Change.
+     *
+     * @param deviceDesc device descripter
+     * @param isRemote Is remote or local
+     */
+    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) {}
 };
 
 class AudioManagerMicStateChangeCallbackTest : public AudioManagerMicStateChangeCallback {
@@ -117,6 +132,18 @@ public:
     virtual void OnSpatializationEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) {};
 };
+
+class AudioSpatialEnabledChangeForCurrDeviceCbTest : public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
+    public:
+        virtual ~AudioSpatialEnabledChangeForCurrDeviceCbTest() = default;
+        /**
+         * @brief AudioSpatializationEnabledChangeForCurrentDeviceCallback will be executed when spatialization enabled
+         * state changes for current device
+         * @param enabled the spatialization enabled state for current device.
+         * @since 18
+         */
+        virtual void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) {};
+    };
 
 class AudioHeadTrackingEnabledChangeCallbackTest : public AudioHeadTrackingEnabledChangeCallback {
 public:

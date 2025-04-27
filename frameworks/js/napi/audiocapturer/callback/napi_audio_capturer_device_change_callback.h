@@ -21,18 +21,25 @@
 #include "napi/native_node_api.h"
 #include "napi_async_work.h"
 #include "audio_capturer.h"
+#include "napi_audio_capturer_callback_inner.h"
+#include "napi_audio_capturer_callbacks.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class NapiAudioCapturerDeviceChangeCallback : public AudioCapturerDeviceChangeCallback {
+class NapiAudioCapturerDeviceChangeCallback : public AudioCapturerDeviceChangeCallback,
+    public NapiAudioCapturerCallbackInner {
 public:
     explicit NapiAudioCapturerDeviceChangeCallback(napi_env env);
-    virtual ~NapiAudioCapturerDeviceChangeCallback();
-    void SaveCallbackReference(napi_value args);
+    ~NapiAudioCapturerDeviceChangeCallback() override;
+    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
+    void RemoveCallbackReference(const std::string &callbackName, napi_env env, napi_value callback) override;
     void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override;
     bool ContainSameJsCallback(napi_value args);
     void CreateCaptureDeviceChangeTsfn(napi_env env);
-
+    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
+protected:
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
+    napi_env &GetEnv() override;
 private:
     struct AudioCapturerDeviceChangeJsCallback {
         napi_ref callback_;
@@ -49,6 +56,7 @@ private:
     napi_ref callback_ = nullptr;
     bool regAcDevChgTsfn_ = false;
     napi_threadsafe_function acDevChgTsfn_ = nullptr;
+    std::shared_ptr<AutoRef> callbackPtr_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

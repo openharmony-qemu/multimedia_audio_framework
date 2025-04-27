@@ -65,11 +65,12 @@ constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
-constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
+constexpr int32_t UID_DMSDP_SA = 7071;
 constexpr int32_t TIME_OUT_SECONDS = 10;
+constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
 const uint32_t UNIQUE_ID_INTERVAL = 8;
 
@@ -100,10 +101,10 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
-    UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
     UID_THPEXTRA_SA,
-    UID_TELEPHONY_SA // used in distributed communication call
+    UID_TELEPHONY_SA, // used in distributed communication call
+    UID_DMSDP_SA
 };
 
 const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
@@ -208,6 +209,11 @@ void WatchTimeout::CheckCurrTimeout()
 
 bool CheckoutSystemAppUtil::CheckoutSystemApp(int32_t uid)
 {
+    if (uid == BOOTUP_MUSIC_UID) {
+        // boot animation must be system app, no need query from BMS, to redeuce boot latency.
+        AUDIO_INFO_LOG("boot animation must be system app, no need query from BMS.");
+        return true;
+    }
     bool isSystemApp = false;
     WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():CheckoutSystemApp");
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -394,6 +400,9 @@ bool PermissionUtil::VerifyIsAudio()
 
 bool PermissionUtil::VerifyIsSystemApp()
 {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    return true;
+#endif
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
@@ -404,6 +413,9 @@ bool PermissionUtil::VerifyIsSystemApp()
 
 bool PermissionUtil::VerifySelfPermission()
 {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    return true;
+#endif
     Security::AccessToken::FullTokenID selfToken = IPCSkeleton::GetSelfTokenID();
 
     auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(selfToken));
@@ -681,7 +693,8 @@ int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* 
 
 bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::mutex> lock(g_recordMapMutex);
     if (g_tokenIdRecordMap.count(targetTokenId)) {
         if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
@@ -710,7 +723,8 @@ bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t session
 
 bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStop", TIME_OUT_SECONDS);
+    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStop", TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::unique_lock<std::mutex> lock(g_recordMapMutex);
     if (!g_tokenIdRecordMap.count(targetTokenId)) {
         AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
@@ -1021,12 +1035,16 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
             curMaxAmplitude = value;
         }
     }
-    return float(curMaxAmplitude) / static_cast<double>(LONG_MAX);
+    return float(curMaxAmplitude) / static_cast<float>(INT_MAX);
 }
 
 template <typename T>
 bool StringConverter(const std::string &str, T &result)
 {
+    if (str == "-0") {
+        result = 0;
+        return true;
+    }
     auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
     return ec == std::errc{} && ptr == str.data() + str.size();
 }
@@ -1076,6 +1094,18 @@ template bool GetSysPara(const char *key, int32_t &value);
 template bool GetSysPara(const char *key, uint32_t &value);
 template bool GetSysPara(const char *key, int64_t &value);
 template bool GetSysPara(const char *key, std::string &value);
+
+int32_t GetEngineFlag()
+{
+    std::string para = "const.multimedia.audio.proaudioEnable";
+    static int32_t engineFlag = -1;
+    if (engineFlag == -1) {
+        bool res = GetSysPara(para.c_str(), engineFlag);
+        AUDIO_DEBUG_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
+        CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
+    }
+    return engineFlag;
+}
 
 std::map<std::string, std::string> DumpFileUtil::g_lastPara = {};
 
@@ -1199,6 +1229,13 @@ static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
     }
 }
 
+static void MemcpyToI32FromF32(float *src, int32_t *dst, size_t count)
+{
+    for (size_t i = 0; i < count; i++) {
+        *(dst + i) = static_cast<int32_t>(*(src + i));
+    }
+}
+
 bool NearZero(int16_t number)
 {
     return number >= -DETECTED_ZERO_THRESHOLD && number <= DETECTED_ZERO_THRESHOLD;
@@ -1270,6 +1307,9 @@ bool SignalDetectAgent::CheckAudioData(uint8_t *buffer, size_t bufferLen)
         int32_t ret = memcpy_s(cache, sizeof(int32_t) * cacheAudioData_.capacity(), buffer, bufferLen);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "LatencyMeas checkAudioData failed, dstSize "
             "%{public}zu, srcSize %{public}zu", sizeof(int32_t) * cacheAudioData_.capacity(), bufferLen);
+    } else if (sampleFormat_ == SAMPLE_F32LE) {
+        float *cp = reinterpret_cast<float*>(buffer);
+        MemcpyToI32FromF32(cp, cache, frameCountIgnoreChannel_);
     } else if (sampleFormat_ == SAMPLE_S24LE) {
         MemcpyToI32FromI24(buffer, cache, frameCountIgnoreChannel_);
     } else {
@@ -1461,6 +1501,7 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
                        "DspBeforeSmartPa:%{public}s, DspAfterSmartPa:%{public}s", rendererMockTime_.c_str(),
                        sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
     } else {
+        AUDIO_INFO_LOG("renderer mock time %{public}s", rendererMockTime_.c_str());
         if (dspDetectedTime_.length() == 0) {
             AUDIO_ERR_LOG("LatencyMeas GetExtraParam failed!");
             AUDIO_INFO_LOG("LatencyMeas CapturerDetectedTime:%{public}s, SourceDetectedTime:%{public}s",
@@ -1521,6 +1562,9 @@ const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_MIC:
             device = "MIC";
             break;
+        case DEVICE_TYPE_HDMI:
+            device = "HDMI";
+            break;
         case DEVICE_TYPE_WAKEUP:
             device = "WAKEUP";
             break;
@@ -1529,6 +1573,9 @@ const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
             break;
         case DEVICE_TYPE_INVALID:
             device = "INVALID";
+            break;
+        case DEVICE_TYPE_REMOTE_CAST:
+            device = "REMOTE_CAST";
             break;
         default:
             device = "UNKNOWN";
@@ -1640,6 +1687,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_ACCESSIBILITY, STREAM_ACCESSIBILITY},
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
     {STREAM_ALL, STREAM_ALL},
+    {STREAM_APP, STREAM_APP}
 };
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
@@ -1668,6 +1716,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_SYSTEM_ENFORCED, STREAM_SYSTEM},
 
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
+    {STREAM_APP, STREAM_APP}
 };
 
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
@@ -1753,6 +1802,21 @@ std::string AudioDump::GetVersionType()
 {
     return versionType_;
 }
+
+int32_t CheckSupportedParams(const AudioStreamInfo &info)
+{
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_SAMPLING_RATES, info.samplingRate),
+        ERR_INVALID_PARAM, "samplingRate not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(RENDERER_SUPPORTED_CHANNELS, info.channels),
+        ERR_INVALID_PARAM, "channels not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_FORMATS, info.format),
+        ERR_INVALID_PARAM, "format not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_ENCODING_TYPES, info.encoding),
+        ERR_INVALID_PARAM, "encoding not supported");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(RENDERER_SUPPORTED_CHANNELLAYOUTS, info.channelLayout),
+        ERR_INVALID_PARAM, "channelLayout not supported");
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -1791,6 +1855,29 @@ void CallEndAndClear(CTrace **cTrace)
         delete *cTrace;
         *cTrace = nullptr;
     }
+}
+
+bool IsInnerCapSinkName(char *pattern)
+{
+    size_t patternLength = strlen(pattern);
+    if (patternLength > MAX_MEM_MALLOC_SIZE) {
+        return false;
+    }
+    char *patternCopy = (char*)malloc(patternLength + 1);
+    if (patternCopy == nullptr) {
+        return false;
+    }
+    if (strcpy_s(patternCopy, patternLength + 1, pattern) != 0) {
+        free(patternCopy);
+        return false;
+    }
+    char *firstPart = strtok(patternCopy, "_");
+    bool result = false;
+    if (firstPart != nullptr && strcmp(firstPart, SINK_NAME_INNER_CAPTURER) == 0) {
+        result = true;
+    }
+    free(patternCopy);
+    return result;
 }
 
 #ifdef __cplusplus

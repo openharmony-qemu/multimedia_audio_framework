@@ -46,7 +46,7 @@ public:
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid = INVALID_UID);
 
     int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback);
@@ -57,6 +57,8 @@ public:
 
     int32_t SetDeviceChangeCallback(const DeviceFlag flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback);
+
+    int32_t SetDistribuitedOutputChangeCallback(const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb);
 
     int32_t SetQueryClientTypeCallback(
         const std::shared_ptr<AudioQueryClientTypeCallback>& callback);
@@ -72,6 +74,8 @@ public:
     DeviceType GetActiveOutputDevice();
 
     AudioScene GetAudioScene() const;
+
+    int32_t SetAudioSceneChangeCallback(const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
 
     int32_t GetMaxVolume(AudioVolumeType volumeType);
 
@@ -93,6 +97,16 @@ public:
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
 
     int32_t RegisterAudioRendererEventListener(const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
+
+    int32_t GetPreferredInputDeviceForCapturerInfo(
+        AudioCapturerInfo captureInfo, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+
+    int32_t SetPreferredInputDeviceChangeCallback(
+        AudioCapturerInfo &capturerInfo, const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
+
+    int32_t GetCurrentCapturerChangeInfos(
+        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+    int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
 
 private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;

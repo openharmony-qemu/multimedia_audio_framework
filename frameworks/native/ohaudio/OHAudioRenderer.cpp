@@ -105,8 +105,8 @@ OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-
     OHOS::AudioStandard::RendererState rendererState = audioRenderer->GetCurrentState();
+    CHECK_AND_RETURN_RET_LOG(state != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "state is nullptr");
     *state = (OH_AudioStream_State)rendererState;
     return AUDIOSTREAM_SUCCESS;
 }
@@ -115,7 +115,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetSamplingRate(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-
+    CHECK_AND_RETURN_RET_LOG(rate != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "rate is nullptr");
     *rate = audioRenderer->GetSamplingRate();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -124,6 +124,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetStreamId(OH_AudioRenderer *renderer, u
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(streamId != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "streamId is nullptr");
     audioRenderer->GetStreamId(*streamId);
     return AUDIOSTREAM_SUCCESS;
 }
@@ -132,6 +133,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetChannelCount(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(channelCount != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "channelCount is nullptr");
     *channelCount = audioRenderer->GetChannelCount();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -141,6 +143,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetSampleFormat(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(sampleFormat != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "sampleFormat is nullptr");
     *sampleFormat = (OH_AudioStream_SampleFormat)audioRenderer->GetSampleFormat();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -152,6 +155,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetLatencyMode(OH_AudioRenderer *renderer
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     OHOS::AudioStandard::AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
+    CHECK_AND_RETURN_RET_LOG(latencyMode != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "latencyMode is nullptr");
     *latencyMode = (OH_AudioStream_LatencyMode)rendererInfo.rendererFlags;
 
     return AUDIOSTREAM_SUCCESS;
@@ -162,9 +166,9 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-
     OHOS::AudioStandard::AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
+    CHECK_AND_RETURN_RET_LOG(usage != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "usage is nullptr");
     *usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
     return AUDIOSTREAM_SUCCESS;
 }
@@ -174,7 +178,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererPrivacy(OH_AudioRenderer* rend
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-
+    CHECK_AND_RETURN_RET_LOG(privacy != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "privacy is nullptr");
     *privacy = (OH_AudioStream_PrivacyType)audioRenderer->GetRendererPrivacy();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -184,6 +188,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetEncodingType(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(encodingType != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "encodingType is nullptr");
     *encodingType = (OH_AudioStream_EncodingType)audioRenderer->GetEncodingType();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -192,6 +197,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer *render
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(frames != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "frames is nullptr");
     *frames = audioRenderer->GetFramesWritten();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -209,7 +215,9 @@ OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer *renderer,
         AUDIO_ERR_LOG("GetTimestamp error!");
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     }
+    CHECK_AND_RETURN_RET_LOG(framePosition != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "framePosition is nullptr");
     *framePosition = stamp.framePosition;
+    CHECK_AND_RETURN_RET_LOG(timestamp != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "timestamp is nullptr");
     *timestamp = stamp.time.tv_sec * SECOND_TO_NANOSECOND + stamp.time.tv_nsec;
     return AUDIOSTREAM_SUCCESS;
 }
@@ -236,6 +244,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer *
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(frameSize != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "frameSize is nullptr");
     *frameSize = audioRenderer->GetFrameSizeInCallback();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -244,6 +253,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetSpeed(OH_AudioRenderer *renderer, floa
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(speed != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "speed is nullptr");
     *speed = audioRenderer->GetSpeed();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -306,6 +316,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetChannelLayout(OH_AudioRenderer *render
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(channelLayout != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "channelLayout is nullptr");
     *channelLayout = (OH_AudioChannelLayout)audioRenderer->GetChannelLayout();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -315,6 +326,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetEffectMode(OH_AudioRenderer *renderer,
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(effectMode != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "effectMode is nullptr");
     *effectMode = (OH_AudioStream_AudioEffectMode)audioRenderer->GetEffectMode();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -351,6 +363,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetSilentModeAndMixWithOthers(
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(on != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "on is nullptr");
     *on = audioRenderer->GetSilentModeAndMixWithOthers();
     return AUDIOSTREAM_SUCCESS;
 }
@@ -654,7 +667,13 @@ void OHAudioRenderer::SetWriteDataCallback(RendererCallback rendererCallbacks, v
 
 void OHAudioRenderer::SetInterruptCallback(RendererCallback rendererCallbacks, void *userData)
 {
-    if (rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
+    if (interruptEventCallbackType_ == INTERRUPT_EVENT_CALLBACK_WITH_RESULT &&
+        rendererCallbacks.onInterruptEventCallback != nullptr) {
+        audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(
+            rendererCallbacks.onInterruptEventCallback, (OH_AudioRenderer*)this, userData);
+        audioRenderer_->SetRendererCallback(audioRendererCallback_);
+    } else if (interruptEventCallbackType_ == INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT &&
+        rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
         audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(rendererCallbacks.callbacks,
             (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererCallback(audioRendererCallback_);
@@ -665,7 +684,19 @@ void OHAudioRenderer::SetInterruptCallback(RendererCallback rendererCallbacks, v
 
 void OHAudioRenderer::SetErrorCallback(RendererCallback rendererCallbacks, void *userData)
 {
-    if (rendererCallbacks.callbacks.OH_AudioRenderer_OnError != nullptr) {
+    if (errorCallbackType_ == ERROR_CALLBACK_WITH_RESULT &&
+        rendererCallbacks.onErrorCallback != nullptr) {
+        std::shared_ptr<AudioRendererPolicyServiceDiedCallback> callback =
+            std::make_shared<OHServiceDiedCallback>(rendererCallbacks.onErrorCallback,
+            (OH_AudioRenderer*)this, userData);
+        int32_t clientPid = getpid();
+        audioRenderer_->RegisterAudioPolicyServerDiedCb(clientPid, callback);
+
+        std::shared_ptr<AudioRendererErrorCallback> errorCallback = std::make_shared<OHAudioRendererErrorCallback>(
+            rendererCallbacks.onErrorCallback, (OH_AudioRenderer*)this, userData);
+        audioRenderer_->SetAudioRendererErrorCallback(errorCallback);
+    } else if (errorCallbackType_ == ERROR_CALLBACK_WITHOUT_RESULT &&
+        rendererCallbacks.callbacks.OH_AudioRenderer_OnError != nullptr) {
         std::shared_ptr<AudioRendererPolicyServiceDiedCallback> callback =
             std::make_shared<OHServiceDiedCallback>(rendererCallbacks.callbacks, (OH_AudioRenderer*)this, userData);
         int32_t clientPid = getpid();
@@ -721,6 +752,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
 {
     OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
     OHOS::AudioStandard::ObjectRefMap objectGuard(audioRenderer);
+    audioRenderer = objectGuard.GetPtr();
     CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_PCM) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
         ((encodingType_ == ENCODING_PCM) && (onWriteDataCallback_ != nullptr)) ||
@@ -732,12 +764,12 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
         writeDataWithMetadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
             (void*)bufDesc.metaBuffer, bufDesc.metaLength);
     } else {
-        if (audioRenderer->GetRendererCallbackType() == WRITE_DATA_CALLBACK_WITHOUT_RESULT &&
+        if (audioRenderer->GetRendererWriteDataCallbackType() == WRITE_DATA_CALLBACK_WITHOUT_RESULT &&
             callbacks_.OH_AudioRenderer_OnWriteData != nullptr) {
             callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
         }
-        if (audioRenderer->GetRendererCallbackType() == WRITE_DATA_CALLBACK_WITH_RESULT &&
+        if (audioRenderer->GetRendererWriteDataCallbackType() == WRITE_DATA_CALLBACK_WITH_RESULT &&
             onWriteDataCallback_ != nullptr) {
             OH_AudioData_Callback_Result result = onWriteDataCallback_(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
@@ -763,18 +795,37 @@ void OHAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const AudioDevice
 void OHAudioRendererCallback::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnInterruptEvent != nullptr, "pointer to the function is nullptr");
-    OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
-    OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
-    callbacks_.OH_AudioRenderer_OnInterruptEvent(ohAudioRenderer_, userData_, type, hint);
+    OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
+    if (audioRenderer->GetRendererInterruptEventCallbackType() == INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioRenderer_OnInterruptEvent != nullptr) {
+        OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
+        OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
+        callbacks_.OH_AudioRenderer_OnInterruptEvent(ohAudioRenderer_, userData_, type, hint);
+    }
+
+    if (audioRenderer->GetRendererInterruptEventCallbackType() == INTERRUPT_EVENT_CALLBACK_WITH_RESULT &&
+        onInterruptEventCallback_ != nullptr) {
+        OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
+        OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
+        onInterruptEventCallback_(ohAudioRenderer_, userData_, type, hint);
+    }
 }
 
 void OHServiceDiedCallback::OnAudioPolicyServiceDied()
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnError != nullptr, "pointer to the function is nullptr");
-    OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
-    callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+    OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
+    if (audioRenderer->GetRendererErrorCallbackType() == ERROR_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioRenderer_OnError != nullptr) {
+            OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
+        callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+    }
+
+    if (audioRenderer->GetRendererErrorCallbackType() == ERROR_CALLBACK_WITH_RESULT &&
+        errorCallback_ != nullptr) {
+            OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
+        errorCallback_(ohAudioRenderer_, userData_, error);
+    }
 }
 
 OH_AudioStream_Result OHAudioRendererErrorCallback::GetErrorResult(AudioErrors errorCode) const
@@ -786,6 +837,8 @@ OH_AudioStream_Result OHAudioRendererErrorCallback::GetErrorResult(AudioErrors e
             return AUDIOSTREAM_ERROR_INVALID_PARAM;
         case ERROR_SYSTEM:
             return AUDIOSTREAM_ERROR_SYSTEM;
+        case ERROR_UNSUPPORTED_FORMAT:
+            return AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT;
         default:
             return AUDIOSTREAM_ERROR_SYSTEM;
     }
@@ -793,10 +846,18 @@ OH_AudioStream_Result OHAudioRendererErrorCallback::GetErrorResult(AudioErrors e
 
 void OHAudioRendererErrorCallback::OnError(AudioErrors errorCode)
 {
-    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr && callbacks_.OH_AudioRenderer_OnError != nullptr,
-        "renderer client or error callback funtion is nullptr");
-    OH_AudioStream_Result error = GetErrorResult(errorCode);
-    callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
+    OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
+    if (audioRenderer->GetRendererErrorCallbackType() == ERROR_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioRenderer_OnError != nullptr) {
+        OH_AudioStream_Result error = GetErrorResult(errorCode);
+        callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+    }
+
+    if (audioRenderer->GetRendererErrorCallbackType() == ERROR_CALLBACK_WITH_RESULT && errorCallback_ != nullptr) {
+        OH_AudioStream_Result error = GetErrorResult(errorCode);
+        errorCallback_(ohAudioRenderer_, userData_, error);
+    }
 }
 
 void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
@@ -832,14 +893,34 @@ int32_t OHAudioRenderer::SetDefaultOutputDevice(DeviceType deviceType)
     return audioRenderer_->SetDefaultOutputDevice(deviceType);
 }
 
-void OHAudioRenderer::SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType)
+void OHAudioRenderer::SetRendererWriteDataCallbackType(WriteDataCallbackType writeDataCallbackType)
 {
     writeDataCallbackType_ = writeDataCallbackType;
 }
 
-WriteDataCallbackType OHAudioRenderer::GetRendererCallbackType()
+WriteDataCallbackType OHAudioRenderer::GetRendererWriteDataCallbackType()
 {
     return writeDataCallbackType_;
+}
+
+void OHAudioRenderer::SetRendererInterruptEventCallbackType(InterruptEventCallbackType InterruptEventCallbackType)
+{
+    interruptEventCallbackType_ = InterruptEventCallbackType;
+}
+
+InterruptEventCallbackType OHAudioRenderer::GetRendererInterruptEventCallbackType()
+{
+    return interruptEventCallbackType_;
+}
+
+void OHAudioRenderer::SetRendererErrorCallbackType(ErrorCallbackType errorCallbackType)
+{
+    errorCallbackType_ = errorCallbackType;
+}
+
+ErrorCallbackType OHAudioRenderer::GetRendererErrorCallbackType()
+{
+    return errorCallbackType_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

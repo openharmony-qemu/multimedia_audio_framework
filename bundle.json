@@ -251,6 +251,16 @@
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/frameworks/cj/include"
               }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+              "header": {
+                "header_files": [
+                  "audio_zone_manager.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include"
+              }
             }
           ],
           "test": [

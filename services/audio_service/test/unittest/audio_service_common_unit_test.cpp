@@ -674,5 +674,185 @@ HWTEST(AudioServiceCommonUnitTest, AudioRingCache_008, TestSize.Level1)
         EXPECT_EQ(writeBuffer[index], readBuffer[index]);
     }
 }
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: DumpInnerCapConfig_001
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_001, TestSize.Level1)
+{
+    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::EXCLUDE, {0}, FilterMode::EXCLUDE}, false};
+    std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
+    EXPECT_NE(dumpStr, "");
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: DumpInnerCapConfig_002
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, DumpInnerCapConfig_002, TestSize.Level1)
+{
+    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC},
+        FilterMode::MAX_FILTER_MODE, {0}, FilterMode::MAX_FILTER_MODE}, false};
+    std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
+    EXPECT_NE(dumpStr, "");
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_001
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_001, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    for (int i = 0; i < 31; i++) {
+        config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_MEDIA);
+    }
+    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_002
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_002, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    for (int i = 0; i < 29; i++) {
+        config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT);
+    }
+    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_003
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_003, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ALARM);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_RINGTONE);
+
+    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_004
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_004, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ALARM);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ENFORCED_TONE);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_INVALID);
+
+    int ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: ReadInnerCapConfigFromParcel_005
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_005, TestSize.Level1)
+{
+    MessageParcel parcel;
+    AudioPlaybackCaptureConfig config;
+
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ALARM);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_MEDIA);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_MEDIA);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_MEDIA);
+    config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_ALARM);
+
+    int ret = 0;
+    ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, parcel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test LinearPosTimeModel API
+* @tc.type  : FUNC
+* @tc.number: LinearPosTimeModel_003
+* @tc.desc  : Test LinearPosTimeModel interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_003, TestSize.Level1)
+{
+    auto linearPos = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(linearPos != nullptr);
+
+    uint64_t frame = 0;
+    int64_t nanoTime = 0;
+    for (int i = 0; i < 10; i++) {
+        linearPos->posTimeVec_.push_back(std::make_pair(frame, nanoTime));
+        if (frame < 5) {
+            frame++;
+        }
+        nanoTime++;
+    }
+    linearPos->sampleRate_ = 1;
+    auto ret = linearPos->CheckReasonable(frame, nanoTime);
+    EXPECT_EQ(ret, CHECK_FAILED);
+}
+
+/**
+* @tc.name  : Test LinearPosTimeModel API
+* @tc.type  : FUNC
+* @tc.number: LinearPosTimeModel_004
+* @tc.desc  : Test LinearPosTimeModel interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_004, TestSize.Level1)
+{
+    auto linearPos = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(linearPos != nullptr);
+
+    uint64_t posInFrame = 20;
+    linearPos->isConfiged = true;
+    linearPos->sampleRate_ = 1;
+    auto ret = linearPos->GetTimeOfPos(posInFrame);
+    EXPECT_NE(ret, -1);
+}
+
+/**
+* @tc.name  : Test LinearPosTimeModel API
+* @tc.type  : FUNC
+* @tc.number: LinearPosTimeModel_005
+* @tc.desc  : Test LinearPosTimeModel interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_005, TestSize.Level1)
+{
+    auto linearPos = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(linearPos != nullptr);
+
+    uint64_t posInFrame = 0;
+    linearPos->stampFrame_ = 5;
+    linearPos->isConfiged = true;
+    linearPos->sampleRate_ = 1;
+    auto ret = linearPos->GetTimeOfPos(posInFrame);
+    EXPECT_NE(ret, -1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

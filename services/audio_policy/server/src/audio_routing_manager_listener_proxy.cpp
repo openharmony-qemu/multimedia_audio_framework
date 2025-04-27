@@ -123,5 +123,21 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
     }
     return SUCCESS;
 }
+
+int32_t AudioRoutingManagerListenerProxy::GetSplitInfoRefined(std::string &splitInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int error = Remote()->SendRequest(GET_SPLIT_INFO_REFINED, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "error: %{public}d", error);
+
+    int32_t result = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+        "callback failed, error %{public}d", result);
+    splitInfo = reply.ReadString();
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

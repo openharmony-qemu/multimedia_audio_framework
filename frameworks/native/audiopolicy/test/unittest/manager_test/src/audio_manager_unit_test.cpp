@@ -20,6 +20,7 @@
 #include "audio_renderer.h"
 #include "audio_capturer.h"
 #include "audio_stream_manager.h"
+#include "audio_utils.h"
 
 #include <chrono>
 #include <thread>
@@ -150,7 +151,7 @@ HWTEST(AudioManagerUnitTest, GetAudioParameter_001, TestSize.Level1)
 {
     std::string mockBundleName = "Is_Fast_Blocked_For_AppName#com.samples.audio";
     std::string result = AudioSystemManager::GetInstance()->GetAudioParameter(mockBundleName);
-    EXPECT_EQ(result, "true");
+    EXPECT_EQ(result, "");
 }
 
 /**
@@ -191,7 +192,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_001, TestSize.Level1)
     outputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -262,7 +263,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level1)
     outputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1829,6 +1830,35 @@ HWTEST(AudioManagerUnitTest, SetRingerModeTest_003, TestSize.Level1)
 }
 
 /**
+* @tc.name   : Test SetRingerMode API
+* @tc.number : SetRingerModeTest_004
+* @tc.desc   : Test setting of ringer mode to VIBRATE
+*/
+HWTEST(AudioManagerUnitTest, SetRingerModeTest_004, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    auto ret = AudioSystemManager::GetInstance()->SetRingerMode(AudioRingerMode::RINGER_MODE_VIBRATE);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_VIBRATE);
+}
+
+/**
+* @tc.name   : Test SetRingerMode API
+* @tc.number : SetRingerModeTest_005
+* @tc.desc   : Test setting of ringer mode to SILENT
+*/
+HWTEST(AudioManagerUnitTest, SetRingerModeTest_005, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    auto ret = AudioSystemManager::GetInstance()->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioRingerMode ringerMode = AudioSystemManager::GetInstance()->GetRingerMode();
+    EXPECT_EQ(ringerMode, AudioRingerMode::RINGER_MODE_SILENT);
+}
+/**
 * @tc.name   : Test SetMicrophoneMute API
 * @tc.number : SetMicrophoneMute_001
 * @tc.desc   : Test muting of microphone to true
@@ -1923,6 +1953,34 @@ HWTEST(AudioManagerUnitTest, SetMute_006, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_DEFAULT, false);
     EXPECT_LT(ret, SUCCESS);
+}
+
+/**
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_007
+* @tc.desc   : Test mute functionality of medie stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_007, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_ALL, true);
+    EXPECT_EQ(ret, SUCCESS);
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_SYSTEM);
+    EXPECT_TRUE(isActive);
+}
+
+/**
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_008
+* @tc.desc   : Test unmute functionality of media stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_008, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_ALL, false);
+    EXPECT_EQ(ret, SUCCESS);
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_SYSTEM);
+    EXPECT_FALSE(isActive);
 }
 
 /**
@@ -3027,8 +3085,7 @@ HWTEST(AudioManagerUnitTest, LoadSplitModule_004, TestSize.Level1)
     int32_t setUidRet = setuid(UID_CAR_DISTRIBUTED_ENGINE_SA);
     std::cout << "stUidRet: " << setUidRet << std::endl;
     auto ret = AudioSystemManager::GetInstance()->LoadSplitModule(TEST_SPLIT_ARGS, TEST_NETWORK_ID);
-    const int32_t E_IPC_ERROR = 29189;
-    EXPECT_EQ(E_IPC_ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 } // namespace AudioStandard

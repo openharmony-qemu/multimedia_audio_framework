@@ -37,9 +37,9 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
-    const int32_t VALID_SCENEKEY = 68864;
-    const int32_t INVALID_SCENEKEY = 0;
-    const int32_t VALID_CAPTUREID = 13;
+    const uint64_t VALID_SCENEKEY = 4563402752;
+    const uint64_t INVALID_SCENEKEY = 0;
+    const int32_t VALID_CAPTUREID = 4096;
     const int32_t INVALID_CAPTUREID = 0;
     const int32_t DEFAULT_RATE = 48000;
     const int32_t DEFAULT_CHANNEL = 4;
@@ -84,7 +84,7 @@ void AudioEnhanceChainAdapterUnitTest::SetUp(void)
 
 void AudioEnhanceChainAdapterUnitTest::TearDown(void)
 {
-    AudioEnhanceChainManager* manager = AudioEnhanceChainManager::GetInstance();
+    manager = AudioEnhanceChainManager::GetInstance();
     manager->ResetInfo();
 }
 
@@ -93,7 +93,7 @@ void AudioEnhanceChainAdapterUnitTest::TearDown(void)
 * @tc.number : EnhanceChainManagerCreateCb_001
 * @tc.desc   : Test EnhanceChainManagerCreateCb interface with invalid scene key code.
 */
-HWTEST_F(AudioEnhanceChainAdapterUnitTest, EnhanceChainManagerCreateCb_001, TestSize.Level1)
+HWTEST_F(AudioEnhanceChainAdapterUnitTest, EnhanceChainManagerCreateCb_001, TestSize.Level0)
 {
     int32_t result = EnhanceChainManagerCreateCb(INVALID_SCENEKEY, &validAdapter);
     EXPECT_EQ(ERROR, result);
@@ -197,6 +197,14 @@ HWTEST_F(AudioEnhanceChainAdapterUnitTest, EnhanceChainManagerGetAlgoConfig_002,
     pa_sample_spec_init(&ecSpec);
     pa_sample_spec_init(&micRefSpec);
 
+    std::string scene = "SCENE_RECORD";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    bool defaultFlag = false;
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain =
+        std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, defaultFlag);
+    manager->sceneTypeToEnhanceChainMap_.insert_or_assign(VALID_SCENEKEY, audioEnhanceChain);
+    manager->sceneTypeToEnhanceChainCountMap_.insert_or_assign(VALID_SCENEKEY, 1);
     int32_t result = EnhanceChainManagerGetAlgoConfig(VALID_SCENEKEY, &micSpec, &ecSpec, &micRefSpec);
     EXPECT_EQ(SUCCESS, result);
 }
@@ -416,7 +424,7 @@ HWTEST_F(AudioEnhanceChainAdapterUnitTest, EnhanceChainManagerProcess_002, TestS
 HWTEST_F(AudioEnhanceChainAdapterUnitTest, GetSceneTypeCode_001, TestSize.Level1)
 {
     const char *invalidScene = "NONE";
-    uint32_t sceneTypeCode;
+    uint64_t sceneTypeCode;
     int32_t result = GetSceneTypeCode(invalidScene, &sceneTypeCode);
     EXPECT_EQ(ERROR, result);
 }
@@ -429,7 +437,7 @@ HWTEST_F(AudioEnhanceChainAdapterUnitTest, GetSceneTypeCode_001, TestSize.Level1
 HWTEST_F(AudioEnhanceChainAdapterUnitTest, GetSceneTypeCode_002, TestSize.Level1)
 {
     const char *invalidScene = "SCENE_RECORD";
-    uint32_t sceneTypeCode;
+    uint64_t sceneTypeCode;
     int32_t result = GetSceneTypeCode(invalidScene, &sceneTypeCode);
     EXPECT_EQ(SUCCESS, result);
 }

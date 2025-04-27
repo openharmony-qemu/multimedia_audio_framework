@@ -22,6 +22,9 @@
 #include "audio_process_stub.h"
 #include "i_audio_process_stream.h"
 #include "i_process_status_listener.h"
+#include "player_dfx_writer.h"
+#include "recorder_dfx_writer.h"
+#include "audio_schedule_guard.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -92,36 +95,59 @@ public:
     int32_t GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime);
 
     // for inner-cap
-    void SetInnerCapState(bool isInnerCapped) override;
-    bool GetInnerCapState() override;
+    void SetInnerCapState(bool isInnerCapped, int32_t innerCapId) override;
+    bool GetInnerCapState(int32_t innerCapId) override;
+    std::unordered_map<int32_t, bool> GetInnerCapState() override;
 
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
-    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
+
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName,
+        BoostTriggerMethod method) override;
 
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
+    std::time_t GetStartMuteTime() override;
+    void SetStartMuteTime(std::time_t time) override;
+ 
+    bool GetSilentState() override;
+    void SetSilentState(bool state) override;
+    int32_t SetSourceDuration(int64_t duration) override;
+
+    int32_t SetUnderrunCount(uint32_t underrunCnt) override;
+    void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
+
+    RestoreStatus RestoreSession(RestoreInfo restoreInfo);
+    
+    bool TurnOnMicIndicator(CapturerState capturerState);
+    bool TurnOffMicIndicator(CapturerState capturerState);
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+        uint32_t code) override;
 public:
     const AudioProcessConfig processConfig_;
 
 private:
+    int32_t StartInner();
+    int64_t GetLastAudioDuration();
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
+    void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
 
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
-    bool isInnerCapped_ = false;
+    std::unordered_map<int32_t, bool> innerCapStates_;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
     sptr<IRemoteObject> object_ = nullptr;
     sptr<ProcessDeathRecipient> deathRecipient_ = nullptr;
 
     bool needCheckBackground_ = false;
+    bool isMicIndicatorOn_ = false;
 
     uint32_t sessionId_ = 0;
     bool isInited_ = false;
@@ -130,7 +156,6 @@ private:
 
     uint32_t clientTid_ = 0;
     std::string clientBundleName_;
-    bool clientThreadPriorityRequested_ = false;
 
     uint32_t totalSizeInframe_ = 0;
     uint32_t spanSizeInframe_ = 0;
@@ -143,6 +168,20 @@ private:
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
+    std::time_t startMuteTime_ = 0;
+    bool isInSilentState_ = false;
+
+    int64_t lastStartTime_{};
+    int64_t lastStopTime_{};
+    int64_t lastWriteFrame_{};
+    int64_t lastWriteMuteFrame_{};
+    std::atomic<uint32_t> underrunCount_ = 0;
+    int64_t sourceDuration_ = -1;
+    std::unique_ptr<PlayerDfxWriter> playerDfx_;
+    std::unique_ptr<RecorderDfxWriter> recorderDfx_;
+
+    std::array<std::shared_ptr<SharedAudioScheduleGuard>, METHOD_MAX> scheduleGuards_ = {};
+    std::mutex scheduleGuardsMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

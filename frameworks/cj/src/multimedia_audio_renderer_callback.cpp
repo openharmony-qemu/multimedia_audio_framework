@@ -56,10 +56,11 @@ void CjAudioRendererOutputDeviceChangeCallback::OnOutputDeviceChange(const Audio
     if (func_ == nullptr) {
         return;
     }
-    CArrDeviceDescriptor arr;
+    CArrDeviceDescriptor arr{};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     func_(arr);
@@ -79,11 +80,12 @@ void CjAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(con
     if (func_ == nullptr) {
         return;
     }
-    CAudioStreamDeviceChangeInfo info;
-    CArrDeviceDescriptor arr;
+    CAudioStreamDeviceChangeInfo info{};
+    CArrDeviceDescriptor arr{};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
         return;
     }
     info.deviceDescriptors = arr;
@@ -105,8 +107,8 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
     if (func_ == nullptr) {
         return;
     }
-    CArrUI8 arr;
-    BufferDesc buf;
+    CArrUI8 arr{};
+    BufferDesc buf{};
     audioRenderer_->GetBufferDesc(buf);
     if (buf.buffer == nullptr) {
         return;
@@ -114,6 +116,7 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
     arr.size = std::min(length, buf.bufLength);
     int32_t mallocSize = static_cast<int32_t>(sizeof(uint8_t)) * static_cast<int32_t>(arr.size);
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(uint8_t) * MAX_MEM_MALLOC_SIZE)) {
+        FreeBufferDesc(buf);
         return;
     }
     arr.head = static_cast<uint8_t *>(malloc(mallocSize));
@@ -152,7 +155,7 @@ void CjAudioRendererCallback::OnInterrupt(const InterruptEvent &interruptEvent)
     if (interruptCallback_ == nullptr) {
         return;
     }
-    CInterruptEvent event;
+    CInterruptEvent event{};
     event.eventType = static_cast<int32_t>(interruptEvent.eventType);
     event.forceType = static_cast<int32_t>(interruptEvent.forceType);
     event.hintType = static_cast<int32_t>(interruptEvent.hintType);

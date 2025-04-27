@@ -222,7 +222,6 @@ AudioDeviceDescriptor MediaBluetoothDeviceManager::HandleConnectDeviceInner(cons
     RemoveDeviceInConfigVector(device, connectingDevices_);
     // If the device was virtual connected, remove it from the negativeDevices_ list.
     RemoveDeviceInConfigVector(device, negativeDevices_);
-    RemoveDeviceInConfigVector(device, virtualDevices_);
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -404,9 +403,6 @@ void MediaBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevic
 
 void MediaBluetoothDeviceManager::HandleVirtualConnectDevice(const BluetoothRemoteDevice &device)
 {
-    if (IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        return;
-    }
     AddDeviceInConfigVector(device, virtualDevices_);
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
     AudioDeviceDescriptor desc;
@@ -417,10 +413,6 @@ void MediaBluetoothDeviceManager::HandleVirtualConnectDevice(const BluetoothRemo
 
 void MediaBluetoothDeviceManager::HandleRemoveVirtualConnectDevice(const BluetoothRemoteDevice &device)
 {
-    if (IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        AUDIO_WARNING_LOG("The device is already removed as virtual Devices, ignore remove action.");
-        return;
-    }
     RemoveDeviceInConfigVector(device, virtualDevices_);
     RemoveDeviceInConfigVector(device, negativeDevices_);
     AudioDeviceDescriptor desc;
@@ -462,8 +454,8 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::CONNECTED;
-    AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
-        category is %{public}d, device name is %{public}s", deviceStatus,
+    AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address\
+        is %{public}s, category is %{public}d, device name is %{public}s", deviceStatus,
         GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
     {
         std::lock_guard<std::mutex> deviceMapLock(g_a2dpDeviceMapLock);
@@ -791,7 +783,6 @@ AudioDeviceDescriptor HfpBluetoothDeviceManager::HandleConnectDeviceInner(const 
     RemoveDeviceInConfigVector(device, connectingDevices_);
     // If the device was virtual connected, remove it from the negativeDevices_ list.
     RemoveDeviceInConfigVector(device, negativeDevices_);
-    RemoveDeviceInConfigVector(device, virtualDevices_);
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
@@ -1003,9 +994,6 @@ void HfpBluetoothDeviceManager::HandleStopVirtualCall(const BluetoothRemoteDevic
 
 void HfpBluetoothDeviceManager::HandleVirtualConnectDevice(const BluetoothRemoteDevice &device)
 {
-    if (IsHfpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        return;
-    }
     AddDeviceInConfigVector(device, virtualDevices_);
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
     AudioDeviceDescriptor desc;
@@ -1016,10 +1004,6 @@ void HfpBluetoothDeviceManager::HandleVirtualConnectDevice(const BluetoothRemote
 
 void HfpBluetoothDeviceManager::HandleRemoveVirtualConnectDevice(const BluetoothRemoteDevice &device)
 {
-    if (IsHfpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        AUDIO_INFO_LOG("The device is already removed as virtual Devices, ignore remove action.");
-        return;
-    }
     RemoveDeviceInConfigVector(device, virtualDevices_);
     RemoveDeviceInConfigVector(device, negativeDevices_);
     AudioDeviceDescriptor desc;

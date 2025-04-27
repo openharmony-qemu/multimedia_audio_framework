@@ -21,6 +21,7 @@
 #include "napi/native_node_api.h"
 #include "napi_async_work.h"
 #include "audio_renderer.h"
+#include "napi_audio_renderer_callback_inner.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,18 +35,24 @@ const std::string DEVICECHANGE_CALLBACK_NAME = "outputDeviceChange";
 const std::string OUTPUT_DEVICECHANGE_WITH_INFO = "outputDeviceChangeWithInfo";
 const std::string WRITE_DATA_CALLBACK_NAME = "writeData";
 
-class NapiAudioRendererCallback : public AudioRendererCallback {
+class NapiAudioRendererCallback : public AudioRendererCallback,
+    public NapiAudioRendererCallbackInner {
 public:
     explicit NapiAudioRendererCallback(napi_env env);
-    virtual ~NapiAudioRendererCallback();
+    ~NapiAudioRendererCallback() override;
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType) override;
-    void SaveCallbackReference(const std::string &callbackName, napi_value args);
-    void RemoveCallbackReference(const std::string &callbackName);
     void CreateArInterrupt(napi_env env);
     void CreateArStateChange(napi_env env);
     bool GetArInterruptTsfnFlag();
     bool GetArStateChangeTsfnFlag();
+    void SaveCallbackReference(const std::string &callbackName, napi_value args) override;
+    void RemoveCallbackReference(const std::string &callbackName, napi_env env,
+        napi_value callback, napi_value args = nullptr) override;
+    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
+protected:
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
+    napi_env &GetEnv() override;
 
 private:
     struct AudioRendererJsCallback {

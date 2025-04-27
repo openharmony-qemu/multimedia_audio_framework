@@ -102,6 +102,8 @@ public:
         std::optional<int32_t> userSettedPreferredFrameSize = std::nullopt;
         bool silentModeAndMixWithOthers = false;
         DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
+
+        std::optional<pid_t> lastCallStartByUserTid = std::nullopt;
     };
 
     virtual ~IAudioStream() = default;
@@ -129,7 +131,8 @@ public:
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
     virtual void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;
     virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj) = 0;
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) = 0;
     virtual int32_t GetAudioStreamInfo(AudioStreamParams &info) = 0;
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
     virtual void GetAudioPipeType(AudioPipeType &pipeType) = 0;
@@ -143,14 +146,14 @@ public:
     virtual int32_t SetVolume(float volume) = 0;
     virtual float GetVolume() = 0;
     virtual int32_t SetDuckVolume(float volume) = 0;
+    virtual float GetDuckVolume() = 0;
     virtual int32_t SetMute(bool mute) = 0;
+    virtual bool GetMute() = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
     virtual int32_t SetSpeed(float speed) = 0;
     virtual float GetSpeed() = 0;
-    virtual int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize) = 0;
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;
@@ -278,13 +281,26 @@ public:
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
     virtual DeviceType GetDefaultOutputDevice() = 0;
 
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
 
     virtual void SetSwitchingStatus(bool isSwitching) = 0;
+    virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
+
+    virtual void GetRestoreInfo(RestoreInfo &restoreInfo) = 0;
+
+    virtual void SetRestoreInfo(RestoreInfo &restoreInfo) = 0;
+
+    virtual RestoreStatus CheckRestoreStatus() = 0;
+
+    virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
+
+    virtual void FetchDeviceForSplitStream() = 0;
+
+    virtual void SetCallStartByUserTid(pid_t tid) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

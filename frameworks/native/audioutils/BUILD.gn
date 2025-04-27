@@ -26,6 +26,9 @@ ohos_shared_library("audio_utils") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   public_configs = [ ":audio_utils_public_config" ]
   install_enable = true
@@ -40,6 +43,8 @@ ohos_shared_library("audio_utils") {
     "./src/audio_performance_monitor.cpp",
     "./src/audio_speed.cpp",
     "./src/audio_utils.cpp",
+    "./src/dfx_stat.cpp",
+    "./src/dfx_utils.cpp",
     "./src/volume_ramp.cpp",
   ]
 
@@ -89,6 +94,9 @@ ohos_shared_library("audio_xml_utils") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   public_configs = [ ":audio_utils_public_config" ]
   install_enable = true
@@ -102,6 +110,11 @@ ohos_shared_library("audio_xml_utils") {
   public_external_deps = [ "libxml2:libxml2" ]
 
   external_deps = [ "hilog:libhilog" ]
+
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
 
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]

@@ -19,21 +19,24 @@
 #include <shared_mutex>
 #include <optional>
 
+#include "securec.h"
+
 #include "audio_interrupt_callback.h"
 #include "audio_concurrency_callback.h"
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
-class AudioRendererConcurrencyCallbackImpl;
+class FormatUnsupportedErrorCallbackImpl;
 
-class AudioRendererPrivate : public AudioRenderer {
+class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
@@ -48,7 +51,7 @@ public:
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
-    bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+    bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool Drain() const override;
     bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
@@ -62,6 +65,7 @@ public:
     int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) override;
     int32_t SetStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) const override;
+    int32_t SetVolumeMode(int32_t mode) override;
     float GetVolume() const override;
     int32_t SetRenderRate(AudioRendererRate renderRate) const override;
     AudioRendererRate GetRenderRate() const override;
@@ -81,8 +85,8 @@ public:
     int32_t SetRendererFirstFrameWritingCallback(
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
-    int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
-    int32_t Enqueue(const BufferDesc &bufDesc) const override;
+    int32_t GetBufferDesc(BufferDesc &bufDesc) override;
+    int32_t Enqueue(const BufferDesc &bufDesc) override;
     int32_t Clear() const override;
     int32_t GetBufQueueState(BufferQueueState &bufState) const override;
     void SetInterruptMode(InterruptMode mode) override;
@@ -97,8 +101,6 @@ public:
     float GetMaxStreamVolume() const override;
     int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
-    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag,
-        const AudioStreamDeviceChangeReasonExt reason);
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
@@ -119,6 +121,9 @@ public:
     int32_t RemoveRendererPolicyServiceDiedCallback();
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
+    void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
+
+    bool IsOffloadEnable() override;
 
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
@@ -132,6 +137,9 @@ public:
 
     bool IsNoStreamRenderer() const override;
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
+
+    int64_t GetSourceDuration() const override;
+    void SetSourceDuration(int64_t duration) override;
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
@@ -161,23 +169,35 @@ public:
 
     ~AudioRendererPrivate();
 
+    AudioRendererPrivate(const AudioRendererPrivate &) = delete;
+    AudioRendererPrivate &operator=(const AudioRendererPrivate &) = delete;
+    AudioRendererPrivate(AudioRendererPrivate &&) = delete;
+    AudioRendererPrivate &operator=(AudioRendererPrivate &&) = delete;
 protected:
-    // Method for switching between normal and low latency paths
-    void SwitchStream(bool isLowLatencyDevice, bool isHalNeedChange);
 
 private:
-    int32_t PrepareAudioStream(const AudioStreamParams &audioStreamParams,
+    int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
+    int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
-    int32_t InitAudioInterruptCallback();
+    std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
+    std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
+        const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
+    void SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass);
+    int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
-    int32_t InitAudioConcurrencyCallback();
-    int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
+    bool SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &newAudioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
-    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId,
-        const AudioStreamDeviceChangeReasonExt reason);
+    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo);
+    bool FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
+        IAudioStream::SwitchInfo &info);
+    bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
+        IAudioStream::SwitchInfo &info);
+    bool ContinueAfterConcede(IAudioStream::StreamClass &targetClass, RestoreInfo restoreInfo);
+    bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
+    void HandleAudioInterruptWhenServerDied();
     void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
@@ -195,11 +215,12 @@ private:
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
     float GetVolumeInner() const;
     uint32_t GetUnderflowCountInner() const;
+    int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
+    int32_t InitFormatUnsupportedErrorCallback();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
-    std::shared_ptr<AudioRendererConcurrencyCallbackImpl> audioConcurrencyCallback_ = nullptr;
     AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};
@@ -210,6 +231,7 @@ private:
     std::mutex audioRendererErrCallbackMutex_;
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
+    std::shared_ptr<FormatUnsupportedErrorCallbackImpl> formatUnsupportedErrorCallback_ = nullptr;
     std::atomic<bool> isFastRenderer_ = false;
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
@@ -233,6 +255,7 @@ private:
     std::mutex setParamsMutex_;
     std::mutex rendererPolicyServiceDiedCbMutex_;
     int64_t framesAlreadyWritten_ = 0;
+    int64_t sourceDuration_ = -1;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
@@ -244,9 +267,11 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
     void UpdateAudioStream(const std::shared_ptr<IAudioStream> &audioStream);
+    void StartSwitch();
+    void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
-    void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
+    InterruptCallbackEvent HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcedEvent(const InterruptEventInternal &interruptEvent);
     void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
     bool HandleForceDucking(const InterruptEventInternal &interruptEvent);
@@ -258,16 +283,20 @@ private:
     bool isForceDucked_ = false;
     uint32_t sessionID_ = INVALID_SESSION_ID;
     std::mutex mutex_;
+    bool switching_ = false;
+    std::condition_variable switchStreamCv_;
 };
 
 class AudioStreamCallbackRenderer : public AudioStreamCallback {
 public:
+    AudioStreamCallbackRenderer(std::weak_ptr<AudioRendererPrivate> renderer);
     virtual ~AudioStreamCallbackRenderer() = default;
 
     void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     void SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback);
 private:
     std::weak_ptr<AudioRendererCallback> callback_;
+    std::weak_ptr<AudioRendererPrivate> renderer_;
 };
 
 class OutputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {
@@ -299,7 +328,7 @@ public:
         callbacks_.erase(std::remove(callbacks_.begin(), callbacks_.end(), callback), callbacks_.end());
     }
 
-    void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
+    void SetAudioRendererObj(std::weak_ptr<AudioRendererPrivate> rendererObj)
     {
         std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
         renderer_ = rendererObj;
@@ -308,48 +337,39 @@ public:
     void UnsetAudioRendererObj()
     {
         std::lock_guard<std::mutex> lock(audioRendererObjMutex_);
-        renderer_ = nullptr;
+        renderer_.reset();
     }
 private:
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks_;
-    AudioRendererPrivate *renderer_ = nullptr;
+    std::weak_ptr<AudioRendererPrivate> renderer_;
     std::mutex audioRendererObjMutex_;
     std::mutex callbackMutex_;
 };
 
-class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback {
+class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback,
+    public std::enable_shared_from_this<RendererPolicyServiceDiedCallback> {
 public:
     RendererPolicyServiceDiedCallback();
     virtual ~RendererPolicyServiceDiedCallback();
-    void SetAudioRendererObj(AudioRendererPrivate *rendererObj);
+    void SetAudioRendererObj(std::weak_ptr<AudioRendererPrivate> rendererObj);
     void SetAudioInterrupt(AudioInterrupt &audioInterrupt);
     void OnAudioPolicyServiceDied() override;
 
 private:
-    AudioRendererPrivate *renderer_ = nullptr;
+    std::weak_ptr<AudioRendererPrivate> renderer_;
     AudioInterrupt audioInterrupt_;
     void RestoreTheadLoop();
-    std::unique_ptr<std::thread> restoreThread_ = nullptr;
+
+    std::atomic<int32_t> taskCount_ = 0;
 };
 
-class AudioRendererConcurrencyCallbackImpl : public AudioConcurrencyCallback {
+class FormatUnsupportedErrorCallbackImpl : public AudioFormatUnsupportedErrorCallback {
 public:
-    explicit AudioRendererConcurrencyCallbackImpl();
-    virtual ~AudioRendererConcurrencyCallbackImpl();
-    void OnConcedeStream() override;
-    void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        renderer_ = rendererObj;
-    }
-    void UnsetAudioRendererObj()
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        renderer_ = nullptr;
-    }
+    FormatUnsupportedErrorCallbackImpl() = default;
+    virtual ~FormatUnsupportedErrorCallbackImpl() = default;
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
 private:
-    AudioRendererPrivate *renderer_ = nullptr;
-    std::mutex mutex_;
+    std::weak_ptr<AudioRendererErrorCallback> callback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

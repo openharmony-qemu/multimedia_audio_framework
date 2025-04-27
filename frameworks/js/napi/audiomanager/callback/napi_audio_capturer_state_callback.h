@@ -31,6 +31,8 @@ public:
     explicit NapiAudioCapturerStateCallback(napi_env env);
     virtual ~NapiAudioCapturerStateCallback();
     void SaveCallbackReference(napi_value args);
+    bool IsSameCallback(const napi_value args);
+    void RemoveCallbackReference(const napi_value args);
     void OnCapturerStateChange(
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void CreateCaptureStateTsfn(napi_env env);

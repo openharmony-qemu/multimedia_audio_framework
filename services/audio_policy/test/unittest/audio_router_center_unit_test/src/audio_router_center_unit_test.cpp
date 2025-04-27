@@ -16,8 +16,6 @@
 #include "../include/audio_router_center_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
-#include "audio_policy_server.h"
-#include "audio_policy_service.h"
 
 #include <thread>
 #include <memory>
@@ -49,6 +47,7 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_001, TestSize.Level1)
     EXPECT_FALSE(audioRouterCenter.NeedSkipSelectAudioOutputDeviceRefined(STREAM_USAGE_ALARM, descs));
 
     descs.push_back(std::move(desc));
+    descs.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     EXPECT_FALSE(audioRouterCenter.NeedSkipSelectAudioOutputDeviceRefined(STREAM_USAGE_ALARM, descs));
 
     descs.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;

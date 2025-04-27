@@ -32,7 +32,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) override;
+        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag = false) override;
     const std::string GetAudioParameter(const std::string &key) override;
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
@@ -48,6 +48,7 @@ public:
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "") override;
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
@@ -56,23 +57,23 @@ public:
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
-    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
+    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
+        const AudioPlaybackCaptureConfig &filterConfig = AudioPlaybackCaptureConfig()) override;
     bool LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
         std::vector<Effect> &successEffects) override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     bool CreatePlaybackCapturerManager() override;
-    int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
-    int32_t SetCaptureSilentState(bool state) override;
+    int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t ResetRouteForDisconnect(DeviceType type) override;
     uint32_t GetEffectLatency(const std::string &sessionId) override;
-    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+    float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) override;
     void ResetAudioEndpoint() override;
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
@@ -108,12 +109,34 @@ public:
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
     void CheckHibernateState(bool onHibernate) override;
-    void RestoreSession(const int32_t &sessionID, bool isOutput) override;
+    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) override;
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
+    void NotifySettingsDataReady() override;
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
+    void SetDefaultAdapterEnable(bool isEnable) override;
+    void NotifyAudioPolicyReady() override;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
+    int32_t ReleaseCaptureLimit(int32_t innerCapId) override;
+#endif
+    int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
+    void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
+    uint32_t CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSinkAttr &attr) override;
+    uint32_t CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSinkAttr &attr) override;
+    uint32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSourceAttr &attr) override;
+    uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSourceAttr &attr) override;
+    void DestroyHdiPort(uint32_t id) override;
+    void SetDeviceConnectedFlag(bool flag) override;
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

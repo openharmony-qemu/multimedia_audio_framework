@@ -55,6 +55,8 @@ private:
     template<typename T>
     void ProcessWithBlendMode(T *buffer, size_t bufferSize);
 
+    size_t GetAudioFormatSize();
+
     ChannelBlendMode blendMode_;
     uint8_t format_;
     uint8_t channels_;

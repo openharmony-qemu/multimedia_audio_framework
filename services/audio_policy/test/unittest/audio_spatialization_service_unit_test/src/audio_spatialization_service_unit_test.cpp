@@ -961,5 +961,112 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_043, Tes
     const std::string address = "1234";
     ptrAudioSpatializationService->WriteSpatializationStateToDb(operation, address);
 }
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_044
+* @tc.desc  : Test AudioSpatializationService::IsSpatializationEnabledForCurrentDevice
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_044, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    ptrAudioSpatializationService->currentDeviceAddress_ = "test_address";
+    auto result = ptrAudioSpatializationService->IsSpatializationEnabledForCurrentDevice();
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_045
+* @tc.desc  : Test AudioSpatializationService::UpdateSpatializationSupported
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_045, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    std::string testAddress = "test_address";
+    std::string encryptedAddress = ptrAudioSpatializationService->GetSha256EncryptAddress(testAddress);
+    ptrAudioSpatializationService->UpdateSpatializationSupported(encryptedAddress);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_046
+* @tc.desc  : Test AudioSpatializationService::HandleSpatializationEnabledChangeForCurrentDevice
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_046, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    const bool enable = true;
+    ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+
+    EXPECT_NE(ptrAudioSpatializationService->audioPolicyServerHandler_, nullptr);
+
+    ptrAudioSpatializationService->HandleSpatializationEnabledChangeForCurrentDevice(enable);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_047
+* @tc.desc  : Test AudioSpatializationService::HandleSpatializationEnabledChangeForCurrentDevice
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_047, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    const bool enable = true;
+    ptrAudioSpatializationService->audioPolicyServerHandler_ = nullptr;
+
+    ptrAudioSpatializationService->HandleSpatializationEnabledChangeForCurrentDevice(enable);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_048
+* @tc.desc  : Test AudioSpatializationService::HandleHeadTrackingDeviceChange
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_048, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    std::unordered_map<std::string, bool> changeInfo;
+    changeInfo.insert({"abc", true});
+    EXPECT_NE(changeInfo.size(), 0);
+
+    ptrAudioSpatializationService->audioPolicyServerHandler_ = nullptr;
+
+    ptrAudioSpatializationService->HandleHeadTrackingDeviceChange(changeInfo);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService_049
+* @tc.desc  : Test AudioSpatializationService::HandleHeadTrackingDeviceChange
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_049, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    std::unordered_map<std::string, bool> changeInfo;
+    changeInfo.insert({"abc", true});
+    EXPECT_NE(changeInfo.size(), 0);
+
+    ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(ptrAudioSpatializationService->audioPolicyServerHandler_, nullptr);
+
+    ptrAudioSpatializationService->HandleHeadTrackingDeviceChange(changeInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

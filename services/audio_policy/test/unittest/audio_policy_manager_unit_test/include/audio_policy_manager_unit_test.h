@@ -61,11 +61,18 @@ public:
     virtual int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType)
         override {return 0;}
+    virtual int32_t GetSplitInfoRefined(std::string &splitInfo)
+        override {return 0;}
 };
 
 class ConcreteAudioDeviceAnahs : public AudioDeviceAnahs {
 public:
     int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) override { return 0; }
+};
+
+class ConcreteAudioManagerAudioSceneChangedCallback : public AudioManagerAudioSceneChangedCallback {
+public:
+    void OnAudioSceneChange(const AudioScene audioScene) override {}
 };
 
 class AudioPolicyManagerUnitTest : public testing::Test {

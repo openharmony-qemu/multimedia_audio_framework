@@ -32,6 +32,7 @@ public:
         RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) override;
     int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) override;
+    int32_t GetSplitInfoRefined(std::string &splitInfo) override;
 private:
     static inline BrokerDelegator<AudioRoutingManagerListenerProxy> delegator_;
 };

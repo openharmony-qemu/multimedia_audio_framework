@@ -25,6 +25,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 static const int32_t MAX_BUFFER_SIZE = 100000;
+static constexpr float SLOW_PLAY_1_8_SPEED = 0.125f;
+static constexpr float SLOW_PLAY_1_8_VOL = 0.0625f;
 
 AudioSpeed::AudioSpeed(size_t rate, size_t format, size_t channels):rate_(rate), format_(format), channels_(channels)
 {
@@ -83,6 +85,14 @@ int32_t AudioSpeed::LoadChangeSpeedFunc()
                     return this->ChangeSpeedFor32Bit(buffer, bufferSize, outBuffer, outBufferSize);
                 };
             break;
+        case SAMPLE_F32LE:
+            formatSize_ = 4; // size is 4
+            ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
+                std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)-> int32_t {
+                    return this->ChangeSpeedForFloat(reinterpret_cast<float*>(buffer), bufferSize,
+                        reinterpret_cast<float*>(outBuffer.get()), outBufferSize);
+                };
+            break;
         default:
             formatSize_ = 2; // size is 2
             ChangeSpeedFunc = [this] (uint8_t *buffer, int32_t bufferSize,
@@ -99,6 +109,12 @@ int32_t AudioSpeed::SetSpeed(float speed)
     AUDIO_INFO_LOG("SetSpeed %{public}f", speed);
     speed_ = speed;
     sonicSetSpeed(sonicStream_, speed_);
+    // Lower the volume to avoid noise at 0.125x speed
+    if (isEqual(speed, SLOW_PLAY_1_8_SPEED)) {
+        sonicSetVolume(sonicStream_, SLOW_PLAY_1_8_VOL);
+    } else {
+        sonicSetVolume(sonicStream_, SPEED_NORMAL);
+    }
     return SUCCESS;
 }
 

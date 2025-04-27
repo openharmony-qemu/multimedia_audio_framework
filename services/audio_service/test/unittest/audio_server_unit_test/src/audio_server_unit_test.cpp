@@ -119,7 +119,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSuspendRenderSink_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->SuspendRenderSink("primary");
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -146,7 +146,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAsrNoiseSuppressionMode_001, TestSiz
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->SetAsrNoiseSuppressionMode(static_cast<AsrNoiseSuppressionMode>(4));
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -192,10 +192,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAsrVoiceControlMode_001, TestSize.Le
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->SetAsrVoiceControlMode(static_cast<AsrVoiceControlMode>(4), true);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     ret = audioServer->SetAsrVoiceControlMode(static_cast<AsrVoiceControlMode>(4), false);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -254,18 +254,132 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_001, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test CheckAndPrintStacktrace API
+ * @tc.name  : Test GetExtraParameters API
  * @tc.type  : FUNC
- * @tc.number: AudioServerGetExtraParameters_001
- * @tc.desc  : Test CheckAndPrintStacktrace interface.
+ * @tc.number: AudioServerGetExtraParameters_002
+ * @tc.desc  : Test GetExtraParameters interface.
  */
-HWTEST_F(AudioServerUnitTest, AudioServerCheckAndPrintStacktrace, TestSize.Level1)
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    EXPECT_TRUE(audioServer->CheckAndPrintStacktrace("dump_pulseaudio_stacktrace"));
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys;
+    std::string mainKey = "PCM_DUMP";
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(ERROR, ret);
+}
 
-    EXPECT_TRUE(audioServer->CheckAndPrintStacktrace("recovery_audio_server"));
+/**
+ * @tc.name  : Test GetExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_003
+ * @tc.desc  : Test GetExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys;
+    std::string mainKey = "test_003";
+    AudioServer::audioParameterKeys = {
+        {
+            "Category1", {
+                {"Key1", {"Value1", "Value2"}}
+            }
+        }
+    };
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    auto it = AudioServer::audioParameterKeys.find(mainKey);
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase(mainKey);
+    }
+}
+
+/**
+ * @tc.name  : Test GetExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_004
+ * @tc.desc  : Test GetExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_004, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys;
+    std::string mainKey = "test_004";
+    AudioServer::audioParameterKeys = {
+        {
+            "test_004", {
+                {"Key1", {"Value1", "Value2"}}
+            }
+        }
+    };
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(SUCCESS, ret);
+    auto it = AudioServer::audioParameterKeys.find(mainKey);
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase(mainKey);
+    }
+}
+
+/**
+ * @tc.name  : Test GetExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_005
+ * @tc.desc  : Test GetExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_005, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys = {"test_005"};
+    std::string mainKey = "test_005";
+    AudioServer::audioParameterKeys = {
+        {
+            "test_005", {
+                {"test_005", {"Value1", "Value2"}}
+            }
+        }
+    };
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(SUCCESS, ret);
+    auto it = AudioServer::audioParameterKeys.find(mainKey);
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase(mainKey);
+    }
+}
+
+/**
+ * @tc.name  : Test GetExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerGetExtraParameters_006
+ * @tc.desc  : Test GetExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_006, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys = {""};
+    std::string mainKey = "test_006";
+    AudioServer::audioParameterKeys = {
+        {
+            "test_006", {
+                {"test_006", {"Value1", "Value2"}}
+            }
+        }
+    };
+    int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    auto it = AudioServer::audioParameterKeys.find(mainKey);
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase(mainKey);
+    }
 }
 
 /**
@@ -334,6 +448,23 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
     std::vector<DeviceType> activeOutputDevices;
     activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
+        NO_A2DP_DEVICE);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetAudioScene API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetAudioScene_002
+ * @tc.desc  : Test SetAudioScene interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<DeviceType> activeOutputDevices;
+    activeOutputDevices.push_back(DEVICE_TYPE_ACCESSORY);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_ACCESSORY,
         NO_A2DP_DEVICE);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -548,6 +679,21 @@ HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test PermissionChecker API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerPermissionChecker_003
+ * @tc.desc  : Test PermissionChecker interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_RECORD;
+    bool ret = audioServer->PermissionChecker(config);
+    EXPECT_FALSE(ret);
+}
+
+/**
  * @tc.name  : Test CheckRecorderPermission API
  * @tc.type  : FUNC
  * @tc.number: AudioServerCheckRecorderPermission_001
@@ -561,7 +707,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
     config.appInfo.appUid = INVALID_UID;
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     bool ret = audioServer->CheckRecorderPermission(config);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
     ret = audioServer->CheckRecorderPermission(config);
@@ -581,6 +727,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
     EXPECT_TRUE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    ret = audioServer->CheckRecorderPermission(config);
+    EXPECT_TRUE(ret);
+
+    config.appInfo.appUid = 0;
     ret = audioServer->CheckRecorderPermission(config);
     EXPECT_TRUE(ret);
 }
@@ -611,16 +761,16 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetMaxAmplitude_001, TestSize.Level1)
     std::string timestamp = "";
     audioServer->UpdateLatencyTimestamp(timestamp, true);
     audioServer->UpdateLatencyTimestamp(timestamp, false);
-    float ret = audioServer->GetMaxAmplitude(false, DEVICE_TYPE_USB_ARM_HEADSET);
+    float ret = audioServer->GetMaxAmplitude(false, "usb", SOURCE_TYPE_MIC);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetMaxAmplitude(false, DEVICE_TYPE_BLUETOOTH_A2DP);
+    ret = audioServer->GetMaxAmplitude(false, "a2dp", SOURCE_TYPE_MIC);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetMaxAmplitude(true, DEVICE_TYPE_USB_ARM_HEADSET);
+    ret = audioServer->GetMaxAmplitude(true, "usb", SOURCE_TYPE_INVALID);
     EXPECT_EQ(0, ret);
 
-    ret = audioServer->GetMaxAmplitude(true, DEVICE_TYPE_BLUETOOTH_A2DP);
+    ret = audioServer->GetMaxAmplitude(true, "a2dp", SOURCE_TYPE_INVALID);
     EXPECT_EQ(0, ret);
 }
 
@@ -669,7 +819,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetSinkMuteForSwitchDevice_001, TestSiz
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->SetSinkMuteForSwitchDevice("primary", 1, false);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = audioServer->SetSinkMuteForSwitchDevice("primary", 0, false);
     EXPECT_EQ(SUCCESS, ret);
@@ -685,9 +835,9 @@ HWTEST_F(AudioServerUnitTest, AudioServerRestoreSession_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
 
-    audioServer->RestoreSession(-1, true);
-
-    audioServer->RestoreSession(-1, false);
+    RestoreInfo restoreInfo;
+    audioServer->RestoreSession(-1, restoreInfo);
+    audioServer->RestoreSession(-1, restoreInfo);
 }
 
 /**
@@ -723,9 +873,23 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_001, TestSize.Level1
     config.audioMode = AUDIO_MODE_RECORD;
     int32_t errorCode = 0;
     audioServer->CreateAudioProcess(config, errorCode);
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    audioServer->CreateAudioProcess(config, errorCode);
     EXPECT_EQ(errorCode, 0);
+}
+
+/**
+ * @tc.name  : Test CreateAudioProcess API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCreateAudioProcess_002
+ * @tc.desc  : Test CreateAudioProcess interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    int32_t errorCode = 0;
+    audioServer->waitCreateStreamInServerCount_ = 6;
+    audioServer->CreateAudioProcess(config, errorCode);
+    EXPECT_EQ(errorCode, ERR_RETRY_IN_CLIENT);
 }
 
 /**
@@ -767,11 +931,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
     ret = audioServer->IsNormalIpcStream(config);
     EXPECT_EQ(false, ret);
     AudioParamKey key = NONE;
-    audioServer->OnAudioSinkParamChange("", key, "", "");
-    audioServer->OnAudioSourceParamChange("", key, "", "");
+    audioServer->OnRenderSinkParamChange("", key, "", "");
+    audioServer->OnCaptureSourceParamChange("", key, "", "");
     audioServer->OnWakeupClose();
-    audioServer->OnCapturerState(true, 1);
-    audioServer->OnCapturerState(false, 1);
+    audioServer->OnCapturerState(true, 0, 1);
+    audioServer->OnCapturerState(false, 1, 0);
     int32_t res = audioServer->SetParameterCallback(remoteObject);
     EXPECT_EQ(res, ERR_INVALID_PARAM);
     res = audioServer->SetWakeupSourceCallback(remoteObject);
@@ -963,6 +1127,206 @@ HWTEST_F(AudioServerUnitTest, CheckParam_001, TestSize.Level1)
     config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
     ret = audioServer->CheckParam(config);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Dump API
+ * @tc.type  : FUNC
+ * @tc.number: Dump_001
+ * @tc.desc  : Test Dump interface.
+ */
+HWTEST_F(AudioServerUnitTest, Dump_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::vector<std::u16string> args;
+    args.push_back(u"-fb");
+    args.push_back(u"test");
+
+    auto ret = audioServer->Dump(0, args);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test SetVoiceVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetVoiceVolume_001
+ * @tc.desc  : Test SetVoiceVolume interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetVoiceVolume_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->SetVoiceVolume(0.5f);
+    EXPECT_EQ(ret, -62980105);
+}
+
+/**
+ * @tc.name  : Test OffloadSetVolume API
+ * @tc.type  : FUNC
+ * @tc.number: OffloadSetVolume_001
+ * @tc.desc  : Test OffloadSetVolume interface.
+ */
+HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->OffloadSetVolume(0.5f);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test ResetRouteForDisconnect API
+ * @tc.type  : FUNC
+ * @tc.number: ResetRouteForDisconnect_001
+ * @tc.desc  : Test ResetRouteForDisconnect interface.
+ */
+HWTEST_F(AudioServerUnitTest, ResetRouteForDisconnect_001, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+
+    EXPECT_NE(nullptr, audioServer);
+    auto ret = audioServer->ResetRouteForDisconnect(deviceType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CheckPlaybackPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckPlaybackPermission_001
+ * @tc.desc  : Test CheckPlaybackPermission interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    bool ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test CheckInnerRecorderPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckInnerRecorderPermission_001
+ * @tc.desc  : Test CheckInnerRecorderPermission interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    auto ret = audioServer->CheckInnerRecorderPermission(config);
+    EXPECT_EQ(ret, 2);
+
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC_REF;
+    ret = audioServer->CheckInnerRecorderPermission(config);
+    EXPECT_EQ(ret, 2);
+}
+
+/**
+ * @tc.name  : Test HandleCheckRecorderBackgroundCapture API
+ * @tc.type  : FUNC
+ * @tc.number: HandleCheckRecorderBackgroundCapture_001
+ * @tc.desc  : Test HandleCheckRecorderBackgroundCapture interface.
+ */
+HWTEST_F(AudioServerUnitTest, HandleCheckRecorderBackgroundCapture_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
+    int32_t ret = audioServer->HandleCheckRecorderBackgroundCapture(config);
+    EXPECT_EQ(ret, 0);
+
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    ret = audioServer->HandleCheckRecorderBackgroundCapture(config);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderFormat API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderFormat_001
+ * @tc.desc  : Test CheckRecorderFormat interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.streamInfo.channels = MONO;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_U8;
+    config.streamInfo.samplingRate = SAMPLE_RATE_8000;
+    bool ret = audioServer->CheckRecorderFormat(config);
+    EXPECT_EQ(ret, true);
+
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC_REF;
+    ret = audioServer->CheckRecorderFormat(config);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test CheckAndWaitAudioPolicyReady API
+ * @tc.type  : FUNC
+ * @tc.number: CheckAndWaitAudioPolicyReady_001
+ * @tc.desc  : Test CheckAndWaitAudioPolicyReady interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckAndWaitAudioPolicyReady_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->CheckAndWaitAudioPolicyReady();
+    EXPECT_EQ(ret, -62980132);
+}
+
+/**
+ * @tc.name  : Test NotifyStreamVolumeChanged API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStreamVolumeChanged_001
+ * @tc.desc  : Test NotifyStreamVolumeChanged interface.
+ */
+HWTEST_F(AudioServerUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioStreamType streamType = STREAM_MUSIC;
+    float volume = 0.5f;
+    int32_t ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
+    EXPECT_EQ(ret, SUCCESS);
+
+    streamType = static_cast<AudioStreamType>(-1);
+    ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
+    EXPECT_EQ(ret, SUCCESS);
+
+    streamType = STREAM_MUSIC;
+    volume = -1.0f;
+    ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetDefaultAdapterEnable API
+ * @tc.type  : FUNC
+ * @tc.number: SetDefaultAdapterEnable_001
+ * @tc.desc  : Test SetDefaultAdapterEnable interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    bool isEnable = false;
+    audioServer->SetDefaultAdapterEnable(isEnable);
+    EXPECT_NE(nullptr, audioServer);
 }
 } // namespace AudioStandard
 } // namespace OHOS

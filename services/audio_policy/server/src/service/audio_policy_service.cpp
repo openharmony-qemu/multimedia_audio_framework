@@ -36,13 +36,14 @@
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
 #include "audio_safe_volume_notification.h"
-#include "avsession_manager.h"
 #include "audio_setting_provider.h"
 #include "audio_spatialization_service.h"
 #include "audio_usb_manager.h"
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_policy_global_parser.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,33 +59,19 @@ static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 }
 
-static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
-    STREAM_VOICE_CALL,
-    STREAM_RING,
-    STREAM_MUSIC,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_ALARM,
-    STREAM_ACCESSIBILITY,
-    STREAM_ULTRASONIC,
-    STREAM_SYSTEM,
-    STREAM_VOICE_CALL_ASSISTANT,
-    STREAM_ALL
-};
 
 static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
+static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
+static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
 const int32_t UID_AUDIO = 1041;
 static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
+static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
 
-#ifdef BLUETOOTH_ENABLE
-static sptr<IStandardAudioService> g_btProxy = nullptr;
-#endif
 mutex g_dataShareHelperMutex;
-#ifdef BLUETOOTH_ENABLE
-mutex g_btProxyMutex;
-#endif
 bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;
+mutex g_policyMgrListenerMutex;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -106,12 +93,12 @@ bool AudioPolicyService::LoadAudioPolicyConfig()
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
     }
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Config Parse failed");
+    SetDefaultAdapterEnable(audioConfigManager_.GetDefaultAdapterEnable());
     return ret;
 }
 
 bool AudioPolicyService::Init(void)
 {
-    serviceFlag_.reset();
     audioPolicyManager_.Init();
     audioEffectService_.EffectServiceInit();
     audioDeviceManager_.ParseDeviceXml();
@@ -119,8 +106,7 @@ bool AudioPolicyService::Init(void)
 #ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.init();
 #endif
-    audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
-    if (audioA2dpOffloadManager_ != nullptr) {audioA2dpOffloadManager_->Init();}
+    audioGlobalConfigManager_.ParseGlobalConfigXml();
 
     bool ret = LoadAudioPolicyConfig();
     if (!ret) {
@@ -132,21 +118,6 @@ bool AudioPolicyService::Init(void)
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Tone Load Configuration failed");
 #endif
 
-    int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
-    if (status != SUCCESS) {
-        AudioPolicyUtils::GetInstance().WriteServiceStartupError("[Policy Service] Register for device status "
-            "events failed");
-    }
-    CHECK_AND_RETURN_RET_LOG(status == SUCCESS, false, "[Policy Service] Register for device status events failed");
-
-    audioVolumeManager_.Init(audioPolicyServerHandler_);
-    audioDeviceCommon_.Init(audioPolicyServerHandler_);
-    audioRecoveryDevice_.Init(audioA2dpOffloadManager_);
-
-    audioDeviceStatus_.Init(audioA2dpOffloadManager_, audioPolicyServerHandler_);
-    audioDeviceLock_.Init(audioA2dpOffloadManager_);
-    audioCapturerSession_.Init(audioA2dpOffloadManager_);
-
     CreateRecoveryThread();
     std::string versionType = OHOS::system::GetParameter("const.logsystem.versiontype", "commercial");
     AudioDump::GetInstance().SetVersionType(versionType);
@@ -155,6 +126,9 @@ bool AudioPolicyService::Init(void)
     int32_t micRefEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
 
     audioEcManager_.Init(ecEnableState, micRefEnableState);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    AudioServerProxy::GetInstance().SetInnerCapLimitProxy(audioGlobalConfigManager_.GetCapLimit());
+#endif
     return true;
 }
 
@@ -183,6 +157,11 @@ void AudioPolicyService::RecoveryPreferredDevices()
 void AudioPolicyService::InitKVStore()
 {
     audioVolumeManager_.InitKVStore();
+}
+
+void AudioPolicyService::NotifySettingsDataReady()
+{
+    AudioServerProxy::GetInstance().NotifySettingsDataReady();
 }
 
 bool AudioPolicyService::ConnectServiceAdapter()
@@ -298,6 +277,29 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     return audioVolumeManager_.SetSystemVolumeLevel(streamType, volumeLevel);
 }
 
+int32_t AudioPolicyService::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
+    DeviceType deviceType)
+{
+    return audioVolumeManager_.SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
+}
+
+int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
+{
+    // update dump appvolume
+    audioDeviceLock_.UpdateAppVolume(appUid, volumeLevel);
+    return audioVolumeManager_.SetAppVolumeLevel(appUid, volumeLevel);
+}
+
+int32_t AudioPolicyService::SetAppVolumeMuted(int32_t appUid, bool muted)
+{
+    return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
+}
+
+int32_t AudioPolicyService::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
+{
+    return audioVolumeManager_.IsAppVolumeMute(appUid, owned, isMute);
+}
+
 int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
 {
     return audioVolumeManager_.SetVoiceRingtoneMute(isMute);
@@ -306,6 +308,11 @@ int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
 {
     return audioVolumeManager_.GetSystemVolumeLevel(streamType);
+}
+
+int32_t AudioPolicyService::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
+{
+    return audioVolumeManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
 int32_t AudioPolicyService::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
@@ -404,9 +411,9 @@ bool AudioPolicyService::IsArmUsbDevice(const AudioDeviceDescriptor &desc)
     return audioDeviceLock_.IsArmUsbDevice(desc);
 }
 
-void AudioPolicyService::RestoreSession(const int32_t &sessionID, bool isOutput)
+void AudioPolicyService::RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo)
 {
-    AudioServerProxy::GetInstance().RestoreSessionProxy(sessionID, isOutput);
+    AudioServerProxy::GetInstance().RestoreSessionProxy(sessionID, restoreInfo);
 }
 
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
@@ -435,10 +442,10 @@ int32_t AudioPolicyService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     return audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetExcludedOutputDevices(
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetExcludedDevices(
     AudioDeviceUsage audioDevUsage)
 {
-    return audioDeviceLock_.GetExcludedOutputDevices(audioDevUsage);
+    return audioDeviceLock_.GetExcludedDevices(audioDevUsage);
 }
 
 bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
@@ -600,9 +607,9 @@ std::string AudioPolicyService::GetSystemSoundUri(const std::string &key)
     return audioPolicyManager_.GetSystemSoundUri(key);
 }
 
-int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active)
+int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
-    return audioDeviceLock_.SetDeviceActive(deviceType, active);
+    return audioDeviceLock_.SetDeviceActive(deviceType, active, uid);
 }
 
 bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType)
@@ -623,6 +630,11 @@ shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveOutputDeviceDescr
 DeviceType AudioPolicyService::GetActiveInputDevice()
 {
     return audioActiveDevice_.GetCurrentInputDeviceType();
+}
+
+uint16_t AudioPolicyService::GetDmDeviceType()
+{
+    return audioDeviceStatus_.GetDmDeviceType();
 }
 
 int32_t AudioPolicyService::SetRingerMode(AudioRingerMode ringMode)
@@ -648,9 +660,9 @@ AudioRingerMode AudioPolicyService::GetRingerMode() const
     return audioPolicyManager_.GetRingerMode();
 }
 
-int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
+int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    return audioDeviceLock_.SetAudioScene(audioScene);
+    return audioDeviceLock_.SetAudioScene(audioScene, uid, pid);
 }
 
 AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const
@@ -739,8 +751,9 @@ void AudioPolicyService::RegisterRemoteDevStatusCallback()
     std::shared_ptr<DistributedHardware::DmInitCallback> initCallback = std::make_shared<DeviceInitCallBack>();
     int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, initCallback);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init device manage failed");
-    std::shared_ptr<DistributedHardware::DeviceStatusCallback> callback = std::make_shared<DeviceStatusCallbackImpl>();
+    auto callback = std::make_shared<DeviceStatusCallbackImpl>();
     DistributedHardware::DeviceManager::GetInstance().RegisterDevStatusCallback(AUDIO_SERVICE_PKG, "", callback);
+    DistributedHardware::DeviceManager::GetInstance().RegisterDevStateCallback(AUDIO_SERVICE_PKG, "", callback);
     AUDIO_INFO_LOG("Done");
 #endif
 }
@@ -793,6 +806,11 @@ int32_t AudioPolicyService::SetVirtualCall(const bool isVirtual)
     return audioDeviceCommon_.SetVirtualCall(isVirtual);
 }
 
+void AudioPolicyService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
+{
+    AudioServerProxy::GetInstance().GetAllSinkInputsProxy(sinkInputs);
+}
+
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper
@@ -810,6 +828,8 @@ void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
     RegisterAccessiblilityBalance();
     RegisterAccessiblilityMono();
+    RegisterDoNotDisturbStatus();
+    RegisterDoNotDisturbStatusWhiteList();
 }
 
 void AudioPolicyService::RegisterAccessiblilityBalance()
@@ -831,6 +851,7 @@ void AudioPolicyService::RegisterAccessiblilityBalance()
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver balance failed");
     }
+    AUDIO_INFO_LOG("Register accessibility balance successfully");
 }
 
 void AudioPolicyService::RegisterAccessiblilityMono()
@@ -848,6 +869,45 @@ void AudioPolicyService::RegisterAccessiblilityMono()
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver mono failed");
     }
+    AUDIO_INFO_LOG("Register accessibility mono successfully");
+}
+
+void AudioPolicyService::RegisterDoNotDisturbStatus()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturb = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int32_t isDoNotDisturb = 0;
+        int32_t ret = settingProvider.GetIntValue(DO_NOT_DISTURB_STATUS, isDoNotDisturb, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus failed");
+        onDoNotDisturbStatusChanged(isDoNotDisturb != 0);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS, updateFuncDoNotDisturb);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus failed");
+    }
+    AUDIO_INFO_LOG("Register doNotDisturbStatus successfully");
+}
+
+void AudioPolicyService::RegisterDoNotDisturbStatusWhiteList()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturbWhiteList = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        std::vector<std::map<std::string, std::string>> doNotDisturbWhiteList;
+        int32_t ret = settingProvider.GetMapValue(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+            doNotDisturbWhiteList, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus WhiteList failed");
+        onDoNotDisturbStatusWhiteListChanged(doNotDisturbWhiteList);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+        updateFuncDoNotDisturbWhiteList);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed");
+    }
+    AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
@@ -857,31 +917,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
 
 void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
-    AUDIO_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);
-    CHECK_AND_RETURN_LOG(serviceIndex >= HDI_SERVICE_INDEX && serviceIndex <= AUDIO_SERVICE_INDEX, "invalid index");
-
-    // If audio service or hdi service is not ready, donot load default modules
-    lock_guard<mutex> lock(serviceFlagMutex_);
-    serviceFlag_.set(serviceIndex, true);
-    if (serviceFlag_.count() != MIN_SERVICE_COUNT) {
-        AUDIO_INFO_LOG("[module_load]::hdi service or audio service not up. Cannot load default module now");
-        return;
-    }
-
-    int32_t ret = audioDeviceLock_.OnServiceConnected(serviceIndex);
-    if (ret == SUCCESS) {
-#ifdef USB_ENABLE
-        AudioUsbManager::GetInstance().Init(this);
-#endif
-        audioEffectService_.SetMasterSinkAvailable();
-    }
-#ifdef HAS_FEATURE_INNERCAPTURER
-    // load inner-cap-sink
-    LoadModernInnerCapSink();
-#endif
-    // RegisterBluetoothListener() will be called when bluetooth_host is online
-    // load hdi-effect-model
-    LoadHdiEffectModel();
+    AUDIO_INFO_LOG("Not support, use AudioCoreService");
 }
 
 void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
@@ -896,32 +932,30 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
 
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
-    AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_INFO_LOG("audioMono = %{public}s", audioMono? "true": "false");
     AudioServerProxy::GetInstance().SetAudioMonoStateProxy(audioMono);
 }
 
 void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
-    AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
+    AUDIO_INFO_LOG("audioBalance = %{public}f", audioBalance);
     AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
 }
 
-#ifdef HAS_FEATURE_INNERCAPTURER
-void AudioPolicyService::LoadModernInnerCapSink()
+void AudioPolicyService::onDoNotDisturbStatusChanged(bool isDoNotDisturb)
 {
-    AUDIO_INFO_LOG("Start");
-    AudioModuleInfo moduleInfo = {};
-    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
-    moduleInfo.name = INNER_CAPTURER_SINK;
-
-    moduleInfo.format = "s16le";
-    moduleInfo.channels = "2"; // 2 channel
-    moduleInfo.rate = "48000";
-    moduleInfo.bufferSize = "3840"; // 20ms
-
-    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb ? "true" : "false");
+    ErrCode ret = audioPolicyManager_.SetDoNotDisturbStatus(isDoNotDisturb);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set doNotDisturbStatus filed");
 }
-#endif
+
+void AudioPolicyService::onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
+    doNotDisturbStatusWhiteList)
+{
+    AUDIO_INFO_LOG("doNotDisturbStatusWhiteList changed");
+    ErrCode ret = audioPolicyManager_.SetDoNotDisturbStatusWhiteList(doNotDisturbStatusWhiteList);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set doNotDisturbStatus WhiteList filed");
+}
 
 void AudioPolicyService::LoadEffectLibrary()
 {
@@ -996,6 +1030,18 @@ int32_t AudioPolicyService::SetQueryClientTypeCallback(const sptr<IRemoteObject>
         AUDIO_ERR_LOG("Client type callback is null");
     }
 #endif
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object)
+{
+    sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
+
+    if (callback != nullptr) {
+        return audioStateManager_.SetAudioClientInfoMgrCallback(callback);
+    } else {
+        AUDIO_ERR_LOG("Client info manager callback is null");
+    }
     return SUCCESS;
 }
 
@@ -1247,10 +1293,6 @@ std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
 void AudioPolicyService::RegiestPolicy()
 {
     AUDIO_INFO_LOG("Start");
-    const sptr<IStandardAudioService> gsp = AudioServerProxy::GetInstance().GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "RegiestPolicy, Audio Server Proxy is null");
-    audioPolicyManager_.SetAudioServerProxy(gsp);
-
     sptr<PolicyProviderWrapper> wrapper = new(std::nothrow) PolicyProviderWrapper(this);
     CHECK_AND_RETURN_LOG(wrapper != nullptr, "Get null PolicyProviderWrapper");
     sptr<IRemoteObject> object = wrapper->AsObject();
@@ -1290,6 +1332,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.networkId_ = curOutputDeviceDesc.networkId_;
         deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
+        CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupport(config, deviceInfo), ERROR, "device not support playback");
     } else {
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             AudioCapturerInfo capturerInfo = config.capturerInfo;
@@ -1404,51 +1447,6 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
     return audioConfigManager_.GetMaxRendererInstances();
 }
 
-#ifdef BLUETOOTH_ENABLE
-const sptr<IStandardAudioService> RegisterBluetoothDeathCallback()
-{
-    lock_guard<mutex> lock(g_btProxyMutex);
-    if (g_btProxy == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr,
-            "get sa manager failed");
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID);
-        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr,
-            "get audio service remote object failed");
-        g_btProxy = iface_cast<IStandardAudioService>(object);
-        CHECK_AND_RETURN_RET_LOG(g_btProxy != nullptr, nullptr,
-            "get audio service proxy failed");
-
-        // register death recipent
-        sptr<AudioServerDeathRecipient> asDeathRecipient =
-            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
-        if (asDeathRecipient != nullptr) {
-            asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
-                AudioPolicyService::BluetoothServiceCrashedCallback(pid, uid);
-            });
-            bool result = object->AddDeathRecipient(asDeathRecipient);
-            if (!result) {
-                AUDIO_ERR_LOG("failed to add deathRecipient");
-            }
-        }
-    }
-    sptr<IStandardAudioService> gasp = g_btProxy;
-    return gasp;
-}
-
-void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
-{
-    AUDIO_INFO_LOG("Bluetooth sa crashed, will restore proxy in next call");
-    lock_guard<mutex> lock(g_btProxyMutex);
-    g_btProxy = nullptr;
-    isBtListenerRegistered = false;
-    isBtCrashed = true;
-    Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
-    Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSource();
-    Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
-}
-#endif
-
 void AudioPolicyService::RegisterBluetoothListener()
 {
 #ifdef BLUETOOTH_ENABLE
@@ -1463,14 +1461,9 @@ void AudioPolicyService::RegisterBluetoothListener()
         Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
         Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
     }
-    
+
     isBtListenerRegistered = true;
     isBtCrashed = false;
-    const sptr<IStandardAudioService> gsp = RegisterBluetoothDeathCallback();
-    AudioPolicyUtils::GetInstance().SetBtConnecting(true);
-    Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
-    Bluetooth::AudioHfpManager::CheckHfpDeviceReconnect();
-    AudioPolicyUtils::GetInstance().SetBtConnecting(false);
 #endif
 }
 
@@ -1532,35 +1525,6 @@ void AudioPolicyService::RegisterDataObserver()
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterDataObserver get devicesName failed");
     SetDisplayName(devicesName, true);
     RegisterNameMonitorHelper();
-}
-
-int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    int32_t ret = AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(config.silentCapture);
-    CHECK_AND_RETURN_RET_LOG(!ret, ERR_OPERATION_FAILED, "SetCaptureSilentState failed");
-
-    std::vector<int32_t> targetUsages;
-    AUDIO_INFO_LOG("start");
-    for (size_t i = 0; i < config.filterOptions.usages.size(); i++) {
-        if (count(targetUsages.begin(), targetUsages.end(), config.filterOptions.usages[i]) == 0) {
-            targetUsages.emplace_back(config.filterOptions.usages[i]); // deduplicate
-        }
-    }
-
-    return AudioServerProxy::GetInstance().SetSupportStreamUsageProxy(targetUsages);
-#else
-    return ERROR;
-#endif
-}
-
-int32_t AudioPolicyService::SetCaptureSilentState(bool state)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    return AudioServerProxy::GetInstance().SetCaptureSilentStateProxy(state);
-#else
-    return ERROR;
-#endif
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
@@ -1694,9 +1658,10 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     audioDeviceLock_.OnDeviceInfoUpdated(desc, command);
 }
 
-int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
+    const int32_t uid)
 {
-    return audioDeviceLock_.SetCallDeviceActive(deviceType, active, address);
+    return audioDeviceLock_.SetCallDeviceActive(deviceType, active, address, uid);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDevice()
@@ -1710,9 +1675,9 @@ ConverterConfig AudioPolicyService::GetConverterConfig()
     return converterParser.LoadConfig();
 }
 
-float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
+float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId, const AudioInterrupt audioInterrupt)
 {
-    return audioActiveDevice_.GetMaxAmplitude(deviceId);
+    return audioActiveDevice_.GetMaxAmplitude(deviceId, audioInterrupt);
 }
 
 int32_t AudioPolicyService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
@@ -1875,7 +1840,12 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
 int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
     int32_t ret = AUDIO_OK;
-    ret = AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
+    } else {
+        ret = AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "get audio enhance property fail");
     auto oIter = propertyArray.property.begin();
     while (oIter != propertyArray.property.end()) {
@@ -1890,7 +1860,12 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &
 
 int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
-    return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
+    } else {
+        return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    }
 }
 
 int32_t AudioPolicyService::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
@@ -1941,7 +1916,12 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
 
 int32_t AudioPolicyService::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEffectProperty(propertyArray);
+    } else {
+        return AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray);
+    }
 }
 
 int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray)
@@ -1975,7 +1955,12 @@ int32_t AudioPolicyService::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
 int32_t AudioPolicyService::GetAudioEnhancePropertyByDevice(DeviceType deviceType,
     AudioEnhancePropertyArray &propertyArray)
 {
-    return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray, deviceType);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return audioPolicyManager_.GetAudioEnhanceProperty(propertyArray, deviceType);
+    } else {
+        return AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(propertyArray, deviceType);
+    }
 }
 
 void AudioPolicyService::UpdateEffectBtOffloadSupported(const bool &isSupported)
@@ -2037,12 +2022,17 @@ bool AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pi
     if (uid == BOOTUP_MUSIC_UID) {
         return true;
     }
+    lock_guard<mutex> lock(g_policyMgrListenerMutex);
     bool allowed = false;
-    allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
+    if (policyManagerListener_ != nullptr) {
+        allowed = policyManagerListener_->OnQueryAllowedPlayback(uid, pid);
+    }
     if (!allowed) {
         usleep(WATI_PLAYBACK_TIME); //wait for 200ms
         AUDIO_INFO_LOG("IsAudioPlaybackAllowed Try again after 200ms");
-        allowed = OHOS::AVSession::AVSessionManager::GetInstance().IsAudioPlaybackAllowed(uid, pid);
+        if (policyManagerListener_ != nullptr) {
+            allowed = policyManagerListener_->OnQueryAllowedPlayback(uid, pid);
+        }
     }
     return allowed;
 #endif
@@ -2056,6 +2046,17 @@ int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, 
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
         audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+        return SUCCESS;
+    }
+    return ret;
+}
+
+int32_t AudioPolicyService::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    int32_t ret = audioDeviceManager_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    if (ret == NEED_TO_FETCH) {
+        AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
         return SUCCESS;
     }
     return ret;
@@ -2082,6 +2083,11 @@ BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
     return NO_A2DP_DEVICE;
 }
 
+void AudioPolicyService::SetDefaultAdapterEnable(bool isEnable)
+{
+    return AudioServerProxy::GetInstance().SetDefaultAdapterEnableProxy(isEnable);
+}
+
 int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
 {
     return audioOffloadStream_.ActivateConcurrencyFromServer(incomingPipe);
@@ -2094,6 +2100,23 @@ int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)
     return SUCCESS;
 }
 
+void AudioPolicyService::CheckConnectedDevice()
+{
+    auto isUsbHeadsetConnected =
+        audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_USB_HEADSET);
+    auto isUsbArmHeadsetConnected =
+        audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_USB_ARM_HEADSET);
+
+    bool flag = (isUsbHeadsetConnected != nullptr || isUsbArmHeadsetConnected != nullptr) ? true : false;
+    AudioServerProxy::GetInstance().SetDeviceConnectedFlag(flag);
+}
+
+void AudioPolicyService::SetDeviceConnectedFlagFalseAfterDuration()
+{
+    usleep(DEVICE_CONNECTED_FLAG_DURATION_MS); // 3s
+    AudioServerProxy::GetInstance().SetDeviceConnectedFlag(false);
+}
+
 void AudioPolicyService::CheckHibernateState(bool hibernate)
 {
     AudioServerProxy::GetInstance().CheckHibernateStateProxy(hibernate);
@@ -2102,6 +2125,80 @@ void AudioPolicyService::CheckHibernateState(bool hibernate)
 void AudioPolicyService::UpdateSafeVolumeByS4()
 {
     return audioVolumeManager_.UpdateSafeVolumeByS4();
+}
+
+void AudioPolicyService::UpdateSpatializationSupported(const std::string macAddress, const bool support)
+{
+    audioDeviceLock_.UpdateSpatializationSupported(macAddress, support);
+}
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t AudioPolicyService::LoadModernInnerCapSink(int32_t innerCapId)
+{
+    AUDIO_INFO_LOG("Start");
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
+    std::string name = INNER_CAPTURER_SINK;
+    moduleInfo.name = name + std::to_string(innerCapId);
+
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = "2"; // 2 channel
+    moduleInfo.rate = "48000";
+    moduleInfo.bufferSize = "3840"; // 20ms
+
+    audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
+{
+    AUDIO_INFO_LOG("Start");
+    std::string name = INNER_CAPTURER_SINK;
+    name += std::to_string(innerCapId);
+
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(name);
+    return SUCCESS;
+}
+#endif
+
+int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object)
+{
+    lock_guard<mutex> lock(g_policyMgrListenerMutex);
+    policyManagerListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    return SUCCESS;
+}
+
+bool AudioPolicyService::IsDevicePlaybackSupport(const AudioProcessConfig &config,
+    const AudioDeviceDescriptor &deviceInfo)
+{
+    if (audioPolicyServerHandler_ && config.streamInfo.encoding == ENCODING_EAC3 &&
+        deviceInfo.deviceType_ != DEVICE_TYPE_HDMI && deviceInfo.deviceType_ != DEVICE_TYPE_LINE_DIGITAL) {
+        audioPolicyServerHandler_->SendFormatUnsupportedErrorEvent(ERROR_UNSUPPORTED_FORMAT);
+        return false;
+    }
+    return true;
+}
+
+void AudioPolicyService::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
+    std::string callerName, std::string invocationTime)
+{
+    audioVolumeManager_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, callerName, invocationTime);
+}
+
+void AudioPolicyService::SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName,
+    std::string invocationTime)
+{
+    audioPolicyManager_.SaveRingerModeInfo(ringMode, callerName, invocationTime);
+}
+
+void AudioPolicyService::SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime,
+    int32_t subscriptionId, bool registrationResult)
+{
+    audioVolumeManager_.SaveVolumeKeyRegistrationInfo(keyType, registrationTime, subscriptionId, registrationResult);
+}
+
+bool AudioPolicyService::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    return AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

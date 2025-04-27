@@ -23,6 +23,8 @@
 #include "audio_effect.h"
 #include "pulseaudio_ipc_interface_code.h"
 #include "audio_asr.h"
+#include "hdi_adapter_type.h"
+#include "hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,7 +59,7 @@ public:
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) = 0;
+        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag = false) = 0;
 
     /**
      * Set Audio Parameter.
@@ -210,6 +212,13 @@ public:
         BluetoothOffloadState a2dpOffloadFlag) = 0;
 
     /**
+     * Set device dmDevice type.
+     *
+     * @return none.
+     */
+    virtual void SetDmDeviceType(uint16_t dmDeviceType) = 0;
+
+    /**
      * Update the audio route after devices is detected and route is decided
      *
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
@@ -287,7 +296,8 @@ public:
      *
      * @return Returns AudioProcess client.
      */
-    virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) = 0;
+    virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
+        const AudioPlaybackCaptureConfig &filterConfig = AudioPlaybackCaptureConfig()) = 0;
 
     /**
      * Use effect manager information to load effect libraries.
@@ -320,29 +330,18 @@ public:
     virtual int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) = 0;
 
     /**
+     * Regiest CoreService provider.
+     *
+     * @return result code.
+     */
+    virtual int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) = 0;
+
+    /**
      * Create playback capturer manager.
      *
      * @return true/false.
      */
     virtual bool CreatePlaybackCapturerManager() = 0;
-
-    /**
-     * Set StreamUsage set which support playback capturer.
-     *
-     * @param usage value of StreamUsage which support inner capturer.
-     *
-     * @return result of setting. 0 if success, error number else.
-     */
-    virtual int32_t SetSupportStreamUsage(std::vector<int32_t> usage) = 0;
-
-    /**
-     * Mark if playback capture silently.
-     *
-     * @param state identify the capture state
-     *
-     * @return result of setting. 0 if success, error number else.
-     */
-    virtual int32_t SetCaptureSilentState(bool state) = 0;
 
     /**
      * Update spatialization enabled state and head tracking enabled state.
@@ -396,11 +395,12 @@ public:
      * Get max amplitude for device.
      *
      * @param isOutputDevice specified if the device is output device
-     * @param deviceType specified deviceType to get max amplitude
+     * @param deviceClass specified deviceClass to get max amplitude
+     * @param sourceType specified sourceType when capture
      *
      * @return result of max amplitude.
      */
-    virtual float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) = 0;
+    virtual float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) = 0;
 
     /**
      * Release old endpoint and re-create one.
@@ -443,7 +443,7 @@ public:
     /**
      * Restore Session
      */
-    virtual void RestoreSession(const int32_t &sessionID, bool isOutput) = 0;
+    virtual void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) = 0;
 
     /**
      * Set Rotation To Effect.
@@ -495,6 +495,120 @@ public:
     virtual int32_t GenerateSessionId(uint32_t &sessionId) = 0;
 
     virtual void NotifyAccountsChanged() = 0;
+
+    virtual void NotifySettingsDataReady() = 0;
+
+    virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
+
+    virtual void SetDefaultAdapterEnable(bool isEnable) = 0;
+
+    virtual void NotifyAudioPolicyReady() = 0;
+
+    virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+    /**
+     * set inner capture limit.
+     * @param innerCapLimit inner capture limit num
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t SetInnerCapLimit(uint32_t innerCapLimit) = 0;
+    /**
+     * check inner capture limit
+     * @param AudioPlaybackCaptureConfig inner capture filter info
+     * @param innerCapId unique identifier of inner capture
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) = 0;
+    /**
+     * release inner capture limit
+     * @param innerCapId unique identifier of inner capture
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t ReleaseCaptureLimit(int32_t innerCapId) = 0;
+#endif
+
+    /**
+     * Load adapter of hal.
+     *
+     * @param devMgrType specify which manager to load adapter, include local, bt, remote.
+     * @param adapterName name of adapter to load.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) = 0;
+
+    /**
+     * Unload adapter of hal.
+     *
+     * @param devMgrType specify which manager to unload adapter, include local, bt, remote.
+     * @param adapterName name of adapter to unload.
+     * @param force need to force unload adapter.
+     *
+     * @return none.
+     */
+    virtual void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) = 0;
+
+    /**
+     * Create render of hal.
+     *
+     * @param deviceClass specify render type.
+     * @param idInfo info of render id.
+     * @param attr attribute string of render.
+     *
+     * @return Returns render id if success, HDI_INVALID_ID else.
+     */
+    virtual uint32_t CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSinkAttr &attr) = 0;
+
+    /**
+     * Create render of hal.
+     *
+     * @param idBase specify render type.
+     * @param idType specify sink type.
+     * @param info extra info of render.
+     * @param attr attribute string of render.
+     *
+     * @return Returns render id if success, HDI_INVALID_ID else.
+     */
+    virtual uint32_t CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSinkAttr &attr) = 0;
+
+    /**
+     * Create capture of hal.
+     *
+     * @param deviceClass specify capture type.
+     * @param idInfo info of capture id.
+     * @param attr attribute string of capture.
+     *
+     * @return Returns capture id if success, HDI_INVALID_ID else.
+     */
+    virtual uint32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSourceAttr &attr) = 0;
+
+    /**
+     * Create capture of hal.
+     *
+     * @param idBase specify capture type.
+     * @param idType specify sink type.
+     * @param info extra info of capture.
+     * @param attr attribute string of capture.
+     *
+     * @return Returns capture id if success, HDI_INVALID_ID else.
+     */
+    virtual uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSourceAttr &attr) = 0;
+
+    /**
+     * Destroy render/capture of hal.
+     *
+     * @param id specify which render or capture to destroy.
+     *
+     * @return none.
+     */
+    virtual void DestroyHdiPort(uint32_t id) = 0;
+
+    virtual void SetDeviceConnectedFlag(bool flag) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -513,6 +627,7 @@ private:
     int HandleSetAudioScene(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDevicesRoute(MessageParcel &data, MessageParcel &reply);
+    int HandleSetDmDeviceType(MessageParcel &data, MessageParcel &reply);
     int HandleDualToneState(MessageParcel &data, MessageParcel &reply);
     int HandleGetTransactionId(MessageParcel &data, MessageParcel &reply);
     int HandleSetParameterCallback(MessageParcel &data, MessageParcel &reply);
@@ -528,10 +643,9 @@ private:
     int HandleCreateAudioEffectChainManager(MessageParcel &data, MessageParcel &reply);
     int HandleSetOutputDeviceSink(MessageParcel &data, MessageParcel &reply);
     int HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply);
-    int HandleSetSupportStreamUsage(MessageParcel &data, MessageParcel &reply);
     int HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply);
+    int HandleRegistCoreServiceProvider(MessageParcel &data, MessageParcel &reply);
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
-    int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatialDeviceType(MessageParcel& data, MessageParcel& reply);
     int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
@@ -575,11 +689,30 @@ private:
     int HandleGetStandbyStatus(MessageParcel &data, MessageParcel &reply);
     int HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyAccountsChanged(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifySettingsDataReady(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply);
+    int HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply);
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply);
+    int HandleCheckCaptureLimit(MessageParcel &data, MessageParcel &reply);
+    int HandleReleaseCaptureLimit(MessageParcel &data, MessageParcel &reply);
+#endif
+    int HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply);
+    int HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply);
+    int HandleCreateHdiSinkPort(MessageParcel &data, MessageParcel &reply);
+    int HandleCreateSinkPort(MessageParcel &data, MessageParcel &reply);
+    int HandleCreateHdiSourcePort(MessageParcel &data, MessageParcel &reply);
+    int HandleCreateSourcePort(MessageParcel &data, MessageParcel &reply);
+    int HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply);
+    int HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply);
+    int HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFifthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    int HandleSixthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 };
 } // namespace AudioStandard
 } // namespace OHOS

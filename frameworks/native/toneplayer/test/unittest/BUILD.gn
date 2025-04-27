@@ -13,7 +13,7 @@
 
 import("//build/test.gni")
 
-module_output_path = "multimedia_audio_framework/audio_toneplayer"
+module_output_path = "audio_framework/audio_framework_route/audio_toneplayer"
 
 ohos_unittest("audio_toneplayer_unit_test") {
   module_out_path = module_output_path
@@ -22,6 +22,12 @@ ohos_unittest("audio_toneplayer_unit_test") {
     "../../../audioutils/include",
     "./../../../../../interfaces/inner_api/native/audiocommon/include",
     "./../../../../../interfaces/inner_api/native/audiorenderer/include",
+    "./../../../../../frameworks/native/audiorenderer/include",
+    "./../../../../../frameworks/native/audiopolicy/include",
+    "./../../../../../interfaces/inner_api/native/audiomanager/include",
+    "./../../../../../frameworks/native/audiostream/include",
+    "./../../../../../interfaces/inner_api/native/audiocapturer/include",
+    "./../../../../../frameworks/native/audiodefinitions/include",
   ]
 
   cflags = [
@@ -34,5 +40,8 @@ ohos_unittest("audio_toneplayer_unit_test") {
 
   sources = [ "audio_toneplayer_unit_test.cpp" ]
 
-  deps = [ "../../../toneplayer:audio_toneplayer" ]
+  deps = [
+    "../../../toneplayer:audio_toneplayer",
+    "./../../../../../frameworks/native/audiorenderer:audio_renderer",
+  ]
 }

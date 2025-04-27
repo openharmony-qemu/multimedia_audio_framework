@@ -60,7 +60,12 @@ public:
 
 class ConcreteAudioSessionCallback : public AudioSessionCallback {
 public:
-     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override {}
+    void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override {}
+};
+
+class ConcreteAudioDistribuitedOutputChangeCallback : public AudioDistribuitedOutputChangeCallback {
+public:
+    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override {};
 };
 
 class ConcreteAudioManagerMicStateChangeCallback : public AudioManagerMicStateChangeCallback {
@@ -110,6 +115,24 @@ class ConcreteAudioHeadTrackingEnabledChangeCallback : public AudioHeadTrackingE
     void OnHeadTrackingEnabledChange(const bool &enabled) override {}
     void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override {}
+};
+
+class ConcreteSpatialEnabledChangeForCurrentDeviceCb : public AudioSpatializationEnabledChangeForCurrentDeviceCallback {
+    void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override {}
+};
+
+class ConcreteAudioManagerAppVolumeChangeCallback : public AudioManagerAppVolumeChangeCallback {
+    void OnAppVolumeChangedForUid(int32_t appUid, const VolumeEvent &event) override {};
+
+    void OnSelfAppVolumeChanged(const VolumeEvent &event) override {};
+};
+
+class ConcreteAudioManagerAudioSceneChangedCallback : public AudioManagerAudioSceneChangedCallback {
+    void OnAudioSceneChange(const AudioScene audioScene) override {};
+};
+
+class ConcreteAudioFormatUnsupportedErrorCallback : public AudioFormatUnsupportedErrorCallback {
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

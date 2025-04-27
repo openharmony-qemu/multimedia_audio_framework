@@ -30,7 +30,7 @@
 #include "audio_router_center.h"
 #include "audio_policy_manager_factory.h"
 
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_active_device.h"
 #include "audio_iohandle_map.h"
 
@@ -46,7 +46,7 @@ public:
     }
 
     void Init(int32_t ecEnableState, int32_t micRefEnableState);
-    void PrepareAndOpenNormalSource(SessionInfo &sessionInfo, StreamPropInfo &targetInfo, SourceType targetSource);
+    void PrepareAndOpenNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
     void CloseNormalSource();
     AudioEcInfo GetAudioEcInfo();
     void ResetAudioEcInfo();
@@ -56,7 +56,7 @@ public:
     void CloseUsbArmDevice(const AudioDeviceDescriptor &device);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
 
-    int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, StreamPropInfo &targetInfo,
+    int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,
         SourceType &targetSourceType);
 
     void ReloadSourceForSession(SessionInfo sessionInfo);
@@ -67,29 +67,32 @@ public:
     bool GetEcFeatureEnable();
     bool GetMicRefFeatureEnable();
     void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void SetOpenedNormalSource(SourceType targetSource);
+    int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
+    void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
 private:
     AudioEcManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()) {}
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()) {}
     ~AudioEcManager() {}
 
     void UpdateEnhanceEffectState(SourceType source);
-    void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, StreamPropInfo &targetInfo, SourceType sourceType);
-    void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
-    void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo, SourceType sourceType);
     void UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice, const AudioDeviceDescriptor &outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
     std::string ShouldOpenMicRef(SourceType source);
 
     EcType GetEcType(const DeviceType inputDevice, const DeviceType outputDevice);
-    std::string GetEcSamplingRate(const std::string &halName, StreamPropInfo &streamPropInfo);
-    std::string GetEcFormat(const std::string &halName, StreamPropInfo &streamPropInfo);
-    std::string GetEcChannels(const std::string &halName, StreamPropInfo &streamPropInfo);
+    std::string GetEcSamplingRate(const std::string &halName, std::shared_ptr<PipeStreamPropInfo> &outModuleInfo);
+    std::string GetEcFormat(const std::string &halName, std::shared_ptr<PipeStreamPropInfo> &outModuleInfo);
+    std::string GetEcChannels(const std::string &halName, std::shared_ptr<PipeStreamPropInfo> &outModuleInfo);
 
-    int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType, PipeInfo &pipeInfo);
+    int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType,
+        std::shared_ptr<AdapterPipeInfo> &pipeInfo);
 
     void UpdateArmModuleInfo(const string &address, const DeviceRole role, AudioModuleInfo &moduleInfo);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
@@ -116,10 +119,9 @@ private:
     AudioRouterCenter& audioRouterCenter_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioActiveDevice& audioActiveDevice_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
 };
 
 }
 }
-
 #endif

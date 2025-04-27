@@ -16,9 +16,10 @@
 #ifndef ST_AUDIO_STATE_MANAGER_H
 #define ST_AUDIO_STATE_MANAGER_H
 
-#include <set>
+#include <unordered_set>
 #include <shared_mutex>
 #include "audio_system_manager.h"
+#include "i_standard_audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,7 +37,8 @@ public:
     void SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     // Set call render device selected by the user
-    void SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+        const int32_t uid = INVALID_UID, const std::string caller = "");
 
     // Set call capture device selected by the user
     void SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
@@ -79,8 +81,14 @@ public:
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
-    vector<shared_ptr<AudioDeviceDescriptor>> GetExcludedOutputDevices(AudioDeviceUsage audioDevUsage);
-    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage, shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
+    vector<shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
+    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage,
+        const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
+
+    void SetAudioSceneOwnerUid(const int32_t uid);
+    
+    int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
+    const std::string GetBundleNameFromUid(int32_t uid);
 
 private:
     AudioStateManager() {};
@@ -92,12 +100,18 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
 
-    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorComparer> mediaExcludedDevices_;
-    set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorComparer> callExcludedDevices_;
+    unordered_set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorHash,
+        AudioDeviceDescriptor::AudioDeviceDescriptorEqual> mediaExcludedDevices_;
+    unordered_set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorHash,
+        AudioDeviceDescriptor::AudioDeviceDescriptorEqual> callExcludedDevices_;
 
     std::mutex mutex_;
     shared_mutex mediaExcludedDevicesMutex_;
     shared_mutex callExcludedDevicesMutex_;
+    int32_t ownerUid_ = 0;
+    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedDeviceMapList_;
+    sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_;
+    void RemoveForcedDeviceMapData(int32_t uid);
 };
 
 } // namespace AudioStandard

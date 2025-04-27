@@ -20,6 +20,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_parcel_helper.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -88,6 +89,12 @@ int AudioProcessStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
             return HandleSetDefaultOutputDevice(data, reply);
         case ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS:
             return HandleSetSlientModeAndMixWithOther(data, reply);
+        case ON_SET_SOURCE_DURATION:
+            return HandleSetSourceDuration(data, reply);
+        case ON_SET_UNDERRUN_CNT:
+            return HandleSetUnderrunCount(data, reply);
+        case ON_SAVE_STREAM_VOLUME_INFO:
+            return HandleSaveStreamVolumeInfo(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -173,9 +180,10 @@ int32_t AudioProcessStub::HandleRegisterProcessCb(MessageParcel &data, MessagePa
 
 int32_t AudioProcessStub::HandleRegisterThreadPriority(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t tid = data.ReadUint32();
+    pid_t tid = AudioParcelHelper<MessageParcel, pid_t>::Unmarshalling(data);
     std::string bundleName = data.ReadString();
-    reply.WriteInt32(RegisterThreadPriority(tid, bundleName));
+    BoostTriggerMethod method = static_cast<BoostTriggerMethod>(data.ReadUint32());
+    reply.WriteInt32(RegisterThreadPriority(tid, bundleName, method));
     return AUDIO_OK;
 }
 
@@ -190,6 +198,30 @@ int32_t AudioProcessStub::HandleSetSlientModeAndMixWithOther(MessageParcel &data
 {
     bool on = data.ReadBool();
     reply.WriteInt32(SetSilentModeAndMixWithOthers(on));
+    return AUDIO_OK;
+}
+
+int32_t AudioProcessStub::HandleSetSourceDuration(MessageParcel &data, MessageParcel &reply)
+{
+    int64_t duration = data.ReadInt64();
+    reply.WriteInt32(SetSourceDuration(duration));
+    return AUDIO_OK;
+}
+
+int32_t AudioProcessStub::HandleSetUnderrunCount(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t underrunCnt = data.ReadUint32();
+    reply.WriteInt32(SetUnderrunCount(underrunCnt));
+    return AUDIO_OK;
+}
+
+int32_t AudioProcessStub::HandleSaveStreamVolumeInfo(MessageParcel &data, MessageParcel &reply)
+{
+    float volume = data.ReadFloat();
+    uint32_t sessionId = data.ReadUint32();
+    std::string adjustTime = data.ReadString();
+    uint32_t code = data.ReadUint32();
+    reply.WriteInt32(SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

@@ -154,18 +154,83 @@ bool PlaybackCapturerManager::RegisterCapturerFilterListener(ICapturerFilterList
 }
 
 int32_t PlaybackCapturerManager::SetPlaybackCapturerFilterInfo(uint32_t sessionId,
-    const AudioPlaybackCaptureConfig &config)
+    const AudioPlaybackCaptureConfig &config, int32_t innerCapId)
 {
     CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
 
-    return listener_->OnCapturerFilterChange(sessionId, config);
+    return listener_->OnCapturerFilterChange(sessionId, config, innerCapId);
 }
 
-int32_t PlaybackCapturerManager::RemovePlaybackCapturerFilterInfo(uint32_t sessionId)
+int32_t PlaybackCapturerManager::RemovePlaybackCapturerFilterInfo(uint32_t sessionId, int32_t innerCapId)
 {
     CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
+    return listener_->OnCapturerFilterRemove(sessionId, innerCapId);
+}
 
-    return listener_->OnCapturerFilterRemove(sessionId);
+int32_t PlaybackCapturerManager::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
+{
+    bool isSame = false;
+    AudioPlaybackCaptureConfig newConfig = config;
+    if (newConfig.filterOptions.usages.size() == 0) {
+        std::vector<StreamUsage> defalutUsages = GetDefaultUsages();
+        for (size_t i = 0; i < defalutUsages.size(); i++) {
+            newConfig.filterOptions.usages.push_back(defalutUsages[i]);
+        }
+    }
+    std::lock_guard<std::mutex> lock(filterMapMutex_);
+    for (auto &filter : filters_) {
+        if (filter.second.filterConfig == newConfig) {
+            AUDIO_INFO_LOG("Capture num reuse innerId:%{public}d", filter.first);
+            innerCapId = filter.first;
+            filter.second.ref += 1;
+            isSame = true;
+            break;
+        }
+    }
+    if (!isSame && filters_.size() >= innerCapLimit_) {
+        AUDIO_ERR_LOG("Capture nume over limit");
+        innerCapId = 0;
+        return ERR_ADD_CAPTURE_OVER_LIMIT;
+    }
+    if (!isSame) {
+        GetFilterIndex();
+        innerCapId = static_cast<int32_t>(filterNowIndex_);
+        AUDIO_INFO_LOG("Capture num add innerId:%{public}d", innerCapId);
+        CaptureFilterRef captureFilter;
+        captureFilter.ref = 1;
+        captureFilter.filterConfig = newConfig;
+        filters_[filterNowIndex_] = captureFilter;
+    }
+    return SUCCESS;
+}
+
+uint32_t PlaybackCapturerManager::GetFilterIndex()
+{
+    if (filterNowIndex_ >= innerCapLimit_) {
+        filterNowIndex_ = 0;
+    }
+    return (++filterNowIndex_);
+}
+
+int32_t PlaybackCapturerManager::SetInnerCapLimit(uint32_t innerCapLimit)
+{
+    innerCapLimit_ = innerCapLimit;
+    return SUCCESS;
+}
+
+bool PlaybackCapturerManager::CheckReleaseUnloadModernInnerCapSink(int32_t innerCapId)
+{
+    bool result = false;
+    std::lock_guard<std::mutex> lock(filterMapMutex_);
+    if (filters_.count(innerCapId)) {
+        if (filters_[innerCapId].ref <= 1) {
+            filters_.erase(innerCapId);
+            result = true;
+        } else {
+            filters_[innerCapId].ref -= 1;
+        }
+    }
+    return result;
 }
 } // namespace OHOS
 } // namespace AudioStandard

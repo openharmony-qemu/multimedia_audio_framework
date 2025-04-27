@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_manager_base.h"
+#include <sstream>
 #include "audio_system_manager.h"
 #include "audio_service_log.h"
 #include "i_audio_process.h"
@@ -63,10 +64,9 @@ const char *g_audioServerCodeStrs[] = {
     "CREATE_AUDIO_EFFECT_CHAIN_MANAGER",
     "SET_OUTPUT_DEVICE_SINK",
     "CREATE_PLAYBACK_CAPTURER_MANAGER",
-    "SET_SUPPORT_STREAM_USAGE",
     "REGISET_POLICY_PROVIDER",
+    "REGISET_CORE_SERVICE_PROVIDER",
     "SET_WAKEUP_CLOSE_CALLBACK",
-    "SET_CAPTURE_SILENT_STATE",
     "UPDATE_SPATIALIZATION_STATE",
     "UPDATE_SPATIAL_DEVICE_TYPE",
     "OFFLOAD_SET_VOLUME",
@@ -105,14 +105,31 @@ const char *g_audioServerCodeStrs[] = {
     "UPDATE_SESSION_CONNECTION_STATE",
     "SET_SINGLE_STREAM_MUTE",
     "RESTORE_SESSION",
+    "GET_ALL_SINK_INPUTS",
+    "SET_DEFAULT_ADAPTER_ENABLE",
     "CREATE_IPC_OFFLINE_STREAM",
     "GET_OFFLINE_AUDIO_EFFECT_CHAINS",
     "GET_STANDBY_STATUS",
     "GENERATE_SESSION_ID",
     "NOTIFY_ACCOUNTS_CHANGED",
+    "NOTIFY_AUDIO_POLICY_READY",
+    "SET_CAPTURE_LIMIT",
+    "LOAD_HDI_ADAPTER",
+    "UNLOAD_HDI_ADAPTER",
+    "CHECK_CAPTURE_LIMIT",
+    "RELEASE_CAPTURE_LIMIT",
+    "CREATE_HDI_SINK_PORT",
+    "CREATE_SINK_PORT",
+    "CREATE_HDI_SOURCE_PORT",
+    "CREATE_SOURCE_PORT",
+    "DESTROY_HDI_PORT",
+    "DEVICE_CONNECTED_FLAG",
+    "SET_DM_DEVICE_TYPE",
+    "NOTIFY_SETTINGS_DATA_READY",
+    "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
 };
-constexpr size_t codeNums = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
-static_assert(codeNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
+constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
+static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
     "keep same with AudioServerInterfaceCode");
 }
 static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>& effectList, MessageParcel &data,
@@ -325,7 +342,8 @@ int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &re
     }
     DeviceType activeInputDevice = (static_cast<DeviceType>(data.ReadInt32()));
     BluetoothOffloadState a2dpOffloadFlag =  static_cast<BluetoothOffloadState>(data.ReadInt32());
-    int32_t result = SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag);
+    bool scoExcludeFlag = data.ReadBool();
+    int32_t result = SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag, scoExcludeFlag);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -355,6 +373,13 @@ int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, Messag
     std::string deviceName = data.ReadString();
     int32_t ret = UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, deviceName);
     reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetDmDeviceType(MessageParcel &data, MessageParcel &reply)
+{
+    int16_t dmDeviceType = data.ReadUint16();
+    SetDmDeviceType(dmDeviceType);
     return AUDIO_OK;
 }
 
@@ -451,11 +476,21 @@ int AudioManagerStub::HandleCreateAudioProcess(MessageParcel &data, MessageParce
     AudioProcessConfig config;
     ProcessConfig::ReadConfigFromParcel(config, data);
     int32_t errorCode = 0;
-    sptr<IRemoteObject> process = CreateAudioProcess(config, errorCode);
-    CHECK_AND_RETURN_RET_LOG(process != nullptr, AUDIO_ERR,
-        "CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
-    reply.WriteRemoteObject(process);
+    AudioPlaybackCaptureConfig filterConfig;
+    ProcessConfig::ReadInnerCapConfigFromParcel(filterConfig, data);
+    sptr<IRemoteObject> process = CreateAudioProcess(config, errorCode, filterConfig);
+    if (process == nullptr) {
+        AUDIO_ERR_LOG("CREATE_AUDIOPROCESS AudioManagerStub CreateAudioProcess failed");
+        if (errorCode == 0) {
+            errorCode = AUDIO_ERR;
+        }
+        reply.WriteInt32(errorCode);
+        // Only ipc failed need return err. Here using errorCode send information.
+        return AUDIO_OK;
+    }
+
     reply.WriteInt32(errorCode);
+    reply.WriteRemoteObject(process);
     return AUDIO_OK;
 }
 
@@ -568,34 +603,20 @@ int AudioManagerStub::HandleCreatePlaybackCapturerManager(MessageParcel &data, M
 #endif
 }
 
-int AudioManagerStub::HandleSetSupportStreamUsage(MessageParcel &data, MessageParcel &reply)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    vector<int32_t> usage;
-    size_t cnt = static_cast<size_t>(data.ReadInt32());
-    CHECK_AND_RETURN_RET_LOG(cnt <= AUDIO_SUPPORTED_STREAM_USAGES.size(), AUDIO_ERR,
-        "Set support stream usage failed, please check");
-    for (size_t i = 0; i < cnt; i++) {
-        int32_t tmp_usage = data.ReadInt32();
-        if (find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmp_usage) ==
-            AUDIO_SUPPORTED_STREAM_USAGES.end()) {
-            continue;
-        }
-        usage.emplace_back(tmp_usage);
-    }
-    int32_t ret = SetSupportStreamUsage(usage);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-#else
-    return ERROR;
-#endif
-}
-
 int AudioManagerStub::HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     CHECK_AND_RETURN_RET_LOG(object != nullptr, AUDIO_ERR, "obj is null");
     int32_t result = RegiestPolicyProvider(object);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleRegistCoreServiceProvider(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, AUDIO_ERR, "obj is null");
+    int32_t result = RegistCoreServiceProvider(object);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -608,22 +629,6 @@ int AudioManagerStub::HandleSetWakeupSourceCallback(MessageParcel &data, Message
     int32_t result = SetWakeupSourceCallback(object);
     reply.WriteInt32(result);
     return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply)
-{
-#ifdef HAS_FEATURE_INNERCAPTURER
-    bool state = false;
-    int32_t flag = data.ReadInt32();
-    if (flag == 1) {
-        state = true;
-    }
-    int32_t ret = SetCaptureSilentState(state);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-#else
-    return ERROR;
-#endif
 }
 
 int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply)
@@ -689,8 +694,9 @@ int AudioManagerStub::HandleGetEffectLatency(MessageParcel &data, MessageParcel 
 int AudioManagerStub::HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply)
 {
     bool isOutputDevice = data.ReadBool();
-    int32_t deviceType = data.ReadInt32();
-    float result = GetMaxAmplitude(isOutputDevice, deviceType);
+    std::string deviceClass = data.ReadString();
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    float result = GetMaxAmplitude(isOutputDevice, deviceClass, sourceType);
     reply.WriteFloat(result);
     return AUDIO_OK;
 }
@@ -733,9 +739,12 @@ int AudioManagerStub::HandleSetRotationToEffect(MessageParcel &data, MessageParc
 
 int AudioManagerStub::HandleRestoreSession(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t sessionID = data.ReadInt32();
-    int32_t isOutput = data.ReadBool();
-    RestoreSession(sessionID, isOutput);
+    RestoreInfo restoreInfo;
+    uint32_t sessionID = data.ReadUint32();
+    restoreInfo.restoreReason = static_cast<RestoreReason>(data.ReadInt32());
+    restoreInfo.deviceChangeReason = data.ReadInt32();
+    restoreInfo.targetStreamFlag = data.ReadInt32();
+    RestoreSession(sessionID, restoreInfo);
     return AUDIO_OK;
 }
 
@@ -790,6 +799,12 @@ int AudioManagerStub::HandleFourthPartCode(uint32_t code, MessageParcel &data, M
             return HandleUpdateEffectBtOffloadSupported(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED):
             return HandleNotifyAccountsChanged(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_AUDIO_POLICY_READY):
+            return HandleNotifyAudioPolicyReady(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::DEVICE_CONNECTED_FLAG):
+            return HandleDeviceConnectedFlag(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY):
+            return HandleNotifySettingsDataReady(data, reply);
         default:
             return HandleFifthPartCode(code, data, reply, option);
     }
@@ -817,6 +832,39 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleGetStandbyStatus(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID):
             return HandleGenerateSessionId(data, reply);
+#ifdef HAS_FEATURE_INNERCAPTURER
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT):
+            return HandleSetInnerCapLimit(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_CAPTURE_LIMIT):
+            return HandleCheckCaptureLimit(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_CAPTURE_LIMIT):
+            return HandleReleaseCaptureLimit(data, reply);
+#endif
+        default:
+            return HandleSixthPartCode(code, data, reply, option);
+    }
+}
+
+int AudioManagerStub::HandleSixthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER):
+            return HandleLoadHdiAdapter(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER):
+            return HandleUnloadHdiAdapter(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SINK_PORT):
+            return HandleCreateHdiSinkPort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_SINK_PORT):
+            return HandleCreateSinkPort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_HDI_SOURCE_PORT):
+            return HandleCreateHdiSourcePort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_SOURCE_PORT):
+            return HandleCreateSourcePort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::DESTROY_HDI_PORT):
+            return HandleDestroyHdiPort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED):
+            return HandleIsAcousticEchoCancelerSupported(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -890,14 +938,12 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleSetOutputDeviceSink(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER):
             return HandleCreatePlaybackCapturerManager(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SUPPORT_STREAM_USAGE):
-            return HandleSetSupportStreamUsage(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER):
             return HandleRegiestPolicyProvider(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_CORE_SERVICE_PROVIDER):
+            return HandleRegistCoreServiceProvider(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK):
             return HandleSetWakeupSourceCallback(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE):
-            return HandleSetCaptureSilentState(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE):
             return HandleUpdateSpatializationState(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIAL_DEVICE_TYPE):
@@ -915,7 +961,7 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
         -1, "ReadInterfaceToken failed");
-    Trace trace(code >= codeNums ? "invalid audio server code!" : g_audioServerCodeStrs[code]);
+    Trace trace(code >= CODE_NUMS ? "invalid audio server code!" : g_audioServerCodeStrs[code]);
     if (code <= static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX)) {
         switch (code) {
             case static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_PARAMETER):
@@ -946,6 +992,12 @@ int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
                 return HandleSetRemoteAudioParameter(data, reply);
             case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO):
                 return HandleNotifyDeviceInfo(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS):
+                return HandleGetAllSinkInputs(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_DEFAULT_ADAPTER_ENABLE):
+                return HandleSetDefaultAdapterEnable(data, reply);
+            case static_cast<uint32_t>(AudioServerInterfaceCode::SET_DM_DEVICE_TYPE):
+                return HandleSetDmDeviceType(data, reply);
             default:
                 return HandleSecondPartCode(code, data, reply, option);
         }
@@ -1115,5 +1167,190 @@ int AudioManagerStub::HandleNotifyAccountsChanged(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleNotifySettingsDataReady(MessageParcel &data, MessageParcel &reply)
+{
+    NotifySettingsDataReady();
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetAllSinkInputs(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<SinkInput> sinkInputs;
+    GetAllSinkInputs(sinkInputs);
+    size_t size = sinkInputs.size();
+    reply.WriteUint64(size);
+    for (auto &sinkInput : sinkInputs) {
+        sinkInput.Marshalling(reply);
+    }
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetDefaultAdapterEnable(MessageParcel &data, MessageParcel &reply)
+{
+    bool isEnable = data.ReadBool();
+    SetDefaultAdapterEnable(isEnable);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleNotifyAudioPolicyReady(MessageParcel &data, MessageParcel &reply)
+{
+    NotifyAudioPolicyReady();
+    return AUDIO_OK;
+}
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int AudioManagerStub::HandleSetInnerCapLimit(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t innerCapId = data.ReadUint32();
+    reply.WriteInt32(SetInnerCapLimit(innerCapId));
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCheckCaptureLimit(MessageParcel &data, MessageParcel &reply)
+{
+    AudioPlaybackCaptureConfig filterConfig;
+    ProcessConfig::ReadInnerCapConfigFromParcel(filterConfig, data);
+    int32_t innerCapId = 0;
+    reply.WriteInt32(CheckCaptureLimit(filterConfig, innerCapId));
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleReleaseCaptureLimit(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t innerCapId = data.ReadInt32();
+    reply.WriteInt32(ReleaseCaptureLimit(innerCapId));
+    return AUDIO_OK;
+}
+#endif
+
+int AudioManagerStub::HandleLoadHdiAdapter(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t devMgrType = data.ReadUint32();
+    const std::string adapterName = data.ReadString();
+    int32_t result = LoadHdiAdapter(devMgrType, adapterName);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUnloadHdiAdapter(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t devMgrType = data.ReadUint32();
+    const std::string adapterName = data.ReadString();
+    bool force = data.ReadBool();
+    UnloadHdiAdapter(devMgrType, adapterName, force);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply)
+{
+    bool flag = data.ReadBool();
+    SetDeviceConnectedFlag(flag);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateHdiSinkPort(MessageParcel &data, MessageParcel &reply)
+{
+    std::string deviceClass = data.ReadString();
+    std::string idInfo = data.ReadString();
+    IAudioSinkAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSinkAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
+    attr.adapterName = data.ReadString();
+    attr.filePath = data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString().c_str();
+    attr.address = data.ReadString();
+    attr.aux = data.ReadString().c_str();
+
+    uint32_t id = CreateHdiSinkPort(deviceClass, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateSinkPort(MessageParcel &data, MessageParcel &reply)
+{
+    HdiIdBase idBase = static_cast<HdiIdBase>(data.ReadUint32());
+    HdiIdType idType = static_cast<HdiIdType>(data.ReadUint32());
+    std::string idInfo = data.ReadString();
+    IAudioSinkAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSinkAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSinkAttr));
+    attr.adapterName = data.ReadString();
+    attr.filePath = data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString().c_str();
+    attr.address = data.ReadString();
+    attr.aux = data.ReadString().c_str();
+
+    uint32_t id = CreateSinkPort(idBase, idType, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateHdiSourcePort(MessageParcel &data, MessageParcel &reply)
+{
+    std::string deviceClass = data.ReadString();
+    std::string idInfo = data.ReadString();
+    IAudioSourceAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSourceAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
+    attr.adapterName = data.ReadString();
+    attr.filePath = data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString().c_str();
+
+    uint32_t id = CreateHdiSourcePort(deviceClass, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleCreateSourcePort(MessageParcel &data, MessageParcel &reply)
+{
+    HdiIdBase idBase = static_cast<HdiIdBase>(data.ReadUint32());
+    HdiIdType idType = static_cast<HdiIdType>(data.ReadUint32());
+    std::string idInfo = data.ReadString();
+    IAudioSourceAttr attr;
+
+    std::string attrStr = data.ReadString();
+    if (attrStr.size() != sizeof(IAudioSourceAttr)) {
+        return AUDIO_ERR;
+    }
+    std::istringstream iss(attrStr);
+    iss.read(reinterpret_cast<char *>(&attr), sizeof(IAudioSourceAttr));
+    attr.adapterName = data.ReadString();
+    attr.filePath = data.ReadString().c_str();
+    attr.deviceNetworkId = data.ReadString().c_str();
+
+    uint32_t id = CreateSourcePort(idBase, idType, idInfo, attr);
+    reply.WriteUint32(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t id = data.ReadUint32();
+    DestroyHdiPort(id);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply)
+{
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    bool ret = IsAcousticEchoCancelerSupported(sourceType);
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

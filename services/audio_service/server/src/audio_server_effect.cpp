@@ -20,6 +20,10 @@
 
 #include "audio_effect_chain_manager.h"
 #include "audio_enhance_chain_manager.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
+#include "i_hpae_manager.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -28,19 +32,21 @@ using namespace std;
 void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
     const std::string &extraSceneType)
 {
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
-        return;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        HPAE::IHpaeManager::GetHpaeManager().UpdateParamExtra(mainkey, subkey, extraSceneType);
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+            return;
+        }
+        audioEffectChainManager->UpdateParamExtra(mainkey, subkey, extraSceneType);
+        
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        return audioEnhanceChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
     }
-    audioEffectChainManager->UpdateParamExtra(mainkey, subkey, extraSceneType);
-
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    if (audioEnhanceChainManager == nullptr) {
-        AUDIO_ERR_LOG("audioEnhanceChainManager is nullptr");
-        return;
-    }
-    audioEnhanceChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
 }
 
 bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
@@ -50,12 +56,21 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
         AUDIO_ERR_LOG("not audio calling!");
         return false;
     }
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectParam,
-        audioEffectServer_->GetEffectEntries());
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceParam,
-        audioEffectServer_->GetEffectEntries());
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        HPAE::IHpaeManager::GetHpaeManager().InitAudioEffectChainManager(effectChains, effectParam,
+            audioEffectServer_->GetEffectEntries());
+        HPAE::IHpaeManager::GetHpaeManager().InitAudioEnhanceChainManager(effectChains, enhanceParam,
+            audioEffectServer_->GetEffectEntries());
+        AUDIO_INFO_LOG("AudioEffectChainManager Init");
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectParam,
+            audioEffectServer_->GetEffectEntries());
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceParam,
+            audioEffectServer_->GetEffectEntries());
+    }
     return true;
 }
 
@@ -66,8 +81,14 @@ void AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
         AUDIO_ERR_LOG("not audio calling!");
         return;
     }
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName);
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        HPAE::IHpaeManager::GetHpaeManager().SetOutputDeviceSink(deviceType, sinkName);
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName);
+    }
     return;
 }
 
@@ -75,12 +96,18 @@ int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatiali
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
-        return ERROR;
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().UpdateSpatializationState(spatializationState);
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        if (audioEffectChainManager == nullptr) {
+            AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+            return ERROR;
+        }
+        return audioEffectChainManager->UpdateSpatializationState(spatializationState);
     }
-    return audioEffectChainManager->UpdateSpatializationState(spatializationState);
 }
 
 int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
@@ -88,25 +115,32 @@ int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDevic
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().UpdateSpatialDeviceType(spatialDeviceType);
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
 
-    return audioEffectChainManager->UpdateSpatialDeviceType(spatialDeviceType);
+        return audioEffectChainManager->UpdateSpatialDeviceType(spatialDeviceType);
+    }
 }
 
 int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, float volume)
 {
     AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    AUDIO_INFO_LOG("streamType: %{public}d, systemVolume: %{public}f", streamType, volume);
-    audioEffectChainManager->SetEffectSystemVolume(systemVolumeType, volume);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        HPAE::IHpaeManager::GetHpaeManager().SetEffectSystemVolume(systemVolumeType, volume);
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+        AUDIO_INFO_LOG("streamType: %{public}d, systemVolume: %{public}f", streamType, volume);
+        audioEffectChainManager->SetEffectSystemVolume(systemVolumeType, volume);
 
-    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
-    audioEffectChainManager->EffectVolumeUpdate(audioEffectVolume);
-
+        audioEffectChainManager->EffectVolumeUpdate();
+    }
     return SUCCESS;
 }
 
@@ -115,9 +149,14 @@ int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spa
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetSpatializationSceneType(spatializationSceneType);
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+        return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
+    }
 }
 
 uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
@@ -142,9 +181,14 @@ void AudioServer::LoadHdiEffectModel()
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "load hdi effect model refused for %{public}d", callingUid);
 
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
-    audioEffectChainManager->InitHdiState();
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        HPAE::IHpaeManager::GetHpaeManager().InitHdiState();
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        audioEffectChainManager->InitHdiState();
+    }
 }
 
 int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
@@ -195,9 +239,15 @@ int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArray &prop
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "SetA udio Effect Property refused for %{public}d", callingUid);
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    return audioEffectChainManager->SetAudioEffectProperty(propertyArray);
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetAudioEffectProperty(propertyArray);
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+        return audioEffectChainManager->SetAudioEffectProperty(propertyArray);
+    }
 }
 
 int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
@@ -216,9 +266,14 @@ int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &pr
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "Set Audio Enhance Property refused for %{public}d", callingUid);
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
-    return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray, deviceType);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetAudioEnhanceProperty(propertyArray, deviceType);
+    } else {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+        return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray, deviceType);
+    }
 }
 
 int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
@@ -234,17 +289,28 @@ int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &property
 
 int32_t AudioServer::SetAudioEffectChainProperty(const AudioEffectPropertyArrayV3 &propertyArray)
 {
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    return audioEffectChainManager->SetAudioEffectProperty(propertyArray);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetAudioEffectProperty(propertyArray);
+        return SUCCESS;
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+        return audioEffectChainManager->SetAudioEffectProperty(propertyArray);
+    }
 }
 
 int32_t AudioServer::SetAudioEnhanceChainProperty(const AudioEffectPropertyArrayV3 &propertyArray,
     const DeviceType& deviceType)
 {
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
-    return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray, deviceType);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetAudioEnhanceProperty(propertyArray, deviceType);
+    } else {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+        return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray, deviceType);
+    }
 }
 
 int32_t AudioServer::GetAudioEffectPropertyArray(AudioEffectPropertyArrayV3 &propertyArray)
@@ -267,9 +333,14 @@ void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
 
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
-    audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        HPAE::IHpaeManager::GetHpaeManager().UpdateEffectBtOffloadSupported(isSupported);
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
+    }
 }
 
 void AudioServer::SetRotationToEffect(const uint32_t rotate)
@@ -277,20 +348,24 @@ void AudioServer::SetRotationToEffect(const uint32_t rotate)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "set rotation to effect refused for %{public}d", callingUid);
 
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
-    audioEffectChainManager->EffectRotationUpdate(rotate);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        HPAE::IHpaeManager::GetHpaeManager().EffectRotationUpdate(rotate);
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        audioEffectChainManager->EffectRotationUpdate(rotate);
+    }
 
     std::string value = "rotation=" + std::to_string(rotate);
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-    CHECK_AND_RETURN_LOG(audioRendererSinkInstance != nullptr, "has no valid sink");
-    audioRendererSinkInstance->SetAudioParameter(AudioParamKey::NONE, "", value);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
 }
 
 int32_t AudioServer::SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType)
 {
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     Volume vol = {false, 0.0f, 0};
@@ -300,14 +375,27 @@ int32_t AudioServer::SetVolumeInfoForEnhanceChain(const AudioStreamType &streamT
         PolicyHandler::GetInstance().GetActiveOutPutDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
         systemVol = 1.0f; // 1.0f for a2dp abs volume
     }
-    return audioEnhanceChainManager->SetVolumeInfo(volumeType, systemVol);
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetVolumeInfo(volumeType, systemVol);
+    } else {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+        return audioEnhanceChainManager->SetVolumeInfo(volumeType, systemVol);
+    }
 }
 
 int32_t AudioServer::SetMicrophoneMuteForEnhanceChain(const bool &isMute)
 {
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
-    return audioEnhanceChainManager->SetMicrophoneMuteInfo(isMute);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetMicrophoneMuteInfo(isMute);
+    } else {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
+        return audioEnhanceChainManager->SetMicrophoneMuteInfo(isMute);
+    }
 }
 
 bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
@@ -333,5 +421,23 @@ void AudioServer::NotifyAccountsChanged()
     audioEffectChainManager->LoadEffectProperties();
 }
 
+void AudioServer::NotifySettingsDataReady()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+    audioEffectChainManager->LoadEffectProperties();
+}
+
+bool AudioServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
+        "IsAcousticEchoCancelerSupported refused for %{public}d", callingUid);
+    AUDIO_WARNING_LOG("Not Supported");
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -109,18 +109,18 @@ void AudioServiceMoreFuzzTest()
     audioServicePtr->UpdateMuteControlSet(sessionId, true);
     audioServicePtr->UpdateMuteControlSet(sessionId, false);
     audioServicePtr->EnableDualToneList(sessionId);
-    audioServicePtr->OnCapturerFilterChange(sessionId, newConfig);
-    audioServicePtr->OnCapturerFilterRemove(sessionId);
+    audioServicePtr->OnCapturerFilterChange(sessionId, newConfig, 1);
+    audioServicePtr->OnCapturerFilterRemove(sessionId, 1);
 
     int32_t ret = GetData<int32_t>();
-    audioServicePtr->workingInnerCapId_ = GetData<uint32_t>();
+    audioServicePtr->workingConfigs_[1];
     audioServicePtr->GetIpcStream(config, ret);
 #ifdef HAS_FEATURE_INNERCAPTURER
-    audioServicePtr->ShouldBeInnerCap(config);
+    audioServicePtr->ShouldBeInnerCap(config, 1);
     audioServicePtr->ShouldBeDualTone(config);
 
-    audioServicePtr->OnInitInnerCapList();
-    audioServicePtr->OnUpdateInnerCapList();
+    audioServicePtr->OnInitInnerCapList(1);
+    audioServicePtr->OnUpdateInnerCapList(1);
     audioServicePtr->ResetAudioEndpoint();
 #endif
     uint32_t sourceTypeInt = GetData<uint32_t>();
@@ -138,6 +138,9 @@ void AudioCapturerInServerMoreFuzzTest()
         return;
     }
 
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = static_cast<RestoreReason>(GetData<int32_t>());
+    restoreInfo.targetStreamFlag = GetData<int32_t>();
     uint32_t operationInt = GetData<uint32_t>();
     operationInt = (operationInt % OPERATION_ENUM_NUM) - NUM;
     IOperation operation = static_cast<IOperation>(operationInt);
@@ -150,7 +153,9 @@ void AudioCapturerInServerMoreFuzzTest()
     capturerInServer->UpdatePlaybackCaptureConfig(captureconfig);
 #endif
     capturerInServer->SetNonInterruptMute(true);
-    capturerInServer->RestoreSession();
+    if (capturerInServer->isInited_ == true) {
+        capturerInServer->RestoreSession(restoreInfo);
+    }
 }
 
 void AudioNoneMixEngineMoreFuzzTest()

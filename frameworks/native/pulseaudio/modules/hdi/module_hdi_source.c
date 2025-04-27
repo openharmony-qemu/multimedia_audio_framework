@@ -29,9 +29,9 @@
 
 #include "securec.h"
 #include "audio_hdi_log.h"
-#include "audio_hdiadapter_info.h"
 #include "audio_enhance_chain_adapter.h"
 #include "source_userdata.h"
+#include "common/hdi_adapter_info.h"
 
 pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSourceFree(pa_source *s);
@@ -81,6 +81,7 @@ static const char * const VALID_MODARGS[] = {
     "mic_ref_rate",
     "mic_ref_format",
     "mic_ref_channels",
+    "default_adapter_enable",
     NULL
 };
 
@@ -123,9 +124,9 @@ static bool DecreaseScenekeyCount(pa_hashmap *sceneMap, const char *key)
     return false;
 }
 
-static enum HdiAdapterFormat ConvertPaFormat(pa_sample_format_t paFormat)
+static enum AudioSampleFormatIntf ConvertPaFormat(pa_sample_format_t paFormat)
 {
-    enum HdiAdapterFormat format;
+    enum AudioSampleFormatIntf format;
     switch (paFormat) {
         case PA_SAMPLE_U8:
             format = SAMPLE_U8;
@@ -228,7 +229,7 @@ static void SetDefaultResampler(pa_source_output *so, const pa_sample_spec *algo
     }
 }
 
-static uint32_t GetByteSizeByFormat(enum HdiAdapterFormat format)
+static uint32_t GetByteSizeByFormat(enum AudioSampleFormatIntf format)
 {
     uint32_t byteSize = 0;
     switch (format) {
@@ -280,7 +281,7 @@ static void InitDeviceAttrAdapter(struct DeviceAttrAdapter *deviceAttrAdapter, s
     }
 }
 
-static pa_hook_result_t GetAlgoSpecs(uint32_t sceneKeyCode, struct AlgoSpecs *algoSpecs)
+static pa_hook_result_t GetAlgoSpecs(uint64_t sceneKeyCode, struct AlgoSpecs *algoSpecs)
 {
     pa_sample_spec_init(&algoSpecs->micSpec);
     pa_sample_spec_init(&algoSpecs->ecSpec);
@@ -307,13 +308,15 @@ static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userd
     }
     uint32_t captureId = u->captureId;
     uint32_t renderId = u->renderId;
-    uint32_t sceneTypeCode = 0;
+    uint64_t sceneTypeCode = 0;
     if (GetSceneTypeCode(sceneType, &sceneTypeCode) != 0) {
         AUDIO_ERR_LOG("scenetype:%{public}s GetSceneTypeCode failed", sceneType);
         pa_proplist_sets(so->proplist, "scene.bypass", DEFAULT_SCENE_BYPASS);
         return PA_HOOK_OK;
     }
-    uint32_t sceneKeyCode = 0;
+    uint64_t sceneKeyCode = 0;
+    AUDIO_INFO_LOG("sceneTypeCode = %{public}" PRIu64 ", captureId = %{public}u, renderId = %{public}u",
+        sceneTypeCode, captureId, renderId);
     sceneKeyCode = (sceneTypeCode << SCENE_TYPE_OFFSET) + (captureId << CAPTURER_ID_OFFSET) + renderId;
     struct DeviceAttrAdapter deviceAttrAdapter;
     InitDeviceAttrAdapter(&deviceAttrAdapter, u);
@@ -331,7 +334,7 @@ static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userd
         pa_proplist_sets(so->proplist, "scene.default", "1");
     } else {
         char sceneKey[MAX_SCENE_NAME_LEN];
-        if (sprintf_s(sceneKey, sizeof(sceneKey), "%u", sceneKeyCode) < 0) {
+        if (sprintf_s(sceneKey, sizeof(sceneKey), "%lu", sceneKeyCode) < 0) {
             AUDIO_ERR_LOG("sprintf from sceneKeyCode to sceneKey failed");
             return PA_HOOK_OK;
         }
@@ -355,16 +358,16 @@ static pa_hook_result_t HandleSourceOutputUnlink(pa_source_output *so, struct Us
     }
     uint32_t captureId = u->captureId;
     uint32_t renderId = u->renderId;
-    uint32_t sceneTypeCode = 0;
+    uint64_t sceneTypeCode = 0;
     if (GetSceneTypeCode(sceneType, &sceneTypeCode) != 0) {
         AUDIO_ERR_LOG("scenetype:%{public}s GetSceneTypeCode failed", sceneType);
         return PA_HOOK_OK;
     }
-    uint32_t sceneKeyCode = 0;
+    uint64_t sceneKeyCode = 0;
     sceneKeyCode = (sceneTypeCode << SCENE_TYPE_OFFSET) + (captureId << CAPTURER_ID_OFFSET) + renderId;
     EnhanceChainManagerReleaseCb(sceneKeyCode);
     char sceneKey[MAX_SCENE_NAME_LEN];
-    if (sprintf_s(sceneKey, sizeof(sceneKey), "%u", sceneKeyCode) < 0) {
+    if (sprintf_s(sceneKey, sizeof(sceneKey), "%lu", sceneKeyCode) < 0) {
         AUDIO_ERR_LOG("sprintf from sceneKeyCode to sceneKey failed");
         return PA_HOOK_OK;
     }
@@ -475,6 +478,7 @@ int pa__init(pa_module *m)
     }
 
     if (!(m->userdata = PaHdiSourceNew(m, ma, __FILE__))) {
+        AUDIO_ERR_LOG("Failed to PaHdiSourceNew");
         goto fail;
     }
     pa_source *source = (pa_source *)m->userdata;
@@ -521,7 +525,7 @@ static void ReleaseAllChains(struct Userdata *u)
     uint32_t *sceneKeyNum;
     const void *sceneKey;
     while ((sceneKeyNum = pa_hashmap_iterate(u->sceneToCountMap, &state, &sceneKey))) {
-        uint32_t sceneKeyCode = (uint32_t)strtoul((char *)sceneKey, NULL, BASE_TEN);
+        uint64_t sceneKeyCode = (uint64_t)strtoul((char *)sceneKey, NULL, BASE_TEN);
         for (uint32_t count = 0; count < *sceneKeyNum; count++) {
             EnhanceChainManagerReleaseCb(sceneKeyCode);
         }

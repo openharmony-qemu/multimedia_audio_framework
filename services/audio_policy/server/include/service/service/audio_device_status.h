@@ -44,9 +44,10 @@
 #include "audio_a2dp_device.h"
 #include "audio_ec_manager.h"
 #include "audio_a2dp_offload_flag.h"
-#include "audio_config_manager.h"
+#include "audio_policy_config_manager.h"
 #include "audio_router_map.h"
 #include "audio_a2dp_offload_manager.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -77,6 +78,7 @@ public:
         std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
         bool isConnected);
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
+    uint16_t GetDmDeviceType();
 private:
     AudioDeviceStatus() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -95,7 +97,7 @@ private:
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioEcManager_(AudioEcManager::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
-        audioConfigManager_(AudioConfigManager::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()) {}
     ~AudioDeviceStatus() {}
 
@@ -107,6 +109,8 @@ private:
     int32_t RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address);
     int32_t HandleArmUsbDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address);
     int32_t HandleDpDevice(DeviceType deviceType, const std::string &address);
+    int32_t HandleAccessoryDevice(DeviceType deviceType, const std::string &address);
+    int32_t LoadAccessoryModule(std::string deviceInfo);
     int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected,
         const std::string &address, DeviceRole role);
     void TriggerAvailableDeviceChangedCallback(
@@ -139,6 +143,8 @@ private:
     int32_t GetModuleInfo(ClassType classType, std::string &moduleInfoStr);
     int32_t LoadDpModule(std::string deviceInfo);
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
+    int32_t RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+        AudioModuleInfo &moduleInfo, std::string &currentActivePort);
 
     void DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc);
     void HandleOfflineDistributedDevice();
@@ -170,7 +176,7 @@ private:
     AudioA2dpDevice& audioA2dpDevice_;
     AudioEcManager& audioEcManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
-    AudioConfigManager& audioConfigManager_;
+    AudioPolicyConfigManager& audioConfigManager_;
     AudioRouteMap& audioRouteMap_;
 
     bool remoteCapturerSwitch_ = false;
@@ -180,6 +186,7 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
     bool hasModulesLoaded = false;
+    uint16_t dmDeviceType_ = 0;
 };
 
 }

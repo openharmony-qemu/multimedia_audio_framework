@@ -31,6 +31,12 @@
 namespace OHOS {
 namespace AudioStandard {
 
+struct DmDevice {
+    std::string deviceName_;
+    std::string networkId_;
+    uint16_t dmDeviceType_{0};
+};
+
 class AudioConnectedDevice {
 public:
     static AudioConnectedDevice& GetInstance()
@@ -43,6 +49,8 @@ public:
     bool IsConnectedOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool CheckDeviceConnected(std::string selectedDevice);
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
+    void UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect);
+    void UpdateDeviceDesc4DmDevice(AudioDeviceDescriptor &deviceDesc);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(int32_t deviceType);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType);
@@ -65,14 +73,15 @@ public:
     bool HasHifi(const DeviceRole role);
     bool IsArmDevice(const std::string &address, const DeviceRole role);
     std::shared_ptr<AudioDeviceDescriptor> GetUsbDeviceDescriptor(const std::string &address, const DeviceRole role);
+    void UpdateSpatializationSupported(const std::string macAddress, const bool support);
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
+    std::mutex dmDeviceMtx_;
+    std::unordered_map<std::string, DmDevice> dmDeviceMap_;
 };
-
 }
 }
-
 #endif

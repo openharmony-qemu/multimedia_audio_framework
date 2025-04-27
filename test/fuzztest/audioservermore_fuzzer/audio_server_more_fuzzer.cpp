@@ -18,7 +18,6 @@
 #include <cstdint>
 #include <string>
 
-#include "i_audio_renderer_sink.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
@@ -111,23 +110,6 @@ void AudioServerUpdateSpatialDeviceTypeTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIAL_DEVICE_TYPE),
-        data, reply, option);
-}
-
-void AudioServerSetCaptureSilentStateTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    bool isSilent = *reinterpret_cast<const bool*>(rawData);
-    data.WriteBool(isSilent);
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    MessageParcel reply;
-    MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE),
         data, reply, option);
 }
 
@@ -412,6 +394,24 @@ void AudioLoadAudioEffectLibrariesTest(const uint8_t* rawData, size_t size)
         data, reply, option);
 }
 
+void AudioCapturerInServerTestFirst(std::shared_ptr<CapturerInServer> capturerInServer)
+{
+    capturerInServer->Init();
+    capturerInServer->Start();
+    capturerInServer->ConfigServerBuffer();
+    if (capturerInServer->isInited_ == true) {
+        capturerInServer->InitBufferStatus();
+        capturerInServer->UpdateReadIndex();
+    }
+    uint32_t sessionId;
+    capturerInServer->GetSessionId(sessionId);
+    capturerInServer->DrainAudioBuffer();
+    capturerInServer->Pause();
+    capturerInServer->Flush();
+    capturerInServer->Stop();
+    capturerInServer->Release();
+}
+
 void AudioCapturerInServerFuzzTest()
 {
     std::shared_ptr<CapturerInServer> capturerInServer = nullptr;
@@ -438,6 +438,7 @@ void AudioCapturerInServerFuzzTest()
     capturerInServer->ResolveBuffer(buffer);
     uint32_t sessionId = GetData<uint32_t>();
     capturerInServer->GetSessionId(sessionId);
+    AudioCapturerInServerTestFirst(capturerInServer);
 }
 
 void AudioRendererInServerTestFirst(std::shared_ptr<RendererInServer> renderer)
@@ -478,6 +479,9 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
 {
     bool isAppBack = GetData<bool>();
     bool headTrackingEnabled = GetData<bool>();
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = static_cast<RestoreReason>(GetData<int32_t>());
+    restoreInfo.targetStreamFlag = GetData<int32_t>();
     renderer->UpdateSpatializationState(isAppBack, headTrackingEnabled);
     renderer->CheckAndWriterRenderStreamStandbySysEvent(GetData<bool>());
     uint64_t timeStamp = COMMON_UINT64_NUM;
@@ -490,9 +494,9 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     renderer->WriteData();
     renderer->WriteEmptyData();
     renderer->DrainAudioBuffer();
-    renderer->EnableInnerCap();
-    renderer->DisableInnerCap();
-    renderer->InitDupStream();
+    renderer->EnableInnerCap(1);
+    renderer->DisableInnerCap(1);
+    renderer->InitDupStream(1);
     renderer->EnableDualTone();
     renderer->DisableDualTone();
     renderer->InitDualToneStream();
@@ -508,7 +512,7 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     renderer->Dump(dumpString);
     bool muteFlag = false;
     renderer->SetNonInterruptMute(muteFlag);
-    renderer->RestoreSession();
+    renderer->RestoreSession(restoreInfo);
     renderer->Pause();
     renderer->Flush();
     renderer->Drain(headTrackingEnabled);
@@ -610,7 +614,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::FuzzTest(data, size);
     OHOS::AudioStandard::AudioServerSetSpatializationSceneTypeTest(data, size);
     OHOS::AudioStandard::AudioServerUpdateSpatialDeviceTypeTest(data, size);
-    OHOS::AudioStandard::AudioServerSetCaptureSilentStateTest(data, size);
     OHOS::AudioStandard::AudioServerLoadConfigurationTest(data, size);
     OHOS::AudioStandard::AudioServerGetExtarAudioParametersTest(data, size);
     OHOS::AudioStandard::AudioServerSetExtraAudioParametersTest(data, size);

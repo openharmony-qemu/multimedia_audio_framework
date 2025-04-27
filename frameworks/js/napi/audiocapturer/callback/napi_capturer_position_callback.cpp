@@ -40,18 +40,24 @@ NapiCapturerPositionCallback::~NapiCapturerPositionCallback()
 void NapiCapturerPositionCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    napi_ref callback = nullptr;
-    const int32_t refCount = 1;
-    napi_status status = napi_create_reference(env_, args, refCount, &callback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-        "NapiCapturerPositionCallback: creating reference for callback fail");
+    // create function that will operate while save callback reference success.
+    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
+        [this](std::shared_ptr<AutoRef> generatedCallback) {
+        capturerPositionCallback_ = generatedCallback;
+    };
+    SaveCallbackReferenceInner(callbackName, args, successed);
+}
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    if (callbackName == MARK_REACH_CALLBACK_NAME) {
-        capturerPositionCallback_ = cb;
-    } else {
-        AUDIO_ERR_LOG("NapiCapturerPositionCallback: Unknown callback type: %{public}s", callbackName.c_str());
-    }
+void NapiCapturerPositionCallback::RemoveCallbackReference(const std::string &callbackName, napi_env env,
+    napi_value callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    // create function that will operate while remove callback reference success.
+    std::function<void()> successed =
+        [this]() {
+        capturerPositionCallback_ = nullptr;
+        };
+    RemoveCallbackReferenceInner(callbackName, env, callback, successed);
 }
 
 void NapiCapturerPositionCallback::CreateCapturePositionTsfn(napi_env env)
@@ -137,6 +143,28 @@ void NapiCapturerPositionCallback::OnJsCapturerPositionCallback(std::unique_ptr<
 
     napi_acquire_threadsafe_function(acPosTsfn_);
     napi_call_threadsafe_function(acPosTsfn_, event, napi_tsfn_blocking);
+}
+
+napi_env &NapiCapturerPositionCallback::GetEnv()
+{
+    return env_;
+}
+
+std::shared_ptr<AutoRef> NapiCapturerPositionCallback::GetCallback(const std::string &callbackName)
+{
+    std::shared_ptr<AutoRef> cb = nullptr;
+    if (callbackName == MARK_REACH_CALLBACK_NAME) {
+        return capturerPositionCallback_;
+    }
+    return cb;
+}
+
+bool NapiCapturerPositionCallback::CheckIfTargetCallbackName(const std::string &callbackName)
+{
+    if (callbackName == MARK_REACH_CALLBACK_NAME) {
+        return true;
+    }
+    return false;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

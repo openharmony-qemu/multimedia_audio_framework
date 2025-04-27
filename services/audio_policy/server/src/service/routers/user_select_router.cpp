@@ -58,7 +58,8 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
     }
 }
 
-shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredCallCaptureDevice();
@@ -78,10 +79,56 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
     int32_t clientUID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
+    shared_ptr<AudioDeviceDescriptor> selectedDesc =
+        (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) ?
+        GetCallRenderDevice(streamUsage, clientUID) : GetMediaRenderDevice(streamUsage, clientUID);
+      
+    if (!selectedDesc.get()) {
+        AUDIO_INFO_LOG("Have no selected connected desc, just only add default device.");
+        descs.push_back(make_shared<AudioDeviceDescriptor>());
+        return descs;
+    }
+    if (selectedDesc->getType() == DEVICE_TYPE_NONE) {
+        AUDIO_INFO_LOG("Selected connected desc type is none, just only add default device.");
+        descs.push_back(make_shared<AudioDeviceDescriptor>());
+        return descs;
+    }
+    if (selectedDesc->getType() == DEVICE_TYPE_BLUETOOTH_A2DP && selectedDesc->GetDeviceCategory() == BT_SOUNDBOX) {
+        AUDIO_INFO_LOG("Exclude BT soundbox device for alarm stream.");
+        descs.push_back(make_shared<AudioDeviceDescriptor>());
+        return descs;
+    }
+
+    if (NeedLatestConnectWithDefaultDevices(selectedDesc->getType())) {
+        // Add the latest connected device.
+        descs.push_back(move(selectedDesc));
+        switch (streamUsage) {
+            case STREAM_USAGE_ALARM:
+                // Add default device at same time for alarm.
+                descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+                break;
+            case STREAM_USAGE_VOICE_RINGTONE:
+            case STREAM_USAGE_RINGTONE:
+                if (curRingerMode == RINGER_MODE_NORMAL) {
+                    // Add default devices at same time only in ringer normal mode.
+                    descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+                }
+                break;
+            default:
+                AUDIO_DEBUG_LOG("Don't add default device at the same time.");
+                break;
+        }
+    } else if (selectedDesc->getType() != DEVICE_TYPE_NONE) {
+        descs.push_back(move(selectedDesc));
+    } else {
+        descs.push_back(make_shared<AudioDeviceDescriptor>());
+    }
     return descs;
 }
 
-shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice();

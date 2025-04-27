@@ -22,12 +22,15 @@
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int64_t NANO_COUNT_PER_SECOND = 1000000000;
     static constexpr int32_t MAX_SUPPORT_SAMPLE_RETE = 384000;
+    static constexpr int32_t MAX_STATISTICS_COUNT = 5;
+    static constexpr int64_t REASONABLE_DELTA_BOUND_IN_NANO = 3000000; // 3ms
     static constexpr int64_t REASONABLE_BOUND_IN_NANO = 10000000; // 10ms
 }
 LinearPosTimeModel::LinearPosTimeModel()
@@ -53,6 +56,7 @@ bool LinearPosTimeModel::ConfigSampleRate(int32_t sampleRate)
 void LinearPosTimeModel::ResetFrameStamp(uint64_t frame, int64_t nanoTime)
 {
     AUDIO_INFO_LOG("Reset frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
+    posTimeVec_.clear();
     stampFrame_ = frame;
     stampNanoTime_ = nanoTime;
     return;
@@ -80,18 +84,54 @@ bool LinearPosTimeModel::IsReasonable(uint64_t frame, int64_t nanoTime)
     return false;
 }
 
-bool LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
+CheckPosTimeRes LinearPosTimeModel::CheckReasonable(uint64_t frame, int64_t nanoTime)
+{
+    posTimeVec_.push_back(std::make_pair(frame, nanoTime));
+    if (posTimeVec_.size() < MAX_STATISTICS_COUNT) {
+        return CHECK_FAILED;
+    }
+
+    for (size_t i = 0; i < posTimeVec_.size() - 1; i++) {
+        if (!CheckPosTimeReasonable(posTimeVec_[i], posTimeVec_[i + 1])) {
+            Trace trace("LinearPosTimeModel::CheckReasonable Fail");
+            AUDIO_WARNING_LOG("Unreasonable data pos: %{public}zu", i);
+            posTimeVec_.clear();
+            return CHECK_FAILED;
+        }
+    }
+
+    // todo: add DFX
+    Trace trace("LinearPosTimeModel::CheckReasonable Success");
+    AUDIO_ERR_LOG("Updata new frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
+    return NEED_MODIFY;
+}
+
+bool LinearPosTimeModel::CheckPosTimeReasonable(std::pair<uint64_t, int64_t> &pre, std::pair<uint64_t, int64_t> &next)
+{
+    if (pre.first >= next.first) {
+        return false;
+    }
+    int64_t deltaFrame = static_cast<int64_t>(next.first - pre.first);
+    int64_t deltaFrameTime = deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+    int64_t deltaTime = next.second - pre.second - deltaFrameTime;
+
+    return std::abs(deltaTime) < REASONABLE_DELTA_BOUND_IN_NANO;
+}
+
+CheckPosTimeRes LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
 {
     if (IsReasonable(frame, nanoTime)) {
         AUDIO_DEBUG_LOG("Updata frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);
         stampFrame_ = frame;
         stampNanoTime_ = nanoTime;
-        return true;
+        posTimeVec_.clear();
+        return CHECK_SUCCESS;
     }
+
     AUDIO_WARNING_LOG("Unreasonable pos-time[ %{public}" PRIu64" %{public}" PRId64"] "
         " stamp pos-time[ %{public}" PRIu64" %{public}" PRId64"].", frame, nanoTime, stampFrame_, stampNanoTime_);
-    // note: keep it in queue.
-    return false;
+    
+    return CheckReasonable(frame, nanoTime);
 }
 
 bool LinearPosTimeModel::GetFrameStamp(uint64_t &frame, int64_t &nanoTime)

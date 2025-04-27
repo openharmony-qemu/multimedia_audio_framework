@@ -285,18 +285,6 @@ HWTEST(AudioPolicyExtUnitTest, QueryEffectSceneMode_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetPlaybackCapturerFilterInfos via legal state
- * @tc.number: SetPlaybackCapturerFilterInfos_001
- * @tc.desc  : Test SetPlaybackCapturerFilterInfos interface.set playback capturer filter infos and return ret.
- */
-HWTEST(AudioPolicyExtUnitTest, SetPlaybackCapturerFilterInfos_001, TestSize.Level1)
-{
-    AudioPlaybackCaptureConfig audioPlaybackCaptureConfig;
-    int32_t ret = AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(audioPlaybackCaptureConfig, 0);
-    EXPECT_EQ(0, ret);
-}
-
-/**
  * @tc.name  : Test GetMaxAmplitude via legal state
  * @tc.number: GetMaxAmplitude_001
  * @tc.desc  : Test GetMaxAmplitude interface.Query effect scene mode and return ret.
@@ -641,6 +629,59 @@ HWTEST(AudioPolicyExtUnitTest, UnregisterSpatializationEnabledEventListener_001,
 
     AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
     ret = AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(callback);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RegisterSpatializationEnabledForCurrentDeviceEventListener
+ * @tc.number: RegisterSpatializationEnabledForCurrentDeviceEventListener_001
+ * @tc.desc  : Test RegisterSpatializationEnabledForCurrentDeviceEventListener interface abnormal branch.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, RegisterSpatializationEnabledForCurrentDeviceEventListener_001, TestSize.Level3)
+{
+    std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::
+        GetInstance().RegisterSpatializationEnabledForCurrentDeviceEventListener(callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    callback = std::make_shared<AudioSpatialEnabledChangeForCurrDeviceCbTest>();
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().RegisterSpatializationEnabledForCurrentDeviceEventListener(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().RegisterSpatializationEnabledForCurrentDeviceEventListener(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledForCurrentDeviceEventListener();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test UnregisterSpatializationEnabledForCurrentDeviceEventListener
+ * @tc.number: UnregisterSpatializationEnabledForCurrentDeviceEventListener001
+ * @tc.desc  : Test UnregisterSpatializationEnabledForCurrentDeviceEventListener interface abnormal branch.
+ * @tc.type  : FUNC
+ */
+HWTEST(AudioPolicyExtUnitTest, UnregisterSpatializationEnabledForCurrentDeviceEventListener001, TestSize.Level3)
+{
+    int32_t ret = -1;
+    std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> callback =
+        std::make_shared<AudioSpatialEnabledChangeForCurrDeviceCbTest>();
+
+    ret = AudioPolicyManager::GetInstance().RegisterSpatializationEnabledForCurrentDeviceEventListener(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledForCurrentDeviceEventListener();
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
+    ret = AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledForCurrentDeviceEventListener();
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioPolicyManager::GetInstance().isAudioPolicyClientRegisted_ = false;
+    ret = AudioPolicyManager::GetInstance().RegisterSpatializationEnabledForCurrentDeviceEventListener(callback);
     EXPECT_EQ(SUCCESS, ret);
 }
 

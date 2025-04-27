@@ -190,8 +190,10 @@ ClassType AudioPolicyParser::GetClassTypeByAdapterType(AdaptersType adapterType)
         return ClassType::TYPE_FILE_IO;
     } else if (adapterType == AdaptersType::TYPE_USB) {
         return ClassType::TYPE_USB;
-    }  else if (adapterType == AdaptersType::TYPE_DP) {
+    } else if (adapterType == AdaptersType::TYPE_DP) {
         return ClassType::TYPE_DP;
+    } else if (adapterType == AdaptersType::TYPE_ACCESSORY) {
+        return ClassType::TYPE_ACCESSORY;
     } else {
         return ClassType::TYPE_INVALID;
     }
@@ -259,6 +261,7 @@ void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo()
             audioModuleInfo.sinkLatency = globalConfigs_.globalPaConfigs_.sinkLatency_;
 
             shouldOpenMicSpeaker_ ? audioModuleInfo.OpenMicSpeaker = "1" : audioModuleInfo.OpenMicSpeaker = "0";
+            audioModuleInfo.defaultAdapterEnable = shouldSetDefaultAdapter_ ? "1" : "0";
             if (adapterType == AdaptersType::TYPE_PRIMARY &&
                 shouldEnableOffload && pipeInfo.paPropRole_ == MODULE_TYPE_SINK) {
                 audioModuleInfo.offloadEnable = "1";
@@ -700,6 +703,9 @@ void AudioPolicyParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> curNode
             } else if (configInfo.name_ == "anahsShowType") {
                 AUDIO_INFO_LOG("anahs pc support: %{public}s", configInfo.value_.c_str());
                 HandleUpdateAnahsSupportParsed(configInfo.value_);
+            } else if (configInfo.name_ == "setDefaultAdapter") {
+                AUDIO_INFO_LOG("default adapter support: %{public}s", configInfo.value_.c_str());
+                HandleDefaultAdapterSupportParsed(configInfo.value_);
             }
         }
         curNode->MoveToNext();
@@ -724,6 +730,17 @@ void AudioPolicyParser::HandleUpdateAnahsSupportParsed(std::string &value)
     anahsShowType = value;
     AUDIO_INFO_LOG("HandleUpdateAnahsSupportParsed show type: %{public}s", anahsShowType.c_str());
     portObserver_.OnUpdateAnahsSupport(anahsShowType);
+}
+
+void AudioPolicyParser::HandleDefaultAdapterSupportParsed(std::string &value)
+{
+    if (value == "true") {
+        portObserver_.OnUpdateDefaultAdapter(true);
+        shouldSetDefaultAdapter_ = true;
+    } else {
+        portObserver_.OnUpdateDefaultAdapter(false);
+        shouldSetDefaultAdapter_ = false;
+    }
 }
 
 XmlNodeType AudioPolicyParser::GetXmlNodeTypeAsInt(std::shared_ptr<AudioXmlNode> curNode)
@@ -755,6 +772,8 @@ AdaptersType AudioPolicyParser::GetAdaptersType(const std::string &adapterName)
         return AdaptersType::TYPE_USB;
     else if (adapterName == ADAPTER_DP_TYPE)
         return AdaptersType::TYPE_DP;
+    else if (adapterName == ADAPTER_ACCESSORY_TYPE)
+        return AdaptersType::TYPE_ACCESSORY;
     else
         return AdaptersType::TYPE_INVALID;
 }

@@ -63,6 +63,14 @@ int32_t AudioGeneralManager::SetAudioDeviceRefinerCallback(const std::shared_ptr
     return AudioPolicyManager::GetInstance().SetAudioDeviceRefinerCallback(callback);
 }
 
+int32_t AudioGeneralManager::SetAudioClientInfoMgrCallback(
+    const std::shared_ptr<AudioClientInfoMgrCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
+}
+
 int32_t AudioGeneralManager::GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
@@ -87,9 +95,9 @@ int32_t AudioGeneralManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt
 }
 
 int32_t AudioGeneralManager::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid)
 {
-    return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc);
+    return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
 }
 
 int32_t AudioGeneralManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
@@ -140,6 +148,14 @@ int32_t AudioGeneralManager::SetDeviceChangeCallback(const DeviceFlag flag,
     return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
 }
 
+int32_t AudioGeneralManager::SetDistribuitedOutputChangeCallback(
+    const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb)
+{
+    AUDIO_INFO_LOG("Entry.");
+    CHECK_AND_RETURN_RET_LOG(cb, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetDistribuitedOutputChangeCallback(cb);
+}
+
 int32_t AudioGeneralManager::SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback>& callback)
 {
     AUDIO_INFO_LOG("Entered");
@@ -149,15 +165,18 @@ int32_t AudioGeneralManager::SetQueryClientTypeCallback(const std::shared_ptr<Au
 
 const sptr<IStandardAudioService> AudioGeneralManager::GetAudioGeneralManagerProxy()
 {
-    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioGeneralManagerProxy", XCOLLIE_TIME_OUT_SECONDS);
+    AudioXCollie xcollieGetAudioSystemManagerProxy("GetAudioGeneralManagerProxy", XCOLLIE_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::lock_guard<std::mutex> lock(g_asManagerProxyMutex);
     if (g_asManagerProxy == nullptr) {
-        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS);
+        AudioXCollie xcollieGetSystemAbilityManager("GetSystemAbilityManager", XCOLLIE_TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get sa manager failed");
         xcollieGetSystemAbilityManager.CancelXCollieTimer();
 
-        AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS);
+        AudioXCollie xcollieGetSystemAbility("GetSystemAbility", XCOLLIE_TIME_OUT_SECONDS,
+             nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
         CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
         g_asManagerProxy = iface_cast<IStandardAudioService>(object);
@@ -226,6 +245,15 @@ AudioScene AudioGeneralManager::GetAudioScene() const
     return AudioPolicyManager::GetInstance().GetAudioScene();
 }
 
+int32_t AudioGeneralManager::SetAudioSceneChangeCallback(
+    const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    int32_t clientId = GetCallingPid();
+    return AudioPolicyManager::GetInstance().SetAudioSceneChangeCallback(clientId, callback);
+}
+
 int32_t AudioGeneralManager::GetMaxVolume(AudioVolumeType volumeType)
 {
     if (volumeType == STREAM_ALL) {
@@ -285,6 +313,8 @@ int32_t AudioGeneralManager::SelectOutputDevice(
         return ERR_INVALID_PARAM;
     }
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_MEMORY_ALLOC_FAILED,
+        "audioRendererFilter is nullptr.");
     audioRendererFilter->uid = -1;
     int32_t ret = AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
     return ret;
@@ -361,6 +391,29 @@ void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioF
     callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
         return callback_.lock() == callback.lock();
     });
+}
+
+int32_t AudioGeneralManager::GetPreferredInputDeviceForCapturerInfo(
+    AudioCapturerInfo captureInfo, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    desc = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(captureInfo);
+    return SUCCESS;
+}
+ 
+int32_t AudioGeneralManager::SetPreferredInputDeviceChangeCallback(
+    AudioCapturerInfo &capturerInfo, const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+ 
+    return AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, callback);
+}
+ 
+int32_t AudioGeneralManager::GetCurrentCapturerChangeInfos(
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
+    return AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
 } // namespace AudioStandard

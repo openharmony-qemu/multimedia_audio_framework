@@ -23,14 +23,60 @@ namespace AudioStandard {
 using namespace std;
 
 #ifdef FEATURE_DEVICE_MANAGER
+constexpr size_t HEAD_LEN = 2;
+constexpr size_t TAIL_LEN = 4;
+
+static string GetExtraDataField(const string &src, const string &field)
+{
+    auto pos = src.find(field);
+    CHECK_AND_RETURN_RET(pos != string::npos, "");
+    pos = src.find(':', pos + field.length());
+    CHECK_AND_RETURN_RET(pos != string::npos, "");
+    auto end = ++pos;
+    for (; end < src.length(); end++) {
+        if (src[end] == '}' || src[end] == ',') {
+            break;
+        }
+    }
+    auto value = end == src.length() ? src.substr(pos) : src.substr(pos, end - pos);
+    for (pos = 0; pos < value.length(); pos++) {
+        auto ch = value[pos];
+        if (ch != '\\' && ch != '"') {
+            break;
+        }
+    }
+    for (end = value.length() - 1; end >= 0; end--) {
+        auto ch = value[end];
+        if (ch != '\\' && ch != '"') {
+            break;
+        }
+    }
+    return value.substr(pos, end - pos + 1);
+}
+
+static DmDevice ParseDmDevice(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
+{
+    string carBrand = GetExtraDataField(dmDeviceInfo.extraData, "\"CAR_BRAND\\");
+    CHECK_AND_RETURN_RET_LOG(!carBrand.empty(), {}, "Can not find field: CAR_BRAND");
+    return {
+        carBrand,
+        dmDeviceInfo.networkId,
+        DistributedHardware::DEVICE_TYPE_CAR,
+    };
+}
+
+static string Hide(const string &str)
+{
+    CHECK_AND_RETURN_RET(str.length() >= HEAD_LEN + TAIL_LEN, "");
+    return str.substr(0, HEAD_LEN) + "**" + str.substr(str.length() - TAIL_LEN);
+}
+
 DeviceStatusCallbackImpl::DeviceStatusCallbackImpl()
     : audioPolicyService_(AudioPolicyService::GetAudioPolicyService())
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 }
-#endif
 
-#ifdef FEATURE_DEVICE_MANAGER
 void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo)
 {
     std::string strDeviceName(dmDeviceBasicInfo.deviceName);
@@ -38,6 +84,39 @@ void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDevi
 
     //OnDeviceChanged listeren did not report networkId information
     audioPolicyService_.SetDisplayName(strDeviceName, false);
+}
+
+void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
+{
+    AUDIO_INFO_LOG("Entry. deviceName=%{public}s, dmDeviceType=%{public}d, networkId=%{public}s, extraData=%{public}s",
+        dmDeviceInfo.deviceName, dmDeviceInfo.deviceTypeId,
+        Hide(dmDeviceInfo.networkId).c_str(), dmDeviceInfo.extraData.c_str());
+    auto dmDev = ParseDmDevice(dmDeviceInfo);
+    if (!dmDev.deviceName_.empty()) {
+        AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
+    }
+}
+
+void DeviceStatusCallbackImpl::OnDeviceOnline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
+{
+    AUDIO_INFO_LOG("Entry. deviceName=%{public}s, dmDeviceType=%{public}d, networkId=%{public}s, extraData=%{public}s",
+        dmDeviceInfo.deviceName, dmDeviceInfo.deviceTypeId,
+        Hide(dmDeviceInfo.networkId).c_str(), dmDeviceInfo.extraData.c_str());
+    auto dmDev = ParseDmDevice(dmDeviceInfo);
+    if (!dmDev.deviceName_.empty()) {
+        AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
+    }
+}
+
+void DeviceStatusCallbackImpl::OnDeviceOffline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
+{
+    AUDIO_INFO_LOG("Entry. deviceName=%{public}s, dmDeviceType=%{public}d, networkId=%{public}s, extraData=%{public}s",
+        dmDeviceInfo.deviceName, dmDeviceInfo.deviceTypeId,
+        Hide(dmDeviceInfo.networkId).c_str(), dmDeviceInfo.extraData.c_str());
+    auto dmDev = ParseDmDevice(dmDeviceInfo);
+    if (!dmDev.deviceName_.empty()) {
+        AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), false);
+    }
 }
 #endif
 } // namespace AudioStandard

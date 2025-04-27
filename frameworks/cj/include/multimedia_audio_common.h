@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const size_t MAX_MEM_MALLOC_SIZE = 128;
+const size_t MAX_MEM_MALLOC_SIZE = 50 * 1024 * 1024;
 void Convert2AudioCapturerOptions(AudioCapturerOptions &opions, const CAudioCapturerOptions &cOptions);
 char *MallocCString(const std::string &origin);
 void Convert2CAudioCapturerInfo(CAudioCapturerInfo &cInfo, const AudioCapturerInfo &capturerInfo);

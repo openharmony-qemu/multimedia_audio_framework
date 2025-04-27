@@ -18,6 +18,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t API_VERSION_18 = 18;
+
 AudioDeviceDescriptor::AudioDeviceDescriptor(int32_t descriptorType)
     : AudioDeviceDescriptor(DeviceType::DEVICE_TYPE_NONE, DeviceRole::DEVICE_ROLE_NONE)
 {
@@ -52,6 +54,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     isLowLatencyDevice_ = false;
     a2dpOffloadFlag_ = 0;
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
+    spatializationSupported_ = false;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId,
@@ -76,6 +79,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     isLowLatencyDevice_ = false;
     a2dpOffloadFlag_ = 0;
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
+    spatializationSupported_ = false;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -94,6 +98,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     volumeGroupId_ = deviceDescriptor.volumeGroupId_;
     interruptGroupId_ = deviceDescriptor.interruptGroupId_;
     networkId_ = deviceDescriptor.networkId_;
+    dmDeviceType_ = deviceDescriptor.dmDeviceType_;
     displayName_ = deviceDescriptor.displayName_;
     deviceCategory_ = deviceDescriptor.deviceCategory_;
     connectTimeStamp_ = deviceDescriptor.connectTimeStamp_;
@@ -108,6 +113,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     // Other
     descriptorType_ = deviceDescriptor.descriptorType_;
     hasPair_ = deviceDescriptor.hasPair_;
+    spatializationSupported_ = deviceDescriptor.spatializationSupported_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -127,6 +133,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     volumeGroupId_ = deviceDescriptor->volumeGroupId_;
     interruptGroupId_ = deviceDescriptor->interruptGroupId_;
     networkId_ = deviceDescriptor->networkId_;
+    dmDeviceType_ = deviceDescriptor->dmDeviceType_;
     displayName_ = deviceDescriptor->displayName_;
     deviceCategory_ = deviceDescriptor->deviceCategory_;
     connectTimeStamp_ = deviceDescriptor->connectTimeStamp_;
@@ -141,6 +148,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     // Other
     descriptorType_ = deviceDescriptor->descriptorType_;
     hasPair_ = deviceDescriptor->hasPair_;
+    spatializationSupported_ = deviceDescriptor->spatializationSupported_;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -158,6 +166,11 @@ DeviceRole AudioDeviceDescriptor::getRole() const
     return deviceRole_;
 }
 
+DeviceCategory AudioDeviceDescriptor::GetDeviceCategory() const
+{
+    return deviceCategory_;
+}
+
 bool AudioDeviceDescriptor::IsAudioDeviceDescriptor() const
 {
     return descriptorType_ == AUDIO_DEVICE_DESCRIPTOR;
@@ -165,16 +178,21 @@ bool AudioDeviceDescriptor::IsAudioDeviceDescriptor() const
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
+    return Marshalling(parcel, 0);
+}
+
+bool AudioDeviceDescriptor::Marshalling(Parcel &parcel, int32_t apiVersion) const
+{
     if (IsAudioDeviceDescriptor()) {
-        return MarshallingToDeviceDescriptor(parcel);
+        return MarshallingToDeviceDescriptor(parcel, apiVersion);
     }
 
     return MarshallingToDeviceInfo(parcel);
 }
 
-bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel) const
+bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel, int32_t apiVersion) const
 {
-    parcel.WriteInt32(MapInternalToExternalDeviceType());
+    parcel.WriteInt32(MapInternalToExternalDeviceType(apiVersion));
     parcel.WriteInt32(deviceRole_);
     parcel.WriteInt32(deviceId_);
     audioStreamInfo_.Marshalling(parcel);
@@ -185,9 +203,11 @@ bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel) const
     parcel.WriteInt32(interruptGroupId_);
     parcel.WriteInt32(volumeGroupId_);
     parcel.WriteString(networkId_);
+    parcel.WriteUint16(dmDeviceType_);
     parcel.WriteString(displayName_);
     parcel.WriteInt32(deviceCategory_);
     parcel.WriteInt32(connectState_);
+    parcel.WriteBool(spatializationSupported_);
     return true;
 }
 
@@ -202,12 +222,14 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel) const
         parcel.WriteString(macAddress_) &&
         audioStreamInfo_.Marshalling(parcel) &&
         parcel.WriteString(networkId_) &&
+        parcel.WriteUint16(dmDeviceType_) &&
         parcel.WriteString(displayName_) &&
         parcel.WriteInt32(interruptGroupId_) &&
         parcel.WriteInt32(volumeGroupId_) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
         parcel.WriteInt32(a2dpOffloadFlag_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_));
+        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
+        parcel.WriteBool(spatializationSupported_);
 }
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
@@ -255,12 +277,14 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
             deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : macAddress_) &&
         streamInfo.Marshalling(parcel) &&
         parcel.WriteString(hasSystemPermission ? networkId_ : "") &&
+        parcel.WriteUint16(dmDeviceType_) &&
         parcel.WriteString(displayName_) &&
         parcel.WriteInt32(hasSystemPermission ? interruptGroupId_ : INVALID_GROUP_ID) &&
         parcel.WriteInt32(hasSystemPermission ? volumeGroupId_ : INVALID_GROUP_ID) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
         parcel.WriteInt32(a2dpOffloadFlag_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_));
+        parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
+        parcel.WriteBool(spatializationSupported_);
 }
 
 void AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -292,9 +316,11 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
     interruptGroupId_ = parcel.ReadInt32();
     volumeGroupId_ = parcel.ReadInt32();
     networkId_ = parcel.ReadString();
+    dmDeviceType_ = parcel.ReadUint16();
     displayName_ = parcel.ReadString();
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
     connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
+    spatializationSupported_ = parcel.ReadBool();
 }
 
 void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
@@ -308,12 +334,14 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)
     macAddress_ = parcel.ReadString();
     audioStreamInfo_.Unmarshalling(parcel);
     networkId_ = parcel.ReadString();
+    dmDeviceType_ = parcel.ReadUint16();
     displayName_ = parcel.ReadString();
     interruptGroupId_ = parcel.ReadInt32();
     volumeGroupId_ = parcel.ReadInt32();
     isLowLatencyDevice_ = parcel.ReadBool();
     a2dpOffloadFlag_ = parcel.ReadInt32();
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
+    spatializationSupported_ = parcel.ReadBool();
 }
 
 void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string macAddress)
@@ -341,6 +369,14 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
         (!IsUsb(deviceType_) || deviceDescriptor.deviceRole_ == deviceRole_);
 }
 
+bool AudioDeviceDescriptor::IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const
+{
+    return deviceDescriptor->deviceType_ == deviceType_ &&
+        deviceDescriptor->macAddress_ == macAddress_ &&
+        deviceDescriptor->networkId_ == networkId_ &&
+        (!IsUsb(deviceType_) || deviceDescriptor->deviceRole_ == deviceRole_);
+}
+
 bool AudioDeviceDescriptor::IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const
 {
     return deviceType_ == deviceInfo.deviceType_ &&
@@ -358,12 +394,28 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
         deviceDescriptor.networkId_ == networkId_;
 }
 
-DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType() const
+bool AudioDeviceDescriptor::IsDistributedSpeaker() const
+{
+    return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
+}
+
+void AudioDeviceDescriptor::Dump(std::string &dumpString)
+{
+    dumpString += "deviceName: " + deviceName_ + " deviceRole: ";
+    if (deviceRole_ != INPUT_DEVICE && deviceRole_ != OUTPUT_DEVICE) {
+        dumpString += "INVALID";
+    } else {
+        dumpString += deviceRole_ == INPUT_DEVICE ? "INPUT" : "OUTPUT";
+    }
+    dumpString += " deviceType: " + std::to_string(deviceType_);
+}
+
+DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVersion) const
 {
     switch (deviceType_) {
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
-            if (!hasPair_) {
+            if (!hasPair_ && apiVersion >= API_VERSION_18) {
 #ifdef DETECT_SOUNDBOX
                 return DEVICE_TYPE_USB_DEVICE;
 #else

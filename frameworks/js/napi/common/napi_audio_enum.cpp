@@ -42,6 +42,7 @@ napi_ref NapiAudioEnum::samplingRate_ = nullptr;
 napi_ref NapiAudioEnum::encodingType_ = nullptr;
 napi_ref NapiAudioEnum::contentType_ = nullptr;
 napi_ref NapiAudioEnum::streamUsage_ = nullptr;
+napi_ref NapiAudioEnum::audioVolumeMode_ = nullptr;
 napi_ref NapiAudioEnum::deviceRole_ = nullptr;
 napi_ref NapiAudioEnum::deviceType_ = nullptr;
 napi_ref NapiAudioEnum::sourceType_ = nullptr;
@@ -135,6 +136,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::contentTypeMap = {
     {"CONTENT_TYPE_ULTRASONIC", CONTENT_TYPE_ULTRASONIC}
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeModeMap = {
+    {"SYSTEM_GLOBAL", AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL},
+    {"APP_INDIVIDUAL", AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL}
+};
+
 const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_UNKNOWN", STREAM_USAGE_UNKNOWN},
     {"STREAM_USAGE_MEDIA", STREAM_USAGE_MEDIA},
@@ -181,6 +187,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"DISPLAY_PORT", DEVICE_TYPE_DP},
     {"REMOTE_CAST", DEVICE_TYPE_REMOTE_CAST},
     {"USB_DEVICE", DEVICE_TYPE_USB_DEVICE},
+    {"HDMI", DEVICE_TYPE_HDMI},
+    {"LINE_DIGITAL", DEVICE_TYPE_LINE_DIGITAL},
+    {"REMOTE_DAUDIO", DEVICE_TYPE_REMOTE_DAUDIO},
+    {"ACCESSORY", DEVICE_TYPE_ACCESSORY},
     {"DEFAULT", DEVICE_TYPE_DEFAULT},
     {"MAX", DEVICE_TYPE_MAX},
 };
@@ -480,11 +490,14 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
     {"FAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD)},
     {"FULL_DUPLEX_STANDARD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD)},
     {"FULL_DUPLEX_NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD)},
+    {"ASR_WHISPER_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::ASR_WHISPER_MODE)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
     {"BYPASS", static_cast<int32_t>(AsrAecMode::BYPASS)},
-    {"STANDARD", static_cast<int32_t>(AsrAecMode::STANDARD)}
+    {"STANDARD", static_cast<int32_t>(AsrAecMode::STANDARD)},
+    {"EXPAND", static_cast<int32_t>(AsrAecMode::EXPAND)},
+    {"FOLDED", static_cast<int32_t>(AsrAecMode::FOLDED)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrWhisperDetectionModeMap = {
@@ -660,6 +673,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioEncodingType", CreateEnumObject(env, encodingTypeMap, encodingType_)),
         DECLARE_NAPI_PROPERTY("ContentType", CreateEnumObject(env, contentTypeMap, contentType_)),
         DECLARE_NAPI_PROPERTY("StreamUsage", CreateEnumObject(env, streamUsageMap, streamUsage_)),
+        DECLARE_NAPI_PROPERTY("AudioVolumeMode", CreateEnumObject(env, audioVolumeModeMap, audioVolumeMode_)),
         DECLARE_NAPI_PROPERTY("DeviceRole", CreateEnumObject(env, deviceRoleMap, deviceRole_)),
         DECLARE_NAPI_PROPERTY("DeviceType", CreateEnumObject(env, deviceTypeMap, deviceType_)),
         DECLARE_NAPI_PROPERTY("SourceType", CreateEnumObject(env, sourceTypeMap, sourceType_)),
@@ -721,7 +735,8 @@ napi_value NapiAudioEnum::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_GETTER_SETTER("contentType", GetContentType, SetContentType),
         DECLARE_NAPI_GETTER_SETTER("usage", GetStreamUsage, SetStreamUsage),
         DECLARE_NAPI_GETTER_SETTER("deviceRole", GetDeviceRole, SetDeviceRole),
-        DECLARE_NAPI_GETTER_SETTER("deviceType", GetDeviceType, SetDeviceType)
+        DECLARE_NAPI_GETTER_SETTER("deviceType", GetDeviceType, SetDeviceType),
+        DECLARE_NAPI_GETTER_SETTER("mode", GetVolumeMode, SetVolumeMode)
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_ENUM_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
@@ -984,6 +999,35 @@ napi_value NapiAudioEnum::GetStreamUsage(napi_env env, napi_callback_info info)
     return jsResult;
 }
 
+napi_value NapiAudioEnum::GetVolumeMode(napi_env env, napi_callback_info info)
+{
+    AudioVolumeMode mode;
+    napi_value jsResult = nullptr;
+    NapiAudioEnum *napiAudioEnum = GetValue(env, info);
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    mode = napiAudioEnum->audioParameters_->mode;
+    napi_status status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(mode), jsResult);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetVolumeMode fail");
+
+    return jsResult;
+}
+
+napi_value NapiAudioEnum::SetVolumeMode(napi_env env, napi_callback_info info)
+{
+    napi_value jsResult = nullptr;
+    napi_value args[1] = { nullptr };
+    NapiAudioEnum *napiAudioEnum = SetValue(env, info, args, jsResult);
+    int32_t mode;
+    napi_status status = NapiParamUtils::GetValueInt32(env, mode, args[0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, jsResult, "GetValueInt32 fail");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum != nullptr, jsResult, "napiAudioEnum is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioEnum->audioParameters_ != nullptr, jsResult, "audioParameters_ is nullptr");
+    napiAudioEnum->audioParameters_->mode = static_cast<AudioVolumeMode>(mode);
+    return jsResult;
+}
+
 napi_value NapiAudioEnum::SetStreamUsage(napi_env env, napi_callback_info info)
 {
     napi_value jsResult = nullptr;
@@ -1125,6 +1169,7 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_VOICE_TRANSCRIPTION:
         case TYPE_CAMCORDER:
         case TYPE_UNPROCESSED:
+        case TYPE_LIVE:
             result = true;
             break;
         default:
@@ -1189,25 +1234,13 @@ bool NapiAudioEnum::IsLegalInputArgumentVolumeAdjustType(int32_t adjustType)
 
 bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
 {
-    bool result = false;
-    switch (deviceType) {
-        case DeviceType::DEVICE_TYPE_EARPIECE:
-        case DeviceType::DEVICE_TYPE_SPEAKER:
-        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
-        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DeviceType::DEVICE_TYPE_MIC:
-        case DeviceType::DEVICE_TYPE_USB_HEADSET:
-        case DeviceType::DEVICE_TYPE_FILE_SINK:
-        case DeviceType::DEVICE_TYPE_FILE_SOURCE:
-            result = true;
-            break;
-        default:
-            result = false;
-            break;
+    for (const auto &iter : NapiAudioEnum::deviceTypeMap) {
+        if (deviceType == iter.second && deviceType != DeviceType::DEVICE_TYPE_NONE &&
+            deviceType != DeviceType::DEVICE_TYPE_INVALID && deviceType != DeviceType::DEVICE_TYPE_MAX) {
+            return true;
+        }
     }
-    return result;
+    return false;
 }
 
 bool NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType)
@@ -1221,6 +1254,23 @@ bool NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceTy
             break;
         default:
             result = false;
+            break;
+    }
+    return result;
+}
+
+int32_t NapiAudioEnum::GetJsAudioVolumeMode(AudioVolumeMode volumeMode)
+{
+    int32_t result = NapiAudioEnum::SYSTEM_GLOBAL;
+    switch (volumeMode) {
+        case AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL:
+            result = NapiAudioEnum::SYSTEM_GLOBAL;
+            break;
+        case AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL:
+            result = NapiAudioEnum::APP_INDIVIDUAL;
+            break;
+        default:
+            result = NapiAudioEnum::SYSTEM_GLOBAL;
             break;
     }
     return result;
@@ -1344,6 +1394,7 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
         case SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION:
         case SourceType::SOURCE_TYPE_CAMCORDER:
         case SourceType::SOURCE_TYPE_UNPROCESSED:
+        case SourceType::SOURCE_TYPE_LIVE:
             return true;
         default:
             return false;
@@ -1369,6 +1420,20 @@ bool NapiAudioEnum::IsLegalDeviceUsage(int32_t usage)
     return result;
 }
 
+bool NapiAudioEnum::IsLegalInputArgumentVolumeMode(int32_t volumeMode)
+{
+    bool result = false;
+    switch (volumeMode) {
+        case AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL:
+        case AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 
 bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
 {
@@ -1416,6 +1481,10 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
         case DeviceType::DEVICE_TYPE_REMOTE_CAST:
+        case DeviceType::DEVICE_TYPE_USB_DEVICE:
+        case DeviceType::DEVICE_TYPE_HDMI:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
+        case DeviceType::DEVICE_TYPE_REMOTE_DAUDIO:
             result = true;
             break;
         default:

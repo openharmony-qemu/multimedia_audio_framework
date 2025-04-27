@@ -17,7 +17,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "i_audio_renderer_sink.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
@@ -26,12 +25,15 @@
 #include "audio_info.h"
 #include "audio_source_type.h"
 #include "audio_process_in_client.h"
+#include "fast_audio_stream.h"
+#include "audio_utils.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 shared_ptr<AudioProcessInClient> g_AudioProcessInClient = nullptr;
+shared_ptr<FastAudioStream> g_FastAudioStream = nullptr;
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
@@ -82,7 +84,9 @@ void GetAudioProcessInClient()
     config.streamInfo.encoding = ENCODING_PCM;
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    g_AudioProcessInClient = AudioProcessInClient::Create(config);
+    g_FastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_RECORD, config.appInfo.appUid);
+    g_AudioProcessInClient = AudioProcessInClient::Create(config, g_FastAudioStream);
     if (g_AudioProcessInClient== nullptr) {
         return;
     }
@@ -118,6 +122,11 @@ void GetAudioProcessInClient()
 
     int32_t frameSize = GetData<int32_t>();
     g_AudioProcessInClient->SetPreferredFrameSize(frameSize);
+
+    uint32_t sessionId = GetData<uint32_t>();
+    std::string adjustTime = GetTime();
+    uint32_t code = static_cast<uint32_t>(GetData<AdjustStreamVolume>());
+    g_AudioProcessInClient->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
 }
 
 void AudioClientUpdateLatencyTimestampTest()
@@ -135,7 +144,9 @@ void AudioClientUpdateLatencyTimestampTest()
     config.streamInfo.encoding = ENCODING_PCM;
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    g_AudioProcessInClient = AudioProcessInClient::Create(config);
+    g_FastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_RECORD, config.appInfo.appUid);
+    g_AudioProcessInClient = AudioProcessInClient::Create(config, g_FastAudioStream);
     if (g_AudioProcessInClient== nullptr) {
         return;
     }

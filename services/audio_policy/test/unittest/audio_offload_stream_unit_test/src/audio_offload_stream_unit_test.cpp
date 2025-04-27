@@ -17,6 +17,7 @@
 #include "gtest/gtest.h"
 #include "audio_errors.h"
 #include "audio_offload_stream_unit_test.h"
+#include "audio_spatialization_service.h"
 
 using namespace testing::ext;
 
@@ -100,6 +101,13 @@ HWTEST_F(AudioOffloadStreamTest, HandlePowerStateChanged_OffloadSessionIDSet_Tes
     audioOffloadStream_->offloadSessionID_ = 1;
     audioOffloadStream_->HandlePowerStateChanged(state);
     EXPECT_EQ(audioOffloadStream_->currentPowerState_, PowerMgr::PowerState::FREEZE);
+
+    bool oldState = audioOffloadStream_->isOffloadAvailable_;
+    audioOffloadStream_->isOffloadAvailable_ = false;
+    audioOffloadStream_->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioOffloadStream_->HandlePowerStateChanged(PowerMgr::PowerState::INACTIVE);
+    audioOffloadStream_->isOffloadAvailable_ = oldState;
+    EXPECT_FALSE(audioOffloadStream_->GetOffloadAvailableFromXml());
 }
 
 /**
@@ -135,6 +143,104 @@ HWTEST_F(AudioOffloadStreamTest, CheckStreamOffloadMode_002, TestSize.Level3)
 }
 
 /**
+ * @tc.name  : CheckStreamOffloadMode_003
+ * @tc.number: Audio_OffloadStream_008
+ * @tc.desc  : Test CheckStreamOffloadMode when offload not available on current output device.
+ */
+HWTEST_F(AudioOffloadStreamTest, CheckStreamOffloadMode_003, TestSize.Level3)
+{
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    int64_t activateSessionId = 6;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioRendererChangeInfo.clientUID = 1;
+    streamChangeInfo.audioRendererChangeInfo.sessionId = 1;
+    streamChangeInfo.audioRendererChangeInfo.channelCount = 3;
+    streamChangeInfo.audioRendererChangeInfo.createrUID = 2;
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    audioOffloadStream_->streamCollector_.AddRendererStream(streamChangeInfo);
+
+    audioOffloadStream_->isOffloadAvailable_ = true;
+    audioOffloadStream_->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    bool result = audioOffloadStream_->CheckStreamOffloadMode(activateSessionId, streamType);
+    EXPECT_FALSE(result);
+
+    streamType = AudioStreamType::STREAM_MUSIC;
+    result = audioOffloadStream_->CheckStreamOffloadMode(activateSessionId, streamType);
+    EXPECT_FALSE(result);
+
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    audioOffloadStream_->streamCollector_.audioRendererChangeInfos_.clear();
+    audioOffloadStream_->streamCollector_.AddRendererStream(streamChangeInfo);
+    result = audioOffloadStream_->CheckStreamOffloadMode(activateSessionId, streamType);
+    EXPECT_FALSE(result);
+
+    streamChangeInfo.audioRendererChangeInfo.channelCount = 2;
+    audioOffloadStream_->streamCollector_.audioRendererChangeInfos_.clear();
+    audioOffloadStream_->streamCollector_.AddRendererStream(streamChangeInfo);
+    result = audioOffloadStream_->CheckStreamOffloadMode(activateSessionId, streamType);
+    EXPECT_FALSE(result);
+
+    activateSessionId = 1;
+    result = audioOffloadStream_->CheckStreamOffloadMode(activateSessionId, streamType);
+    EXPECT_FALSE(result);
+
+    streamChangeInfo.audioRendererChangeInfo.sessionId = 1041;
+    audioOffloadStream_->streamCollector_.audioRendererChangeInfos_.clear();
+    audioOffloadStream_->streamCollector_.AddRendererStream(streamChangeInfo);
+    result = audioOffloadStream_->CheckStreamOffloadMode(activateSessionId, streamType);
+    EXPECT_FALSE(result);
+
+    activateSessionId = 1041;
+    streamChangeInfo.audioRendererChangeInfo.sessionId = 1041;
+    audioOffloadStream_->streamCollector_.audioRendererChangeInfos_.clear();
+    audioOffloadStream_->streamCollector_.AddRendererStream(streamChangeInfo);
+    result = audioOffloadStream_->CheckStreamOffloadMode(activateSessionId, streamType);
+    EXPECT_EQ(audioOffloadStream_->streamCollector_.GetUid(activateSessionId), 2);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : CheckStreamOffloadMode_004
+ * @tc.number: Audio_OffloadStream_008
+ * @tc.desc  : Test CheckStreamOffloadMode with different offloadUID.
+ */
+HWTEST_F(AudioOffloadStreamTest, CheckStreamOffloadMode_004, TestSize.Level3)
+{
+    AudioOffloadStream audioOffloadStream;
+    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
+    int64_t activateSessionId = 10;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioRendererChangeInfo.clientUID = 1;
+    streamChangeInfo.audioRendererChangeInfo.sessionId = activateSessionId;
+    streamChangeInfo.audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
+    streamChangeInfo.audioRendererChangeInfo.createrUID = 2;
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
+    audioOffloadStream.isOffloadAvailable_ = true;
+
+    audioOffloadStream.streamCollector_.AddRendererStream(streamChangeInfo);
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.macAddress_ = "00:11:22:33:44:55";
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
+
+    bool result = audioOffloadStream.CheckStreamOffloadMode(activateSessionId, streamType);
+    EXPECT_TRUE(result);
+
+    audioOffloadStream.streamCollector_.audioRendererChangeInfos_.back()->createrUID = -1;
+    audioOffloadStream.CheckStreamOffloadMode(activateSessionId, streamType);
+    const int32_t UID_AUDIO = 1041;
+    audioOffloadStream.streamCollector_.audioRendererChangeInfos_.back()->createrUID = UID_AUDIO;
+    result = audioOffloadStream.CheckStreamOffloadMode(activateSessionId, streamType);
+
+    audioOffloadStream.SetOffloadStatus(activateSessionId);
+    EXPECT_EQ(audioOffloadStream.offloadSessionID_, activateSessionId);
+    audioOffloadStream.SetOffloadStatus(activateSessionId);
+    audioOffloadStream.SetOffloadStatus(activateSessionId + 1);
+    EXPECT_EQ(audioOffloadStream.offloadSessionID_, activateSessionId);
+}
+
+/**
  * @tc.name  : MoveToNewPipe_ShouldReturnError_WhenStreamIsIllegal
  * @tc.number: AudioOffloadStreamTest_008
  * @tc.desc  : Test if MoveToNewPipe .
@@ -152,9 +258,21 @@ HWTEST_F(AudioOffloadStreamTest, MoveToNewPipe_ShouldReturnError_WhenStreamIsIll
     // Arrange
     int32_t defaultUid = -1;
     // Act
+    auto oldDeviceType = audioOffloadStream_->audioActiveDevice_.currentActiveDevice_.deviceType_;
+    audioOffloadStream_->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     int32_t result = audioOffloadStream_->MoveToNewPipe(sessionId, pipeType);
     // Assert
     EXPECT_NE(result, ERROR);
+
+    result = audioOffloadStream_->MoveToNewPipe(defaultUid, pipeType);
+    EXPECT_EQ(result, ERROR);
+
+    audioOffloadStream_->audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
+    result = audioOffloadStream_->MoveToNewPipe(sessionId, PIPE_TYPE_MULTICHANNEL);
+    EXPECT_EQ(result, ERROR);
+
+    audioOffloadStream_->MoveToOutputDevice(sessionId, BLUETOOTH_SPEAKER);
+    audioOffloadStream_->audioActiveDevice_.currentActiveDevice_.deviceType_ = oldDeviceType;
 }
 
 
@@ -204,6 +322,10 @@ HWTEST_F(AudioOffloadStreamTest, ReleaseOffloadStream_WhenSessionIdDoesNotMatch,
     audioOffloadStream_->RemoteOffloadStreamRelease(differentSessionId);
     // Assert
     EXPECT_TRUE(audioOffloadStream_->offloadSessionID_.has_value());
+
+    audioOffloadStream_->RemoteOffloadStreamRelease(sessionId);
+    EXPECT_FALSE(audioOffloadStream_->offloadSessionID_.has_value());
+    audioOffloadStream_->offloadSessionID_ = sessionId;
 }
 
 /**
@@ -218,7 +340,7 @@ HWTEST_F(AudioOffloadStreamTest, CheckStreamMode_ShouldActivate_WhenMultichannel
     // Act
     audioOffloadStream_->CheckStreamMode(activateSessionId);
     // Assert
-    EXPECT_EQ(DeviceType::DEVICE_TYPE_NONE, audioOffloadStream_->audioActiveDevice_.GetCurrentOutputDeviceType());
+    EXPECT_EQ(DeviceType::DEVICE_TYPE_SPEAKER, audioOffloadStream_->audioActiveDevice_.GetCurrentOutputDeviceType());
 }
 
 /**
@@ -258,7 +380,177 @@ HWTEST_F(AudioOffloadStreamTest, SpatializationEnabledAndEffectOffloadEnabled, T
     audioOffloadStream.ResetOffloadModeOnSpatializationChanged(allSessions);
 
     EXPECT_EQ(audioOffloadStream.currentPowerState_, PowerMgr::PowerState::AWAKE);
+
+    auto &service = AudioSpatializationService::GetAudioSpatializationService();
+    service.spatializationEnabledReal_ = true;
+    audioOffloadStream.ResetOffloadModeOnSpatializationChanged(allSessions);
+
+    audioOffloadStream.isOffloadAvailable_ = true;
+    audioOffloadStream.offloadSessionID_ = 1;
+    audioOffloadStream.ResetOffloadModeOnSpatializationChanged(allSessions);
+
+    audioOffloadStream.OffloadStreamReleaseCheck(0);
+    audioOffloadStream.offloadSessionID_.reset();
+    audioOffloadStream.OffloadStreamReleaseCheck(0);
+    service.spatializationEnabledReal_ = false;
 }
 
+/**
+ * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
+ * @tc.number: AudioOffloadStreamTest_015
+ * @tc.desc  : Test ConstructMchAudioModuleInfo Interface.
+ */
+HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_015, TestSize.Level0)
+{
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioOffloadStream audioOffloadStream;
+    AudioModuleInfo ret;
+
+    ret = audioOffloadStream.ConstructMchAudioModuleInfo(deviceType);
+    EXPECT_EQ(ret.channels, "6");
+}
+
+/**
+ * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
+ * @tc.number: AudioOffloadStreamTest_016
+ * @tc.desc  : Test LoadMchModule Interface.
+ */
+HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_016, TestSize.Level0)
+{
+    AudioOffloadStream audioOffloadStream;
+    int32_t ret;
+
+    ret = audioOffloadStream.LoadMchModule();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
+ * @tc.number: AudioOffloadStreamTest_017
+ * @tc.desc  : Test ConstructOffloadAudioModuleInfo Interface.
+ */
+HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_017, TestSize.Level0)
+{
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioOffloadStream audioOffloadStream;
+    AudioModuleInfo ret;
+
+    ret = audioOffloadStream.ConstructOffloadAudioModuleInfo(deviceType);
+    EXPECT_EQ(ret.channels, "2");
+}
+
+/**
+ * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
+ * @tc.number: AudioOffloadStreamTest_018
+ * @tc.desc  : Test UnloadMchModule Interface.
+ */
+HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_018, TestSize.Level0)
+{
+    AudioOffloadStream audioOffloadStream;
+    int32_t ret;
+
+    ret = audioOffloadStream.UnloadMchModule();
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
+ * @tc.number: AudioOffloadStreamTest_019
+ * @tc.desc  : Test LoadOffloadModule Interface.
+ */
+HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_019, TestSize.Level0)
+{
+    AudioIOHandle audioIOHandle = 3;
+    AudioOffloadStream audioOffloadStream;
+    int32_t ret;
+
+    ret = audioOffloadStream.LoadOffloadModule();
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioOffloadStream.audioIOHandleMap_.IOHandles_[OFFLOAD_PRIMARY_SPEAKER] = audioIOHandle;
+    ret = audioOffloadStream.LoadOffloadModule();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
+ * @tc.number: AudioOffloadStreamTest_020
+ * @tc.desc  : Test UnloadOffloadModule Interface.
+ */
+HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_020, TestSize.Level0)
+{
+    AudioOffloadStream audioOffloadStream;
+    int32_t ret;
+
+    audioOffloadStream.isOffloadOpened_.store(true);
+    ret = audioOffloadStream.UnloadOffloadModule();
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
+ * @tc.number: AudioOffloadStreamTest_021
+ * @tc.desc  : Test ActivateConcurrencyFromServer Interface.
+ */
+HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_021, TestSize.Level0)
+{
+    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
+    AudioOffloadStream audioOffloadStream;
+    int32_t ret;
+
+    ret = audioOffloadStream.ActivateConcurrencyFromServer(incomingPipe);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
+ * @tc.number: AudioOffloadStreamTest_022
+ * @tc.desc  : Test OffloadStreamSetCheck Interface.
+ */
+HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_022, TestSize.Level0)
+{
+    uint32_t sessionId = 100;
+    AudioOffloadStream audioOffloadStream;
+    AudioStreamChangeInfo streamChangeInfo;
+    audioOffloadStream.isOffloadAvailable_ = true;
+    streamChangeInfo.audioRendererChangeInfo.clientUID = 1;
+    streamChangeInfo.audioRendererChangeInfo.sessionId = sessionId;
+    streamChangeInfo.audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
+
+    audioOffloadStream.streamCollector_.AddRendererStream(streamChangeInfo);
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.macAddress_ = "00:11:22:33:44:55";
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioOffloadStream.OffloadStreamSetCheck(sessionId);
+    EXPECT_EQ(audioOffloadStream.audioActiveDevice_.GetCurrentOutputDeviceNetworkId(), LOCAL_NETWORK_ID);
+    EXPECT_EQ(audioOffloadStream.audioActiveDevice_.GetCurrentOutputDeviceType(), DEVICE_TYPE_SPEAKER);
+    audioOffloadStream.OffloadStreamSetCheck(sessionId);
+    audioOffloadStream.OffloadStreamSetCheck(1);
+
+    audioOffloadStream.streamCollector_.audioRendererChangeInfos_.back()->channelCount = AudioChannel::CHANNEL_3;
+    EXPECT_FALSE(audioOffloadStream.CheckStreamMultichannelMode(sessionId));
+    audioOffloadStream.streamCollector_.audioRendererChangeInfos_.back()->channelCount = AudioChannel::STEREO;
+
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NONE;
+    audioOffloadStream.OffloadStreamSetCheck(sessionId);
+    EXPECT_EQ(audioOffloadStream.audioActiveDevice_.GetCurrentOutputDeviceNetworkId(), REMOTE_NETWORK_ID);
+
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.networkId_ = "";
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NONE;
+    audioOffloadStream.OffloadStreamSetCheck(sessionId);
+    EXPECT_EQ(audioOffloadStream.audioActiveDevice_.GetCurrentOutputDeviceMacAddr(), "00:11:22:33:44:55");
+    EXPECT_FALSE(audioOffloadStream.CheckStreamMultichannelMode(sessionId));
+
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.networkId_ = "";
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.macAddress_ = "";
+    audioOffloadStream.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NONE;
+    audioOffloadStream.OffloadStreamSetCheck(sessionId);
+    EXPECT_EQ(audioOffloadStream.streamCollector_.GetStreamType(sessionId), STREAM_MUSIC);
+    audioOffloadStream.ResetOffloadStatus(sessionId);
+    EXPECT_FALSE(audioOffloadStream.offloadSessionID_.has_value());
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -64,7 +64,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(Str
 }
 
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(SourceType sourceType,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePrivacyDevices();
@@ -74,19 +74,6 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(So
     return desc;
 }
 
-bool PrivacyPriorityRouter::NeedLatestConnectWithDefaultDevices(DeviceType type)
-{
-    if (type == DEVICE_TYPE_WIRED_HEADSET ||
-        type == DEVICE_TYPE_WIRED_HEADPHONES ||
-        type == DEVICE_TYPE_BLUETOOTH_SCO ||
-        type == DEVICE_TYPE_USB_HEADSET ||
-        type == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        type == DEVICE_TYPE_USB_ARM_HEADSET) {
-        return true;
-    }
-    return false;
-}
-
 vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
@@ -94,8 +81,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs;
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
-        (streamUsage == STREAM_USAGE_ALARM && isAlarmFollowRingRouter_)) {
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
@@ -119,10 +105,6 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
         descs.push_back(move(latestConnDesc));
         switch (streamUsage) {
             case STREAM_USAGE_ALARM:
-                if (isAlarmFollowRingRouter_ && curRingerMode != RINGER_MODE_NORMAL) {
-                    AUDIO_INFO_LOG("Don't add alarm default device when follow ring and not normal mode.");
-                    break;
-                }
                 // Add default device at same time for alarm.
                 descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
                 break;
@@ -146,11 +128,14 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
 }
 
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
+    vector<shared_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
     if (Util::IsScoSupportSource(sourceType)) {
-        vector<shared_ptr<AudioDeviceDescriptor>> descs =
+        vector<shared_ptr<AudioDeviceDescriptor>> recgDescs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
+        descs.insert(descs.end(), std::make_move_iterator(recgDescs.begin()), std::make_move_iterator(recgDescs.end()));
         shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_INPUT_DEVICES, descs);
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             AUDIO_DEBUG_LOG("Recognition sourceType %{public}d clientUID %{public}d fetch device %{public}d",
@@ -158,11 +143,20 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
             return desc;
         }
     }
-    vector<shared_ptr<AudioDeviceDescriptor>> descs =
-        AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
+
+    // bluetooth sco device, need skip
+    if (desc == nullptr) {
+        AUDIO_ERR_LOG("nullptr desc");
+        return make_shared<AudioDeviceDescriptor>();
+    }
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        AUDIO_INFO_LOG("record scene, skip bluetooth sco router");
+        return make_shared<AudioDeviceDescriptor>();
+    }
+
     return desc;
 }
 

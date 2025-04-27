@@ -22,7 +22,9 @@
 #include "audio_info.h"
 namespace OHOS {
 namespace AudioStandard {
-
+namespace {
+constexpr float SPEED_NORMAL = 1.0f;
+}
 class AudioSpeed {
 public:
     AudioSpeed();
@@ -45,9 +47,6 @@ public:
     int32_t ChangeSpeedForFloat(float *buffer, int32_t bufferSize, float* outBuffer, int32_t &outBufferSize);
 
     std::function<int32_t(uint8_t *, int32_t, std::unique_ptr<uint8_t []>&, int32_t&)> ChangeSpeedFunc;
-
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
 private:
     float speed_ = 0.0f;
     size_t rate_;

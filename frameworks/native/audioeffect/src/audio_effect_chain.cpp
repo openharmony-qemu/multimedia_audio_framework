@@ -24,6 +24,8 @@
 #include "audio_dump_pcm.h"
 #include "securec.h"
 #include "media_monitor_manager.h"
+#include "audio_effect_map.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,8 +39,10 @@ constexpr int32_t CROSS_FADE_FRAME_COUNT = 5;
 #ifdef SENSOR_ENABLE
 AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
 {
+    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
+
     sceneType_ = scene;
-    effectMode_ = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
+    effectMode_ = audioSupportedSceneModes.find(EFFECT_DEFAULT)->second;
     audioBufIn_.frameLength = 0;
     audioBufOut_.frameLength = 0;
     ioBufferConfig_.inputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
@@ -64,8 +68,10 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
 #else
 AudioEffectChain::AudioEffectChain(std::string scene)
 {
+    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
+
     sceneType_ = scene;
-    effectMode_ = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
+    effectMode_ = audioSupportedSceneModes.find(EFFECT_DEFAULT)->second;
     audioBufIn_.frameLength = 0;
     audioBufOut_.frameLength = 0;
     ioBufferConfig_.inputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
@@ -182,7 +188,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     int32_t *data = &(effectParam->data[0]);
     data[COMMAND_CODE_INDEX] = EFFECT_SET_PARAM;
     data[SCENE_TYPE_INDEX] = static_cast<int32_t>(currSceneType_);
-    data[EFFECT_MODE_INDEX] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode_);
+    data[EFFECT_MODE_INDEX] = GetKeyFromValue(GetAudioSupportedSceneModes(), effectMode_);
 #ifdef WINDOW_MANAGER_ENABLE
     std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
     if (audioEffectRotation == nullptr) {
@@ -502,35 +508,105 @@ void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDevice
 
     return;
 }
+void AudioEffectChain::SetCurrChannelNoCheck(const uint32_t channel)
+{
+    currChannelNoCheck_ = channel;
+}
+
+void AudioEffectChain::SetCurrChannelLayoutNoCheck(const uint64_t channelLayout)
+{
+    currchannelLayoutNoCheck_ = channelLayout;
+}
+
 void AudioEffectChain::GetInputChannelInfo(uint32_t &channels, uint64_t &channelLayout)
 {
     channels = ioBufferConfig_.inputCfg.channels;
     channelLayout = ioBufferConfig_.inputCfg.channelLayout;
 }
 
-void AudioEffectChain::CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info, AudioEffectConfig *tmpIoBufferConfig)
+bool AudioEffectChain::CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info)
 {
-    AUDIO_INFO_LOG("begin CheckChannelLayoutByReplyInfo channel: %{public}u", ioBufferConfig_.inputCfg.channels);
     if (info.data == nullptr) {
-        (*tmpIoBufferConfig).inputCfg.channels = DEFAULT_NUM_CHANNEL;
-        (*tmpIoBufferConfig).inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-        ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
-        ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-        return;
+        return false;
     }
     int32_t *channelLayoutSupportedFlage = static_cast<int32_t *>(info.data);
     if (*channelLayoutSupportedFlage != SUCCESS) {
-        (*tmpIoBufferConfig).inputCfg.channels = DEFAULT_NUM_CHANNEL;
-        (*tmpIoBufferConfig).inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+        return false;
+    }
+    return true;
+}
+
+int32_t AudioEffectChain::updatePrimaryChannel()
+{
+    ioBufferConfig_.inputCfg.channels = currChannelNoCheck_;
+    ioBufferConfig_.inputCfg.channelLayout = currchannelLayoutNoCheck_;
+    int32_t replyData = -1;
+    AudioEffectConfig tmpIoBufferConfig = ioBufferConfig_;
+    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
+    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+    AudioEffectHandle preHandle = nullptr;
+    tmpIoBufferConfig.outputCfg.channels = 0;
+    tmpIoBufferConfig.outputCfg.channelLayout = 0;
+    bool isSupportedChannelLayoutFlage = true;
+    for (AudioEffectHandle handle : standByEffectHandles_) {
+        if (preHandle != nullptr) {
+            int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
+            isSupportedChannelLayoutFlage = CheckChannelLayoutByReplyInfo(replyInfo);
+            if (isSupportedChannelLayoutFlage == false) {
+                ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
+                ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+                AUDIO_INFO_LOG("currChannelLayout is not supported, change to default channelLayout");
+                return ERROR;
+            }
+
+            ret = (*preHandle)->command(preHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_GET_CONFIG fail");
+            tmpIoBufferConfig.inputCfg = tmpIoBufferConfig.outputCfg;
+        }
+        preHandle = handle;
+    }
+    tmpIoBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
+    tmpIoBufferConfig.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    if (preHandle == nullptr) {
+        AUDIO_ERR_LOG("The preHandle is nullptr!");
+        return ERROR;
+    }
+    int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "last effect update EFFECT_CMD_SET_CONFIG fail");
+    isSupportedChannelLayoutFlage = CheckChannelLayoutByReplyInfo(replyInfo);
+    if (isSupportedChannelLayoutFlage == false) {
         ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
         ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+        AUDIO_INFO_LOG("currChannelLayout is not supported, change to default channelLayout");
+        return ERROR;
     }
-    AUDIO_INFO_LOG("channel change to: %{public}u, channelLayoutSupportedFlage: %{public}d",
-        ioBufferConfig_.inputCfg.channels, *channelLayoutSupportedFlage);
+
+    ret = (*preHandle)->command(preHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "last effect update EFFECT_CMD_GET_CONFIG fail");
+
+    ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
+    ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
+    updateDumpName(); // update dumpFile name(effect_in and effect_out)
+    return SUCCESS;
+}
+
+void AudioEffectChain::updateDumpName()
+{
+    dumpNameIn_ = "dump_effect_in_" + sceneType_ + "_"
+        + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
+        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
+    dumpNameOut_ = "dump_effect_out_" + sceneType_ + "_"
+        + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
+        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
 }
 
 int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 {
+    if (updatePrimaryChannel() == SUCCESS) {
+        AUDIO_INFO_LOG("finish UpdateMultichannelIoBufferConfigInner in updatePrimaryChannel, no need continue");
+        return SUCCESS;
+    }
     int32_t replyData = 0;
     AudioEffectConfig tmpIoBufferConfig = ioBufferConfig_;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
@@ -538,12 +614,6 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
     AudioEffectHandle preHandle = nullptr;
     tmpIoBufferConfig.outputCfg.channels = 0;
     tmpIoBufferConfig.outputCfg.channelLayout = 0;
-    if (standByEffectHandles_.size() != 0) {
-        AudioEffectHandle firstHandle = standByEffectHandles_.front();
-        int32_t ret = (*firstHandle)->command(firstHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
-        CheckChannelLayoutByReplyInfo(replyInfo, &tmpIoBufferConfig);
-    }
     for (AudioEffectHandle handle : standByEffectHandles_) {
         if (preHandle != nullptr) {
             int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
@@ -569,12 +639,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 
     ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
     ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
-    dumpNameIn_ = "dump_effect_in_" + sceneType_ + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4.pcm";
-    dumpNameOut_ = "dump_effect_out_" + sceneType_ + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.samplingRate) + "_"
-        + std::to_string(ioBufferConfig_.outputCfg.channels) + "_4.pcm";
+    updateDumpName(); // update dumpFile name(effect_in and effect_out)
     return SUCCESS;
 }
 

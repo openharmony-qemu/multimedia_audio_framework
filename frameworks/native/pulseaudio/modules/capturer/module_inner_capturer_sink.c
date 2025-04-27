@@ -46,6 +46,7 @@
 #include "audio_common_log.h"
 #include "audio_utils_c.h"
 #include "audio_volume_c.h"
+#include "audio_schedule.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Inner Capturer Sink"));
@@ -64,7 +65,6 @@ PA_MODULE_USAGE(
 #define DEFAULT_SINK_NAME "InnerCapturer"
 #define DEFAULT_BUFFER_SIZE 8192  // same as HDI Sink
 #define PA_ERR (-1)
-const char *SINK_NAME_INNER_CAPTURER = "InnerCapturerSink";
 
 struct userdata {
     pa_core *core;
@@ -228,10 +228,11 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
         const char *sessionIDStr = SafeProplistGets(input->proplist, "stream.sessionID", "NULL");
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
         float volumeFloat = 1.0f;
-        if (!strcmp(s->name, SINK_NAME_INNER_CAPTURER)) { // inner capturer only stream volume
+        if (IsInnerCapSinkName(s->name)) { // inner capturer only stream volume
             volumeFloat = GetStreamVolume(sessionID);
         } else {
-            volumeFloat = GetCurVolume(sessionID, streamType, s->name);
+            struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+            volumeFloat = GetCurVolume(sessionID, streamType, s->name, &volumes);
         }
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);
@@ -289,6 +290,7 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
 
 static void ThreadFunc(void *userdata)
 {
+    ScheduleReportData(getpid(), gettid(), "audio_server");
     struct userdata *u = userdata;
 
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
@@ -344,6 +346,7 @@ fail:
 
 finish:
     AUDIO_DEBUG_LOG("Thread shutting down");
+    UnscheduleReportData(getpid(), gettid(), "audio_server");
 }
 
 int InitFailed(pa_module *m, pa_modargs *ma)
@@ -380,7 +383,6 @@ int CreateSink(pa_module *m, pa_modargs *ma, struct userdata *u)
     pa_sink_new_data_set_sample_spec(&data, &ss);
     pa_sink_new_data_set_channel_map(&data, &map);
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_DESCRIPTION, _("Null Output"));
-    pa_proplist_sets(data.proplist, PA_PROP_DEVICE_CLASS, "capturer");
     pa_proplist_sets(data.proplist, PA_PROP_DEVICE_STRING, "innercapturer");
 
     u->formats = pa_idxset_new(NULL, NULL);

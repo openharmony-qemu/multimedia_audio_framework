@@ -25,6 +25,7 @@ group("audio_policy_packages") {
     ":audio_converter_config",
     ":audio_device_config",
     ":audio_interrupt_policy_config",
+    ":audio_policy_global_config",
     ":audio_policy_service",
     ":audio_strategy_router",
     ":audio_usage_strategy",
@@ -40,6 +41,7 @@ group("audio_policy_packages") {
 config("audio_policy_public_config") {
   include_dirs = [
     "util/include",
+    "common/definitions/include",
     "common/include",
     "client/include",
     "server/include",
@@ -54,19 +56,27 @@ config("audio_policy_public_config") {
     "server/include/service/routers",
     "server/include/service/service",
     "server/include/service/spatialization",
+    "server/include/service/zone",
     "server/src/interface",
     "server/src/service/concurrency",
     "server/src/service/interrupt",
     "server/src/service/session",
+    "services/core/config/include",
+    "services/core/include",
+    "services/pipe/include",
     "safe_volume_notification/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
+    "../audio_service/common/include/dfx",
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiorenderer/include",
     "../../frameworks/native/audioadapter/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/bluetoothclient",
+    "../../frameworks/native/hdiadapter_new/include",
+    "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
@@ -102,6 +112,9 @@ ohos_shared_library("audio_setting_provider") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
 
@@ -142,15 +155,22 @@ audio_ohos_library("audio_policy_service") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/audio_manager_listener_stub.cpp",
+    "../audio_service/client/src/core_service_provider_stub.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "../audio_service/client/src/policy_provider_stub.cpp",
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
+    "common/definitions/src/audio_definition_adapter_info.cpp",
+    "common/definitions/src/audio_definition_policy_utils.cpp",
+    "server/src/app_state_listener.cpp",
     "server/src/audio_anahs_manager_listener_proxy.cpp",
     "server/src/audio_client_tracker_callback_proxy.cpp",
     "server/src/audio_concurrency_state_listener_proxy.cpp",
@@ -160,6 +180,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/audio_policy_manager_device_stub.cpp",
     "server/src/audio_policy_manager_listener_proxy.cpp",
     "server/src/audio_policy_manager_stub.cpp",
+    "server/src/audio_policy_manager_zone_stub.cpp",
     "server/src/audio_policy_server.cpp",
     "server/src/audio_policy_server_handler.cpp",
     "server/src/audio_policy_state_monitor.cpp",
@@ -168,6 +189,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/audio_stream_collector.cpp",
     "server/src/service/audio_affinity_manager.cpp",
     "server/src/service/audio_device_manager.cpp",
+    "server/src/service/audio_global_config_manager.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/audio_state_manager.cpp",
     "server/src/service/concurrency/audio_concurrency_service.cpp",
@@ -177,6 +199,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/config/audio_converter_parser.cpp",
     "server/src/service/config/audio_device_parser.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
+    "server/src/service/config/audio_policy_global_parser.cpp",
     "server/src/service/config/audio_policy_parser.cpp",
     "server/src/service/config/audio_strategy_router_parser.cpp",
     "server/src/service/config/audio_usage_strategy_parser.cpp",
@@ -185,7 +208,10 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/device_init_callback.cpp",
     "server/src/service/effect/audio_effect_config_parser.cpp",
     "server/src/service/effect/audio_effect_service.cpp",
+    "server/src/service/interrupt/audio_interrupt_dfx_collector.cpp",
     "server/src/service/interrupt/audio_interrupt_service.cpp",
+    "server/src/service/interrupt/audio_interrupt_service_ext.cpp",
+    "server/src/service/interrupt/audio_interrupt_zone.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/listener/power_state_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
@@ -229,6 +255,18 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/session/audio_session_service.cpp",
     "server/src/service/session/audio_session_state_monitor.cpp",
     "server/src/service/spatialization/audio_spatialization_service.cpp",
+    "server/src/service/zone/audio_zone.cpp",
+    "server/src/service/zone/audio_zone_client_manager.cpp",
+    "server/src/service/zone/audio_zone_client_proxy.cpp",
+    "server/src/service/zone/audio_zone_interrupt_reporter.cpp",
+    "server/src/service/zone/audio_zone_service.cpp",
+    "services/core/config/src/audio_policy_config_manager.cpp",
+    "services/core/config/src/audio_policy_config_parser.cpp",
+    "services/core/src/audio_core_service.cpp",
+    "services/core/src/audio_core_service_entry.cpp",
+    "services/core/src/audio_core_service_private.cpp",
+    "services/pipe/src/audio_pipe_manager.cpp",
+    "services/pipe/src/audio_pipe_selector.cpp",
     "util/src/audio_ability_manager.cpp",
   ]
 
@@ -273,6 +311,7 @@ audio_ohos_library("audio_policy_service") {
 
   deps = [
     "../../frameworks/native/audioadapter:pulse_audio_service_adapter",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioutils:audio_xml_utils",
@@ -290,6 +329,7 @@ audio_ohos_library("audio_policy_service") {
     "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:ability_context_native",
     "ability_runtime:app_context",
+    "ability_runtime:app_manager",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
     "access_token:libaccesstoken_sdk",
@@ -352,15 +392,6 @@ audio_ohos_library("audio_policy_service") {
   if (bluetooth_part_enable == true) {
     deps += [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
     external_deps += [ "bluetooth:btframework" ]
-  }
-
-  if (avsession_part_enable == true) {
-    external_deps += [
-      "ability_base:want",
-      "ability_runtime:wantagent_innerkits",
-      "av_session:avsession_client",
-      "input:libmmi-client",
-    ]
   }
 
   if (audio_framework_feature_input) {
@@ -428,6 +459,14 @@ ohos_prebuilt_etc("audio_affinity_config") {
   part_name = "audio_framework"
 }
 
+ohos_prebuilt_etc("audio_policy_global_config") {
+  source = "server/config/audio_policy_global_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
 if (audio_framework_feature_dtmf_tone) {
   ohos_prebuilt_etc("audio_tone_dtmf_config") {
     source = "server/config/audio_tone_dtmf_config.xml"
@@ -467,6 +506,7 @@ config("audio_policy_client_config") {
     "server/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
+    "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiopolicy/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
@@ -507,17 +547,23 @@ audio_ohos_library("audio_policy_client") {
     "client/src/audio_policy_manager.cpp",
     "client/src/audio_policy_manager_device.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
+    "client/src/audio_policy_manager_zone.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
     "client/src/audio_spatialization_state_change_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
-    "client/src/audio_service_load.cpp",
+    "client/src/audio_zone_client.cpp",
+    "client/src/audio_zone_manager.cpp",
     "client/src/proxy/audio_policy_callback_proxy.cpp",
     "client/src/proxy/audio_policy_microphone_proxy.cpp",
     "client/src/proxy/audio_policy_proxy.cpp",
     "client/src/proxy/audio_policy_volume_proxy.cpp",
+    "client/src/proxy/audio_policy_zone_proxy.cpp",
   ]
 
-  deps = [ "../../frameworks/native/audioutils:audio_utils" ]
+  deps = [
+    "../../frameworks/native/audiodefinitions:audio_definitions",
+    "../../frameworks/native/audioutils:audio_utils",
+  ]
 
   public_configs = [ ":audio_policy_client_config" ]
 
@@ -559,6 +605,9 @@ ohos_executable("audio_dump_test") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   sources = [ "test/example/audio_dump_test.cpp" ]
 
@@ -625,11 +674,16 @@ ohos_shared_library("audio_foundation") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
     "server/src/service/device/audio_device_descriptor.cpp",
+    "util/src/audio_device_type.cpp",
+    "util/src/audio_effect_map.cpp",
   ]
 
   public_configs = [ ":audio_foundation_public_config" ]
@@ -647,13 +701,23 @@ ohos_shared_library("audio_foundation") {
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
+  defines = []
+  if (audio_framework_feature_detect_soundbox) {
+    defines += [ "DETECT_SOUNDBOX" ]
+  }
+
   innerapi_tags = [ "platformsdk" ]
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }
 
 config("audio_manager_client_public_config") {
-  include_dirs = [ "util/include" ]
+  include_dirs = [
+    "util/include",
+    "../../frameworks/native/audiodefinitions/include",
+    "../../frameworks/native/audiodefinitions/include/common",
+    "../../frameworks/native/hdiadapter_new/include/common",
+  ]
 }
 
 ohos_shared_library("audio_manager_client") {
@@ -663,6 +727,9 @@ ohos_shared_library("audio_manager_client") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
   sources = [
@@ -719,6 +786,9 @@ ohos_shared_library("audio_policy_common") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
   install_enable = true
   sources = [
@@ -734,6 +804,7 @@ ohos_shared_library("audio_policy_common") {
     "hilog:libhilog",
     "i18n:intl_util",
     "ipc:ipc_core",
+    "resource_management:global_resmgr",
   ]
 
   cflags = [ "-Os" ]

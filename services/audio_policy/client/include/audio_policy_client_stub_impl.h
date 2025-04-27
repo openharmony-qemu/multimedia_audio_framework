@@ -41,6 +41,18 @@ public:
     int32_t RemoveDeviceChangeCallback(DeviceFlag flag, std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
     size_t GetDeviceChangeCallbackSize() const;
     int32_t AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
+    int32_t AddAppVolumeChangeForUidCallback(const int32_t appUid,
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &cb);
+    int32_t RemoveAppVolumeChangeForUidCallback(
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &cb);
+    int32_t RemoveAllAppVolumeChangeForUidCallback();
+    size_t GetAppVolumeChangeCallbackForUidSize() const;
+    size_t GetSelfAppVolumeChangeCallbackSize() const;
+    int32_t AddSelfAppVolumeChangeCallback(int32_t appUid,
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &cb);
+    int32_t RemoveSelfAppVolumeChangeCallback(int32_t appUid,
+        const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &cb);
+    int32_t RemoveAllSelfAppVolumeChangeCallback(int32_t appUid);
     int32_t RemoveRingerModeCallback();
     int32_t RemoveRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
     size_t GetRingerModeCallbackSize() const;
@@ -83,6 +95,10 @@ public:
     int32_t AddSpatializationEnabledChangeCallback(const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb);
     int32_t RemoveSpatializationEnabledChangeCallback();
     size_t GetSpatializationEnabledChangeCallbackSize() const;
+    int32_t AddSpatializationEnabledChangeForCurrentDeviceCallback(
+        const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &cb);
+    int32_t RemoveSpatializationEnabledChangeForCurrentDeviceCallback();
+    size_t GetSpatializationEnabledChangeForCurrentDeviceCallbackSize() const;
     int32_t AddHeadTrackingEnabledChangeCallback(const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);
     int32_t RemoveHeadTrackingEnabledChangeCallback();
     size_t GetHeadTrackingEnabledChangeCallbacSize() const;
@@ -94,6 +110,15 @@ public:
     int32_t RemoveAudioSessionCallback();
     int32_t RemoveAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb);
     size_t GetAudioSessionCallbackSize() const;
+    int32_t AddAudioSceneChangedCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
+    int32_t RemoveAudioSceneChangedCallback(
+        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
+    size_t GetAudioSceneChangedCallbackSize() const;
+    int32_t SetDistribuitedOutputChangeCallback(const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb);
+    int32_t AddAudioFormatUnsupportedErrorCallback(const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &cb);
+    int32_t RemoveAudioFormatUnsupportedErrorCallback();
+    size_t GetAudioFormatUnsupportedErrorCallbackSize() const;
 
     void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
@@ -106,6 +131,7 @@ public:
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+    void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
@@ -117,15 +143,19 @@ public:
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void OnRendererDeviceChange(const uint32_t sessionId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
+    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override;
     void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
     void OnSpatializationEnabledChange(const bool &enabled) override;
     void OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
+    void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override;
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled) override;
     void OnNnStateChange(const int32_t &nnState) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
+    void OnAudioSceneChange(const AudioScene &audioScene) override;
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
 
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
@@ -135,15 +165,25 @@ private:
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
+    std::vector<std::pair<int32_t, std::shared_ptr<
+        AudioManagerAppVolumeChangeCallback>>> appVolumeChangeForUidCallback_;
+    std::map<int32_t, int32_t> appVolumeChangeForUidCallbackNum;
+    std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerAppVolumeChangeCallback>>> selfAppVolumeChangeCallback_;
+    std::map<int32_t, int32_t> selfAppVolumeChangeCallbackNum_;
     std::vector<std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback>>
+        spatializationEnabledChangeForCurrentDeviceCallbackList_;
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioNnStateChangeCallback>> nnStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
         microphoneBlockedCallbackList_;
+    std::vector<std::shared_ptr<AudioManagerAudioSceneChangedCallback>> audioSceneChangedCallbackList_;
+    std::vector<std::shared_ptr<AudioDistribuitedOutputChangeCallback>> distribuitedOutputChangeCallback_;
+    std::vector<std::shared_ptr<AudioFormatUnsupportedErrorCallback>> AudioFormatUnsupportedErrorCallbackList_;
 
     std::unordered_map<StreamUsage,
         std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>>> preferredOutputDeviceCallbackMap_;
@@ -164,14 +204,19 @@ private:
     mutable std::mutex volumeKeyEventMutex_;
     mutable std::mutex deviceChangeMutex_;
     mutable std::mutex ringerModeMutex_;
+    mutable std::mutex appVolumeChangeForUidMutex_;
+    mutable std::mutex selfAppVolumeChangeMutex_;
     mutable std::mutex micStateChangeMutex_;
     mutable std::mutex deviceChangeWithInfoCallbackMutex_;
     mutable std::mutex headTrackingDataRequestedChangeMutex_;
     mutable std::mutex spatializationEnabledChangeMutex_;
+    mutable std::mutex spatializationEnabledChangeForCurrentDeviceMutex_;
     mutable std::mutex headTrackingEnabledChangeMutex_;
     mutable std::mutex nnStateChangeMutex_;
     mutable std::mutex audioSessionMutex_;
     mutable std::mutex microphoneBlockedMutex_;
+    mutable std::mutex audioSceneChangedMutex_;
+    mutable std::mutex formatUnsupportedErrorMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

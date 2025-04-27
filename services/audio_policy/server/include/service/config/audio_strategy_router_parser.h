@@ -31,7 +31,11 @@ namespace AudioStandard {
 using namespace std;
 class AudioStrategyRouterParser : public Parser {
 public:
+#ifdef USE_CONFIG_POLICY
+    static constexpr char DEVICE_CONFIG_FILE[] = "etc/audio/audio_strategy_router.xml";
+#else
     static constexpr char DEVICE_CONFIG_FILE[] = "/system/etc/audio/audio_strategy_router.xml";
+#endif
 
     bool LoadConfiguration() final;
     void Destroy() final;

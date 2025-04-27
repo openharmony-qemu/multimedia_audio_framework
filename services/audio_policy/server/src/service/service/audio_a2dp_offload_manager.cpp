@@ -257,7 +257,7 @@ int32_t AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForAllStream(DeviceType de
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     {
         AudioXCollie audioXCollie("AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForAllStream",
-            BLUETOOTH_TIME_OUT_SECONDS);
+            BLUETOOTH_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
         std::vector<int32_t> stopPlayingStream(0);
         for (auto &changeInfo : audioRendererChangeInfos) {
             if (changeInfo->rendererState != RENDERER_RUNNING) {
@@ -390,9 +390,6 @@ int32_t AudioA2dpOffloadManager::HandleA2dpDeviceInOffload(BluetoothOffloadState
         AUDIO_INFO_LOG("A2dpOffload has been connected, Fetch stream");
         FetchStreamForA2dpOffload(true);
     }
-
-    std::string activePort = BLUETOOTH_SPEAKER;
-    audioPolicyManager_.SuspendAudioDevice(activePort, true);
     return SUCCESS;
 #else
     return ERROR;
@@ -441,9 +438,9 @@ void AudioA2dpOffloadManager::GetA2dpOffloadCodecAndSendToDsp()
 
 int32_t AudioA2dpOffloadManager::HandleActiveDevice(DeviceType deviceType)
 {
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (GetVolumeGroupType(curOutputDeviceType) != GetVolumeGroupType(deviceType)) {
-        audioVolumeManager_.SetVolumeForSwitchDevice(deviceType);
+    AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    if (GetVolumeGroupType(curOutputDevice.deviceType_) != GetVolumeGroupType(deviceType)) {
+        audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDevice);
     }
     if (audioConfigManager_.GetUpdateRouteSupport()) {
         audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
@@ -485,6 +482,8 @@ void AudioA2dpOffloadManager::FetchStreamForA2dpOffload(const bool &requireReset
                 int32_t ret = audioDeviceCommon_.ActivateA2dpDevice(descs.front(), rendererChangeInfos);
                 CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
                     GetEncryptAddr(descs.front()->macAddress_).c_str());
+                std::string activePort = BLUETOOTH_SPEAKER;
+                audioPolicyManager_.SuspendAudioDevice(activePort, true);
             }
             if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
                 AudioServerProxy::GetInstance().ResetAudioEndpointProxy();
@@ -522,10 +521,12 @@ std::string AudioA2dpOffloadManager::GetVolumeGroupType(DeviceType deviceType)
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_DP:
+        case DEVICE_TYPE_HDMI:
             volumeGroupType = "build-in";
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_ACCESSORY:
             volumeGroupType = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:

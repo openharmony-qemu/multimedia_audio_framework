@@ -28,10 +28,16 @@ public:
         : callbacks_(callbacks), ohAudioCapturer_(audioCapturer), userData_(userData)
     {
     }
+    OHAudioCapturerModeCallback(OH_AudioCapturer_OnReadDataCallback onReadDataCallback,
+        OH_AudioCapturer* audioCapturer, void* userData)
+        : onReadDataCallback_(onReadDataCallback), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
 
     void OnReadData(size_t length) override;
 private:
     OH_AudioCapturer_Callbacks callbacks_;
+    OH_AudioCapturer_OnReadDataCallback onReadDataCallback_ = nullptr;
     OH_AudioCapturer* ohAudioCapturer_;
     void* userData_;
 };
@@ -40,6 +46,12 @@ class OHAudioCapturerCallback : public AudioCapturerCallback {
 public:
     OHAudioCapturerCallback(OH_AudioCapturer_Callbacks callbacks, OH_AudioCapturer* audioCapturer, void* userData)
         : callbacks_(callbacks), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+
+    OHAudioCapturerCallback(OH_AudioCapturer_OnInterruptCallback OnInterruptEventCallback,
+        OH_AudioCapturer *audioCapturer, void *userData) : onInterruptEventCallback_(OnInterruptEventCallback),
+        ohAudioCapturer_(audioCapturer), userData_(userData)
     {
     }
 
@@ -52,8 +64,79 @@ public:
 
 private:
     OH_AudioCapturer_Callbacks callbacks_;
+    OH_AudioCapturer_OnInterruptCallback onInterruptEventCallback_ = nullptr;
     OH_AudioCapturer* ohAudioCapturer_;
     void* userData_;
+};
+
+class OHCapturerServiceDiedCallback : public AudioCapturerPolicyServiceDiedCallback {
+public:
+    OHCapturerServiceDiedCallback(OH_AudioCapturer_OnErrorCallback errorCallback, OH_AudioCapturer *audioCapturer,
+        void *userData) : errorCallback_(errorCallback), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+
+    void OnAudioPolicyServiceDied() override;
+
+private:
+    OH_AudioCapturer_OnErrorCallback errorCallback_ = nullptr;
+    OH_AudioCapturer* ohAudioCapturer_;
+    void *userData_;
+};
+
+class OHAudioCapturerErrorCallback : public AudioCapturerErrorCallback {
+public:
+    OHAudioCapturerErrorCallback(OH_AudioCapturer_Callbacks callbacks, OH_AudioCapturer *audioCapturer,
+        void *userData) : callbacks_(callbacks), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+    OHAudioCapturerErrorCallback(OH_AudioCapturer_OnErrorCallback errorCallback, OH_AudioCapturer *audioCapturer,
+        void *userData) : errorCallback_(errorCallback), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+
+    void OnError(AudioErrors errorCode) override;
+
+    OH_AudioStream_Result GetErrorResult(AudioErrors errorCode) const;
+
+private:
+    OH_AudioCapturer_Callbacks callbacks_ = {};
+    OH_AudioCapturer_OnErrorCallback errorCallback_ = nullptr;
+    OH_AudioCapturer *ohAudioCapturer_;
+    void *userData_;
+};
+
+class OHAudioCapturerDeviceChangeCallback : public AudioCapturerDeviceChangeCallback {
+public:
+    OHAudioCapturerDeviceChangeCallback(OH_AudioCapturer_Callbacks callbacks, OH_AudioCapturer* audioCapturer,
+        void* userData) : callbacks_(callbacks), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+    OHAudioCapturerDeviceChangeCallback(OH_AudioCapturer_OnDeviceChangeCallback onDeviceChangeCallback,
+        OH_AudioCapturer* audioCapturer, void* userData)
+        : onDeviceChangeCallback_(onDeviceChangeCallback), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+
+    void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override;
+
+private:
+    OH_AudioCapturer_Callbacks callbacks_;
+    OH_AudioCapturer_OnDeviceChangeCallback onDeviceChangeCallback_ = nullptr;
+    OH_AudioCapturer* ohAudioCapturer_;
+    void* userData_;
+};
+
+struct CapturerCallback {
+    OH_AudioCapturer_Callbacks callbacks;
+
+    OH_AudioCapturer_OnReadDataCallback onReadDataCallback;
+
+    OH_AudioCapturer_OnDeviceChangeCallback onDeviceChangeCallback;
+
+    OH_AudioCapturer_OnInterruptCallback onInterruptEventCallback;
+
+    OH_AudioCapturer_OnErrorCallback onErrorCallback;
 };
 
 class OHAudioCapturer {
@@ -79,13 +162,33 @@ class OHAudioCapturer {
         int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
+        int32_t SetInputDevice(DeviceType deviceType);
         uint32_t GetOverflowCount() const;
 
-        void SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);
+        void SetInterruptCallback(CapturerCallback capturerCallbacks, void *userData);
+        void SetErrorCallback(CapturerCallback capturerCallbacks, void *userData);
+        void RegisterErrorCallback(CapturerCallback capturerCallbacks, void *userData, void *metadataUserData,
+            AudioEncodingType encodingType);
+        void SetCapturerInterruptEventCallbackType(InterruptEventCallbackType interruptCallbackType);
+        void SetCapturerErrorCallbackType(ErrorCallbackType errorCallbackType);
+        InterruptEventCallbackType GetCapturerInterruptEventCallbackType();
+        ErrorCallbackType GetCapturerErrorCallbackType();
+
+        void SetCapturerCallback(CapturerCallback capturerCallbacks, void* userData);
+        void SetReadDataCallback(CapturerCallback capturerCallbacks, void* userData);
+        void SetStreamEventCallback(CapturerCallback capturerCallbacks, void* userData);
+        void SetCapturerReadDataCallbackType(ReadDataCallbackType readDataCallbackType);
+        void SetCapturerStreamEventCallbackType(StreamEventCallbackType streamEventCallbackType);
+        ReadDataCallbackType GetCapturerReadDataCallbackType();
+        StreamEventCallbackType GetCapturerStreamEventCallbackType();
 
     private:
         std::shared_ptr<AudioCapturer> audioCapturer_;
         std::shared_ptr<AudioCapturerCallback> audioCapturerCallback_;
+        ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
+        StreamEventCallbackType streamEventCallbackType_ = STREAM_EVENT_CALLBACK_WITHOUT_RESULT;
+        ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+        InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

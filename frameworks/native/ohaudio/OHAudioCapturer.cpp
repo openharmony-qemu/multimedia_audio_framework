@@ -12,12 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <memory>
+#include <cstdint>
 #ifndef LOG_TAG
 #define LOG_TAG "OHAudioCapturer"
 #endif
 
 #include "OHAudioCapturer.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
+#include "OHAudioDeviceDescriptor.h"
 
 using OHOS::AudioStandard::Timestamp;
 
@@ -33,8 +37,7 @@ OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer)
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
     if (audioCapturer->Release()) {
-        delete audioCapturer;
-        audioCapturer = nullptr;
+        OHOS::AudioStandard::ObjectRefMap<OHOS::AudioStandard::OHAudioCapturer>::DecreaseRef(audioCapturer);
         return AUDIOSTREAM_SUCCESS;
     } else {
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
@@ -74,6 +77,22 @@ OH_AudioStream_Result OH_AudioCapturer_Stop(OH_AudioCapturer* capturer)
     } else {
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     }
+}
+
+OH_AudioStream_Result OH_AudioCapturer_SetInputDevice(
+    OH_AudioCapturer* capturer, OH_AudioDevice_Type deviceType)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert Capturer failed");
+    int32_t ret = audioCapturer->SetInputDevice((OHOS::AudioStandard::DeviceType)deviceType);
+    if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
+        AUDIO_ERR_LOG("This audioCapturer can not reset the input device");
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    } else if (ret != AUDIOSTREAM_SUCCESS) {
+        AUDIO_ERR_LOG("system error when calling this function");
+        return AUDIOSTREAM_ERROR_SYSTEM;
+    }
+    return AUDIOSTREAM_SUCCESS;
 }
 
 OH_AudioStream_Result OH_AudioCapturer_Flush(OH_AudioCapturer* capturer)
@@ -236,7 +255,7 @@ bool OHAudioCapturer::Start()
     }
     return audioCapturer_->Start();
 }
-    
+
 bool OHAudioCapturer::Pause()
 {
     if (audioCapturer_ == nullptr) {
@@ -329,25 +348,15 @@ AudioSampleFormat OHAudioCapturer::GetSampleFormat()
     return params.audioSampleFormat;
 }
 
-void OHAudioCapturer::SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData)
+void OHAudioCapturer::SetCapturerCallback(CapturerCallback capturerCallbacks, void *userData)
 {
     CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "capturer client is nullptr");
     audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
-    if (callbacks.OH_AudioCapturer_OnReadData != nullptr) {
-        std::shared_ptr<AudioCapturerReadCallback> callback = std::make_shared<OHAudioCapturerModeCallback>(callbacks,
-            (OH_AudioCapturer*)this, userData);
-        audioCapturer_->SetCapturerReadCallback(callback);
-    } else {
-        AUDIO_WARNING_LOG("The read callback function is not set");
-    }
 
-    if (callbacks.OH_AudioCapturer_OnInterruptEvent != nullptr) {
-        audioCapturerCallback_ = std::make_shared<OHAudioCapturerCallback>(callbacks,
-            (OH_AudioCapturer*)this, userData);
-        audioCapturer_->SetCapturerCallback(audioCapturerCallback_);
-    } else {
-        AUDIO_WARNING_LOG("The capturer interrupt event callback function is not set");
-    }
+    SetInterruptCallback(capturerCallbacks, userData);
+    SetErrorCallback(capturerCallbacks, userData);
+    SetReadDataCallback(capturerCallbacks, userData);
+    SetStreamEventCallback(capturerCallbacks, userData);
 }
 
 int64_t OHAudioCapturer::GetFramesRead()
@@ -370,6 +379,12 @@ int32_t OHAudioCapturer::GetFrameSizeInCallback()
     return static_cast<int32_t>(frameSize);
 }
 
+int32_t OHAudioCapturer::SetInputDevice(DeviceType deviceType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->SetInputDevice(deviceType);
+}
+
 int32_t OHAudioCapturer::GetBufferDesc(BufferDesc &bufDesc) const
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
@@ -388,28 +403,245 @@ uint32_t OHAudioCapturer::GetOverflowCount() const
     return audioCapturer_->GetOverflowCount();
 }
 
-void OHAudioCapturerModeCallback::OnReadData(size_t length)
+OH_AudioStream_Result OHAudioCapturerErrorCallback::GetErrorResult(AudioErrors errorCode) const
+{
+    switch (errorCode) {
+        case ERROR_ILLEGAL_STATE:
+            return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+        case ERROR_INVALID_PARAM:
+            return AUDIOSTREAM_ERROR_INVALID_PARAM;
+        case ERROR_SYSTEM:
+            return AUDIOSTREAM_ERROR_SYSTEM;
+        default:
+            return AUDIOSTREAM_ERROR_SYSTEM;
+    }
+}
+
+void OHAudioCapturerErrorCallback::OnError(AudioErrors errorCode)
 {
     OHAudioCapturer* audioCapturer = (OHAudioCapturer*)ohAudioCapturer_;
     CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "capturer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioCapturer_OnReadData != nullptr, "pointer to the fuction is nullptr");
+    if (audioCapturer->GetCapturerErrorCallbackType() == ERROR_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioCapturer_OnError != nullptr) {
+        OH_AudioStream_Result error = GetErrorResult(errorCode);
+        callbacks_.OH_AudioCapturer_OnError(ohAudioCapturer_, userData_, error);
+    }
+
+    if (audioCapturer->GetCapturerErrorCallbackType() == ERROR_CALLBACK_WITH_RESULT &&
+        errorCallback_ != nullptr) {
+        OH_AudioStream_Result error = GetErrorResult(errorCode);
+        errorCallback_(ohAudioCapturer_, userData_, error);
+    }
+}
+
+void OHCapturerServiceDiedCallback::OnAudioPolicyServiceDied()
+{
+    CHECK_AND_RETURN_LOG(ohAudioCapturer_ != nullptr, "renderer client is nullptr");
+    OHAudioCapturer* audioCapturer = (OHAudioCapturer*)ohAudioCapturer_;
+    if (audioCapturer->GetCapturerErrorCallbackType() == ERROR_CALLBACK_WITH_RESULT &&
+        errorCallback_ != nullptr) {
+        OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
+        errorCallback_(ohAudioCapturer_, userData_, error);
+    }
+}
+
+void OHAudioCapturerModeCallback::OnReadData(size_t length)
+{
+    OHAudioCapturer* audioCapturer = (OHAudioCapturer*)ohAudioCapturer_;
+    OHOS::AudioStandard::ObjectRefMap objectGuard(audioCapturer);
+    CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "capturer client is nullptr");
+    CHECK_AND_RETURN_LOG((callbacks_.OH_AudioCapturer_OnReadData != nullptr) || onReadDataCallback_ != nullptr,
+        "pointer to the fuction is nullptr");
     BufferDesc bufDesc;
     audioCapturer->GetBufferDesc(bufDesc);
-    callbacks_.OH_AudioCapturer_OnReadData(ohAudioCapturer_,
-        userData_,
-        (void*)bufDesc.buffer,
-        bufDesc.bufLength);
+
+    if (audioCapturer->GetCapturerReadDataCallbackType() == READ_DATA_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioCapturer_OnReadData != nullptr) {
+        callbacks_.OH_AudioCapturer_OnReadData(ohAudioCapturer_, userData_,
+            (void*)bufDesc.buffer, bufDesc.bufLength);
+    }
+    if (audioCapturer->GetCapturerReadDataCallbackType() == READ_DATA_CALLBACK_WITH_RESULT &&
+        onReadDataCallback_ != nullptr) {
+        onReadDataCallback_(ohAudioCapturer_, userData_, (void*)bufDesc.buffer, bufDesc.bufLength);
+        if (length > bufDesc.bufLength) {
+            bufDesc.dataLength = bufDesc.bufLength;
+        } else {
+            bufDesc.dataLength = length;
+        }
+    }
     audioCapturer->Enqueue(bufDesc);
+}
+
+void OHAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
+{
+    OHAudioCapturer* audioCapturer = (OHAudioCapturer*)ohAudioCapturer_;
+    CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "capturer client is nullptr");
+    CHECK_AND_RETURN_LOG((callbacks_.OH_AudioCapturer_OnStreamEvent != nullptr) || onDeviceChangeCallback_ != nullptr,
+        "pointer to the fuction is nullptr");
+    OH_AudioStream_Event event = AUDIOSTREAM_EVENT_ROUTING_CHANGED;
+    if (audioCapturer->GetCapturerStreamEventCallbackType() == STREAM_EVENT_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioCapturer_OnStreamEvent != nullptr) {
+        callbacks_.OH_AudioCapturer_OnStreamEvent(ohAudioCapturer_, userData_, event);
+    }
+    if (audioCapturer->GetCapturerStreamEventCallbackType() == STREAM_EVENT_CALLBACK_WITH_RESULT &&
+        onDeviceChangeCallback_ != nullptr) {
+        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor =
+            std::make_shared<AudioDeviceDescriptor>(deviceInfo);
+        OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
+            (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
+        CHECK_AND_RETURN_LOG(audioDeviceDescriptorArray != nullptr, "audioDeviceDescriptorArray is nullptr");
+        int32_t arraySize = 1;
+        int32_t arrayIndex = 0;
+        audioDeviceDescriptorArray->size = arraySize;
+        audioDeviceDescriptorArray->descriptors =
+            (OH_AudioDeviceDescriptor **)malloc(sizeof(OH_AudioDeviceDescriptor *) * arraySize);
+        CHECK_AND_RETURN_LOG(audioDeviceDescriptorArray->descriptors != nullptr,
+                             "audioDeviceDescriptorArray->descriptors is nullptr");
+        audioDeviceDescriptorArray->descriptors[arrayIndex] =
+            (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(audioDeviceDescriptor));
+        CHECK_AND_RETURN_LOG(audioDeviceDescriptorArray->descriptors[arrayIndex] != nullptr,
+                             "audioDeviceDescriptorArray->descriptors[%{public}d] is nullptr", arrayIndex);
+        onDeviceChangeCallback_(ohAudioCapturer_, userData_, audioDeviceDescriptorArray);
+    }
 }
 
 void OHAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
 {
+    OHAudioCapturer *audioCapturer = (OHAudioCapturer*)ohAudioCapturer_;
     CHECK_AND_RETURN_LOG(ohAudioCapturer_ != nullptr, "capturer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioCapturer_OnInterruptEvent != nullptr, "pointer to the fuction is nullptr");
+    if (audioCapturer->GetCapturerInterruptEventCallbackType() == INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT &&
+        callbacks_.OH_AudioCapturer_OnInterruptEvent != nullptr) {
+        OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
+        OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
+        callbacks_.OH_AudioCapturer_OnInterruptEvent(ohAudioCapturer_, userData_, type, hint);
+    } else if (audioCapturer->GetCapturerInterruptEventCallbackType() == INTERRUPT_EVENT_CALLBACK_WITH_RESULT &&
+        onInterruptEventCallback_ != nullptr) {
+        OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
+        OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
+        onInterruptEventCallback_(ohAudioCapturer_, userData_, type, hint);
+    }
+}
 
-    OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
-    OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
-    callbacks_.OH_AudioCapturer_OnInterruptEvent(ohAudioCapturer_, userData_, type, hint);
+void OHAudioCapturer::SetReadDataCallback(CapturerCallback capturerCallbacks, void* userData)
+{
+    if (readDataCallbackType_ == READ_DATA_CALLBACK_WITH_RESULT &&
+        capturerCallbacks.onReadDataCallback != nullptr) {
+        std::shared_ptr<AudioCapturerReadCallback> callback = std::make_shared<OHAudioCapturerModeCallback>(
+            capturerCallbacks.onReadDataCallback, (OH_AudioCapturer*)this, userData);
+        audioCapturer_->SetCapturerReadCallback(callback);
+        AUDIO_INFO_LOG("The read callback function with result");
+    } else if (readDataCallbackType_ == READ_DATA_CALLBACK_WITHOUT_RESULT &&
+        capturerCallbacks.callbacks.OH_AudioCapturer_OnReadData != nullptr) {
+        std::shared_ptr<AudioCapturerReadCallback> callback = std::make_shared<OHAudioCapturerModeCallback>(
+            capturerCallbacks.callbacks, (OH_AudioCapturer*)this, userData);
+        audioCapturer_->SetCapturerReadCallback(callback);
+        AUDIO_INFO_LOG("The read callback function without result");
+    } else {
+        AUDIO_WARNING_LOG("The read callback function is not set");
+    }
+}
+
+void OHAudioCapturer::SetStreamEventCallback(CapturerCallback capturerCallbacks, void* userData)
+{
+    if (streamEventCallbackType_ == STREAM_EVENT_CALLBACK_WITH_RESULT &&
+        capturerCallbacks.onDeviceChangeCallback != nullptr) {
+        std::shared_ptr<AudioCapturerDeviceChangeCallback> callback =
+            std::make_shared<OHAudioCapturerDeviceChangeCallback>(capturerCallbacks.onDeviceChangeCallback,
+            (OH_AudioCapturer*)this, userData);
+        audioCapturer_->SetAudioCapturerDeviceChangeCallback(callback);
+        AUDIO_INFO_LOG("The stream event callback function with result");
+    } else if (streamEventCallbackType_ == STREAM_EVENT_CALLBACK_WITHOUT_RESULT &&
+        capturerCallbacks.callbacks.OH_AudioCapturer_OnStreamEvent != nullptr) {
+        std::shared_ptr<AudioCapturerDeviceChangeCallback> callback =
+            std::make_shared<OHAudioCapturerDeviceChangeCallback>(capturerCallbacks.callbacks,
+            (OH_AudioCapturer*)this, userData);
+        audioCapturer_->SetAudioCapturerDeviceChangeCallback(callback);
+        AUDIO_INFO_LOG("The stream event callback function without result");
+    } else {
+        AUDIO_WARNING_LOG("The stream event callback function is not set");
+    }
+}
+
+void OHAudioCapturer::SetInterruptCallback(CapturerCallback capturerCallbacks, void *userData)
+{
+    if (interruptCallbackType_ == INTERRUPT_EVENT_CALLBACK_WITH_RESULT &&
+        capturerCallbacks.onInterruptEventCallback != nullptr) {
+        std::shared_ptr<AudioCapturerCallback> callback = std::make_shared<OHAudioCapturerCallback>(
+            capturerCallbacks.onInterruptEventCallback, (OH_AudioCapturer*)this, userData);
+        audioCapturer_->SetCapturerCallback(callback);
+        AUDIO_INFO_LOG("The Interrupt callback function is for PCM type with result");
+    } else if (interruptCallbackType_ == INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT &&
+        capturerCallbacks.callbacks.OH_AudioCapturer_OnInterruptEvent != nullptr) {
+        std::shared_ptr<AudioCapturerCallback> callback = std::make_shared<OHAudioCapturerCallback>(
+            capturerCallbacks.callbacks, (OH_AudioCapturer*)this, userData);
+        audioCapturer_->SetCapturerCallback(callback);
+        AUDIO_INFO_LOG("The Interrupt callback function is for PCM type without result");
+    } else {
+        AUDIO_WARNING_LOG("The Interrupt callback function is not set");
+    }
+}
+
+void OHAudioCapturer::SetErrorCallback(CapturerCallback capturerCallbacks, void *userData)
+{
+    if (errorCallbackType_ == ERROR_CALLBACK_WITH_RESULT &&
+        capturerCallbacks.onErrorCallback != nullptr) {
+        std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> callback =
+            std::make_shared<OHCapturerServiceDiedCallback>(capturerCallbacks.onErrorCallback,
+                (OH_AudioCapturer*)this, userData);
+        int32_t clientPid = getpid();
+        audioCapturer_->RegisterAudioPolicyServerDiedCb(clientPid, callback);
+
+        std::shared_ptr<AudioCapturerErrorCallback> errorCallback = std::make_shared<OHAudioCapturerErrorCallback>(
+            capturerCallbacks.onErrorCallback, (OH_AudioCapturer*)this, userData);
+        audioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
+    } else if (errorCallbackType_ == ERROR_CALLBACK_WITHOUT_RESULT &&
+        capturerCallbacks.callbacks.OH_AudioCapturer_OnError != nullptr) {
+        std::shared_ptr<AudioCapturerErrorCallback> errorCallback = std::make_shared<OHAudioCapturerErrorCallback>(
+            capturerCallbacks.callbacks, (OH_AudioCapturer*)this, userData);
+        audioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
+    } else {
+        AUDIO_WARNING_LOG("The audio capturer error callback function is not set");
+    }
+}
+
+void OHAudioCapturer::SetCapturerReadDataCallbackType(ReadDataCallbackType readDataCallbackType)
+{
+    readDataCallbackType_ = readDataCallbackType;
+}
+
+void OHAudioCapturer::SetCapturerStreamEventCallbackType(StreamEventCallbackType streamEventCallbackType)
+{
+    streamEventCallbackType_ = streamEventCallbackType;
+}
+
+ReadDataCallbackType OHAudioCapturer::GetCapturerReadDataCallbackType()
+{
+    return readDataCallbackType_;
+}
+
+StreamEventCallbackType OHAudioCapturer::GetCapturerStreamEventCallbackType()
+{
+    return streamEventCallbackType_;
+}
+
+void OHAudioCapturer::SetCapturerInterruptEventCallbackType(InterruptEventCallbackType interruptCallbackType)
+{
+    interruptCallbackType_ = interruptCallbackType;
+}
+
+InterruptEventCallbackType OHAudioCapturer::GetCapturerInterruptEventCallbackType()
+{
+    return interruptCallbackType_;
+}
+
+void OHAudioCapturer::SetCapturerErrorCallbackType(ErrorCallbackType errorCallbackType)
+{
+    errorCallbackType_ = errorCallbackType;
+}
+
+ErrorCallbackType OHAudioCapturer::GetCapturerErrorCallbackType()
+{
+    return errorCallbackType_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

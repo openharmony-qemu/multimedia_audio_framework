@@ -45,22 +45,22 @@ bool g_hasServerInit = false;
 const uint8_t TESTSIZE = 6;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
-AudioPolicyServer* GetServerPtr()
+sptr<AudioPolicyServer> GetServerPtr()
 {
-    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit) {
-        server.OnStart();
-        server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-        server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
         g_hasServerInit = true;
     }
-    return &server;
+    return server;
 }
 
 uint32_t Convert2Uint32(const uint8_t *ptr)
@@ -169,9 +169,6 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
     BluetoothOffloadState flag = static_cast<BluetoothOffloadState>(num % (A2DP_OFFLOAD + 1));
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleA2dpDeviceInOffload(flag);
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleA2dpDeviceOutOffload(flag);
-
-    bool captureSilentState = static_cast<bool>(num % MOD_NUM_TWO);
-    GetServerPtr()->audioPolicyService_.SetCaptureSilentState(captureSilentState);
 
     uint32_t sessionId = static_cast<uint32_t>(num);
     // the max value of AudioPipeType is PIPE_TYPE_DIRECT_VOIP.

@@ -35,7 +35,7 @@
 #ifdef SENSOR_ENABLE
 #include "audio_head_tracker.h"
 #endif
-#include "audio_effect_hdi_param.h"
+
 #ifdef WINDOW_MANAGER_ENABLE
 #include "audio_effect_rotation.h"
 #endif
@@ -43,6 +43,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+class AudioEffectHdiParam;
 
 const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
@@ -64,7 +66,6 @@ struct SessionEffectInfo {
     std::string sceneType;
     uint32_t channels;
     uint64_t channelLayout;
-    std::string spatializationEnabled;
     int32_t streamUsage;
     int32_t systemVolumeType;
 };
@@ -104,17 +105,26 @@ enum SceneTypeOperation {
     REMOVE_SCENE_TYPE = 1,
 };
 
+enum ProcessClusterOperation {
+    NO_NEED_TO_CREATE_PROCESSCLUSTER,
+    CREATE_NEW_PROCESSCLUSTER,
+    CREATE_DEFAULT_PROCESSCLUSTER,
+    USE_DEFAULT_PROCESSCLUSTER,
+    USE_NONE_PROCESSCLUSTER,
+    CREATE_EXTRA_PROCESSCLUSTER
+};
+
 class AudioEffectChainManager {
 public:
     AudioEffectChainManager();
     ~AudioEffectChainManager();
     static AudioEffectChainManager *GetInstance();
-    void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
+    void InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectChainManagerParam,
-        std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
-    void ConstructEffectChainMgrMaps(std::vector<EffectChain> &effectChains,
+        const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
+    void ConstructEffectChainMgrMaps(const std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectChainManagerParam,
-        std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
+        const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
     bool CheckAndAddSessionID(const std::string &sessionID);
     int32_t CreateAudioEffectChainDynamic(const std::string &sceneType);
     bool CheckAndRemoveSessionID(const std::string &sessionID);
@@ -132,7 +142,7 @@ public:
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
     int32_t EffectRotationUpdate(const uint32_t rotationState);
-    int32_t EffectVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
+    int32_t EffectVolumeUpdate();
     int32_t StreamVolumeUpdate(const std::string sessionIDString, const float streamVolume);
     uint32_t GetLatency(const std::string &sessionId);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
@@ -154,8 +164,10 @@ public:
     int32_t QueryEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t QueryHdiSupportedChannelInfo(uint32_t &channels, uint64_t &channelLayout);
     void LoadEffectProperties();
+    ProcessClusterOperation CheckProcessClusterInstances(const std::string &sceneType);
+    int32_t GetOutputChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
 private:
-    int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
+    int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
@@ -171,7 +183,7 @@ private:
     int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
     std::shared_ptr<AudioEffectChain> CreateAudioEffectChain(const std::string &sceneType, bool isPriorScene);
     bool CheckIfSpkDsp();
-    void CheckAndReleaseCommonEffectChain(const std::string &sceneType);
+    int32_t CheckAndReleaseCommonEffectChain(const std::string &sceneType);
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
     void UpdateCurrSceneTypeAndStreamUsageForDsp();
@@ -199,7 +211,10 @@ private:
     void InitHdiStateInner();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
-        const std::string &effectMode);
+        const std::string &effectMode, std::string &sceneType);
+    int32_t NotifyAndCreateAudioEffectChain(const std::string &sceneType);
+    void WaitAndReleaseEffectChain(const std::string &sceneType, const std::string &sceneTypeAndDeviceKey,
+        const std::string &defaultSceneTypeAndDeviceKey, int32_t ret);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> effectChainToEffectsMap_;
@@ -238,6 +253,8 @@ private:
     uint32_t maxSessionID_ = 0;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     bool hasLoadedEffectProperties_ = false;
+    std::condition_variable cv_;
+    bool defaultEffectChainCreated_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

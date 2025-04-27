@@ -50,6 +50,7 @@ namespace AudioStandard {
 const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t MILLISECOND_PER_SECOND = 1000;
 const int32_t GET_EXTRA_PARAM_LEN = 200;
+const uint32_t AUDIO_ID = 1041;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
@@ -89,7 +90,7 @@ private:
 class AudioXCollie {
 public:
     AudioXCollie(const std::string &tag, uint32_t timeoutSeconds,
-        std::function<void(void *)> func = nullptr, void *arg = nullptr, uint32_t flag = 1);
+        std::function<void(void *)> func = nullptr, void *arg = nullptr, uint32_t flag = 0);
     ~AudioXCollie();
     void CancelXCollieTimer();
 private:
@@ -216,6 +217,8 @@ bool StringConverterFloat(const std::string &str, float &result);
 bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>
 bool GetSysPara(const char *key, T &value);
+
+int32_t GetEngineFlag();
 
 enum AudioDumpFileType {
     AUDIO_APP = 0,
@@ -345,6 +348,14 @@ T *ObjectRefMap<T>::GetPtr()
     return obj_;
 }
 
+template <typename Key, typename T>
+auto SafeGetMap(const std::unordered_map<Key, std::shared_ptr<T>>& map, Key key)
+    -> std::shared_ptr<T>
+{
+    auto it = map.find(key);
+    return (it != map.end() && it->second) ? it->second : nullptr;
+}
+
 std::string GetTime();
 
 int32_t GetFormatByteSize(int32_t format);
@@ -447,6 +458,74 @@ bool CasWithCompare(std::atomic<T> &atomicVar, T newValue, Compare compare)
     return true;
 }
 
+template <typename T>
+class FixedSizeList {
+public:
+    FixedSizeList(size_t size) : maxSize_(size), currentSize_(0), index_(0)
+    {
+        data_.resize(size);
+    }
+
+    void Add(T value)
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        data_[index_] = value;
+        index_ = (index_ + 1) % maxSize_;
+        if (currentSize_ < maxSize_) {
+            ++currentSize_;
+        }
+    }
+
+    std::optional<T> FindIf(const std::function<bool(const T&)>& predicate)
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        for (size_t i = 0; i < currentSize_; ++i) {
+            if (predicate(data_[i])) {
+                T result = data_[i];
+                RemoveAt(i);
+                return result;
+            }
+        }
+        return std::nullopt;
+    }
+
+    void Clear()
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        data_.clear();
+        data_.resize(maxSize_);
+        currentSize_ = 0;
+        index_ = 0;
+    }
+
+    std::vector<T> GetData()
+    {
+        std::vector<T> dataInfo;
+        for (size_t i = 0; i < currentSize_; ++i) {
+            dataInfo.push_back(data_[i]);
+        }
+        return dataInfo;
+    }
+
+private:
+    void RemoveAt(size_t position)
+    {
+        if (position < currentSize_) {
+            for (size_t i = position; i < currentSize_ - 1; ++i) {
+                data_[i] = data_[i + 1];
+            }
+            --currentSize_;
+            index_ = (index_ - 1 + maxSize_) % maxSize_;
+        }
+    }
+
+    std::vector<T> data_;
+    size_t maxSize_;
+    size_t currentSize_;
+    size_t index_;
+    mutable std::mutex mtx_;  // mutable to allow const methods to lock the mutex
+};
+
 enum AudioHdiUniqueIDBase : uint32_t {
     // 0-4 is reserved for other modules
     AUDIO_HDI_RENDER_ID_BASE = 5,
@@ -463,6 +542,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_MIC_REF = 7,
     HDI_CAPTURE_OFFSET_WAKEUP = 8,
     HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
+    HDI_CAPTURE_OFFSET_ACCESSORY = 10,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -478,11 +558,14 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_DP = 10,
     HDI_RENDER_OFFSET_USB = 11,
     HDI_RENDER_OFFSET_VOIP_FAST = 12,
+    HDI_RENDER_OFFSET_EAC3 = 13,
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 
 void CloseFd(int fd);
+
+int32_t CheckSupportedParams(const AudioStreamInfo &info);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

@@ -34,6 +34,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const int ARGS_ZERO = 0;
 const int ARGS_ONE = 1;
 const int ARGS_TWO = 2;
 const int ARGS_THREE = 3;
@@ -116,6 +117,7 @@ public:
     static napi_status SetRendererInfo(const napi_env &env, const AudioRendererInfo &rendererInfo, napi_value &result);
     static napi_status GetStreamInfo(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in);
     static napi_status SetStreamInfo(const napi_env &env, const AudioStreamInfo &streamInfo, napi_value &result);
+    static napi_status SetTimeStampInfo(const napi_env &env, const Timestamp &timestamp, napi_value &result);
     static napi_status SetValueInt32Element(const napi_env &env, const std::string &fieldStr,
         const std::vector<int32_t> &values, napi_value &result);
     static napi_status SetDeviceDescriptor(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,

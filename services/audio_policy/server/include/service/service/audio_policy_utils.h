@@ -33,6 +33,7 @@
 #include "audio_stream_collector.h"
 
 #include "audio_a2dp_offload_flag.h"
+#include "audio_policy_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -51,13 +52,15 @@ public:
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
     void SetBtConnecting(bool flag);
-    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        const int32_t uid = INVALID_UID, const std::string caller = "");
     void ClearScoDeviceSuspendState(std::string macAddress = "");
     int64_t GetCurrentTimeMS();
     std::string GetNewSinkPortName(DeviceType deviceType);
     std::string GetSinkPortName(DeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
     string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat);
-    std::string GetSinkName(const AudioDeviceDescriptor& desc, int32_t sessionId);
+    std::string GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId);
+    std::string GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId);
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
     std::string GetSourcePortName(DeviceType deviceType);
     void UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
@@ -77,11 +80,16 @@ public:
     PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);
 
     int32_t UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    std::string GetOutputDeviceClassBySinkPortName(std::string sinkPortName);
+    std::string GetInputDeviceClassBySourcePortName(std::string sourcePortName);
+    void SetScoExcluded(bool scoExcluded);
+    bool GetScoExcluded();
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
+        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
+        audioConfigManager_(AudioPolicyConfigManager::GetInstance()) {}
     ~AudioPolicyUtils() {}
     int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
 public:
@@ -89,11 +97,13 @@ public:
     static std::map<std::string, ClassType> portStrToEnum;
 private:
     bool isBTReconnecting_ = false;
+    bool isScoExcluded_ = false;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioStreamCollector& streamCollector_;
     AudioStateManager &audioStateManager_;
     AudioDeviceManager &audioDeviceManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
+    AudioPolicyConfigManager& audioConfigManager_;
 };
 
 }

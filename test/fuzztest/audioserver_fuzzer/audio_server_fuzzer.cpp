@@ -17,7 +17,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "i_audio_renderer_sink.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
@@ -92,25 +91,7 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     AudioParamKey key = *reinterpret_cast<const AudioParamKey *>(rawData);
     std::string condition(reinterpret_cast<const char*>(rawData), size - 1);
     std::string value(reinterpret_cast<const char*>(rawData), size - 1);
-    AudioServerPtr->OnAudioSinkParamChange(netWorkId, key, condition, value);
-}
-
-void AudioServerCaptureSilentlyFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE),
-        data, reply, option);
+    AudioServerPtr->OnRenderSinkParamChange(netWorkId, key, condition, value);
 }
 
 float Convert2Float(const uint8_t *ptr)
@@ -519,7 +500,6 @@ void AudioServerCheckHibernateStateTest(const uint8_t *rawData, size_t size)
 
 OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerFuzzTest,
-    OHOS::AudioStandard::AudioServerCaptureSilentlyFuzzTest,
     OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
     OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest,
     OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest,

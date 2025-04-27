@@ -20,6 +20,7 @@
 #include "native_audiostream_base.h"
 #include "audio_interrupt_info.h"
 #include "OHAudioRenderer.h"
+#include "OHAudioCapturer.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,6 +42,7 @@ public:
     OH_AudioStream_Result SetChannelLayout(AudioChannelLayout channelLayout);
 
     OH_AudioStream_Result SetRendererInfo(StreamUsage usage);
+    OH_AudioStream_Result SetAudioVolumeMode(AudioVolumeMode volumeMode);
     OH_AudioStream_Result SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void *userData);
     OH_AudioStream_Result SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
     void *userData);
@@ -49,10 +51,21 @@ public:
         void *userData);
     OH_AudioStream_Result SetRendererWriteDataCallback(OH_AudioRenderer_OnWriteDataCallback callback,
         void* userData);
+    OH_AudioStream_Result SetRendererInterruptEventCallback(OH_AudioRenderer_OnInterruptCallback callback,
+        void* userData);
+    OH_AudioStream_Result SetRendererErrorCallback(OH_AudioRenderer_OnErrorCallback callback, void* userData);
 
     OH_AudioStream_Result SetSourceType(SourceType type);
     OH_AudioStream_Result SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void *userData);
     OH_AudioStream_Result SetInterruptMode(InterruptMode mode);
+    OH_AudioStream_Result SetCapturerReadDataCallback(OH_AudioCapturer_OnReadDataCallback callback,
+        void* userData);
+    OH_AudioStream_Result SetCapturerStreamEventCallback(OH_AudioCapturer_OnDeviceChangeCallback callback,
+        void* userData);
+    OH_AudioStream_Result SetCapturerInterruptCallback(
+        OH_AudioCapturer_OnInterruptCallback callback, void *userData);
+    OH_AudioStream_Result SetCapturerErrorCallback(OH_AudioCapturer_OnErrorCallback callback,
+        void *userData);
 
 private:
     int32_t streamType_;
@@ -69,21 +82,35 @@ private:
     // renderer params
     StreamUsage usage_ = STREAM_USAGE_UNKNOWN;
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
-
+    AudioVolumeMode volumeMode_ = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;
 
-    OH_AudioCapturer_Callbacks capturerCallbacks_ = {
-        NULL
-    };
     WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
+    ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
+    StreamEventCallbackType streamEventCallbackType_ = STREAM_EVENT_CALLBACK_WITHOUT_RESULT;
+    InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
+    ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
     RendererCallback rendererCallbacks_ = {
         {nullptr},
 
         nullptr,
 
+        nullptr,
+    };
+
+    CapturerCallback capturerCallbacks_ = {
+        {nullptr},
+
+        nullptr,
+
+        nullptr,
+
+        nullptr,
+
         nullptr
     };
+
     void *userData_ = nullptr;
 
     OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;

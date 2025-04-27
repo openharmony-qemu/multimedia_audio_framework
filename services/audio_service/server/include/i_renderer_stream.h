@@ -24,6 +24,12 @@ namespace AudioStandard {
 class IWriteCallback {
 public:
     virtual int32_t OnWriteData(size_t length) = 0;
+    virtual int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) = 0;
+};
+
+class IStreamCallback {
+public:
+    virtual int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) = 0;
 };
 
 class IRendererStream : public IStream {
@@ -58,6 +64,11 @@ public:
     virtual AudioProcessConfig GetAudioProcessConfig() const noexcept = 0;
     virtual int32_t SetClientVolume(float clientVolume) = 0;
     virtual void BlockStream() noexcept = 0;
+};
+
+struct CaptureInfo {
+    std::atomic<bool> isInnerCapEnabled = false;
+    std::shared_ptr<IRendererStream> dupStream = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -37,6 +37,11 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+constexpr int32_t INVALID_PID = -1;
+constexpr int32_t CLEAR_PID = 0;
+constexpr int32_t SYSTEM_PID = 1;
+constexpr int32_t CLEAR_UID = 0;
+constexpr int32_t SYSTEM_UID = 1;
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
@@ -69,8 +74,7 @@ const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
-
-const char* INNER_CAPTURER_SINK = "InnerCapturerSink";
+const char* INNER_CAPTURER_SINK = "InnerCapturerSink_";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 }
@@ -229,6 +233,7 @@ enum AudioErrors {
     ERROR_ILLEGAL_STATE = 6800103,
     ERROR_UNSUPPORTED   = 6800104,
     ERROR_TIMEOUT       = 6800105,
+    ERROR_UNSUPPORTED_FORMAT = 6800106,
     /**
      * Audio specific errors.
      */
@@ -284,6 +289,8 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
+    CALLBACK_APP_VOLUME_CHANGE,
+    CALLBACK_SELF_APP_VOLUME_CHANGE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_HEAD_TRACKING_ENABLED_CHANGE,
@@ -291,7 +298,23 @@ enum CallbackChange : int32_t {
     CALLBACK_DEVICE_CHANGE_WITH_INFO,
     CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE,
     CALLBACK_NN_STATE_CHANGE,
+    CALLBACK_SET_AUDIO_SCENE_CHANGE,
+    CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
+    CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_MAX,
+};
+
+enum AdjustStreamVolume {
+    STREAM_VOLUME_INFO = 0,
+    LOW_POWER_VOLUME_INFO,
+    DUCK_VOLUME_INFO,
+};
+
+struct AdjustStreamVolumeInfo {
+    float volume;
+    uint32_t sessionId;
+    std::string invocationTime;
 };
 
 constexpr CallbackChange CALLBACK_ENUMS[] = {
@@ -305,6 +328,8 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE,
     CALLBACK_SET_VOLUME_KEY_EVENT,
     CALLBACK_SET_DEVICE_CHANGE,
+    CALLBACK_SET_VOLUME_KEY_EVENT,
+    CALLBACK_SET_DEVICE_CHANGE,
     CALLBACK_SET_RINGER_MODE,
     CALLBACK_SET_MIC_STATE_CHANGE,
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE,
@@ -313,6 +338,10 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_DEVICE_CHANGE_WITH_INFO,
     CALLBACK_HEAD_TRACKING_DATA_REQUESTED_CHANGE,
     CALLBACK_NN_STATE_CHANGE,
+    CALLBACK_SET_AUDIO_SCENE_CHANGE,
+    CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
+    CALLBACK_FORMAT_UNSUPPORTED_ERROR,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -324,6 +353,25 @@ struct VolumeEvent {
     bool updateUi;
     int32_t volumeGroupId;
     std::string networkId;
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(volumeType))
+            && parcel.WriteInt32(volume)
+            && parcel.WriteBool(updateUi)
+            && parcel.WriteInt32(volumeGroupId)
+            && parcel.WriteString(networkId)
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+        volume = parcel.ReadInt32();
+        updateUi = parcel.ReadInt32();
+        volumeGroupId = parcel.ReadInt32();
+        networkId = parcel.ReadString();
+        volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+    }
 };
 
 struct AudioParameters {
@@ -335,12 +383,13 @@ struct AudioParameters {
     StreamUsage usage;
     DeviceRole deviceRole;
     DeviceType deviceType;
+    AudioVolumeMode mode;
 };
 
 struct A2dpDeviceConfigInfo {
     DeviceStreamInfo streamInfo;
     bool absVolumeSupport = false;
-    int32_t volumeLevel;
+    int32_t volumeLevel = -1;
     bool mute = false;
 };
 
@@ -357,12 +406,25 @@ enum PlayerType : int32_t {
     PLAYER_TYPE_SOUND_POOL = 1000,
     PLAYER_TYPE_AV_PLAYER = 1001,
     PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
+    PLAYER_TYPE_TONE_PLAYER = 1003,
+};
+
+enum RecorderType : int32_t {
+    RECORDER_TYPE_DEFAULT = 0,
+
+    // AudioFramework internal type.
+    RECORDER_TYPE_ARKTS_AUDIO_RECORDER = 100,
+    RECORDER_TYPE_OPENSL_ES = 101,
+
+    // Indicates a type from the system internals, but not from the AudioFramework.
+    RECORDER_TYPE_AV_RECORDER = 1000,
 };
 
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     std::string sceneType = "";
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
@@ -398,7 +460,8 @@ struct AudioRendererInfo {
             && parcel.WriteBool(isOffloadAllowed)
             && parcel.WriteInt32(playerType)
             && parcel.WriteUint64(expectedPlaybackDurationBytes)
-            && parcel.WriteInt32(effectMode);
+            && parcel.WriteInt32(effectMode)
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -418,6 +481,7 @@ struct AudioRendererInfo {
         playerType = static_cast<PlayerType>(parcel.ReadInt32());
         expectedPlaybackDurationBytes = parcel.ReadUint64();
         effectMode = parcel.ReadInt32();
+        volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
     }
 };
 
@@ -431,6 +495,7 @@ public:
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
     std::string sceneType = "";
+    RecorderType recorderType = RECORDER_TYPE_DEFAULT;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -449,7 +514,8 @@ public:
             parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
             parcel.WriteUint8(encodingType) &&
             parcel.WriteUint64(channelLayout) &&
-            parcel.WriteString(sceneType);
+            parcel.WriteString(sceneType) &&
+            parcel.WriteInt32(static_cast<int32_t>(recorderType));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -461,6 +527,7 @@ public:
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
         sceneType = parcel.ReadString();
+        recorderType = static_cast<RecorderType>(parcel.ReadInt32());
     }
 };
 
@@ -590,11 +657,26 @@ struct CaptureFilterOptions {
     FilterMode usageFilterMode {FilterMode::INCLUDE};
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
+
+    bool operator ==(CaptureFilterOptions& filter)
+    {
+        std::sort(filter.usages.begin(), filter.usages.end());
+        std::sort(filter.pids.begin(), filter.pids.end());
+        std::sort(usages.begin(), usages.end());
+        std::sort(pids.begin(), pids.end());
+        return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
+            && filter.pids == pids && filter.pidFilterMode == pidFilterMode);
+    }
 };
 
 struct AudioPlaybackCaptureConfig {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
+
+    bool operator ==(AudioPlaybackCaptureConfig& filter)
+    {
+        return (filter.filterOptions == filterOptions && filter.silentCapture == silentCapture);
+    }
 };
 
 struct AudioCapturerOptions {
@@ -644,6 +726,22 @@ struct SinkInput {
     std::string sinkName; // sink name
     int32_t statusMark; // mark the router status
     uint64_t startTime; // when this router is created
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(streamId) &&
+               parcel.WriteInt32(static_cast<int32_t>(streamType)) &&
+               parcel.WriteInt32(uid) &&
+               parcel.WriteInt32(pid) &&
+               parcel.WriteUint32(paStreamId);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        streamId = parcel.ReadInt32();
+        streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        uid = parcel.ReadInt32();
+        pid = parcel.ReadInt32();
+        paStreamId = parcel.ReadUint32();
+    }
 };
 
 struct SourceOutput {
@@ -791,6 +889,8 @@ struct AudioProcessConfig {
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
 
     InnerCapMode innerCapMode {InnerCapMode::INVALID_CAP_MODE};
+
+    int32_t innerCapId = 0;
 };
 
 struct Volume {
@@ -875,10 +975,12 @@ enum AudioPin {
     AUDIO_PIN_OUT_HDMI = 1 << 3, // HDMI output pin
     AUDIO_PIN_OUT_USB = 1 << 4, // USB output pin
     AUDIO_PIN_OUT_USB_EXT = 1 << 5, // Extended USB output pin
+    AUDIO_PIN_OUT_EARPIECE = 1 << 5 | 1 << 4, // Earpiece output pin
     AUDIO_PIN_OUT_BLUETOOTH_SCO = 1 << 6, // Bluetooth SCO output pin
     AUDIO_PIN_OUT_DAUDIO_DEFAULT = 1 << 7, // Daudio default output pin
     AUDIO_PIN_OUT_HEADPHONE = 1 << 8, // Wired headphone output pin
     AUDIO_PIN_OUT_USB_HEADSET = 1 << 9,  // Arm usb output pin
+    AUDIO_PIN_OUT_BLUETOOTH_A2DP = 1 << 10,  // Bluetooth A2dp output pin
     AUDIO_PIN_OUT_DP = 1 << 11,
     AUDIO_PIN_IN_MIC = 1 << 27 | 1 << 0, // Microphone input pin
     AUDIO_PIN_IN_HS_MIC = 1 << 27 | 1 << 1, // Wired headset microphone pin for input
@@ -887,6 +989,8 @@ enum AudioPin {
     AUDIO_PIN_IN_BLUETOOTH_SCO_HEADSET = 1 << 27 | 1 << 4, // Bluetooth SCO headset input pin
     AUDIO_PIN_IN_DAUDIO_DEFAULT = 1 << 27 | 1 << 5, // Daudio default input pin
     AUDIO_PIN_IN_USB_HEADSET = 1 << 27 | 1 << 6,  // Arm usb input pin
+    AUDIO_PIN_IN_PENCIL = 1 << 27 | 1 << 7,  // Pencil input pin
+    AUDIO_PIN_IN_UWB = 1 << 27 | 1 << 8,  // Remote control input pin
 };
 
 enum AudioParamKey {
@@ -899,6 +1003,8 @@ enum AudioParamKey {
     BT_WBS = 8,
     A2DP_OFFLOAD_STATE = 9, // for a2dp offload
     GET_DP_DEVICE_INFO = 10, // for dp sink
+    GET_PENCIL_INFO = 11, // for pencil source
+    GET_UWB_INFO = 12, // for remote control source
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,
@@ -932,6 +1038,17 @@ enum AudioPermissionState {
 class AudioRendererPolicyServiceDiedCallback {
 public:
     virtual ~AudioRendererPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 10
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
+class AudioCapturerPolicyServiceDiedCallback {
+public:
+    virtual ~AudioCapturerPolicyServiceDiedCallback() = default;
 
     /**
      * Called when audio policy service died.
@@ -1021,10 +1138,10 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
     static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
         {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
-        {DEVICE_TYPE_DP, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
-        {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
-        {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
-        {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+        {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
+        {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+        {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
     };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
@@ -1120,6 +1237,59 @@ enum WriteDataCallbackType {
     WRITE_DATA_CALLBACK_WITH_RESULT = 1
 };
 
+enum ReadDataCallbackType {
+    /**
+     * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnReadData
+     * @since 12
+     */
+    READ_DATA_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioCapturer_OnReadDataCallback.
+     * @since 12
+     */
+    READ_DATA_CALLBACK_WITH_RESULT = 1
+};
+
+enum StreamEventCallbackType {
+    /**
+     * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnStreamEvent
+     * @since 12
+     */
+    STREAM_EVENT_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioCapturer_OnStreamEventCallback.
+     * @since 12
+     */
+    STREAM_EVENT_CALLBACK_WITH_RESULT = 1
+};
+
+enum InterruptEventCallbackType {
+    /**
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnInterruptEvent
+     * @since 12
+     */
+    INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioRenderer_OnInterruptEventCallback.
+     * @since 12
+     */
+    INTERRUPT_EVENT_CALLBACK_WITH_RESULT = 1
+};
+
+enum ErrorCallbackType {
+    /**
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnError
+     *
+     * @since 12
+     */
+    ERROR_CALLBACK_WITHOUT_RESULT = 0,
+    /**
+     * Use OH_AudioRenderer_OnErrorCallback.
+     * @since 12
+     */
+    ERROR_CALLBACK_WITH_RESULT = 1
+};
+
 enum PolicyType {
     EDM_POLICY_TYPE = 0,
     PRIVACY_POLCIY_TYPE = 1,
@@ -1145,6 +1315,65 @@ enum SuscribeResultCode {
      */
     ERR_MODE_SUBSCRIBE,
 };
+
+enum RendererStage {
+    RENDERER_STAGE_UNKNOWN = 0,
+    RENDERER_STAGE_START_OK = 0x10,
+    RENDERER_STAGE_START_FAIL = 0x11,
+    RENDERER_STAGE_PAUSE_OK = 0x20,
+    RENDERER_STAGE_STOP_OK = 0x30,
+    RENDERER_STAGE_STANDBY_BEGIN = 0x40,
+    RENDERER_STAGE_STANDBY_END = 0x41,
+    RENDERER_STAGE_SET_VOLUME_ZERO = 0x50,
+    RENDERER_STAGE_SET_VOLUME_NONZERO = 0x51,
+};
+
+enum CapturerStage {
+    CAPTURER_STAGE_START_OK = 0x10,
+    CAPTURER_STAGE_START_FAIL = 0x11,
+    CAPTURER_STAGE_PAUSE_OK = 0x20,
+    CAPTURER_STAGE_STOP_OK = 0x30,
+};
+
+
+enum RestoreStatus : int32_t {
+    NO_NEED_FOR_RESTORE = 0,
+    NEED_RESTORE,
+    RESTORING,
+    RESTORE_ERROR,
+};
+
+enum RestoreReason : int32_t {
+    DEFAULT_REASON = 0,
+    DEVICE_CHANGED,
+    STREAM_CONCEDED,
+    STREAM_SPLIT,
+    SERVER_DIED,
+};
+
+enum CheckPosTimeRes : int32_t {
+    CHECK_SUCCESS = 0,
+    CHECK_FAILED,
+    NEED_MODIFY,
+};
+
+struct RestoreInfo {
+    RestoreReason restoreReason = DEFAULT_REASON;
+    int32_t deviceChangeReason = 0;
+    int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
+    uint32_t routeFlag = 0;
+};
+
+/**
+ * Enumerates the method sources that trigger priority boosting.
+ * Used to distinguish between different triggering entry points.
+ */
+enum BoostTriggerMethod : uint32_t {
+    METHOD_START = 0,
+    METHOD_WRITE_OR_READ,
+    METHOD_MAX
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

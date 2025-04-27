@@ -398,16 +398,16 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_008, TestSize.Level1
     // Test cases where sourceType is directly cast to AudioStreamType
     EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_RECOGNITION),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VOICE_RECOGNITION));
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_PLAYBACK_CAPTURE),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_PLAYBACK_CAPTURE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_PLAYBACK_CAPTURE));
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_REMOTE_CAST),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_REMOTE_CAST),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_REMOTE_CAST));
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_VIRTUAL_CAPTURE),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VIRTUAL_CAPTURE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VIRTUAL_CAPTURE));
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_MESSAGE),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_VOICE_MESSAGE),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_VOICE_MESSAGE));
     // Test an invalid source type (should fall into default case)
-    EXPECT_NE(static_cast<AudioStreamType>(SOURCE_TYPE_INVALID),
+    EXPECT_EQ(static_cast<AudioStreamType>(SOURCE_TYPE_INVALID),
               collector.GetStreamTypeFromSourceType(SOURCE_TYPE_INVALID));
 }
 
@@ -974,6 +974,13 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_033, TestSize.Level1
     AudioStreamChangeInfo streamChangeInfo;
     streamChangeInfo.audioRendererChangeInfo.clientUID = 1001;
     streamChangeInfo.audioRendererChangeInfo.sessionId = 2001;
+    streamChangeInfo.audioCapturerChangeInfo.clientUID = 3001;
+    streamChangeInfo.audioCapturerChangeInfo.sessionId = 4001;
+
+    shared_ptr<AudioCapturerChangeInfo> audioCapturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    audioCapturerChangeInfo->clientUID = 3001;
+    audioCapturerChangeInfo->sessionId = 4001;
+    audioStreamCollector.audioCapturerChangeInfos_.push_back(audioCapturerChangeInfo);
 
     int32_t ret = audioStreamCollector.UpdateTrackerInternal(mode, streamChangeInfo);
     EXPECT_EQ(ERROR, ret);
@@ -1212,6 +1219,447 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_044, TestSize.Level1
 
     bool ret = collector.HasVoipRendererStream();
     EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_020
+* @tc.desc  : Test UpdateCapturerStreamInternal.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_045, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioCapturerChangeInfo.clientUID = 1001;
+    streamChangeInfo.audioCapturerChangeInfo.sessionId = 2001;
+    streamChangeInfo.audioCapturerChangeInfo.prerunningState = false;
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+
+    int32_t ret = collector.UpdateCapturerStreamInternal(streamChangeInfo);
+    EXPECT_EQ(ERROR, ret);
+
+    capturerChangeInfo->clientUID = 1001;
+    capturerChangeInfo->sessionId = 2001;
+    capturerChangeInfo->prerunningState = false;
+    collector.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    ret = collector.UpdateCapturerStreamInternal(streamChangeInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : IsMediaPlaying_Test01
+* @tc.number: AudioStreamCollectorUnitTest_IsMediaPlaying_Test01
+* @tc.desc  : Test IsMediaPlaying function when there is at least one media renderer running.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, IsMediaPlaying_Test01, TestSize.Level1)
+{
+    std::unique_ptr<AudioStreamCollector> collector = std::make_unique<AudioStreamCollector>();
+    AudioRendererInfo rendererInfo1 = {
+        .contentType = CONTENT_TYPE_MUSIC, .streamUsage = STREAM_USAGE_MEDIA
+    };
+    std::unique_ptr<AudioRendererChangeInfo> info1 = std::make_unique<AudioRendererChangeInfo>();
+    info1->sessionId = 1;
+    info1->rendererState = RENDERER_PAUSED;
+    info1->rendererInfo = rendererInfo1;
+    info1->channelCount = 2;
+    collector->audioRendererChangeInfos_.push_back(std::move(info1));
+    bool result = collector->IsMediaPlaying();
+    EXPECT_FALSE(result);
+
+    AudioRendererInfo rendererInfo2 = {
+        .contentType = CONTENT_TYPE_SPEECH, .streamUsage = STREAM_USAGE_VOICE_COMMUNICATION
+    };
+    std::unique_ptr<AudioRendererChangeInfo> info2 = std::make_unique<AudioRendererChangeInfo>();
+    info2->sessionId = 2;
+    info2->rendererState = RENDERER_RUNNING;
+    info2->rendererInfo = rendererInfo2;
+    info2->channelCount = 1;
+    collector->audioRendererChangeInfos_.push_back(std::move(info2));
+    result = collector->IsMediaPlaying();
+    EXPECT_FALSE(result);
+
+    AudioRendererInfo rendererInfo3 = {
+        .contentType = CONTENT_TYPE_MOVIE, .streamUsage = STREAM_USAGE_MEDIA
+    };
+    std::unique_ptr<AudioRendererChangeInfo> info3 = std::make_unique<AudioRendererChangeInfo>();
+    info3->sessionId = 3;
+    info3->rendererState = RENDERER_RUNNING;
+    info3->rendererInfo = rendererInfo3;
+    info3->channelCount = 2;
+    collector->audioRendererChangeInfos_.push_back(std::move(info3));
+    result = collector->IsMediaPlaying();
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateRenderDeviceInfo_001
+* @tc.desc  : Test UpdateRenderDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateRendererDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    int32_t ret = collector.UpdateRendererDeviceInfo(outputDeviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateRenderDeviceInfo_001
+* @tc.desc  : Test UpdateRenderDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateCapturerDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor iutputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    captureChangeInfo->clientUID = 1001;
+    captureChangeInfo->createrUID = 1001;
+    captureChangeInfo->sessionId = 2001;
+    captureChangeInfo->inputDeviceInfo = iutputDeviceInfo;
+    collector.audioCapturerChangeInfos_.push_back(move(captureChangeInfo));
+
+    int32_t ret = collector.UpdateCapturerDeviceInfo(iutputDeviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: GetRendererStreamInfo_001
+* @tc.desc  : Test GetRendererStreamInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetRendererStreamInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioRendererChangeInfo.clientUID = 1001;
+    streamChangeInfo.audioRendererChangeInfo.sessionId = 2001;
+    AudioRendererChangeInfo rendererInfo;
+
+    EXPECT_NO_THROW(
+        collector.GetRendererStreamInfo(streamChangeInfo, rendererInfo);
+    );
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: SendCapturerInfoEvent_001
+* @tc.desc  : Test SendCapturerInfoEvent.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, SendCapturerInfoEvent_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor inputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo1 = make_shared<AudioCapturerChangeInfo>();
+    captureChangeInfo1->clientUID = 5000;
+    captureChangeInfo1->createrUID = 1001;
+    captureChangeInfo1->sessionId = 2001;
+    captureChangeInfo1->inputDeviceInfo = inputDeviceInfo;
+
+    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo2 = make_shared<AudioCapturerChangeInfo>();
+    captureChangeInfo2->clientUID = 1001;
+    captureChangeInfo2->createrUID = 1001;
+    captureChangeInfo2->sessionId = 2001;
+    captureChangeInfo2->inputDeviceInfo = inputDeviceInfo;
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    audioCapturerChangeInfos.push_back(move(captureChangeInfo1));
+    audioCapturerChangeInfos.push_back(move(captureChangeInfo2));
+
+    EXPECT_NO_THROW(
+        collector.SendCapturerInfoEvent(audioCapturerChangeInfos);
+    );
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: SendCapturerInfoEvent_002
+* @tc.desc  : Test SendCapturerInfoEvent.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, SendCapturerInfoEvent_002, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor inputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    captureChangeInfo->clientUID = 5000;
+    captureChangeInfo->createrUID = 1001;
+    captureChangeInfo->sessionId = 2001;
+    captureChangeInfo->inputDeviceInfo = inputDeviceInfo;
+    collector.audioCapturerChangeInfos_.push_back(captureChangeInfo);
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    audioCapturerChangeInfos.push_back(captureChangeInfo);
+
+    EXPECT_NO_THROW(
+        collector.SendCapturerInfoEvent(audioCapturerChangeInfos);
+    );
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: IsTransparentCapture_001
+* @tc.desc  : Test IsTransparentCapture.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, IsTransparentCapture_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+
+    uint32_t clientUid = 5000;
+    bool ret = collector.IsTransparentCapture(clientUid);
+    EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: ResetRingerModeMute_001
+* @tc.desc  : Test ResetRingerModeMute.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, ResetRingerModeMute_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+
+    RendererState rendererState = RENDERER_PAUSED;
+    StreamUsage streamUsage = STREAM_USAGE_ALARM;
+    EXPECT_NO_THROW(
+        collector.ResetRingerModeMute(rendererState, streamUsage);
+    );
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateRendererDeviceInfo_002
+* @tc.desc  : Test UpdateRendererDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateRendererDeviceInfo_002, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    int32_t clientUID = 1001;
+    int32_t sessionId = 2001;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    outputDeviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+
+    int32_t ret = collector.UpdateRendererDeviceInfo(clientUID, sessionId, outputDeviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateCapturerDeviceInfo_002
+* @tc.desc  : Test UpdateCapturerDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateCapturerDeviceInfo_002, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor inputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    captureChangeInfo->clientUID = 1001;
+    captureChangeInfo->createrUID = 1001;
+    captureChangeInfo->sessionId = 2001;
+    captureChangeInfo->inputDeviceInfo = inputDeviceInfo;
+    collector.audioCapturerChangeInfos_.push_back(move(captureChangeInfo));
+
+    int32_t clientUID = 1001;
+    int32_t sessionId = 2001;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    outputDeviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
+
+    int32_t ret = collector.UpdateCapturerDeviceInfo(clientUID, sessionId, outputDeviceInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateAppVolume_001
+* @tc.desc  : Test UpdateAppVolume.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateAppVolume_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    int32_t appUid = 1001;
+    int32_t volume = 7;
+    EXPECT_NO_THROW(
+        collector.UpdateAppVolume(appUid, volume);
+    );
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: GetSessionIdsOnRemoteDeviceByStreamUsage_001
+* @tc.desc  : Test GetSessionIdsOnRemoteDeviceByStreamUsage.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsOnRemoteDeviceByStreamUsage_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    AudioDeviceDescriptor outputDeviceInfo(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
+    rendererChangeInfo->rendererInfo.streamUsage = streamUsage;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    std::set<int32_t> sessionIdSet = collector.GetSessionIdsOnRemoteDeviceByStreamUsage(streamUsage);
+    EXPECT_EQ(sessionIdSet.size(), 1);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: GetSessionIdsOnRemoteDeviceBySourceType_001
+* @tc.desc  : Test GetSessionIdsOnRemoteDeviceBySourceType.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsOnRemoteDeviceBySourceType_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    AudioDeviceDescriptor inputDeviceInfo(DEVICE_TYPE_MIC, INPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
+    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    captureChangeInfo->clientUID = 1001;
+    captureChangeInfo->createrUID = 1001;
+    captureChangeInfo->sessionId = 2001;
+    captureChangeInfo->inputDeviceInfo = inputDeviceInfo;
+    captureChangeInfo->capturerInfo.sourceType = sourceType;
+    collector.audioCapturerChangeInfos_.push_back(move(captureChangeInfo));
+
+    std::set<int32_t> sessionIdSet = collector.GetSessionIdsOnRemoteDeviceBySourceType(sourceType);
+    EXPECT_EQ(sessionIdSet.size(), 1);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: GetSessionIdsOnRemoteDeviceByDeviceType_001
+* @tc.desc  : Test GetSessionIdsOnRemoteDeviceByDeviceType.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsOnRemoteDeviceByDeviceType_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioDeviceDescriptor outputDeviceInfo(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    std::set<int32_t> sessionIdSet = collector.GetSessionIdsOnRemoteDeviceByDeviceType(deviceType);
+    EXPECT_EQ(sessionIdSet.size(), 1);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: GetSessionIdsPauseOnRemoteDeviceByRemote_001
+* @tc.desc  : Test GetSessionIdsPauseOnRemoteDeviceByRemote.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsPauseOnRemoteDeviceByRemote_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    InterruptHint hintType = INTERRUPT_HINT_NONE;
+    AudioDeviceDescriptor outputDeviceInfo(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
+    rendererChangeInfo->rendererState == RendererState::RENDERER_RUNNING;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    int32_t ret = collector.GetSessionIdsPauseOnRemoteDeviceByRemote(hintType);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: GetSessionIdsPauseOnRemoteDeviceByRemote_002
+* @tc.desc  : Test GetSessionIdsPauseOnRemoteDeviceByRemote.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsPauseOnRemoteDeviceByRemote_002, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    InterruptHint hintType = INTERRUPT_HINT_NONE;
+    AudioDeviceDescriptor outputDeviceInfo(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
+    rendererChangeInfo->rendererState = RendererState::RENDERER_RUNNING;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    int32_t ret = collector.GetSessionIdsPauseOnRemoteDeviceByRemote(hintType);
+    EXPECT_EQ(ret, 2001);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: RegisteredCapturerTrackerClientDied_001
+* @tc.desc  : Test RegisteredCapturerTrackerClientDied.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, RegisteredCapturerTrackerClientDied_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor inputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    captureChangeInfo->clientUID = 1001;
+    captureChangeInfo->createrUID = 1001;
+    captureChangeInfo->sessionId = 2001;
+    captureChangeInfo->inputDeviceInfo = inputDeviceInfo;
+    collector.audioCapturerChangeInfos_.push_back(move(captureChangeInfo));
+
+    int32_t uid = 1001;
+    EXPECT_NO_THROW(
+        collector.RegisteredCapturerTrackerClientDied(uid);
+    );
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: ResumeStreamState_001
+* @tc.desc  : Test ResumeStreamState.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, ResumeStreamState_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    int32_t ret = collector.ResumeStreamState();
+    EXPECT_EQ(ret, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

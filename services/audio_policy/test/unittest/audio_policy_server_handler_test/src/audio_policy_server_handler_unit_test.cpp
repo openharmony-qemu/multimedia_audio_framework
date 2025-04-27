@@ -1144,5 +1144,154 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SendInterruptEventWithClientIdCallback_
     bool ret = audioPolicyServerHandler_->SendInterruptEventWithClientIdCallback(interruptEvent, clientPid);
     EXPECT_EQ(ret, true);
 }
+/**
+ * @tc.name  : AudioPolicyServerHandlerUnitTest_001
+ * @tc.number: AudioPolicyServerHandlerUnitTest_001
+ * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 1;
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+}
+/**
+ * @tc.name  : AudioPolicyServerHandlerUnitTest_002
+ * @tc.number: AudioPolicyServerHandlerUnitTest_002
+ * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_002, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    CastType type = CAST_TYPE_NULL;
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioPolicyServerHandler_->SendDistributedRoutingRoleChange(descriptor, CAST_TYPE_NULL);
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+}
+/**
+ * @tc.name  : AudioPolicyServerHandlerUnitTest_003
+ * @tc.number: AudioPolicyServerHandlerUnitTest_003
+ * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_003, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 1;
+    uint64_t sessionId = 0;
+    AudioDeviceDescriptor outputDeviceInfo;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    bool ret = audioPolicyServerHandler_->SendRendererDeviceChangeEvent(clientPid,
+        sessionId, outputDeviceInfo, reason);
+    EXPECT_NE(ret, false);
+}
+/**
+ * @tc.name  : AudioPolicyServerHandlerUnitTest_004
+ * @tc.number: AudioPolicyServerHandlerUnitTest_004
+ * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_004, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 1;
+    uint64_t sessionId = 0;
+    int32_t streamFlag = 0;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    bool ret = audioPolicyServerHandler_->SendRecreateRendererStreamEvent(clientPid,
+        sessionId, streamFlag, reason);
+    EXPECT_NE(ret, false);
+}
+/**
+ * @tc.name  : AudioPolicyServerHandlerUnitTest_005
+ * @tc.number: AudioPolicyServerHandlerUnitTest_005
+ * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_005, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 1;
+    uint64_t sessionId = 0;
+    int32_t streamFlag = 0;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    bool ret = audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(clientPid,
+        sessionId, streamFlag, reason);
+    EXPECT_NE(ret, false);
+}
+/**
+ * @tc.name  : AudioPolicyServerHandlerUnitTest_006
+ * @tc.number: AudioPolicyServerHandlerUnitTest_006
+ * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_006, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    std::unordered_map<std::string, bool> changeInfo;
+    bool ret = audioPolicyServerHandler_->SendHeadTrackingDeviceChangeEvent(changeInfo);
+    EXPECT_NE(ret, false);
+}
+/**
+ * @tc.name  : AudioPolicyServerHandlerUnitTest_007
+ * @tc.number: AudioPolicyServerHandlerUnitTest_007
+ * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_007, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    bool ret = audioPolicyServerHandler_->SendPipeStreamCleanEvent(PIPE_TYPE_UNKNOWN);
+    EXPECT_NE(ret, false);
+}
+/**
+ * @tc.name  : AudioPolicyServerHandlerUnitTest_008
+ * @tc.number: AudioPolicyServerHandlerUnitTest_008
+ * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_008, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    uint64_t sessionId = 0;
+    bool ret = audioPolicyServerHandler_->SendConcurrencyEventWithSessionIDCallback(sessionId);
+    EXPECT_NE(ret, false);
+}
+
+/**
+ * @tc.name  : SendFormatUnsupportedErrorEvent_001
+ * @tc.number: SendFormatUnsupportedErrorEvent_001
+ * @tc.desc  : Test SendFormatUnsupportedErrorEvent method when send FormatUnsupportedError.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendFormatUnsupportedErrorEvent_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    AudioErrors errorCode = ERROR_UNSUPPORTED_FORMAT;
+    bool ret = audioPolicyServerHandler_->SendFormatUnsupportedErrorEvent(errorCode);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : HandleFormatUnsupportedErrorEvent_001
+ * @tc.number: HandleFormatUnsupportedErrorEvent_001
+ * @tc.desc  : Test HandleFormatUnsupportedErrorEvent function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleFormatUnsupportedErrorEvent_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 1;
+    sptr<AudioPolicyClientStubImpl> cb;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::FORMAT_UNSUPPORTED_ERROR, 0);
+    audioPolicyServerHandler_->HandleFormatUnsupportedErrorEvent(event);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

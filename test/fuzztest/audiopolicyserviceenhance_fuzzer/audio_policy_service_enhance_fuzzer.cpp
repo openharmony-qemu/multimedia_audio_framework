@@ -71,22 +71,22 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-AudioPolicyServer* GetServerPtr()
+sptr<AudioPolicyServer> GetServerPtr()
 {
-    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit) {
-        server.OnStart();
-        server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-        server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
         g_hasServerInit = true;
     }
-    return &server;
+    return server;
 }
 
 void AudioFuzzTestGetPermission()
@@ -199,19 +199,11 @@ void AudioPolicyServiceEnhanceThreeFuzzTest()
     GetServerPtr()->audioPolicyService_.SetNormalVoipFlag(true);
 
     std::vector<AudioPin> audioPin = {
-        AUDIO_PIN_NONE,
-        AUDIO_PIN_OUT_SPEAKER,
-        AUDIO_PIN_OUT_HEADSET,
-        AUDIO_PIN_OUT_LINEOUT,
-        AUDIO_PIN_OUT_HDMI,
-        AUDIO_PIN_OUT_USB,
-        AUDIO_PIN_OUT_USB_EXT,
-        AUDIO_PIN_OUT_DAUDIO_DEFAULT,
-        AUDIO_PIN_IN_MIC,
-        AUDIO_PIN_IN_HS_MIC,
-        AUDIO_PIN_IN_LINEIN,
-        AUDIO_PIN_IN_USB_EXT,
-        AUDIO_PIN_IN_DAUDIO_DEFAULT,
+        AUDIO_PIN_NONE, AUDIO_PIN_OUT_SPEAKER, AUDIO_PIN_OUT_HEADSET,
+        AUDIO_PIN_OUT_LINEOUT, AUDIO_PIN_OUT_HDMI, AUDIO_PIN_OUT_USB,
+        AUDIO_PIN_OUT_USB_EXT, AUDIO_PIN_OUT_DAUDIO_DEFAULT, AUDIO_PIN_IN_MIC,
+        AUDIO_PIN_IN_HS_MIC, AUDIO_PIN_IN_LINEIN, AUDIO_PIN_IN_PENCIL,
+        AUDIO_PIN_IN_UWB, AUDIO_PIN_IN_USB_EXT, AUDIO_PIN_IN_DAUDIO_DEFAULT,
         AUDIO_PIN_OUT_DP,
     };
     uint32_t audioPinInt = GetData<uint32_t>() % audioPin.size();
@@ -255,6 +247,8 @@ void AudioPolicyServiceEnhanceFourFuzzTest()
         AUDIO_PIN_OUT_USB_EXT,
         AUDIO_PIN_OUT_USB_HEADSET,
         AUDIO_PIN_IN_USB_HEADSET,
+        AUDIO_PIN_IN_PENCIL,
+        AUDIO_PIN_IN_UWB,
         AUDIO_PIN_IN_MIC,
         AUDIO_PIN_IN_DAUDIO_DEFAULT,
         AUDIO_PIN_IN_HS_MIC,
@@ -300,7 +294,8 @@ void AudioPolicyServiceEnhanceFiveFuzzTest()
     uint64_t sessionID = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(sessionID);
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemainingSource();
-    AudioDeviceDescriptor inputDevice, outputDevice;
+    AudioDeviceDescriptor inputDevice;
+    AudioDeviceDescriptor outputDevice;
     inputDevice.deviceType_ = DEVICE_TYPE_DEFAULT;
     outputDevice.deviceType_ = deviceType;
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.ReloadSourceForDeviceChange(
@@ -414,7 +409,7 @@ void AudioPolicyServiceEnhanceNineFuzzTest()
     GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleDistributedDeviceUpdate(statusInfo, descForCb);
     GetServerPtr()->audioPolicyDump_.GetEffectManagerInfo();
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
-    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
     std::unordered_map<std::string, std::string> volumeGroupData;
     GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVolumeGroupData(volumeGroupData);
@@ -465,8 +460,7 @@ void AudioPolicyServiceEnhanceTenFuzzTest()
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.CancelSafeVolumeNotification(notificationId);
     int64_t activateSessionId = GetData<int64_t>();
     GetServerPtr()->audioPolicyService_.CheckStreamMode(activateSessionId);
-    bool state = GetData<bool>();
-    GetServerPtr()->audioPolicyService_.SetCaptureSilentState(state);
+
     GetServerPtr()->audioPolicyService_.GetConverterConfig();
 
     std::string dumpString = "";

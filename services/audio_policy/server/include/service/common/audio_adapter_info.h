@@ -35,6 +35,7 @@ static const char* ADAPTER_REMOTE_TYPE = "remote";
 static const char* ADAPTER_FILE_TYPE = "file";
 static const char* ADAPTER_USB_TYPE = "usb";
 static const char* ADAPTER_DP_TYPE = "dp";
+static const char* ADAPTER_ACCESSORY_TYPE = "accessory";
 
 static const char* ADAPTER_DEVICE_PRIMARY_SPEAKER = "Speaker";
 static const char* ADAPTER_DEVICE_PRIMARY_EARPIECE = "Earpicece";
@@ -57,6 +58,7 @@ static const char* ADAPTER_DEVICE_PIPE_SOURCE = "fifo_input";
 static const char* ADAPTER_DEVICE_WAKEUP = "Built_in_wakeup";
 static const char* ADAPTER_DEVICE_NONE = "none";
 static const char* ADAPTER_DEVICE_DP = "DP Sink";
+static const char* ADAPTER_DEVICE_ACCESSORY = "accessory source";
 
 static const char* MODULE_TYPE_SINK = "sink";
 static const char* MODULE_TYPE_SOURCE = "source";
@@ -87,6 +89,7 @@ enum class AdaptersType {
     TYPE_FILE_IO,
     TYPE_REMOTE_AUDIO,
     TYPE_DP,
+    TYPE_ACCESSORY,
     TYPE_INVALID
 };
 

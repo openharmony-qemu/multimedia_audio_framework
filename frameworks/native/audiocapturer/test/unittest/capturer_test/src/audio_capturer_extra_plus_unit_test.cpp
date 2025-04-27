@@ -83,6 +83,78 @@ public:
     State state_ = State::RUNNING;
 };
 
+class FastAudioStreamFork : public FastAudioStream {
+public:
+    FastAudioStreamFork() : FastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0) {}
+    uint32_t GetOverflowCount() override { return g_writeOverflowNum; }
+    State GetState() override { return state_; }
+    int32_t SetAudioStreamInfo(const AudioStreamParams info,
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
+    bool StopAudioStream() override { return true; }
+    bool StartAudioStream(StateChangeCmdType cmdType,
+        AudioStreamDeviceChangeReasonExt reason) override { return true; }
+    IAudioStream::StreamClass GetStreamClass() override { return IAudioStream::PA_STREAM; }
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override { return restoreStatus; }
+
+    State state_ = State::RUNNING;
+};
+
+
+class FastAudioStreamFork2 : public FastAudioStream {
+public:
+    FastAudioStreamFork2() : FastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0) {}
+    uint32_t GetOverflowCount() override { return g_writeOverflowNum; }
+    State GetState() override { return RUNNING; }
+    int32_t SetAudioStreamInfo(const AudioStreamParams info,
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
+    bool StopAudioStream() override { return true; }
+    bool StartAudioStream(StateChangeCmdType cmdType,
+        AudioStreamDeviceChangeReasonExt reason) override { return true; }
+    IAudioStream::StreamClass GetStreamClass() override { return IAudioStream::FAST_STREAM; }
+    void GetAudioPipeType(AudioPipeType &pipeType) override { pipeType = PIPE_TYPE_LOWLATENCY_IN; }
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override { return restoreStatus; }
+};
+
+class FastAudioStreamFork3 : public FastAudioStream {
+public:
+    FastAudioStreamFork3() : FastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0) {}
+    uint32_t GetOverflowCount() override { return g_writeOverflowNum; }
+    State GetState() override { return NEW; }
+    int32_t SetAudioStreamInfo(const AudioStreamParams info,
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
+    bool StopAudioStream() override { return true; }
+    bool StartAudioStream(StateChangeCmdType cmdType,
+        AudioStreamDeviceChangeReasonExt reason) override { return true; }
+    IAudioStream::StreamClass GetStreamClass() override { return IAudioStream::FAST_STREAM; }
+    void GetAudioPipeType(AudioPipeType &pipeType) override { pipeType = PIPE_TYPE_CALL_IN; }
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override { return restoreStatus; }
+};
+
+class FastAudioStreamFork4 : public FastAudioStream {
+public:
+    FastAudioStreamFork4() : FastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0) {}
+    uint32_t GetOverflowCount() override { return g_writeOverflowNum; }
+    State GetState() override { return state_; }
+    int32_t SetAudioStreamInfo(const AudioStreamParams info,
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
+    bool StopAudioStream() override { return true; }
+    bool StartAudioStream(StateChangeCmdType cmdType,
+        AudioStreamDeviceChangeReasonExt reason) override { return true; }
+    IAudioStream::StreamClass GetStreamClass() override { return IAudioStream::FAST_STREAM; }
+    void GetAudioPipeType(AudioPipeType &pipeType) override { pipeType = PIPE_TYPE_UNKNOWN; }
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override { return restoreStatus; }
+
+    State state_ = State::RUNNING;
+};
+
 /**
 * @tc.name  : Test MISCELLANEOUS classes of module audio capturer.
 * @tc.number: Audio_Capturer_MISCELLANEOUS_001.
@@ -92,7 +164,7 @@ public:
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
 
     AudioStreamParams tempParams = {};
 
@@ -155,7 +227,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_002, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
 
     AudioStreamParams tempParams = {};
     capturer->audioStream_ = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM,
@@ -191,7 +263,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_002, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_003, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, false);
 
     // AudioStreamParams tempParams = {};
     capturer->audioStream_ = std::make_shared<TestAudioStremStub>();
@@ -218,9 +290,9 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_003, TestSize.Level1)
     AUDIO_INFO_LOG("SetSwitchInfo");
     capturer->SetSwitchInfo(info, capturer->audioStream_);
 
-    uint32_t newSessionId;
+    RestoreInfo restoreInfo;
     capturer->audioInterruptCallback_ = std::make_unique<AudioCapturerInterruptCallbackImpl>(nullptr);
-    auto switchResult = capturer->SwitchToTargetStream(IAudioStream::StreamClass::VOIP_STREAM, newSessionId);
+    auto switchResult = capturer->SwitchToTargetStream(IAudioStream::StreamClass::VOIP_STREAM, restoreInfo);
     EXPECT_EQ(switchResult, false);
 }
 
@@ -233,7 +305,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_003, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_004, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
 
     IAudioStream::SwitchInfo info;
     auto audioStream = std::make_shared<TestAudioStremStub>();
@@ -257,7 +329,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_004, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_005, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
 
     IAudioStream::SwitchInfo info;
     auto audioStream = std::make_shared<TestAudioStremStub>();
@@ -281,12 +353,448 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_005, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_006, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    auto capturer = std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
 
     IAudioStream::SwitchInfo info;
     auto audioStream = std::make_shared<TestAudioStremStub>();
 
     capturer->SetSwitchInfo(info, audioStream);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_007
+ * @tc.desc  : Test AudioCapturerPrivate::SetSwitchInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_007, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::SwitchInfo info;
+    auto audioStream = std::make_shared<FastAudioStreamFork>();
+    ASSERT_NE(audioStream, nullptr);
+
+    info.renderPositionCb = std::make_shared<RendererPositionCallbackTestStub>();
+    info.framePeriodNumber = 1;
+    info.capturePositionCb  = std::make_shared<CapturerPositionCallbackTestStub>();
+    info.renderPeriodPositionCb = std::make_shared<RendererPeriodPositionCallbackTestStub>();
+    info.framePeriodNumber = 1;
+    info.capturePeriodPositionCb = std::make_shared<CapturerPeriodPositionCallbackTestStub>();
+
+    auto ret = capturer->SetSwitchInfo(info, audioStream);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_008
+ * @tc.desc  : Test AudioCapturerPrivate::SetSwitchInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_008, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::SwitchInfo info;
+    auto audioStream = std::make_shared<FastAudioStreamFork>();
+    ASSERT_NE(audioStream, nullptr);
+
+    info.renderPositionCb = std::make_shared<RendererPositionCallbackTestStub>();
+    info.framePeriodNumber = 0;
+    info.capturePositionCb  = std::make_shared<CapturerPositionCallbackTestStub>();
+    info.renderPeriodPositionCb = std::make_shared<RendererPeriodPositionCallbackTestStub>();
+    info.framePeriodNumber = 0;
+    info.capturePeriodPositionCb = std::make_shared<CapturerPeriodPositionCallbackTestStub>();
+
+    auto ret = capturer->SetSwitchInfo(info, audioStream);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_009
+ * @tc.desc  : Test AudioCapturerPrivate::SetSwitchInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_009, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::SwitchInfo info;
+    auto audioStream = std::make_shared<FastAudioStreamFork>();
+    ASSERT_NE(audioStream, nullptr);
+
+    info.renderPositionCb = nullptr;
+    info.framePeriodNumber = 0;
+    info.capturePositionCb  = nullptr;
+    info.renderPeriodPositionCb = nullptr;
+    info.framePeriodNumber = 0;
+    info.capturePeriodPositionCb = nullptr;
+
+    auto ret = capturer->SetSwitchInfo(info, audioStream);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_010
+ * @tc.desc  : Test AudioCapturerPrivate::ContinueAfterConcede
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_010, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork>();
+    ASSERT_NE(capturer->audioStream_, nullptr);
+
+    IAudioStream::StreamClass targetClass;
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = STREAM_CONCEDED;
+
+    auto ret = capturer->ContinueAfterConcede(targetClass, restoreInfo);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_011
+ * @tc.desc  : Test AudioCapturerPrivate::ContinueAfterConcede
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_011, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork2>();
+    ASSERT_NE(capturer->audioStream_, nullptr);
+
+    IAudioStream::StreamClass targetClass;
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = STREAM_CONCEDED;
+
+    auto ret = capturer->ContinueAfterConcede(targetClass, restoreInfo);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_012
+ * @tc.desc  : Test AudioCapturerPrivate::ContinueAfterConcede
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_012, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork3>();
+    ASSERT_NE(capturer->audioStream_, nullptr);
+
+    IAudioStream::StreamClass targetClass;
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = STREAM_CONCEDED;
+
+    auto ret = capturer->ContinueAfterConcede(targetClass, restoreInfo);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_013
+ * @tc.desc  : Test AudioCapturerPrivate::ContinueAfterConcede
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_013, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork4>();
+    ASSERT_NE(capturer->audioStream_, nullptr);
+
+    IAudioStream::StreamClass targetClass;
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = STREAM_CONCEDED;
+
+    auto ret = capturer->ContinueAfterConcede(targetClass, restoreInfo);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_014
+ * @tc.desc  : Test AudioCapturerPrivate::ActivateAudioConcurrency
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_014, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    capturer->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    capturer->ActivateAudioConcurrency(streamClass);
+    EXPECT_EQ(capturer->capturerInfo_.pipeType, PIPE_TYPE_CALL_IN);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_015
+ * @tc.desc  : Test AudioCapturerPrivate::ActivateAudioConcurrency
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_015, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::StreamClass streamClass = IAudioStream::FAST_STREAM;
+    capturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+
+    capturer->ActivateAudioConcurrency(streamClass);
+    EXPECT_EQ(capturer->capturerInfo_.pipeType, PIPE_TYPE_LOWLATENCY_IN);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_016
+ * @tc.desc  : Test AudioCapturerPrivate::ActivateAudioConcurrency
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_016, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    capturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+
+    capturer->ActivateAudioConcurrency(streamClass);
+    EXPECT_EQ(capturer->firstConcurrencyResult_, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_017
+ * @tc.desc  : Test AudioCapturerPrivate::ActivateAudioConcurrency
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_017, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    capturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+
+    capturer->ActivateAudioConcurrency(streamClass);
+    EXPECT_EQ(capturer->firstConcurrencyResult_, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_018
+ * @tc.desc  : Test AudioCapturerPrivate::HandleAudioInterruptWhenServerDied
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_018, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork2>();
+
+    capturer->HandleAudioInterruptWhenServerDied();
+    EXPECT_EQ(capturer->GetStatusInner(), CapturerState::CAPTURER_RUNNING);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_019
+ * @tc.desc  : Test AudioCapturerPrivate::HandleAudioInterruptWhenServerDied
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_019, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork3>();
+
+    capturer->HandleAudioInterruptWhenServerDied();
+    EXPECT_EQ(capturer->GetStatusInner(), CapturerState::CAPTURER_NEW);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_020
+ * @tc.desc  : Test AudioCapturerPrivate::ConcedeStream
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_020, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork2>();
+
+    capturer->ConcedeStream();
+    EXPECT_EQ(capturer->audioStream_->GetStreamClass(), IAudioStream::FAST_STREAM);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_021
+ * @tc.desc  : Test AudioCapturerPrivate::ConcedeStream
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_021, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork3>();
+
+    capturer->ConcedeStream();
+    EXPECT_EQ(capturer->audioStream_->GetStreamClass(), IAudioStream::FAST_STREAM);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_022
+ * @tc.desc  : Test AudioCapturerPrivate::ConcedeStream
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_022, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork4>();
+
+    capturer->ConcedeStream();
+    EXPECT_EQ(capturer->audioStream_->GetStreamClass(), IAudioStream::FAST_STREAM);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerStateChangeCallbackImpl API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_023
+ * @tc.desc  : Test AudioCapturerStateChangeCallbackImpl::RemoveCapturerInfoChangeCallback
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_023, TestSize.Level1)
+{
+    auto audioCapturerStateChangeCallbackImpl = std::make_shared<AudioCapturerStateChangeCallbackImpl>();
+    ASSERT_NE(audioCapturerStateChangeCallbackImpl, nullptr);
+
+    std::shared_ptr<AudioCapturerInfoChangeCallback> callback = nullptr;
+
+    audioCapturerStateChangeCallbackImpl->
+        capturerInfoChangeCallbacklist_.push_back(std::make_shared<AudioCapturerInfoChangeCallbackTest>());
+
+    audioCapturerStateChangeCallbackImpl->RemoveCapturerInfoChangeCallback(callback);
+    EXPECT_EQ(audioCapturerStateChangeCallbackImpl->capturerInfoChangeCallbacklist_.empty(), true);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_024
+ * @tc.desc  : Test AudioCapturerPrivate::UpdatePlaybackCaptureConfig
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_024, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    AudioPlaybackCaptureConfig config;
+    capturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+
+    auto ret = capturer->UpdatePlaybackCaptureConfig(config);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_025
+ * @tc.desc  : Test AudioCapturerPrivate::SetClientInfo
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_025, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    uint32_t flag = 0x6000;
+    IAudioStream::StreamClass streamClass = IAudioStream::StreamClass::PA_STREAM;
+
+    capturer->SetClientInfo(flag, streamClass);
+    EXPECT_EQ(capturer->capturerInfo_.pipeType, PIPE_TYPE_CALL_IN);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_026
+ * @tc.desc  : Test AudioCapturerPrivate::SetInputDevice
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_026, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    capturer->audioStream_ = NULL;
+
+    auto ret = capturer->SetInputDevice(deviceType);
+    capturer->audioStream_ = std::make_shared<FastAudioStreamFork2>();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerInterruptCallbackImpl API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_027
+ * @tc.desc  : Test AudioCapturerInterruptCallbackImpl::OnInterrupt
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_027, TestSize.Level1)
+{
+    std::shared_ptr<IAudioStream> audioStream = nullptr;
+    auto capturer = std::make_shared<AudioCapturerInterruptCallbackImpl>(audioStream);
+    ASSERT_NE(capturer, nullptr);
+
+    InterruptEventInternal interruptEvent;
+    capturer->switching_ = true;
+
+    capturer->OnInterrupt(interruptEvent);
+    EXPECT_EQ(capturer->switching_, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -232,5 +232,19 @@ int32_t PolicyHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevi
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t PolicyHandler::LoadModernInnerCapSink(int32_t innerCapId)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->LoadModernInnerCapSink(innerCapId);
+}
+
+int32_t PolicyHandler::UnloadModernInnerCapSink(int32_t innerCapId)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->UnloadModernInnerCapSink(innerCapId);
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

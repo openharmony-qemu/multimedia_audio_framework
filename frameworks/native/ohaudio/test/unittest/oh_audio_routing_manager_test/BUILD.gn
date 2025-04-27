@@ -14,7 +14,7 @@
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "multimedia_audio_framework/audio_ndk"
+module_output_path = "audio_framework/audio_framework_route/audio_ndk"
 
 config("audio_routing_manager_config") {
   include_dirs = [
@@ -60,7 +60,10 @@ ohos_unittest("audio_oh_routing_manager_unit_test") {
 
   sources = [ "src/oh_audio_routing_manager_unit_test.cpp" ]
 
-  deps = [ "../../../../ohaudio:ohaudio" ]
+  deps = [
+    "../../../../../../services/audio_policy:audio_policy_service_static",
+    "../../../../ohaudio:ohaudio",
+  ]
 
   external_deps = [ "hilog:libhilog" ]
 }

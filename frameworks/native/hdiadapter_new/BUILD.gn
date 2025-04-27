@@ -1,0 +1,169 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../audio_framework_test_sources.gni")
+import("../../../config.gni")
+
+ohos_shared_library("hdiadapter_new") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = true
+
+  cflags = [
+    "-fPIC",
+    "-Wall",
+    "-Os",
+  ]
+  cflags_cc = cflags
+
+  include_dirs = [
+    "include",
+    "../../../services/audio_service/common/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../audioutils/include",
+    "../audioeffect/include",
+    "../audioschedule/include",
+  ]
+
+  sources = [
+    "adapter/bluetooth_device_manager.cpp",
+    "adapter/local_device_manager.cpp",
+    "manager/hdi_adapter_factory.cpp",
+    "manager/hdi_adapter_manager.cpp",
+    "sink/audio_render_sink.cpp",
+    "sink/bluetooth_audio_render_sink.cpp",
+    "sink/direct_audio_render_sink.cpp",
+    "sink/fast_audio_render_sink.cpp",
+    "sink/file_audio_render_sink.cpp",
+    "sink/multichannel_audio_render_sink.cpp",
+    "sink/offload_audio_render_sink.cpp",
+    "source/audio_capture_source.cpp",
+    "source/bluetooth_audio_capture_source.cpp",
+    "source/fast_audio_capture_source.cpp",
+    "source/file_audio_capture_source.cpp",
+    "source/wakeup_audio_capture_source.cpp",
+    "util/callback_wrapper.cpp",
+    "util/id_handler.cpp",
+    "util/ring_buffer_handler.cpp",
+  ]
+
+  deps = [
+    "../../../services/audio_service:audio_common",
+    "../audioeffect:audio_effect",
+    "../audioschedule:audio_schedule",
+    "../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "drivers_peripheral_bluetooth:hdi_audio_bluetooth_header",
+    "hdf_core:libhdf_ipc_adapter",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
+  ]
+
+  defines = []
+
+  if (audio_framework_feature_file_io) {
+    defines += [ "FEATURE_FILE_IO" ]
+  }
+  if (audio_framework_feature_distributed_audio) {
+    sources += [
+      "adapter/remote_device_manager.cpp",
+      "sink/remote_audio_render_sink.cpp",
+      "sink/remote_fast_audio_render_sink.cpp",
+      "source/remote_audio_capture_source.cpp",
+      "source/remote_fast_audio_capture_source.cpp",
+    ]
+    external_deps +=
+        [ "drivers_interface_distributed_audio:libdaudio_proxy_1.0" ]
+    defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
+  }
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+  if (audio_framework_feature_power_manager) {
+    sources += [ "util/audio_running_lock.cpp" ]
+    external_deps += [ "power_manager:powermgr_client" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+  }
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+  version_script = "libhdiadapter_new.versionscript"
+}
+
+ohos_unittest("hdiadapter_unit_test") {
+  module_out_path = "audio_framework/audio_framework_route/hdiadapter_new"
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  include_dirs = [
+    "include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../audioutils/include",
+    "../../../frameworks/native/hdiadapter_new/include/sink",
+  ]
+
+  sources = [
+    "test/unittest/adapter_unit_test.cpp",
+    "test/unittest/manager_unit_test.cpp",
+    "test/unittest/sink/audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/bluetooth_audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/fast_audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/file_audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/multichannel_audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/offload_audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/remote_audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
+    "test/unittest/source/audio_capture_source_unit_test.cpp",
+    "test/unittest/source/bluetooth_audio_capture_source_unit_test.cpp",
+    "test/unittest/source/fast_audio_capture_source_unit_test.cpp",
+    "test/unittest/source/file_audio_capture_source_unit_test.cpp",
+    "test/unittest/source/remote_audio_capture_source_unit_test.cpp",
+    "test/unittest/source/remote_fast_audio_capture_source_unit_test.cpp",
+    "test/unittest/source/wakeup_audio_capture_source_unit_test.cpp",
+    "test/unittest/util_unit_test.cpp",
+  ]
+
+  deps = [ ":hdiadapter_new" ]
+
+  external_deps = [
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "googletest:gtest",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}

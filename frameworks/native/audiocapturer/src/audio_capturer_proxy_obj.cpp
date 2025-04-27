@@ -23,7 +23,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-void AudioCapturerProxyObj::SaveCapturerObj(const AudioCapturer *capturerObj)
+void AudioCapturerProxyObj::SaveCapturerObj(std::weak_ptr<const AudioCapturer> capturerObj)
 {
     capturer = capturerObj;
 }

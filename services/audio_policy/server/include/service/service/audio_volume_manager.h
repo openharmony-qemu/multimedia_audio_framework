@@ -51,6 +51,21 @@ namespace AudioStandard {
 
 using InternalDeviceType = DeviceType;
 
+struct AdjustVolumeInfo {
+    DeviceType deviceType;
+    AudioStreamType streamType;
+    int32_t volumeLevel;
+    std::string callerName;
+    std::string invocationTime;
+};
+
+struct VolumeKeyEventRegistration {
+    std::string keyType;  // Volume up or down
+    int32_t subscriptionId;
+    std::string registrationTime;
+    bool registrationResult;
+};
+
 class AudioVolumeManager {
 public:
     static AudioVolumeManager& GetInstance()
@@ -68,8 +83,12 @@ public:
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
+    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
     int32_t DisableSafeMediaVolume();
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
@@ -82,7 +101,7 @@ public:
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
         bool connected, int32_t mappingId);
     void GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& volumeGroupInfos);
-    void SetVolumeForSwitchDevice(DeviceType deviceType, const std::string &newSinkName = PORT_NONE);
+    void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor, const std::string &newSinkName = PORT_NONE);
 
     bool IsRingerModeMute();
     void SetRingerModeMute(bool flag);
@@ -95,6 +114,15 @@ public:
     void NotifyVolumeGroup();
     bool GetLoadFlag();
     void UpdateSafeVolumeByS4();
+    void SetMaxVolumeForDeviceChange();
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+        std::string invocationTime);
+    void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
+        bool registrationResult);
+    void GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo> &systemVolumeLevelInfo);
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> GetAllDeviceVolumeInfo();
+    void GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration> &keyRegistrationInfo);
+    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -115,13 +143,17 @@ private:
     void SetSafeVolumeCallback(AudioStreamType streamType);
     void SetDeviceSafeVolumeStatus();
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
-    int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
     void UpdateVolumeForLowLatency();
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
+    void SetRestoreVolumeLevel(DeviceType deviceType, int32_t curDeviceVolume);
+    void CheckLowerDeviceVolume(DeviceType deviceType);
+    int32_t CheckRestoreDeviceVolume(DeviceType deviceType);
     int32_t DealWithEventVolume(const int32_t notificationId);
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
@@ -162,12 +194,19 @@ private:
     bool isVoiceRingtoneMute_ = false;
 
     std::mutex notifyMutex_;
-    int32_t streamMusicVol_ = 0;
+    int32_t btRestoreVol_ = 0;
+    int32_t wiredRestoreVol_ = 0;
     bool restoreNIsShowing_ = false;
     bool increaseNIsShowing_ = false;
 
     std::mutex defaultDeviceLoadMutex_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
+    DeviceType curOutputDeviceType_;
+
+    std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> systemVolumeLevelInfo_ =
+        std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);
+    std::shared_ptr<FixedSizeList<VolumeKeyEventRegistration>> volumeKeyRegistrations_ =
+    std::make_shared<FixedSizeList<VolumeKeyEventRegistration>>(MAX_CACHE_AMOUNT);
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioA2dpDevice& audioA2dpDevice_;

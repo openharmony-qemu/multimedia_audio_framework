@@ -25,6 +25,7 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
+#include "audio_spatialization_service.h"
 
 
 #include "audio_policy_utils.h"
@@ -196,6 +197,7 @@ void AudioConnectedDevice::DelConnectedDevice(std::string networkId, DeviceType 
 
 void AudioConnectedDevice::AddConnectedDevice(std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
+    UpdateDeviceDesc4DmDevice(*remoteDeviceDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), remoteDeviceDescriptor);
     return;
 }
@@ -217,6 +219,39 @@ void AudioConnectedDevice::SetDisplayName(const std::string &deviceName, bool is
         if ((isLocalDevice && deviceInfo->networkId_ == LOCAL_NETWORK_ID) ||
             (!isLocalDevice && deviceInfo->networkId_ != LOCAL_NETWORK_ID)) {
             deviceInfo->displayName_ = deviceName;
+        }
+    }
+}
+
+void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect)
+{
+    AUDIO_INFO_LOG("Entry. deviceName_=%{public}s, dmDeviceType_=%{public}d",
+        dmDevice.deviceName_.c_str(), dmDevice.dmDeviceType_);
+    lock_guard<mutex> lg(dmDeviceMtx_);
+    if (isConnect) {
+        dmDeviceMap_[dmDevice.networkId_] = dmDevice;
+        auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), [&dmDevice](auto &item) {
+            return item->networkId_ == dmDevice.networkId_;
+        });
+        if (it != connectedDevices_.end()) {
+            (*it)->displayName_ = dmDevice.deviceName_;
+            (*it)->deviceName_ = dmDevice.deviceName_;
+            (*it)->dmDeviceType_ = dmDevice.dmDeviceType_;
+        }
+    } else {
+        dmDeviceMap_.erase(dmDevice.networkId_);
+    }
+}
+
+void AudioConnectedDevice::UpdateDeviceDesc4DmDevice(AudioDeviceDescriptor &deviceDesc)
+{
+    if (deviceDesc.deviceType_ == DEVICE_TYPE_SPEAKER && deviceDesc.networkId_ != LOCAL_NETWORK_ID) {
+        lock_guard<mutex> lg(dmDeviceMtx_);
+        auto it = dmDeviceMap_.find(deviceDesc.networkId_);
+        if (it != dmDeviceMap_.end()) {
+            deviceDesc.dmDeviceType_ = it->second.dmDeviceType_;
+            deviceDesc.deviceName_ = it->second.deviceName_;
+            deviceDesc.displayName_ = it->second.deviceName_;
         }
     }
 }
@@ -298,7 +333,10 @@ DeviceType AudioConnectedDevice::FindConnectedHeadset()
             (devDesc->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_DP) ||
-            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET));
+            (devDesc->deviceType_ == DEVICE_TYPE_ACCESSORY) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_HDMI) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_LINE_DIGITAL));
     });
 
     DeviceType retType = DEVICE_TYPE_NONE;
@@ -367,5 +405,28 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetUsbDeviceDescrip
     return nullptr;
 }
 
+static std::string GetSha256EncryptAddress(const std::string& address)
+{
+    const int32_t HexWidth = 2;
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256(reinterpret_cast<const unsigned char *>(address.c_str()), address.size(), hash);
+    std::stringstream ss;
+    for (int32_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        ss << std::hex << std::setw(HexWidth) << std::setfill('0') << (int32_t)hash[i];
+    }
+    return ss.str();
+}
+
+void AudioConnectedDevice::UpdateSpatializationSupported(const std::string macAddress, const bool support)
+{
+    for (auto device : connectedDevices_) {
+        std::string encryAddress = GetSha256EncryptAddress(device->macAddress_);
+        if (encryAddress == macAddress && device->deviceType_ ==  DEVICE_TYPE_BLUETOOTH_A2DP &&
+            device->spatializationSupported_ != support) {
+            device->spatializationSupported_ = support;
+            AUDIO_INFO_LOG("spatializationSupported is set to %{public}d", support);
+        }
+    }
+}
 }
 }

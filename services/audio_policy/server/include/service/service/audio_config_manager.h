@@ -52,6 +52,8 @@ public:
 
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
+    void OnUpdateDefaultAdapter(bool isEnable);
+
     void OnAudioLatencyParsed(uint64_t latency);
 
     void OnSinkLatencyParsed(uint32_t latency);
@@ -75,6 +77,8 @@ public:
     int32_t GetMaxRendererInstances();
     void SetNormalVoipFlag(const bool &normalVoipFlag);
 
+    bool GetNormalVoipFlag();
+
     int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
         const AudioSamplingRate &samplingRate);
 
@@ -91,6 +95,8 @@ public:
     void GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData);
 
     bool GetUpdateRouteSupport();
+
+    bool GetDefaultAdapterEnable();
 
     bool GetAdapterInfoFlag();
 
@@ -112,6 +118,7 @@ private:
 
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;
+    bool isDefaultAdapterEnable_ = false;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     GlobalConfigs globalConfigs_;

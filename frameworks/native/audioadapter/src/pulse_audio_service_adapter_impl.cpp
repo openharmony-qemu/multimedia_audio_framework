@@ -72,14 +72,7 @@ static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM
     {"camcorder", STREAM_CAMCORDER}
 };
 
-AudioServiceAdapter::~AudioServiceAdapter() = default;
 PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;
-
-unique_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(unique_ptr<AudioServiceAdapterCallback> cb)
-{
-    CHECK_AND_RETURN_RET_LOG(cb != nullptr, nullptr, "CreateAudioAdapter cb is nullptr!");
-    return make_unique<PulseAudioServiceAdapterImpl>(cb);
-}
 
 PulseAudioServiceAdapterImpl::PulseAudioServiceAdapterImpl(unique_ptr<AudioServiceAdapterCallback> &cb)
 {
@@ -172,9 +165,15 @@ Fail:
     return false;
 }
 
+int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const AudioModuleInfo& audioModuleInfo)
+{
+    AUDIO_PRERELEASE_LOGE("OpenAudioPort enter the INCORRECT func.");
+    return 0;
+}
+
 uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
 {
-    AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
+    AUDIO_PRERELEASE_LOGI("Enter, port name: %{public}s", audioPortName.c_str());
     AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::OpenAudioPort", PA_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("OpenAudioPort timeout");

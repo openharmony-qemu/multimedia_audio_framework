@@ -15,6 +15,7 @@
 
 #ifndef I_AUDIO_POLICY_INTERFACE_H
 #define I_AUDIO_POLICY_INTERFACE_H
+#define HDI_INVALID_ID 0xFFFFFFFF
 
 #include "audio_adapter_info.h"
 #include "audio_policy_manager.h"
@@ -23,6 +24,7 @@
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
 #include "audio_manager_base.h"
+#include "audio_pipe_info.h"
 
 #include <memory>
 #include <string>
@@ -47,7 +49,15 @@ public:
 
     virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
 
+    virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel) = 0;
+
+    virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted) = 0;
+
+    virtual int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) = 0;
+
     virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
+
+    virtual int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
     virtual int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType) = 0;
 
@@ -62,13 +72,15 @@ public:
 
     virtual std::vector<SinkInfo> GetAllSinks() = 0;
 
-    virtual std::vector<SinkInput> GetAllSinkInputs() = 0;
+    virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
 
     virtual std::vector<SourceOutput> GetAllSourceOutputs() = 0;
 
-    virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo) = 0;
+    virtual AudioIOHandle OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex) = 0;
 
-    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, bool isSync = false) = 0;
+    virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
+
+    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID, bool isSync = false) = 0;
 
     virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name) = 0;
 
@@ -88,7 +100,7 @@ public:
 
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 
-    virtual void SetVolumeForSwitchDevice(InternalDeviceType deviceType) = 0;
+    virtual void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor) = 0;
 
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
@@ -122,6 +134,8 @@ public:
 
     virtual void ResetRemoteCastDeviceVolume() = 0;
 
+    virtual void SetMaxVolumeForDeviceChange() = 0;
+
     virtual int32_t DoRestoreData() = 0;
 
     virtual SafeStatus GetCurrentDeviceSafeStatus(DeviceType deviceType) = 0;
@@ -142,9 +156,11 @@ public:
 
     virtual void SafeVolumeDump(std::string &dumpString) = 0;
 
-    virtual void SetActiveDevice(DeviceType deviceType) = 0;
+    virtual void SetActiveDeviceDescriptor(AudioDeviceDescriptor deviceDescriptor) = 0;
 
     virtual DeviceType GetActiveDevice() = 0;
+
+    virtual AudioDeviceDescriptor GetActiveDeviceDescriptor() = 0;
 
     virtual void NotifyAccountsChanged(const int &id) = 0;
 
@@ -172,11 +188,33 @@ public:
 
     virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
 
-    virtual void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel) = 0;
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const = 0;
 
-    virtual void SetRestoreVolumeFlag(const bool safeVolumeCall) = 0;
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const = 0;
+
+    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) const = 0;
+
+    virtual int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType) = 0;
+
+    virtual void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime) = 0;
+
+    virtual void GetRingerModeInfo(std::vector<RingerModeAdjustInfo> &ringerModeInfo) = 0;
+
+    virtual std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType) = 0;
+
+    virtual std::shared_ptr<AllDeviceVolumeInfo> GetAllDeviceVolumeInfo(DeviceType deviceType,
+        AudioStreamType streamType) = 0;
 
     virtual void UpdateSafeVolumeByS4() = 0;
+
+    virtual int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
+        DeviceType deviceType) = 0;
+
+    virtual int32_t SetDoNotDisturbStatusWhiteList(std::vector<std::map<std::string, std::string>>
+        doNotDisturbStatusWhiteList) = 0;
+
+    virtual int32_t SetDoNotDisturbStatus(bool isDoNotDisturb) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

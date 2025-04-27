@@ -22,10 +22,10 @@
 #include "oh_audio_buffer.h"
 #include <gtest/gtest.h>
 #include "audio_endpoint.h"
-#include "remote_fast_audio_renderer_sink.h"
-#include "fast_audio_renderer_sink.h"
+#include "sink/i_audio_render_sink.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
 #include "audio_process_in_server.h"
-#include "fast_audio_renderer_sink.h"
 #include "audio_endpoint.h"
 #include "audio_service.h"
 
@@ -90,8 +90,10 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_001, TestSize.Level1
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     float volume = 0.0f;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
-    ptr->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    ptr->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
+        "endpoint_sep_test", true);
     auto ret = ptr->SetVolume(streamType, volume);
+    HdiAdapterManager::GetInstance().ReleaseId(ptr->fastRenderId_);
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
@@ -108,11 +110,13 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_002, TestSize.Level1
     AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
     float volume = 0.0f;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
-    ptr->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    ptr->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
+        "endpoint_sep_test", true);
     streamType = AudioStreamType::STREAM_VOICE_CALL;
     ptr->streamType_ = STREAM_DEFAULT;
     auto ret = ptr->SetVolume(streamType, volume);
     EXPECT_EQ(ret, SUCCESS);
+    HdiAdapterManager::GetInstance().ReleaseId(ptr->fastRenderId_);
 }
 
 /**
@@ -189,7 +193,8 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_006, TestSize.Level1
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
     ptr->isInited_ = true;
-    ptr->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    ptr->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
+        "endpoint_sep_test", true);
     ptr->Release();
 }
 
@@ -206,7 +211,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_007, TestSize.Level1
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
     ptr->isInited_ = true;
-    ptr->fastSink_ = nullptr;
+    ptr->fastRenderId_ = HDI_INVALID_ID;
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t spanSizeInFrame = 0;
@@ -215,7 +220,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_007, TestSize.Level1
         spanSizeInFrame, byteSizePerFrame);
     ptr->Release();
     ptr->isInited_ = true;
-    ptr->fastSink_ = nullptr;
+    ptr->fastRenderId_ = HDI_INVALID_ID;
     ptr->dstAudioBuffer_ = nullptr;
     ptr->Release();
 }
@@ -283,9 +288,11 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_010, TestSize.Level1
     ptr->dstTotalSizeInframe_ = 1;
     ptr->dstSpanSizeInframe_ = 1;
     ptr->dstBufferFd_ = 1;
-    ptr->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    ptr->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
+        "endpoint_sep_test", true);
     ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    HdiAdapterManager::GetInstance().ReleaseId(ptr->fastRenderId_);
 }
 
 /**
@@ -302,31 +309,33 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_011, TestSize.Level1
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
     std::shared_ptr<AudioDeviceDescriptor> ptr2 =
         std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
-    ptr->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    ptr->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
+        "endpoint_sep_test", true);
     ptr->dstBufferFd_ = -1;
     ptr->dstTotalSizeInframe_ = 1;
     ptr->dstSpanSizeInframe_ = 1;
     ptr->dstBufferFd_ = 1;
     auto ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     ptr->dstBufferFd_ = 0;
     ptr->dstTotalSizeInframe_ = 0;
     ptr->dstSpanSizeInframe_ = 1;
     ptr->dstBufferFd_ = 1;
     ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     ptr->dstBufferFd_ = 0;
     ptr->dstTotalSizeInframe_ = 1;
     ptr->dstSpanSizeInframe_ = 0;
     ptr->dstBufferFd_ = 1;
     ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     ptr->dstBufferFd_ = 0;
     ptr->dstTotalSizeInframe_ = 1;
     ptr->dstSpanSizeInframe_ = 1;
     ptr->dstBufferFd_ = 0;
     ret = ptr->GetAdapterBufferInfo(*ptr2);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    HdiAdapterManager::GetInstance().ReleaseId(ptr->fastRenderId_);
 }
 
 /**
@@ -464,7 +473,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_018, TestSize.Level1
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
     ptr->endpointStatus_.store(AudioEndpoint::EndpointStatus::IDEL);
-    ptr->fastSink_ = nullptr;
+    ptr->fastRenderId_ = HDI_INVALID_ID;
     auto ret = ptr->StartDevice();
     EXPECT_EQ(ret, false);
 }
@@ -597,7 +606,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_024, TestSize.Level1
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
     uint64_t frames = 0;
     int64_t nanoTime = 0;
-    ptr->fastSink_ = nullptr;
+    ptr->fastRenderId_ = HDI_INVALID_ID;
     auto ret = ptr->GetDeviceHandleInfo(frames, nanoTime);
     EXPECT_EQ(ret, false);
     ptr->GetDeviceHandleInfo(frames, nanoTime);
@@ -662,25 +671,28 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_026, TestSize.Level1
  * @tc.name  : Test AudioEndpointSeparate API
  * @tc.type  : FUNC
  * @tc.number: AudioEndpointSeparate_027
- * @tc.desc  : Test static enum HdiAdapterFormat ConvertToHdiAdapterFormat
+ * @tc.desc  : Test static enum AudioSampleFormat ConvertToHdiAdapterFormat
  */
 HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_027, TestSize.Level1)
 {
     AudioSampleFormat format = SAMPLE_U8;
     auto ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, HdiAdapterFormat::SAMPLE_U8);
+    EXPECT_EQ(ret, SAMPLE_U8);
     format = SAMPLE_S16LE;
     ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, HdiAdapterFormat::SAMPLE_S16);
+    EXPECT_EQ(ret, SAMPLE_S16LE);
     format = SAMPLE_S24LE;
     ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, HdiAdapterFormat::SAMPLE_S24);
+    EXPECT_EQ(ret, SAMPLE_S24LE);
     format = SAMPLE_S32LE;
     ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, HdiAdapterFormat::SAMPLE_S32);
+    EXPECT_EQ(ret, SAMPLE_S32LE);
+    format = SAMPLE_F32LE;
+    ret = ConvertToHdiAdapterFormat(format);
+    EXPECT_EQ(ret, SAMPLE_F32LE);
     format = INVALID_WIDTH;
     ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, HdiAdapterFormat::INVALID_WIDTH);
+    EXPECT_EQ(ret, INVALID_WIDTH);
 }
 
 /**
@@ -752,7 +764,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_030, TestSize.Level1
     BufferDesc bufferDesc = {nullptr, 0, 0};
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
@@ -778,10 +790,11 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_031, TestSize.Level1
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
 
     ptr->endpointStatus_.store(AudioEndpoint::EndpointStatus::IDEL);
-    ptr->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
-
+    ptr->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
+        "endpoint_sep_test", true);
     auto ret = ptr->StartDevice();
     EXPECT_EQ(ret, false);
+    HdiAdapterManager::GetInstance().ReleaseId(ptr->fastRenderId_);
 }
 
 /**
@@ -802,7 +815,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_032, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
 
@@ -832,7 +845,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_033, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
@@ -865,7 +878,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_034, TestSize.Level1
     BufferDesc bufferDesc = {nullptr, 0, 0};
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
@@ -896,7 +909,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_035, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
 
@@ -926,7 +939,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_036, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
@@ -958,7 +971,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_037, TestSize.Level1
     BufferDesc bufferDesc;
     int32_t volumeStart = 0;
     int32_t volumeEnd = 0;
-    bool isInnerCaped = false;
+    std::unordered_map<int32_t, bool> isInnerCaped;
 
     AudioStreamData tddData = {streamInfo, bufferDesc, volumeStart, volumeEnd, isInnerCaped};
     std::vector<AudioStreamData> srcDataList;
@@ -1153,8 +1166,271 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_044, TestSize.Level1
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
     uint64_t frames = 0;
     int64_t nanoTime = 0;
-    ptr->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    ptr->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
+        "endpoint_sep_test", true);
     ptr->GetDeviceHandleInfo(frames, nanoTime);
+    HdiAdapterManager::GetInstance().ReleaseId(ptr->fastRenderId_);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_045
+ * @tc.desc  : Test AudioEndpointSeparate::ShouldInnerCap
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_045, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    int32_t innerCapId = 0;
+    bool ret = true;
+
+    ret = ptr->ShouldInnerCap(innerCapId);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_046
+ * @tc.desc  : Test AudioEndpointSeparate::EnableFastInnerCap
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_046, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    int32_t innerCapId = 0;
+    int32_t ret = 0;
+
+    ret = ptr->EnableFastInnerCap(innerCapId);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_047
+ * @tc.desc  : Test AudioEndpointSeparate::GetBuffer
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_047, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    std::shared_ptr<OHAudioBuffer> ret;
+
+    ret = ptr->GetBuffer();
+    EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_048
+ * @tc.desc  : Test AudioEndpointSeparate::GetPreferBufferInfo
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_048, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    uint32_t totalSizeInframe = 0;
+    uint32_t spanSizeInframe = 0;
+    int32_t ret = 0;
+
+    ret = ptr->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_049
+ * @tc.desc  : Test AudioEndpointSeparate::GetMaxAmplitude
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_049, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    float ret;
+
+    ret = ptr->GetMaxAmplitude();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_050
+ * @tc.desc  : Test AudioEndpointSeparate::GetLinkedProcessCount
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_050, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    uint32_t ret;
+
+    ret = ptr->GetLinkedProcessCount();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_051
+ * @tc.desc  : Test AudioEndpointSeparate::GetAudioMode
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_051, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    AudioMode ret;
+
+    ret = ptr->GetAudioMode();
+    EXPECT_EQ(ret, AUDIO_MODE_PLAYBACK);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_052
+ * @tc.desc  : Test AudioEndpointSeparate::GetProcLastWriteDoneInfo
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_052, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    int32_t ret;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
+    uint32_t totalSizeInFrame = 96;
+    uint32_t spanSizeInFrame = 16;
+    uint32_t byteSizePerFrame = 4;
+    std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+    uint64_t curWriteFrame = 0;
+    uint64_t proHandleFrame = 0;
+    int64_t proHandleTime = 0;
+    int dataFd = INVALID_FD;
+    int infoFd = AUDIO_SERVER_SHARED;
+
+    ret = processBuffer->Init(dataFd, infoFd);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ptr->dstSpanSizeInframe_ = 4;
+    ret = ptr->GetProcLastWriteDoneInfo(processBuffer, curWriteFrame, proHandleFrame, proHandleTime);
+    EXPECT_EQ(ret, SUCCESS);
+
+    curWriteFrame = 5;
+    ret = ptr->GetProcLastWriteDoneInfo(processBuffer, curWriteFrame, proHandleFrame, proHandleTime);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_053
+ * @tc.desc  : Test AudioEndpointSeparate::LinkProcessStream
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_053, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool startWhenLinking = false;
+    int32_t ret = 0;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t spanSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+
+    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
+    processStream->isBufferConfiged_ = true;
+    processStream->processBuffer_ = processBuffer;
+    ptr->processList_.push_back(processStream);
+
+    ptr->endpointStatus_ = AudioEndpoint::EndpointStatus::RUNNING;
+    ret = ptr->LinkProcessStream(processStream, startWhenLinking);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ptr->endpointStatus_ = AudioEndpoint::EndpointStatus::UNLINKED;
+    ret = ptr->LinkProcessStream(processStream, startWhenLinking);
+    EXPECT_EQ(ret, SUCCESS);
+
+    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    ptr->isDeviceRunningInIdel_ = true;
+    ptr->endpointStatus_ = AudioEndpoint::EndpointStatus::UNLINKED;
+    ret = ptr->LinkProcessStream(processStream, startWhenLinking);
+    EXPECT_EQ(ret, SUCCESS);
+
+    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    ptr->isDeviceRunningInIdel_ = false;
+    ptr->endpointStatus_ = AudioEndpoint::EndpointStatus::UNLINKED;
+    ret = ptr->LinkProcessStream(processStream, startWhenLinking);
+    EXPECT_EQ(ret, SUCCESS);
+
+    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    ptr->isDeviceRunningInIdel_ = false;
+    ptr->endpointStatus_ = AudioEndpoint::EndpointStatus::INVALID;
+    ret = ptr->LinkProcessStream(processStream, startWhenLinking);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioEndpointSeparate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointSeparate_054
+ * @tc.desc  : Test AudioEndpointSeparate::UnlinkProcessStream
+ */
+HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_054, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::EndpointType::TYPE_MMAP;
+    uint64_t id = 0;
+    AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
+    std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    int32_t ret = 0;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t spanSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+
+    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
+    processStream->isBufferConfiged_ = true;
+    processStream->processBuffer_ = processBuffer;
+    ptr->processList_.push_back(processStream);
+    ptr->processBufferList_.push_back(processBuffer);
+
+    ptr->endpointStatus_ = AudioEndpoint::EndpointStatus::RUNNING;
+    ret = ptr->UnlinkProcessStream(processStream);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

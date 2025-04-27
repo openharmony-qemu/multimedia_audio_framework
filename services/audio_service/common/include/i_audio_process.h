@@ -46,9 +46,16 @@ public:
 
     virtual int32_t Release(bool isSwitchStream = false) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual int32_t SetSourceDuration(int64_t duration) = 0;
+
+    virtual int32_t SetUnderrunCount(uint32_t underrunCnt) = 0;
+
+    virtual int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+        uint32_t code) = 0;
 
     virtual ~AudioProcess() = default;
 };
@@ -72,7 +79,7 @@ public:
     virtual ~IAudioProcess() = default;
 
     virtual int32_t RegisterProcessCb(sptr<IRemoteObject> object) = 0;
-    virtual int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) = 0;
+    virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) = 0;
 
     // IPC code.
     enum IAudioProcessMsg : uint32_t {
@@ -88,6 +95,9 @@ public:
         ON_REGISTER_THREAD_PRIORITY,
         ON_SET_DEFAULT_OUTPUT_DEVICE,
         ON_SET_SLITNT_MODE_AND_MIX_WITH_OTHERS,
+        ON_SET_SOURCE_DURATION,
+        ON_SET_UNDERRUN_CNT,
+        ON_SAVE_STREAM_VOLUME_INFO,
         PROCESS_MAX_MSG
     };
 

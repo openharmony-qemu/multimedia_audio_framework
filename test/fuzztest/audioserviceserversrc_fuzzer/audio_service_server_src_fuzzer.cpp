@@ -17,12 +17,13 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "i_audio_renderer_sink.h"
 #include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub.h"
 #include "audio_server.h"
 #include "audio_service.h"
-#include "fast_audio_renderer_sink.h"
+#include "sink/i_audio_render_sink.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
 #include "audio_endpoint.h"
 #include "access_token.h"
 #include "message_parcel.h"
@@ -73,6 +74,14 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+void ReleaseNoneEngine()
+{
+    if (playbackEngine_ != nullptr) {
+        playbackEngine_->Stop();
+        playbackEngine_ = nullptr;
+    }
+}
+
 void DeviceFuzzTestSetUp()
 {
     if (playbackEngine_ != nullptr) {
@@ -83,6 +92,7 @@ void DeviceFuzzTestSetUp()
     playbackEngine_ = std::make_unique<NoneMixEngine>();
     bool isVoip = GetData<bool>();
     playbackEngine_->Init(deviceInfo, isVoip);
+    ReleaseNoneEngine();
 }
 
 static AudioProcessConfig InitProcessConfig()
@@ -118,24 +128,28 @@ void NoneMixEngineStartFuzzTest()
 {
     playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Start();
+    ReleaseNoneEngine();
 }
 
 void NoneMixEngineStopFuzzTest()
 {
     playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Stop();
+    ReleaseNoneEngine();
 }
 
 void NoneMixEnginePauseFuzzTest()
 {
     playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Pause();
+    ReleaseNoneEngine();
 }
 
 void NoneMixEngineFlushFuzzTest()
 {
     playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->Flush();
+    ReleaseNoneEngine();
 }
 
 void NoneMixEngineAddRendererFuzzTest()
@@ -148,6 +162,7 @@ void NoneMixEngineAddRendererFuzzTest()
     rendererStream->Start();
     playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->AddRenderer(rendererStream);
+    ReleaseNoneEngine();
 }
 
 void NoneMixEngineRemoveRendererFuzzTest()
@@ -161,6 +176,7 @@ void NoneMixEngineRemoveRendererFuzzTest()
     playbackEngine_ = std::make_unique<NoneMixEngine>();
     playbackEngine_->AddRenderer(rendererStream);
     playbackEngine_->RemoveRenderer(rendererStream);
+    ReleaseNoneEngine();
 }
 
 
@@ -168,10 +184,41 @@ void AudioEndPointSeparateStartDeviceFuzzTest(std::shared_ptr<AudioEndpointSepar
 {
     audioEndpoint->StartDevice();
     audioEndpoint->GetEndpointName();
-    audioEndpoint->ShouldInnerCap();
-    audioEndpoint->EnableFastInnerCap();
-    audioEndpoint->DisableFastInnerCap();
+    audioEndpoint->ShouldInnerCap(1);
+    audioEndpoint->EnableFastInnerCap(1);
+    audioEndpoint->DisableFastInnerCap(1);
     return;
+}
+
+void AudioEndPointGetPreferBufferInfoFuzzTest(std::shared_ptr<AudioEndpointSeparate> audioEndpoint)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+
+    uint32_t spanSizeInFrame = GetData<uint32_t>();
+    uint32_t totalSizeInFrame = GetData<uint32_t>();
+    uint32_t byteSizePerFrame = GetData<uint32_t>();
+    if (spanSizeInFrame == 0) {
+        spanSizeInFrame++;
+    }
+    if (byteSizePerFrame == 0) {
+        byteSizePerFrame++;
+    }
+    std::shared_ptr<OHAudioBuffer> oHAudioBuffer =
+        OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    if (audioEndpoint == nullptr) {
+        return;
+    }
+    audioEndpoint->ResolveBuffer(oHAudioBuffer);
+    audioEndpoint->GetBuffer();
+    audioEndpoint->GetStatus();
+    audioEndpoint->OnStart(processStream);
+    audioEndpoint->OnPause(processStream);
+    audioEndpoint->OnUpdateHandleInfo(processStream);
+    audioEndpoint->LinkProcessStream(processStream);
+    audioEndpoint->UnlinkProcessStream(processStream);
+    audioEndpoint->GetPreferBufferInfo(totalSizeInFrame, spanSizeInFrame);
 }
 
 void AudioEndPointSeparateConfigFuzzTest()
@@ -191,31 +238,13 @@ void AudioEndPointSeparateConfigFuzzTest()
     AudioEndpoint::EndpointType type = GetData<AudioEndpoint::EndpointType>();
     AudioStreamType streamType = GetData<AudioStreamType>();
     audioEndpoint = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     audioEndpoint->Config(deviceInfo);
-
     AudioEndPointSeparateStartDeviceFuzzTest(audioEndpoint);
-
-    audioEndpoint->fastSink_ = FastAudioRendererSink::CreateFastRendererSink();
+    audioEndpoint->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
+        HDI_ID_INFO_DEFAULT, true);
     float volume = GetData<float>();
     audioEndpoint->SetVolume(streamType, volume);
-
-    uint32_t spanSizeInFrame = GetData<uint32_t>();
-    uint32_t totalSizeInFrame = GetData<uint32_t>();
-    uint32_t byteSizePerFrame = GetData<uint32_t>();
-    std::shared_ptr<OHAudioBuffer> oHAudioBuffer =
-        OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-    audioEndpoint->ResolveBuffer(oHAudioBuffer);
-    audioEndpoint->GetBuffer();
-    audioEndpoint->GetStatus();
-    audioEndpoint->OnStart(processStream);
-    audioEndpoint->OnPause(processStream);
-    audioEndpoint->OnUpdateHandleInfo(processStream);
-    audioEndpoint->LinkProcessStream(processStream);
-    audioEndpoint->UnlinkProcessStream(processStream);
-    audioEndpoint->GetPreferBufferInfo(totalSizeInFrame, spanSizeInFrame);
+    AudioEndPointGetPreferBufferInfoFuzzTest(audioEndpoint);
     std::string dumpString = "";
     audioEndpoint->Dump(dumpString);
     audioEndpoint->GetEndpointType();

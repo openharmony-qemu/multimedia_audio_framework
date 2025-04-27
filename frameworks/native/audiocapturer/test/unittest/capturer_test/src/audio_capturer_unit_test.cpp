@@ -59,9 +59,9 @@ int32_t AudioCapturerUnitTest::InitializeCapturer(unique_ptr<AudioCapturer> &aud
 
 void AudioCapturerUnitTest::InitializeCapturerOptions(AudioCapturerOptions &capturerOptions)
 {
-    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     capturerOptions.streamInfo.channels = AudioChannel::MONO;
     capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
@@ -1358,11 +1358,15 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_001, TestSize.Level1)
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_002, TestSize.Level1)
 {
+    AudioCapturerOptions capturerOptions;
+    AppInfo appInfo;
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(false, isStarted);
+    std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
+    bool isStarted = pCapturer->Start();
+    EXPECT_EQ(true, isStarted);
 }
 
 /**
@@ -1467,12 +1471,19 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_001, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
+    AppInfo appInfo;
     AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
 
-    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
 
+    audioCapturer->CreateCapturer(capturerOptions, appInfo);
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(true, isStarted);
 
@@ -1480,7 +1491,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_001, TestSize.Level1)
     ret = audioCapturer->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
 
-    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen+1);
     ASSERT_NE(nullptr, buffer);
     FILE *capFile = fopen(AUDIO_CAPTURE_FILE1.c_str(), "wb");
     ASSERT_NE(nullptr, capFile);
@@ -1566,25 +1577,30 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_003, TestSize.Level1)
 {
     int32_t ret = -1;
     bool isBlockingRead = true;
+    AudioCapturerOptions capturerOptions;
+    AppInfo appInfo;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(false, isStarted);
+    std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
+    bool isStarted = pCapturer->Start();
+    EXPECT_EQ(true, isStarted);
 
     size_t bufferLen;
-    ret = audioCapturer->GetBufferSize(bufferLen);
+    ret = pCapturer->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
 
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
     ASSERT_NE(nullptr, buffer);
 
-    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
-    EXPECT_EQ(ERR_INVALID_PARAM, bytesRead);
+    int32_t bytesRead = pCapturer->Read(*buffer, bufferLen, isBlockingRead);
+    EXPECT_NE(0, bytesRead);
 
-    audioCapturer->Flush();
-    audioCapturer->Stop();
-    audioCapturer->Release();
+    pCapturer->Flush();
+    pCapturer->Stop();
+    pCapturer->Release();
 
     free(buffer);
 }
@@ -1912,6 +1928,119 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_005, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_Stability_001, TestSize.Level1)
 {
     AudioCapturerOptions capturerOptions;
+    AppInfo appInfo;
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
+    bool isStarted = pCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    thread captureThread(StartCaptureThread, audioCapturer.get(), AUDIO_TIME_STABILITY_TEST_FILE);
+
+    for (int i = 0; i < VALUE_THOUSAND; i++) {
+        Timestamp timestamp;
+        bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
+        EXPECT_EQ(true, getAudioTime);
+    }
+
+    captureThread.join();
+    audioCapturer->Stop();
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+* @tc.name  : Test GetFirstPkgTimeStampInfo API via legal input.
+* @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_001
+* @tc.desc  : Test GetFirstPkgTimeStampInfo interface. Returns true, if the getting is successful.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    bool isBlockingRead = true;
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioCapturer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
+    EXPECT_GE(bytesRead, VALUE_ZERO);
+
+    int64_t firstTs;
+    bool getRet = audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
+    EXPECT_EQ(true, getRet);
+    EXPECT_TRUE(firstTs >= 0);
+
+    audioCapturer->Flush();
+    audioCapturer->Stop();
+    audioCapturer->Release();
+
+    free(buffer);
+}
+
+/**
+* @tc.name  : Test GetFirstPkgTimeStampInfo API via illegal state
+* @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_002
+* @tc.desc  : Test GetFirstPkgTimeStampInfo interface. Returns false, if the capturer state is CAPTURER_RELEASED
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_002, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioCapturer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    int64_t firstTs;
+    bool ret = audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name  : Test GetFirstPkgTimeStampInfo API via illegal state
+* @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_003
+* @tc.desc  : Test GetFirstPkgTimeStampInfo interface. Returns false, if the capturer state is CAPTURER_NEW.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_003, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    int64_t firstTs;
+    audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
+    EXPECT_TRUE(firstTs >= 0);
+}
+
+/**
+* @tc.name  : Test GetFirstPkgTimeStampInfo API stability.
+* @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_Stability_001
+* @tc.desc  : Test GetFirstPkgTimeStampInfo interface stability.
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_Stability_001, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
 
     AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
@@ -1922,11 +2051,9 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_Stability_001, TestSiz
 
     thread captureThread(StartCaptureThread, audioCapturer.get(), AUDIO_TIME_STABILITY_TEST_FILE);
 
-    for (int i = 0; i < VALUE_THOUSAND; i++) {
-        Timestamp timestamp;
-        bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
-        EXPECT_EQ(true, getAudioTime);
-    }
+    Timestamp timestamp;
+    bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_EQ(true, getAudioTime);
 
     captureThread.join();
 
@@ -1945,8 +2072,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_Stability_001, TestSiz
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    std::shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
     AudioPlaybackCaptureConfig playbackCaptureConfig;
@@ -1983,8 +2110,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_001, TestSize.Level
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_002, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
     AudioDeviceDescriptor newDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
@@ -2003,8 +2130,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_002, TestSize.Level
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_003, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
     AudioDeviceDescriptor newDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
@@ -2025,20 +2152,18 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_003, TestSize.Level
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
-    EXPECT_EQ(CAPTURER_PREPARED, audioCapturer->GetStatus());
+    EXPECT_NE(CAPTURER_INVALID, audioCapturer->GetStatus());
     uint32_t originalSessionId = INVALID_SESSION_ID;
     audioCapturer->GetAudioStreamId(originalSessionId);
 
-    uint32_t newSessionId = 0;
-    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
+    RestoreInfo restoreInfo;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, restoreInfo);
 
     EXPECT_EQ(true, switchResult);
-    EXPECT_NE(newSessionId, originalSessionId);
-    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
@@ -2051,27 +2176,29 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_001, TestSize.
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_002, TestSize.Level1)
 {
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    AudioCapturerOptions capturerOptions;
+    AppInfo appInfo;
+
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
-    bool startResult = audioCapturer->Start();
+    std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
+    bool startResult = pCapturer->Start();
     EXPECT_EQ(true, startResult);
-    EXPECT_EQ(CAPTURER_RUNNING, audioCapturer->GetStatus());
+    EXPECT_EQ(CAPTURER_RUNNING, pCapturer->GetStatus());
 
     uint32_t originalSessionId = INVALID_SESSION_ID;
-    audioCapturer->GetAudioStreamId(originalSessionId);
+    pCapturer->GetAudioStreamId(originalSessionId);
 
-    uint32_t newSessionId = 0;
-    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, newSessionId);
+    RestoreInfo restoreInfo;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, restoreInfo);
 
     EXPECT_EQ(true, switchResult);
-    EXPECT_NE(newSessionId, originalSessionId);
-    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
-    EXPECT_EQ(CAPTURER_RUNNING, audioCapturer->GetStatus());
+    EXPECT_EQ(CAPTURER_RUNNING, pCapturer->GetStatus());
 
-    bool isReleased = audioCapturer->Release();
+    bool isReleased = pCapturer->Release();
     EXPECT_EQ(true, isReleased);
 }
 
@@ -2083,75 +2210,20 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_002, TestSize.
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
     uint32_t originalSessionId = INVALID_SESSION_ID;
     audioCapturer->GetAudioStreamId(originalSessionId);
 
-    uint32_t newSessionId = 0;
-    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::VOIP_STREAM, newSessionId);
+    RestoreInfo restoreInfo;
+    bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::VOIP_STREAM, restoreInfo);
 
-    EXPECT_EQ(true, switchResult);
-    EXPECT_NE(newSessionId, originalSessionId);
-    EXPECT_NE(newSessionId, INVALID_SESSION_ID);
+    EXPECT_EQ(false, switchResult);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
-}
-
-/**
-* @tc.name  : Test InitPlaybackCapturer.
-* @tc.number: InitPlaybackCapturer_001
-* @tc.desc  : Test InitPlaybackCapturer.
-*/
-HWTEST(AudioCapturerUnitTest, InitPlaybackCapturer_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    int32_t type = 3;
-    const AudioPlaybackCaptureConfig config;
-    int32_t ret = audioCapturer->InitPlaybackCapturer(type, config);
-
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test InitPlaybackCapturer.
-* @tc.number: InitPlaybackCapturer_002
-* @tc.desc  : Test InitPlaybackCapturer.
-*/
-HWTEST(AudioCapturerUnitTest, InitPlaybackCapturer_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    int32_t type = 2;
-    const AudioPlaybackCaptureConfig config;
-    int32_t ret = audioCapturer->InitPlaybackCapturer(type, config);
-
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test SetCaptureSilentState.
-* @tc.number: SetCaptureSilentState_001
-* @tc.desc  : Test SetCaptureSilentState.
-*/
-HWTEST(AudioCapturerUnitTest, SetCaptureSilentState_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    int32_t ret = audioCapturer->SetCaptureSilentState(true);
-    EXPECT_EQ(ret, ERROR);
-    ret = audioCapturer->SetCaptureSilentState(false);
-    EXPECT_EQ(ret, ERROR);
 }
 
 /**
@@ -2162,8 +2234,8 @@ HWTEST(AudioCapturerUnitTest, SetCaptureSilentState_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, CheckSignalData_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
     uint8_t *buffer = {};
     size_t bufferSize = 10;
@@ -2182,8 +2254,8 @@ HWTEST(AudioCapturerUnitTest, CheckSignalData_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, GetStreamInfo_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
     audioCapturer->isChannelChange_ = true;
     AudioStreamInfo streamInfo;
@@ -2200,8 +2272,8 @@ HWTEST(AudioCapturerUnitTest, GetStreamInfo_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, FindStreamTypeBySourceType_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
     SourceType sourceType = SOURCE_TYPE_CAMCORDER;
     AudioStreamType ret = audioCapturer->FindStreamTypeBySourceType(sourceType);
@@ -2216,8 +2288,8 @@ HWTEST(AudioCapturerUnitTest, FindStreamTypeBySourceType_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, ConcedeStream_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
     audioCapturer->ConcedeStream();
     EXPECT_EQ(audioCapturer != nullptr, true);
@@ -2231,8 +2303,8 @@ HWTEST(AudioCapturerUnitTest, ConcedeStream_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, IsDeviceChanged_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
     AudioPlaybackCaptureConfig playbackCaptureConfig;
     audioCapturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
@@ -2264,36 +2336,12 @@ HWTEST(AudioCapturerUnitTest, IsDeviceChanged_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, RemoveCapturerPolicyServiceDiedCallback_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     audioCapturer->audioPolicyServiceDiedCallback_ = std::make_shared<CapturerPolicyServiceDiedCallback>();;
 
     int32_t ret = audioCapturer->RemoveCapturerPolicyServiceDiedCallback();
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test SwitchStream.
-* @tc.number: SwitchStream
-* @tc.desc  : Test SwitchStream.
-*/
-HWTEST(AudioCapturerUnitTest, SwitchStream_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    const uint32_t sessionId = 0;
-    const int32_t streamFlag = AUDIO_FLAG_NORMAL;
-    const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE;
-
-    audioCapturer->SwitchStream(sessionId, streamFlag, reason);
-    const int32_t streamFlag_2 = AUDIO_FLAG_MMAP;
-    audioCapturer->SwitchStream(sessionId, streamFlag_2, reason);
-    const int32_t streamFlag_3 = AUDIO_FLAG_VOIP_FAST;
-    audioCapturer->SwitchStream(sessionId, streamFlag_3, reason);
-    const int32_t streamFlag_4 = AUDIO_FLAG_INVALID;
-    audioCapturer->SwitchStream(sessionId, streamFlag_4, reason);
-    EXPECT_EQ(streamFlag, 0);
 }
 
 /**
@@ -2304,14 +2352,14 @@ HWTEST(AudioCapturerUnitTest, SwitchStream_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, NotifyAudioCapturerInfoChange_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
     audioCapturer->audioStateChangeCallback_ = std::make_shared<AudioCapturerStateChangeCallbackImpl>();
-    AudioCapturerPrivate *capturerObj = new AudioCapturerPrivate(STREAM_MUSIC, appInfo, true);
+    auto capturerObj = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
-    audioCapturer->audioStateChangeCallback_->setAudioCapturerObj(capturerObj);
+    audioCapturer->audioStateChangeCallback_->SetAudioCapturerObj(capturerObj);
     audioCapturer->audioStateChangeCallback_->NotifyAudioCapturerInfoChange(capturerChangeInfos);
     EXPECT_EQ(capturerChangeInfos.size() == 0, true);
 }
@@ -2324,8 +2372,8 @@ HWTEST(AudioCapturerUnitTest, NotifyAudioCapturerInfoChange_001, TestSize.Level1
 HWTEST(AudioCapturerUnitTest, NotifyAudioCapturerDeviceChange_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
     audioCapturer->audioStateChangeCallback_ = std::make_shared<AudioCapturerStateChangeCallbackImpl>();
@@ -2341,8 +2389,8 @@ HWTEST(AudioCapturerUnitTest, NotifyAudioCapturerDeviceChange_001, TestSize.Leve
 HWTEST(AudioCapturerUnitTest, OnCapturerStateChange_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
-    unique_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_unique<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
 
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
     audioCapturer->audioStateChangeCallback_ = std::make_shared<AudioCapturerStateChangeCallbackImpl>();
@@ -2376,6 +2424,96 @@ HWTEST(AudioCapturerUnitTest, RestoreTheadLoop_001, TestSize.Level1)
 
     capturerPolicyServiceDiedCallback->RestoreTheadLoop();
     EXPECT_EQ(capturerPolicyServiceDiedCallback != nullptr, true);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_WIRED_HEADSET);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_ACCESSORY);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_005, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_USB_ARM_HEADSET);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetInputDevice.
+* @tc.number: SetInputDevice.
+* @tc.desc  : Test SetInputDevice.
+*/
+HWTEST(AudioCapturerUnitTest, SetInputDevice_006, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+
+    int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_FILE_SOURCE);
+    EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -26,6 +26,7 @@
 #include "audio_group_handle.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
+#include "audio_pipe_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,12 +50,13 @@ public:
 
     int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName, bool isSync = false);
+    int32_t ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo,
+        bool isSync = false);
 
     void NotifyUnmutePort();
     void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
     void SetMoveFinish(bool flag);
     void MuteDefaultSinkPort(std::string networkID, std::string sinkName);
-    void SetDeviceInfos(DeviceType oldOutputDevice, DeviceType newOutputDevice);
     void UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName);
     void DoUnmutePort(int32_t muteDuration, const std::string &portName);
 
@@ -69,9 +71,6 @@ private:
     std::mutex moveDeviceMutex_;
     std::condition_variable moveDeviceCV_;
     std::atomic<bool> moveDeviceFinished_ = false;
-
-    DeviceType oldOutputDevice_ = DEVICE_TYPE_NONE;
-    DeviceType newOutputDevice_ = DEVICE_TYPE_NONE;
 
     static std::map<std::string, std::string> sinkPortStrToClassStrMap_;
 };

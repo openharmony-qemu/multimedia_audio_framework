@@ -15,6 +15,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "securec.h"
+
 #include "audio_effect.h"
 #include "audio_effect_chain.h"
 #include "audio_effect_log.h"
@@ -288,7 +290,7 @@ void AudioEnhanceChainFuzzTest()
     EnhanceChainManagerIsEmptyEnhanceChain();
     EnhanceChainManagerInitEnhanceBuffer();
     const char *invalidScene = "SCENE_RECORD";
-    uint32_t sceneTypeCode = GetData<uint32_t>();
+    uint64_t sceneTypeCode = GetData<uint64_t>();
     GetSceneTypeCode(invalidScene, &sceneTypeCode);
     AudioEnhanceChainManagerFuzzTest(audioEnhanceChainMananger);
 }

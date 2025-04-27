@@ -17,6 +17,7 @@
 #include "playback_capturer_adapter.h"
 #include "playback_capturer_manager.h"
 #include "audio_info.h"
+#include "audio_errors.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -49,60 +50,6 @@ void PlaybackPlaybackCapturerManagerUnitTest::SetUp(void)
 void PlaybackPlaybackCapturerManagerUnitTest::TearDown(void)
 {
     // input testcase teardown step，teardown invoked after each testcases
-}
-
-/**
- * @tc.name  : Test IsStreamSupportInnerCapturer API via legal state
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupportInnerCapturer_001
- * @tc.desc  : Test IsStreamSupportInnerCapturer interface. Is stream support inner capturer and return ret.
- */
-HWTEST(PlaybackPlaybackCapturerManagerUnitTest, IsStreamSupportInnerCapturer_001, TestSize.Level1)
-{
-    std::vector<int32_t> usage;
-    usage.push_back(STREAM_USAGE_MEDIA);
-    usage.push_back(STREAM_USAGE_MUSIC);
-    usage.push_back(STREAM_USAGE_GAME);
-    usage.push_back(STREAM_USAGE_MOVIE);
-    usage.push_back(STREAM_USAGE_AUDIOBOOK);
-    playbackCapturerMgr_->SetSupportStreamUsage(usage);
-    for (int32_t usageItem : usage) {
-        bool ret = IsStreamSupportInnerCapturer(usageItem);
-        EXPECT_TRUE(ret);
-    }
-}
-
-/**
- * @tc.name  : Test IsStreamSupportInnerCapturer API via illegal state
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupportInnerCapturer_002
- * @tc.desc  : Test IsStreamSupportInnerCapturer interface. Is stream support inner capturer and return ret.
- */
-HWTEST(PlaybackPlaybackCapturerManagerUnitTest, IsStreamSupportInnerCapturer_002, TestSize.Level1)
-{
-    std::vector<int32_t> usage;
-    playbackCapturerMgr_->SetSupportStreamUsage(usage);
-    bool ret = playbackCapturerMgr_->IsStreamSupportInnerCapturer(STREAM_USAGE_RANGING);
-    EXPECT_FALSE(ret);
-}
-
-/**
- * @tc.name  : Test IsStreamSupportInnerCapturer API via legal state
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupportInnerCapturer_003
- * @tc.desc  : Test IsStreamSupportInnerCapturer interface. Is stream support inner capturer and return ret.
- */
-HWTEST(PlaybackPlaybackCapturerManagerUnitTest, IsStreamSupportInnerCapturer_003, TestSize.Level1)
-{
-    std::vector<int32_t> usage;
-    usage.push_back(STREAM_USAGE_MEDIA);
-    usage.push_back(STREAM_USAGE_MUSIC);
-    usage.push_back(STREAM_USAGE_GAME);
-    usage.push_back(STREAM_USAGE_MOVIE);
-    usage.push_back(STREAM_USAGE_AUDIOBOOK);
-    playbackCapturerMgr_->SetSupportStreamUsage(usage);
-    bool ret = playbackCapturerMgr_->IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA);
-    EXPECT_TRUE(ret);
 }
 
 /**
@@ -143,6 +90,43 @@ HWTEST(PlaybackPlaybackCapturerManagerUnitTest, SetInnerCapturerState_001, TestS
     SetInnerCapturerState(false);
     ret = GetInnerCapturerState();
     EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test RegisterCapturerFilterListener API via legal and illegal state
+ * @tc.type  : FUNC
+ * @tc.number: RegisterCapturerFilterListener_001
+ * @tc.desc  : Test RegisterCapturerFilterListener interface
+ */
+HWTEST(PlaybackPlaybackCapturerManagerUnitTest, RegisterCapturerFilterListener_001, TestSize.Level1)
+{
+    bool ret = playbackCapturerMgr_->RegisterCapturerFilterListener(nullptr);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckCaptureLimit API
+ * @tc.type  : FUNC
+ * @tc.number: CheckCaptureLimit_001
+ * @tc.desc  : Test CheckCaptureLimit interface
+ */
+HWTEST(PlaybackPlaybackCapturerManagerUnitTest, CheckCaptureLimit_001, TestSize.Level1)
+{
+    AudioPlaybackCaptureConfig config;
+    int32_t innerCapId = 0;
+    int32_t ret = playbackCapturerMgr_->CheckCaptureLimit(config, innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = playbackCapturerMgr_->SetInnerCapLimit(++innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = playbackCapturerMgr_->CheckCaptureLimit(config, innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+    config.filterOptions.usages.push_back(STREAM_USAGE_MUSIC);
+    ret = playbackCapturerMgr_->CheckCaptureLimit(config, innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+    playbackCapturerMgr_->CheckReleaseUnloadModernInnerCapSink(innerCapId--);
+    playbackCapturerMgr_->CheckReleaseUnloadModernInnerCapSink(innerCapId);
+    bool checkRet = playbackCapturerMgr_->CheckReleaseUnloadModernInnerCapSink(1);
+    EXPECT_TRUE(checkRet);
 }
 
 }

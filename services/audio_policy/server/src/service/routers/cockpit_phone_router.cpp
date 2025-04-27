@@ -51,7 +51,8 @@ shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallRenderDevice(Stream
     return desc;
 }
 
-shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePublicDevices();
@@ -80,11 +81,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRender
         return descs;
     }
 
-    if (latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADSET ||
-        latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADPHONES ||
-        latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_SCO ||
-        latestConnDesc->getType() == DEVICE_TYPE_USB_HEADSET ||
-        latestConnDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+    if (NeedLatestConnectWithDefaultDevices(latestConnDesc->getType())) {
         // Add the latest connected device.
         descs.push_back(move(latestConnDesc));
         switch (streamUsage) {
@@ -111,7 +108,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> CockpitPhoneRouter::GetRingRender
     return descs;
 }
 
-shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
+    const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }

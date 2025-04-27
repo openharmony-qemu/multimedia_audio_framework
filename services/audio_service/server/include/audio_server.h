@@ -17,6 +17,7 @@
 #define ST_AUDIO_SERVER_H
 
 #include <mutex>
+#include <condition_variable>
 #include <pthread.h>
 #include <unordered_map>
 
@@ -28,10 +29,12 @@
 #include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
 #include "audio_server_dump.h"
+#include "i_audio_server_hpae_dump.h"
 #include "audio_system_manager.h"
 #include "audio_inner_call.h"
-#include "i_audio_renderer_sink.h"
-#include "i_audio_capturer_source.h"
+#include "common/hdi_adapter_info.h"
+#include "sink/i_audio_render_sink.h"
+#include "source/i_audio_capture_source.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
 #include "policy_handler.h"
@@ -61,7 +64,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag) override;
+        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag = false) override;
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<std::pair<std::string, std::string>>& kvpairs) override;
@@ -77,6 +80,7 @@ public:
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag, BluetoothOffloadState a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "") override;
+    void SetDmDeviceType(uint16_t dmDeviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
@@ -110,26 +114,25 @@ public:
 
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;
 
-    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode) override;
+    sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
+        const AudioPlaybackCaptureConfig &filterConfig = AudioPlaybackCaptureConfig()) override;
 
     // ISinkParameterCallback
-    void OnAudioSinkParamChange(const std::string &netWorkId, const AudioParamKey key,
+    void OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
 
     // IAudioSourceCallback
     void OnWakeupClose() override;
-    void OnAudioSourceParamChange(const std::string &netWorkId, const AudioParamKey key,
+    void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
 
+    int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) override;
+
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
-
-    int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
-
-    int32_t SetCaptureSilentState(bool state) override;
 
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
 
@@ -143,7 +146,7 @@ public:
 
     uint32_t GetEffectLatency(const std::string &sessionId) override;
 
-    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+    float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) override;
 
     void ResetAudioEndpoint() override;
 
@@ -151,7 +154,7 @@ public:
 
     bool GetEffectOffloadEnabled() override;
 
-    void OnCapturerState(bool isActive, int32_t num);
+    void OnCapturerState(bool isActive, size_t preNum, size_t curNum);
 
     // IAudioServerInnerCall
     int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) final;
@@ -162,7 +165,7 @@ public:
 
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
 
-    void RestoreSession(const int32_t &sessionID, bool isOutput) override;
+    void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) override;
 
     void SetRotationToEffect(const uint32_t rotate) override;
 
@@ -174,7 +177,7 @@ public:
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
 
-    void OnAudioSinkStateChange(uint32_t sinkId, bool started) override;
+    void OnRenderSinkStateChange(uint32_t sinkId, bool started) override;
 
     void CheckHibernateState(bool hibernate) override;
 
@@ -187,10 +190,42 @@ public:
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     
     void NotifyAccountsChanged() override;
+
+    void NotifySettingsDataReady() override;
+
+    void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
+
+    void SetDefaultAdapterEnable(bool isEnable) override;
+
+    void NotifyAudioPolicyReady() override;
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
+    int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
+    int32_t ReleaseCaptureLimit(int32_t innerCapId) override;
+#endif
+
+    int32_t LoadHdiAdapter(uint32_t devMgrType, const std::string &adapterName) override;
+    void UnloadHdiAdapter(uint32_t devMgrType, const std::string &adapterName, bool force) override;
+    uint32_t CreateHdiSinkPort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSinkAttr &attr) override;
+    uint32_t CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSinkAttr &attr) override;
+    uint32_t CreateHdiSourcePort(const std::string &deviceClass, const std::string &idInfo,
+        const IAudioSourceAttr &attr) override;
+    uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
+        const IAudioSourceAttr &attr) override;
+    void DestroyHdiPort(uint32_t id) override;
+    void SetDeviceConnectedFlag(bool flag) override;
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
 private:
+#ifdef HAS_FEATURE_INNERCAPTURER
+    bool HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
+        const AudioPlaybackCaptureConfig &filterConfig);
+    int32_t InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
+#endif
     int32_t GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &propertyArray,
         const DeviceType& deviceType);
     int32_t GetAudioEffectPropertyArray(AudioEffectPropertyArrayV3 &propertyArray);
@@ -216,7 +251,6 @@ private:
     bool CheckConfigFormat(const AudioProcessConfig &config);
     int32_t GetHapBuildApiVersion(int32_t callerUid);
 
-    void NotifyProcessStatus(bool isStart);
     void AudioServerDied(pid_t pid, pid_t uid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
@@ -226,10 +260,12 @@ private:
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
-    bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
+    void ParseAudioParameter();
+    bool CacheExtraParameters(const std::string &key,
+        const std::vector<std::pair<std::string, std::string>> &kvpairs);
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
@@ -249,6 +285,8 @@ private:
     sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
     int32_t SetAsrVoiceSuppressionControlMode(const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode,
         bool on, int32_t modifyVolume);
+    int32_t CheckAndWaitAudioPolicyReady();
+    void NotifyProcessStatus();
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -275,11 +313,24 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
+
+    std::atomic<bool> isAudioParameterParsed_ = false;
+    std::mutex audioParameterCacheMutex_;
+    std::vector<std::pair<std::string,
+        std::vector<std::pair<std::string, std::string>>>> audioExtraParameterCacheVector_;
+
     bool isFastControlled_ = true;
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem
     std::map<std::string, std::string> usbInfoMap_;
+
+    std::atomic<bool> isAudioPolicyReady_ = false;
+    std::mutex isAudioPolicyReadyMutex_;
+    std::condition_variable isAudioPolicyReadyCv_;
+
+    int32_t waitCreateStreamInServerCount_ = 0;
+    std::shared_ptr<IAudioServerHpaeDump> hpaeDumpObj_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

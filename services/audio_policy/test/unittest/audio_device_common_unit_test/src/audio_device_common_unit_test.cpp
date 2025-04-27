@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -91,6 +91,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_002, TestSize.Level1)
     EXPECT_EQ(true, ret);
 
     deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    ret = audioDeviceCommon.IsRingerOrAlarmerDualDevicesRange(deviceType);
+    EXPECT_EQ(true, ret);
+
+    deviceType = DEVICE_TYPE_REMOTE_CAST;
     ret = audioDeviceCommon.IsRingerOrAlarmerDualDevicesRange(deviceType);
     EXPECT_EQ(true, ret);
 
@@ -221,60 +225,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_006, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_007
-* @tc.desc  : Test GetPreferredOutputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_007, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    StreamUsage streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    DeviceType deviceType = DEVICE_TYPE_EARPIECE;
-    int32_t flags = 1;
-    std::string networkId = "";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    int32_t ret = audioDeviceCommon.GetPreferredOutputStreamTypeInner(streamUsage,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_NORMAL, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_008
-* @tc.desc  : Test GetPreferredInputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_008, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    DeviceType deviceType = DEVICE_TYPE_MIC;
-    int32_t flags = 1;
-    std::string networkId = "LocalDevice";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    int32_t ret = audioDeviceCommon.GetPreferredInputStreamTypeInner(sourceType,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_NORMAL, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_009
-* @tc.desc  : Test GetPreferredInputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_009, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    DeviceType deviceType = DEVICE_TYPE_MIC;
-    int32_t flags = 1;
-    std::string networkId = "LocalDevice";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    int32_t ret = audioDeviceCommon.GetPreferredInputStreamTypeInner(sourceType,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_NORMAL, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_010
 * @tc.desc  : Test IsRingerOrAlarmerDualDevicesRange interface.
 */
@@ -335,185 +285,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_010, TestSize.Level1)
     deviceType = DEVICE_TYPE_MIC;
     ret = audioDeviceCommon.HasLowLatencyCapability(deviceType, isRemote);
     EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_011
-* @tc.desc  : Test GetPreferredOutputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_011, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    StreamUsage streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    DeviceType deviceType = DEVICE_TYPE_EARPIECE;
-    int32_t flags = 1;
-    std::string networkId = "LocalDevice";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_48000;
-    audioDeviceCommon.audioConfigManager_.OnVoipConfigParsed(true);
-    int32_t ret = audioDeviceCommon.GetPreferredOutputStreamTypeInner(streamUsage,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_VOIP_FAST, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_012
-* @tc.desc  : Test GetPreferredOutputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_012, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    StreamUsage streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    DeviceType deviceType = DEVICE_TYPE_EARPIECE;
-    int32_t flags = 1;
-    std::string networkId = "LocalDevice";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_48000;
-    audioDeviceCommon.audioConfigManager_.OnVoipConfigParsed(false);
-    int32_t ret = audioDeviceCommon.GetPreferredOutputStreamTypeInner(streamUsage,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_VOIP_DIRECT, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_013
-* @tc.desc  : Test GetPreferredOutputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_013, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    StreamUsage streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    DeviceType deviceType = DEVICE_TYPE_EARPIECE;
-    int32_t flags = 1;
-    std::string networkId = "LocalDevice";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_48000;
-    audioDeviceCommon.audioConfigManager_.OnVoipConfigParsed(false);
-    int32_t ret = audioDeviceCommon.GetPreferredOutputStreamTypeInner(streamUsage,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_VOIP_DIRECT, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_014
-* @tc.desc  : Test GetPreferredOutputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_014, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    StreamUsage streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    DeviceType deviceType = DEVICE_TYPE_EARPIECE;
-    int32_t flags = 1;
-    std::string networkId = "";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    const std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
-    audioDeviceCommon.audioConfigManager_.OnAudioPolicyXmlParsingCompleted(adapterInfoMap);
-    int32_t ret = audioDeviceCommon.GetPreferredOutputStreamTypeInner(streamUsage,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_NORMAL, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_015
-* @tc.desc  : Test GetPreferredOutputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_015, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    StreamUsage streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    DeviceType deviceType = DEVICE_TYPE_EARPIECE;
-    int32_t flags = 1;
-    std::string networkId = "";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    AudioAdapterInfo adapterInfo = {};
-    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap = {};
-    adapterInfoMap.insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
-    audioDeviceCommon.audioConfigManager_.OnAudioPolicyXmlParsingCompleted(adapterInfoMap);
-    int32_t ret = audioDeviceCommon.GetPreferredOutputStreamTypeInner(streamUsage,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_INVALID, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_016
-* @tc.desc  : Test GetPreferredInputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_016, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    DeviceType deviceType = DEVICE_TYPE_MIC;
-    int32_t flags = 1;
-    std::string networkId = "LocalDevice";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_48000;
-    audioDeviceCommon.audioConfigManager_.OnVoipConfigParsed(true);
-    int32_t ret = audioDeviceCommon.GetPreferredInputStreamTypeInner(sourceType,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_VOIP_FAST, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_017
-* @tc.desc  : Test GetPreferredInputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_017, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    DeviceType deviceType = DEVICE_TYPE_MIC;
-    int32_t flags = 1;
-    std::string networkId = "LocalDevice";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_16000;
-    audioDeviceCommon.audioConfigManager_.OnVoipConfigParsed(true);
-    int32_t ret = audioDeviceCommon.GetPreferredInputStreamTypeInner(sourceType,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_VOIP_FAST, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_018
-* @tc.desc  : Test GetPreferredInputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_018, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    DeviceType deviceType = DEVICE_TYPE_MIC;
-    int32_t flags = 1;
-    std::string networkId = "LocalDevice";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_16000;
-    const std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
-    audioDeviceCommon.audioConfigManager_.OnAudioPolicyXmlParsingCompleted(adapterInfoMap);
-    int32_t ret = audioDeviceCommon.GetPreferredInputStreamTypeInner(sourceType,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_INVALID, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_019
-* @tc.desc  : Test GetPreferredInputStreamTypeInner interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_019, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    DeviceType deviceType = DEVICE_TYPE_MIC;
-    int32_t flags = 1;
-    std::string networkId = "LocalDevice";
-    AudioSamplingRate samplingRate = SAMPLE_RATE_16000;
-    AudioAdapterInfo adapterInfo = {};
-    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap = {};
-    adapterInfoMap.insert({AdaptersType::TYPE_PRIMARY, adapterInfo});
-    audioDeviceCommon.audioConfigManager_.OnAudioPolicyXmlParsingCompleted(adapterInfoMap);
-    int32_t ret = audioDeviceCommon.GetPreferredInputStreamTypeInner(sourceType,
-        deviceType, flags, networkId, samplingRate);
-    EXPECT_EQ(AUDIO_FLAG_INVALID, ret);
 }
 
 /**
@@ -1036,6 +807,25 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_048, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_049
+* @tc.desc  : Test MuteSinkForSwitchDistributedDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_049, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
+    audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
+    audioDeviceCommon.MuteSinkForSwitchDistributedDevice(rendererChangeInfo,
+        audioDeviceDescriptorUniqueptrVector, reason);
+    EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_050
 * @tc.desc  : Test IsRendererStreamRunning interface.
 */
@@ -1112,7 +902,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_053, TestSize.Level1)
     rendererChangeInfo->outputDeviceInfo.networkId_ = "test1";
     desc->networkId_ = "test2";
     ret = audioDeviceCommon.NotifyRecreateRendererStream(desc, rendererChangeInfo, reason);
-    EXPECT_EQ(true, ret);
+    EXPECT_EQ(false, ret);
 }
 
 /**
@@ -1272,6 +1062,26 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_062, TestSize.Level1)
     std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
+    capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
+    capturerChangeInfo->inputDeviceInfo.networkId_ = "LocalDevice";
+    bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
+        capturerChangeInfo, reason);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: NotifyRecreateCapturerStream_003
+* @tc.desc  : Test NotifyRecreateCapturerStream interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, NotifyRecreateCapturerStream_003, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    bool isUpdateActiveDevice = true;
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_NORMAL;
     capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
     audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
     capturerChangeInfo->inputDeviceInfo.networkId_ = "LocalDevice";
@@ -1927,42 +1737,34 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_088, TestSize.Level1)
     outputDevices.push_back(std::make_shared<AudioDeviceDescriptor>());
 
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(-1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+    EXPECT_EQ(0, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
 
     outputDevices.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(-1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+    EXPECT_EQ(0, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
 
     audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = true;
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+    EXPECT_EQ(1, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
 
     outputDevices.front()->deviceType_ = DEVICE_TYPE_INVALID;
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(1, audioDeviceCommon.ringDualToneOnPrimarySpeakerSessionId_);
+    EXPECT_EQ(2, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
 }
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_089
-* @tc.desc  : Test IsBlueToothOnPrimarySpeaker interface.
+* @tc.desc  : Test IsDualStreamWhenRingDual interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_089, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
 
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    EXPECT_TRUE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
-
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    EXPECT_FALSE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
-
-    audioDeviceCommon.audioA2dpOffloadFlag_.SetA2dpOffloadFlag(A2DP_OFFLOAD);
-    EXPECT_TRUE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
-
-    desc->deviceType_ = DEVICE_TYPE_INVALID;
-    EXPECT_FALSE(audioDeviceCommon.IsBlueToothOnPrimarySpeaker(desc));
+    EXPECT_TRUE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_RING));
+    EXPECT_TRUE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_ALARM));
+    EXPECT_TRUE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_ACCESSIBILITY));
+    EXPECT_FALSE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_MUSIC));
 }
 
 /**

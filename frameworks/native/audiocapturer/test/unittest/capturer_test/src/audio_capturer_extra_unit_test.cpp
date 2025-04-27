@@ -612,15 +612,18 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_001, TestSize.Level1)
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_002, TestSize.Level1)
 {
     CapturerState state = CAPTURER_INVALID;
+    AudioCapturerOptions capturerOptions;
+    AppInfo appInfo;
 
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    bool isStarted = audioCapturer->Start();
-    EXPECT_EQ(false, isStarted);
+    std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
+    bool isStarted = pCapturer->Start();
+    EXPECT_EQ(true, isStarted);
     state = audioCapturer->GetStatus();
-    EXPECT_NE(CAPTURER_RUNNING, state);
-    EXPECT_EQ(CAPTURER_NEW, state);
+    EXPECT_NE(CAPTURER_INVALID, state);
 }
 
 /**
@@ -1434,8 +1437,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     EXPECT_EQ(SUCCESS, ret);
 
     AppInfo appInfo = {};
-    std::unique_ptr<AudioCapturerPrivate> audioCapturerPrivate =
-        std::make_unique<AudioCapturerPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    std::shared_ptr<AudioCapturerPrivate> audioCapturerPrivate =
+        std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
 
     bool isDeviceChanged = audioCapturerPrivate->IsDeviceChanged(deviceInfo);
     EXPECT_EQ(false, isDeviceChanged);
@@ -1447,7 +1450,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSiz
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(true, isStarted);
 
-    int32_t ret1 = -1;
+    int32_t ret1 = 0;
     auto inputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     if (inputDeviceDescriptors.size() > 0) {
         auto microphoneDescriptors = audioCapturer->GetCurrentMicrophones();

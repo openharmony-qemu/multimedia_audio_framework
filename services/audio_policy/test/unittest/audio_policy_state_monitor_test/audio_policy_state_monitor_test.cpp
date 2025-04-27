@@ -160,5 +160,30 @@ HWTEST_F(AudioPolicyStateMonitorTest, RegisterStateMonitorFailWithNullCbTest, Te
     EXPECT_EQ(cbId, INVALID_CB_ID);
 }
 
+/**
+ * @tc.name  : AudioPolicyStateMonitor_001
+ * @tc.desc  : AudioPolicyStateMonitor::FreeCbId
+ */
+HWTEST_F(AudioPolicyStateMonitorTest, AudioPolicyStateMonitor_001, TestSize.Level1)
+{
+    auto audioPolicyStateMonitor = std::make_shared<AudioPolicyStateMonitor>();
+    EXPECT_NE(audioPolicyStateMonitor, nullptr);
+
+    int32_t cbId = -10;
+    audioPolicyStateMonitor->FreeCbId(cbId);
+}
+
+/**
+ * @tc.name  : AudioPolicyStateMonitor_002
+ * @tc.desc  : AudioPolicyStateMonitor::FreeCbId
+ */
+HWTEST_F(AudioPolicyStateMonitorTest, AudioPolicyStateMonitor_002, TestSize.Level1)
+{
+    auto audioPolicyStateMonitor = std::make_shared<AudioPolicyStateMonitor>();
+    EXPECT_NE(audioPolicyStateMonitor, nullptr);
+
+    int32_t cbId = 200;
+    audioPolicyStateMonitor->FreeCbId(cbId);
+}
 } // AudioStandardnamespace
 } // OHOSnamespace

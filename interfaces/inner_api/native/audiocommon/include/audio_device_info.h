@@ -159,6 +159,22 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_DEVICE = 25,
     /**
+     * Indicates a accessory audio device.
+     */
+    DEVICE_TYPE_ACCESSORY = 26,
+    /**
+     * Indicates a Distributed virtualization audio device.
+     */
+    DEVICE_TYPE_REMOTE_DAUDIO = 29,
+    /**
+     * Indicates a hdmi device
+     */
+    DEVICE_TYPE_HDMI = 27,
+    /**
+     * Indicates a line digital device
+     */
+    DEVICE_TYPE_LINE_DIGITAL = 28,
+    /**
      * Indicates a debug sink device
      */
     DEVICE_TYPE_FILE_SINK = 50,
@@ -193,6 +209,7 @@ inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_USB_HEADSET,
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
     DeviceType::DEVICE_TYPE_FILE_SOURCE,
+    DeviceType::DEVICE_TYPE_ACCESSORY,
 };
 
 inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
@@ -204,6 +221,12 @@ inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_
         return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
     }
 }
+
+enum DmDeviceType {
+    DM_DEVICE_TYPE_DEFAULT = 0,
+    DM_DEVICE_TYPE_PENCIL = 0xA07,
+    DM_DEVICE_TYPE_UWB = 0x06C,
+};
 
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_EARPIECE,
@@ -217,6 +240,9 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
     DeviceType::DEVICE_TYPE_FILE_SINK,
     DeviceType::DEVICE_TYPE_REMOTE_CAST,
+    DeviceType::DEVICE_TYPE_HDMI,
+    DeviceType::DEVICE_TYPE_LINE_DIGITAL,
+    DeviceType::DEVICE_TYPE_REMOTE_DAUDIO,
 };
 
 inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
@@ -435,7 +461,9 @@ public:
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
-        SET_DEFAULT_OUTPUT_DEVICE = 1002
+        SET_DEFAULT_OUTPUT_DEVICE = 1002,
+        DISTRIBUTED_DEVICE = 1003,
+        SET_INPUT_DEVICE = 1004
     };
 
     operator AudioStreamDeviceChangeReason() const
