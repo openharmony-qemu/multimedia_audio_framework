@@ -46,6 +46,7 @@ namespace {
     constexpr uint32_t OFFLOAD_FAD_INTERVAL_IN_US = 180000;
     constexpr uint32_t OFFLOAD_SET_BUFFER_SIZE_NUM = 5;
     constexpr uint32_t POLICY_STATE_DELAY_IN_SEC = 3;
+    static constexpr float EPSILON = 1e-6f;
 
     const std::string DEVICE_CLASS_OFFLOAD = "offload";
 }
@@ -498,7 +499,7 @@ void HpaeOffloadSinkOutputNode::OffloadSetHdiVolume()
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamType());
     float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, DEVICE_CLASS_OFFLOAD, &volumes);
     float volumeBeg = AudioVolume::GetInstance()->GetHistoryVolume(GetSessionId());
-    if (volumeBeg != volumeEnd) {
+    if (fabs(volumeBeg - volumeEnd) > EPSILON) {
         AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode::sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
             GetSessionId(), volumeBeg, volumeEnd);
         AudioVolume::GetInstance()->SetHistoryVolume(GetSessionId(), volumeEnd);
