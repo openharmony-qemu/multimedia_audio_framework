@@ -37,7 +37,7 @@ void HpaePolicyManagerTest::SetUp()
 void HpaePolicyManagerTest::TearDown()
 {}
 
-TEST_F(HpaePolicyManagerTest, allTestForHpaePolicyManager)
+TEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_001)
 {
     AudioSpatializationState spatializationState = {};
     int32_t ret = hpaePolicyManager_->UpdateSpatializationState(spatializationState);
@@ -79,7 +79,10 @@ TEST_F(HpaePolicyManagerTest, allTestForHpaePolicyManager)
 
     ret = hpaePolicyManager_->SetStreamVolumeInfo(SESSION_ID, 1.f);
     EXPECT_EQ(ret, 0);
+}
 
+TEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_002)
+{
     AudioEffectPropertyArrayV3 propertyArray2;
     propertyArray.property.push_back({"invalidEffect", "property1"});
     ret = hpaePolicyManager_->SetAudioEnhanceProperty(propertyArray2, DEVICE_TYPE_SPEAKER);
