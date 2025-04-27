@@ -790,7 +790,8 @@ int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t s
         }
 
         if (!SafeGetMap(rendererManagerMap_, sinkName)) {
-            AUDIO_ERR_LOG("move session:%{public}u failed,can not find sink:%{public}s.", sinkInputId, sinkName.c_str());
+            AUDIO_ERR_LOG("move session:%{public}u failed, can not find sink:%{public}s.", sinkInputId,
+                sinkName.c_str());
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
@@ -805,10 +806,11 @@ int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t s
             }
             return;
         }
-        
+
         std::string name = rendererIdSinkNameMap_[sinkInputId];
         if (sinkName == name) {
-            AUDIO_INFO_LOG("sink:%{public}s is the same, no need move session:%{public}u", sinkName.c_str(), sinkInputId);
+            AUDIO_INFO_LOG("sink:%{public}s is the same, no need move session:%{public}u", sinkName.c_str(),
+                sinkInputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(SUCCESS);
             }
@@ -936,7 +938,7 @@ void HpaeManager::HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std
 void HpaeManager::HandleMoveAllSinkInputs(
     const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, bool isConnect)
 {
-    AUDIO_INFO_LOG("handle move session count:%{public}zu to name is :%{public}s", sinkInputs.size(), sinkName.c_str());
+    AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", sinkInputs.size(), sinkName.c_str());
     if (sinkName.empty()) {
         AUDIO_INFO_LOG("sink name is empty, move to default sink:%{public}s", defaultSink_.c_str());
         sinkName = defaultSink_;
@@ -959,7 +961,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
 
 void HpaeManager::HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName)
 {
-    AUDIO_INFO_LOG("handle move session count:%{public}zu to name is :%{public}s", moveInfos.size(), sourceName.c_str());
+    AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", moveInfos.size(), sourceName.c_str());
     if (sourceName.empty()) {
         AUDIO_INFO_LOG("source is empty, move to default source:%{public}s", defaultSource_.c_str());
         sourceName = defaultSource_;

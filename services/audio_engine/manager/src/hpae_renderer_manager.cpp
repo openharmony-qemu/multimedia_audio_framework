@@ -429,7 +429,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
         return;
     }
 
-    if(sinkName.empty()) {
+    if (sinkName.empty()) {
         AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
         return;
     }

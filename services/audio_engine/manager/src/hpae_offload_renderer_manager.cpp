@@ -310,12 +310,11 @@ int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, c
 
 int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::string &sinkName)
 {
-    
     auto request = [this, sessionId, sinkName]() {
         CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
             "[StartMove] session:%{public}d failed,sink [offload] --> [%{public}s]", sessionId, sinkName.c_str());
 
-        if(sinkName.empty()) {
+        if (sinkName.empty()) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
             return;
         }
