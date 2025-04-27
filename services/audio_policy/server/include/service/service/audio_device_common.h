@@ -231,7 +231,7 @@ private:
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const int32_t sessionId);
-    bool IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState);
+    bool IsRingOverPlayback(AudioMode &mode, RendererState rendererState);
     bool IsDualStreamWhenRingDual(AudioStreamType streamType);
 
     // fetchInput
