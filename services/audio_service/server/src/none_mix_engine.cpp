@@ -268,11 +268,10 @@ void NoneMixEngine::AdjustVoipVolume()
     if (isVoip_) {
         uint32_t streamIndx = stream_->GetStreamIndex();
         AudioProcessConfig config = stream_->GetAudioProcessConfig();
-        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(config.streamType);
-        float volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndx);
-        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
-        float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, volumeType, std::string(SINK_ADAPTER_NAME),
-            &volumes);
+        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+        float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType,
+            std::string(SINK_ADAPTER_NAME), &volumes);
+        float volumeBg = volumes.volumeHistory;
         if ((!firstSetVolume_ && volumeBg != volumeEd) || firstSetVolume_) {
             AUDIO_INFO_LOG("Adjust voip volume");
             AudioVolume::GetInstance()->SetHistoryVolume(streamIndx, volumeEd);

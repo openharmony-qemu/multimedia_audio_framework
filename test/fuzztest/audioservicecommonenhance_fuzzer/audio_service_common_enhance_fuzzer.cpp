@@ -143,8 +143,6 @@ void AudioVolumeFuzzTest()
     audioVolume->SetHistoryVolume(sessionId, volume);
     audioVolume->SetStreamVolumeDuckFactor(sessionId, volume);
     audioVolume->SetStreamVolumeLowPowerFactor(sessionId, volume);
-    audioVolume->GetStreamVolumeFade(sessionId);
-    audioVolume->SetStreamVolumeFade(sessionId, volume, volume);
 
     int32_t volumeType = GetData<int32_t>();
     int32_t volumeLevel = GetData<int32_t>();

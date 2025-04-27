@@ -44,7 +44,7 @@ HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePlu
     struct VolumeValues volumes;
     float curSystemGain = AudioVolume::GetInstance()->GetVolume(GetSessionId(),
         GetStreamType(), GetDeviceClass(), &volumes);
-    SetPreVolume(GetSessionId(), curSystemGain);
+    AudioVolume::GetInstance()->SetHistoryVolume(GetSessionId(), curSystemGain);
     AUDIO_INFO_LOG("HpaeGainNode curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
     AUDIO_INFO_LOG(
         "HpaeGainNode SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
@@ -204,9 +204,9 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
 {
     struct VolumeValues volumes;
     float *inputData = (float *)input->GetPcmDataBuffer();
-    float curSystemGain = AudioVolume::GetInstance()->GetVolume(
-        GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
-    float preSystemGain = GetPreVolume(GetSessionId());
+    AudioVolume *audioVolume = AudioVolume::GetInstance();
+    float curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
+    float preSystemGain = volumes.volumeHistory;
     CHECK_AND_RETURN_LOG(frameLen != 0, "framelen is zero, invalid val.");
     float systemStepGain = (curSystemGain - preSystemGain) / frameLen;
     AUDIO_DEBUG_LOG(
@@ -215,11 +215,14 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
         preSystemGain,
         systemStepGain,
         GetDeviceClass().c_str());
-    SetPreVolume(GetSessionId(), curSystemGain);
     for (uint32_t i = 0; i < frameLen; i++) {
         for (uint32_t j = 0; j < channelCount; j++) {
             inputData[channelCount * i + j] = inputData[channelCount * i + j] * (preSystemGain + systemStepGain * i);
         }
+    }
+    if (curSystemGain != preSystemGain) {
+        audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
+        audioVolume->Monitor(GetSessionId(), true);
     }
 }
 
