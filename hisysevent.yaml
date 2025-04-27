@@ -193,6 +193,8 @@ JANK_PLAYBACK:
   PERIOD_MS: {type: UINT32, desc: jank time}
   PIPE_TYPE: {type: UINT8, desc: pipe type}
   HDI_ADAPTER: {type: UINT8, desc: hdi adapter}
+  POSITION: {type: UINT8, desc: jank position}
+  APP_NAME: {type: STRING, desc: application name}
 
 EXCLUDE_OUTPUT_DEVICE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: Exclude/Unexclude an audio output device}

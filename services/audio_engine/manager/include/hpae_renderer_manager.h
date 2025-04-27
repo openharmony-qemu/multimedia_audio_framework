@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef HPAE_RENDER_MANAGER_H
+#define HPAE_RENDER_MANAGER_H
+#include <unordered_map>
+#include <memory>
+#include <atomic>
+#include <string>
+#include <mutex>
+#include <shared_mutex>
+#include "hpae_signal_process_thread.h"
+#include "hpae_sink_input_node.h"
+#include "hpae_process_cluster.h"
+#include "hpae_output_cluster.h"
+#include "hpae_msg_channel.h"
+#include "hpae_no_lock_queue.h"
+#include "i_hpae_renderer_manager.h"
+
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
+
+class HpaeRendererManager : public IHpaeRendererManager {
+public:
+    HpaeRendererManager(HpaeSinkInfo &sinkInfo);
+    virtual ~HpaeRendererManager();
+    int32_t CreateStream(const HpaeStreamInfo &streamInfo) override;
+    int32_t DestroyStream(uint32_t sessionId) override;
+
+    int32_t Start(uint32_t sessionId) override;
+    int32_t Pause(uint32_t sessionId) override;
+    int32_t Flush(uint32_t sessionId) override;
+    int32_t Drain(uint32_t sessionId) override;
+    int32_t Stop(uint32_t sessionId) override;
+    int32_t Release(uint32_t sessionId) override;
+    int32_t MoveStream(uint32_t sessionId, const std::string &sinkName) override;
+    int32_t MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
+        bool isMoveAll = true) override;
+    int32_t SuspendStreamManager(bool isSuspend) override;
+    int32_t SetMute(bool isMute) override;
+    void Process() override;
+    void HandleMsg() override;
+    int32_t Init() override;
+    int32_t DeInit(bool isMoveDefault = false) override;
+    bool IsInit() override;
+    bool IsRunning(void) override;
+    bool IsMsgProcessing() override;
+    bool DeactivateThread() override;
+    int32_t SetClientVolume(uint32_t sessionId, float volume) override;
+    int32_t SetRate(uint32_t sessionId, int32_t rate) override;
+    int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
+    int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;
+    int32_t SetPrivacyType(uint32_t sessionId, int32_t privacyType) override;
+    int32_t GetPrivacyType(uint32_t sessionId, int32_t &privacyType) override;
+    int32_t RegisterWriteCallback(uint32_t sessionId, const std::weak_ptr<IStreamCallback> &callback) override;
+
+    size_t GetWritableSize(uint32_t sessionId) override;
+    int32_t UpdateSpatializationState(
+        uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) override;
+    int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
+    std::vector<SinkInput> GetAllSinkInputsInfo() override;
+    int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
+    HpaeSinkInfo GetSinkInfo() override;
+
+    int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) override;
+    int32_t AddAllNodesToSink(
+        const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect) override;
+
+    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) override;
+    void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
+    void OnFadeDone(uint32_t sessionId, IOperation operation) override;
+    void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
+    void OnNotifyQueue() override;
+    std::string GetThreadName() override;
+    void DumpSinkInfo() override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+
+private:
+    void SendRequest(Request &&request, bool isInit = false);
+    int32_t StartRenderSink();
+    bool IsMchDevice();
+    int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
+    int32_t DeleteInputSession(uint32_t sessionId);
+    int32_t ConnectInputSession(uint32_t sessionId);
+    int32_t DisConnectInputSession(uint32_t sessionId);
+    int32_t ConnectMchInputSession(uint32_t sessionId);
+    int32_t DisConnectMchInputSession(uint32_t sessionId);
+    int32_t DeleteMchInputSession(uint32_t sessionId);
+    void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
+    void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
+    void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds, bool isMoveAll);
+    void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);
+    void ConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
+    void DisConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
+    void DeleteProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
+    void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
+    bool SetSessionFade(uint32_t sessionId, IOperation operation);
+    void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
+    void InitManager();
+    void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
+
+private:
+    std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
+    std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> mchIdGainNodeMap_;
+    std::unique_ptr<HpaeOutputCluster> outputCluster_ = nullptr;
+    HpaeNoLockQueue hpaeNoLockQueue_;
+    std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
+    std::atomic<bool> isInit_ = false;
+    std::atomic<bool> isMute_ = false;
+    HpaeSinkInfo sinkInfo_;
+    std::unordered_map<HpaeProcessorType, int32_t> sceneTypeToProcessClusterCountMap_;
+};
+}  // namespace HPAE
+}  // namespace AudioStandard
+}  // namespace OHOS
+#endif

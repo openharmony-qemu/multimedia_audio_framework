@@ -29,6 +29,7 @@
 #include "common/hdi_adapter_info.h"
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"
+#include "audio_ring_cache.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,11 +37,16 @@ namespace AudioStandard {
 class MockCallbacks : public IStatusCallback, public IWriteCallback {
 public:
     explicit MockCallbacks(uint32_t streamIndex);
-    virtual ~MockCallbacks() = default;
+    virtual ~MockCallbacks();
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
+    int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
+    std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 private:
     uint32_t streamIndex_ = 0;
+    FILE *dumpDupOut_ = nullptr;
+    std::string dumpDupOutFileName_ = "";
+    std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
 };
 
 class AudioEndpointInner : public AudioEndpoint {
@@ -147,6 +153,7 @@ private:
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
     bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
     bool RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wakeUpTime);
+    int32_t InitDupBuffer(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex);
 
     /**
      * @brief Get the current read position in frame and the read-time with it.
@@ -206,6 +213,8 @@ private:
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, AudioSampleFormat format);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index);
+    int32_t CreateDupBufferInner(int32_t innerCapId);
+    int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms
@@ -255,7 +264,13 @@ private:
 
     // for inner-cap
     std::mutex dupMutex_;
-    std::shared_ptr<MockCallbacks> dupStreamCallback_ = nullptr;
+    size_t dupTotalSizeInFrame_ = 0;
+    size_t dupSpanSizeInFrame_ = 0;
+    size_t dupSpanSizeInByte_ = 0;
+    size_t dupByteSizePerFrame_ = 0;
+    FILE *dumpDupIn_ = nullptr;
+    std::string dumpDupInFileName_ = "";
+    std::map<int32_t, std::shared_ptr<MockCallbacks>> innerCapIdToDupStreamCallbackMap_;
     size_t dupBufferSize_ = 0;
     std::unique_ptr<uint8_t []> dupBuffer_ = nullptr;
     FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file

@@ -98,32 +98,27 @@ public:
 
     virtual int32_t UnRegisterSystemVolumeProxy(int32_t zoneId) = 0;
 
-    virtual int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-        const int32_t volumeLevel, const int32_t volumeFlag = 0) = 0;
-    
-    virtual int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) = 0;
-
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId) = 0;
     
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
-        int32_t zoneId, int32_t deviceId) = 0;
+        int32_t zoneId, const std::string &deviceTag) = 0;
     
     virtual int32_t RegisterAudioZoneInterruptCallback(int32_t zoneId,
         const std::shared_ptr<AudioZoneInterruptCallback> &callback) = 0;
     
     virtual int32_t UnRegisterAudioZoneInterruptCallback(int32_t zoneId) = 0;
 
-    virtual int32_t RegisterAudioZoneInterruptCallback(int32_t zoneId, int32_t deviceId,
+    virtual int32_t RegisterAudioZoneInterruptCallback(int32_t zoneId, const std::string &deviceTag,
         const std::shared_ptr<AudioZoneInterruptCallback> &callback) = 0;
     
     virtual int32_t UnRegisterAudioZoneInterruptCallback(int32_t zoneId,
-        int32_t deviceId) = 0;
+        const std::string &deviceTag) = 0;
     
     virtual int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
     
-    virtual int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+    virtual int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
 };
 } // namespace AudioStandard

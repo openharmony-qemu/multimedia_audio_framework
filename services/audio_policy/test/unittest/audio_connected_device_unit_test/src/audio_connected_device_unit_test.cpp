@@ -359,137 +359,78 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_016, TestSiz
 
 /**
 * @tc.name  : Test AudioConnectedDevice.
-* @tc.number: AudioConnectedDeviceUnitTest_017
-* @tc.desc  : Test UpdateSpatializationSupported.
+* @tc.number: AudioConnectedDeviceUnitTest_017.
+* @tc.desc  : Test CheckDeviceConnected.
 */
 HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_017, TestSize.Level1)
 {
+    std::string selectedDevice = "test";
     auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
-    EXPECT_NE(audioConnectedDevice, nullptr);
-
-    std::string networkId = "abc";
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    std::string macAddress = "test";
-    DeviceRole deviceRole = DeviceRole::OUTPUT_DEVICE;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
-
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    desc->networkId_ = "abc";
-    desc->macAddress_ = "test";
-    desc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP,
+        DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = selectedDevice;
     audioConnectedDevice->connectedDevices_.push_back(desc);
+    bool result = audioConnectedDevice->CheckDeviceConnected(selectedDevice);
+    EXPECT_EQ(result, true);
 
-    audioConnectedDevice->GetAllConnectedDeviceByType(networkId, deviceType, macAddress, deviceRole, descForCb);
-    EXPECT_NE(audioConnectedDevice, nullptr);
+    result = audioConnectedDevice->CheckDeviceConnected("test1");
+    EXPECT_EQ(result, false);
 }
 
 /**
 * @tc.name  : Test AudioConnectedDevice.
-* @tc.number: AudioConnectedDeviceUnitTest_018
-* @tc.desc  : Test UpdateSpatializationSupported.
+* @tc.number: AudioConnectedDeviceUnitTest_018.
+* @tc.desc  : Test HasArm.
 */
 HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_018, TestSize.Level1)
 {
     auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
-    EXPECT_NE(audioConnectedDevice, nullptr);
-
-    std::string networkId = "abc";
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_USB_HEADSET;
-    std::string macAddress = "test";
-    DeviceRole deviceRole = DeviceRole::OUTPUT_DEVICE;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
-
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DeviceType::DEVICE_TYPE_USB_HEADSET;
-    desc->networkId_ = "abc";
-    desc->macAddress_ = "test";
-    desc->deviceRole_ = DeviceRole::DEVICE_ROLE_MAX;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
+        DeviceRole::OUTPUT_DEVICE);
     audioConnectedDevice->connectedDevices_.push_back(desc);
+    bool result = audioConnectedDevice->HasArm(DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(result, true);
 
-    audioConnectedDevice->GetAllConnectedDeviceByType(networkId, deviceType, macAddress, deviceRole, descForCb);
-    EXPECT_NE(audioConnectedDevice, nullptr);
+    result = audioConnectedDevice->HasArm(DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(result, false);
 }
 
 /**
 * @tc.name  : Test AudioConnectedDevice.
-* @tc.number: AudioConnectedDeviceUnitTest_019
-* @tc.desc  : Test UpdateSpatializationSupported.
+* @tc.number: AudioConnectedDeviceUnitTest_019.
+* @tc.desc  : Test HasHifi.
 */
 HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_019, TestSize.Level1)
 {
     auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
-    EXPECT_NE(audioConnectedDevice, nullptr);
-
-    std::string networkId = "abc";
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_USB_HEADSET;
-    std::string macAddress = "test";
-    DeviceRole deviceRole = DeviceRole::OUTPUT_DEVICE;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
-
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DeviceType::DEVICE_TYPE_USB_HEADSET;
-    desc->networkId_ = "abc";
-    desc->macAddress_ = "123";
-    desc->deviceRole_ = DeviceRole::DEVICE_ROLE_MAX;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_USB_HEADSET,
+        DeviceRole::OUTPUT_DEVICE);
     audioConnectedDevice->connectedDevices_.push_back(desc);
+    bool result = audioConnectedDevice->HasHifi(DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(result, true);
 
-    audioConnectedDevice->GetAllConnectedDeviceByType(networkId, deviceType, macAddress, deviceRole, descForCb);
-    EXPECT_NE(audioConnectedDevice, nullptr);
+    result = audioConnectedDevice->HasHifi(DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(result, false);
 }
 
 /**
 * @tc.name  : Test AudioConnectedDevice.
-* @tc.number: AudioConnectedDeviceUnitTest_020
-* @tc.desc  : Test UpdateSpatializationSupported.
+* @tc.number: AudioConnectedDeviceUnitTest_020.
+* @tc.desc  : Test IsArmDevice.
 */
 HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_020, TestSize.Level1)
 {
+    std::string address = "test";
     auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
-    EXPECT_NE(audioConnectedDevice, nullptr);
-
-    std::string networkId = "abc";
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_USB_HEADSET;
-    std::string macAddress = "test";
-    DeviceRole deviceRole = DeviceRole::OUTPUT_DEVICE;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
-
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DeviceType::DEVICE_TYPE_USB_HEADSET;
-    desc->networkId_ = "456";
-    desc->macAddress_ = "123";
-    desc->deviceRole_ = DeviceRole::DEVICE_ROLE_MAX;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
+        DeviceRole::OUTPUT_DEVICE);
+    desc->macAddress_ = address;
     audioConnectedDevice->connectedDevices_.push_back(desc);
+    bool result = audioConnectedDevice->IsArmDevice(address, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(result, true);
 
-    audioConnectedDevice->GetAllConnectedDeviceByType(networkId, deviceType, macAddress, deviceRole, descForCb);
-    EXPECT_NE(audioConnectedDevice, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioConnectedDevice.
-* @tc.number: AudioConnectedDeviceUnitTest_021
-* @tc.desc  : Test UpdateSpatializationSupported.
-*/
-HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_021, TestSize.Level1)
-{
-    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
-    EXPECT_NE(audioConnectedDevice, nullptr);
-
-    std::string networkId = "abc";
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    std::string macAddress = "test";
-    DeviceRole deviceRole = DeviceRole::OUTPUT_DEVICE;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
-
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DeviceType::DEVICE_TYPE_USB_HEADSET;
-    desc->networkId_ = "456";
-    desc->macAddress_ = "123";
-    desc->deviceRole_ = DeviceRole::DEVICE_ROLE_MAX;
-    audioConnectedDevice->connectedDevices_.push_back(desc);
-
-    audioConnectedDevice->GetAllConnectedDeviceByType(networkId, deviceType, macAddress, deviceRole, descForCb);
-    EXPECT_NE(audioConnectedDevice, nullptr);
+    result = audioConnectedDevice->IsArmDevice(address, DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(result, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

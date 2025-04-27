@@ -188,9 +188,14 @@ public:
 
     virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
 
-    virtual void SetDeviceSafeVolume(const AudioStreamType streamType, const int32_t volumeLevel) = 0;
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) const = 0;
 
-    virtual void SetRestoreVolumeFlag(const bool safeVolumeCall) = 0;
+    virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) const = 0;
+
+    virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
+        DeviceType deviceType = DEVICE_TYPE_NONE) const = 0;
+
+    virtual int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType) = 0;
 
     virtual void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime) = 0;
 
@@ -205,6 +210,11 @@ public:
 
     virtual int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType deviceType) = 0;
+
+    virtual int32_t SetDoNotDisturbStatusWhiteList(std::vector<std::map<std::string, std::string>>
+        doNotDisturbStatusWhiteList) = 0;
+
+    virtual int32_t SetDoNotDisturbStatus(bool isDoNotDisturb) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -32,15 +32,40 @@ const bool RUN_ON_CREATE = false;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 const uint8_t TESTSIZE = 4;
 typedef void (*TestPtr)(const uint8_t *, size_t);
+bool g_hasServerInit = false;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
+
+sptr<AudioPolicyServer> GetServerPtr()
+{
+    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (server != nullptr && !g_hasServerInit) {
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+#endif
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        g_hasServerInit = true;
+    }
+    return server;
+}
 
 void AudioBluetoothManagerFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    
-    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
-        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+
+    sptr<AudioPolicyServer> AudioPolicyServerPtr = GetServerPtr();
+
+    if (AudioPolicyServerPtr == nullptr) {
+        return;
+    }
 
     DeviceType devType = *reinterpret_cast<const DeviceType *>(rawData);
     bool isConnected = *reinterpret_cast<const bool *>(rawData);

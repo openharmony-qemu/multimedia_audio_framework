@@ -73,7 +73,8 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+        bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
@@ -122,6 +123,7 @@ private:
     SinkCallbackWrapper callback_ = {};
     std::atomic<bool> sinkInited_ = false;
     std::atomic<bool> renderInited_ = false;
+    std::atomic<bool> isThreadRunning = false;
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;

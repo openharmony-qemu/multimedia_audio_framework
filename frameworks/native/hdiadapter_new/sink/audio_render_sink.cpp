@@ -132,6 +132,7 @@ int32_t AudioRenderSink::Start(void)
     UpdateSinkState(true);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     started_ = true;
+    isDataLinkConnected_ = false;
     return SUCCESS;
 }
 
@@ -226,6 +227,7 @@ int32_t AudioRenderSink::Reset(void)
 
 int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+    WaitForDataLinkConnected();
     int64_t stamp = ClockTime::GetCurNano();
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     if (!started_) {
@@ -446,7 +448,8 @@ int32_t AudioRenderSink::SetDeviceConnectedFlag(bool flag)
     return SUCCESS;
 }
 
-int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
+int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+    bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
@@ -458,17 +461,28 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
         return SUCCESS;
     }
 
-    if (audioScene != currentAudioScene_) {
+    if (audioScene != currentAudioScene_ && !scoExcludeFlag) {
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
 
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
         int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
-        currentAudioScene_ = audioScene;
-        if (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT) {
+    }
+    bool isRingingToDefaultScene = false;
+    if (audioScene != currentAudioScene_) {
+        if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {
             forceSetRouteFlag_ = true;
         }
+        if (audioScene == AUDIO_SCENE_DEFAULT &&
+            (currentAudioScene_ == AUDIO_SCENE_RINGING || currentAudioScene_ == AUDIO_SCENE_VOICE_RINGING)) {
+            isRingingToDefaultScene = true;
+        }
+        currentAudioScene_ = audioScene;
+    }
+    if (isRingingToDefaultScene) {
+        AUDIO_INFO_LOG("ringing scene to default scene");
+        return SUCCESS;
     }
     int32_t ret = UpdateActiveDevice(activeDevices);
     if (ret != SUCCESS) {
@@ -486,8 +500,7 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
-    AUDIO_INFO_LOG("currentActiveDevice: %{public}d, outputDevices %{public}d",
-        currentActiveDevice_, outputDevices[0]);
+    AUDIO_INFO_LOG("device: %{public}d, currentActiveDevice: %{public}d", outputDevices[0], currentActiveDevice_);
     if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() ==
         static_cast<uint32_t>(currentDevicesSize_) && !forceSetRouteFlag_) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
@@ -782,7 +795,9 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBit(attr_.format) * param.channelCount / PCM_8_BIT;
-    param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    }
 }
 
 void AudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
@@ -809,14 +824,14 @@ void AudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, Audi
         sceneDesc.scene.id = AUDIO_IN_COMMUNICATION;
     }
 
-    AudioPortPin pin = GetAudioPortPin();
+    AudioPortPin port = GetAudioPortPin();
     if (halName_ == HDI_ID_INFO_USB) {
-        pin = PIN_OUT_USB_HEADSET;
+        port = PIN_OUT_USB_HEADSET;
     } else if (halName_ == HDI_ID_INFO_DP) {
-        pin = PIN_OUT_DP;
+        port = PIN_OUT_DP;
     }
-    AUDIO_DEBUG_LOG("pin is %{public}d", pin);
-    sceneDesc.desc.pins = pin;
+    AUDIO_DEBUG_LOG("port: %{public}d", port);
+    sceneDesc.desc.pins = port;
     sceneDesc.desc.desc = const_cast<char *>("");
 }
 
@@ -1142,6 +1157,39 @@ void AudioRenderSink::WriteSmartPAStatusSysEvent(int32_t status)
 void AudioRenderSink::UpdateSinkState(bool started)
 {
     callback_.OnRenderSinkStateChange(GetUniqueId(), started);
+}
+
+int32_t AudioRenderSink::UpdatePrimaryConnectionState(uint32_t operation)
+{
+    if (operation == DATA_LINK_CONNECTING) {
+        AUDIO_INFO_LOG("Primary sink is connecting");
+        isDataLinkConnected_ = false;
+    }
+    if (operation == DATA_LINK_CONNECTED) {
+        AUDIO_INFO_LOG("Primary sink is connected");
+        isDataLinkConnected_ = true;
+        dataConnectionCV_.notify_all();
+    }
+    return SUCCESS;
+}
+
+void AudioRenderSink::WaitForDataLinkConnected()
+{
+    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
+    if (!isDataLinkConnected_ && (halName_ == "primary") && (sinkType_ == ADAPTER_TYPE_PRIMARY)) {
+        AUDIO_INFO_LOG("data-connection blocking starts");
+        bool stopWaiting = dataConnectionCV_.wait_for(
+            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
+                return isDataLinkConnected_;
+            });
+        if (stopWaiting) {
+            AUDIO_INFO_LOG("data-connection blocking ends");
+        } else {
+            AUDIO_WARNING_LOG("data-connection time out, start RenderFrame anyway.");
+        }
+        isDataLinkConnected_ = true;
+    }
+    dataConnectionWaitLock.unlock();
 }
 
 } // namespace AudioStandard

@@ -22,6 +22,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "access_token.h"
+#include "dfx_msg_manager.h"
 using namespace std;
 
 namespace OHOS {
@@ -48,6 +49,7 @@ typedef void (*TestPtr)(const uint8_t *, size_t);
 sptr<AudioPolicyServer> GetServerPtr()
 {
     static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    server->ConnectServiceAdapter();
     if (!g_hasServerInit) {
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
@@ -110,7 +112,11 @@ void AudioFuzzTestGetPermission()
 
 void ReleaseServer()
 {
+    if (GetServerPtr() == nullptr) {
+        return;
+    }
     GetServerPtr()->OnStop();
+    DfxMsgManager::GetInstance().HandleThreadExit();
     g_hasServerInit = false;
 }
 

@@ -207,6 +207,9 @@ void AudioEndPointGetPreferBufferInfoFuzzTest(std::shared_ptr<AudioEndpointSepar
     }
     std::shared_ptr<OHAudioBuffer> oHAudioBuffer =
         OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    if (audioEndpoint == nullptr) {
+        return;
+    }
     audioEndpoint->ResolveBuffer(oHAudioBuffer);
     audioEndpoint->GetBuffer();
     audioEndpoint->GetStatus();

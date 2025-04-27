@@ -65,7 +65,6 @@ constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
 constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
-constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
@@ -102,7 +101,6 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
-    UID_FOUNDATION_SA,
     UID_DISTRIBUTED_CALL_SA,
     UID_THPEXTRA_SA,
     UID_TELEPHONY_SA, // used in distributed communication call
@@ -1096,6 +1094,18 @@ template bool GetSysPara(const char *key, int32_t &value);
 template bool GetSysPara(const char *key, uint32_t &value);
 template bool GetSysPara(const char *key, int64_t &value);
 template bool GetSysPara(const char *key, std::string &value);
+
+int32_t GetEngineFlag()
+{
+    std::string para = "const.multimedia.audio.proaudioEnable";
+    static int32_t engineFlag = -1;
+    if (engineFlag == -1) {
+        bool res = GetSysPara(para.c_str(), engineFlag);
+        AUDIO_DEBUG_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
+        CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
+    }
+    return engineFlag;
+}
 
 std::map<std::string, std::string> DumpFileUtil::g_lastPara = {};
 

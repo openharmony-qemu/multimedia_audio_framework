@@ -37,8 +37,7 @@ OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer)
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
     if (audioCapturer->Release()) {
-        delete audioCapturer;
-        audioCapturer = nullptr;
+        OHOS::AudioStandard::ObjectRefMap<OHOS::AudioStandard::OHAudioCapturer>::DecreaseRef(audioCapturer);
         return AUDIOSTREAM_SUCCESS;
     } else {
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
@@ -449,6 +448,7 @@ void OHCapturerServiceDiedCallback::OnAudioPolicyServiceDied()
 void OHAudioCapturerModeCallback::OnReadData(size_t length)
 {
     OHAudioCapturer* audioCapturer = (OHAudioCapturer*)ohAudioCapturer_;
+    OHOS::AudioStandard::ObjectRefMap objectGuard(audioCapturer);
     CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "capturer client is nullptr");
     CHECK_AND_RETURN_LOG((callbacks_.OH_AudioCapturer_OnReadData != nullptr) || onReadDataCallback_ != nullptr,
         "pointer to the fuction is nullptr");

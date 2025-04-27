@@ -327,7 +327,7 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     ipcStream->UpdatePosition();
 
     std::string name = "fuzz_test";
-    ipcStream->RegisterThreadPriority(0, name);
+    ipcStream->RegisterThreadPriority(0, name, METHOD_START);
     uint32_t sessionId = 0;
     ipcStream->GetAudioSessionID(sessionId);
     ipcStream->Start();

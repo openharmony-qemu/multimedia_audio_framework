@@ -82,6 +82,7 @@ Note:If the text contains special characters, please escape them according to th
             <filefilter name="binaryFileTypePolicyFilter" desc="Filters for binary file policies">
                 <filteritem type="filename" name="*.png" desc="Audio service design diagrams"/>
                 <filteritem type="filename" name="*.wav" desc="Sample test files"/>
+                <filteritem type="filename" name="*.pcm" desc="Sample pcm test files"/>
                 <filteritem type="filepath" name="test/resource/audio_renderer/test_audiofile/avs3_bitstream.bin" desc="Sample audiovivid metadata test files"/>
             </filefilter>
         </filefilterlist>

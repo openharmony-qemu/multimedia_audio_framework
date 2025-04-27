@@ -38,7 +38,7 @@ public:
 
     // Set call render device selected by the user
     void SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const int32_t pid = INVALID_PID);
+        const int32_t uid = INVALID_UID, const std::string caller = "");
 
     // Set call capture device selected by the user
     void SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
@@ -85,8 +85,7 @@ public:
     bool IsExcludedDevice(AudioDeviceUsage audioDevUsage,
         const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
 
-    void SetAudioSceneOwnerPid(const int32_t pid);
-    int32_t GetAudioSceneOwnerPid();
+    void SetAudioSceneOwnerUid(const int32_t uid);
     
     int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     const std::string GetBundleNameFromUid(int32_t uid);
@@ -109,10 +108,10 @@ private:
     std::mutex mutex_;
     shared_mutex mediaExcludedDevicesMutex_;
     shared_mutex callExcludedDevicesMutex_;
-    int32_t ownerPid_ = 0;
+    int32_t ownerUid_ = 0;
     std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedDeviceMapList_;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_;
-    void RemoveForcedDeviceMapData(int32_t pid);
+    void RemoveForcedDeviceMapData(int32_t uid);
 };
 
 } // namespace AudioStandard

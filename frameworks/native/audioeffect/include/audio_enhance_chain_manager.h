@@ -34,9 +34,9 @@ public:
     AudioEnhanceChainManager();
     ~AudioEnhanceChainManager();
     static AudioEnhanceChainManager* GetInstance();
-    void InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
+    void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
-        std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
+        const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
     int32_t CreateAudioEnhanceChainDynamic(const uint64_t sceneKeyCode, const AudioEnhanceDeviceAttr &deviceAttr);
     int32_t ReleaseAudioEnhanceChainDynamic(const uint64_t sceneKeyCode);
     bool ExistAudioEnhanceChain(const uint64_t sceneKeyCode);
@@ -49,6 +49,7 @@ public:
     int32_t CopyMicRefToEnhanceBuffer(void *data, uint32_t length);
     int32_t CopyFromEnhanceBuffer(void *data, uint32_t length);
     int32_t ApplyAudioEnhanceChain(const uint64_t sceneKeyCode, uint32_t length);
+    int32_t SetAccessoryDeviceState(bool state);
     int32_t SetInputDevice(const uint32_t &captureId, const DeviceType &inputDevice,
         const std::string &deviceName = "");
     int32_t SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice);
@@ -89,9 +90,9 @@ private:
     void GetDeviceTypeName(DeviceType deviceType, std::string &deviceName);
     void GetDeviceNameByCaptureId(const uint32_t captureId, std::string &deviceName);
     // construct when init
-    void ConstructEnhanceChainMgrMaps(std::vector<EffectChain> &enhanceChains,
+    void ConstructEnhanceChainMgrMaps(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
-        std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
+        const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
     void ConstructDeviceEnhances();
 
     std::map<uint64_t, std::shared_ptr<AudioEnhanceChain>> sceneTypeToEnhanceChainMap_;

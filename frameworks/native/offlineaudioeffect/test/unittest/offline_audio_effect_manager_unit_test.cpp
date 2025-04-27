@@ -105,7 +105,7 @@ void OfflineAudioEffectServerChainUnitTest::TearDown(void) {}
  * @tc.number: OfflineAudioEffectManager_001
  * @tc.desc  : Test OfflineAudioEffectManager interface.
  */
-HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSize.Level1)
+HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSize.Level0)
 {
     auto manager = make_shared<OfflineAudioEffectManager>();
     EXPECT_NE(nullptr, manager);
@@ -118,7 +118,7 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSiz
  * @tc.number: OfflineAudioEffectManager_002
  * @tc.desc  : Test OfflineAudioEffectManager interface.
  */
-HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSize.Level1)
+HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSize.Level0)
 {
     auto manager = make_shared<OfflineAudioEffectManager>();
     auto chain = manager->CreateOfflineAudioEffectChain(g_normalName);

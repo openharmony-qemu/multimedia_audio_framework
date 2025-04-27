@@ -63,12 +63,6 @@ void AudioPolicyManagerStub::OnAudioZoneRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::ENABLE_SYSTEM_VOLUME_PROXY):
             HandleEnableSystemVolumeProxy(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUME_LEVEL_FOR_ZONE):
-            HandleSetSystemVolumeLevelForZone(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUME_LEVEL_FOR_ZONE):
-            HandleGetSystemVolumeLevelForZone(data, reply);
-            break;
         default:
             OnAudioZoneRemoteRequestExt(code, data, reply, option);
             break;
@@ -212,24 +206,6 @@ void AudioPolicyManagerStub::HandleEnableSystemVolumeProxy(MessageParcel &data, 
     reply.WriteInt32(EnableSystemVolumeProxy(zoneId, enable));
 }
 
-void AudioPolicyManagerStub::HandleSetSystemVolumeLevelForZone(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t zoneId = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    int32_t volumeLevel = data.ReadInt32();
-    int32_t volumeFlag = data.ReadInt32();
-    reply.WriteInt32(SetSystemVolumeLevelForZone(zoneId, volumeType, volumeLevel, volumeFlag));
-}
-
-void AudioPolicyManagerStub::HandleGetSystemVolumeLevelForZone(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t zoneId = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
-    reply.WriteInt32(GetSystemVolumeLevelForZone(zoneId, volumeType));
-}
-
 void AudioPolicyManagerStub::HandleGetAudioInterruptForZone(MessageParcel &data, MessageParcel &reply)
 {
     int32_t zoneId = data.ReadInt32();
@@ -247,8 +223,8 @@ void AudioPolicyManagerStub::HandleGetAudioInterruptForZoneDevice(MessageParcel 
 {
     int32_t zoneId = data.ReadInt32();
     CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
-    int32_t deviceId = data.ReadInt32();
-    auto interrupts = GetAudioInterruptForZone(zoneId, deviceId);
+    std::string deviceTag = data.ReadString();
+    auto interrupts = GetAudioInterruptForZone(zoneId, deviceTag);
     reply.WriteInt32(SUCCESS);
     reply.WriteInt32(static_cast<int32_t>(interrupts.size()));
     for (const auto &it : interrupts) {
@@ -261,9 +237,9 @@ void AudioPolicyManagerStub::HandleEnableAudioZoneInterruptReport(MessageParcel 
 {
     int32_t zoneId = data.ReadInt32();
     CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
-    int32_t deviceId = data.ReadInt32();
+    std::string deviceTag = data.ReadString();
     bool enable = data.ReadBool();
-    reply.WriteInt32(EnableAudioZoneInterruptReport(zoneId, deviceId, enable));
+    reply.WriteInt32(EnableAudioZoneInterruptReport(zoneId, deviceTag, enable));
 }
 
 void AudioPolicyManagerStub::HandleInjectInterruptToAudioZone(MessageParcel &data, MessageParcel &reply)
@@ -285,7 +261,7 @@ void AudioPolicyManagerStub::HandleInjectInterruptToAudioZoneDevice(MessageParce
 {
     int32_t zoneId = data.ReadInt32();
     CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
-    int32_t deviceId = data.ReadInt32();
+    std::string deviceTag = data.ReadString();
     int32_t size = data.ReadInt32();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
     for (int32_t i = 0; i < size; i++) {
@@ -294,7 +270,7 @@ void AudioPolicyManagerStub::HandleInjectInterruptToAudioZoneDevice(MessageParce
         AudioFocuState state = static_cast<AudioFocuState>(data.ReadInt32());
         interrupts.emplace_back(std::make_pair(temp, state));
     }
-    reply.WriteInt32(InjectInterruptToAudioZone(zoneId, deviceId, interrupts));
+    reply.WriteInt32(InjectInterruptToAudioZone(zoneId, deviceTag, interrupts));
 }
 } // namespace AudioStandard
 } // namespace OHOS

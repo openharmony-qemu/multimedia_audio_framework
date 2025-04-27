@@ -103,6 +103,7 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getSupportedAudioEnhanceProperty", GetSupportedAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("getAudioEnhanceProperty", GetAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("setAudioEnhanceProperty", SetAudioEnhanceProperty),
+        DECLARE_NAPI_FUNCTION("isAcousticEchoCancelerSupported", IsAcousticEchoCancelerSupported),
     };
 
     status = napi_define_class(env, AUDIO_STREAM_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -797,5 +798,31 @@ napi_value NapiAudioStreamMgr::SetAudioEnhanceProperty(napi_env env, napi_callba
     return result;
 }
 
+napi_value NapiAudioStreamMgr::IsAcousticEchoCancelerSupported(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE && napiStreamMgr != nullptr &&
+        napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID,
+        "parameter verification failed: mandatory parameters are left unspecified"), "argcCount invalid");
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of options must be number"),
+        "invaild valueType");
+    int32_t sourceType;
+    NapiParamUtils::GetValueInt32(env, sourceType, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsValidSourceType(sourceType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of sourceType must be enum SourceType"), "get sourceType failed");
+    
+    bool isSupported = napiStreamMgr->audioStreamMngr_->IsAcousticEchoCancelerSupported(
+        static_cast<SourceType>(sourceType));
+    NapiParamUtils::SetValueBoolean(env, isSupported, result);
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

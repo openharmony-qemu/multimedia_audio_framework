@@ -508,12 +508,21 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManager(napi_env env, napi_call
             NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
+    auto executor = [context]() {
+        context->audioGroupManager = AudioSystemManager::GetInstance()->GetGroupManager(context->groupId);
+    };
 
     auto complete = [env, context](napi_value &output) {
-        output = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, context->groupId);
+        if (context->audioGroupManager == nullptr) {
+            AUDIO_ERR_LOG("Failed to get group manager!");
+            NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
+            output = NapiParamUtils::GetUndefinedValue(env);
+        } else {
+            output = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, context->groupId);
+        }
         NapiAudioVolumeGroupManager::isConstructSuccess_ = SUCCESS;
     };
-    return NapiAsyncWork::Enqueue(env, context, "GetVolumeGroupManager", nullptr, complete);
+    return NapiAsyncWork::Enqueue(env, context, "GetVolumeGroupManager", executor, complete);
 }
 
 napi_value NapiAudioVolumeManager::GetVolumeGroupManagerSync(napi_env env, napi_callback_info info)
@@ -535,8 +544,14 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManagerSync(napi_env env, napi_
     int32_t groupId;
     NapiParamUtils::GetValueInt32(env, groupId, args[PARAM0]);
 
-    result = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, groupId);
-
+    if (AudioSystemManager::GetInstance()->GetGroupManager(groupId) == nullptr) {
+        AUDIO_ERR_LOG("Failed to get group manager!");
+        NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
+        result = NapiParamUtils::GetUndefinedValue(env);
+    } else {
+        result = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, groupId);
+    }
+    
     napi_value undefinedValue = nullptr;
     napi_get_undefined(env, &undefinedValue);
     bool isEqual = false;

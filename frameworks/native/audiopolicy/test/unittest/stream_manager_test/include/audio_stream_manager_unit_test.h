@@ -45,6 +45,16 @@ private:
     std::string testCaseName_;
 };
 
+class AudioFormatUnsupportedErrorCallbackTest : public AudioFormatUnsupportedErrorCallback {
+public:
+    explicit AudioFormatUnsupportedErrorCallbackTest(const std::string &testCaseName);
+    ~AudioFormatUnsupportedErrorCallbackTest() = default;
+
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override {}
+private:
+    std::string testCaseName_;
+};
+
 class AudioStreamManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
