@@ -1996,23 +1996,26 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_090, TestSize.Level1)
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_091
-* @tc.desc  : Test IsStopOrReleasePlayback interface.
+* @tc.desc  : Test IsRingOverPlayback interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_091, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     AudioMode mode = AUDIO_MODE_RECORD;
     RendererState state  = RENDERER_RUNNING;
-    EXPECT_FALSE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
+    EXPECT_FALSE(audioDeviceCommon.IsRingOverPlayback(mode, state));
 
     mode = AUDIO_MODE_PLAYBACK;
-    EXPECT_FALSE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
+    EXPECT_FALSE(audioDeviceCommon.IsRingOverPlayback(mode, state));
 
     state = RENDERER_STOPPED;
-    EXPECT_TRUE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
+    EXPECT_TRUE(audioDeviceCommon.IsRingOverPlayback(mode, state));
 
     state = RENDERER_RELEASED;
-    EXPECT_TRUE(audioDeviceCommon.IsStopOrReleasePlayback(mode, state));
+    EXPECT_TRUE(audioDeviceCommon.IsRingOverPlayback(mode, state));
+
+    state = RENDERER_PAUSED;
+    EXPECT_TRUE(audioDeviceCommon.IsRingOverPlayback(mode, state));
 }
 
 /**

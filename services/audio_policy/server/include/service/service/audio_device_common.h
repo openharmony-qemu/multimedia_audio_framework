@@ -222,7 +222,7 @@ private:
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const int32_t sessionId);
     bool IsBlueToothOnPrimarySpeaker(const std::shared_ptr<AudioDeviceDescriptor> &desc);
-    bool IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState);
+    bool IsRingOverPlayback(AudioMode &mode, RendererState rendererState);
 
     // fetchInput
     void FetchInputDeviceInner(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,

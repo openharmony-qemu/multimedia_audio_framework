@@ -1724,12 +1724,13 @@ void AudioDeviceCommon::SetHasDpFlag(bool flag)
     hasDpDevice_ = flag;
 }
 
-bool AudioDeviceCommon::IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState)
+bool AudioDeviceCommon::IsRingOverPlayback(AudioMode &mode, RendererState rendererState)
 {
     if (mode != AUDIO_MODE_PLAYBACK) {
         return false;
     }
-    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED) {
+    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED &&
+        rendererState != RENDERER_PAUSED) {
         return false;
     }
     return true;
@@ -1760,7 +1761,7 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
     }
-    if (IsStopOrReleasePlayback(mode, rendererState) &&
+    if (IsRingOverPlayback(mode, rendererState) &&
         (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE)) {
         audioRouterCenter_.SetAlarmFollowRingRouter(false);
         if (isRingDualToneOnPrimarySpeaker_) {
