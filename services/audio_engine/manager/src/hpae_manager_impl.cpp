@@ -236,7 +236,7 @@ int32_t HpaeManagerImpl::RegisterStatusCallback(HpaeStreamClassType streamClassT
 }
 
 // record stream interface
-void HpaeManagerImpl::RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback)
+void HpaeManagerImpl::RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
     manager_->RegisterReadCallback(sessionId, callback);
