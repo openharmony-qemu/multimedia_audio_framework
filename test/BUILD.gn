@@ -54,6 +54,7 @@ group("audio_unit_test") {
     "../frameworks/native/examples:pa_stream_test",
     "../frameworks/native/offlineaudioeffect/test/unittest:offline_audio_effect_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_capture_test:audio_oh_capture_unit_test",
+    "../frameworks/native/ohaudio/test/unittest/oh_audio_common_test:audio_oh_common_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_device_change_test:audio_oh_device_change_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_microphone_block_test:audio_oh_microphone_block_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",

@@ -22,7 +22,6 @@
  * @syscap SystemCapability.Multimedia.Audio.Core
  *
  * @since 19
- * @version 1.0
  */
 
 /**
@@ -37,7 +36,6 @@
  * @syscap SystemCapability.Multimedia.Audio.Core
  * @kit AudioKit
  * @since 19
- * @version 1.0
  */
 
 #ifndef NATIVE_AUDIO_STREAM_MANAGER_H
@@ -50,31 +48,29 @@ extern "C" {
 #endif
 
 /**
- * @brief Declaring the audio stream manager.
- * The handle of audio stream manager used for audio stream settings and management.
+ * @brief Declare the audio stream manager.
+ * Audio stream manager provides many functions about audio streams, like monitoring audio streams status,
+ * getting different stream types supported information and so on.
  *
  * @since 19
  */
 typedef struct OH_AudioStreamManager OH_AudioStreamManager;
 
 /**
- * @brief Query the audio stream manager handle, which should be set as the first parameter in stream management
- * releated functions.
+ * @brief Fetch the audio streammanager handle, which is a singleton.
  *
- * @param audioStreamManager the {@link OH_AudioStreamManager} handle returned by
- * {@link OH_AudioManager_GetAudioStreamManager}.
- * @return Function result code:
- *         {@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.
- *         {@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}:
- *                                                        1.The param of audioStreamManager is nullptr.
+ * @param streamManager output parameter to get the {@link #OH_AudioStreamManager}.
+ * @return
+ *         {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ *         {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} if system state error
  * @since 19
  */
-OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManager **audioStreamManager);
+OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManager **streamManager);
 
 /**
  * @brief Gets the mode of direct playback available for a given audio format with current active device.
  *
- * @param audioStreamManager the {@link OH_AudioStreamManager} handle returned by
+ * @param audioStreamManager the {@link OH_AudioStreamManager} handle provided by
  * {@link OH_AudioManager_GetAudioStreamManager}.
  * @param streamInfo the {@link OH_AudioStreamInfo}.
  * @param usage the {@link OH_AudioStream_Usage}.
