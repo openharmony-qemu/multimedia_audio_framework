@@ -22,6 +22,7 @@
 #include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include <sstream>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -237,10 +238,10 @@ bool HpaeRemoteOutputCluster::IsProcessClusterConnected(HpaeProcessorType sceneT
 
 HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, const std::string &splitMode)
 {
-    static constexpr int SPLIT_ONE_STREAM = 1;
-    static constexpr int SPLIT_TWO_STREAM = 2;
-    static constexpr int SPLIT_THREE_STREAM = 3;
-    static constexpr int MAX_PARTS = 10;
+    static constexpr int splitOneStream = 1;
+    static constexpr int splitTwoStream = 2;
+    static constexpr int splitThreeStream = 3;
+    static constexpr int maxParts = 3;
     AUDIO_INFO_LOG("streamUsage is: %{public}d, splitMode is: %{public}s",
         static_cast<int>(streamUsage), splitMode.c_str());
     int splitNums = 0;
@@ -250,15 +251,15 @@ HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, cons
     }
     std::istringstream iss(splitMode);
     std::string token;
-    while (splitNums < MAX_PARTS && std::getline(iss, token, ':')) {
+    while (splitNums < maxParts && std::getline(iss, token, ':')) {
         ++splitNums;
     }
     const auto getSceneType = [streamUsage](size_t splitNums) -> HpaeProcessorType {
         return
-            (splitNums == SPLIT_ONE_STREAM) ? HPAE_SCENE_SPLIT_MEDIA :
-            (splitNums == SPLIT_TWO_STREAM) ? (streamUsage == STREAM_USAGE_NAVIGATION ?
+            (splitNums == splitOneStream) ? HPAE_SCENE_SPLIT_MEDIA :
+            (splitNums == splitTwoStream) ? (streamUsage == STREAM_USAGE_NAVIGATION ?
                 HPAE_SCENE_SPLIT_NAVIGATION : HPAE_SCENE_SPLIT_MEDIA) :
-            (splitNums == SPLIT_THREE_STREAM) ? (
+            (splitNums == splitThreeStream) ? (
                 (streamUsage == STREAM_USAGE_NAVIGATION) ? HPAE_SCENE_SPLIT_NAVIGATION :
                 (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION)
                     ? HPAE_SCENE_SPLIT_COMMUNICATION

@@ -140,13 +140,13 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
 
     HpaeSplitStreamType GetSplitStreamType() const
     {
-        static const auto splitTypeMap = []{
+        static const auto splitTypeMap = [] {
             std::unordered_map<HpaeProcessorType, HpaeSplitStreamType> map;
             map[HPAE_SCENE_SPLIT_NAVIGATION] = STREAM_TYPE_NAVIGATION;
             map[HPAE_SCENE_SPLIT_COMMUNICATION] = STREAM_TYPE_COMMUNICATION;
             map[HPAE_SCENE_SPLIT_MEDIA] = STREAM_TYPE_MEDIA;
             return map;
-        }();
+        } ();
         auto it = splitTypeMap.find(sceneType);
         return (it != splitTypeMap.end()) ? it->second : STREAM_TYPE_DEFAULT;
     }
