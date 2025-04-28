@@ -1102,6 +1102,19 @@ bool AudioStreamCollector::CheckVoiceCallActive(int32_t sessionId)
     return true;
 }
 
+bool AudioStreamCollector::IsVoiceCallActive()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo != nullptr &&
+            (changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+            changeInfo->rendererState == RENDERER_PREPARED) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int32_t AudioStreamCollector::GetRunningStream(AudioStreamType certainType, int32_t certainChannelCount)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

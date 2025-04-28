@@ -974,6 +974,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
+    isVoiceCallMuted_ = false;
     for (auto streamDesc : outputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
