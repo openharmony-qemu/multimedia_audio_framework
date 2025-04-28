@@ -122,8 +122,7 @@ OH_AudioStream_DirectPlaybackMode OHAudioStreamManager::GetDirectPlaybackSupport
 
 bool OHAudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
-    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, AUDIOSTREAM_DIRECT_PLAYBACK_NOT_SUPPORTED,
-        "failed, audioStreamManager_ is null");
+    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
     return audioStreamManager_->IsAcousticEchoCancelerSupported(sourceType);
 }
 } // namespace AudioStandard
