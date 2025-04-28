@@ -44,19 +44,22 @@ static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     {SOURCE_TYPE_VOICE_CALL, 7},
     {SOURCE_TYPE_VOICE_COMMUNICATION, 6},
     {SOURCE_TYPE_VOICE_TRANSCRIPTION, 5},
-    {SOURCE_TYPE_VOICE_RECOGNITION, 4},
-    {SOURCE_TYPE_CAMCORDER, 3},
+    {SOURCE_TYPE_VOICE_RECOGNITION, 2},
+    {SOURCE_TYPE_CAMCORDER, 2},
     {SOURCE_TYPE_MIC, 2},
     {SOURCE_TYPE_UNPROCESSED, 1},
 };
 
 static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
 {
+    AUDIO_INFO_LOG("newSource sourceType:%{public}d priority:%{public}d,"
+        "currentSource sourceType:%{public}d priority:%{public}d",
+        newSource, NORMAL_SOURCE_PRIORITY[newSource], currentSource, NORMAL_SOURCE_PRIORITY[currentSource]);
     if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0 ||
         NORMAL_SOURCE_PRIORITY.count(currentSource) == 0) {
         return false;
     }
-    return NORMAL_SOURCE_PRIORITY[newSource] > NORMAL_SOURCE_PRIORITY[currentSource];
+    return NORMAL_SOURCE_PRIORITY[newSource] >= NORMAL_SOURCE_PRIORITY[currentSource];
 }
 
 void AudioCapturerSession::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager)
