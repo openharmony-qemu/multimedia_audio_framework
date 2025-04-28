@@ -70,17 +70,22 @@ void HpaeRemoteSinkOutputNode::HandleRemoteTiming()
 void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, char* data, size_t size)
 {
     auto handleDump = [&](auto& dumper) {
-        dumper->CheckAndReopenHandlde();
-        if (dumper) dumper->Dump(reinterpret_cast<int8_t*>(data), size);
+        if (dumper) {
+            dumper->CheckAndReopenHandlde();
+            dumper->Dump(reinterpret_cast<int8_t*>(data), size);
+        }
     };
 
     switch (streamType) {
         case HpaeSplitStreamType::STREAM_TYPE_MEDIA:
-            handleDump(outputMediaPcmDumper_); break;
+            handleDump(outputMediaPcmDumper_);
+            break;
         case HpaeSplitStreamType::STREAM_TYPE_NAVIGATION:
-            handleDump(outputNavigationPcmDumper_); break;
+            handleDump(outputNavigationPcmDumper_);
+            break;
         default:
-            handleDump(outputCommunicationPcmDumper_); break;
+            handleDump(outputCommunicationPcmDumper_);
+            break;
     }
 }
 
