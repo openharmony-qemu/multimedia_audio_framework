@@ -989,11 +989,12 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
     int32_t ret = SUCCESS;
 #ifdef SUPPORT_LOW_LATENCY
     for (auto item : endpointList_) {
-        if (item.second != nullptr) {
-            std::string endpointName = item.second->GetEndpointName();
-            if (endpointName == item.first) {
-                ret = ret != SUCCESS ? ret : item.second->SetVolume(streamType, volume);
-            }
+        if (item.second == nullptr) {
+            continue;
+        }
+        std::string endpointName = item.second->GetEndpointName();
+        if (endpointName == item.first) {
+            ret = ret != SUCCESS ? ret : item.second->SetVolume(streamType, volume);
         }
     }
 #endif
