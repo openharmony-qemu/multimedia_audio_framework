@@ -31,7 +31,7 @@ namespace HPAE {
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)), sinkInfo_(sinkInfo)
 {
-    if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA") {
+    if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA" && nodeInfo.deviceClass != "remote") {
         renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     } else {
         renderEffectNode_ = nullptr;

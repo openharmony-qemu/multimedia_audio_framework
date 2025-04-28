@@ -32,6 +32,7 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
     converterOuput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tmpOutBuf_(pcmBufferInfo_)
 {
+    converterOuput_.SetSplitStreamType(preNodeInfo.GetSplitStreamType());
     UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
     // use ProResamppler as default
     resampler_ = std::make_unique<ProResampler>(preNodeInfo_.samplingRate, nodeInfo.samplingRate,

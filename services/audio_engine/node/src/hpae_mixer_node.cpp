@@ -35,6 +35,7 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
         std::to_string(GetSceneType()) + "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
     AUDIO_INFO_LOG("HpaeMixerNode scene type is %{public}d", GetSceneType());
 #endif
+    mixedOutput_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
 }
 
 bool HpaeMixerNode::Reset()

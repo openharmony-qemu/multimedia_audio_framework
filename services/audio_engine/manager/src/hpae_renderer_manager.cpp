@@ -59,7 +59,11 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.streamType = streamInfo.streamType;
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
-    nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
+    if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
+        nodeInfo.sceneType = TransStreamUsageToSplitSceneType(streamInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
+    } else {
+        nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
+    }
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.statusCallback = weak_from_this();
@@ -106,6 +110,9 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     // no need history buffer in not offload sink
     nodeInfo.historyFrameCount = 0;
     nodeInfo.statusCallback = weak_from_this();
+    if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
+        nodeInfo.sceneType = TransStreamUsageToSplitSceneType(nodeInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
+    }
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
     
@@ -281,7 +288,8 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
     } else {
         HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
         int32_t effectMode = nodeInfo.effectInfo.effectMode;
-        HpaeProcessorType sceneType = (effectMode == EFFECT_NONE) ? HPAE_SCENE_EFFECT_NONE : nodeInfo.sceneType;
+        HpaeProcessorType sceneType = (effectMode == EFFECT_NONE && !isSplitProcessorType(nodeInfo.sceneType))
+            ? HPAE_SCENE_EFFECT_NONE : nodeInfo.sceneType;
         if (SafeGetMap(sceneClusterMap_, sceneType)) {
             DeleteProcessCluster(nodeInfo, sceneType, sessionId);
         }
@@ -340,6 +348,15 @@ int32_t HpaeRendererManager::ConnectMchInputSession(uint32_t sessionId)
     return SUCCESS;
 }
 
+bool HpaeRendererManager::isSplitProcessorType(HpaeProcessorType sceneType)
+{
+    if (sceneType == HPAE_SCENE_SPLIT_MEDIA || sceneType == HPAE_SCENE_SPLIT_NAVIGATION ||
+        sceneType == HPAE_SCENE_SPLIT_COMMUNICATION) {
+        return true;
+    }
+    return false;
+}
+
 int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::ConnectInputSession");
@@ -357,7 +374,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     int32_t effectMode = nodeInfo.effectInfo.effectMode;
-    if (effectMode == EFFECT_NONE) {
+    if (effectMode == EFFECT_NONE && !isSplitProcessorType(sceneType)) {
         sceneType = HPAE_SCENE_EFFECT_NONE;
     }
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
@@ -510,7 +527,7 @@ int32_t HpaeRendererManager::DisConnectInputSession(uint32_t sessionId)
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     int32_t effectMode = nodeInfo.effectInfo.effectMode;
-    if (effectMode == EFFECT_NONE) {
+    if (effectMode == EFFECT_NONE && !isSplitProcessorType(sceneType)) {
         sceneType = HPAE_SCENE_EFFECT_NONE;
     }
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
@@ -682,7 +699,11 @@ void HpaeRendererManager::InitManager()
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.statusCallback = weak_from_this();
-    outputCluster_ = std::make_unique<HpaeOutputCluster>(nodeInfo);
+    if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
+        outputCluster_ = std::make_unique<HpaeRemoteOutputCluster>(nodeInfo);
+    } else {
+        outputCluster_ = std::make_unique<HpaeOutputCluster>(nodeInfo);
+    }
     outputCluster_->SetTimeoutStopThd(sinkInfo_.suspendTime);
     int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
     IAudioSinkAttr attr;
@@ -696,6 +717,7 @@ void HpaeRendererManager::InitManager()
     attr.openMicSpeaker = sinkInfo_.openMicSpeaker;
     attr.deviceNetworkId = sinkInfo_.deviceNetId.c_str();
     attr.filePath = sinkInfo_.filePath.c_str();
+    attr.aux = sinkInfo_.splitMode.c_str();
     if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE)) {
         HpaeNodeInfo defaultNodeInfo;
         defaultNodeInfo.frameLen = (uint32_t)DEFAULT_EFFECT_FRAME_LEN;
