@@ -22,7 +22,8 @@
 
 #include "audio_service_log.h"
 #include "audio_utils.h"
-#include "fast/fast_audio_renderer_sink.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
 #include "pcm2wav.h"
 
 using namespace std;
@@ -33,7 +34,7 @@ class AudioHdiDeviceTest {
 public:
     void RenderFrameFromFile()
     {
-        if (hdiRenderSink_ == nullptr) {
+        if (sink_ == nullptr) {
             AUDIO_ERR_LOG("RenderFrameFromFile hdiRenderSink_ null");
             return;
         }
@@ -43,7 +44,7 @@ public:
         uint32_t spanSizeInframe = 0;
         uint32_t byteSizePerFrame = 0;
 
-        hdiRenderSink_->GetMmapBufferInfo(fd, totalSizeInframe, spanSizeInframe, byteSizePerFrame);
+        sink_->GetMmapBufferInfo(fd, totalSizeInframe, spanSizeInframe, byteSizePerFrame);
         if (byteSizePerFrame == 0) {
             AUDIO_ERR_LOG("RenderFrameFromFile():byteSizePerFrame is zero");
             return;
@@ -73,14 +74,14 @@ public:
         while (!stopThread && !feof(wavFile)) {
             Trace trace1("read_write");
             if (writeCount == 0) {
-                hdiRenderSink_->GetMmapHandlePosition(frameCount, timeSec, timeNanoSec);
+                sink_->GetMmapHandlePosition(frameCount, timeSec, timeNanoSec);
                 int64_t temp = timeNanoSec + timeSec * AUDIO_NS_PER_SECOND;
                 fwkSyncTime = temp;
             }
             writeCount++;
 
             fread(buffer, 1, tempBufferSize, wavFile);
-            ret = hdiRenderSink_->RenderFrame(*buffer, tempBufferSize, written);
+            ret = sink_->RenderFrame(*buffer, tempBufferSize, written);
 
             int64_t writeTime = fwkSyncTime + writeCount * periodNanoSec + deltaTime;
             trace1.End();
@@ -91,29 +92,35 @@ public:
 
     bool InitHdiRender()
     {
-        hdiRenderSink_ = FastAudioRendererSink::GetInstance();
+        renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT,
+            true);
+        sink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
+        if (sink_ == nullptr) {
+            AUDIO_ERR_LOG("InitHdiRender sink_ null");
+            return false;
+        }
         IAudioSinkAttr attr = {};
         attr.adapterName = "primary";
         attr.sampleRate = 48000; // 48000hz
         attr.channel = 2; // two channel
-        attr.format = HdiAdapterFormat::SAMPLE_S16;
+        attr.format = SAMPLE_S16LE;
 
-        hdiRenderSink_->Init(attr);
+        sink_->Init(attr);
 
         return true;
     }
 
     void StartHdiRender(int32_t time)
     {
-        if (hdiRenderSink_ == nullptr) {
-            AUDIO_ERR_LOG("StartHdiRender hdiRenderSink_ null");
+        if (sink_ == nullptr) {
+            AUDIO_ERR_LOG("StartHdiRender sink_ null");
             return;
         }
 
-        int32_t ret = hdiRenderSink_->Start();
+        int32_t ret = sink_->Start();
         AUDIO_INFO_LOG("AudioHdiDeviceTest Start, ret %{public}d", ret);
         float vol = 0.12; // for test
-        ret = hdiRenderSink_->SetVolume(vol, vol); // volume
+        ret = sink_->SetVolume(vol, vol); // volume
         AUDIO_INFO_LOG("AudioHdiDeviceTest set volume to 0.5, ret %{public}d", ret);
 
         timeThread_ = make_unique<thread>(&AudioHdiDeviceTest::RenderFrameFromFile, this);
@@ -123,8 +130,13 @@ public:
         cout << "stop running" << endl;
         stopThread = true;
         timeThread_->join();
-        hdiRenderSink_->Stop();
-        hdiRenderSink_->DeInit();
+        sink_->Stop();
+        sink_->DeInit();
+    }
+
+    void DeInitHdiRender()
+    {
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
     }
 
     bool TestPlayback(int argc, char *argv[])
@@ -155,7 +167,8 @@ public:
         return true;
     }
 private:
-    IMmapAudioRendererSink *hdiRenderSink_ = nullptr;
+    uint32_t renderId_ = HDI_INVALID_ID;
+    std::shared_ptr<IAudioRenderSink> sink_ = nullptr;
     unique_ptr<thread> timeThread_ = nullptr;
     int64_t deltaTime = 4000000; // 4ms
     bool stopThread = false;

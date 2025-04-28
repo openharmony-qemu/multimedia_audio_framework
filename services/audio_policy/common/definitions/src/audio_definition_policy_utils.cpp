@@ -56,6 +56,7 @@ std::unordered_map<std::string, DeviceType> AudioDefinitionPolicyUtils::deviceTy
     {"DEVICE_TYPE_EXTERN_CABLE", DEVICE_TYPE_EXTERN_CABLE},
     {"DEVICE_TYPE_DEFAULT", DEVICE_TYPE_DEFAULT},
     {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
+    {"DEVICE_TYPE_ACCESSORY", DEVICE_TYPE_ACCESSORY},
 };
 
 std::unordered_map<std::string, AudioPin> AudioDefinitionPolicyUtils::pinStrToEnum = {
@@ -78,13 +79,15 @@ std::unordered_map<std::string, AudioPin> AudioDefinitionPolicyUtils::pinStrToEn
     {"PIN_IN_USB_EXT", AUDIO_PIN_IN_USB_EXT},
     {"PIN_IN_BLUETOOTH_SCO_HEADSET", AUDIO_PIN_IN_BLUETOOTH_SCO_HEADSET},
     {"PIN_IN_DAUDIO_DEFAULT", AUDIO_PIN_IN_DAUDIO_DEFAULT},
-    {"PIN_IN_USB_HEADSET", AUDIO_PIN_IN_USB_HEADSET},
+    {"PIN_IN_PENCIL", AUDIO_PIN_IN_PENCIL},
+    {"PIN_IN_UWB", AUDIO_PIN_IN_UWB},
 };
 
 std::unordered_map<std::string, AudioSampleFormat> AudioDefinitionPolicyUtils::formatStrToEnum = {
     {"s16le", SAMPLE_S16LE},
     {"s24le", SAMPLE_S24LE},
     {"s32le", SAMPLE_S32LE},
+    {"eac3", INVALID_WIDTH},
 };
 
 // for moduleInfo

@@ -29,18 +29,22 @@
 #include "sink/file_audio_render_sink.h"
 #include "sink/multichannel_audio_render_sink.h"
 #include "sink/offload_audio_render_sink.h"
-#include "sink/remote_audio_render_sink.h"
-#include "sink/remote_fast_audio_render_sink.h"
+#include "sink/direct_audio_render_sink.h"
 #include "source/audio_capture_source.h"
 #include "source/bluetooth_audio_capture_source.h"
 #include "source/wakeup_audio_capture_source.h"
 #include "source/fast_audio_capture_source.h"
 #include "source/file_audio_capture_source.h"
-#include "source/remote_audio_capture_source.h"
-#include "source/remote_fast_audio_capture_source.h"
 #include "adapter/local_device_manager.h"
 #include "adapter/bluetooth_device_manager.h"
+
+#ifdef FEATURE_DISTRIBUTE_AUDIO
+#include "sink/remote_audio_render_sink.h"
+#include "sink/remote_fast_audio_render_sink.h"
+#include "source/remote_audio_capture_source.h"
+#include "source/remote_fast_audio_capture_source.h"
 #include "adapter/remote_device_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -78,12 +82,17 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
         case HDI_ID_TYPE_OFFLOAD:
             sink = std::make_shared<OffloadAudioRenderSink>();
             break;
+        case HDI_ID_TYPE_EAC3:
+            sink = std::make_shared<DirectAudioRenderSink>();
+            break;
+#ifdef FEATURE_DISTRIBUTE_AUDIO
         case HDI_ID_TYPE_REMOTE:
             sink = CreateRemoteRenderSink(info);
             break;
         case HDI_ID_TYPE_REMOTE_FAST:
             sink = CreateRemoteFastRenderSink(info);
             break;
+#endif
         default:
             AUDIO_ERR_LOG("invalid type");
             break;
@@ -116,12 +125,14 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
         case HDI_ID_TYPE_FILE:
             source = std::make_shared<FileAudioCaptureSource>();
             break;
+#ifdef FEATURE_DISTRIBUTE_AUDIO
         case HDI_ID_TYPE_REMOTE:
             source = CreateRemoteCaptureSource(info);
             break;
         case HDI_ID_TYPE_REMOTE_FAST:
             source = CreateRemoteFastCaptureSource(info);
             break;
+#endif
         default:
             AUDIO_ERR_LOG("invalid type");
             break;
@@ -139,9 +150,11 @@ std::shared_ptr<IDeviceManager> HdiAdapterFactory::CreateDeviceManager(uint32_t 
         case HDI_DEVICE_MANAGER_TYPE_BLUETOOTH:
             deviceManager = std::make_shared<BluetoothDeviceManager>();
             break;
+#ifdef FEATURE_DISTRIBUTE_AUDIO
         case HDI_DEVICE_MANAGER_TYPE_REMOTE:
             deviceManager = std::make_shared<RemoteDeviceManager>();
             break;
+#endif
         default:
             AUDIO_ERR_LOG("invalid type");
             break;
@@ -167,6 +180,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateBluetoothRenderSink(c
     return std::make_shared<BluetoothAudioRenderSink>();
 }
 
+#ifdef FEATURE_DISTRIBUTE_AUDIO
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteRenderSink(const std::string &info)
 {
     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
@@ -178,6 +192,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteFastRenderSink(
     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
     return std::make_shared<RemoteFastAudioRenderSink>(info);
 }
+#endif
 
 std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreatePrimaryCaptureSource(const uint32_t captureId,
     const std::string &info)
@@ -188,6 +203,7 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreatePrimaryCaptureSour
     return std::make_shared<AudioCaptureSource>(captureId);
 }
 
+#ifdef FEATURE_DISTRIBUTE_AUDIO
 std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateRemoteCaptureSource(const std::string &info)
 {
     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
@@ -199,6 +215,7 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateRemoteFastCaptureS
     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
     return std::make_shared<RemoteFastAudioCaptureSource>(info);
 }
+#endif
 
 } // namespace AudioStandard
 } // namespace OHOS

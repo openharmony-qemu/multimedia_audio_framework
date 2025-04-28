@@ -143,13 +143,17 @@ private:
     void SetSafeVolumeCallback(AudioStreamType streamType);
     void SetDeviceSafeVolumeStatus();
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
-    int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
     void UpdateVolumeForLowLatency();
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
+    void SetRestoreVolumeLevel(DeviceType deviceType, int32_t curDeviceVolume);
+    void CheckLowerDeviceVolume(DeviceType deviceType);
+    int32_t CheckRestoreDeviceVolume(DeviceType deviceType);
     int32_t DealWithEventVolume(const int32_t notificationId);
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
@@ -190,7 +194,8 @@ private:
     bool isVoiceRingtoneMute_ = false;
 
     std::mutex notifyMutex_;
-    int32_t streamMusicVol_ = 0;
+    int32_t btRestoreVol_ = 0;
+    int32_t wiredRestoreVol_ = 0;
     bool restoreNIsShowing_ = false;
     bool increaseNIsShowing_ = false;
 

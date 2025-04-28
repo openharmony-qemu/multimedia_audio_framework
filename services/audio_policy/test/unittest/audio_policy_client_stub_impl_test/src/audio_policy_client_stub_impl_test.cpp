@@ -638,6 +638,47 @@ HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_001, TestSize.Level1
 }
 
 /**
+* @tc.name  : Test AudioDeviceDescriptor.
+* @tc.number: GetDeviceCategory_001
+* @tc.desc  : Test AudioDeviceDescriptor/GetDeviceCategory.
+*/
+HWTEST(AudioPolicyClientStubImplTest, GetDeviceCategory_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.hasPair_ = true;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    EXPECT_EQ(deviceDescriptor.GetDeviceCategory(), CATEGORY_DEFAULT);
+}
+
+/**
+* @tc.name  : Test AudioDeviceDescriptor.
+* @tc.number: Dump_001
+* @tc.desc  : Test AudioDeviceDescriptor/Dump.
+*/
+HWTEST(AudioPolicyClientStubImplTest, Dump_001, TestSize.Level1)
+{
+    string dumpString = "";
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceName_ = "Test";
+    deviceDescriptor.deviceRole_ = DEVICE_ROLE_NONE;
+    deviceDescriptor.hasPair_ = true;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+
+    deviceDescriptor.Dump(dumpString);
+    EXPECT_EQ(dumpString.empty(), false);
+
+    dumpString = "";
+    deviceDescriptor.deviceRole_ = INPUT_DEVICE;
+    deviceDescriptor.Dump(dumpString);
+    EXPECT_EQ(dumpString.empty(), false);
+
+    dumpString = "";
+    deviceDescriptor.deviceRole_ = OUTPUT_DEVICE;
+    deviceDescriptor.Dump(dumpString);
+    EXPECT_EQ(dumpString.empty(), false);
+}
+
+/**
 * @tc.name  : Test AudioPolicyClientStubImpl.
 * @tc.number: AudioPolicyClientStubImpl_029
 * @tc.desc  : Test DeviceFilterByFlag.
@@ -1279,6 +1320,60 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_061, TestSize.Le
 
     bool enabled = true;
     audioPolicyClient->OnSpatializationEnabledChangeForCurrentDevice(enabled);
+    EXPECT_NE(audioPolicyClient, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_062
+* @tc.desc  : Test AddAudioFormatUnsupportedErrorCallback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_062, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioFormatUnsupportedErrorCallback>();
+    int32_t ret = audioPolicyClient->AddAudioFormatUnsupportedErrorCallback(cb);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto size = audioPolicyClient->GetAudioFormatUnsupportedErrorCallbackSize();
+    EXPECT_EQ(size, 1);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_063
+* @tc.desc  : Test RemoveAudioFormatUnsupportedErrorCallback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_063, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb1 = std::make_shared<ConcreteAudioFormatUnsupportedErrorCallback>();
+    auto cb2 = std::make_shared<ConcreteAudioFormatUnsupportedErrorCallback>();
+    int32_t ret = audioPolicyClient->AddAudioFormatUnsupportedErrorCallback(cb1);
+    ret = audioPolicyClient->AddAudioFormatUnsupportedErrorCallback(cb2);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioPolicyClient->RemoveAudioFormatUnsupportedErrorCallback();
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto size = audioPolicyClient->GetAudioFormatUnsupportedErrorCallbackSize();
+    EXPECT_EQ(size, 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_064
+* @tc.desc  : Test OnFormatUnsupportedError.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_064, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioFormatUnsupportedErrorCallback>();
+    int32_t ret = audioPolicyClient->AddAudioFormatUnsupportedErrorCallback(cb);
+    EXPECT_EQ(ret, SUCCESS);
+
+    AudioErrors errorCode = ERROR_UNSUPPORTED_FORMAT;
+    audioPolicyClient->OnFormatUnsupportedError(errorCode);
     EXPECT_NE(audioPolicyClient, nullptr);
 }
 } // namespace AudioStandard

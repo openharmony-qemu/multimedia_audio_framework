@@ -51,18 +51,6 @@ group("audio_unit_test") {
     "../frameworks/native/audioutils/test/unittest:audio_utils_pro_unit_test",
     "../frameworks/native/audioutils/test/unittest:audio_utils_unit_test",
     "../frameworks/native/examples:pa_stream_test",
-
-    #"../frameworks/native/hdiadapter/sink/test/unittest/audio_render_sink_plus_unit_test:audio_render_sink_plus_unit_test",
-
-    # "../frameworks/native/hdiadapter/sink/test/unittest/audio_render_sink_unit_test:audio_render_sink_unit_test",
-    "../frameworks/native/hdiadapter/sink/test/unittest/audio_running_lock_manager_unit_test:audio_running_lock_manager_unit_test",
-
-    # "../frameworks/native/hdiadapter/sink/test/unittest/remote_fast_audio_render_sink_unit_test:remote_fast_audio_render_sink_unit_test",
-    # "../frameworks/native/hdiadapter/source/test/unittest:audio_capturer_source_unit_test",
-    # "../frameworks/native/hdiadapter/source/test/unittest:remote_audio_capturer_source_unit_test",
-    # "../frameworks/native/hdiadapter/source/test/unittest:remote_fast_audio_capturer_source_unittest",
-    "../frameworks/native/hdiadapter/test/unittest/audio_device_adapter_impl_unit_test:audio_device_adapter_impl_unit_test",
-    "../frameworks/native/hdiadapter/test/unittest/audio_device_manager_impl_unit_test:audio_device_manager_impl_unit_test",
     "../frameworks/native/offlineaudioeffect/test/unittest:offline_audio_effect_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_capture_test:audio_oh_capture_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_device_change_test:audio_oh_device_change_unit_test",
@@ -70,6 +58,7 @@ group("audio_unit_test") {
     "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_routing_manager_test:audio_oh_routing_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
+    "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_manager_test:audio_oh_stream_manager_unit_test",
     "../frameworks/native/toneplayer/test/unittest:audio_toneplayer_unit_test",
     "../services/audio_policy/test:audio_policy_unittest_packages",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
@@ -111,9 +100,8 @@ group("audio_unit_test") {
   if (speex_enable == true) {
     deps += [
       "../frameworks/native/hdiadapter_new:hdiadapter_unit_test",
-
-      # "../services/audio_service/test/unittest:audio_direct_sink_unit_test",
       "../services/audio_service/test/unittest:none_mix_engine_unit_test",
+      "../services/audio_service/test/unittest:direct_playback_engine_unit_test",
     ]
 
     if (audio_framework_feature_low_latency) {
@@ -132,6 +120,7 @@ group("audio_unit_test") {
       "../services/audio_service/test/unittest:audio_endpoint_separate_unit_test",
       "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
       "../services/audio_service/test/unittest:audio_service_unit_test",
+      "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_second_unit_test",
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_unit_test",
     ]
   }
@@ -157,16 +146,17 @@ group("audio_fuzz_test") {
     "fuzztest/audioeffectchain_fuzzer:fuzztest",
     "fuzztest/audioeffectenhance_fuzzer:fuzztest",
     "fuzztest/audioeffectservice_fuzzer:fuzztest",
-    "fuzztest/audiohdiadapterdevicemanager_fuzzer:fuzztest",
     "fuzztest/audiointerruptservice_fuzzer:fuzztest",
     "fuzztest/audiointerruptservicemore_fuzzer:fuzztest",
     "fuzztest/audiomanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
-    # "fuzztest/audiopolicyconcurrency_fuzzer:fuzztest",
+    "fuzztest/audiopolicyconcurrency_fuzzer:fuzztest",
+
     # "fuzztest/audiopolicymore_fuzzer:fuzztest",
-    # "fuzztest/audiopolicyproxy_fuzzer:fuzztest",
+    "fuzztest/audiopolicyproxy_fuzzer:fuzztest",
+
     # "fuzztest/audiopolicyservenhance_fuzzer:fuzztest",
     # "fuzztest/audiopolicyservice_fuzzer:fuzztest",
     # "fuzztest/audiopolicyserviceenhance_fuzzer:fuzztest",

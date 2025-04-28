@@ -41,6 +41,7 @@
 #define NATIVE_AUDIOSTREAM_BASE_H
 
 #include <stdint.h>
+#include "multimedia/native_audio_channel_layout.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,7 +81,14 @@ typedef enum {
      *
      * @since 10
      */
-    AUDIOSTREAM_ERROR_SYSTEM = 3
+    AUDIOSTREAM_ERROR_SYSTEM = 3,
+
+    /**
+     * @error Unsupported audio format, such as unsupported encoding type, sample format etc.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT = 4
 } OH_AudioStream_Result;
 
 /**
@@ -160,7 +168,45 @@ typedef enum {
      * @since 12
      */
     AUDIOSTREAM_ENCODING_TYPE_AUDIOVIVID = 1,
+    /**
+     * E_AC3 encoding type.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_ENCODING_TYPE_E_AC3 = 2,
 } OH_AudioStream_EncodingType;
+
+/**
+ * @brief Define the audio stream info structure, used to describe basic audio format.
+ *
+ * @since 19
+ */
+typedef struct OH_AudioStreamInfo {
+    /**
+     * @brief Audio sampling rate.
+     *
+     * @since 19
+     */
+    int32_t samplingRate;
+    /**
+     * @brief Audio channel layout.
+     *
+     * @since 19
+     */
+    OH_AudioChannelLayout channelLayout;
+    /**
+     * @brief Audio encoding format type.
+     *
+     * @since 19
+     */
+    OH_AudioStream_EncodingType encodingType;
+    /**
+     * @brief Audio sample format.
+     *
+     * @since 19
+     */
+    OH_AudioStream_SampleFormat sampleFormat;
+} OH_AudioStreamInfo;
 
 /**
  * @brief Define the audio stream usage.
@@ -275,6 +321,32 @@ typedef enum {
      */
     AUDIOSTREAM_LATENCY_MODE_FAST = 1
 } OH_AudioStream_LatencyMode;
+
+/**
+ * @brief Enumerates audio direct playback modes.
+ *
+ * @since 19
+ */
+typedef enum {
+    /**
+     * Direct playback is not supported.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_DIRECT_PLAYBACK_NOT_SUPPORTED = 0,
+    /**
+     * Direct playback mode which is bitstream pass-through such as compressed pass-through.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_DIRECT_PLAYBACK_BITSTREAM_SUPPORTED = 1,
+    /**
+     * Direct playback mode of pcm.
+     *
+     * @since 19
+     */
+    AUDIOSTREAM_DIRECT_PLAYBACK_PCM_SUPPORTED = 2
+} OH_AudioStream_DirectPlaybackMode;
 
 /**
  * @brief Define the audio stream volume mode.
@@ -492,7 +564,13 @@ typedef enum {
      *
      * @since 15
      */
-    AUDIOSTREAM_SOURCE_TYPE_UNPROCESSED = 14
+    AUDIOSTREAM_SOURCE_TYPE_UNPROCESSED = 14,
+    /**
+     * live broadcast source type.
+     *
+     * @since 20
+     */
+    AUDIOSTREAM_SOURCE_TYPE_LIVE = 17
 } OH_AudioStream_SourceType;
 
 /**

@@ -32,6 +32,7 @@ public:
     virtual ~CapturerInServer();
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnReadData(size_t length) override;
+    int32_t OnReadData(int8_t *outputData, size_t requestDataLen) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
@@ -76,7 +77,7 @@ private:
     std::shared_ptr<ICapturerStream> stream_ = nullptr;
     uint32_t streamIndex_ = -1;
     IOperation operation_ = OPERATION_INVALID;
-    IStatus status_ = I_STATUS_IDLE;
+    std::atomic<IStatus> status_ = I_STATUS_IDLE;
 
     bool needCheckBackground_ = false;
     bool isMicIndicatorOn_ = false;

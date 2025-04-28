@@ -25,6 +25,7 @@ config("module_private_config") {
     "../../common/include",
     "../../client/include",
     "../../server/include",
+    "../../../../frameworks/native/audioschedule/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
   ]
@@ -136,38 +137,6 @@ ohos_unittest("audio_balance_unit_test") {
   }
 }
 
-ohos_unittest("audio_direct_sink_unit_test") {
-  module_out_path = module_output_path
-
-  install_enable = false
-
-  include_dirs = [
-    "../../../../frameworks/native/audioutils/include",
-    "../../../../frameworks/native/hdiadapter/common/include",
-    "../../../../frameworks/native/hdiadapter/sink",
-    "../../../../frameworks/native/hdiadapter/sink/common",
-    "../../../../frameworks/native/hdiadapter/sink/primary",
-    "../../../../interfaces/inner_api/native/audiocommon/include",
-  ]
-
-  cflags = [ "-DDEBUG_DIRECT_USE_HDI" ]
-
-  sources = [ "audio_direct_sink_unit_test.cpp" ]
-
-  configs = [ ":module_private_config" ]
-
-  deps = [
-    "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
-  ]
-
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "pulseaudio:pulse",
-  ]
-}
-
 ohos_unittest("none_mix_engine_unit_test") {
   module_out_path = module_output_path
 
@@ -204,6 +173,42 @@ ohos_unittest("none_mix_engine_unit_test") {
   ]
 }
 
+ohos_unittest("direct_playback_engine_unit_test") {
+  module_out_path = module_output_path
+
+  install_enable = false
+
+  include_dirs = [
+    "../../../../frameworks/native/audioutils/include",
+    "../../../../frameworks/native/hdiadapter_new/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/server/include",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  sources = [ "direct_playback_engine_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../../services/audio_service:audio_common",
+    "../../../../services/audio_service:audio_process_service_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "pulseaudio:pulse",
+  ]
+}
+
 ohos_unittest("audio_thread_task_unit_test") {
   module_out_path = module_output_path
 
@@ -211,11 +216,6 @@ ohos_unittest("audio_thread_task_unit_test") {
 
   include_dirs = [
     "../../../../frameworks/native/audioutils/include",
-    "../../../../frameworks/native/hdiadapter/common/include",
-    "../../../../frameworks/native/hdiadapter/sink",
-    "../../../../frameworks/native/hdiadapter/sink/primary",
-    "../../../../frameworks/native/hdiadapter/sink/common",
-    "../../../../frameworks/native/hdiadapter/sink/fast",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/server/include",
@@ -258,11 +258,6 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../frameworks/native/audioinnercall/include",
     "../../../../frameworks/native/audiopolicy/include",
-    "../../../../frameworks/native/hdiadapter/sink/common",
-    "../../../../frameworks/native/hdiadapter/sink/primary",
-    "../../../../frameworks/native/hdiadapter/sink/fast",
-    "../../../../frameworks/native/hdiadapter/common/include",
-    "../../../../frameworks/native/hdiadapter/source/common",
     "../../../../frameworks/native/hdiadapter_new/include",
     "../../../../frameworks/native/playbackcapturer/include",
   ]
@@ -403,12 +398,8 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
   install_enable = false
 
   include_dirs = [
+    "../../../../frameworks/native/audioschedule/include",
     "../../../../frameworks/native/audioutils/include",
-    "../../../../frameworks/native/hdiadapter/common/include",
-    "../../../../frameworks/native/hdiadapter/sink",
-    "../../../../frameworks/native/hdiadapter/sink/primary",
-    "../../../../frameworks/native/hdiadapter/sink/common",
-    "../../../../frameworks/native/hdiadapter/sink/fast",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
@@ -421,7 +412,6 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
 
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service_static",
   ]
@@ -473,13 +463,10 @@ ohos_unittest("audio_process_in_server_unit_test") {
 
   include_dirs = [
     "../../../../services/audio_service/server/include",
-    "../../../../frameworks/native/hdiadapter/sink/common",
-    "../../../../frameworks/native/hdiadapter/common/include",
     "../../../../frameworks/native/playbackcapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../frameworks/native/audiopolicy/include",
     "../../../../frameworks/native/audioinnercall/include",
-    "../../../../frameworks/native/hdiadapter/source/common",
     "../../../../frameworks/native/hdiadapter_new/include",
     "../../../../frameworks/native/audioinnercall/include",
     "../../../../services/audio_service/client/include",
@@ -493,7 +480,6 @@ ohos_unittest("audio_process_in_server_unit_test") {
 
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_service:audio_client",
     "../../../../services/audio_service:audio_common",
@@ -535,11 +521,6 @@ ohos_unittest("capturer_in_client_unit_test") {
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../frameworks/native/audioinnercall/include",
     "../../../../frameworks/native/audiopolicy/include",
-    "../../../../frameworks/native/hdiadapter/sink/common",
-    "../../../../frameworks/native/hdiadapter/sink/primary",
-    "../../../../frameworks/native/hdiadapter/sink/fast",
-    "../../../../frameworks/native/hdiadapter/common/include",
-    "../../../../frameworks/native/hdiadapter/source/common",
   ]
 
   sources = [ "./client/capturer_in_client_unit_test.cpp" ]
@@ -634,15 +615,12 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/client/src",
     "../../../../services/audio_service/server/include",
     "../../../../frameworks/native/audiostream/include",
-    "../../../../frameworks/native/hdiadapter/sink/common",
-    "../../../../frameworks/native/hdiadapter/common/include",
     "../../../../frameworks/native/hdiadapter_new/include",
     "../../../../frameworks/native/playbackcapturer/include",
     "../../../../../../window/window_manager/previewer/mock",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../frameworks/native/audiopolicy/include",
     "../../../../frameworks/native/audioinnercall/include",
-    "../../../../frameworks/native/hdiadapter/source/common",
     "../../../../frameworks/native/audioinnercall/include",
     "../../../../services/audio_service/client/include",
     "../../../../services/audio_service/common/include",
@@ -658,6 +636,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/server/src/capturer_in_server.cpp",
     "../../../../services/audio_service/server/src/core_service_handler.cpp",
     "../../../../services/audio_service/server/src/core_service_provider_proxy.cpp",
+    "../../../../services/audio_service/server/src/direct_playback_engine.cpp",
     "../../../../services/audio_service/server/src/i_stream_manager.cpp",
     "../../../../services/audio_service/server/src/ipc_offline_stream_stub.cpp",
     "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
@@ -751,11 +730,6 @@ ohos_unittest("ipc_stream_stub_unit_test") {
 
   include_dirs = [
     "../../../../frameworks/native/audioutils/include",
-    "../../../../frameworks/native/hdiadapter/common/include",
-    "../../../../frameworks/native/hdiadapter/sink",
-    "../../../../frameworks/native/hdiadapter/sink/primary",
-    "../../../../frameworks/native/hdiadapter/sink/common",
-    "../../../../frameworks/native/hdiadapter/sink/fast",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/server/include",
@@ -768,7 +742,6 @@ ohos_unittest("ipc_stream_stub_unit_test") {
 
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service_static",
   ]
@@ -903,6 +876,8 @@ ohos_unittest("policy_provider_stub_unit_test") {
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
+  cflags_cc = cflags
+  cflags_cc += [ "-std=c++20" ]
 
   deps = [ "../../../audio_service:audio_client" ]
 
@@ -1004,6 +979,7 @@ ohos_unittest("resource_manager_adapter_unit_test") {
     "hilog:libhilog",
     "i18n:intl_util",
     "ipc:ipc_core",
+    "resource_management:global_resmgr",
   ]
 }
 

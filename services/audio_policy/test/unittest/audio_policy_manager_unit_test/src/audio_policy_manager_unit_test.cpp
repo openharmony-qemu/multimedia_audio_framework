@@ -630,5 +630,41 @@ HWTEST(AudioPolicyManager, CreateCapturerClient_001, TestSize.Level1)
     auto result = audioPolicyManager_->CreateCapturerClient(streamDesc, flag, originalSessionId);
     EXPECT_EQ(result,  SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: GetDirectPlaybackSupport_001.
+* @tc.desc  : Test GetDirectPlaybackSupport. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
+*/
+HWTEST(AudioPolicyManager, GetDirectPlaybackSupport_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.encoding = ENCODING_PCM;
+    streamInfo.format = SAMPLE_S24LE;
+    streamInfo.channels = STEREO;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    auto result = audioPolicyManager_->GetDirectPlaybackSupport(streamInfo, streamUsage);
+    EXPECT_EQ(result,  DIRECT_PLAYBACK_NOT_SUPPORTED);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: GetDirectPlaybackSupport_002.
+* @tc.desc  : Test GetDirectPlaybackSupport. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
+*/
+HWTEST(AudioPolicyManager, GetDirectPlaybackSupport_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_24000;
+    streamInfo.encoding = ENCODING_EAC3;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.channels = STEREO;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    auto result = audioPolicyManager_->GetDirectPlaybackSupport(streamInfo, streamUsage);
+    EXPECT_EQ(result,  DIRECT_PLAYBACK_NOT_SUPPORTED);
+}
 } // namespace AudioStandard
 } // namespace OHOS

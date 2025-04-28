@@ -27,6 +27,7 @@ enum ManagerType : int32_t {
     DUAL_PLAYBACK,
     DIRECT_PLAYBACK,
     VOIP_PLAYBACK,
+    EAC3_PLAYBACK,
     RECORDER,
 };
 

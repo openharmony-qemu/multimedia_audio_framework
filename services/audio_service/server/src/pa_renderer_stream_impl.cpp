@@ -1197,10 +1197,6 @@ int32_t PaRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
         return SUCCESS;
     }
 
-    if ((offloadStatePolicy_ == offloadNextStateTargetPolicy_) && (offloadStatePolicy_ == statePolicy)) {
-        return SUCCESS;
-    }
-
     offloadEnable_ = true;
     SyncOffloadMode();
     if (OffloadUpdatePolicy(statePolicy, false) != SUCCESS) {

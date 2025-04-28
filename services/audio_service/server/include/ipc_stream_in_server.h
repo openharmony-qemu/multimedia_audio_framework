@@ -23,6 +23,7 @@
 #include "renderer_in_server.h"
 #include "capturer_in_server.h"
 #include "ipc_skeleton.h"
+#include "audio_schedule_guard.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -112,7 +113,7 @@ public:
 
     int32_t SetDuckFactor(float duckFactor) override;
 
-    int32_t RegisterThreadPriority(uint32_t tid, const std::string &bundleName) override;
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
@@ -127,15 +128,14 @@ private:
     int32_t ConfigCapturer();
 
 private:
-    uint32_t clientTid_ = 0;
-    int32_t clientPid_ = 0;
-    std::string clientBundleName_;
-    bool clientThreadPriorityRequested_ = false;
     AudioProcessConfig config_;
     std::shared_ptr<StreamListenerHolder> streamListenerHolder_ = nullptr;
     AudioMode mode_ = AUDIO_MODE_PLAYBACK;
     std::shared_ptr<RendererInServer> rendererInServer_ = nullptr;
     std::shared_ptr<CapturerInServer> capturerInServer_ = nullptr;
+
+    std::array<std::shared_ptr<SharedAudioScheduleGuard>, METHOD_MAX> scheduleGuards_ = {};
+    std::mutex scheduleGuardsMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -37,6 +37,7 @@ static const char* ADAPTER_TYPE_REMOTE = "remote";
 static const char* ADAPTER_TYPE_FILE = "file";
 static const char* ADAPTER_TYPE_USB = "usb";
 static const char* ADAPTER_TYPE_DP = "dp";
+static const char* ADAPTER_TYPE_ACCESSORY = "accessory";
 static const char* ADAPTER_TYPE_SLE = "sle";
 
 struct PairHash {
@@ -62,6 +63,7 @@ enum class AudioAdapterType {
     TYPE_FILE_IO,
     TYPE_REMOTE_AUDIO,
     TYPE_DP,
+    TYPE_ACCESSORY,
     TYPE_SLE,
     TYPE_INVALID
 };
@@ -136,6 +138,7 @@ public:
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     uint32_t supportFlags_ = AUDIO_FLAG_NONE;
     int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
+    bool supportEncodingEac3_ = false;
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos_ {};

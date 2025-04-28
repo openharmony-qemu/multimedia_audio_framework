@@ -261,17 +261,16 @@ AudioScene AudioSystemManager::GetAudioScene() const
     }
 }
 
-int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag) const
+int32_t AudioSystemManager::SetDeviceActive(DeviceType deviceType, bool flag, const int32_t clientUid) const
 {
-    int32_t pid = GetCallingPid();
-    AUDIO_INFO_LOG("device: %{public}d pid: %{public}d", deviceType, pid);
+    int32_t uid = clientUid == -1 ? getuid() : clientUid;
     if (!IsActiveDeviceType(deviceType)) {
         AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
         return ERR_NOT_SUPPORTED;
     }
 
     /* Call Audio Policy SetDeviceActive */
-    return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, pid));
+    return (AudioPolicyManager::GetInstance().SetDeviceActive(static_cast<InternalDeviceType>(deviceType), flag, uid));
 }
 
 bool AudioSystemManager::IsDeviceActive(DeviceType deviceType) const
@@ -1147,13 +1146,13 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
 
 int32_t AudioSystemManager::ActivatePreemptMode() const
 {
-    AUDIO_DEBUG_LOG("stub implementation");
+    AUDIO_DEBUG_LOG("ActivatePreemptMode");
     return AudioPolicyManager::GetInstance().ActivatePreemptMode();
 }
 
 int32_t AudioSystemManager::DeactivatePreemptMode() const
 {
-    AUDIO_DEBUG_LOG("stub implementation");
+    AUDIO_DEBUG_LOG("DeactivatePreemptMode");
     return AudioPolicyManager::GetInstance().DeactivatePreemptMode();
 }
 
@@ -1745,11 +1744,12 @@ AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImp
     AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl destroy");
 }
 
-int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address) const
+int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address,
+    const int32_t clientUid) const
 {
-    int32_t pid = GetCallingPid();
+    int32_t uid = clientUid == -1 ? getuid() : clientUid;
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
-        flag, address, pid));
+        flag, address, uid));
 }
 
 uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)

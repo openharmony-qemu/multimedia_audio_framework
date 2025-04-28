@@ -32,4 +32,8 @@ ohos_unittest("playback_capturer_manager_unit_test") {
   sources = [ "playback_capturer_manager_unit_test.cpp" ]
 
   deps = [ "../../../playbackcapturer:playback_capturer" ]
+
+  external_deps = [
+      "c_utils:utils",
+  ]
 }

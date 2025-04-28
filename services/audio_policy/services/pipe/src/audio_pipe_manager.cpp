@@ -95,13 +95,15 @@ void AudioPipeManager::StartClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
-    streamDesc->streamStatus_ = STREAM_STATUS_STARTTING;
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
 }
 
 void AudioPipeManager::PauseClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
 }
 
@@ -109,6 +111,7 @@ void AudioPipeManager::StopClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
 }
 
@@ -221,6 +224,18 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
             streamDescs.insert(streamDescs.end(), it->streamDescriptors_.begin(), it->streamDescriptors_.end());
         }
     }
+    return streamDescs;
+}
+
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByIoHandle(AudioIOHandle id)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it : curPipeList_) {
+        if (it != nullptr && it->id_ == id) {
+            return it->streamDescriptors_;
+        }
+    }
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {};
     return streamDescs;
 }
 

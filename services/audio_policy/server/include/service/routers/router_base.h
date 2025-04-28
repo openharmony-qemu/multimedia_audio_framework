@@ -97,15 +97,12 @@ public:
 
     bool NeedLatestConnectWithDefaultDevices(DeviceType type)
     {
-        if (type == DEVICE_TYPE_WIRED_HEADSET ||
+        return type == DEVICE_TYPE_WIRED_HEADSET ||
             type == DEVICE_TYPE_WIRED_HEADPHONES ||
             type == DEVICE_TYPE_BLUETOOTH_SCO ||
             type == DEVICE_TYPE_USB_HEADSET ||
             type == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            type == DEVICE_TYPE_USB_ARM_HEADSET) {
-            return true;
-        }
-        return false;
+            type == DEVICE_TYPE_USB_ARM_HEADSET;
     }
 };
 } // namespace AudioStandard

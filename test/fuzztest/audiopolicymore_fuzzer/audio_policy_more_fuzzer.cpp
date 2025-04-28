@@ -381,6 +381,9 @@ void AudioDeviceMoreFuzzTest()
     GetServerPtr()->GetPersistentMicMuteState();
     GetServerPtr()->IsMicrophoneMuteLegacy();
     GetServerPtr()->GetAudioScene();
+
+    StreamUsage streamUsage = GetData<StreamUsage>();
+    GetServerPtr()->GetDirectPlaybackSupport(audioStreamInfo, streamUsage);
 }
 
 void AudioPolicySomeMoreFuzzTest()

@@ -32,7 +32,7 @@ public:
     void OnInterruptEvent(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
         AudioZoneInterruptReason reason) override;
-    void OnInterruptEvent(int32_t zoneId, int32_t deviceId,
+    void OnInterruptEvent(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
         AudioZoneInterruptReason reason) override;
     int32_t SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,

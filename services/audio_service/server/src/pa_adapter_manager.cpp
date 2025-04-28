@@ -118,7 +118,7 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
 
     std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
     SinkInput sinkInput;
-    sinkInput.streamId = sessionId;
+    sinkInput.streamId = static_cast<int32_t>(sessionId);
     sinkInput.streamType = processConfig.streamType;
     sinkInput.uid = processConfig.appInfo.appUid;
     sinkInput.pid = processConfig.appInfo.appPid;
@@ -162,7 +162,7 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
 
 void PaAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
-    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
     sinkInputs = sinkInputs_;
     Trace trace("PaAdapterManager::GetAllSinkInputs size:" + std::to_string(sinkInputs.size()));
 }
@@ -697,6 +697,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(
     } else {
         sinkNameStr = adapterName;
         sinkName = strdup(sinkNameStr.c_str());
+        CHECK_AND_RETURN_RET_LOG(sinkName != nullptr, ERR_MEMORY_ALLOC_FAILED, "dup string failed");
     }
     if (strcmp(sinkName, "") == 0) {
         AUDIO_INFO_LOG("Sink name is null");
@@ -738,6 +739,7 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     } else {
         sourceNameStr = adapterName;
         cDeviceName = strdup(sourceNameStr.c_str());
+        CHECK_AND_RETURN_RET_LOG(cDeviceName != nullptr, ERR_MEMORY_ALLOC_FAILED, "dup string failed");
     }
     AUDIO_INFO_LOG("Source name: %{public}s", cDeviceName);
 

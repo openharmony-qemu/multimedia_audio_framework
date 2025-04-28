@@ -212,7 +212,6 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
     if (audioBalanceState_) {
         AdjustAudioBalance(&data, len);
     }
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     CheckUpdateState(&data, len);
     if (switchDeviceMute_) {
         Trace trace("MultichannelAudioRenderSink::RenderFrame::switch");
@@ -366,7 +365,8 @@ void MultichannelAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     }
 }
 
-int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
+int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+    bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
@@ -566,7 +566,9 @@ void MultichannelAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttribut
     param.channelLayout = attr_.channelLayout;
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBit(attr_.format) * param.channelCount / PCM_8_BIT;
-    param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    }
 }
 
 void MultichannelAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
@@ -582,12 +584,12 @@ void MultichannelAudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sce
 {
     sceneDesc.scene.id = GetAudioCategory(audioScene);
 
-    AudioPortPin pin = PIN_OUT_SPEAKER;
+    AudioPortPin port = PIN_OUT_SPEAKER;
     if (halName_ == HDI_ID_INFO_USB) {
-        pin = PIN_OUT_USB_HEADSET;
+        port = PIN_OUT_USB_HEADSET;
     }
-    AUDIO_DEBUG_LOG("pin is %{public}d", pin);
-    sceneDesc.desc.pins = pin;
+    AUDIO_DEBUG_LOG("port: %{public}d", port);
+    sceneDesc.desc.pins = port;
     sceneDesc.desc.desc = const_cast<char *>("");
 }
 

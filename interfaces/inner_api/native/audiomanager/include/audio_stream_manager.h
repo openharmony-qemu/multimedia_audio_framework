@@ -35,6 +35,18 @@ public:
         const AudioStreamDeviceChangeReasonExt reason) = 0;
 };
 
+class AudioFormatUnsupportedErrorCallback {
+public:
+    virtual ~AudioFormatUnsupportedErrorCallback() = default;
+
+    /**
+     * Called when format unsupported error occurs
+     *
+     * @param errorCode ErrorCode information.
+     */
+    virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) = 0;
+};
+
 class AudioClientTracker {
 public:
     virtual ~AudioClientTracker() = default;
@@ -284,6 +296,44 @@ public:
      */
     int32_t GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
+    /**
+     * @brief Judges whether the playback is supported by the renderer.
+     *
+     * @param streamInfo AudioStreamInfo
+     * @param streamUsage StreamUsage
+     * @return Returns direct playback mode.
+     * @since 19
+     */
+    DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
+
+    /**
+     * @brief Sets format unsupported error callback.
+     *
+     * @param callback The format unsupported error callback.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 19
+     */
+    int32_t SetAudioFormatUnsupportedErrorCallback(
+        const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback);
+
+    /**
+     * @brief Unsets format unsupported error callback.
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 19
+     */
+    int32_t UnsetAudioFormatUnsupportedErrorCallback();
+
+    /**
+     * Query whether Acoustic Echo Canceler is supported on input SourceType.
+     * @param { SourceType } sourceType - Audio source type.
+     * @returns { bool } Promise used to return the support status of Acoustic Echo Canceler.
+     * The value true means that Acoustic Echo Canceler is supported, and false means the opposite.
+     * @since 20
+     */
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

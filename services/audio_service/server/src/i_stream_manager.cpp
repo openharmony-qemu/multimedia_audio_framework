@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
+#include "audio_utils.h"
+#include "audio_engine_log.h"
 #include "pa_adapter_manager.h"
+#include "hpae_adapter_manager.h"
 #include "pro_audio_stream_manager.h"
 
 namespace OHOS {
@@ -24,32 +27,59 @@ IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
         case DIRECT_PLAYBACK:
             static ProAudioStreamManager directManager(DIRECT_PLAYBACK);
             return directManager;
+        case EAC3_PLAYBACK:
+            static ProAudioStreamManager eac3Manager(EAC3_PLAYBACK);
+            return eac3Manager;
         case VOIP_PLAYBACK:
             static ProAudioStreamManager voipManager(VOIP_PLAYBACK);
             return voipManager;
         case PLAYBACK:
         default:
-            static PaAdapterManager adapterManager(PLAYBACK);
-            return adapterManager;
+            int32_t engineFlag = GetEngineFlag();
+            if (engineFlag == 1) {
+                static HpaeAdapterManager adapterManager(PLAYBACK);
+                return adapterManager;
+            } else {
+                static PaAdapterManager adapterManager(PLAYBACK);
+                return adapterManager;
+            }
     }
 }
 
 IStreamManager &IStreamManager::GetDupPlaybackManager()
 {
-    static PaAdapterManager adapterManager(DUP_PLAYBACK);
-    return adapterManager;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        static HpaeAdapterManager adapterManager(DUP_PLAYBACK);
+        return adapterManager;
+    } else {
+        static PaAdapterManager adapterManager(DUP_PLAYBACK);
+        return adapterManager;
+    }
 }
 
 IStreamManager &IStreamManager::GetDualPlaybackManager()
 {
-    static PaAdapterManager adapterManager(DUAL_PLAYBACK);
-    return adapterManager;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        static HpaeAdapterManager adapterManager(DUAL_PLAYBACK);
+        return adapterManager;
+    } else {
+        static PaAdapterManager adapterManager(DUAL_PLAYBACK);
+        return adapterManager;
+    }
 }
 
 IStreamManager &IStreamManager::GetRecorderManager()
 {
-    static PaAdapterManager adapterManager(RECORDER);
-    return adapterManager;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        static HpaeAdapterManager adapterManager(RECORDER);
+        return adapterManager;
+    } else {
+        static PaAdapterManager adapterManager(RECORDER);
+        return adapterManager;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

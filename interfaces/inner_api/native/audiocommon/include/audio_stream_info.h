@@ -17,6 +17,7 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <parcel.h>
 
@@ -286,7 +287,14 @@ enum AudioSamplingRate {
 enum AudioEncodingType {
     ENCODING_INVALID = -1,
     ENCODING_PCM = 0,
-    ENCODING_AUDIOVIVID = 1
+    ENCODING_AUDIOVIVID = 1,
+    ENCODING_EAC3 = 2
+};
+
+enum DirectPlaybackMode {
+    DIRECT_PLAYBACK_NOT_SUPPORTED = 0,
+    DIRECT_PLAYBACK_BITSTREAM_SUPPORTED = 1,
+    DIRECT_PLAYBACK_PCM_SUPPORTED = 2
 };
 
 
@@ -493,7 +501,8 @@ const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
 
 const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
     ENCODING_PCM,
-    ENCODING_AUDIOVIVID
+    ENCODING_AUDIOVIVID,
+    ENCODING_EAC3
 };
 
 const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
@@ -584,6 +593,32 @@ struct AudioStreamData {
     int32_t volumeEnd;
     std::unordered_map<int32_t, bool> isInnerCapeds;
 };
+
+struct AudioCallBackStreamInfo {
+    uint64_t framePosition;
+    uint64_t framesWritten;
+    uint64_t timestamp;
+    uint64_t latency = 0;
+    int8_t *inputData;
+    size_t requestDataLen;
+    std::string deviceClass;
+    std::string deviceNetId;
+    bool needData;
+};
+
+struct AudioCallBackCapturerStreamInfo {
+    uint64_t framesRead;
+    uint64_t timestamp;
+    uint64_t latency = 0;
+    int8_t *outputData;
+    size_t requestDataLen;
+};
+
+struct AudioChannelInfo {
+    AudioChannelLayout channelLayout;
+    uint32_t numChannels;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STREAM_INFO_H

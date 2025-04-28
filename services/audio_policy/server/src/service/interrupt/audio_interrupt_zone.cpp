@@ -41,31 +41,29 @@ int32_t AudioInterruptZoneManager::GetAudioFocusInfoList(const int32_t zoneId,
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
     auto itZone = service_->zonesMap_.find(zoneId);
-    if (itZone != service_->zonesMap_.end() && itZone->second != nullptr) {
-        focusInfoList = itZone->second->audioFocusInfoList;
-    } else {
-        focusInfoList = {};
-    }
+    focusInfoList = {};
 
+    CHECK_AND_RETURN_RET_LOG(itZone != service_->zonesMap_.end(), SUCCESS, "zone %{public}d is not found", zoneId);
+    CHECK_AND_RETURN_RET_LOG(itZone->second != nullptr, SUCCESS, "zone %{public}d focusInfoList is null", zoneId);
+
+    focusInfoList = itZone->second->audioFocusInfoList;
     return SUCCESS;
 }
 
 int32_t AudioInterruptZoneManager::GetAudioFocusInfoList(const int32_t zoneId,
-    const int32_t deviceId, AudioFocusList &focusInfoList)
+    const std::string &deviceTag, AudioFocusList &focusInfoList)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
     auto itZone = service_->zonesMap_.find(zoneId);
-    if (itZone != service_->zonesMap_.end() && itZone->second != nullptr) {
-        for (const auto &focus : itZone->second->audioFocusInfoList) {
-            if (focus.first.deviceId != deviceId) {
-                continue;
-            }
-            focusInfoList.emplace_back(focus);
-        }
-    } else {
-        focusInfoList = {};
-    }
+    focusInfoList = {};
 
+    CHECK_AND_RETURN_RET_LOG(itZone != service_->zonesMap_.end(), SUCCESS, "zone %{public}d is not found", zoneId);
+    CHECK_AND_RETURN_RET_LOG(itZone->second != nullptr, SUCCESS, "zone %{public}d focusInfoList is null", zoneId);
+
+    for (const auto &focus : itZone->second->audioFocusInfoList) {
+        CHECK_AND_CONTINUE(focus.first.deviceTag == deviceTag);
+        focusInfoList.emplace_back(focus);
+    }
     return SUCCESS;
 }
 
@@ -80,15 +78,12 @@ int32_t AudioInterruptZoneManager::CreateAudioInterruptZone(const int32_t zoneId
     }
 
     auto &tempMap = service_->zonesMap_;
-    if (tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr) {
-        AUDIO_INFO_LOG("zone %{public}d already exist", zoneId);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(tempMap.find(zoneId) == tempMap.end() || tempMap[zoneId] == nullptr,
+        ERR_INVALID_PARAM, "zone %{public}d already exist", zoneId);
 
     std::shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
-    if (zone == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone %{public}d create interrupt failed", zoneId);
+
     zone->zoneId = zoneId;
     zone->focusStrategy = focusStrategy;
     tempMap[zoneId] = zone;
@@ -103,13 +98,10 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
         "audio zone permission deny");
 
     auto &tempMap = service_->zonesMap_;
-    if (tempMap.find(zoneId) == tempMap.end() || tempMap[zoneId] == nullptr) {
-        AUDIO_WARNING_LOG("zone %{public}d not exist", zoneId);
-        return ERR_INVALID_PARAM;
-    }
-    if (zoneId == AudioInterruptService::ZONEID_DEFAULT) {
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr,
+        ERR_INVALID_PARAM, "zone %{public}d not exist", zoneId);
+    CHECK_AND_RETURN_RET_LOG(zoneId != AudioInterruptService::ZONEID_DEFAULT,
+        ERR_INVALID_PARAM, "zone %{public}d is default zone", zoneId);
 
     bool updateScene = false;
     auto &releaseZone = tempMap[zoneId];
@@ -120,7 +112,7 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
             it->first.streamUsage == STREAM_USAGE_MOVIE)) {
             ForceStopAudioFocusInZone(zoneId, it->first);
         } else {
-            int32_t destZoneId = func(it->first.uid, it->first.deviceId, it->first.deviceTag);
+            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "");
             service_->ActivateAudioInterruptInternal(zoneId, it->first, false, updateScene);
         }
     }
@@ -141,9 +133,8 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
     }
 
     auto audioSession = service_->sessionService_->GetAudioSessionByPid(interrupt.pid);
-    if (audioSession != nullptr) {
-        audioSession->RemoveAudioInterrptByStreamId(interrupt.streamId);
-    }
+    CHECK_AND_RETURN_LOG(audioSession != nullptr, "audio session is nullptr");
+    audioSession->RemoveAudioInterrptByStreamId(interrupt.streamId);
 }
 
 int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
@@ -151,17 +142,15 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
     CHECK_AND_RETURN_RET_LOG(func != nullptr, ERR_INVALID_PARAM, "zone id is invalid");
     auto &tempMap = service_->zonesMap_;
-    if (tempMap.find(zoneId) == tempMap.end() || tempMap[zoneId] == nullptr) {
-        AUDIO_WARNING_LOG("zone %{public}d not exist", zoneId);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr,
+        ERR_INVALID_PARAM, "zone %{public}d not exist", zoneId);
 
     auto &focusInfoList = tempMap[zoneId]->audioFocusInfoList;
     AUDIO_INFO_LOG("migrate interrupt size %{public}zu from zone %{public}d", focusInfoList.size(), zoneId);
     bool isMigrate = false;
     bool updateScene = false;
     for (auto itFocus = focusInfoList.begin(); itFocus != focusInfoList.end();) {
-        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceId, itFocus->first.deviceTag);
+        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "");
         if (toZoneId == zoneId) {
             ++itFocus;
             continue;
@@ -174,9 +163,7 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
         focusInfoList.erase(itFocus++);
         isMigrate = true;
     }
-    if (!isMigrate) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(isMigrate, SUCCESS, "no interrupt need migrate");
 
     ForceStopAllAudioFocusInZone(tempMap[zoneId]);
     if (tempMap[zoneId]->audioFocusInfoList.size() > 0) {
@@ -205,10 +192,8 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
         "audio zone permission deny");
 
     auto &tempMap = service_->zonesMap_;
-    if (tempMap.find(zoneId) == tempMap.end() || tempMap[zoneId] == nullptr) {
-        AUDIO_WARNING_LOG("zone %{public}d not exist", zoneId);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr,
+        ERR_INVALID_PARAM, "zone %{public}d not exist", zoneId);
 
     AUDIO_INFO_LOG("inject interrupt size %{public}zu to zone %{public}d", interrupts.size(), zoneId);
     auto oldFocusList = tempMap[zoneId]->audioFocusInfoList;
@@ -242,37 +227,33 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
 }
 
 int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zoneId,
-    const int32_t deviceId, const AudioFocusList &interrupts)
+    const std::string &deviceTag, const AudioFocusList &interrupts)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
     CHECK_AND_RETURN_RET_LOG(CheckAudioInterruptZonePermission(), ERR_INVALID_PARAM,
         "audio zone permission deny");
 
     auto &tempMap = service_->zonesMap_;
-    if (tempMap.find(zoneId) == tempMap.end() || tempMap[zoneId] == nullptr) {
-        AUDIO_WARNING_LOG("zone %{public}d not exist", zoneId);
-        return ERR_INVALID_PARAM;
-    }
-    if (deviceId == -1) {
-        AUDIO_WARNING_LOG("device id is invalid for zone %{public}d", zoneId);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr,
+        ERR_INVALID_PARAM, "zone %{public}d not exist", zoneId);
+    CHECK_AND_RETURN_RET_LOG(!deviceTag.empty(), ERR_INVALID_PARAM,
+        "device tag is invalid for zone %{public}d", zoneId);
 
-    AUDIO_INFO_LOG("inject interrupt size %{public}zu with device id %{public}d to zone %{public}d",
-        interrupts.size(), deviceId, zoneId);
+    AUDIO_INFO_LOG("inject interrupt size %{public}zu with device tag %{public}s to zone %{public}d",
+        interrupts.size(), deviceTag.c_str(), zoneId);
     AudioFocusList newFocusList = interrupts;
     AudioFocusList activeFocusList;
-    AudioFocusIterator oldDeviceList = QueryAudioFocusFromZone(zoneId, deviceId);
+    AudioFocusIterator oldDeviceList = QueryAudioFocusFromZone(zoneId, deviceTag);
 
     for (auto &itNew : newFocusList) {
-        auto isPresent = [itNew, deviceId](const std::list<std::pair<AudioInterrupt,
+        auto isPresent = [itNew, deviceTag](const std::list<std::pair<AudioInterrupt,
             AudioFocuState>>::iterator &iter) {
-            return iter->first.streamId == itNew.first.streamId && iter->first.deviceId == deviceId;
+            return iter->first.streamId == itNew.first.streamId && iter->first.deviceTag == deviceTag;
         };
         auto itOld = std::find_if(oldDeviceList.begin(), oldDeviceList.end(), isPresent);
         if (itOld == oldDeviceList.end()) {
             AUDIO_DEBUG_LOG("record new interrupt %{public}d", itNew.first.streamId);
-            itNew.first.deviceId = deviceId;
+            itNew.first.deviceTag = deviceTag;
             activeFocusList.emplace_back(itNew);
         } else {
             if ((*itOld)->second != itNew.second) {
@@ -292,14 +273,13 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
 }
 
 AudioFocusIterator AudioInterruptZoneManager::QueryAudioFocusFromZone(int32_t zoneId,
-    const int32_t deviceId)
+    const std::string &deviceTag)
 {
-    auto &focusInfoList = service_->zonesMap_[zoneId]->audioFocusInfoList;
     AudioFocusIterator deviceList;
+    CHECK_AND_RETURN_RET_LOG(service_ != nullptr, deviceList, "service is nullptr");
+    auto &focusInfoList = service_->zonesMap_[zoneId]->audioFocusInfoList;
     for (auto it = focusInfoList.begin(); it != focusInfoList.end(); it++) {
-        if (it->first.deviceId != deviceId) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(it->first.deviceTag == deviceTag);
         deviceList.emplace_back(it);
     }
     return deviceList;
@@ -321,6 +301,7 @@ void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const 
 
 void AudioInterruptZoneManager::TryActiveAudioFocusForZone(int32_t zoneId, AudioFocusList &activeFocusList)
 {
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
     AUDIO_DEBUG_LOG("focus list size is %{public}zu for zone %{public}d before active",
         service_->zonesMap_[zoneId]->audioFocusInfoList.size(), zoneId);
     if (activeFocusList.size() > 0) {
@@ -338,30 +319,26 @@ void AudioInterruptZoneManager::TryActiveAudioFocusForZone(int32_t zoneId, Audio
 
 void AudioInterruptZoneManager::TryResumeAudioFocusForZone(int32_t zoneId)
 {
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
     AUDIO_DEBUG_LOG("try resume audio focus list for zone %{public}d", zoneId);
     auto &focusList = service_->zonesMap_[zoneId]->audioFocusInfoList;
-    if (focusList.size() == 0) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(focusList.size() > 0, "focus list is empty");
+
     for (auto it = focusList.begin(); it != focusList.end(); ++it) {
-        if (it->second == ACTIVE) {
-            return;
-        }
+        CHECK_AND_RETURN(it->second != ACTIVE);
     }
     service_->ResumeAudioFocusList(zoneId, false);
 }
 
 int32_t AudioInterruptZoneManager::FindZoneByPid(int32_t pid)
 {
+    CHECK_AND_RETURN_RET_LOG(service_ != nullptr, AudioInterruptService::ZONEID_DEFAULT, "service is nullptr");
     for (const auto &zone : service_->zonesMap_) {
-        if (zone.second == nullptr) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(zone.second != nullptr);
 
         for (const auto &it : zone.second->audioFocusInfoList) {
-            if (it.first.pid == pid) {
-                return zone.first;
-            }
+            CHECK_AND_CONTINUE(it.first.pid == pid);
+            return zone.first;
         }
     }
     AUDIO_WARNING_LOG("pid %{public}d not in audio zone, use default", pid);
@@ -371,10 +348,8 @@ int32_t AudioInterruptZoneManager::FindZoneByPid(int32_t pid)
 bool AudioInterruptZoneManager::CheckAudioInterruptZonePermission()
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid == UID_AUDIO) {
-        return true;
-    }
-    return false;
+    CHECK_AND_RETURN_RET(callerUid == UID_AUDIO, false);
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

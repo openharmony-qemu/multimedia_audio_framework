@@ -32,7 +32,7 @@ using AudioZoneFocusList = std::list<std::pair<AudioInterrupt, AudioFocuState>>;
 
 class AudioZoneInterruptReporter {
 public:
-    using ReportItem = std::pair<int32_t, int32_t>;
+    using ReportItem = std::pair<int32_t, std::string>;
     using ReportItemList = std::list<ReportItem>;
     using ReportMap = std::unordered_map<int32_t, ReportItemList>;
     using Reporter  =  std::shared_ptr<AudioZoneInterruptReporter>;
@@ -42,7 +42,7 @@ public:
     ~AudioZoneInterruptReporter() = default;
 
     static int32_t EnableInterruptReport(pid_t clientPid, int32_t zoneId,
-        int32_t deviceId, bool enable);
+        const std::string &deviceTag, bool enable);
     static void DisableInterruptReport(pid_t clientPid);
     static void DisableAllInterruptReport();
     static ReporterVector CreateReporter(std::shared_ptr<AudioInterruptService> interruptService,
@@ -60,7 +60,7 @@ private:
     std::shared_ptr<AudioZoneClientManager> zoneClientManager_;
     pid_t clientPid_ = -1;
     int32_t zoneId_ = 0;
-    int32_t deviceId_ = -1;
+    std::string deviceTag_ = "";
     AudioZoneFocusList oldFocusList_;
     AudioZoneInterruptReason reportReason_ = AudioZoneInterruptReason::UNKNOWN;
 
@@ -68,9 +68,9 @@ private:
     static std::mutex interruptEnableMutex_;
 
     static int32_t RegisterInterruptReport(pid_t clientPid, int32_t zoneId,
-        int32_t deviceId);
+        const std::string &deviceTag);
     static void UnRegisterInterruptReport(pid_t clientPid, int32_t zoneId,
-        int32_t deviceId);
+        const std::string &deviceTag);
     
     AudioZoneFocusList GetFocusList();
     bool IsFocusListEqual(const AudioZoneFocusList &a, const AudioZoneFocusList &b);
