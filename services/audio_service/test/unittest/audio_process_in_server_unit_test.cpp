@@ -61,7 +61,7 @@ DeviceStreamInfo g_audioStreamInfo = {
     SAMPLE_RATE_48000,
     ENCODING_PCM,
     SAMPLE_S16LE,
-    STEREO
+    CH_LAYOUT_STEREO
 };
 
 static AudioProcessConfig InitProcessConfig()

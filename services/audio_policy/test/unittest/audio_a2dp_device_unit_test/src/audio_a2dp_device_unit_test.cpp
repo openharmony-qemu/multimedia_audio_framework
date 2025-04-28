@@ -34,7 +34,7 @@ void AudioA2dpDeviceUnitTest::TearDown(void) {}
 HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpDeviceInfo_001, TestSize.Level1)
 {
     DeviceStreamInfo streamInfo(AudioSamplingRate::SAMPLE_RATE_44100, AudioEncodingType::ENCODING_PCM,
-        AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO);
+        AudioSampleFormat::SAMPLE_S16LE, AudioChannelLayout::CH_LAYOUT_STEREO);
     A2dpDeviceConfigInfo configInfo;
     configInfo.streamInfo = streamInfo;
     configInfo.absVolumeSupport = true;
@@ -49,8 +49,8 @@ HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpDeviceInfo_001, TestSize.Level1)
     EXPECT_EQ(info.streamInfo.format, AudioSampleFormat::SAMPLE_S16LE);
     EXPECT_EQ(info.streamInfo.samplingRate.size(), 1);
     EXPECT_EQ(*info.streamInfo.samplingRate.begin(), AudioSamplingRate::SAMPLE_RATE_44100);
-    EXPECT_EQ(info.streamInfo.channels.size(), 1);
-    EXPECT_EQ(*info.streamInfo.channels.begin(), AudioChannel::STEREO);
+    EXPECT_EQ(info.streamInfo.channelLayout.size(), 1);
+    EXPECT_EQ(*info.streamInfo.channelLayout.begin(), AudioChannelLayout::CH_LAYOUT_STEREO);
     EXPECT_TRUE(info.absVolumeSupport);
     EXPECT_EQ(info.volumeLevel, 50);
     EXPECT_FALSE(info.mute);
@@ -80,7 +80,7 @@ HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpDeviceInfo_002, TestSize.Level1)
 HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpInDeviceInfo_001, TestSize.Level1)
 {
     DeviceStreamInfo streamInfo(AudioSamplingRate::SAMPLE_RATE_44100, AudioEncodingType::ENCODING_PCM,
-        AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO);
+        AudioSampleFormat::SAMPLE_S16LE, AudioChannelLayout::CH_LAYOUT_STEREO);
     A2dpDeviceConfigInfo configInfo;
     configInfo.streamInfo = streamInfo;
     configInfo.absVolumeSupport = true;
@@ -95,8 +95,8 @@ HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpInDeviceInfo_001, TestSize.Level1)
     EXPECT_EQ(info.streamInfo.format, AudioSampleFormat::SAMPLE_S16LE);
     EXPECT_EQ(info.streamInfo.samplingRate.size(), 1);
     EXPECT_EQ(*info.streamInfo.samplingRate.begin(), AudioSamplingRate::SAMPLE_RATE_44100);
-    EXPECT_EQ(info.streamInfo.channels.size(), 1);
-    EXPECT_EQ(*info.streamInfo.channels.begin(), AudioChannel::STEREO);
+    EXPECT_EQ(info.streamInfo.channelLayout.size(), 1);
+    EXPECT_EQ(*info.streamInfo.channelLayout.begin(), CH_LAYOUT_STEREO);
     EXPECT_TRUE(info.absVolumeSupport);
     EXPECT_EQ(info.volumeLevel, 50);
     EXPECT_FALSE(info.mute);

@@ -52,6 +52,16 @@ void AudioPolicyConfigData::SetDeviceInfoMap(std::list<std::shared_ptr<AdapterDe
 void AudioPolicyConfigData::SetSupportDeviceAndPipeMap(std::shared_ptr<AdapterPipeInfo> &pipeInfo_,
     std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> &tmpDeviceInfoMap_)
 {
+    if (pipeInfo_->streamPropInfos_.size() == 0) {
+        AUDIO_INFO_LOG("dynamic setting");
+        for (auto deviceName : pipeInfo_->supportDevices_) {
+            auto uniqueDeviceIt = tmpDeviceInfoMap_.find(deviceName);
+            CHECK_AND_CONTINUE_LOG(uniqueDeviceIt != tmpDeviceInfoMap_.end(),
+                "pipe needed device:%{public}s not exists.", deviceName.c_str());
+            uniqueDeviceIt->second->supportPipeMap_.insert({pipeInfo_->supportFlags_, pipeInfo_});
+        }
+        return;
+    }
     for (auto &streamPropInfo : pipeInfo_->streamPropInfos_) {
         for (auto deviceName : streamPropInfo->supportDevices_) {
             auto uniqueDeviceIt = tmpDeviceInfoMap_.find(deviceName);
@@ -158,6 +168,71 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
     return nullptr;
 }
 
+void AudioPolicyConfigData::UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
+    const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps)
+{
+    CHECK_AND_RETURN_LOG(!streamProps.empty(), "streamProps is empty");
+    AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
+    CHECK_AND_RETURN_LOG(adapterInfoMap.count(adapterType) != 0, "adapter not exist");
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo = adapterInfoMap[adapterType];
+    CHECK_AND_RETURN_LOG(adapterInfo != nullptr, "adapterInfo is nullptr");
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(pipeName);
+    CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+
+    std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> tmpDeviceInfoMap;
+    for (auto &deviceInfo : adapterInfo->deviceInfos) {
+        tmpDeviceInfoMap.insert({deviceInfo->name_, deviceInfo});
+    }
+    for (auto &streamProp : streamProps) {
+        CHECK_AND_RETURN_LOG(streamProp != nullptr, "streamProp is nullptr");
+        streamProp->pipeInfo_ = pipeInfo;
+        for (auto deviceName : streamProp->supportDevices_) {
+            auto uniqueDeviceIt = tmpDeviceInfoMap.find(deviceName);
+            CHECK_AND_CONTINUE_LOG(uniqueDeviceIt != tmpDeviceInfoMap.end(),
+                "streamProp needed device %{public}s not exist", deviceName.c_str());
+            streamProp->supportDeviceMap_.insert({uniqueDeviceIt->second->type_, uniqueDeviceIt->second});
+        }
+    }
+    pipeInfo->UpdateDynamicStreamProps(streamProps);
+}
+
+void AudioPolicyConfigData::ClearDynamicStreamProps(const std::string adapterName, const std::string &pipeName)
+{
+    AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
+    CHECK_AND_RETURN_LOG(adapterInfoMap.count(adapterType) != 0, "adapter not exist");
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo = adapterInfoMap[adapterType];
+    CHECK_AND_RETURN_LOG(adapterInfo != nullptr, "adapterInfo is nullptr");
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(pipeName);
+    CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+    pipeInfo->ClearDynamicStreamProps();
+}
+
+uint32_t AudioPolicyConfigData::GetConfigStreamPropsSize(const std::string adapterName,
+    const std::string &pipeName) const
+{
+    AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
+    auto it = adapterInfoMap.find(adapterType);
+    CHECK_AND_RETURN_RET_LOG(it != adapterInfoMap.end(), 0, "adapter not exist");
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo = it->second;
+    CHECK_AND_RETURN_RET_LOG(adapterInfo != nullptr, 0, "adapterInfo is nullptr");
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(pipeName);
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, 0, "pipeInfo is nullptr");
+    return pipeInfo->streamPropInfos_.size();
+}
+
+uint32_t AudioPolicyConfigData::GetDynamicStreamPropsSize(const std::string adapterName,
+    const std::string &pipeName) const
+{
+    AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
+    auto it = adapterInfoMap.find(adapterType);
+    CHECK_AND_RETURN_RET_LOG(it != adapterInfoMap.end(), 0, "adapter not exist");
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo = it->second;
+    CHECK_AND_RETURN_RET_LOG(adapterInfo != nullptr, 0, "adapterInfo is nullptr");
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(pipeName);
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, 0, "pipeInfo is nullptr");
+    return pipeInfo->dynamicStreamPropInfos_.size();
+}
+
 AudioAdapterType PolicyAdapterInfo::GetTypeEnum()
 {
     return GetAdapterType(adapterName);
@@ -261,6 +336,19 @@ void AdapterPipeInfo::SelfCheck()
     for (auto &streamPropInfo : streamPropInfos_) {
         streamPropInfo->SelfCheck();
     }
+}
+
+void AdapterPipeInfo::UpdateDynamicStreamProps(const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps)
+{
+    CHECK_AND_RETURN_LOG(streamProps.size() != 0, "streamProps is empty");
+    std::lock_guard<std::mutex> lock(dynamicMtx_);
+    dynamicStreamPropInfos_ = streamProps;
+}
+
+void AdapterPipeInfo::ClearDynamicStreamProps()
+{
+    std::lock_guard<std::mutex> lock(dynamicMtx_);
+    dynamicStreamPropInfos_.clear();
 }
 
 void PipeStreamPropInfo::SelfCheck()

@@ -152,8 +152,7 @@ void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode,
 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
-            AdapterPipeInfo pipeInfo {};
-            std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>(pipeInfo);
+            std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
             pipeInfoPtr->adapterInfo_ = adapterInfo;
             curNode->GetProp("name", pipeInfoPtr->name_);
             if (pipeInfoPtr->name_.find(FAST_DISTRIBUTE_TAG) != string::npos) {
@@ -164,6 +163,11 @@ void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode,
             std::string pipeRole;
             curNode->GetProp("role", pipeRole);
             pipeInfoPtr->role_ = AudioDefinitionPolicyUtils::pipeRoleStrToEnum[pipeRole];
+            std::string supportDevicesStr;
+            curNode->GetProp("supportDevices", supportDevicesStr);
+            if (supportDevicesStr != "") {
+                SplitStringToList(supportDevicesStr, pipeInfoPtr->supportDevices_, ", ");
+            }
             ParsePipeInfos(curNode->GetCopyNode(), pipeInfoPtr);
             pipeInfos.push_back(pipeInfoPtr);
         }
@@ -674,7 +678,7 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
 
     for (auto &streamPropInfo : pipeInfo->streamPropInfos_) {
         audioModuleInfo.supportedRate_.insert(streamPropInfo->sampleRate_);
-        audioModuleInfo.supportedChannels_.insert(streamPropInfo->channels_);
+        audioModuleInfo.supportedChannelLayout_.insert(streamPropInfo->channelLayout_);
     }
 
     audioModuleInfo.lib = pipeInfo->paProp_.lib_;

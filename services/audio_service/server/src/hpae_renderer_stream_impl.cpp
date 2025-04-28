@@ -45,6 +45,7 @@ static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
 static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
+static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
@@ -255,7 +256,7 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     uint32_t sinkLatency = 0;
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     latencyUs = latency_;
-    if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
+    if (deviceClass_ != DEVICE_CLASS_OFFLOAD && deviceClass_ != DEVICE_CLASS_REMOTE_OFFLOAD) {
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
             audioRendererSink->GetLatency(sinkLatency);
@@ -434,7 +435,7 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
-    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(DEVICE_CLASS_OFFLOAD, "");
+    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass_, "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;

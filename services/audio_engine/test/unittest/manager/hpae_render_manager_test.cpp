@@ -881,4 +881,24 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererSetLoudnessGain_001)
     std::cout << "test innercapture manager" << std::endl;
     TestIRendererManagerSetLoudnessGain<HpaeInnerCapturerManager>();
 }
+
+/**
+ * @tc.name: CreateRendererManager
+ * @tc.type: FUNC
+ * @tc.number: CreateRendererManager_001
+ * @tc.desc: Test CreateRendererManager
+ */
+TEST_F(HpaeRendererManagerTest, CreateRendererManager_001)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote_offload";
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    EXPECT_NE(hpaeRendererManager, nullptr);
+    sinkInfo.deviceClass = "offload";
+    hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    EXPECT_NE(hpaeRendererManager, nullptr);
+    sinkInfo.deviceClass = "test";
+    hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    EXPECT_NE(hpaeRendererManager, nullptr);
+}
 }  // namespace

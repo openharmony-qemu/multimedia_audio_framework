@@ -106,6 +106,7 @@ ohos_shared_library("hdiadapter_new") {
       "adapter/remote_device_manager.cpp",
       "sink/remote_audio_render_sink.cpp",
       "sink/remote_fast_audio_render_sink.cpp",
+      "sink/remote_offload_audio_render_sink.cpp",
       "source/remote_audio_capture_source.cpp",
       "source/remote_fast_audio_capture_source.cpp",
     ]
@@ -185,6 +186,7 @@ ohos_unittest("hdiadapter_unit_test") {
     "test/unittest/sink/offload_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/remote_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/remote_offload_audio_render_sink_unit_test.cpp",
     "test/unittest/source/audio_capture_source_unit_test.cpp",
     "test/unittest/source/bluetooth_audio_capture_source_unit_test.cpp",
     "test/unittest/source/fast_audio_capture_source_unit_test.cpp",

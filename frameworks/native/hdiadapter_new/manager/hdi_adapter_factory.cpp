@@ -41,6 +41,7 @@
 #ifdef FEATURE_DISTRIBUTE_AUDIO
 #include "sink/remote_audio_render_sink.h"
 #include "sink/remote_fast_audio_render_sink.h"
+#include "sink/remote_offload_audio_render_sink.h"
 #include "source/remote_audio_capture_source.h"
 #include "source/remote_fast_audio_capture_source.h"
 #include "adapter/remote_device_manager.h"
@@ -91,6 +92,9 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
             break;
         case HDI_ID_TYPE_REMOTE_FAST:
             sink = CreateRemoteFastRenderSink(info);
+            break;
+        case HDI_ID_TYPE_REMOTE_OFFLOAD:
+            sink = CreateRemoteOffloadRenderSink(info);
             break;
 #endif
         default:
@@ -191,6 +195,12 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteFastRenderSink(
 {
     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
     return std::make_shared<RemoteFastAudioRenderSink>(info);
+}
+
+std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteOffloadRenderSink(const std::string &info)
+{
+    CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
+    return std::make_shared<RemoteOffloadAudioRenderSink>(info);
 }
 #endif
 

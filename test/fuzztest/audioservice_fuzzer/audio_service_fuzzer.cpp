@@ -178,8 +178,10 @@ static void CreateFuzzTestPtr()
         AudioProcessConfig config = {};
         AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
         deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-        deviceInfo.audioStreamInfo_.samplingRate.insert(SAMPLE_RATE_48000);
-        deviceInfo.audioStreamInfo_.channels.insert(STEREO);
+        DeviceStreamInfo streamInfo;
+        streamInfo.samplingRate.insert(SAMPLE_RATE_48000);
+        streamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+        deviceInfo.audioStreamInfo_.push_back(streamInfo);
         deviceInfo.networkId_ = LOCAL_NETWORK_ID;
         audioEndpointPtr_ = AudioEndpoint::CreateEndpoint(
             AudioEndpoint::TYPE_INDEPENDENT, GetData<uint64_t>(), config, deviceInfo);

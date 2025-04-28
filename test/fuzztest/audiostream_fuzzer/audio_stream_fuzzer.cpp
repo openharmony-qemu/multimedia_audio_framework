@@ -116,7 +116,7 @@ int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &confi
     deviceInfo.networkId_ = "LocalDevice";
     deviceInfo.deviceName_ = "testname";
 
-    deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
     return SUCCESS;
 }
 
