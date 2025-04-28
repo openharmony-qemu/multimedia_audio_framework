@@ -839,6 +839,26 @@ HWTEST(AudioServiceUnitTest, SetNonInterruptMute_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetNonInterruptMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetNonInterruptMute_005
+ * @tc.desc  : Test SetNonInterruptMute interface.
+ */
+HWTEST(AudioServiceUnitTest, SetNonInterruptMute_005, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->SetNonInterruptMute(1, true);
+    EXPECT_EQ(1, audioService->muteSwitchStreams_.count(1));
+    audioService->SetNonInterruptMute(1, false);
+    EXPECT_EQ(0, audioService->muteSwitchStreams_.count(1));
+    audioService->mutedSessions_.insert(1);
+    audioService->SetNonInterruptMute(1, true);
+    EXPECT_EQ(1, audioService->mutedSessions_.count(1));
+    audioService->SetNonInterruptMute(1, false);
+    EXPECT_EQ(1, audioService->mutedSessions_.count(1));
+}
+
+/**
  * @tc.name  : Test SetOffloadMode API
  * @tc.type  : FUNC
  * @tc.number: SetOffloadMode_001
@@ -1076,6 +1096,78 @@ HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_004, TestSize.Level1)
     int32_t mostAppNum = 1;
     audioService->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
 }
+
+/**
+ * @tc.name  : Test CheckRenderSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRenderSessionMuteState_005
+ * @tc.desc  : Test CheckRenderSessionMuteState interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_005, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    uint32_t sessionId = 100001;
+    AudioService *audioService = AudioService::GetInstance();
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+    audioService->muteSwitchStreams_.insert(sessionId);
+    audioService->CheckRenderSessionMuteState(sessionId, renderer);
+    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
+    audioService->RemoveIdFromMuteControlSet(sessionId);
+}
+
+/**
+ * @tc.name  : Test CheckCapturerSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: CheckCapturerSessionMuteState_006
+ * @tc.desc  : Test CheckCapturerSessionMuteState interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckCapturerSessionMuteState_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    uint32_t sessionId = 100001;
+    AudioService *audioService = AudioService::GetInstance();
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<CapturerInServer> capturerInServer =
+        std::make_shared<CapturerInServer>(processConfig, streamListener);
+    std::shared_ptr<CapturerInServer> capturer = capturerInServer;
+    audioService->muteSwitchStreams_.insert(sessionId);
+    audioService->CheckCaptureSessionMuteState(sessionId, capturer);
+    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
+    audioService->RemoveIdFromMuteControlSet(sessionId);
+}
+
+/**
+ * @tc.name  : Test CheckFastSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: CheckFastSessionMuteState_006
+ * @tc.desc  : Test CheckFastSessionMuteState interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckFastSessionMuteState_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    uint32_t sessionId = 100001;
+    AudioService *audioService = AudioService::GetInstance();
+
+    sptr<AudioProcessInServer> audioprocess = AudioProcessInServer::Create(processConfig, AudioService::GetInstance());;
+    audioService->CheckFastSessionMuteState(sessionId, audioprocess);
+
+    audioService->muteSwitchStreams_.insert(sessionId);
+    audioService->CheckFastSessionMuteState(sessionId, audioprocess);
+    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
+    audioService->RemoveIdFromMuteControlSet(sessionId);
+}
+
 /**
  * @tc.name  : Test GetStandbyStatus API
  * @tc.type  : FUNC
