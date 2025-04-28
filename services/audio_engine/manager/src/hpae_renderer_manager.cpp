@@ -927,7 +927,8 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId, IOperation operation)
     SendRequest(request);
 }
 
-int32_t HpaeRendererManager::RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback)
+int32_t HpaeRendererManager::RegisterReadCallback(uint32_t sessionId,
+    const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     return SUCCESS;
 }

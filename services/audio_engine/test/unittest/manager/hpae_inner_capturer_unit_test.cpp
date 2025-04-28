@@ -30,7 +30,7 @@ namespace AudioStandard {
 namespace HPAE {
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const float FRAME_LENGTH_IN_SECOND = 0.02;
-std::string g_rootPath = "/data/data/.pulse_dir/";
+std::string g_rootPath = "/data/";
 
 
 static HpaeSinkInfo GetInCapSinkInfo()

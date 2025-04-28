@@ -47,7 +47,8 @@ public:
     virtual bool IsMsgProcessing() = 0;
     virtual bool DeactivateThread() = 0;
     
-    virtual int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) = 0;
+    virtual int32_t RegisterReadCallback(uint32_t sessionId,
+        const std::weak_ptr<ICapturerStreamCallback> &callback) = 0;
     virtual int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo) = 0;
     virtual HpaeSourceInfo GetSourceInfo() = 0;
     virtual std::vector<SourceOutput> GetAllSourceOutputsInfo() = 0;

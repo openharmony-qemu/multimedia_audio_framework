@@ -511,11 +511,6 @@ int32_t HpaeInnerCapturerManager::RegisterWriteCallback(uint32_t sessionId,
     return SUCCESS;
 }
 
-int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback)
-{
-    return SUCCESS;
-}
-
 size_t HpaeInnerCapturerManager::GetWritableSize(uint32_t sessionId)
 {
     return SUCCESS;
@@ -574,7 +569,8 @@ void HpaeInnerCapturerManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation
         rendererSessionNodeMap_[sessionId].state, operation);
 }
 
-int32_t HpaeInnerCapturerManager::RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback)
+int32_t HpaeInnerCapturerManager::RegisterReadCallback(uint32_t sessionId,
+    const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
         AUDIO_INFO_LOG("RegisterReadCallback sessionId %{public}u", sessionId);

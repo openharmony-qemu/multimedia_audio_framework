@@ -272,7 +272,7 @@ void HpaeRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCal
     writeCallback_ = callback;
 }
 
-int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo& callBackStreamInfo)
+int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackStreamInfo)
 {
     {
         std::unique_lock<std::shared_mutex> lock(latencyMutex_);

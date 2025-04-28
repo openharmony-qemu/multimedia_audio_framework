@@ -24,7 +24,12 @@ namespace AudioStandard {
 class IReadCallback {
 public:
     virtual int32_t OnReadData(size_t length) = 0;
-    virtual int32_t OnReadData(std::vector<char>& outputData, size_t requestDataLen) = 0;
+    virtual int32_t OnReadData(int8_t *outputData, size_t requestDataLen) = 0;
+};
+
+class ICapturerStreamCallback {
+public:
+    virtual int32_t OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo) = 0;
 };
 
 class ICapturerStream : public IStream {

@@ -38,13 +38,17 @@ public:
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnectWithInfo(
         const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode, HpaeNodeInfo &nodeInfo) override;
-    bool RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback);
-
+    bool RegisterReadCallback(const std::weak_ptr<ICapturerStreamCallback> &callback);
+private:
+    uint64_t GetTimestamp();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
-    std::weak_ptr<IReadCallback> readCallback_;
-    std::vector<char> sourceOuputData_;
+    std::weak_ptr<ICapturerStreamCallback> readCallback_;
+    AudioCallBackCapturerStreamInfo streamInfo_;
+    std::vector<char> sourceOutputData_;
     std::vector<float> interleveData_;
+    std::atomic<uint64_t> framesRead_;
+    uint64_t totalFrames_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

@@ -451,7 +451,7 @@ int32_t HpaeCapturerManager::PrepareCapturerEc(HpaeNodeInfo &ecNodeInfo)
         ecNodeInfo.sourceInputNodeType = HPAE_SOURCE_EC;
         ecNodeInfo.statusCallback = weak_from_this();
         sourceInputClusterMap_[HPAE_SOURCE_EC] = std::make_shared<HpaeSourceInputCluster>(ecNodeInfo);
-        int32_t ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->GetCapturerSourceInstance(
+        int32_t ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->GetCapturerSourceInstance(
             DEFAULT_DEVICE_CLASS, DEFAULT_DEVICE_NETWORKID, SOURCE_TYPE_INVALID, HDI_ID_INFO_EC);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
             "get ec capturer soruce instance error, ret = %{public}d.\n", ret);
@@ -508,8 +508,7 @@ int32_t HpaeCapturerManager::InitCapturer()
     int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceInit(attr);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
         "init mic source input node err, , ret = %{public}d.\n", ret);
-    if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER &&
-        sourceInputClusterMap_.find(HPAE_SOURCE_EC) != sourceInputClusterMap_.end()) {
+    if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
         IAudioSourceAttr attrEc;
         attrEc.sourceType = SOURCE_TYPE_EC;
         attrEc.adapterName = sourceInfo_.ecAdapterName.c_str();
@@ -522,8 +521,7 @@ int32_t HpaeCapturerManager::InitCapturer()
         ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceInit(attrEc);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION, "init ec source input node err");
     }
-    if (sourceInfo_.micRef == HPAE_REF_ON &&
-        SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
+    if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         IAudioSourceAttr attrMicRef;
         attrMicRef.sourceType = SOURCE_TYPE_MIC_REF;
         attrMicRef.adapterName = "primary";
@@ -679,10 +677,13 @@ bool HpaeCapturerManager::DeactivateThread()
     return true;
 }
 
-int32_t HpaeCapturerManager::RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback)
+int32_t HpaeCapturerManager::RegisterReadCallback(uint32_t sessionId,
+    const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
-        sourceOutputNodeMap_[sessionId]->RegisterReadCallback(callback);
+        if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
+            sourceOutputNodeMap_[sessionId]->RegisterReadCallback(callback);
+        }
     };
     SendRequest(request);
     return SUCCESS;
@@ -869,6 +870,13 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
 void HpaeCapturerManager::OnNotifyQueue()
 {
     hpaeSignalProcessThread_->Notify();
+}
+
+void HpaeCapturerManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency)
+{
+    // todo: add processLatency
+    latency = 0;
+    return;
 }
 
 std::string HpaeCapturerManager::GetThreadName()

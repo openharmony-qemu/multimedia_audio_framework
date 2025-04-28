@@ -58,13 +58,14 @@ public:
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
 
-    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) override;
+    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo) override;
     HpaeSourceInfo GetSourceInfo() override;
     std::vector<SourceOutput> GetAllSourceOutputsInfo() override;
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnNotifyQueue() override;
+    void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
 
     int32_t AddNodeToSource(const HpaeCaptureMoveInfo &moveInfo) override;
     int32_t AddAllNodesToSource(const std::vector<HpaeCaptureMoveInfo> &moveInfos, bool isConnect) override;

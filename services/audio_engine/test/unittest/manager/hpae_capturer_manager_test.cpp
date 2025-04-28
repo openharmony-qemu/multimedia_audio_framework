@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-std::string g_rootCapturerPath = "/data/";
+std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_SESSION_ID = 123456;
 
@@ -77,7 +77,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerConstructTest)
     sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
-    sourceInfo.filePath = g_rootCapturerPath + "constructHpaeRendererManagerTest.pcm";
+    sourceInfo.filePath = g_rootCapturerPath;
 
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
     sourceInfo.channels = STEREO;
@@ -104,7 +104,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest)
     sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
-    sourceInfo.filePath = g_rootCapturerPath + "constructHpaeRendererManagerTest.pcm";
+    sourceInfo.filePath = g_rootCapturerPath;
 
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
     sourceInfo.channels = STEREO;
@@ -123,7 +123,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest)
     sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
-    sourceInfo.filePath = g_rootCapturerPath + "constructHpaeRendererManagerTest.pcm";
+    sourceInfo.filePath = g_rootCapturerPath;
 
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
     sourceInfo.channels = STEREO;
@@ -151,7 +151,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest)
     HpaeSourceOutputInfo sourceOutputInfo;
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     TestCheckSourceOutputInfo(sourceOutputInfo, streamInfo);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_NEW);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PREPARED);
     EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(
@@ -198,7 +198,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest)
     sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
-    sourceInfo.filePath = g_rootCapturerPath + "constructHpaeRendererManagerTest.pcm";
+    sourceInfo.filePath = g_rootCapturerPath;
 
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
     sourceInfo.channels = STEREO;
@@ -228,11 +228,11 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest)
     HpaeSourceOutputInfo sourceOutputInfo;
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     TestCheckSourceOutputInfo(sourceOutputInfo, streamInfo);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_NEW);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PREPARED);
     EXPECT_EQ(capturerManager->IsRunning(), false);
 
     std::shared_ptr<ReadDataCb> readDataCb =
-        std::make_shared<ReadDataCb>(g_rootCapturerPath + "HpaeCapturerManagerTest.pcm");
+        std::make_shared<ReadDataCb>(g_rootCapturerPath);
     EXPECT_EQ(capturerManager->RegisterReadCallback(streamInfo.sessionId, readDataCb), SUCCESS);
     EXPECT_EQ(readDataCb.use_count() == 1, true);
 
@@ -244,7 +244,7 @@ static void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &new
     sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
-    sourceInfo.filePath = g_rootCapturerPath + "constructHpaeRendererManagerTest.pcm";
+    sourceInfo.filePath = g_rootCapturerPath;
 
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
     sourceInfo.channels = STEREO;
@@ -256,7 +256,7 @@ static void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &new
     newSourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     newSourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     newSourceInfo.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
-    newSourceInfo.filePath = g_rootCapturerPath + "constructHpaeRendererManagerTest.pcm";
+    newSourceInfo.filePath = g_rootCapturerPath;
 
     newSourceInfo.samplingRate = SAMPLE_RATE_48000;
     newSourceInfo.channels = STEREO;
@@ -296,7 +296,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest)
     HpaeSourceOutputInfo sourceOutputInfo;
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     TestCheckSourceOutputInfo(sourceOutputInfo, streamInfo);
-    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_NEW);
+    EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PREPARED);
     EXPECT_EQ(capturerManager->ReloadCaptureManager(newSourceInfo) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);

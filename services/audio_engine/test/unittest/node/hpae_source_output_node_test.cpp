@@ -43,10 +43,9 @@ void HpaeSourceOutputNodeTest::SetUp()
 void HpaeSourceOutputNodeTest::TearDown()
 {}
 
-class TestReadDataCb : public IReadCallback, public std::enable_shared_from_this<TestReadDataCb> {
+class TestReadDataCb : public ICapturerStreamCallback, public std::enable_shared_from_this<TestReadDataCb> {
 public:
-    int32_t OnReadData(std::vector<char> &inputData, size_t requestDataLen) override;
-    int32_t OnReadData(size_t length) override
+    int32_t OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo) override
     {
         return SUCCESS;
     }
@@ -55,14 +54,6 @@ public:
     virtual ~TestReadDataCb()
     {}
 };
-
-int32_t TestReadDataCb::OnReadData(std::vector<char> &inputData, size_t requestDataLen)
-{
-    for (int32_t i = 0; i < requestDataLen / SAMPLE_F32LE; i++) {
-        EXPECT_EQ(*(float *)(inputData.data() + i * sizeof(float)), i);
-    }
-    return 0;
-}
 
 static int32_t TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t *replyBytes)
 {
@@ -113,7 +104,7 @@ TEST_F(HpaeSourceOutputNodeTest, connectHpaeSourceInputAndOutputNode)
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSoruceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
     IAudioSourceAttr attr;
-    attr.adapterName = NULL;
+    attr.adapterName = "";
     attr.openMicSpeaker = 0;
     attr.format = AudioSampleFormat::INVALID_WIDTH;
     attr.sampleRate = nodeInfo.samplingRate;

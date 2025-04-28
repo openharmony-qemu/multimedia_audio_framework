@@ -72,7 +72,8 @@ public:
     virtual int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) = 0;
     virtual int32_t AddAllNodesToSink(
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect) = 0;
-    virtual int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) = 0;
+    virtual int32_t RegisterReadCallback(uint32_t sessionId,
+        const std::weak_ptr<ICapturerStreamCallback> &callback) = 0;
     virtual int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo)
     {
         return 0;
