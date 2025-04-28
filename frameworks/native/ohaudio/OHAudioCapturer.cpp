@@ -490,17 +490,24 @@ void OHAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescrip
         OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
             (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
         CHECK_AND_RETURN_LOG(audioDeviceDescriptorArray != nullptr, "audioDeviceDescriptorArray is nullptr");
-        int32_t arraySize = 1;
+        uint32_t arraySize = 1;
         int32_t arrayIndex = 0;
         audioDeviceDescriptorArray->size = arraySize;
         audioDeviceDescriptorArray->descriptors =
             (OH_AudioDeviceDescriptor **)malloc(sizeof(OH_AudioDeviceDescriptor *) * arraySize);
-        CHECK_AND_RETURN_LOG(audioDeviceDescriptorArray->descriptors != nullptr,
-                             "audioDeviceDescriptorArray->descriptors is nullptr");
+        if (audioDeviceDescriptorArray->descriptors == nullptr) {
+            free(audioDeviceDescriptorArray);
+            AUDIO_ERR_LOG("audioDeviceDescriptorArray->descriptors is nullptr");
+            return;
+        }
         audioDeviceDescriptorArray->descriptors[arrayIndex] =
             (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(audioDeviceDescriptor));
-        CHECK_AND_RETURN_LOG(audioDeviceDescriptorArray->descriptors[arrayIndex] != nullptr,
-                             "audioDeviceDescriptorArray->descriptors[%{public}d] is nullptr", arrayIndex);
+        if (audioDeviceDescriptorArray->descriptors[arrayIndex] == nullptr) {
+            free(audioDeviceDescriptorArray->descriptors);
+            free(audioDeviceDescriptorArray);
+            AUDIO_ERR_LOG("audioDeviceDescriptorArray->descriptors[%{public}d] is nullptr", arrayIndex);
+            return;
+        }
         onDeviceChangeCallback_(ohAudioCapturer_, userData_, audioDeviceDescriptorArray);
     }
 }

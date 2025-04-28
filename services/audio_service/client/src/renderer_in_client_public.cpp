@@ -162,8 +162,6 @@ void RendererInClientInner::UpdateDataLinkState(bool isConnected, bool needNotif
 
 void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
 {
-    std::unique_lock<std::mutex> lock(streamCbMutex_);
-    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     switch (operation) {
         case START_STREAM :
             state_ = RUNNING;
@@ -176,9 +174,6 @@ void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
             break;
         default :
             break;
-    }
-    if (streamCb != nullptr) {
-        streamCb->OnStateChange(state_, CMD_FROM_SYSTEM);
     }
 }
 

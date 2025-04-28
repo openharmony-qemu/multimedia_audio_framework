@@ -694,6 +694,8 @@ bool FastAudioStream::StopAudioStream()
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
     return true;
 }
 
