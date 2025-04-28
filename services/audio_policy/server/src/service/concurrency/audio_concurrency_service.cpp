@@ -23,6 +23,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+static const int64_t DELAY_CONTROL_TIME_NS = 100000000; // 100ms
+}
 void AudioConcurrencyService::Init()
 {
     AUDIO_INFO_LOG("AudioConcurrencyService Init");
@@ -143,13 +146,10 @@ void AudioConcurrencyService::AudioConcurrencyClient::OnConcedeStream()
     }
 }
 
-int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incomingPipeType,
-    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
-    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+int32_t AudioConcurrencyService::ActivateAudioRendererConcurrency(AudioPipeType incomingPipeType,
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    if (concurrencyCfgMap_.empty()) {
-        return SUCCESS;
-    }
+    int32_t ret = SUCCESS;
     for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
         if ((*it)->rendererInfo.pipeType == incomingPipeType && (incomingPipeType == PIPE_TYPE_OFFLOAD ||
             incomingPipeType == PIPE_TYPE_MULTICHANNEL)) {
@@ -160,12 +160,33 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
             "pipe %{public}d, concede incoming pipe %{public}d", (*it)->sessionId, (*it)->rendererInfo.pipeType,
             incomingPipeType);
     }
+    return ret;
+}
+
+int32_t AudioConcurrencyService::ActivateAudioCapturerConcurrency(AudioPipeType incomingPipeType,
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    int32_t ret = SUCCESS;
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
         CHECK_AND_RETURN_RET_LOG(concurrencyCfgMap_[std::make_pair((*it)->capturerInfo.pipeType, incomingPipeType)] !=
             CONCEDE_INCOMING, ERR_CONCEDE_INCOMING_STREAM, "existing session %{public}d, "
             "pipe %{public}d, concede incoming pipe %{public}d", (*it)->sessionId, (*it)->capturerInfo.pipeType,
             incomingPipeType);
     }
+    return ret;
+}
+
+int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incomingPipeType,
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    Trace trace("AudioConcurrencyService::ActivateAudioConcurrency:" + std::to_string(incomingPipeType));
+    if (concurrencyCfgMap_.empty()) {
+        return SUCCESS;
+    }
+    int32_t ret = SUCCESS;
+    ret = ActivateAudioRendererConcurrency(incomingPipeType, audioRendererChangeInfos);
+    ret = ActivateAudioCapturerConcurrency(incomingPipeType, audioCapturerChangeInfos);
     bool concedeIncomingVoipCap = false;
     for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
         if ((*it)->rendererInfo.pipeType == incomingPipeType && (incomingPipeType == PIPE_TYPE_OFFLOAD ||
@@ -188,6 +209,59 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
     }
     CHECK_AND_RETURN_RET_LOG(!concedeIncomingVoipCap, ERR_CONCEDE_INCOMING_STREAM,
         "Existing call in concede incoming call in");
+    if (incomingPipeType == PIPE_TYPE_OFFLOAD) {
+        ret = ActivateOffloadConcurrencyExt();
+    } else if (incomingPipeType == PIPE_TYPE_LOWLATENCY_OUT) {
+        ret = ActivateFastConcurrencyExt();
+    }
+    return ret;
+}
+
+bool AudioConcurrencyService::CheckFastActivatedState()
+{
+    // fast is activated in history
+    if (!fastActivated_ || ClockTime::GetCurNano() - lastFastActivedTime_ > DELAY_CONTROL_TIME_NS) {
+        fastActivated_ = false;
+        return false;
+    }
+    return true;
+}
+
+bool AudioConcurrencyService::CheckOffloadActivatedState()
+{
+    // offload is activated in history
+    if (!offloadActivated_ || ClockTime::GetCurNano() - lastOffloadActivedTime_ > DELAY_CONTROL_TIME_NS) {
+        offloadActivated_ = false;
+        return false;
+    }
+    return true;
+}
+
+int32_t AudioConcurrencyService::ActivateOffloadConcurrencyExt()
+{
+    // need check if fast running
+    if (CheckFastActivatedState() &&
+        concurrencyCfgMap_[{PIPE_TYPE_LOWLATENCY_OUT, PIPE_TYPE_OFFLOAD}] == CONCEDE_INCOMING) {
+        AUDIO_INFO_LOG("fast is activated, concede incomingPipeType: PIPE_TYPE_OFFLOAD");
+        return ERR_CONCEDE_INCOMING_STREAM;
+    }
+    Trace trace("IsOffloadActivated: TURN ON");
+    offloadActivated_ = true;
+    lastOffloadActivedTime_ = ClockTime::GetCurNano();
+    return SUCCESS;
+}
+
+int32_t AudioConcurrencyService::ActivateFastConcurrencyExt()
+{
+    // need check if offload running
+    if (CheckOffloadActivatedState() &&
+        concurrencyCfgMap_[{PIPE_TYPE_OFFLOAD, PIPE_TYPE_LOWLATENCY_OUT}] == CONCEDE_INCOMING) {
+        AUDIO_INFO_LOG("offload is activated, concede incomingPipeType: PIPE_TYPE_LOWLATENCY_OUT");
+        return ERR_CONCEDE_INCOMING_STREAM;
+    }
+    Trace trace("IsFastActivated: TURN ON");
+    fastActivated_ = true;
+    lastFastActivedTime_ = ClockTime::GetCurNano();
     return SUCCESS;
 }
 

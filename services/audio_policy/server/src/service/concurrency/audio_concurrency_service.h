@@ -47,6 +47,12 @@ public:
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& GetConcurrencyMap();
+    int32_t ActivateAudioRendererConcurrency(AudioPipeType incomingPipeType,
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+    int32_t ActivateAudioCapturerConcurrency(AudioPipeType incomingPipeType,
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+    int32_t ActivateOffloadConcurrencyExt();
+    int32_t ActivateFastConcurrencyExt();
 private:
     // Inner class for death handler
     class AudioConcurrencyDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -81,6 +87,14 @@ private:
         sptr<AudioConcurrencyDeathRecipient> deathRecipient_;
         const uint32_t sessionID_;
     };
+
+private:
+    bool CheckFastActivatedState();
+    bool CheckOffloadActivatedState();
+    bool fastActivated_ = false;
+    int64_t lastFastActivedTime_ = 0;
+    bool offloadActivated_ = false;
+    int64_t lastOffloadActivedTime_ = 0;
     std::map<int32_t /*sessionId*/, std::shared_ptr<AudioConcurrencyClient>> concurrencyClients_ = {};
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> concurrencyCfgMap_ = {};
     std::shared_ptr<AudioPolicyServerHandler> handler_;

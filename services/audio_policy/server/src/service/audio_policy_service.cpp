@@ -337,6 +337,7 @@ float AudioPolicyService::GetLowPowerVolume(int32_t streamId) const
 
 void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
 {
+    Trace trace("AudioPolicyService::OffloadStreamSetCheck: sessionid:" + std::to_string(sessionId));
     audioOffloadStream_.OffloadStreamSetCheck(sessionId);
     return;
 }
@@ -1419,6 +1420,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
 
 void AudioPolicyService::CheckStreamMode(const int64_t activateSessionId)
 {
+    Trace trace("AudioPolicyService::CheckStreamMode:activateSessionId:" + std::to_string(activateSessionId));
     audioOffloadStream_.CheckStreamMode(activateSessionId);
 }
 
