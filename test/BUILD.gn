@@ -38,6 +38,7 @@ group("audio_unit_test") {
     "../frameworks/native/audiopolicy/test/unittest/manager_test:audio_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/policy_test:audio_policy_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/routing_manager_test:audio_routing_manager_test",
+    "../frameworks/native/audiopolicy/test/unittest/sasdk_test:audio_sasdk_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/spatialization_manager_test:audio_spatialization_manager_test",
     "../frameworks/native/audiopolicy/test/unittest/stream_manager_test:audio_stream_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/volume_change_test:audio_volume_change_unit_test",
