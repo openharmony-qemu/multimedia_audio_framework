@@ -25,7 +25,7 @@ static constexpr uint32_t DEFAULT_EFFECT_RATE = 48000;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-constexpr int REASAMPLE_QUAILTY = 5;
+constexpr int REASAMPLE_QUAILTY = 1;
 
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),

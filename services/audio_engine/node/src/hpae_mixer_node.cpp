@@ -20,6 +20,7 @@
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
 #include "cinttypes"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,7 +28,7 @@ namespace HPAE {
 HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
-    mixedOutput_(pcmBufferInfo_)
+    mixedOutput_(pcmBufferInfo_), tmpOutput_(pcmBufferInfo_)
 {
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ =  std::make_unique<HpaePcmDumper>("HpaeMixerNodeOut_ch_" +
@@ -43,6 +44,24 @@ bool HpaeMixerNode::Reset()
     return HpaePluginNode::Reset();
 }
 
+int32_t HpaeMixerNode::SetupAudioLimiter()
+{
+    if (limiter_ != nullptr) {
+        AUDIO_INFO_LOG("NodeId: %{public}d, limiter has already been setup!", GetNodeId());
+        return ERROR;
+    }
+    limiter_ = std::make_unique<AudioLimiter>(GetNodeId());
+    // limiter only supports float format
+    int32_t ret = limiter_->SetConfig(GetFrameLen() * GetChannelCount() * sizeof(float), sizeof(float), GetSampleRate(),
+        GetChannelCount());
+    if (ret == SUCCESS) {
+        AUDIO_INFO_LOG("NodeId: %{public}d, limiter setup sucess!", GetNodeId());
+    } else {
+        AUDIO_INFO_LOG("NodeId: %{public}d, limiter setup fail!!", GetNodeId());
+    }
+    return ret;
+}
+
 HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
     Trace trace("HpaeMixerNode::SignalProcess");
@@ -50,39 +69,20 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
 
     mixedOutput_.Reset();
 
-    bool isPCMBufferInfoUpdated = false;
-    if (pcmBufferInfo_.ch != inputs[0]->GetChannelCount()) {
-        AUDIO_INFO_LOG("Update channel count: %{public}d -> %{public}d",
-            pcmBufferInfo_.ch, inputs[0]->GetChannelCount());
-        pcmBufferInfo_.ch = inputs[0]->GetChannelCount();
-        isPCMBufferInfoUpdated = true;
-    }
-    if (pcmBufferInfo_.frameLen != inputs[0]->GetFrameLen()) {
-        AUDIO_INFO_LOG("Update frame len %{public}d -> %{public}d",
-            pcmBufferInfo_.frameLen, inputs[0]->GetFrameLen());
-        pcmBufferInfo_.frameLen = inputs[0]->GetFrameLen();
-        isPCMBufferInfoUpdated = true;
-    }
-    if (pcmBufferInfo_.rate != inputs[0]->GetSampleRate()) {
-        AUDIO_INFO_LOG("Update sample rate %{public}d -> %{public}d",
-            pcmBufferInfo_.rate, inputs[0]->GetSampleRate());
-        pcmBufferInfo_.rate = inputs[0]->GetSampleRate();
-        isPCMBufferInfoUpdated = true;
-    }
-    if (pcmBufferInfo_.channelLayout != inputs[0]->GetChannelLayout()) {
-        AUDIO_INFO_LOG("Update channel layout %{public}" PRIu64 " -> %{public}" PRIu64 "",
-            pcmBufferInfo_.channelLayout, inputs[0]->GetChannelLayout());
-        pcmBufferInfo_.channelLayout = inputs[0]->GetChannelLayout();
-        isPCMBufferInfoUpdated = true;
-    }
-    // if other bitwidth is supported, add check here
-
-    if (isPCMBufferInfoUpdated) {
-        mixedOutput_.ReConfig(pcmBufferInfo_);
-    }
-
-    for (auto input : inputs) {
-        mixedOutput_ += *input;
+    if (limiter_ == nullptr) {
+        if (CheckUpdateInfo(inputs[0])) {
+            mixedOutput_.ReConfig(pcmBufferInfo_);
+        }
+        for (auto input: inputs) {
+            mixedOutput_ += *input;
+        }
+    } else { // limiter does not support reconfigging frameLen at runtime
+        tmpOutput_.Reset();
+        for (auto input: inputs) {
+            tmpOutput_ += *input;
+        }
+        limiter_->Process(GetFrameLen() * GetChannelCount(),
+            tmpOutput_.GetPcmDataBuffer(), mixedOutput_.GetPcmDataBuffer());
     }
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_->CheckAndReopenHandlde();
@@ -90,6 +90,39 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
         mixedOutput_.GetChannelCount() * sizeof(float) * mixedOutput_.GetFrameLen());
 #endif
     return &mixedOutput_;
+}
+
+bool HpaeMixerNode::CheckUpdateInfo(HpaePcmBuffer *input)
+{
+    bool isPCMBufferInfoUpdated = false;
+    if (pcmBufferInfo_.ch != input->GetChannelCount()) {
+        AUDIO_INFO_LOG("Update channel count: %{public}d -> %{public}d",
+            pcmBufferInfo_.ch, input->GetChannelCount());
+        pcmBufferInfo_.ch = input->GetChannelCount();
+        isPCMBufferInfoUpdated = true;
+    }
+    if (pcmBufferInfo_.frameLen != input->GetFrameLen()) {
+        AUDIO_INFO_LOG("Update frame len %{public}d -> %{public}d",
+            pcmBufferInfo_.frameLen, input->GetFrameLen());
+        pcmBufferInfo_.frameLen = input->GetFrameLen();
+        isPCMBufferInfoUpdated = true;
+    }
+    if (pcmBufferInfo_.rate != input->GetSampleRate()) {
+        AUDIO_INFO_LOG("Update sample rate %{public}d -> %{public}d",
+            pcmBufferInfo_.rate, input->GetSampleRate());
+        pcmBufferInfo_.rate = input->GetSampleRate();
+        isPCMBufferInfoUpdated = true;
+    }
+    if (pcmBufferInfo_.channelLayout != input->GetChannelLayout()) {
+        AUDIO_INFO_LOG("Update channel layout %{public}" PRIu64 " -> %{public}" PRIu64 "",
+            pcmBufferInfo_.channelLayout, input->GetChannelLayout());
+        pcmBufferInfo_.channelLayout = input->GetChannelLayout();
+        isPCMBufferInfoUpdated = true;
+    }
+
+    // if other bitwidth is supported, add check here
+
+    return isPCMBufferInfoUpdated;
 }
 
 }  // namespace HPAE

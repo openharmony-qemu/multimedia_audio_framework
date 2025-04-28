@@ -114,6 +114,7 @@ config("audio_engine_node_config") {
     "plugin/channel_converter/include",
     "plugin/bitdepth_converter",
     "../audio_service/common/include",
+    "../audio_service/common/include/limiter",
     "../audio_service/server/include",
     "../audio_policy/util/include",
     "../../frameworks/native/audioeffect/include",
