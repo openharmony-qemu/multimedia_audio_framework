@@ -69,8 +69,8 @@ int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const Au
     AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
     Trace trace("OpenAudioPort");
     lock_guard<mutex> lock(lock_);
-    IHpaeManager::GetHpaeManager().OpenAudioPort(audioModuleInfo);
     isFinishOpenAudioPort_ = false;
+    IHpaeManager::GetHpaeManager().OpenAudioPort(audioModuleInfo);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishOpenAudioPort_;  // will be true when got notified.
@@ -85,13 +85,12 @@ int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const Au
 
 int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, bool isSync)
 {
-    AUDIO_INFO_LOG("try to close module:%{public}d", audioHandleIndex);
+    AUDIO_INFO_LOG("CloseAudioPort:audioHandleIndex:%{public}d isSync [%{public}d]", audioHandleIndex, isSync);
     Trace trace("CloseAudioPort");
     lock_guard<mutex> lock(lock_);
-    IHpaeManager::GetHpaeManager().CloseAudioPort(audioHandleIndex);
-    AUDIO_INFO_LOG("CloseAudioPort: audioHandleIndex: [%{public}d] isSync [%{public}d]", audioHandleIndex, isSync);
     if (isSync) {
         isFinishCloseAudioPort_ = false;
+        IHpaeManager::GetHpaeManager().CloseAudioPort(audioHandleIndex);
         std::unique_lock<std::mutex> waitLock(callbackMutex_);
         bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
             return isFinishCloseAudioPort_;  // will be true when got notified.
@@ -100,6 +99,8 @@ int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, boo
             AUDIO_ERR_LOG("CloseAudioPort timeout");
             return ERROR;
         }
+    } else {
+        IHpaeManager::GetHpaeManager().CloseAudioPort(audioHandleIndex);
     }
     AUDIO_INFO_LOG("CloseAudioPort leave");
     return SUCCESS;
@@ -119,9 +120,9 @@ bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool i
     AUDIO_INFO_LOG("SetSinkMute: [%{public}s] : [%{public}d] isSync [%{public}d]", sinkName.c_str(), isMute, isSync);
     lock_guard<mutex> lock(lock_);
     Trace trace("SetSinkMute:" + sinkName + "isMute:" + std::to_string(isMute));
-    IHpaeManager::GetHpaeManager().SetSinkMute(sinkName, isMute, isSync);
     if (isSync) {
         isFinishSetSinkMute_ = false;
+        IHpaeManager::GetHpaeManager().SetSinkMute(sinkName, isMute, isSync);
         std::unique_lock<std::mutex> waitLock(callbackMutex_);
         bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
             return isFinishSetSinkMute_;  // will be true when got notified.
@@ -130,6 +131,8 @@ bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool i
             AUDIO_ERR_LOG("SetSinkMute timeout");
             return ERROR;
         }
+    } else {
+        IHpaeManager::GetHpaeManager().SetSinkMute(sinkName, isMute, isSync);
     }
     AUDIO_INFO_LOG("SetSinkMute leave");
     return SUCCESS;

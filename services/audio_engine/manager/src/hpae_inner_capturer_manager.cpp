@@ -110,7 +110,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
         }
     }
     for (const auto &it : sessionIds) {
-        DisConnectRendererInputSessionInner(it);
+        DeleteRendererInputSessionInner(it);
     }
     AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, isMoveAll:%{public}d",
         idStr.c_str(), name.c_str(), isMoveAll);
@@ -149,7 +149,7 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
         AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
             sessionId, sinkName.c_str(), sinkInfo_.deviceName.c_str());
         std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNodeMap_[sessionId];
-        DisConnectRendererInputSessionInner(sessionId);
+        DeleteRendererInputSessionInner(sessionId);
         std::string name = sinkName;
         TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
     };
