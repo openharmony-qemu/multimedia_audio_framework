@@ -568,7 +568,7 @@ void VolumeTools::CalcMuteFrame(BufferDesc &buffer, AudioStreamInfo streamInfo, 
         }
         AudioLogUtils::ProcessVolumeData(logTag, vols, volumeDataCount);
         if (volumeDataCount < 0) {
-            muteFrameCnt += frameSize;
+            muteFrameCnt += static_cast<int64_t>(frameSize);
         }
     }
     Trace::Count(logTag, minVolume);

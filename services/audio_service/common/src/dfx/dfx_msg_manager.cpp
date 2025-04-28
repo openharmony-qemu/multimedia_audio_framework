@@ -269,10 +269,10 @@ bool DfxMsgManager::ProcessInner(int32_t index,
     std::list<RenderDfxInfo> &dfxInfo, std::list<RenderDfxInfo> &curDfxInfo)
 {
     bool processed = false;
-    int32_t size = dfxInfo.size();
+    int32_t size = static_cast<int32_t>(dfxInfo.size());
     if (size != 0) {
         processed = true;
-        int32_t vacancy = MAX_DFX_MSG_MEMBER_SIZE - curDfxInfo.size();
+        int32_t vacancy = MAX_DFX_MSG_MEMBER_SIZE - static_cast<int32_t>(curDfxInfo.size());
         vacancy = std::max(vacancy, 0);
         if (vacancy == 0) {
             InsertReportQueue({.appUid = index, .renderInfo = dfxInfo});
@@ -295,10 +295,10 @@ bool DfxMsgManager::ProcessInner(int32_t index,
     std::list<InterruptDfxInfo> &dfxInfo, std::list<InterruptDfxInfo> &curDfxInfo)
 {
     bool processed = false;
-    int32_t size = dfxInfo.size();
+    int32_t size = static_cast<int32_t>(dfxInfo.size());
     if (size != 0) {
         processed = true;
-        int32_t vacancy = MAX_DFX_MSG_MEMBER_SIZE - curDfxInfo.size();
+        int32_t vacancy = MAX_DFX_MSG_MEMBER_SIZE - static_cast<int32_t>(curDfxInfo.size());
         vacancy = std::max(vacancy, 0);
         if (vacancy == 0) {
             InsertReportQueue({.appUid = index, .interruptInfo = dfxInfo});
@@ -321,10 +321,10 @@ bool DfxMsgManager::ProcessInner(int32_t index,
     std::list<CapturerDfxInfo> &dfxInfo, std::list<CapturerDfxInfo> &curDfxInfo)
 {
     bool processed = false;
-    int32_t size = dfxInfo.size();
+    int32_t size = static_cast<int32_t>(dfxInfo.size());
     if (size != 0) {
         processed = true;
-        int32_t vacancy = MAX_DFX_MSG_MEMBER_SIZE - curDfxInfo.size();
+        int32_t vacancy = MAX_DFX_MSG_MEMBER_SIZE - static_cast<int32_t>(curDfxInfo.size());
         vacancy = std::max(vacancy, 0);
         if (vacancy == 0) {
             InsertReportQueue({.appUid = index, .captureInfo = dfxInfo});

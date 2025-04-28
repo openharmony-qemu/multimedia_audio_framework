@@ -64,9 +64,9 @@ public:
     void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReason reason) override;
 private:
-    OH_AudioRenderer_Callbacks callbacks_;
-    OH_AudioRenderer *ohAudioRenderer_;
-    void *userData_;
+    OH_AudioRenderer_Callbacks callbacks_ = {};
+    OH_AudioRenderer *ohAudioRenderer_ = {};
+    void *userData_ = {};
 };
 
 class OHAudioRendererDeviceChangeCallbackWithInfo : public AudioRendererOutputDeviceChangeCallback {
@@ -103,10 +103,10 @@ public:
     }
 
 private:
-    OH_AudioRenderer_Callbacks callbacks_;
+    OH_AudioRenderer_Callbacks callbacks_ = {};
     OH_AudioRenderer_OnInterruptCallback onInterruptEventCallback_ = nullptr;
-    OH_AudioRenderer *ohAudioRenderer_;
-    void *userData_;
+    OH_AudioRenderer *ohAudioRenderer_ = {};
+    void *userData_ = {};
 };
 
 class OHServiceDiedCallback : public AudioRendererPolicyServiceDiedCallback {
@@ -123,10 +123,10 @@ public:
     void OnAudioPolicyServiceDied() override;
 
 private:
-    OH_AudioRenderer_Callbacks callbacks_;
+    OH_AudioRenderer_Callbacks callbacks_ = {};
     OH_AudioRenderer_OnErrorCallback errorCallback_ = nullptr;
-    OH_AudioRenderer *ohAudioRenderer_;
-    void *userData_;
+    OH_AudioRenderer *ohAudioRenderer_ = {};
+    void *userData_ = {};
 };
 
 class OHAudioRendererErrorCallback : public AudioRendererErrorCallback {
@@ -145,10 +145,10 @@ public:
     OH_AudioStream_Result GetErrorResult(AudioErrors errorCode) const;
 
 private:
-    OH_AudioRenderer_Callbacks callbacks_;
+    OH_AudioRenderer_Callbacks callbacks_ = {};
     OH_AudioRenderer_OnErrorCallback errorCallback_ = nullptr;
-    OH_AudioRenderer *ohAudioRenderer_;
-    void *userData_;
+    OH_AudioRenderer *ohAudioRenderer_ = {};
+    void *userData_ = {};
 };
 
 class OHRendererPositionCallback : public RendererPositionCallback {
@@ -167,15 +167,15 @@ private:
 };
 
 struct RendererCallback {
-    OH_AudioRenderer_Callbacks callbacks;
+    OH_AudioRenderer_Callbacks callbacks = {};
 
-    OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback;
+    OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback = {};
 
-    OH_AudioRenderer_OnInterruptCallback onInterruptEventCallback;
+    OH_AudioRenderer_OnInterruptCallback onInterruptEventCallback = {};
 
-    OH_AudioRenderer_OnErrorCallback onErrorCallback;
+    OH_AudioRenderer_OnErrorCallback onErrorCallback = {};
 
-    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback;
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback = {};
 };
 
 class OHAudioRenderer {

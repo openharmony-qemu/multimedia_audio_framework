@@ -419,26 +419,6 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     notifiedOperation_ = operation;
     notifiedResult_ = result;
 
-    if (notifiedResult_ == SUCCESS) {
-        std::unique_lock<std::mutex> lock(streamCbMutex_);
-        std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
-        switch (operation) {
-            case START_STREAM :
-                state_ = RUNNING;
-                break;
-            case PAUSE_STREAM :
-                state_ = PAUSED;
-                break;
-            case STOP_STREAM :
-                state_ = STOPPED;
-            default :
-                break;
-        }
-        if (streamCb != nullptr) {
-            streamCb->OnStateChange(state_, CMD_FROM_SYSTEM);
-        }
-    }
-
     callServerCV_.notify_all();
     return SUCCESS;
 }

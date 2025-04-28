@@ -266,7 +266,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             stateListener->OnOperationHandled(STOP_STREAM, 0);
             lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
-            lastWriteFrame_ = audioServerBuffer_->GetCurReadFrame() - lastWriteFrame_;
+            lastWriteFrame_ = static_cast<int64_t>(audioServerBuffer_->GetCurReadFrame()) - lastWriteFrame_;
             playerDfx_->WriteDfxStopMsg(streamIndex_, RENDERER_STAGE_STOP_OK,
                 {lastWriteFrame_, lastWriteMuteFrame_, GetLastAudioDuration(), underrunCount_}, processConfig_);
             break;
@@ -318,7 +318,7 @@ void RendererInServer::HandleOperationStarted()
     
     lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
-    lastWriteFrame_ = audioServerBuffer_->GetCurReadFrame();
+    lastWriteFrame_ = static_cast<int64_t>(audioServerBuffer_->GetCurReadFrame());
     lastWriteMuteFrame_ = 0;
 }
 

@@ -228,7 +228,7 @@ int32_t AudioProcessInServer::Start()
     lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     if (processBuffer_ != nullptr) {
-        lastWriteFrame_ = processBuffer_->GetCurReadFrame();
+        lastWriteFrame_ = static_cast<int64_t>(processBuffer_->GetCurReadFrame());
     }
     lastWriteMuteFrame_ = 0;
     return ret;
@@ -355,7 +355,7 @@ int32_t AudioProcessInServer::Stop()
     lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     if (processBuffer_ != nullptr) {
-        lastWriteFrame_ = processBuffer_->GetCurReadFrame() - lastWriteFrame_;
+        lastWriteFrame_ = static_cast<int64_t>(processBuffer_->GetCurReadFrame()) - lastWriteFrame_;
     }
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         playerDfx_->WriteDfxStopMsg(sessionId_, RENDERER_STAGE_STOP_OK,
