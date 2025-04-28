@@ -1752,7 +1752,6 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
-        FetchOutputDeviceAndRoute();
     }
 
     if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
