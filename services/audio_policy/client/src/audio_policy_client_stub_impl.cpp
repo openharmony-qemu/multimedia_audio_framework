@@ -303,7 +303,7 @@ int32_t AudioPolicyClientStubImpl::AddSelfAppVolumeChangeCallback(int32_t appUid
     }
     selfAppVolumeChangeCallbackNum_[appUid]++;
     selfAppVolumeChangeCallback_.push_back({appUid, cb});
-    AUDIO_INFO_LOG("Add selfAppVolumeChangeCallback appUid : %{public}d ; P : %{public}p", appUid, cb.get());
+    AUDIO_INFO_LOG("Add selfAppVolumeChangeCallback appUid : %{public}d", appUid);
     return SUCCESS;
 }
 

@@ -529,9 +529,9 @@ int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
 
     int32_t ret = audioCapture_->ReqMmapBuffer(audioCapture_, reqBufferFrameSize, &desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "request mmap buffer fail, ret: %{public}d", ret);
-    AUDIO_INFO_LOG("memoryAddress: [%{public}p], memoryFd: [%{public}d], totalBufferFrames: [%{public}d], "
-        "transferFrameSize: [%{public}d], isShareable: [%{public}d], offset: [%{public}d]", desc.memoryAddress,
-        desc.memoryFd, desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
+    AUDIO_INFO_LOG("memoryFd: [%{public}d], totalBufferFrames: [%{public}d], "
+        "transferFrameSize: [%{public}d], isShareable: [%{public}d], offset: [%{public}d]", desc.memoryFd,
+        desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
 
     bufferFd_ = desc.memoryFd; // fcntl(fd, 1030, 3) after dup?
     int32_t periodFrameMaxSize = 1920000; // 192khz * 10s
