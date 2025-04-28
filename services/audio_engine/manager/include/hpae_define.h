@@ -48,6 +48,7 @@ struct HpaeSinkInfo {
     std::string deviceNetId;
     std::string deviceClass;
     std::string adapterName;
+    std::string lib;
     std::string filePath;
     std::string deviceName;
     size_t frameLen;
@@ -64,6 +65,7 @@ struct HpaeSinkInfo {
     uint32_t offloadEnable = 0;
     uint32_t fixedLatency = 0;
     uint32_t sinkLatency = 0;
+    std::string splitMode;
 };
 
 struct HpaeCapturerSessionInfo {

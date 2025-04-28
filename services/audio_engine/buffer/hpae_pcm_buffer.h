@@ -32,6 +32,13 @@ enum HpaeSourceBufferType {
     HPAE_SOURCE_BUFFER_TYPE_MICREF,
 };
 
+enum HpaeSplitStreamType {
+    STREAM_TYPE_DEFAULT = 0,
+    STREAM_TYPE_MEDIA = 1,
+    STREAM_TYPE_COMMUNICATION = 2,
+    STREAM_TYPE_NAVIGATION = 13
+};
+
 // redefine allocator to ensure memory alignment
 template <typename T, size_t Alignment>
 class AlignedAllocator : public std::allocator<T> {
@@ -219,6 +226,16 @@ public:
         sourceBufferType_ = type;
     }
 
+    HpaeSplitStreamType GetSplitStreamType()
+    {
+        return splitStreamType_;
+    }
+
+    void SetSplitStreamType(HpaeSplitStreamType type)
+    {
+        splitStreamType_ = type;
+    }
+
 private:
     void InitPcmProcess();
 
@@ -235,6 +252,7 @@ private:
     std::vector<HpaePcmProcess> pcmProcessVec_;
     PcmBufferInfo pcmBufferInfo_;
     HpaeSourceBufferType sourceBufferType_;
+    HpaeSplitStreamType splitStreamType_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

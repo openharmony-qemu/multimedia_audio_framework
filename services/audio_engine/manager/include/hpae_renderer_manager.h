@@ -25,6 +25,7 @@
 #include "hpae_sink_input_node.h"
 #include "hpae_process_cluster.h"
 #include "hpae_output_cluster.h"
+#include "hpae_remote_output_cluster.h"
 #include "hpae_msg_channel.h"
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_renderer_manager.h"
@@ -94,6 +95,7 @@ private:
     bool IsMchDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteInputSession(uint32_t sessionId);
+    bool isSplitProcessorType(HpaeProcessorType sceneType);
     int32_t ConnectInputSession(uint32_t sessionId);
     int32_t DisConnectInputSession(uint32_t sessionId);
     int32_t ConnectMchInputSession(uint32_t sessionId);

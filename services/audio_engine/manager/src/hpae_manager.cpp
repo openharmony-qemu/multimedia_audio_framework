@@ -279,6 +279,8 @@ void HpaeManager::TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModu
         sinkInfo.deviceNetId.c_str(),
         sinkInfo.deviceClass.c_str());
     sinkInfo.adapterName = audioModuleInfo.adapterName;
+    sinkInfo.lib = audioModuleInfo.lib;
+    sinkInfo.splitMode = audioModuleInfo.extra;
     sinkInfo.filePath = audioModuleInfo.fileName;
 
     sinkInfo.samplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.rate.c_str()));
