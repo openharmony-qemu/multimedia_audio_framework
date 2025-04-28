@@ -644,6 +644,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->rendererInfo_ = rendererInfo_;
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = getuid();
+    streamDesc->callerPid_ = getpid();
     return streamDesc;
 }
 
@@ -2088,6 +2089,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::GetStreamDescBySwit
     streamDesc->rendererInfo_ = switchInfo.rendererInfo;
     streamDesc->appInfo_ = AppInfo{switchInfo.appUid, 0, switchInfo.clientPid, 0};
     streamDesc->callerUid_ = switchInfo.clientUid;
+    streamDesc->callerPid_ = switchInfo.clientPid;
     streamDesc->sessionId_ = switchInfo.sessionId;
     streamDesc->routeFlag_ = restoreInfo.routeFlag;
     return streamDesc;
