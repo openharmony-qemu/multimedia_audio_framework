@@ -146,8 +146,8 @@ void HpaeResampleNode::ResampleProcess(float *srcData, uint32_t inputFrameLen, f
     }
 
 #ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_->CheckAndReopenHandlde();
     if (outputPcmDumper_ != nullptr) {
+        outputPcmDumper_->CheckAndReopenHandlde();
         outputPcmDumper_->Dump(
             (int8_t *)(resampleOuput_.GetPcmDataBuffer()), GetFrameLen() * sizeof(float) * GetChannelCount());
     }
