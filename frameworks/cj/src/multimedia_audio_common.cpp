@@ -18,6 +18,62 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+enum class AudioCJVolumeType {
+    VOLUMETYPE_DEFAULT = -1,
+    VOICE_CALL = 0,
+    RINGTONE = 2,
+    MEDIA = 3,
+    ALARM = 4,
+    ACCESSIBILITY = 5,
+    SYSTEM = 6,
+    VOICE_ASSISTANT = 9,
+    ULTRASONIC = 10,
+    VOLUMETYPE_MAX,
+    ALL = 100
+};
+}
+
+AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
+{
+    AudioVolumeType result = STREAM_MUSIC;
+
+    switch (static_cast<AudioCJVolumeType>(volumeType)) {
+        case AudioCJVolumeType::VOICE_CALL:
+            result = STREAM_VOICE_CALL;
+            break;
+        case AudioCJVolumeType::RINGTONE:
+            result = STREAM_RING;
+            break;
+        case AudioCJVolumeType::MEDIA:
+            result = STREAM_MUSIC;
+            break;
+        case AudioCJVolumeType::ALARM:
+            result = STREAM_ALARM;
+            break;
+        case AudioCJVolumeType::ACCESSIBILITY:
+            result = STREAM_ACCESSIBILITY;
+            break;
+        case AudioCJVolumeType::VOICE_ASSISTANT:
+            result = STREAM_VOICE_ASSISTANT;
+            break;
+        case AudioCJVolumeType::ULTRASONIC:
+            result = STREAM_ULTRASONIC;
+            break;
+        case AudioCJVolumeType::SYSTEM:
+            result = STREAM_SYSTEM;
+            break;
+        case AudioCJVolumeType::ALL:
+            result = STREAM_ALL;
+            break;
+        default:
+            result = STREAM_MUSIC;
+            break;
+    }
+
+    return result;
+}
+
 char *MallocCString(const std::string &origin)
 {
     if (origin.empty()) {
@@ -361,18 +417,6 @@ void Convert2CAudioRendererChangeInfo(CAudioRendererChangeInfo &cInfo, const Aud
     cInfo.streamId = changeInfo.sessionId;
     Convert2CArrDeviceDescriptorByDeviceInfo(cInfo.deviceDescriptors, changeInfo.outputDeviceInfo, errorCode);
     Convert2AudioRendererInfo(cInfo.rendererInfo, changeInfo.rendererInfo);
-}
-
-void FreeBufferDesc(BufferDesc &buf)
-{
-    if (buf.buffer != nullptr) {
-        free(buf.buffer);
-    }
-    if (buf.metaBuffer != nullptr) {
-        free(buf.metaBuffer);
-    }
-    buf.buffer = nullptr;
-    buf.metaBuffer = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

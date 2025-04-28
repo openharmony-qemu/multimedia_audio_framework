@@ -36,7 +36,7 @@ MMAAudioStreamManagerImpl::~MMAAudioStreamManagerImpl()
 
 bool MMAAudioStreamManagerImpl::IsActive(int32_t volumeType)
 {
-    return streamMgr_->IsStreamActive(static_cast<AudioVolumeType>(volumeType));
+    return streamMgr_->IsStreamActive(GetNativeAudioVolumeType(volumeType));
 }
 
 CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_t *errorCode)
