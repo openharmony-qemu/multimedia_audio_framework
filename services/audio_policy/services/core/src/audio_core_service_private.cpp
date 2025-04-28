@@ -843,8 +843,10 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     std::vector<SinkInput> targetSinkInputs = audioOffloadStream_.FilterSinkInputs(streamDesc->sessionId_, sinkInputs);
     
     if (isNeedTriggerCallback && audioPolicyServerHandler_) {
-        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(streamDesc->appInfo_.appPid,
-            streamDesc->sessionId_, newDeviceDesc, reason);
+        std::shared_ptr<AudioDeviceDescriptor> callbackDesc = std::make_shared<AudioDeviceDescriptor>(*newDeviceDesc);
+        callbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
+        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(streamDesc->callerPid_,
+            streamDesc->sessionId_, callbackDesc, reason);
     }
     MuteSinkForSwitchGeneralDevice(streamDesc, reason);
 

@@ -43,6 +43,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         parcel.WriteUint64(appInfo_.appFullTokenId) &&
         parcel.WriteUint32(sessionId_) &&
         parcel.WriteInt32(callerUid_) &&
+        parcel.WriteInt32(callerPid_) &&
         parcel.WriteUint32(streamAction_) &&
         WriteDeviceDescVectorToParcel(parcel, oldDeviceDescs_) &&
         WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_);
@@ -63,6 +64,7 @@ void AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     appInfo_.appFullTokenId = parcel.ReadUint64();
     sessionId_ = parcel.ReadUint32();
     callerUid_ = parcel.ReadInt32();
+    callerPid_ = parcel.ReadInt32();
     streamAction_ = static_cast<AudioStreamAction>(parcel.ReadUint32());
     UnmarshallingDeviceDescVector(parcel, oldDeviceDescs_);
     UnmarshallingDeviceDescVector(parcel, newDeviceDescs_);

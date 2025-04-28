@@ -358,6 +358,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->capturerInfo_ = capturerInfo_;
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
+    streamDesc->callerPid_ = static_cast<int32_t>(getpid());
     return streamDesc;
 }
 
