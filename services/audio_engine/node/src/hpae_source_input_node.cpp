@@ -338,7 +338,7 @@ int32_t HpaeSourceInputNode::SetSourceState(StreamManagerState sourceState)
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sourceState).c_str());
         state_ = sourceState;
-        return SUCCESS;
+    return SUCCESS;
 }
 
 size_t HpaeSourceInputNode::GetOutputPortNum()
