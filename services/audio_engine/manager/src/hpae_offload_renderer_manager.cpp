@@ -79,18 +79,18 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
-    AUDIO_INFO_LOG("add node :%{public}d to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
+    AUDIO_INFO_LOG("[FinishMove] session:%{public}u to sink:offload", sessionId);
     sinkInputNode_ = node;
     sessionInfo_.state = node->GetState();
 
     if (!isConnect || sinkInputNode_->GetState() != HPAE_SESSION_RUNNING) {
-        AUDIO_INFO_LOG("not need connect session:%{public}d", sessionId);
+        AUDIO_INFO_LOG("[FinishMove] session:%{public}u not need connect session", sessionId);
         return;
     }
 
     if (node->GetState() == HPAE_SESSION_RUNNING) {
-        AUDIO_INFO_LOG("connect node :%{public}d to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
-        ConnectInputSession();  // todo: fadein
+        AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:offload", sessionId);
+        ConnectInputSession();
         if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING) {
             sinkOutputNode_->RenderSinkStart();
         }
@@ -277,14 +277,17 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
 {
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
-    std::vector<uint32_t> sessionIds;
     if (sinkInputNode_) {
         uint32_t sessionId = sinkInputNode_->GetSessionId();
         if (isMoveAll || std::find(moveIds.begin(), moveIds.end(), sessionId) != moveIds.end()) {
             sinkInputs.emplace_back(sinkInputNode_);
-            sessionIds.emplace_back(sinkInputNode_->GetSessionId());
             DisConnectInputSession();
+            AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [offload] --> [%{public}s]",
+                sessionId, sinkName.c_str());
         }
+    }
+    if (sinkInputs.size() == 0) {
+        AUDIO_WARNING_LOG("sink count is 0,no need move session");
     }
     TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, !isMoveAll);
 }
@@ -307,26 +310,23 @@ int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, c
 
 int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::string &sinkName)
 {
-    AUDIO_INFO_LOG("move session:%{public}d,sink name:%{public}s", sessionId, sinkName.c_str());
     auto request = [this, sessionId, sinkName]() {
         CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
-            "could not find session:%{public}d,sink name:%{public}s",
-            sessionId,
-            sinkName.c_str());
+            "[StartMove] session:%{public}d failed,sink [offload] --> [%{public}s]", sessionId, sinkName.c_str());
+
+        if (sinkName.empty()) {
+            AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
+            return;
+        }
 
         std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNode_;
-        if (inputNode->GetState() == HPAE_SESSION_RUNNING) {
-            // todo: do fade out
-        }
+        AUDIO_INFO_LOG("move session:%{public}d,sink [offload] --> [%{public}s]", sessionId, sinkName.c_str());
         DisConnectInputSession();
         sinkOutputNode_->StopStream();
         sinkInputNode_ = nullptr;
         formatConverterNode_ = nullptr;
-        if (!sinkName.empty()) {
-            std::string name = sinkName;
-            AUDIO_ERR_LOG("trigger call back, sink name:%{public}s", sinkName.c_str());
-            TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
-        }
+        std::string name = sinkName;
+        TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
     };
     SendRequest(request);
     return SUCCESS;
@@ -512,7 +512,7 @@ int32_t HpaeOffloadRendererManager::RegisterWriteCallback(
 }
 
 int32_t HpaeOffloadRendererManager::RegisterReadCallback(
-    uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback)
+    uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     return ERR_NOT_SUPPORTED;
 }

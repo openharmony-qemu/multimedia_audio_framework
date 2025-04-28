@@ -16,11 +16,14 @@
 #ifndef HPAE_CAPTURER_STREAM_IMPL_H
 #define HPAE_CAPTURER_STREAM_IMPL_H
 
+#include <shared_mutex>
 #include "i_capturer_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class HpaeCapturerStreamImpl : public std::enable_shared_from_this<HpaeCapturerStreamImpl>, public ICapturerStream {
+class HpaeCapturerStreamImpl : public std::enable_shared_from_this<HpaeCapturerStreamImpl>,
+                               public ICapturerStreamCallback,
+                               public ICapturerStream {
 public:
     HpaeCapturerStreamImpl(AudioProcessConfig processConfig);
     ~HpaeCapturerStreamImpl();
@@ -46,6 +49,7 @@ public:
     uint32_t GetStreamIndex() override;
     int32_t DropBuffer() override;
     void AbortCallback(int32_t abortTimes);
+    int32_t OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo) override;
 
 private:
 
@@ -68,6 +72,11 @@ private:
     int32_t abortFlag_ = 0;
 
     uint32_t capturerId_ = 0;
+
+    std::shared_mutex latencyMutex_;
+    uint64_t framesRead_ = 0;
+    uint64_t timestamp_ = 0;
+    uint64_t latency_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

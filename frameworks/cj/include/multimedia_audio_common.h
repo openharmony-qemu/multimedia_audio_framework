@@ -19,10 +19,12 @@
 #include "securec.h"
 #include "audio_system_manager.h"
 #include "multimedia_audio_ffi.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 const size_t MAX_MEM_MALLOC_SIZE = 50 * 1024 * 1024;
+AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
 void Convert2AudioCapturerOptions(AudioCapturerOptions &opions, const CAudioCapturerOptions &cOptions);
 char *MallocCString(const std::string &origin);
 void Convert2CAudioCapturerInfo(CAudioCapturerInfo &cInfo, const AudioCapturerInfo &capturerInfo);
@@ -45,7 +47,6 @@ void Convert2AudioRendererOptions(AudioRendererOptions &opions, const CAudioRend
 void Convert2AudioRendererInfo(CAudioRendererInfo &cInfo, const AudioRendererInfo &rendererInfo);
 void Convert2CAudioRendererChangeInfo(CAudioRendererChangeInfo &cInfo, const AudioRendererChangeInfo &changeInfo,
                                       int32_t *errorCode);
-void FreeBufferDesc(BufferDesc &buf);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // MULTIMEDIA_AUDIO_COMMON_H

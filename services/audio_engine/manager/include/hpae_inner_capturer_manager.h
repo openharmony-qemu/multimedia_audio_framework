@@ -84,7 +84,7 @@ public:
     int32_t AddAllNodesToSink(
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect) override;
 
-    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) override;
+    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo) override;
     std::vector<SourceOutput> GetAllSourceOutputsInfo() override;
     std::string GetThreadName() override;

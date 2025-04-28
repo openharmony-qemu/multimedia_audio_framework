@@ -42,13 +42,13 @@ void HpaeSourceInputClusterTest::TearDown()
 
 TEST_F(HpaeSourceInputClusterTest, constructHpaeSourceInputClusterNode)
 {
-    std::shared_ptr<NodeStatusCallback> g_testStatuscallback = std::make_shared<NodeStatusCallback>();
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     HpaeNodeInfo nodeInfo;
     nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
-    nodeInfo.statusCallback = g_testStatuscallback->GetWeakPtr();
+    nodeInfo.statusCallback = testStatuscallback;
 
     std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     EXPECT_EQ(hpaeSourceInputCluster->GetSampleRate(), nodeInfo.samplingRate);
@@ -84,13 +84,13 @@ static int32_t TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint6
 
 TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
 {
-    std::shared_ptr<NodeStatusCallback> g_testStatuscallback = std::make_shared<NodeStatusCallback>();
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     HpaeNodeInfo nodeInfo;
     nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
-    nodeInfo.statusCallback = g_testStatuscallback->GetWeakPtr();
+    nodeInfo.statusCallback = testStatuscallback;
     std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
     std::vector<char> testData(requestBytes);
@@ -101,7 +101,7 @@ TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSourceInputCluster->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
     IAudioSourceAttr attr;
-    attr.adapterName = NULL;
+    attr.adapterName = "";
     attr.openMicSpeaker = 0;
     attr.format = AudioSampleFormat::INVALID_WIDTH;
     attr.sampleRate = nodeInfo.samplingRate;

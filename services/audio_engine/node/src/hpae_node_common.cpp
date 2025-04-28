@@ -74,7 +74,6 @@ static std::unordered_map<StreamManagerState, std::string> g_streamMgrStateToStr
     {STREAM_MANAGER_RUNNING, "RUNNING"},
     {STREAM_MANAGER_SUSPENDED, "SUSPENDED"},
     {STREAM_MANAGER_RELEASED, "RELEASED"}
-
 };
 
 std::string ConvertSessionState2Str(HpaeSessionState state)

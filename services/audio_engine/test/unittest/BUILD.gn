@@ -20,6 +20,12 @@ module_output_path = "multimedia_audio_framework/audio_engine"
 config("audio_engine_private_config") {
   visibility = [ ":*" ]
 
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
   include_dirs = [
     "./common",
     "./unittest/include",
@@ -51,9 +57,13 @@ ohos_unittest("audio_engine_unit_test") {
     "manager/hpae_capturer_manager_test.cpp",
     "manager/hpae_inner_capturer_unit_test.cpp",
     "manager/hpae_manager_test.cpp",
+    "manager/hpae_policy_manager_test.cpp",
     "manager/hpae_render_manager_test.cpp",
+    "manager/hpae_signal_process_thread_test.cpp",
+    "node/hpae_capture_effect_node_test.cpp",
     "node/hpae_gain_node_test.cpp",
     "node/hpae_mixer_node_test.cpp",
+    "node/hpae_node_common_test.cpp",
     "node/hpae_output_cluster_test.cpp",
     "node/hpae_pcm_buffer_test.cpp",
     "node/hpae_pcm_process_test.cpp",

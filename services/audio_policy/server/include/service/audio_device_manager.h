@@ -124,8 +124,6 @@ private:
     void AddRemoteCaptureDev(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddDefaultDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
 
-    void AddVirtualDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void RemoveVirtualDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     bool IsVirtualDevicesExist(const shared_ptr<AudioDeviceDescriptor> &devDesc);
 
     void UpdateDeviceInfo(shared_ptr<AudioDeviceDescriptor> &deviceDesc);

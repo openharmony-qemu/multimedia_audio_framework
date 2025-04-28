@@ -328,6 +328,7 @@ int32_t AudioProcessInServer::Resume()
         listenerList_[i]->OnStart(this);
     }
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
+    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }

@@ -46,6 +46,7 @@ public:
     int32_t RenderSinkStop();
     size_t GetPreOutNum();
     StreamManagerState GetSinkState(void);
+    int32_t SetSinkState(StreamManagerState sinkState);
     const char* GetRenderFrameData(void);
     // need flush hdi cache and rewind
     void StopStream();

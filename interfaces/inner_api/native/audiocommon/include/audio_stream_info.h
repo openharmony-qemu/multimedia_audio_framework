@@ -606,6 +606,14 @@ struct AudioCallBackStreamInfo {
     bool needData;
 };
 
+struct AudioCallBackCapturerStreamInfo {
+    uint64_t framesRead;
+    uint64_t timestamp;
+    uint64_t latency = 0;
+    int8_t *outputData;
+    size_t requestDataLen;
+};
+
 struct AudioChannelInfo {
     AudioChannelLayout channelLayout;
     uint32_t numChannels;

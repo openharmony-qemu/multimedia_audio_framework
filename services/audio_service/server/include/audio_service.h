@@ -171,6 +171,7 @@ private:
 
     std::mutex rendererMapMutex_;
     std::mutex capturerMapMutex_;
+    std::mutex muteSwitchStreamSetMutex_;
     std::unordered_map<int32_t, std::vector<std::weak_ptr<RendererInServer>>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
@@ -186,7 +187,7 @@ private:
     std::condition_variable allRunningSinksCV_;
     std::set<uint32_t> allRunningSinks_;
     bool onHibernate_ = false;
-    uint32_t muteSwitchStream_ = 0;
+    std::set<uint32_t> muteSwitchStreams_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

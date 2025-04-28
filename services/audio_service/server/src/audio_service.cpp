@@ -257,8 +257,10 @@ void AudioService::CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProce
 
 bool AudioService::IsMuteSwitchStream(uint32_t sessionId)
 {
-    if (sessionId == muteSwitchStream_) {
-        muteSwitchStream_ = 0;
+    std::lock_guard<std::mutex> muteSwitchStreamLock(muteSwitchStreamSetMutex_);
+    if (muteSwitchStreams_.count(sessionId)) {
+        AUDIO_INFO_LOG("find session %{public}u in muteSwitchStreams_", sessionId);
+        muteSwitchStreams_.erase(sessionId);
         return true;
     }
     return false;
@@ -1152,10 +1154,12 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     // this sessionid will not add into mutedSessions_
     // so need save it temporarily, when new stream create, check if new stream need mute
     // if set muteflag 0 again before new stream create, do not mute it
+    std::lock_guard<std::mutex> muteSwitchStreamLock(muteSwitchStreamSetMutex_);
     if (muteFlag) {
-        muteSwitchStream_ = sessionId;
-    } else if (muteSwitchStream_ == sessionId) {
-        muteSwitchStream_ = 0;
+        muteSwitchStreams_.insert(sessionId);
+        AUDIO_INFO_LOG("Insert into muteSwitchStreams_");
+    } else if (muteSwitchStreams_.count(sessionId)) {
+        muteSwitchStreams_.erase(sessionId);
     }
 }
 

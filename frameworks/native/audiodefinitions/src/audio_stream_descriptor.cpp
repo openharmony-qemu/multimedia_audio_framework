@@ -92,7 +92,7 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
 {
     int32_t size = 0;
     parcel.ReadInt32(size);
-    if (size == -1) {
+    if (size == -1 || size > MAX_STREAM_DESCRIPTORS_SIZE) {
         AUDIO_ERR_LOG("Invalid vector size");
         return;
     }

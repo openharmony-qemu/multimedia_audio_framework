@@ -106,8 +106,8 @@ HpaePcmBuffer *HpaeResampleNode::SignalProcess(const std::vector<HpaePcmBuffer *
         dstData = resampleOuput_.GetPcmDataBuffer();
     }
 #ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_->CheckAndReopenHandlde();
     if (inputPcmDumper_ != nullptr) {
+        inputPcmDumper_->CheckAndReopenHandlde();
         inputPcmDumper_->Dump((int8_t *)(srcData), (inputFrameLen * sizeof(float) * preNodeInfo_.channels));
     }
 #endif
@@ -122,8 +122,8 @@ void HpaeResampleNode::ResampleProcess(float *srcData, uint32_t inputFrameLen, f
 
     if (preNodeInfo_.channels == GetChannelCount()) {
 #ifdef ENABLE_HOOK_PCM
-        outputPcmDumper_->CheckAndReopenHandlde();
         if (outputPcmDumper_ != nullptr) {
+            outputPcmDumper_->CheckAndReopenHandlde();
             outputPcmDumper_->Dump(
                 (int8_t *)(resampleOuput_.GetPcmDataBuffer()), GetFrameLen() * sizeof(float) * GetChannelCount());
         }
@@ -146,8 +146,8 @@ void HpaeResampleNode::ResampleProcess(float *srcData, uint32_t inputFrameLen, f
     }
 
 #ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_->CheckAndReopenHandlde();
     if (outputPcmDumper_ != nullptr) {
+        outputPcmDumper_->CheckAndReopenHandlde();
         outputPcmDumper_->Dump(
             (int8_t *)(resampleOuput_.GetPcmDataBuffer()), GetFrameLen() * sizeof(float) * GetChannelCount());
     }
