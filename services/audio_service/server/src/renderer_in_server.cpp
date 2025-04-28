@@ -1309,6 +1309,8 @@ int32_t RendererInServer::DisableInnerCap(int32_t innerCapId)
 
 int32_t RendererInServer::InitDupStream(int32_t innerCapId)
 {
+    AUDIO_INFO_LOG("InitDupStream for innerCapId：%{public}d", innerCapId);
+    Trace trace(traceTag_ + "InitDupStream innerCapId：" + std::to_string(innerCapId));
     std::lock_guard<std::mutex> lock(dupMutex_);
     auto &capInfo = captureInfos_[innerCapId];
     AudioProcessConfig dupConfig = processConfig_;
