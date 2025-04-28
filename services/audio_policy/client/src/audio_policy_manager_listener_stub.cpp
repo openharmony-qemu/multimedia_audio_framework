@@ -98,7 +98,7 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
         }
         case ON_CHECK_CLIENT_INFO: {
             std::string bundleName = data.ReadString();
-            uint32_t uid = data.ReadUint32();
+            int32_t uid = data.ReadInt32();
             int32_t pid = data.ReadInt32();
             OnCheckClientInfo(bundleName, uid, pid);
             return AUDIO_OK;
@@ -143,7 +143,7 @@ bool AudioPolicyManagerListenerStub::OnQueryClientType(const std::string &bundle
     return audioQueryClientTypeCallback->OnQueryClientType(bundleName, uid);
 }
 
-bool AudioPolicyManagerListenerStub::OnCheckClientInfo(const std::string &bundleName, uint32_t uid, int32_t &pid)
+bool AudioPolicyManagerListenerStub::OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid)
 {
     std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback = audioClientInfoMgrCallback_.lock();
 

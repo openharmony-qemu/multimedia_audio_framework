@@ -102,7 +102,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailab
 }
 
 int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid, const std::string caller)
 {
     if (desc == nullptr) {
         AUDIO_ERR_LOG("desc is null");
@@ -114,7 +114,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             audioStateManager_.SetPreferredMediaRenderDevice(desc);
             break;
         case AUDIO_CALL_RENDER:
-            audioStateManager_.SetPreferredCallRenderDevice(desc, pid);
+            audioStateManager_.SetPreferredCallRenderDevice(desc, uid, caller);
             break;
         case AUDIO_CALL_CAPTURE:
             audioStateManager_.SetPreferredCallCaptureDevice(desc);

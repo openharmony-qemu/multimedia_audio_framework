@@ -158,7 +158,7 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID) override;
+    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID) override;
 
     bool IsDeviceActive(InternalDeviceType deviceType) override;
 
@@ -392,7 +392,7 @@ public:
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId) override;
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = INVALID_PID) override;
+        const int32_t uid = INVALID_UID) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
 
@@ -421,7 +421,7 @@ public:
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN) override;
 
     int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID) override;
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid = INVALID_UID) override;
 
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) override;
 
@@ -595,7 +595,8 @@ private:
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     bool VerifyBluetoothPermission();
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
-    int32_t SetAudioSceneInternal(AudioScene audioScene);
+    int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
+        const int32_t pid = INVALID_PID);
 
     int32_t GetApiTargerVersion();
 

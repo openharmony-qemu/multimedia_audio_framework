@@ -35,7 +35,7 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
     bool OnQueryClientType(const std::string &bundleName, uint32_t uid) override;
-    bool OnCheckClientInfo(const std::string &bundleName, uint32_t uid, int32_t &pid) override;
+    bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) override;
     bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) override;
     // AudioManagerListenerStub
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
