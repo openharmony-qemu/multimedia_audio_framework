@@ -86,8 +86,8 @@ void HpaeSinkOutputNode::DoProcess()
     HighResolutionTimer timer;
     timer.Start();
     intervalTimer_.Stop();
-    outputPcmDumper_->CheckAndReopenHandlde();
     if (outputPcmDumper_) {
+        outputPcmDumper_->CheckAndReopenHandlde();
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
     }
 #endif

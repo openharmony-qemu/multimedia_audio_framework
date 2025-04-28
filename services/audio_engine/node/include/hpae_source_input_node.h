@@ -52,6 +52,7 @@ public:
     int32_t CapturerSourceStart(void);
     int32_t CapturerSourceStop(void);
     StreamManagerState GetSourceState(void);
+    int32_t SetSourceState(StreamManagerState sourceState);
     int32_t WriteCapturerData(char *data, int32_t dataSize);
     size_t GetOutputPortNum();
     size_t GetOutputPortNum(HpaeNodeInfo &nodeInfo);

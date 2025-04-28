@@ -21,6 +21,7 @@
 #include "hpae_format_convert.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "hpae_node_common.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
@@ -126,14 +127,14 @@ void HpaeInnerCapSinkNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBu
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkInit()
 {
     AUDIO_INFO_LOG("Init");
-    state_ = STREAM_MANAGER_IDLE;
+    SetSinkState(STREAM_MANAGER_IDLE);
     return SUCCESS;
 }
 
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkDeInit()
 {
     AUDIO_INFO_LOG("DeInit");
-    state_ = STREAM_MANAGER_RELEASED;
+    SetSinkState(STREAM_MANAGER_RELEASED);
     return SUCCESS;
 }
 
@@ -146,7 +147,7 @@ int32_t HpaeInnerCapSinkNode::InnerCapturerSinkFlush()
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkPause()
 {
     AUDIO_INFO_LOG("Pause");
-    state_ = STREAM_MANAGER_SUSPENDED;
+    SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 
@@ -159,27 +160,36 @@ int32_t HpaeInnerCapSinkNode::InnerCapturerSinkReset()
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkResume()
 {
     AUDIO_INFO_LOG("Resume");
-    state_ = STREAM_MANAGER_RUNNING;
+    SetSinkState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
 }
 
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkStart()
 {
     AUDIO_INFO_LOG("Start");
-    state_ = STREAM_MANAGER_RUNNING;
+    SetSinkState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
 }
 
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkStop()
 {
     AUDIO_INFO_LOG("Stop");
-    state_ = STREAM_MANAGER_SUSPENDED;
+    SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 
 StreamManagerState HpaeInnerCapSinkNode::GetSinkState(void)
 {
     return state_;
+}
+
+int32_t HpaeInnerCapSinkNode::SetSinkState(StreamManagerState sinkState)
+{
+    AUDIO_INFO_LOG("Sink[innerCap] state change:[%{public}s]-->[%{public}s]",
+        ConvertStreamManagerState2Str(state_).c_str(),
+        ConvertStreamManagerState2Str(sinkState).c_str());
+    state_ = sinkState;
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

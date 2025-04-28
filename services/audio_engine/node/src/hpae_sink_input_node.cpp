@@ -117,7 +117,7 @@ void HpaeSinkInputNode::DoProcess()
 
     int32_t ret = GetDataFromSharedBuffer();
     // if historyBuffer has enough data, write to outputStream
-    if (!streamInfo_.needData) {
+    if (!streamInfo_.needData && historyBuffer_) {
         historyBuffer_->GetFrameData(inputAudioBuffer_);
         outputStream_.WriteDataToOutput(&inputAudioBuffer_);
         return;
