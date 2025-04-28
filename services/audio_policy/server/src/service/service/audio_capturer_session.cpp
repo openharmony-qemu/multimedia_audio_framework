@@ -56,8 +56,8 @@ static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSourc
         "currentSource sourceType:%{public}d priority:%{public}d",
         newSource, NORMAL_SOURCE_PRIORITY[newSource], currentSource, NORMAL_SOURCE_PRIORITY[currentSource]);
     if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0 ||
-        NORMAL_SOURCE_PRIORITY.count(currentSource) == 0) ||
-        (newSource == currentSource){
+        NORMAL_SOURCE_PRIORITY.count(currentSource) == 0 ||
+        (newSource == currentSource)) {
         return false;
     }
     return NORMAL_SOURCE_PRIORITY[newSource] >= NORMAL_SOURCE_PRIORITY[currentSource];
