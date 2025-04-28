@@ -643,7 +643,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->rendererInfo_ = rendererInfo_;
     streamDesc->appInfo_ = appInfo_;
-    streamDesc->callerUid_ = getuid();
+    streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     return streamDesc;
 }
 
@@ -2054,7 +2054,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Create stream and pipe
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
+    int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, switchInfo.params.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
 
