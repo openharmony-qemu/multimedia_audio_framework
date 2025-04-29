@@ -264,7 +264,7 @@ int32_t AudioPipeManager::GetStreamCount(const std::string adapterName, const ui
     int32_t count = 0;
     for (auto it : curPipeList_) {
         if (it->adapterName_ == adapterName && it->routeFlag_ == routeFlag) {
-            count = it->streamDescriptors_.size();
+            count = static_cast<int32_t>(it->streamDescriptors_.size());
         }
     }
     return count;
