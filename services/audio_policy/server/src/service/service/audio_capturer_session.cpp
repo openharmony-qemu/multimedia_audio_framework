@@ -54,9 +54,7 @@ static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
 
 static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
 {
-    AUDIO_INFO_LOG("newSource sourceType:%{public}d priority:%{public}d,"
-        "currentSource sourceType:%{public}d priority:%{public}d",
-        newSource, NORMAL_SOURCE_PRIORITY[newSource], currentSource, NORMAL_SOURCE_PRIORITY[currentSource]);
+    AUDIO_INFO_LOG("newSource sourceType:%{public}d, currentSource sourceType:%{public}d", newSource, currentSource);
     if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0 ||
         NORMAL_SOURCE_PRIORITY.count(currentSource) == 0 ||
         (newSource == currentSource)) {
