@@ -164,9 +164,9 @@ public:
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 private:
-    void TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
+    int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
     bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
-    void TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
+    int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
     AudioSampleFormat TransFormatFromStringToEnum(std::string format);
     int32_t CloseOutAudioPort(std::string &sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
@@ -201,7 +201,7 @@ private:
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo);
 
     void MoveToPreferSink(const std::string& name);
-    void ReloadRenderManager(const AudioModuleInfo &audioModuleInfo);
+    int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo);
     void AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>> &sinkIdMap,
         const std::pair<uint32_t, std::string> &id, const std::string &name);
     void DestroyCapture(uint32_t sessionId);
