@@ -222,6 +222,7 @@ int32_t OfflineAudioEffectServerChain::Prepare(const std::shared_ptr<AudioShared
 
 int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize)
 {
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(serverBufferIn_ && serverBufferIn_->GetBase(), ERROR, "serverBufferIn_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(serverBufferOut_ && serverBufferOut_->GetBase(), ERROR, "serverBufferOut_ is nullptr");
 
@@ -240,7 +241,6 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
         reinterpret_cast<int8_t *>(serverBufferIn_->GetBase()), static_cast<int32_t>(inSize)};
     output = {};
 
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "process failed, controller is nullptr");
     int32_t ret = controller_->EffectProcess(controller_, &input, &output);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "EffectProcess failed ret:%{public}d", ret);

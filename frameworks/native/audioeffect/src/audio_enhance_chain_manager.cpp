@@ -823,6 +823,7 @@ int32_t AudioEnhanceChainManager::SetMicrophoneMuteInfo(const bool &isMute)
 
 int32_t AudioEnhanceChainManager::SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol)
 {
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
     sessionId_ = sessionId;
     streamVol_ = streamVol;
     if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0 || sceneTypeToEnhanceChainMap_.size() == 0) {

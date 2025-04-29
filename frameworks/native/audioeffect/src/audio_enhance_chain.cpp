@@ -206,10 +206,10 @@ int32_t AudioEnhanceChain::SetFoldState(uint32_t foldState)
 
 int32_t AudioEnhanceChain::SetEnhanceParam(bool mute, uint32_t systemVol)
 {
+    std::lock_guard<std::mutex> lock(chainMutex_);
     algoParam_.muteInfo = mute;
     algoParam_.volumeInfo = systemVol;
 
-    std::lock_guard<std::mutex> lock(chainMutex_);
     uint32_t size = standByEnhanceHandles_.size();
     AudioEffectTransInfo cmdInfo{};
     AudioEffectTransInfo replyInfo{};
