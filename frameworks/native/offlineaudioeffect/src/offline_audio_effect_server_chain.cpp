@@ -178,13 +178,13 @@ int32_t OfflineAudioEffectServerChain::SetParam(AudioStreamInfo inInfo, AudioStr
     AUDIO_INFO_LOG("%{public}d %{public}d %{public}hhu %{public}hhu %{public}" PRIu64 " OutStreamInfo set",
         outInfo.samplingRate, outInfo.encoding, outInfo.format, outInfo.channels, outInfo.channelLayout);
 
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     offlineConfig_.inputCfg = {inInfo.samplingRate, inInfo.channels, inInfo.format};
     offlineConfig_.outputCfg = {outInfo.samplingRate, outInfo.channels, outInfo.format};
 
     int8_t output[MAX_REPLY_LEN] = {0};
     uint32_t replyLen = MAX_REPLY_LEN;
 
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "configure failed, controller is nullptr");
     int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_SET_CONFIG,
         reinterpret_cast<int8_t *>(&offlineConfig_), sizeof(offlineConfig_), output, &replyLen);
@@ -200,6 +200,7 @@ int32_t OfflineAudioEffectServerChain::SetParam(AudioStreamInfo inInfo, AudioStr
 
 int32_t OfflineAudioEffectServerChain::GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize)
 {
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(inBufferSize_ != 0, ERROR, "inBufferSize_ do not init");
     CHECK_AND_RETURN_RET_LOG(outBufferSize_ != 0, ERROR, "inBufferSize_ do not init");
     inBufferSize = inBufferSize_;
@@ -212,6 +213,7 @@ int32_t OfflineAudioEffectServerChain::GetEffectBufferSize(uint32_t &inBufferSiz
 int32_t OfflineAudioEffectServerChain::Prepare(const std::shared_ptr<AudioSharedMemory> &bufferIn,
     const std::shared_ptr<AudioSharedMemory> &bufferOut)
 {
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     serverBufferIn_ = bufferIn;
     serverBufferOut_ = bufferOut;
     AUDIO_INFO_LOG("Prepare in server done");

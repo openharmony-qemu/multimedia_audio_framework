@@ -795,6 +795,7 @@ int32_t AudioEnhanceChainManager::SetOutputDevice(const uint32_t &renderId, cons
 
 int32_t AudioEnhanceChainManager::SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol)
 {
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
     volumeType_ = volumeType;
     systemVol_ = systemVol;
     if (sceneTypeAndModeToEnhanceChainNameMap_.size() == 0 || sceneTypeToEnhanceChainMap_.size() == 0) {
@@ -806,8 +807,8 @@ int32_t AudioEnhanceChainManager::SetVolumeInfo(const AudioVolumeType &volumeTyp
 
 int32_t AudioEnhanceChainManager::SetMicrophoneMuteInfo(const bool &isMute)
 {
-    isMute_ = isMute;
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
+    isMute_ = isMute;
     int32_t ret = 0;
     for (const auto &[sceneType, enhanceChain] : sceneTypeToEnhanceChainMap_) {
         if (enhanceChain) {

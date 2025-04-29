@@ -186,13 +186,13 @@ int32_t AudioEnhanceChain::SetInputDevice(const std::string &inputDevice, const 
 
 int32_t AudioEnhanceChain::SetFoldState(uint32_t foldState)
 {
+    std::lock_guard<std::mutex> lock(chainMutex_);
     if (algoParam_.foldState == foldState) {
         AUDIO_INFO_LOG("no need update fold state %{public}u", foldState);
         return SUCCESS;
     }
     algoParam_.foldState = foldState;
     AUDIO_INFO_LOG("update fold state %{public}u", foldState);
-    std::lock_guard<std::mutex> lock(chainMutex_);
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
     for (const auto &handle : standByEnhanceHandles_) {
@@ -296,6 +296,7 @@ bool AudioEnhanceChain::IsEmptyEnhanceHandles()
 void AudioEnhanceChain::GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferConfig &ecConfig,
     AudioBufferConfig &micRefConfig)
 {
+    std::lock_guard<std::mutex> lock(chainMutex_);
     uint8_t configDataformat = static_cast<uint8_t>(algoSupportedConfig_.dataFormat);
     micConfig.samplingRate = algoSupportedConfig_.sampleRate;
     micConfig.channels = algoSupportedConfig_.micNum;
@@ -317,6 +318,7 @@ void AudioEnhanceChain::GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferC
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSize()
 {
+    std::lock_guard<std::mutex> lock(chainMutex_);
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
         DEFAULT_FORMAT;
     return byteLenPerFrame * deviceAttr_.micChannels;
@@ -324,6 +326,7 @@ uint32_t AudioEnhanceChain::GetAlgoBufferSize()
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSizeEc()
 {
+    std::lock_guard<std::mutex> lock(chainMutex_);
     CHECK_AND_RETURN_RET_LOG(needEcFlag_, 0, "%{public}s do not need ec", sceneType_.c_str());
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
         DEFAULT_FORMAT;
@@ -332,6 +335,7 @@ uint32_t AudioEnhanceChain::GetAlgoBufferSizeEc()
 
 uint32_t AudioEnhanceChain::GetAlgoBufferSizeMicRef()
 {
+    std::lock_guard<std::mutex> lock(chainMutex_);
     CHECK_AND_RETURN_RET_LOG(needMicRefFlag_, 0, "%{public}s do not need micref", sceneType_.c_str());
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
         DEFAULT_FORMAT;
