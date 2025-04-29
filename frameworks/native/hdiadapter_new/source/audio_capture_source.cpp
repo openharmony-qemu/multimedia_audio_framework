@@ -159,7 +159,7 @@ int32_t AudioCaptureSource::Start(void)
 
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
-    if (halName_ == HDI_ID_INFO_ACCESSORY) {
+    if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
         audioEnhanceChainManager->SetAccessoryDeviceState(true);
     }
 
@@ -181,7 +181,7 @@ int32_t AudioCaptureSource::Stop(void)
 
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
-    if (halName_ == HDI_ID_INFO_ACCESSORY) {
+    if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
         audioEnhanceChainManager->SetAccessoryDeviceState(false);
     }
 
