@@ -778,6 +778,7 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
 
 void AudioPolicyServer::CheckStreamMode(const int64_t activateSessionId)
 {
+    Trace trace("AudioPolicyServer::CheckStreamMode: activateSessionId: " + std::to_string(activateSessionId));
     audioPolicyService_.CheckStreamMode(activateSessionId);
 }
 
@@ -2055,6 +2056,7 @@ void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, Int
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
     AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
+    Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
     if (interruptService_ != nullptr) {
         auto it = std::find(CAN_MIX_MUTED_STREAM.begin(), CAN_MIX_MUTED_STREAM.end(),
             audioInterrupt.audioFocusType.streamType);
@@ -2431,6 +2433,7 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
 
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
+    Trace trace("AudioPolicyServer::UpdateTracker");
     auto callerPid = IPCSkeleton::GetCallingPid();
     streamChangeInfo.audioRendererChangeInfo.callerPid = callerPid;
     streamChangeInfo.audioCapturerChangeInfo.callerPid = callerPid;
@@ -3783,6 +3786,7 @@ int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionI
 
 int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
+    Trace trace("AudioPolicyServer::ActivateAudioConcurrency" + std::to_string(pipeType));
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
 }
 

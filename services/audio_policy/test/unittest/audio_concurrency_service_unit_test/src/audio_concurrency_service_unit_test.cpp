@@ -376,7 +376,7 @@ HWTEST_F(AudioConcurrencyServiceUnitTest, AudioConcurrencyService_015, TestSize.
 
 /**
 * @tc.name  : Test AudioInputThread.
-* @tc.number: AudioConcurrencyService_015.
+* @tc.number: AudioConcurrencyService_016.
 * @tc.desc  : Test ActivateAudioConcurrency.
 */
 HWTEST_F(AudioConcurrencyServiceUnitTest, AudioConcurrencyService_016, TestSize.Level1)
@@ -384,6 +384,64 @@ HWTEST_F(AudioConcurrencyServiceUnitTest, AudioConcurrencyService_016, TestSize.
     auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
     auto result = audioConcurrencyService->GetConcurrencyMap();
     EXPECT_EQ(result.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioInputThread.
+* @tc.number: AudioConcurrencyService_017.
+* @tc.desc  : Test ActivateAudioConcurrency.
+*/
+HWTEST_F(AudioConcurrencyServiceUnitTest, AudioConcurrencyService_017, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
+    std::pair<AudioPipeType, AudioPipeType> pair = std::make_pair(PIPE_TYPE_LOWLATENCY_OUT, PIPE_TYPE_OFFLOAD);
+    audioConcurrencyService->concurrencyCfgMap_.insert({pair, CONCEDE_INCOMING});
+    AudioPipeType incomingPipeType = PIPE_TYPE_OFFLOAD;
+    int32_t result = audioConcurrencyService->ActivateAudioConcurrency(incomingPipeType,
+        audioRendererChangeInfos, audioCapturerChangeInfos);
+    EXPECT_EQ(audioConcurrencyService->offloadActivated_, true);
+    EXPECT_EQ(result, SUCCESS);
+    audioConcurrencyService->lastFastActivedTime_ = ClockTime::GetCurNano() + 200000000; // 200ms
+    result = audioConcurrencyService->ActivateAudioConcurrency(incomingPipeType,
+        audioRendererChangeInfos, audioCapturerChangeInfos);
+    EXPECT_EQ(audioConcurrencyService->offloadActivated_, true);
+    EXPECT_EQ(result, SUCCESS);
+    audioConcurrencyService->lastFastActivedTime_ = ClockTime::GetCurNano();
+    audioConcurrencyService->fastActivated_ = true;
+    result = audioConcurrencyService->ActivateAudioConcurrency(incomingPipeType,
+        audioRendererChangeInfos, audioCapturerChangeInfos);
+    EXPECT_EQ(result, ERR_CONCEDE_INCOMING_STREAM);
+}
+
+/**
+* @tc.name  : Test AudioInputThread.
+* @tc.number: AudioConcurrencyService_018.
+* @tc.desc  : Test ActivateAudioConcurrency.
+*/
+HWTEST_F(AudioConcurrencyServiceUnitTest, AudioConcurrencyService_018, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
+    std::pair<AudioPipeType, AudioPipeType> pair = std::make_pair(PIPE_TYPE_OFFLOAD, PIPE_TYPE_LOWLATENCY_OUT);
+    audioConcurrencyService->concurrencyCfgMap_.insert({pair, CONCEDE_INCOMING});
+    AudioPipeType incomingPipeType = PIPE_TYPE_LOWLATENCY_OUT;
+    int32_t result = audioConcurrencyService->ActivateAudioConcurrency(incomingPipeType,
+        audioRendererChangeInfos, audioCapturerChangeInfos);
+    EXPECT_EQ(audioConcurrencyService->fastActivated_, true);
+    EXPECT_EQ(result, SUCCESS);
+    audioConcurrencyService->lastOffloadActivedTime_ = ClockTime::GetCurNano() + 200000000; // 200ms
+    result = audioConcurrencyService->ActivateAudioConcurrency(incomingPipeType,
+        audioRendererChangeInfos, audioCapturerChangeInfos);
+    EXPECT_EQ(audioConcurrencyService->fastActivated_, true);
+    EXPECT_EQ(result, SUCCESS);
+    audioConcurrencyService->lastOffloadActivedTime_ = ClockTime::GetCurNano();
+    audioConcurrencyService->offloadActivated_ = true;
+    result = audioConcurrencyService->ActivateAudioConcurrency(incomingPipeType,
+        audioRendererChangeInfos, audioCapturerChangeInfos);
+    EXPECT_EQ(result, ERR_CONCEDE_INCOMING_STREAM);
 }
 
 /**
