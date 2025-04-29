@@ -48,14 +48,6 @@ HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
 #endif
 }
 
-HpaeCaptureEffectNode::HpaeCaptureEffectNode(std::vector<HpaeNodeInfo> &nodeInfos)
-    : HpaeNode(*nodeInfos.begin()), HpaePluginNode(*nodeInfos.begin())
-{
-    for (auto &nodeInfo : nodeInfos) {
-        capturerEffectConfigMap_.emplace(nodeInfo.sourceBufferType, nodeInfo);
-    }
-}
-
 bool HpaeCaptureEffectNode::Reset()
 {
     return HpaePluginNode::Reset();

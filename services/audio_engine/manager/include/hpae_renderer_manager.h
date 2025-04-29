@@ -25,6 +25,7 @@
 #include "hpae_sink_input_node.h"
 #include "hpae_process_cluster.h"
 #include "hpae_output_cluster.h"
+#include "hpae_remote_output_cluster.h"
 #include "hpae_msg_channel.h"
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_renderer_manager.h"
@@ -79,7 +80,7 @@ public:
     int32_t AddAllNodesToSink(
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect) override;
 
-    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) override;
+    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnFadeDone(uint32_t sessionId, IOperation operation) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
@@ -94,21 +95,22 @@ private:
     bool IsMchDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteInputSession(uint32_t sessionId);
+    bool isSplitProcessorType(HpaeProcessorType sceneType);
     int32_t ConnectInputSession(uint32_t sessionId);
     int32_t DisConnectInputSession(uint32_t sessionId);
     int32_t ConnectMchInputSession(uint32_t sessionId);
     int32_t DisConnectMchInputSession(uint32_t sessionId);
     int32_t DeleteMchInputSession(uint32_t sessionId);
-    void SetSessionState(uint32_t sessionId, RendererState renderState);
+    void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds, bool isMoveAll);
     void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);
     void ConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DisConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DeleteProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
-    std::shared_ptr<HpaeProcessCluster> CreateProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
-    std::shared_ptr<HpaeProcessCluster> CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
     void InitManager();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);

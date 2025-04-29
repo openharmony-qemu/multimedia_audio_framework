@@ -51,15 +51,12 @@ static OHOS::AudioStandard::OHAudioStreamManager *convertManager(OH_AudioStreamM
     return (OHAudioStreamManager*) manager;
 }
 
-OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManager **audioStreamManager)
+OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManager **streamManager)
 {
-    CHECK_AND_RETURN_RET_LOG(audioStreamManager != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
-        "audioStreamManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(streamManager != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        "streamManager is nullptr");
     OHAudioStreamManager *ohAudioStreamManager = OHAudioStreamManager::GetInstance();
-    if (ohAudioStreamManager == nullptr) {
-        AUDIO_ERR_LOG("audioStreamManager is nullptr");
-    }
-    *audioStreamManager = reinterpret_cast<OH_AudioStreamManager*>(ohAudioStreamManager);
+    *streamManager = reinterpret_cast<OH_AudioStreamManager*>(ohAudioStreamManager);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
@@ -122,8 +119,7 @@ OH_AudioStream_DirectPlaybackMode OHAudioStreamManager::GetDirectPlaybackSupport
 
 bool OHAudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
-    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, AUDIOSTREAM_DIRECT_PLAYBACK_NOT_SUPPORTED,
-        "failed, audioStreamManager_ is null");
+    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
     return audioStreamManager_->IsAcousticEchoCancelerSupported(sourceType);
 }
 } // namespace AudioStandard

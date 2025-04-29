@@ -48,6 +48,29 @@ enum FadeType {
     SHORT_FADE, // short 5ms fade
     NONE_FADE // do not fade
 };
+
+enum HpaeSessionState {
+    HPAE_SESSION_INVALID = -1,
+    HPAE_SESSION_NEW,
+    HPAE_SESSION_PREPARED,
+    HPAE_SESSION_RUNNING,
+    HPAE_SESSION_PAUSING,
+    HPAE_SESSION_PAUSED,
+    HPAE_SESSION_STOPPING,
+    HPAE_SESSION_STOPPED,
+    HPAE_SESSION_RELEASED
+};
+
+// use for sink or source state
+enum StreamManagerState {
+    STREAM_MANAGER_INVALID = -1,
+    STREAM_MANAGER_NEW,
+    STREAM_MANAGER_IDLE,
+    STREAM_MANAGER_RUNNING,
+    STREAM_MANAGER_SUSPENDED,
+    STREAM_MANAGER_RELEASED
+};
+
 struct HpaeStreamInfo {
     uint32_t sessionId;
     size_t frameLen;

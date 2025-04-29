@@ -58,13 +58,14 @@ public:
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
 
-    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) override;
+    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo) override;
     HpaeSourceInfo GetSourceInfo() override;
     std::vector<SourceOutput> GetAllSourceOutputsInfo() override;
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnNotifyQueue() override;
+    void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
 
     int32_t AddNodeToSource(const HpaeCaptureMoveInfo &moveInfo) override;
     int32_t AddAllNodesToSource(const std::vector<HpaeCaptureMoveInfo> &moveInfos, bool isConnect) override;
@@ -81,7 +82,7 @@ private:
     int32_t ConnectOutputSession(uint32_t sessionId);
     int32_t DisConnectOutputSession(uint32_t sessionId);
     void DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType);
-    void SetSessionState(uint32_t sessionId, CapturerState capturerState);
+    void SetSessionState(uint32_t sessionId, HpaeSessionState capturerState);
     int32_t PrepareCapturerEc(HpaeNodeInfo &ecNodeInfo);
     int32_t PrepareCapturerMicRef(HpaeNodeInfo &micRefNodeInfo);
     int32_t InitCapturer();

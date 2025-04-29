@@ -36,10 +36,10 @@ public:
 
     void OnReadData(size_t length) override;
 private:
-    OH_AudioCapturer_Callbacks callbacks_;
+    OH_AudioCapturer_Callbacks callbacks_ = {};
     OH_AudioCapturer_OnReadDataCallback onReadDataCallback_ = nullptr;
-    OH_AudioCapturer* ohAudioCapturer_;
-    void* userData_;
+    OH_AudioCapturer* ohAudioCapturer_ = nullptr;
+    void* userData_ = nullptr;
 };
 
 class OHAudioCapturerCallback : public AudioCapturerCallback {
@@ -63,10 +63,10 @@ public:
     }
 
 private:
-    OH_AudioCapturer_Callbacks callbacks_;
+    OH_AudioCapturer_Callbacks callbacks_ = {};
     OH_AudioCapturer_OnInterruptCallback onInterruptEventCallback_ = nullptr;
-    OH_AudioCapturer* ohAudioCapturer_;
-    void* userData_;
+    OH_AudioCapturer* ohAudioCapturer_ = nullptr;
+    void* userData_ = nullptr;
 };
 
 class OHCapturerServiceDiedCallback : public AudioCapturerPolicyServiceDiedCallback {
@@ -121,22 +121,22 @@ public:
     void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override;
 
 private:
-    OH_AudioCapturer_Callbacks callbacks_;
+    OH_AudioCapturer_Callbacks callbacks_ = {};
     OH_AudioCapturer_OnDeviceChangeCallback onDeviceChangeCallback_ = nullptr;
-    OH_AudioCapturer* ohAudioCapturer_;
-    void* userData_;
+    OH_AudioCapturer* ohAudioCapturer_ = nullptr;
+    void* userData_ = nullptr;
 };
 
 struct CapturerCallback {
-    OH_AudioCapturer_Callbacks callbacks;
+    OH_AudioCapturer_Callbacks callbacks = {};
 
-    OH_AudioCapturer_OnReadDataCallback onReadDataCallback;
+    OH_AudioCapturer_OnReadDataCallback onReadDataCallback = {};
 
-    OH_AudioCapturer_OnDeviceChangeCallback onDeviceChangeCallback;
+    OH_AudioCapturer_OnDeviceChangeCallback onDeviceChangeCallback = {};
 
-    OH_AudioCapturer_OnInterruptCallback onInterruptEventCallback;
+    OH_AudioCapturer_OnInterruptCallback onInterruptEventCallback = {};
 
-    OH_AudioCapturer_OnErrorCallback onErrorCallback;
+    OH_AudioCapturer_OnErrorCallback onErrorCallback = {};
 };
 
 class OHAudioCapturer {

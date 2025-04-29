@@ -48,15 +48,18 @@ public:
     int32_t InnerCapturerSinkResume();
     int32_t InnerCapturerSinkStart();
     int32_t InnerCapturerSinkStop();
-    RendererState GetSinkState();
+    StreamManagerState GetSinkState();
+    int32_t SetSinkState(StreamManagerState sinkState);
 private:
     OutputPort<HpaePcmBuffer*> outputStream_;
     InputPort<HpaePcmBuffer*> inputStream_;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer silenceData_;
- 
-    HighResolutionTimer intervalTimer_;
-    RendererState state_ = RENDERER_NEW;
+
+    StreamManagerState state_ = STREAM_MANAGER_NEW;
+    std::chrono::high_resolution_clock::time_point historyTime_;
+    std::chrono::high_resolution_clock::time_point endTime_;
+    std::chrono::nanoseconds sleepTime_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

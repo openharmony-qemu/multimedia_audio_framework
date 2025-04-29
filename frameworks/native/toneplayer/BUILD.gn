@@ -114,6 +114,7 @@ if (!audio_framework_feature_dtmf_tone) {
     deps = [ ":audio_toneplayer" ]
 
     external_deps = [
+      "c_utils:utils",
       "hilog:libhilog",
       "pulseaudio:pulse",
     ]

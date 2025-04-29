@@ -264,8 +264,8 @@ private:
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
     void ParseAudioParameter();
-    void CacheExtraParameters(const std::string& key,
-        const std::vector<std::pair<std::string, std::string>>& kvpairs);
+    bool CacheExtraParameters(const std::string &key,
+        const std::vector<std::pair<std::string, std::string>> &kvpairs);
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
@@ -286,6 +286,7 @@ private:
     int32_t SetAsrVoiceSuppressionControlMode(const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode,
         bool on, int32_t modifyVolume);
     int32_t CheckAndWaitAudioPolicyReady();
+    void NotifyProcessStatus();
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -313,8 +314,8 @@ private:
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
 
-    std::shared_mutex audioParameterKeyMutex_;
-    bool isAudioParameterParsed_ = false;
+    std::atomic<bool> isAudioParameterParsed_ = false;
+    std::mutex audioParameterCacheMutex_;
     std::vector<std::pair<std::string,
         std::vector<std::pair<std::string, std::string>>>> audioExtraParameterCacheVector_;
 

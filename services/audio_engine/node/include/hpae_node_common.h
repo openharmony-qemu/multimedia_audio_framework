@@ -31,6 +31,8 @@ AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &process
 std::string TransProcessorTypeToSceneType(HpaeProcessorType processorType);
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo);
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo);
+std::string ConvertSessionState2Str(HpaeSessionState state);
+std::string ConvertStreamManagerState2Str(StreamManagerState state);
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

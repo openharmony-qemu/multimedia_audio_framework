@@ -171,25 +171,9 @@ ReadDataCb::~ReadDataCb()
     }
 }
 
-int32_t ReadDataCb::OnReadData(size_t length)
+int32_t ReadDataCb::OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo)
 {
-    AUDIO_WARNING_LOG("ProAudio do not support!");
     return SUCCESS;
-}
-
-int32_t ReadDataCb::OnReadData(std::vector<char>& outputData, size_t requestDataLen)
-{
-    CHECK_AND_RETURN_RET_LOG(testFile_ != nullptr, ERROR, "testFile_ is nullptr");
-    int32_t ret = fwrite(outputData.data(), 1, requestDataLen, testFile_);
-    if (ret != 0) {
-        AUDIO_ERR_LOG(" something wrong when writing pcm! ");
-    }
-    return SUCCESS;
-}
-
-std::weak_ptr<HPAE::INodeCallback> NodeStatusCallback::GetWeakPtr()
-{
-    return weak_from_this();
 }
 } // namespace AudioStandard
 } // namespace OHOS

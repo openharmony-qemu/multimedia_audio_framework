@@ -254,9 +254,8 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
     {
         std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
         for (auto func : serverDiedCbks_) {
-            if (func != nullptr) {
-                func();
-            }
+            CHECK_AND_CONTINUE(func != nullptr);
+            func();
         }
     }
 }
@@ -2137,6 +2136,7 @@ int32_t AudioPolicyManager::UnsetAudioConcurrencyCallback(const uint32_t session
 
 int32_t AudioPolicyManager::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
+    Trace trace("AudioPolicyManager::ActivateAudioConcurrency:" + std::to_string(pipeType));
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->ActivateAudioConcurrency(pipeType);

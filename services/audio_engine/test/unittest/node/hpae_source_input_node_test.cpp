@@ -129,7 +129,7 @@ TEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase)
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSoruceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
     IAudioSourceAttr attr;
-    attr.adapterName = NULL;
+    attr.adapterName = "";
     attr.openMicSpeaker = 0;
     attr.format = AudioSampleFormat::INVALID_WIDTH;
     attr.sampleRate = nodeInfo.samplingRate;
@@ -145,9 +145,9 @@ TEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase)
     attr.audioStreamFlag = 0;
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), ERROR);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStart(), SUCCESS);
-    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == CAPTURER_RUNNING, true);
+    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == STREAM_MANAGER_RUNNING, true);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStop(), SUCCESS);
-    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == CAPTURER_STOPPED, true);
+    EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
     TestCapturerSourceFrame(testData.data(), requestBytes, &replyBytes);
     hpaeSoruceInputNode->WriteCapturerData(testData.data(), requestBytes);
     OutputPort<HpaePcmBuffer *> *outputPort = hpaeSoruceInputNode->GetOutputPort();

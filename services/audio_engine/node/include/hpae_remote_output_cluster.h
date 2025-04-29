@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef HPAE_REMOTE_OUTPUT_CLUSTER_H
+#define HPAE_REMOTE_OUTPUT_CLUSTER_H
+#include "hpae_output_cluster.h"
+#include "hpae_remote_sink_output_node.h"
+
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
+
+HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, const std::string &splitMode);
+
+class HpaeRemoteOutputCluster : public HpaeOutputCluster {
+public:
+    HpaeRemoteOutputCluster(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeRemoteOutputCluster();
+    virtual void DoProcess() override;
+    virtual bool Reset() override;
+    virtual bool ResetAll() override;
+    void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
+    void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
+    int32_t GetConverterNodeCount() override;
+    int32_t GetPreOutNum() override;
+    int32_t GetInstance(std::string deviceClass, std::string deviceNetId) override;
+    int32_t Init(IAudioSinkAttr &attr) override;
+    int32_t DeInit() override;
+    int32_t Flush(void) override;
+    int32_t Pause(void) override;
+    int32_t ResetRender(void) override;
+    int32_t Resume(void) override;
+    int32_t Start(void) override;
+    int32_t Stop(void) override;
+    int32_t SetTimeoutStopThd(uint32_t timeoutThdMs) override;
+    const char *GetFrameData(void) override;
+    StreamManagerState GetState(void) override;
+    bool IsProcessClusterConnected(HpaeProcessorType sceneType) override;
+private:
+    std::shared_ptr<HpaeRemoteSinkOutputNode> hpaeSinkOutputNode_ = nullptr;
+    std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeAudioFormatConverterNode>> sceneConverterMap_;
+    uint32_t timeoutThdFrames_ = TIME_OUT_STOP_THD_DEFAULT_FRAME;
+    uint32_t timeoutStopCount_ = 0;
+    uint32_t frameLenMs_ = FRAME_LEN_MS_DEFAULT_MS;
+    std::set<HpaeProcessorType> connectedProcessCluster_;
+};
+}  // namespace HPAE
+}  // namespace AudioStandard
+}  // namespace OHOS
+#endif

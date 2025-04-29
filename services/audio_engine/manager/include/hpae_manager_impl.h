@@ -65,7 +65,7 @@ public:
     int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
         const std::weak_ptr<IStatusCallback> &callback) override;
     // record stream interface
-    void RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<IReadCallback> &callback) override;
+    int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo) override;
     // play stream interface
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;

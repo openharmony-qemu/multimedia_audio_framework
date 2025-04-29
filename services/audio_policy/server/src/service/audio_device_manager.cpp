@@ -307,43 +307,22 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
 void AudioDeviceManager::UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected)
 {
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Invalid device descriptor");
+    auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return desc->deviceType_ == devDesc->deviceType_ &&
+            desc->networkId_ == devDesc->networkId_ &&
+            desc->macAddress_ == devDesc->macAddress_;
+    };
     if (isConnected) {
-        AddVirtualDevices(devDesc);
+        std::lock_guard<std::mutex> lock(virtualDevicesMutex_);
+        auto it = find_if(virtualDevices_.begin(), virtualDevices_.end(), isPresent);
+        if (it == virtualDevices_.end()) {
+            virtualDevices_.push_back(devDesc);
+        }
     } else {
-        RemoveVirtualDevices(devDesc);
+        std::lock_guard<std::mutex> lock(virtualDevicesMutex_);
+        virtualDevices_.erase(std::remove_if(virtualDevices_.begin(), virtualDevices_.end(), isPresent),
+            virtualDevices_.end());
     }
-}
-
-void AudioDeviceManager::AddVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
-{
-    CHECK_AND_RETURN_LOG(devDesc != nullptr, "Invalid device descriptor");
-    auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &desc) {
-        return desc->deviceType_ == devDesc->deviceType_ &&
-            desc->networkId_ == devDesc->networkId_ &&
-            desc->macAddress_ == devDesc->macAddress_;
-    };
-
-    std::lock_guard<std::mutex> lock(virtualDevicesMutex_);
-    auto it = find_if(virtualDevices_.begin(), virtualDevices_.end(), isPresent);
-    if (it == virtualDevices_.end()) {
-        virtualDevices_.push_back(devDesc);
-        AUDIO_INFO_LOG("VirtualDevices list %{public}s",
-            AudioPolicyUtils::GetInstance().GetDevicesStr(virtualDevices_).c_str());
-    }
-}
-
-void AudioDeviceManager::RemoveVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
-{
-    CHECK_AND_RETURN_LOG(devDesc != nullptr, "Invalid device descriptor");
-    auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &desc) {
-        return desc->deviceType_ == devDesc->deviceType_ &&
-            desc->networkId_ == devDesc->networkId_ &&
-            desc->macAddress_ == devDesc->macAddress_;
-    };
-
-    std::lock_guard<std::mutex> lock(virtualDevicesMutex_);
-    virtualDevices_.erase(std::remove_if(virtualDevices_.begin(), virtualDevices_.end(), isPresent),
-        virtualDevices_.end());
     AUDIO_INFO_LOG("VirtualDevices list %{public}s",
         AudioPolicyUtils::GetInstance().GetDevicesStr(virtualDevices_).c_str());
 }
@@ -537,8 +516,8 @@ void AudioDeviceManager::RemoveNewDevice(const std::shared_ptr<AudioDeviceDescri
     AUDIO_INFO_LOG("remove type:id %{public}d:%{public}d ", devDesc->getType(), audioId);
 
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
-    RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(devDesc));
-    RemoveVirtualDevices(devDesc);
+    RemoveConnectedDevices(devDesc);
+    UpdateVirtualDevices(devDesc, false);
     RemoveRemoteDevices(devDesc);
     RemoveCommunicationDevices(devDesc);
     RemoveMediaDevices(devDesc);

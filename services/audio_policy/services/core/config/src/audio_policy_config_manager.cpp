@@ -472,7 +472,7 @@ DirectPlaybackMode AudioPolicyConfigManager::GetDirectPlaybackSupport(std::share
     if ((streamInfo.encoding == ENCODING_EAC3) &&
         (desc->deviceType_ == DEVICE_TYPE_HDMI || desc->deviceType_ == DEVICE_TYPE_LINE_DIGITAL)) {
         for (auto &pipeIt : deviceInfo->supportPipeMap_) {
-            if (pipeIt.second->supportEncodingEac3_ &&
+            if (pipeIt.second != nullptr && pipeIt.second->supportEncodingEac3_ &&
                 IsStreamPropMatch(streamInfo, pipeIt.second->streamPropInfos_)) {
                 AUDIO_INFO_LOG("Support encoding type eac3");
                 return DIRECT_PLAYBACK_BITSTREAM_SUPPORTED;
@@ -483,7 +483,7 @@ DirectPlaybackMode AudioPolicyConfigManager::GetDirectPlaybackSupport(std::share
 
     if (streamInfo.encoding == ENCODING_PCM) {
         for (auto &pipeIt : deviceInfo->supportPipeMap_) {
-            if ((pipeIt.first & AUDIO_OUTPUT_FLAG_DIRECT) &&
+            if ((pipeIt.first & AUDIO_OUTPUT_FLAG_DIRECT) && pipeIt.second != nullptr &&
                 IsStreamPropMatch(streamInfo, pipeIt.second->streamPropInfos_)) {
                 AUDIO_INFO_LOG("Support encoding type pcm");
                 return DIRECT_PLAYBACK_PCM_SUPPORTED;
@@ -499,7 +499,7 @@ bool AudioPolicyConfigManager::IsStreamPropMatch(const AudioStreamInfo &streamIn
     std::list<std::shared_ptr<PipeStreamPropInfo>> &infos)
 {
     for (auto info : infos) {
-        if (info->format_ == streamInfo.format && info->sampleRate_ == streamInfo.samplingRate &&
+        if (info != nullptr && info->format_ == streamInfo.format && info->sampleRate_ == streamInfo.samplingRate &&
             info->channels_ == streamInfo.channels) {
             return true;
         }

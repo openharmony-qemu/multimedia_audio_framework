@@ -137,7 +137,7 @@ static float Sinc(float x)
 static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
 {
     uint32_t i;
-    uint32_t j;
+    int32_t j;
     float phi0 = 0;
     float phi = 0;
     double w;

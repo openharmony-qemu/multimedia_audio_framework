@@ -3276,5 +3276,25 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_166, TestSize.Level1)
     int32_t ret = server->SetDeviceConnectionStatus(desc, isConnected);
     EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_167
+* @tc.desc  : Test GetDirectPlaybackSupport.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_167, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.encoding = ENCODING_PCM;
+    streamInfo.format = SAMPLE_S24LE;
+    streamInfo.channels = STEREO;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    auto result = server->GetDirectPlaybackSupport(streamInfo, streamUsage);
+    EXPECT_EQ(result, DIRECT_PLAYBACK_NOT_SUPPORTED);
+}
 } // AudioStandard
 } // OHOS

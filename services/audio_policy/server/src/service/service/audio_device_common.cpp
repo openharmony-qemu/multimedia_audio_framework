@@ -518,7 +518,8 @@ bool AudioDeviceCommon::NotifyRecreateDirectStream(std::shared_ptr<AudioRenderer
             AUDIO_OUTPUT_FLAG_NORMAL, reason);
         return true;
     } else if (audioActiveDevice_.IsDirectSupportedDevice() &&
-        rendererChangeInfo->rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
+        rendererChangeInfo->rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC &&
+        streamCollector_.ActivateAudioConcurrency(PIPE_TYPE_DIRECT_MUSIC) == SUCCESS) {
         AudioRendererInfo info = rendererChangeInfo->rendererInfo;
         if (info.streamUsage == STREAM_USAGE_MUSIC && info.rendererFlags == AUDIO_FLAG_NORMAL &&
             info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
@@ -1714,12 +1715,13 @@ void AudioDeviceCommon::SetHasDpFlag(bool flag)
     hasDpDevice_ = flag;
 }
 
-bool AudioDeviceCommon::IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState)
+bool AudioDeviceCommon::IsRingOverPlayback(AudioMode &mode, RendererState rendererState)
 {
     if (mode != AUDIO_MODE_PLAYBACK) {
         return false;
     }
-    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED) {
+    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED &&
+        rendererState != RENDERER_PAUSED) {
         return false;
     }
     return true;
@@ -1753,7 +1755,7 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
     }
-    if (isRingDualToneOnPrimarySpeaker_ && IsStopOrReleasePlayback(mode, rendererState) &&
+    if (isRingDualToneOnPrimarySpeaker_ && IsRingOverPlayback(mode, rendererState) &&
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer stop/release.");
         isRingDualToneOnPrimarySpeaker_ = false;

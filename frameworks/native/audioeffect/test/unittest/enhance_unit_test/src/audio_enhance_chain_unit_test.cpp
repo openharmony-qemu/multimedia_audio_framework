@@ -726,5 +726,88 @@ HWTEST(AudioEnhanceChainUnitTest, ConvertFormat_001, TestSize.Level1)
     ret = audioEnhanceChain->ConvertFormat(format);
     EXPECT_EQ(ret, INVALID_WIDTH);
 }
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_044
+* @tc.desc  : Test AudioEnhanceChain::ReleaseEnhanceChain()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_044, TestSize.Level1)
+{
+    auto audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
+    ASSERT_TRUE(audioEnhanceChain != nullptr);
+
+    auto effectInterface = new AudioEffectInterface();
+    ASSERT_TRUE(effectInterface != nullptr);
+    AudioEffectHandle effectHandle = &effectInterface;
+    audioEnhanceChain->standByEnhanceHandles_.push_back(effectHandle);
+
+    auto effectLibrary = std::make_shared<AudioEffectLibrary>();
+    audioEnhanceChain->enhanceLibHandles_.push_back(effectLibrary.get());
+
+    audioEnhanceChain->ReleaseEnhanceChain();
+    EXPECT_EQ(audioEnhanceChain->standByEnhanceHandles_.size(), 0);
+    EXPECT_EQ(audioEnhanceChain->enhanceLibHandles_.size(), 0);
+    delete effectInterface;
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_045
+* @tc.desc  : Test AudioEnhanceChain::ReleaseEnhanceChain()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_045, TestSize.Level1)
+{
+    auto audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
+    ASSERT_TRUE(audioEnhanceChain != nullptr);
+
+    audioEnhanceChain->standByEnhanceHandles_ = std::vector<AudioEffectHandle>(3);
+    auto effectLibrary = std::make_shared<AudioEffectLibrary>();
+    audioEnhanceChain->enhanceLibHandles_.push_back(effectLibrary.get());
+
+    audioEnhanceChain->ReleaseEnhanceChain();
+    EXPECT_EQ(audioEnhanceChain->standByEnhanceHandles_.size(), 0);
+    EXPECT_EQ(audioEnhanceChain->enhanceLibHandles_.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_046
+* @tc.desc  : Test AudioEnhanceChain::ReleaseEnhanceChain()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_046, TestSize.Level1)
+{
+    auto audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
+    ASSERT_TRUE(audioEnhanceChain != nullptr);
+
+    uint32_t foldState = 0;
+    audioEnhanceChain->algoParam_.foldState = foldState;
+    auto ret = audioEnhanceChain->SetFoldState(foldState);
+    EXPECT_EQ(ret, SUCCESS);
+
+    foldState = 1;
+    ret = audioEnhanceChain->SetFoldState(foldState);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioEnhanceChain API
+* @tc.type  : FUNC
+* @tc.number: AudioEnhanceChain_047
+* @tc.desc  : Test AudioEnhanceChain::WriteDumpFile()
+*/
+HWTEST(AudioEnhanceChainUnitTest, AudioEnhanceChain_047, TestSize.Level1)
+{
+    auto audioEnhanceChain = std::make_shared<AudioEnhanceChain>(g_sceneType, algoParam, deviceAttr, g_defaultFlag);
+    ASSERT_TRUE(audioEnhanceChain != nullptr);
+
+    uint32_t length = 1;
+    std::unique_ptr<EnhanceBuffer> enhanceBuffer = nullptr;
+    audioEnhanceChain->WriteDumpFile(enhanceBuffer, length);
+    EXPECT_EQ(audioEnhanceChain->dumpFileIn_, nullptr);
+}
 }
 }

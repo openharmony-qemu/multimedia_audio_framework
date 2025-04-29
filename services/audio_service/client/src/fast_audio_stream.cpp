@@ -602,7 +602,7 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
         CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
         tid = lastCallStartByUserTid_.value();
     } else {
-        AUDIO_ERR_LOG("illeagl param");
+        AUDIO_ERR_LOG("illegal param");
         return;
     }
 
@@ -694,6 +694,8 @@ bool FastAudioStream::StopAudioStream()
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
     return true;
 }
 

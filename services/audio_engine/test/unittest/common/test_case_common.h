@@ -86,19 +86,17 @@ private:
     IStatus status_;
 };
 
-class ReadDataCb : public IReadCallback, public std::enable_shared_from_this<ReadDataCb> {
+class ReadDataCb : public ICapturerStreamCallback, public std::enable_shared_from_this<ReadDataCb> {
 public:
     explicit ReadDataCb(const std::string &fileName);
     virtual ~ReadDataCb();
-    int32_t OnReadData(size_t length) override;
-    int32_t OnReadData(std::vector<char>& outputData, size_t requestDataLen) override;
+    int32_t OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo) override;
 private:
     FILE *testFile_ = nullptr;
 };
 
 class NodeStatusCallback : public HPAE::INodeCallback, public std::enable_shared_from_this<NodeStatusCallback> {
 public:
-    std::weak_ptr<HPAE::INodeCallback> GetWeakPtr();
     virtual ~NodeStatusCallback() = default;
 };
 } // namespace AudioStandard

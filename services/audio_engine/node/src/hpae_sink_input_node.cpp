@@ -117,7 +117,7 @@ void HpaeSinkInputNode::DoProcess()
 
     int32_t ret = GetDataFromSharedBuffer();
     // if historyBuffer has enough data, write to outputStream
-    if (!streamInfo_.needData) {
+    if (!streamInfo_.needData && historyBuffer_) {
         historyBuffer_->GetFrameData(inputAudioBuffer_);
         outputStream_.WriteDataToOutput(&inputAudioBuffer_);
         return;
@@ -203,13 +203,16 @@ bool HpaeSinkInputNode::Drain()
     return true;
 }
 
-int32_t HpaeSinkInputNode::SetState(RendererState renderState)
+int32_t HpaeSinkInputNode::SetState(HpaeSessionState renderState)
 {
+    AUDIO_INFO_LOG(" Sink[%{public}s]->Session[%{public}u] state change:[%{public}s]-->[%{public}s]",
+        GetDeviceClass().c_str(), GetSessionId(), ConvertSessionState2Str(state_).c_str(),
+        ConvertSessionState2Str(renderState).c_str());
     state_ = renderState;
     return SUCCESS;
 }
 
-RendererState HpaeSinkInputNode::GetState()
+HpaeSessionState HpaeSinkInputNode::GetState()
 {
     return state_;
 }

@@ -36,7 +36,7 @@ int32_t MMAAudioVolumeGroupManagerImpl::GetMaxVolume(int32_t volumeType)
         AUDIO_ERR_LOG("invalid audio group manager instance");
         return CJ_ERR_INVALID_VALUE;
     }
-    auto ret = audioGroupMngr_->GetMaxVolume(static_cast<AudioVolumeType>(volumeType));
+    auto ret = audioGroupMngr_->GetMaxVolume(GetNativeAudioVolumeType(volumeType));
     return ret;
 }
 
@@ -46,7 +46,7 @@ int32_t MMAAudioVolumeGroupManagerImpl::GetMinVolume(int32_t volumeType)
         AUDIO_ERR_LOG("invalid audio group manager instance");
         return CJ_ERR_INVALID_VALUE;
     }
-    auto ret = audioGroupMngr_->GetMinVolume(static_cast<AudioVolumeType>(volumeType));
+    auto ret = audioGroupMngr_->GetMinVolume(GetNativeAudioVolumeType(volumeType));
     return ret;
 }
 
@@ -66,7 +66,7 @@ float MMAAudioVolumeGroupManagerImpl::GetSystemVolumeInDb(int32_t volumeType, in
         AUDIO_ERR_LOG("invalid audio group manager instance");
         return CJ_ERR_INVALID_RETURN_FLOAT_VALUE;
     }
-    auto ret = audioGroupMngr_->GetSystemVolumeInDb(static_cast<AudioVolumeType>(volumeType), volumeLevel,
+    auto ret = audioGroupMngr_->GetSystemVolumeInDb(GetNativeAudioVolumeType(volumeType), volumeLevel,
         static_cast<DeviceType>(deviceType));
     return ret;
 }
@@ -77,7 +77,7 @@ int32_t MMAAudioVolumeGroupManagerImpl::GetVolume(int32_t volumeType)
         AUDIO_ERR_LOG("invalid audio group manager instance");
         return CJ_ERR_INVALID_VALUE;
     }
-    auto ret = audioGroupMngr_->GetVolume(static_cast<AudioVolumeType>(volumeType));
+    auto ret = audioGroupMngr_->GetVolume(GetNativeAudioVolumeType(volumeType));
     return ret;
 }
 
@@ -98,7 +98,7 @@ bool MMAAudioVolumeGroupManagerImpl::IsMute(int32_t volumeType)
         AUDIO_ERR_LOG("invalid audio group manager instance");
         return isMute;
     }
-    auto ret = audioGroupMngr_->IsStreamMute(static_cast<AudioVolumeType>(volumeType), isMute);
+    auto ret = audioGroupMngr_->IsStreamMute(GetNativeAudioVolumeType(volumeType), isMute);
     if (ret != NATIVE_SUCCESS) {
         AUDIO_ERR_LOG("failed to get mute status.");
     }

@@ -29,7 +29,7 @@ using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
 namespace {
-static std::string g_rootPath = "/data/data/.pulse_dir/";
+static std::string g_rootPath = "/data/";
 constexpr int32_t FRAME_LENGTH_882 = 882;
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
@@ -176,7 +176,7 @@ void TestIRendererManagerCreateDestoryStream()
     EXPECT_EQ(hpaeRendererManager.use_count() == 1, true);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     TestCheckSinkInputInfo(sinkInputInfo, streamInfo);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, RENDERER_NEW);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PREPARED);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);
@@ -209,21 +209,21 @@ static void TestIRendererManagerStartPuaseStream()
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, RENDERER_RUNNING);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
     EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, RENDERER_PAUSED);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, RENDERER_RUNNING);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
     EXPECT_EQ(hpaeRendererManager->Stop(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, RENDERER_STOPPED);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPED);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(

@@ -298,7 +298,7 @@ int32_t CapturerInServer::OnReadData(size_t length)
     return SUCCESS;
 }
 
-int32_t CapturerInServer::OnReadData(std::vector<char>& outputData, size_t requestDataLen)
+int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 {
     CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
@@ -313,8 +313,7 @@ int32_t CapturerInServer::OnReadData(std::vector<char>& outputData, size_t reque
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
         "RingCache write invalid size %{public}zu", result.size);
 
-    BufferDesc srcBuffer = {nullptr, requestDataLen, 0};
-    srcBuffer.buffer = reinterpret_cast<uint8_t *>(outputData.data());
+    BufferDesc srcBuffer = {reinterpret_cast<uint8_t *>(outputData), requestDataLen, 0};
 
     ringCache_->Enqueue({srcBuffer.buffer, srcBuffer.bufLength});
     result = ringCache_->GetReadableSize();

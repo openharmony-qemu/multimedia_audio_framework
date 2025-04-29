@@ -114,6 +114,7 @@ config("audio_engine_node_config") {
     "plugin/channel_converter/include",
     "plugin/bitdepth_converter",
     "../audio_service/common/include",
+    "../audio_service/common/include/limiter",
     "../audio_service/server/include",
     "../audio_policy/util/include",
     "../../frameworks/native/audioeffect/include",
@@ -163,6 +164,8 @@ ohos_shared_library("audio_engine_node") {
     "node/src/hpae_source_input_node.cpp",
     "node/src/hpae_source_output_node.cpp",
     "node/src/hpae_source_process_cluster.cpp",
+    "node/src/hpae_remote_sink_output_node.cpp",
+    "node/src/hpae_remote_output_cluster.cpp",
   ]
 
   deps = [

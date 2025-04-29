@@ -38,6 +38,7 @@ group("audio_unit_test") {
     "../frameworks/native/audiopolicy/test/unittest/manager_test:audio_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/policy_test:audio_policy_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/routing_manager_test:audio_routing_manager_test",
+    "../frameworks/native/audiopolicy/test/unittest/sasdk_test:audio_sasdk_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/spatialization_manager_test:audio_spatialization_manager_test",
     "../frameworks/native/audiopolicy/test/unittest/stream_manager_test:audio_stream_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/volume_change_test:audio_volume_change_unit_test",
@@ -53,6 +54,7 @@ group("audio_unit_test") {
     "../frameworks/native/examples:pa_stream_test",
     "../frameworks/native/offlineaudioeffect/test/unittest:offline_audio_effect_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_capture_test:audio_oh_capture_unit_test",
+    "../frameworks/native/ohaudio/test/unittest/oh_audio_common_test:audio_oh_common_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_device_change_test:audio_oh_device_change_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_microphone_block_test:audio_oh_microphone_block_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",
@@ -101,6 +103,7 @@ group("audio_unit_test") {
     deps += [
       "../frameworks/native/hdiadapter_new:hdiadapter_unit_test",
       "../services/audio_service/test/unittest:none_mix_engine_unit_test",
+      "../services/audio_service/test/unittest:direct_playback_engine_unit_test",
     ]
 
     if (audio_framework_feature_low_latency) {

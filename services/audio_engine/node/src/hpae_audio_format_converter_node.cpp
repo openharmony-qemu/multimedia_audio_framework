@@ -25,13 +25,14 @@ static constexpr uint32_t DEFAULT_EFFECT_RATE = 48000;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-constexpr int REASAMPLE_QUAILTY = 5;
+constexpr int REASAMPLE_QUAILTY = 1;
 
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
     converterOuput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tmpOutBuf_(pcmBufferInfo_)
 {
+    converterOuput_.SetSplitStreamType(preNodeInfo.GetSplitStreamType());
     UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
     // use ProResamppler as default
     resampler_ = std::make_unique<ProResampler>(preNodeInfo_.samplingRate, nodeInfo.samplingRate,

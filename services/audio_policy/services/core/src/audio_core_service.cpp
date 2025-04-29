@@ -963,20 +963,6 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
     return result;
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetDeviceDescriptorInner(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc)
-{
-    CHECK_AND_RETURN_RET_LOG(streamDesc!= nullptr, {}, "streamDesc is null");
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(GetRealUid(streamDesc));
-    if (zoneId != 0) {
-        return AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
-            streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc), ROUTER_TYPE_DEFAULT);
-    } else {
-        return audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage,
-            GetRealUid(streamDesc));
-    }
-}
-
 int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
@@ -990,7 +976,8 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
     bool isUpdateActiveDevice = false;
     for (auto streamDesc : outputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
-        streamDesc->newDeviceDescs_ = GetDeviceDescriptorInner(streamDesc);
+        streamDesc->newDeviceDescs_ =
+            audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
             
         AUDIO_INFO_LOG("DeviceType %{public}d, state: %{public}u",
             streamDesc->newDeviceDescs_[0]->deviceType_, streamDesc->streamStatus_);
