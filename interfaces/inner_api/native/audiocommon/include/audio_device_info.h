@@ -432,6 +432,12 @@ struct DeviceStreamInfo {
         channels = UnmarshallingSetInt32<AudioChannel>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
     }
 
+    bool operator==(const DeviceStreamInfo& info) const
+    {
+        return encoding == info.encoding && format == info.format && channels == info.channels &&
+            channelLayout == info.channelLayout && samplingRate == info.samplingRate;
+    }
+
     bool CheckParams()
     {
         if (samplingRate.size() == 0) {

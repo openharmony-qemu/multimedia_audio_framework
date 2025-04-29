@@ -43,6 +43,12 @@ enum InnerCapFilterPolicy : uint32_t {
     POLICY_USAGES_ONLY,
     POLICY_USAGES_AND_PIDS
 };
+
+enum ReuseEndpointType : uint32_t {
+    CREATE_ENDPOINT = 0,
+    RECREATE_ENDPOINT,
+    REUSE_ENDPOINT,
+};
 } // anonymous namespace
 
 #ifdef SUPPORT_LOW_LATENCY
@@ -117,7 +123,7 @@ public:
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs);
-
+    ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
 #ifdef HAS_FEATURE_INNERCAPTURER
