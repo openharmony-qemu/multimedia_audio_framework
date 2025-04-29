@@ -2187,8 +2187,9 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
     }
     renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    CHECK_AND_RETURN_LOG(sink->UpdatePrimaryConnectionState(state) != SUCCESS,
-        "sink do not support UpdatePrimaryConnectionState");
+    CHECK_AND_RETURN_LOG(sink, "sink is nullptr");
+    int32_t ret = sink->UpdatePrimaryConnectionState(state);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "sink do not support UpdatePrimaryConnectionState");
 }
 
 void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)
