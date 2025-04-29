@@ -21,6 +21,7 @@
 #include <cstring>
 #include <unordered_map>
 #include <v1_0/iaudio_manager.h>
+#include <thread>
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
 
@@ -105,6 +106,8 @@ private:
     void CheckUpdateState(char *data, uint64_t len);
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen, RemoteAudioCategory type);
 
+    void JoinStartThread();
+
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -123,9 +126,12 @@ private:
     SinkCallbackWrapper callback_ = {};
     std::atomic<bool> sinkInited_ = false;
     std::atomic<bool> renderInited_ = false;
-    std::atomic<bool> isThreadRunning = false;
+    std::atomic<bool> isThreadRunning_ = false;
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
+
+    std::shared_ptr<std::thread> startThread_ = nullptr;
+
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     std::mutex createRenderMutex_;
