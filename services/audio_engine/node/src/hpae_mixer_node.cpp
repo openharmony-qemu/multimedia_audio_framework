@@ -57,6 +57,7 @@ int32_t HpaeMixerNode::SetupAudioLimiter()
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("NodeId: %{public}d, limiter setup sucess!", GetNodeId());
     } else {
+        limiter_ = nullptr;
         AUDIO_INFO_LOG("NodeId: %{public}d, limiter setup fail!!", GetNodeId());
     }
     return ret;
