@@ -345,6 +345,9 @@ int32_t HpaeRendererManager::ConnectMchInputSession(uint32_t sessionId)
     mchIdGainNodeMap_[sessionId]->Connect(sinkInputNodeMap_[sessionId]);
     outputCluster_->Connect(mchIdGainNodeMap_[sessionId]);
     OnNotifyDfxNodeInfo(true, mchIdGainNodeMap_[sessionId]->GetNodeId(), sinkInputNodeMap_[sessionId]->GetNodeInfo());
+    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+        outputCluster_->Start();
+    }
     return SUCCESS;
 }
 
