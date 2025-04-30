@@ -644,6 +644,28 @@ HWTEST(AudioManagerUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
 }
 
 /**
+* @tc.name   : Test ActivatePreemptMode API
+* @tc.number : ActivatePreemptMode_001
+* @tc.desc   : Test ActivatePreemptMode interface.
+*/
+HWTEST(AudioManagerUnitTest, ActivatePreemptMode_001, TestSize.Level1)
+{
+    auto ret = AudioSystemManager::GetInstance()->ActivatePreemptMode();
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name   : Test DeactivatePreemptMode API
+* @tc.number : DeactivatePreemptMode_001
+* @tc.desc   : Test DeactivatePreemptMode interface.
+*/
+HWTEST(AudioManagerUnitTest, DeactivatePreemptMode_001, TestSize.Level1)
+{
+    auto ret = AudioSystemManager::GetInstance()->DeactivatePreemptMode();
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
 * @tc.name   : Test GetStandbyStatus API
 * @tc.number : GetStandbyStatus_001
 * @tc.desc   : Test GetStandbyStatus_001 interface.
