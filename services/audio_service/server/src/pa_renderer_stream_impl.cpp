@@ -358,7 +358,7 @@ int32_t PaRendererStreamImpl::Stop()
 int32_t PaRendererStreamImpl::Release()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
-    isRelease_ = true;
+    isReleased_ = true;
     if (state_ == RUNNING) {
         PaLockGuard lock(mainloop_);
         if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
