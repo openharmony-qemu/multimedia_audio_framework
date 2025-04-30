@@ -203,7 +203,7 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
             isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc);
             AUDIO_INFO_LOG("isUpdate: %{public}d, action: %{public}d", isUpdate, streamDescInPipe->streamAction_);
         }
-        pipeInfo->pipeAction_ = isUpdate ? PIPE_ACTION_UPDATE : PIPE_ACTION_DEFAULT;
+        pipeInfo->pipeAction_ = isUpdate ? PIPE_ACTION_UPDATE : pipeInfo->pipeAction_;
     }
     AUDIO_INFO_LOG("Route flag after concurrency: %{public}u", streamDesc->routeFlag_);
 }

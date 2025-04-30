@@ -37,6 +37,8 @@ void AudioPipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     AUDIO_INFO_LOG("Add pipe %{public}s, pipeRole: %{public}d", info->adapterName_.c_str(), info->pipeRole_);
+    // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+    info->pipeAction_ = PIPE_ACTION_DEFAULT;
     curPipeList_.push_back(info);
 }
 
@@ -70,6 +72,8 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
         if (IsSamePipe(newPipe, *iter)) {
             Assign(*iter, newPipe);
+            // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+            (*iter)->pipeAction_ = PIPE_ACTION_DEFAULT;
             break;
         }
     }
@@ -290,7 +294,11 @@ void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<Audio
             tempList.push_back(pipeInfo);
         }
     }
-    tempList.insert(tempList.end(), pipeInfos.begin(), pipeInfos.end());
+    // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+    for (auto &pipe : pipeInfos) {
+        pipe->pipeAction_ = PIPE_ACTION_DEFAULT;
+        tempList.push_back(pipe);
+    }
     curPipeList_.clear();
     curPipeList_ = tempList;
 }
@@ -304,7 +312,11 @@ void AudioPipeManager::UpdateCapturerPipeInfos(std::vector<std::shared_ptr<Audio
             tempList.push_back(pipeInfo);
         }
     }
-    tempList.insert(tempList.end(), pipeInfos.begin(), pipeInfos.end());
+    // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+    for (auto &pipe : pipeInfos) {
+        pipe->pipeAction_ = PIPE_ACTION_DEFAULT;
+        tempList.push_back(pipe);
+    }
     curPipeList_.clear();
     curPipeList_ = tempList;
 }
