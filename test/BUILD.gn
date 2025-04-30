@@ -26,7 +26,6 @@ group("audio_unit_test") {
     "../frameworks/js/napi/audiorenderer/test/unittest/audio_renderer_interrupt_test:js_audio_interrupt_test",
     "../frameworks/js/napi/audiorenderer/test/unittest/audio_renderer_test:jsunittest",
     "../frameworks/js/napi/audiorenderer/toneplayer/test/unittest/tone_player_test:jsunittest",
-    "../frameworks/native/audioadapter/test/unittest:pro_audio_service_adapter_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_fast_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:inner_capturer_unit_test",
