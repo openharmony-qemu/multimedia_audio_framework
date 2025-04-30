@@ -158,7 +158,7 @@ int32_t PaRendererStreamImpl::InitParams()
 
 int32_t PaRendererStreamImpl::Start()
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -187,7 +187,9 @@ int32_t PaRendererStreamImpl::Start()
 
 int32_t PaRendererStreamImpl::Pause(bool isStandby)
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(isReleased_ == false, ERR_ILLEGAL_STATE,
+        "paStream[%{public}u] has been released", streamIndex_);
     PaLockGuard palock(mainloop_, true);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -208,9 +210,11 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
             fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
         palock.Relock();
-        CHECK_AND_RETURN_RET_LOG(releasedFlag_ == false, ERR_ILLEGAL_STATE, "paStream has been released");
     }
 
+    CHECK_AND_RETURN_RET_LOG(isReleased_ == false, ERR_ILLEGAL_STATE,
+        "paStream[%{public}u] has been released", streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(paStream_ != nullptr, ERR_ILLEGAL_STATE, "paStream[%{public}u] is null", streamIndex_);
     isStandbyPause_ = isStandby;
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
@@ -238,7 +242,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
 
 int32_t PaRendererStreamImpl::Flush()
 {
-    AUDIO_PRERELEASE_LOGI("Enter");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -276,7 +280,7 @@ int32_t PaRendererStreamImpl::Flush()
 
 int32_t PaRendererStreamImpl::Drain(bool stopFlag)
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -301,7 +305,9 @@ int32_t PaRendererStreamImpl::Drain(bool stopFlag)
 
 int32_t PaRendererStreamImpl::Stop()
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(isReleased_ == false, ERR_ILLEGAL_STATE,
+        "paStream[%{public}u] has been released", streamIndex_);
     state_ = STOPPING;
     PaLockGuard palock(mainloop_);
 
@@ -318,9 +324,11 @@ int32_t PaRendererStreamImpl::Stop()
             fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
         palock.Relock();
-        CHECK_AND_RETURN_RET_LOG(releasedFlag_ == false, ERR_ILLEGAL_STATE, "paStream has been released");
     }
     isDoFadeOut = false;
+    CHECK_AND_RETURN_RET_LOG(isReleased_ == false, ERR_ILLEGAL_STATE,
+        "paStream[%{public}u] has been released", streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(paStream_ != nullptr, ERR_ILLEGAL_STATE, "paStream[%{public}u] is null", streamIndex_);
 
     pa_operation *operation = pa_stream_cork(paStream_, 1, PaRendererStreamImpl::PAStreamAsyncStopSuccessCb,
         reinterpret_cast<void *>(this));
@@ -349,8 +357,8 @@ int32_t PaRendererStreamImpl::Stop()
 
 int32_t PaRendererStreamImpl::Release()
 {
-    AUDIO_INFO_LOG("Enter");
-
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    isRelease_ = true;
     if (state_ == RUNNING) {
         PaLockGuard lock(mainloop_);
         if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
