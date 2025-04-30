@@ -331,7 +331,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        int32_t outputRet = ActivateOutputDevice(streamDesc->newDeviceDescs_.front());
+        int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (streamDesc->newDeviceDescs_.size() == 2) { // 2 for dual use
@@ -981,16 +981,12 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
             
         AUDIO_INFO_LOG("DeviceType %{public}d, state: %{public}u",
             streamDesc->newDeviceDescs_[0]->deviceType_, streamDesc->streamStatus_);
-
-        if (HandleDeviceChangeForFetchOutputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE &&
-            !Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage)) {
+        SetPlaybackStreamFlag(streamDesc);
+        if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;
         }
-        SetPlaybackStreamFlag(streamDesc);
 
-        MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
-        MuteSinkForSwitchDistributedDevice(streamDesc, reason);
-        int32_t outputRet = ActivateOutputDevice(streamDesc->newDeviceDescs_.front());
+        int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
@@ -1023,12 +1019,12 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
             audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
                 streamDesc->sessionId_);
         streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
+        SetRecordStreamFlag(streamDesc);
 
-        if (HandleDeviceChangeForFetchInputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE) {
+        AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
+        if (!HandleInputStreamInRunning(streamDesc)) {
             continue;
         }
-        AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
-        SetRecordStreamFlag(streamDesc);
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc));
             needUpdateActiveDevice = false;
