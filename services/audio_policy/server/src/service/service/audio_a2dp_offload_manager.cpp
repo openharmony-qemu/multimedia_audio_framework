@@ -361,8 +361,9 @@ int32_t AudioA2dpOffloadManager::HandleA2dpDeviceOutOffload(BluetoothOffloadStat
 
     FetchStreamForA2dpOffload(true);
 
-    if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        return HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
+    AudioDeviceDescriptor deviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
+    if (deviceDescriptor.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        return HandleActiveDevice(deviceDescriptor);
     } else {
         return SUCCESS;
     }
@@ -436,30 +437,30 @@ void AudioA2dpOffloadManager::GetA2dpOffloadCodecAndSendToDsp()
 #endif
 }
 
-int32_t AudioA2dpOffloadManager::HandleActiveDevice(DeviceType deviceType)
+int32_t AudioA2dpOffloadManager::HandleActiveDevice(AudioDeviceDescriptor deviceDescriptor)
 {
     AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
-    if (GetVolumeGroupType(curOutputDevice.deviceType_) != GetVolumeGroupType(deviceType)) {
-        audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDevice);
+    if (GetVolumeGroupType(curOutputDevice.deviceType_) != GetVolumeGroupType(deviceDescriptor.deviceType_)) {
+        audioVolumeManager_.SetVolumeForSwitchDevice(deviceDescriptor);
     }
     if (audioConfigManager_.GetUpdateRouteSupport()) {
-        audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        audioActiveDevice_.UpdateActiveDeviceRoute(deviceDescriptor.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
-    std::string sinkPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
-    std::string sourcePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
+    std::string sinkPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDescriptor.deviceType_);
+    std::string sourcePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceDescriptor.deviceType_);
     if (sinkPortName == PORT_NONE && sourcePortName == PORT_NONE) {
         AUDIO_ERR_LOG("failed for sinkPortName and sourcePortName are none");
         return ERR_OPERATION_FAILED;
     }
     if (sinkPortName != PORT_NONE) {
-        audioIOHandleMap_.GetSinkIOHandle(deviceType);
+        audioIOHandleMap_.GetSinkIOHandle(deviceDescriptor.deviceType_);
         audioPolicyManager_.SuspendAudioDevice(sinkPortName, false);
     }
     if (sourcePortName != PORT_NONE) {
-        audioIOHandleMap_.GetSourceIOHandle(deviceType);
+        audioIOHandleMap_.GetSourceIOHandle(deviceDescriptor.deviceType_);
         audioPolicyManager_.SuspendAudioDevice(sourcePortName, false);
     }
-    audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
+    audioActiveDevice_.UpdateInputDeviceInfo(deviceDescriptor.deviceType_);
 
     return SUCCESS;
 }
