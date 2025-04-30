@@ -48,10 +48,6 @@ void HpaeSourceOutputNode::DoProcess()
     auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " +
         rate + ch + len + format);
-    if (readCallback_.lock() == nullptr) {
-        AUDIO_WARNING_LOG("HpaeSourceOutputNode readCallback_ is nullptr, sessionId:%{public}d", GetSessionId());
-        return;
-    }
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     if (outputVec.empty()) {
         return;
@@ -75,9 +71,14 @@ void HpaeSourceOutputNode::DoProcess()
         .outputData = (int8_t *)sourceOutputData_.data(),
         .requestDataLen = sourceOutputData_.size(),
     };
-    int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ write read data error", GetSessionId());
+    if (readCallback_.lock()) {
+        int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ write read data error", GetSessionId());
+        }
+    } else {
+        AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+        return;
     }
     totalFrames_ += GetFrameLen();
     framesRead_.store(totalFrames_);
