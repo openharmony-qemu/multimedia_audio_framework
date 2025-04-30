@@ -592,6 +592,19 @@ int32_t RendererInClientInner::SetSpeed(float speed)
     return SUCCESS;
 }
 
+int32_t RendererInClientInner::SetPitch(float pitch)
+{
+    if (audioSpeed_ == nullptr) {
+        audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
+            curStreamParams_.channels);
+        GetBufferSize(bufferSize_);
+        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
+    }
+    audioSpeed_->SetPitch(pitch);
+    AUDIO_DEBUG_LOG("SetPitch %{public}f", pitch);
+    return SUCCESS;
+}
+
 float RendererInClientInner::GetSpeed()
 {
     std::lock_guard lock(speedMutex_);

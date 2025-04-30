@@ -404,6 +404,22 @@ HWTEST(FastSystemStreamUnitTest, SetSpeed_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetPitch API
+ * @tc.type  : FUNC
+ * @tc.number: SetPitch_001
+ * @tc.desc  : Test SetPitch interface.
+ */
+HWTEST(FastSystemStreamUnitTest, SetPitch_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetPitch_001 start");
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    int32_t res = fastAudioStream->SetPitch(1.0f);
+    EXPECT_EQ(res, ERR_OPERATION_FAILED);
+}
+
+/**
  * @tc.name  : Test FlushAudioStream and DrainAudioStream API
  * @tc.type  : FUNC
  * @tc.number: SetSpeed_001

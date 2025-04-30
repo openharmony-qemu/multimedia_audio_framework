@@ -17,6 +17,8 @@
 #define SHARED_AUDIO_RENDERER_WRAPPER_H
 
 #include "audio_renderer.h"
+#include "audio_errors.h"
+#include "audio_renderer_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -371,6 +373,13 @@ public:
     int32_t SetSpeed(float speed) override
     {
         return sharedAudioRenderer_->SetSpeed(speed);
+    }
+
+    int32_t SetPitch(float pitch) override
+    {
+        CHECK_AND_RETURN_RET_LOG(sharedAudioRenderer_ != nullptr,
+            ERR_MEMORY_ALLOC_FAILED, "sharedAudioRenderer_ is nullptr");
+        return sharedAudioRenderer_->SetPitch(pitch);
     }
 
     float GetSpeed() override

@@ -126,6 +126,7 @@ public:
     bool IsOffloadEnable() override;
 
     int32_t SetSpeed(float speed) override;
+    int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
     bool IsFastRenderer() override;
     void ConcedeStream();
@@ -245,6 +246,7 @@ private:
     RendererState state_ = RENDERER_INVALID;
 
     std::optional<float> speed_ = std::nullopt;
+    std::optional<float> pitch_ = std::nullopt;
 
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
     std::mutex policyServiceDiedCallbackMutex_;
