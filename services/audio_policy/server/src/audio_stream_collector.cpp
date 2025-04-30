@@ -1184,7 +1184,7 @@ int32_t AudioStreamCollector::SetLowPowerVolume(int32_t streamId, float volume)
 
 float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
 {
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    std::unique_lock<std::mutex> lock(streamsInfoMutex_);
     float ret = 1.0; // invalue volume
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
         ret, "GetLowPowerVolume streamId invalid.");
@@ -1192,6 +1192,7 @@ float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
         ret, "GetLowPowerVolume callback failed");
+    lock.unlock();
     callback->GetLowPowerVolumeImpl(volume);
     return volume;
 }
