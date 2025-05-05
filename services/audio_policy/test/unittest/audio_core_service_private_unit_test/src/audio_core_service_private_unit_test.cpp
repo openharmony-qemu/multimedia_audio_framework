@@ -303,7 +303,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_016, TestSize.Level1
     EXPECT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc->newDeviceDescs_.push_back(deviceDesc);
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
@@ -325,7 +325,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_017, TestSize.Level1
     EXPECT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     desc->newDeviceDescs_.push_back(deviceDesc);
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
