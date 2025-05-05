@@ -283,7 +283,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_015, TestSize.Level1
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
 
-    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    std::shared_ptr<AudioStreamDescriptor> desc = nullptr;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     std::string encryptMacAddr = "abc";
@@ -302,8 +302,10 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_016, TestSize.Level1
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
 
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc->newDeviceDescs_.push_back(deviceDesc);
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     std::string encryptMacAddr = "abc";
@@ -322,8 +324,10 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_017, TestSize.Level1
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
 
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc->newDeviceDescs_.push_back(deviceDesc);
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     std::string encryptMacAddr = "abc";

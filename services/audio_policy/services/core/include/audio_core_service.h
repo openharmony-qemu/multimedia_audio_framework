@@ -250,7 +250,7 @@ private:
     void CheckModemScene(const AudioStreamDeviceChangeReasonExt reason);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
-    int32_t BluetoothDeviceFetchOutputHandle(shared_ptr<AudioDeviceDescriptor> desc,
+    int32_t BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &desc,
         const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamDeviceChangeReasonExt reason);
@@ -339,6 +339,8 @@ private:
     bool IsPaRoute(uint32_t routeFlag);
     int32_t HandleScoOutputDeviceFetched(
         shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason);
+    int32_t HandleScoOutputDeviceFetched(
+        shared_ptr<AudioStreamDescriptor> &streamDesc, const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleFetchOutputWhenNoRunningStream();
     int32_t HandleFetchInputWhenNoRunningStream();
     bool UpdateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t uid,
@@ -372,9 +374,12 @@ private:
     void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
     void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
-    int32_t ActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    int32_t ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     int32_t ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void OnAudioSceneChange(const AudioScene& audioScene);
+    bool HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        AudioStreamDeviceChangeReasonExt reason);
+    bool HandleInputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;

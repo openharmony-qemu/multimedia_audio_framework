@@ -238,13 +238,13 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
     FetchOutputDeviceAndRoute();
 }
 
-int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioDeviceDescriptor> desc,
+int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr)
 {
-    if (desc == nullptr) {
-        AUDIO_ERR_LOG("Fetch output device is null");
-        return BLUETOOTH_FETCH_RESULT_CONTINUE;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, BLUETOOTH_FETCH_RESULT_ERROR, "Stream desc is nullptr");
+    std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, BLUETOOTH_FETCH_RESULT_CONTINUE, "Device desc is nullptr");
+
     if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         AUDIO_INFO_LOG("A2dp device");
         int32_t ret = ActivateA2dpDeviceWhenDescEnabled(desc, reason);
@@ -253,7 +253,7 @@ int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioDevic
             return BLUETOOTH_FETCH_RESULT_ERROR;
         }
     } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        int32_t ret = HandleScoOutputDeviceFetched(desc, reason);
+        int32_t ret = HandleScoOutputDeviceFetched(streamDesc, reason);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
             return BLUETOOTH_FETCH_RESULT_ERROR;
@@ -1409,6 +1409,32 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
     return SUCCESS;
 }
 
+int32_t AudioCoreService::HandleScoOutputDeviceFetched(
+    shared_ptr<AudioStreamDescriptor> &streamDesc, const AudioStreamDeviceChangeReasonExt reason)
+{
+    AUDIO_INFO_LOG("In");
+    Trace trace("AudioCoreService::HandleScoOutputDeviceFetched");
+#ifdef BLUETOOTH_ENABLE
+    std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
+    int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
+        desc->exceptionFlag_ = true;
+        audioDeviceManager_.UpdateDevicesListInfo(
+            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
+        FetchOutputDeviceAndRoute(reason);
+        return ERROR;
+    }
+    if ((desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) &&
+        streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+        Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
+        return SUCCESS;
+    }
+#endif
+    AUDIO_INFO_LOG("out");
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     if (streamDesc->callerUid_ == MEDIA_SERVICE_UID) {
@@ -1956,11 +1982,13 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
     }
 }
 
-int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Stream desc is nullptr");
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "Device desc is nullptr");
     std::string encryptMacAddr = GetEncryptAddr(deviceDesc->macAddress_);
-    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(deviceDesc,
+    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc,
         AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
@@ -1985,6 +2013,32 @@ void AudioCoreService::OnAudioSceneChange(const AudioScene& audioScene)
     AUDIO_INFO_LOG("Start");
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audio policy server handler is null");
     audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
+}
+
+bool AudioCoreService::HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    AudioStreamDeviceChangeReasonExt reason)
+{
+    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
+        return true;
+    }
+    if (HandleDeviceChangeForFetchOutputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE &&
+        !Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage)) {
+        return false;
+    }
+    MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
+    MuteSinkForSwitchDistributedDevice(streamDesc, reason);
+    return true;
+}
+
+bool AudioCoreService::HandleInputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
+        return true;
+    }
+    if (HandleDeviceChangeForFetchInputDevice(streamDesc) == ERR_NEED_NOT_SWITCH_DEVICE) {
+        return false;
+    }
+    return true;
 }
 }
 }
