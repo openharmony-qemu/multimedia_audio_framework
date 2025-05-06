@@ -135,11 +135,6 @@ struct userdata {
     uint32_t defaultAdapterEnable;
 };
 
-struct NumPeekedInfo {
-    unsigned numAll;
-    unsigned numNotSilence;
-};
-
 static const char * const VALID_MODARGS[] = {
     "sink_name",
     "device_class",
@@ -500,20 +495,19 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     }
 }
 
-static struct NumPeekedInfo SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, unsigned maxInfo,
-    char *streamType)
+static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, unsigned maxInfo, char *streamType)
 {
-    struct NumPeekedInfo resInfo = {0, 0};
-    CHECK_AND_RETURN_RET_LOG(s != NULL, resInfo, "s is null");
-    CHECK_AND_RETURN_RET_LOG(length != NULL, resInfo, "length is null");
+    CHECK_AND_RETURN_RET_LOG(s != NULL, 0, "s is null");
+    CHECK_AND_RETURN_RET_LOG(length != NULL, 0, "length is null");
     AUTO_CTRACE("split_stream_sink::SplitFillMixInfo:len:%zu", *length);
     pa_sink_input *i;
+    unsigned n = 0;
     void *state = NULL;
     size_t mixlength = *length;
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
-    CHECK_AND_RETURN_RET_LOG(info != NULL, resInfo, "info is null");
+    CHECK_AND_RETURN_RET_LOG(info != NULL, 0, "info is null");
 
     while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *usageStr = pa_proplist_gets(i->proplist, "stream.usage");
@@ -529,16 +523,12 @@ static struct NumPeekedInfo SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_
 
             ProcessAudioVolume(i, mixlength, &info->chunk, s);
 
-            if (!pa_memblock_is_silence(info->chunk.memblock)) {
-                resInfo.numNotSilence++;
-            }
-
             info->userdata = pa_sink_input_ref(i);
             pa_assert(info->chunk.memblock);
             pa_assert(info->chunk.length > 0);
 
             info++;
-            resInfo.numAll++;
+            n++;
             maxInfo--;
 
             if (mixlength > 0) {
@@ -546,7 +536,7 @@ static struct NumPeekedInfo SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_
             }
         }
     }
-    return resInfo;
+    return n;
 }
 
 static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, unsigned n, pa_memchunk *result)
@@ -594,18 +584,19 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
     }
 }
 
-static struct NumPeekedInfo SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result, char *streamType)
+static unsigned SplitPaSinkRender(pa_sink *s, size_t length, pa_memchunk *result, char *streamType)
 {
     AUTO_CTRACE("module_split_stream_sink::SplitPaSinkRender:len:%zu", length);
+    unsigned streamCount = 0;
     pa_mix_info info[MAX_MIX_CHANNELS];
-    struct NumPeekedInfo resInfo = {0, 0};
+    unsigned n;
     size_t blockSizeMax;
 
-    CHECK_AND_RETURN_RET_LOG(s != NULL, resInfo, "s is null");
+    CHECK_AND_RETURN_RET_LOG(s != NULL, 0, "s is null");
     pa_sink_assert_io_context(s);
     pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
     pa_assert(pa_frame_aligned(length, &s->sample_spec));
-    CHECK_AND_RETURN_RET_LOG(result != NULL, resInfo, "result is null");
+    CHECK_AND_RETURN_RET_LOG(result != NULL, 0, "result is null");
 
     pa_assert(!s->thread_info.rewind_requested);
     pa_assert(s->thread_info.rewind_nbytes == 0);
@@ -614,7 +605,7 @@ static struct NumPeekedInfo SplitPaSinkRender(pa_sink *s, size_t length, pa_memc
         result->memblock = pa_memblock_ref(s->silence.memblock);
         result->index = s->silence.index;
         result->length = PA_MIN(s->silence.length, length);
-        return resInfo;
+        return 0;
     }
 
     pa_sink_ref(s);
@@ -630,13 +621,14 @@ static struct NumPeekedInfo SplitPaSinkRender(pa_sink *s, size_t length, pa_memc
 
     pa_assert(length > 0);
 
-    resInfo = SplitFillMixInfo(s, &length, info, MAX_MIX_CHANNELS, streamType);
-    SplitSinkRenderMix(s, length, info, resInfo.numAll, result);
+    n = SplitFillMixInfo(s, &length, info, MAX_MIX_CHANNELS, streamType);
+    streamCount = n;
+    SplitSinkRenderMix(s, length, info, n, result);
 
-    SplitSinkRenderInputsDrop(s, info, resInfo.numAll, result);
+    SplitSinkRenderInputsDrop(s, info, n, result);
 
     pa_sink_unref(s);
-    return resInfo;
+    return streamCount;
 }
 
 static void SplitSinkRenderIntoMix(pa_sink *s, size_t length, pa_mix_info *info, unsigned n, pa_memchunk *target)
@@ -693,6 +685,7 @@ static void SplitSinkRenderIntoMix(pa_sink *s, size_t length, pa_mix_info *info,
 static void  SplitPaSinkRenderInto(pa_sink *s, pa_memchunk *target, char *streamType)
 {
     pa_mix_info info[MAX_MIX_CHANNELS];
+    unsigned n;
     size_t length;
     size_t blockSizeMax;
 
@@ -720,10 +713,10 @@ static void  SplitPaSinkRenderInto(pa_sink *s, pa_memchunk *target, char *stream
 
     pa_assert(length > 0);
 
-    struct NumPeekedInfo resInfo = SplitFillMixInfo(s, &length, info, MAX_MIX_CHANNELS, streamType);
-    SplitSinkRenderIntoMix(s, length, info, resInfo.numAll, target);
+    n = SplitFillMixInfo(s, &length, info, MAX_MIX_CHANNELS, streamType);
+    SplitSinkRenderIntoMix(s, length, info, n, target);
 
-    SplitSinkRenderInputsDrop(s, info, resInfo.numAll, target);
+    SplitSinkRenderInputsDrop(s, info, n, target);
 
     pa_sink_unref(s);
 }
@@ -764,15 +757,15 @@ static void SplitPaSinkRenderIntoFull(pa_sink *s, pa_memchunk *target, char *str
     pa_sink_unref(s);
 }
 
-static struct NumPeekedInfo SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_memchunk *result, char *streamType)
+static unsigned SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_memchunk *result, char *streamType)
 {
-    struct NumPeekedInfo resInfo = {0, 0};
+    unsigned nSink;
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
     pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
     pa_assert(length > 0);
     pa_assert(pa_frame_aligned(length, &s->sample_spec));
-    CHECK_AND_RETURN_RET_LOG(result != NULL, resInfo, "result is null");
+    CHECK_AND_RETURN_RET_LOG(result != NULL, 0, "result is null");
     
     pa_assert(!s->thread_info.rewind_requested);
     pa_assert(s->thread_info.rewind_nbytes == 0);
@@ -781,13 +774,16 @@ static struct NumPeekedInfo SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_
         result->memblock = pa_memblock_ref(s->silence.memblock);
         result->index = s->silence.index;
         result->length = PA_MIN(s->silence.length, length);
-        return resInfo;
+        return 0;
     }
 
     pa_sink_ref(s);
 
     AUDIO_DEBUG_LOG("module_split_stream_sink, splitSinkRender in  length = %{public}zu", length);
-    resInfo = SplitPaSinkRender(s, length, result, streamType);
+    nSink = SplitPaSinkRender(s, length, result, streamType);
+    if (nSink == 0) {
+        return nSink;
+    }
 
     if (result->length < length) {
         pa_memchunk chunk;
@@ -804,7 +800,7 @@ static struct NumPeekedInfo SplitPaSinkRenderFull(pa_sink *s, size_t length, pa_
     }
 
     pa_sink_unref(s);
-    return resInfo;
+    return nSink;
 }
 
 static void SendStreamData(struct userdata *u, int num, pa_memchunk chunk)
@@ -857,9 +853,9 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
         AUDIO_DEBUG_LOG("module_split_stream_sink: ProcessRender:streamType:%{public}s", g_splitArr[i]);
         
         pa_memchunk chunk;
-        struct NumPeekedInfo resInfo = SplitPaSinkRenderFull(u->sink, u->sink->thread_info.max_request, &chunk,
+        unsigned nSink = SplitPaSinkRenderFull(u->sink, u->sink->thread_info.max_request, &chunk,
             g_splitArr[i]);
-        if (ShouldSendChunk(i, resInfo.numNotSilence)) {
+        if (ShouldSendChunk(i, nSink)) {
             SendStreamData(u, i, chunk);
         }
     }
