@@ -152,18 +152,20 @@ bool AudioCacheMgrInner::Init()
 bool AudioCacheMgrInner::DeInit()
 {
     Trace trace("AudioCacheMgrInner::DeInit");
+    {
+        std::lock_guard<std::mutex> processLock(g_Mutex);
+        isInited_ = false;
+        memChunkDeque_ = {};
+        AUDIO_INFO_LOG("clear all cached pcm success");
+    }
     std::unique_lock<std::mutex> lock(runnerMutex_);
     if (callbackHandler_ != nullptr) {
         callbackHandler_->ReleaseEventRunner();
         callbackHandler_ = nullptr;
         handler_ = nullptr;
-
-        // clear all cached pcm
-        memChunkDeque_ = {};
         AUDIO_INFO_LOG("deinit handler success");
     }
     lock.unlock();
-    isInited_ = false;
     AUDIO_WARNING_LOG("AudioCacheMgr is DeInited!");
     return true;
 }
@@ -312,6 +314,7 @@ void AudioCacheMgrInner::GetCachedDuration(int64_t &startTime, int64_t &endTime)
 void AudioCacheMgrInner::PrintCurMemoryCondition()
 {
     Trace trace("AudioCacheMgrInner::PrintCurMemoryCondition");
+    CHECK_AND_RETURN_LOG(isInited_.load(), "AudioCacheMgr is Not Inited!");
     SafeSendCallBackEvent(PRINT_MEMORY_CONDITION, 0, MEMORY_PRINT_TIME_MS);
 
     size_t dataLength = 0;
@@ -347,6 +350,7 @@ void AudioCacheMgrInner::GetCurMemoryCondition(size_t &dataLength, size_t &buffe
 void AudioCacheMgrInner::ReleaseOverTimeMemBlock()
 {
     Trace trace("AudioCacheMgrInner::ReleaseOverTimeMemBlock");
+    CHECK_AND_RETURN_LOG(isInited_.load(), "AudioCacheMgr is Not Inited!");
     SafeSendCallBackEvent(RELEASE_OVERTIME_MEMBLOCK, 0, MEMBLOCK_CHECK_TIME_MS);
 
     int32_t recycleNums = 0;
