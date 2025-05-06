@@ -1427,6 +1427,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     CapturerState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     bool switchResult = false;
+    std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appPid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");
@@ -1443,16 +1444,20 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
     }
 
-    if (previousState == CAPTURER_RUNNING) {
-        // restart audio stream
-        switchResult = newAudioStream->StartAudioStream();
-        CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
-    }
+    oldAudioStream = audioStream_;
+    // Operation of replace audioStream_ must be performed before StartAudioStream.
+    // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
     audioStream_ = newAudioStream;
     if (audioInterruptCallback_ != nullptr) {
         std::shared_ptr<AudioCapturerInterruptCallbackImpl> interruptCbImpl =
             std::static_pointer_cast<AudioCapturerInterruptCallbackImpl>(audioInterruptCallback_);
         interruptCbImpl->UpdateAudioStream(audioStream_);
+    }
+
+    if (previousState == CAPTURER_RUNNING) {
+        // restart audio stream
+        switchResult = newAudioStream->StartAudioStream();
+        CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
     }
     return true;
 }
