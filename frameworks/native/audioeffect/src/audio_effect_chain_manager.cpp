@@ -898,14 +898,14 @@ void AudioEffectChainManager::DeleteAllChains()
     std::map<std::string, int32_t> sceneTypeToEffectChainCountBackupMap;
     for (auto it = sceneTypeToEffectChainCountMap_.begin(); it != sceneTypeToEffectChainCountMap_.end(); ++it) {
         AUDIO_DEBUG_LOG("sceneTypeAndDeviceKey %{public}s count:%{public}d", it->first.c_str(), it->second);
-        sceneTypeToEffectChainCountBackupMap.insert(
-            std::make_pair(it->first.substr(0, static_cast<size_t>(it->first.find("_&_"))), it->second));
+        sceneTypeToEffectChainCountBackupMap.insert(std::make_pair(it->first, it->second));
     }
 
     for (auto it = sceneTypeToEffectChainCountBackupMap.begin(); it != sceneTypeToEffectChainCountBackupMap.end();
         ++it) {
+        std::string sceneType = it->first.substr(0, static_cast<size_t>(it->first.find("_&_")));
         for (int32_t k = 0; k < it->second; ++k) {
-            ReleaseAudioEffectChainDynamicInner(it->first);
+            ReleaseAudioEffectChainDynamicInner(sceneType);
         }
     }
     return;
@@ -1612,7 +1612,6 @@ void AudioEffectChainManager::WaitAndReleaseEffectChain(const std::string &scene
 
     if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
-        sceneTypeToSpecialEffectSet_.erase(sceneType);
         sceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
         if (ret == SUCCESS && defaultEffectChainCount_ == 0) {
             sceneTypeToEffectChainMap_.erase(defaultSceneTypeAndDeviceKey);
@@ -1647,6 +1646,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamicInner(const std::
     }
 
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
+    sceneTypeToSpecialEffectSet_.erase(sceneType);
     int32_t ret = CheckAndReleaseCommonEffectChain(sceneType);
     std::thread([this, sceneType, sceneTypeAndDeviceKey, defaultSceneTypeAndDeviceKey, ret]() {
         WaitAndReleaseEffectChain(sceneType, sceneTypeAndDeviceKey, defaultSceneTypeAndDeviceKey, ret);
@@ -1811,7 +1811,9 @@ ProcessClusterOperation AudioEffectChainManager::CheckProcessClusterInstances(co
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
 
-    if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+    if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
+        sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
+        sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] > 0) {
         if (sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
             AUDIO_WARNING_LOG("scene type %{public}s has null process cluster", sceneTypeAndDeviceKey.c_str());
         } else {
