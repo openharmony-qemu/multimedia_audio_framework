@@ -441,19 +441,6 @@ static const char *SafeProplistGets(const pa_proplist *p, const char *key, const
     return res;
 }
 
-static void ProcessVolumeChange(float volumeBeg, float volumeEnd, float fadeBeg, float fadeEnd, uint32_t sessionID)
-{
-    AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f"
-        ", fadeBeg:%{public}f, fadeEnd:%{public}f", sessionID, volumeBeg, volumeEnd, fadeBeg, fadeEnd);
-    if (volumeBeg != volumeEnd) {
-        SetPreVolume(sessionID, volumeEnd);
-        MonitorVolume(sessionID, true);
-    }
-    if (fadeBeg != fadeEnd) {
-        SetStreamVolumeFade(sessionID, fadeEnd, fadeEnd);
-    }
-}
-
 static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk *pchunk, pa_sink *si)
 {
     AUTO_CTRACE("module_split_stream_sink::ProcessAudioVolume: len:%zu", length);
@@ -467,14 +454,9 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     const char *sessionIDStr = SafeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
     const char *deviceClass = u->sinkAdapter->deviceClass;
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
-    float volumeBeg = GetPreVolume(sessionID);
-    float fadeBeg = 1.0f;
-    float fadeEnd = 1.0f;
-    if (!pa_safe_streq(streamType, "ultrasonic")) {
-        GetStreamVolumeFade(sessionID, &fadeBeg, &fadeEnd);
-    }
+    float volumeBeg = volumes.volumeHistory;
     if (pa_memblock_is_silence(pchunk->memblock)) {
         AUTO_CTRACE("module_split_stream_sink::ProcessAudioVolume: is_silence");
         AUDIO_PRERELEASE_LOGI("pa_memblock_is_silence");
@@ -487,16 +469,19 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
         void *data = pa_memblock_acquire_chunk(pchunk);
 
         AUDIO_DEBUG_LOG("length:%{public}zu channels:%{public}d format:%{public}d"
-            " volumeBeg:%{public}f, volumeEnd:%{public}f, fadeBeg:%{public}f, fadeEnd:%{public}f",
-            length, rawFormat.channels, rawFormat.format, volumeBeg, volumeEnd, fadeBeg, fadeEnd);
-        int32_t ret = ProcessVol(data, length, rawFormat, volumeBeg * fadeBeg, volumeEnd * fadeEnd);
+            " volumeBeg:%{public}f, volumeEnd:%{public}f",
+            length, rawFormat.channels, rawFormat.format, volumeBeg, volumeEnd);
+        int32_t ret = ProcessVol(data, length, rawFormat, volumeBeg, volumeEnd);
         if (ret != 0) {
             AUDIO_WARNING_LOG("ProcessVol failed:%{public}d", ret);
         }
         pa_memblock_release(pchunk->memblock);
     }
-    if (volumeBeg != volumeEnd || fadeBeg != fadeEnd) {
-        ProcessVolumeChange(volumeBeg, volumeEnd, fadeBeg, fadeEnd, sessionID);
+    if (volumeBeg != volumeEnd) {
+        AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
+            sessionID, volumeBeg, volumeEnd);
+        SetPreVolume(sessionID, volumeEnd);
+        MonitorVolume(sessionID, true);
     }
 }
 

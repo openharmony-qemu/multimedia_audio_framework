@@ -622,7 +622,7 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (offloadSessionID_.has_value()) { // need stream volume and system volume
-        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
         volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_.value(), streamType, OFFLOAD_CLASS, &volumes);
         audioServerProxy_->OffloadSetVolume(volume);
     }

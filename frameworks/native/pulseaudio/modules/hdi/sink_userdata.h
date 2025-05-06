@@ -81,6 +81,7 @@ struct Userdata {
     uint32_t streamAvailable;
     uint32_t lastStreamAvailable;
     pa_hashmap *streamAvailableMap;
+    pa_hashmap *streamVolumeMap;
     bool isLimiterCreated;
     uint32_t performMonitorIndex;
     struct {
