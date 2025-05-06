@@ -89,7 +89,7 @@ public:
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t code);
     void SetCurrentActiveDevice(DeviceType currentActiveDevice);
     void SetDoNotDisturbStatusVolume(uint32_t sessionId, float volume);
-    uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId);
+    uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t appUid, uint32_t sessionId);
     void SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
         doNotDisturbStatusWhiteList);
     void SetDoNotDisturbStatus(bool isDoNotDisturb);

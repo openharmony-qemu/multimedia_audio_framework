@@ -92,7 +92,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     volumes->volumeStream = GetStreamVolumeInternal(sessionId, volumeType, appUid, volumeMode);
     volumes->volumeSystem = GetSystemVolumeInternal(volumeType, deviceClass, volumeLevel);
     volumes->volumeApp = GetAppVolume(appUid, volumeMode);
-    int32_t doNotDisturbStatusVolume = GetDoNotDisturbStatusVolume(volumeType, appUid);
+    int32_t doNotDisturbStatusVolume = GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
     float volumeFloat = volumes->volumeSystem * volumes->volumeStream * volumes->volumeApp *
         doNotDisturbStatusVolume;
     if (IsChangeVolume(sessionId, volumeFloat, volumeLevel)) {
@@ -105,7 +105,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t volumeType, const std::
     return volumeFloat;
 }
 
-uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t sessionId)
+uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t appUid, uint32_t sessionId)
 {
     if (!isDoNotDisturbStatus_) {
         return 1;
@@ -113,11 +113,13 @@ uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t s
     if (volumeType == STREAM_SYSTEM || volumeType == STREAM_DTMF) {
         return 0;
     }
-    if (CheckoutSystemAppUtil::CheckoutSystemApp(sessionId) || sessionId == VOIP_CALL_VOICE_SERVICE) {
+    auto it = streamVolume_.find(sessionId);
+    CHECK_AND_RETURN_RET_LOG(it != streamVolume_.end(), 1.0f, "sessionId is null");
+    if (it->second.isSystemApp() || appUid == VOIP_CALL_VOICE_SERVICE) {
         return 1;
     }
     AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(volumeType));
-    return (doNotDisturbStatusWhiteListVolume_[sessionId] == 1) ? 1 : (volumeMapType != STREAM_RING ? 1 : 0);
+    return (doNotDisturbStatusWhiteListVolume_[appUid] == 1) ? 1 : (volumeMapType != STREAM_RING ? 1 : 0);
 }
 
 void AudioVolume::SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>

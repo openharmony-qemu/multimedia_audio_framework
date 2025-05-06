@@ -162,6 +162,8 @@ void AudioPolicyService::InitKVStore()
 void AudioPolicyService::NotifySettingsDataReady()
 {
     AudioServerProxy::GetInstance().NotifySettingsDataReady();
+    RegisterDoNotDisturbStatus();
+    RegisterDoNotDisturbStatusWhiteList();
 }
 
 bool AudioPolicyService::ConnectServiceAdapter()
@@ -829,8 +831,6 @@ void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
     RegisterAccessiblilityBalance();
     RegisterAccessiblilityMono();
-    RegisterDoNotDisturbStatus();
-    RegisterDoNotDisturbStatusWhiteList();
 }
 
 void AudioPolicyService::RegisterAccessiblilityBalance()
