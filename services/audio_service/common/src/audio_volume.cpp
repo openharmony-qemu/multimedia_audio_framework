@@ -136,8 +136,8 @@ uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t a
         return 0;
     }
     auto it = streamVolume_.find(sessionId);
-    CHECK_AND_RETURN_RET_LOG(it != streamVolume_.end(), 1.0f, "sessionId is null");
-    if (it->second.isSystemApp() || appUid == VOIP_CALL_VOICE_SERVICE) {
+    CHECK_AND_RETURN_RET_LOG(it != streamVolume_.end(), 1, "sessionId is null");
+    if (it->second.IsSystemApp() || appUid == VOIP_CALL_VOICE_SERVICE) {
         return 1;
     }
     AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(volumeType));
