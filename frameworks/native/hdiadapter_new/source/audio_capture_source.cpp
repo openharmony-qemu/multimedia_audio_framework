@@ -112,7 +112,7 @@ bool AudioCaptureSource::IsInited(void)
 int32_t AudioCaptureSource::Start(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::Start");
 
     if (IsNonblockingSource(adapterNameCase_)) {

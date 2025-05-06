@@ -26,6 +26,8 @@ struct VolumeValues {
     float volumeSystem;
     float volumeStream;
     float volumeApp;
+    float volume;
+    float volumeHistory;
 };
 
 enum FadePauseState {
@@ -52,10 +54,6 @@ float GetStreamVolume(uint32_t sessionId);
 float GetPreVolume(uint32_t sessionId);
 
 void SetPreVolume(uint32_t sessionId, float volume);
-
-void GetStreamVolumeFade(uint32_t sessionId, float *fadeBegin, float *fadeEnd);
-
-void SetStreamVolumeFade(uint32_t sessionId, float fadeBegin, float fadeEnd);
 
 bool IsSameVolume(float volumeA, float volumeB);
 

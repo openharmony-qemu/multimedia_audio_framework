@@ -25,6 +25,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr int32_t MS_PER_S = 1000;
+static const unsigned int BUFFER_CALC_20MS = 20;
 static const char* MAX_RENDERERS_NAME = "maxRenderers";
 static const char* MAX_CAPTURERS_NAME = "maxCapturers";
 static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
@@ -32,6 +34,9 @@ static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
 const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
 const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
+
+const uint32_t PC_MIC_CHANNEL_NUM = 4;
+const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
 bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
@@ -379,6 +384,25 @@ void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(
             info = streamProp;
         }
     }
+
+    if (AudioEcManager::GetInstance().GetEcFeatureEnable()) {
+        if (desc->newDeviceDescs_.front() != nullptr &&
+            desc->newDeviceDescs_.front()->deviceType_ != DEVICE_TYPE_MIC &&
+            info->channelLayout_ == PC_MIC_CHANNEL_NUM) {
+            // only built-in mic can use 4 channel, update later by using xml to describe
+            info->channels_ = static_cast<AudioChannel>(HEADPHONE_CHANNEL_NUM);
+            info->channelLayout_ = CH_LAYOUT_STEREO;
+        }
+    }
+
+#ifndef IS_EMULATOR
+    // need change to use profile for all devices later
+    if (isUpdateRouteSupported_) {
+        uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(info->format_);
+        info->bufferSize_ = BUFFER_CALC_20MS * info->sampleRate_ / static_cast<uint32_t>(MS_PER_S)
+            * info->channels_ * sampleFormatBits;
+    }
+#endif
 }
 
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
