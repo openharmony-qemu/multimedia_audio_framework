@@ -1057,7 +1057,7 @@ int32_t AudioCapturerSourceInner::Start(void)
 {
     std::lock_guard<std::mutex> statusLock(statusMutex_);
 
-    AUDIO_INFO_LOG("sourceName %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCapturerSourceInner::Start");
 
     if (IsNonblockingSource(attr_.sourceType, adapterNameCase_)) {
@@ -1752,7 +1752,7 @@ int32_t AudioCapturerSourceInner::GetCaptureId(uint32_t &captureId) const
     if (halName_ == "usb") {
         captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_USB);
     } else {
-        captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
+        captureId = GenerateUniqueIDBySource(attr_.sourceType);
     }
     return SUCCESS;
 }
@@ -1991,8 +1991,8 @@ int32_t AudioCapturerSourceWakeup::UpdateAppsUid(const std::vector<int32_t> &app
 
 int32_t AudioCapturerSourceWakeup::GetCaptureId(uint32_t &captureId) const
 {
-    int ret = audioCapturerSource_.GetCaptureId(captureId);
-    return ret;
+    captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_WAKEUP);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namesapce OHOS
