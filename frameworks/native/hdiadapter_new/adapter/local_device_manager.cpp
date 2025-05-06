@@ -54,6 +54,7 @@ int32_t LocalDeviceManager::LoadAdapter(const std::string &adapterName)
     adapters_[adapterName]->adapter_ = adapter;
     adapterMtx_.unlock();
     // LCOV_EXCL_START
+    std::lock_guard<std::mutex> lock(reSetParamsMtx_);
     for (auto it = reSetParams_.begin(); it != reSetParams_.end();) {
         if (it->adapterName_ == adapterName) {
             SetAudioParameter(adapterName, it->key_, it->condition_, it->value_);
@@ -523,6 +524,7 @@ void LocalDeviceManager::SaveSetParameter(const std::string &adapterName, const 
     // save set param
     auto callerUid = IPCSkeleton::GetCallingUid();
     AUDIO_INFO_LOG("save param when adapter is nullptr, callerUid is %{public}u", callerUid);
+    std::lock_guard<std::mutex> lock(reSetParamsMtx_);
     reSetParams_.push_back({ adapterName, key, condition, value });
 }
 
