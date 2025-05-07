@@ -119,6 +119,7 @@ void AudioOffloadStream::OffloadStreamSetCheck(uint32_t sessionId)
         return;
     }
 
+    Trace trace("AudioOffloadStream::OffloadStreamSetCheck:Getting offload stream:" + std::to_string(sessionId));
     auto CallingUid = IPCSkeleton::GetCallingUid();
     AUDIO_INFO_LOG("sessionId[%{public}d]  CallingUid[%{public}d] StreamType[%{public}d] "
                    "Getting offload stream", sessionId, CallingUid, streamType);
@@ -254,12 +255,22 @@ int32_t AudioOffloadStream::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
 {
     AudioPipeType oldPipeType;
     streamCollector_.GetPipeType(sessionId, oldPipeType);
+    Trace tracePipe("AudioOffloadStream::MoveToNewPipeInner:sessionId:" + std::to_string(sessionId) +
+        " from " + std::to_string(oldPipeType) + " to " + std::to_string(pipeType));
     if (oldPipeType == pipeType) {
         AUDIO_ERR_LOG("the same type [%{public}d],no need to move", pipeType);
         return SUCCESS;
     }
     Trace trace("AudioOffloadStream::MoveToNewPipeInner");
-    AUDIO_INFO_LOG("start move stream into new pipe %{public}d", pipeType);
+    AUDIO_INFO_LOG("start move stream %{public}d from %{public}d into new pipe %{public}d", sessionId,
+        oldPipeType, pipeType);
+    int32_t ret = SwitchToNewPipe(sessionId, pipeType);
+
+    return ret;
+}
+
+int32_t AudioOffloadStream::SwitchToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
+{
     int32_t ret = ERROR;
     std::string portName = PORT_NONE;
     AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
@@ -280,7 +291,6 @@ int32_t AudioOffloadStream::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
             if (!CheckStreamMultichannelMode(sessionId)) {
                 return ERROR;
             }
-
             if (audioIOHandleMap_.CheckIOHandleExist(MCH_PRIMARY_SPEAKER) == false) {
                 // load moudle and move into new sink
                 LoadMchModule();
@@ -494,6 +504,7 @@ bool AudioOffloadStream::CheckStreamMultichannelMode(const int64_t activateSessi
 }
 void AudioOffloadStream::CheckStreamMode(const int64_t activateSessionId)
 {
+    Trace trace("AudioOffloadStream::CheckStreamMode:activateSessionId:" + std::to_string(activateSessionId));
     if (CheckStreamMultichannelMode(activateSessionId)) {
         AudioPipeType pipeMultiChannel = PIPE_TYPE_MULTICHANNEL;
         int32_t ret = streamCollector_.ActivateAudioConcurrency(pipeMultiChannel);
