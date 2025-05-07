@@ -405,13 +405,15 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
         audioScene, audioSceneManager_.GetLastAudioScene(), uid, pid);
     audioSceneManager_.SetAudioScenePre(audioScene);
     audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
-
+    bool isSameScene = audioSceneManager_.IsSameAudioScene();
     FetchDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
 
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
-    OnAudioSceneChange(audioScene);
-
+    if (!isSameScene) {
+        OnAudioSceneChange(audioScene);
+    }
+    
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
