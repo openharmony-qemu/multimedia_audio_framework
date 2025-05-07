@@ -57,6 +57,8 @@ uint64_t DURATION_TIME_DEFAULT = 40;
 uint64_t DURATION_TIME_SHORT = 10;
 static const float DEFAULT_APP_VOLUME = 1.0f;
 uint32_t VOIP_CALL_VOICE_SERVICE = 5523;
+uint32_t DISTURB_STATE_VOLUME_MUTE = 0;
+uint32_t DISTURB_STATE_VOLUME_UNMUTE = 1;
 
 AudioVolume *AudioVolume::GetInstance()
 {
@@ -130,18 +132,28 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
 uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t appUid, uint32_t sessionId)
 {
     if (!isDoNotDisturbStatus_) {
-        return 1;
+        return DISTURB_STATE_VOLUME_UNMUTE;
     }
     if (volumeType == STREAM_SYSTEM || volumeType == STREAM_DTMF) {
-        return 0;
+        return DISTURB_STATE_VOLUME_MUTE;
     }
     auto it = streamVolume_.find(sessionId);
-    CHECK_AND_RETURN_RET_LOG(it != streamVolume_.end(), 1, "sessionId is null");
+    CHECK_AND_RETURN_RET_LOG(it != streamVolume_.end(), DISTURB_STATE_VOLUME_UNMUTE, "sessionId is null");
     if (it->second.IsSystemApp() || appUid == VOIP_CALL_VOICE_SERVICE) {
-        return 1;
+        return DISTURB_STATE_VOLUME_UNMUTE;
     }
     AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(volumeType));
-    return (doNotDisturbStatusWhiteListVolume_[appUid] == 1) ? 1 : (volumeMapType != STREAM_RING ? 1 : 0);
+    if (doNotDisturbStatusWhiteListVolume_[appUid] == 1) {
+        // this stream of app is in whiteList, unMute
+        return DISTURB_STATE_VOLUME_UNMUTE;
+    } else {
+        // this stream is STREAM_RING, mute
+        if (volumeMapType != STREAM_RING) {
+            return DISTURB_STATE_VOLUME_UNMUTE;
+        } else {
+            return DISTURB_STATE_VOLUME_MUTE;
+        }
+    }
 }
 
 void AudioVolume::SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>

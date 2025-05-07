@@ -162,8 +162,6 @@ void AudioPolicyService::InitKVStore()
 void AudioPolicyService::NotifySettingsDataReady()
 {
     AudioServerProxy::GetInstance().NotifySettingsDataReady();
-    RegisterDoNotDisturbStatus();
-    RegisterDoNotDisturbStatusWhiteList();
 }
 
 bool AudioPolicyService::ConnectServiceAdapter()
@@ -1527,6 +1525,8 @@ void AudioPolicyService::RegisterDataObserver()
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterDataObserver get devicesName failed");
     SetDisplayName(devicesName, true);
     RegisterNameMonitorHelper();
+    RegisterDoNotDisturbStatus();
+    RegisterDoNotDisturbStatusWhiteList()
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
