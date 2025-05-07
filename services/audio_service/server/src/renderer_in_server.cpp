@@ -355,7 +355,9 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             offloadEnable_ = operation == OPERATION_SET_OFFLOAD_ENABLE ? true : false;
             if (engineFlag == 1 && offloadEnable_ == true) {
-                ReConfigAllDupStreamCallback();
+                ReConfigOffloadAllDupStreamCallback();
+            } else if (engineFlag == 1 && offloadEnable_ == false) {
+                ReConfigCommonAllDupStreamCallback();
             }
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
@@ -365,12 +367,23 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
     }
 }
 
-void RendererInServer::ReConfigAllDupStreamCallback()
+void RendererInServer::ReConfigOffloadAllDupStreamCallback()
 {
     for (auto it = innerCapIdToDupStreamCallbackMap_.begin(); it != innerCapIdToDupStreamCallbackMap_.end(); ++it) {
         if (captureInfos_[(*it).first].dupStream != nullptr && (*it).second != nullptr &&
             (*it).second->GetDupRingBuffer() != nullptr) {
             dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
+            (*it).second->GetDupRingBuffer()->ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
+        }
+    }
+}
+
+void RendererInServer::ReConfigCommonAllDupStreamCallback()
+{
+    for (auto it = innerCapIdToDupStreamCallbackMap_.begin(); it != innerCapIdToDupStreamCallbackMap_.end(); ++it) {
+        if (captureInfos_[(*it).first].dupStream != nullptr && (*it).second != nullptr &&
+            (*it).second->GetDupRingBuffer() != nullptr) {
+            dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN / DUP_DEFAULT_LEN);
             (*it).second->GetDupRingBuffer()->ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
         }
     }
@@ -1887,6 +1900,11 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
     // create dupBuffer in server
     innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
         AudioRingCache::Create(dupTotalSizeInFrame_ * dupByteSizePerFrame_);
+    if (offloadEnable_ == true) {
+        dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
+        innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->
+            ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
+    }
     CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr,
         ERR_OPERATION_FAILED, "Create dup buffer failed");
     return SUCCESS;

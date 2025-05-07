@@ -142,7 +142,8 @@ private:
     int64_t GetLastAudioDuration();
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
-    void ReConfigAllDupStreamCallback();
+    void ReConfigAllOffloadDupStreamCallback();
+    void ReConfigCommonAllDupStreamCallback();
 
 private:
     std::mutex statusLock_;

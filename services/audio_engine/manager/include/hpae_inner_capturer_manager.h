@@ -116,7 +116,7 @@ private:
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSourceOutputNode>> sourceOutputNodeMap_;
-    std::unordered_map<uint32_t, std::shared_ptr<HpaeResampleNode>> capturerResampleNodeMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> capturerAudioFormatConverterNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeSourceProcessCluster>> capturerSceneClusterMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> rendererSceneClusterMap_;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> capturerSessionNodeMap_;

@@ -386,7 +386,7 @@ int32_t HpaeRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
 
     AUDIO_INFO_LOG("calling set stream offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
 
-    if (offloadStatePolicy_.load() == statePolicy) {
+    if (offloadStatePolicy_.load() == statePolicy && offloadEnable_) {
         return SUCCESS;
     }
 
