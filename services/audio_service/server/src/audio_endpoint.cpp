@@ -1376,6 +1376,7 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
 void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList)
 {
     for (size_t i = 0; i < processBufferList_.size(); i++) {
+        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr");
         uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
         Trace trace("AudioEndpoint::ReadProcessData->" + std::to_string(curRead));
         SpanInfo *curReadSpan = processBufferList_[i]->GetSpanInfo(curRead);
@@ -1387,8 +1388,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
         bool muteFlag = processList_[i]->GetMuteState();
         bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-        int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(volumeType,
-            clientConfig_.appInfo.appUid);
+        int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(streamType,
+            clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId());
         if (deviceInfo_.networkId_ == LOCAL_NETWORK_ID &&
             !(deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && volumeType == STREAM_MUSIC &&
                 PolicyHandler::GetInstance().IsAbsVolumeSupported()) && getVolumeRet) {
