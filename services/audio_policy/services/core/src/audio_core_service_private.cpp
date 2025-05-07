@@ -2041,5 +2041,23 @@ bool AudioCoreService::HandleInputStreamInRunning(std::shared_ptr<AudioStreamDes
     }
     return true;
 }
+
+void AudioCoreService::HandleDualStartClient(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 1, "Invalid params");
+    std::string firstSinkName =
+        AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_[0], streamDesc->sessionId_);
+    std::string secondSinkName =
+        AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_[1], streamDesc->sessionId_);
+    AUDIO_INFO_LOG("firstSinkName %{public}s, secondSinkName %{public}s",
+        firstSinkName.c_str(), secondSinkName.c_str());
+    if (firstSinkName == secondSinkName) {
+        activeDevices.push_back(
+            make_pair(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
+        activeDevices.push_back(
+            make_pair(streamDesc->newDeviceDescs_[1]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
+    }
+}
 }
 }
