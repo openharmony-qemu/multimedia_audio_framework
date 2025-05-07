@@ -66,6 +66,7 @@ typedef struct RemoteAdapterWrapper {
     std::mutex renderCallbackMtx_;
     std::mutex captureCallbackMtx_;
     RemoteAdapterHdiCallback hdiCallback_;
+    bool isValid_ = true;
 } RemoteAdapterWrapper;
 
 class RemoteDeviceManager : public IDeviceManager {
