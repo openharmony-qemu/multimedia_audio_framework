@@ -772,7 +772,12 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
         AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
-    if (AudioPolicyUtils::GetInstance().GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
+    DeviceRole deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(devType);
+    if (!statusInfo.isConnected) {
+        std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(statusInfo.networkId, deviceRole);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+    }
+    if (deviceRole == DeviceRole::INPUT_DEVICE) {
         remoteCapturerSwitch_ = true;
     }
 
@@ -852,7 +857,6 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
             AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
         std::string currentActivePort = REMOTE_CLASS;
         audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-        audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
         audioRouteMap_.RemoveDeviceInRouterMap(moduleName);
         audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
     }
@@ -1278,6 +1282,7 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectedDevices = audioConnectedDevice_.GetCopy();
+    std::vector<std::string> modulesNeedClose = {};
     for (auto deviceDesc : connectedDevices) {
         if (deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID) {
             const std::string networkId = deviceDesc->networkId_;
@@ -1286,7 +1291,7 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
                 AudioPolicyUtils::GetInstance().GetDeviceRole(deviceDesc->deviceType_));
             audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
                 AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
-            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+            modulesNeedClose.push_back(moduleName);
             audioRouteMap_.RemoveDeviceInRouterMap(moduleName);
             audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
             if (AudioPolicyUtils::GetInstance().GetDeviceRole(deviceDesc->deviceType_) == DeviceRole::INPUT_DEVICE) {
@@ -1302,6 +1307,9 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
         AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
+    for (auto &moduleName : modulesNeedClose) {
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+    }
 }
 
 uint16_t AudioDeviceStatus::GetDmDeviceType()
