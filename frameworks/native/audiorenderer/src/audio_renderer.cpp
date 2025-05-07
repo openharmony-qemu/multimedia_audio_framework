@@ -1964,6 +1964,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     bool switchResult = false;
+    std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     // create new IAudioStream
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appPid);
@@ -1981,6 +1982,11 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         switchResult = SetSwitchInfo(switchInfo, newAudioStream);
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "Init ipc stream failed");
     }
+    oldAudioStream = audioStream_;
+    // Update audioStream_ to newAudioStream in both AudioRendererPrivate and AudioInterruptCallbackImpl.
+    // Operation of replace audioStream_ must be performed before StartAudioStream.
+    // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
+    UpdateRendererAudioStream(newAudioStream);
 
     // Start new stream if old stream was in running state.
     // When restoring for audio server died, no need for restart.
@@ -1993,8 +1999,6 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
     }
 
-    // Update audioStream_ to newAudioStream in both AudioRendererPrivate and AudioInterruptCallbackImpl.
-    UpdateRendererAudioStream(newAudioStream);
     isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
     return switchResult;
 }
