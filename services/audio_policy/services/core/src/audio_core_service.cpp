@@ -331,22 +331,15 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
+            streamDesc->sessionId_);
+        audioVolumeManager_.SetVolumeForSwitchDevice(*(streamDesc->newDeviceDescs_.front()), sinkName);
+
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (streamDesc->newDeviceDescs_.size() == 2) { // 2 for dual use
-            std::string firstSinkName =
-                AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_[0], streamDesc->sessionId_);
-            std::string secondSinkName =
-                AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_[1], streamDesc->sessionId_);
-            AUDIO_INFO_LOG("firstSinkName %{public}s, secondSinkName %{public}s",
-                firstSinkName.c_str(), secondSinkName.c_str());
-            if (firstSinkName == secondSinkName) {
-                activeDevices.push_back(
-                    make_pair(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
-                activeDevices.push_back(
-                    make_pair(streamDesc->newDeviceDescs_[1]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
-            }
+            HandleDualStartClient(activeDevices, streamDesc);
         } else {
             std::string firstSinkName =
                 AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_[0], streamDesc->sessionId_);

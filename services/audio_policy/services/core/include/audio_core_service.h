@@ -380,6 +380,8 @@ private:
     bool HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         AudioStreamDeviceChangeReasonExt reason);
     bool HandleInputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void HandleDualStartClient(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
