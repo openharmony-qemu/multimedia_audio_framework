@@ -139,7 +139,7 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
     auto request = [this, sessionId, sinkName]() {
         if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,can not find session,move %{public}s --> %{public}s",
-                sessionId, sinkName.c_str(), sinkInfo_.deviceName.c_str());
+                sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
             return;
         }
         
@@ -147,7 +147,7 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
             sessionId);
 
         AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
-            sessionId, sinkName.c_str(), sinkInfo_.deviceName.c_str());
+            sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
         std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNodeMap_[sessionId];
         DeleteRendererInputSessionInner(sessionId);
         std::string name = sinkName;

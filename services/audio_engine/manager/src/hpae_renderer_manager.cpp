@@ -449,7 +449,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
 {
     if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
         AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,can not find session,move %{public}s --> %{public}s",
-            sessionId, sinkName.c_str(), sinkInfo_.deviceName.c_str());
+            sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
         return;
     }
 
@@ -459,7 +459,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
     }
 
     AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
-        sessionId, sinkName.c_str(), sinkInfo_.deviceName.c_str());
+        sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
     std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNodeMap_[sessionId];
     HpaeSessionState inputState = inputNode->GetState();
     if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {
@@ -788,7 +788,7 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
     hpaeNoLockQueue_.HandleRequests();
     int32_t ret = outputCluster_->DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
-    for(const auto &item : sceneClusterMap_) {
+    for (const auto &item : sceneClusterMap_) {
         item.second->SetConnectedFlag(false);
     }
     outputCluster_->ResetAll();

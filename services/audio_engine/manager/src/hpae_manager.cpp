@@ -37,7 +37,7 @@ static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr int32_t SINK_INVALID_ID = -1;
-static constexpr std::string DEFAULT_SINK_NAME = "Speaker";
+static const std::string DEFAULT_SINK_NAME = "Speaker";
 static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
     {"s16", SAMPLE_S16LE},
     {"s16le", SAMPLE_S16LE},
