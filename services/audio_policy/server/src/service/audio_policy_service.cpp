@@ -1526,7 +1526,7 @@ void AudioPolicyService::RegisterDataObserver()
     SetDisplayName(devicesName, true);
     RegisterNameMonitorHelper();
     RegisterDoNotDisturbStatus();
-    RegisterDoNotDisturbStatusWhiteList()
+    RegisterDoNotDisturbStatusWhiteList();
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
