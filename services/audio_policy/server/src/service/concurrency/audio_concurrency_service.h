@@ -47,10 +47,7 @@ public:
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& GetConcurrencyMap();
-    int32_t ActivateAudioRendererConcurrency(AudioPipeType incomingPipeType,
-        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
-    int32_t ActivateAudioCapturerConcurrency(AudioPipeType incomingPipeType,
-        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+    int32_t ActivateAudioConcurrencyExt(AudioPipeType incomingPipeType);
     int32_t ActivateOffloadConcurrencyExt();
     int32_t ActivateFastConcurrencyExt();
 private:

@@ -146,10 +146,14 @@ void AudioConcurrencyService::AudioConcurrencyClient::OnConcedeStream()
     }
 }
 
-int32_t AudioConcurrencyService::ActivateAudioRendererConcurrency(AudioPipeType incomingPipeType,
-    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incomingPipeType,
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    int32_t ret = SUCCESS;
+    Trace trace("AudioConcurrencyService::ActivateAudioConcurrency:" + std::to_string(incomingPipeType));
+    if (concurrencyCfgMap_.empty()) {
+        return SUCCESS;
+    }
     for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
         if ((*it)->rendererInfo.pipeType == incomingPipeType && (incomingPipeType == PIPE_TYPE_OFFLOAD ||
             incomingPipeType == PIPE_TYPE_MULTICHANNEL)) {
@@ -160,33 +164,12 @@ int32_t AudioConcurrencyService::ActivateAudioRendererConcurrency(AudioPipeType 
             "pipe %{public}d, concede incoming pipe %{public}d", (*it)->sessionId, (*it)->rendererInfo.pipeType,
             incomingPipeType);
     }
-    return ret;
-}
-
-int32_t AudioConcurrencyService::ActivateAudioCapturerConcurrency(AudioPipeType incomingPipeType,
-    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
-{
-    int32_t ret = SUCCESS;
     for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
         CHECK_AND_RETURN_RET_LOG(concurrencyCfgMap_[std::make_pair((*it)->capturerInfo.pipeType, incomingPipeType)] !=
             CONCEDE_INCOMING, ERR_CONCEDE_INCOMING_STREAM, "existing session %{public}d, "
             "pipe %{public}d, concede incoming pipe %{public}d", (*it)->sessionId, (*it)->capturerInfo.pipeType,
             incomingPipeType);
     }
-    return ret;
-}
-
-int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incomingPipeType,
-    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
-    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
-{
-    Trace trace("AudioConcurrencyService::ActivateAudioConcurrency:" + std::to_string(incomingPipeType));
-    if (concurrencyCfgMap_.empty()) {
-        return SUCCESS;
-    }
-    int32_t ret = SUCCESS;
-    ret = ActivateAudioRendererConcurrency(incomingPipeType, audioRendererChangeInfos);
-    ret = ActivateAudioCapturerConcurrency(incomingPipeType, audioCapturerChangeInfos);
     bool concedeIncomingVoipCap = false;
     for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
         if ((*it)->rendererInfo.pipeType == incomingPipeType && (incomingPipeType == PIPE_TYPE_OFFLOAD ||
@@ -209,6 +192,12 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrency(AudioPipeType incoming
     }
     CHECK_AND_RETURN_RET_LOG(!concedeIncomingVoipCap, ERR_CONCEDE_INCOMING_STREAM,
         "Existing call in concede incoming call in");
+    return ActivateAudioConcurrencyExt(incomingPipeType);
+}
+
+int32_t AudioConcurrencyService::ActivateAudioConcurrencyExt(AudioPipeType incomingPipeType)
+{
+    int32_t ret = SUCCESS;
     if (incomingPipeType == PIPE_TYPE_OFFLOAD) {
         ret = ActivateOffloadConcurrencyExt();
     } else if (incomingPipeType == PIPE_TYPE_LOWLATENCY_OUT) {
