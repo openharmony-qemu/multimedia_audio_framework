@@ -55,6 +55,7 @@ namespace {
     constexpr float VOLUME_MIN = 0;
     constexpr float VOLUME_MAX = 1.0;
     constexpr uid_t UID_CAR_DISTRIBUTED_ENGINE_SA = 65872;
+    constexpr uid_t UID_PREEMPT_SA = 7015;
     int g_isCallbackReceived = false;
     std::mutex g_mutex;
     std::condition_variable g_condVar;
@@ -644,23 +645,53 @@ HWTEST(AudioManagerUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test ActivatePreemptMode API
-* @tc.number : ActivatePreemptMode_001
-* @tc.desc   : Test ActivatePreemptMode interface.
-*/
+ * @tc.name   : Test ActivatePreemptMode API
+ * @tc.number : ActivatePreemptMode_001
+ * @tc.desc   : Test ActivatePreemptMode interface, SUCCESS return, if uid: 7015
+ */
 HWTEST(AudioManagerUnitTest, ActivatePreemptMode_001, TestSize.Level1)
 {
+    int32_t setUidRet = setuid(UID_PREEMPT_SA);
+    std::cout << "setUidRet: " << setUidRet << std::endl;
+    auto ret = AudioSystemManager::GetInstance()->ActivatePreemptMode();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test ActivatePreemptMode API
+ * @tc.number : ActivatePreemptMode_002
+ * @tc.desc   : Test ActivatePreemptMode interface, ERROR return, if not preempt uid: 7015
+ */
+HWTEST(AudioManagerUnitTest, ActivatePreemptMode_002, TestSize.Level1)
+{
+    int32_t setUidRet = setuid(0);
+    std::cout << "setUidRet: " << setUidRet << std::endl;
     auto ret = AudioSystemManager::GetInstance()->ActivatePreemptMode();
     EXPECT_EQ(ret, ERROR);
 }
 
 /**
-* @tc.name   : Test DeactivatePreemptMode API
-* @tc.number : DeactivatePreemptMode_001
-* @tc.desc   : Test DeactivatePreemptMode interface.
-*/
+ * @tc.name   : Test DeactivatePreemptMode API
+ * @tc.number : DeactivatePreemptMode_001
+ * @tc.desc   : Test DeactivatePreemptMode interface, SUCCESS return, if uid: 7015
+ */
 HWTEST(AudioManagerUnitTest, DeactivatePreemptMode_001, TestSize.Level1)
 {
+    int32_t setUidRet = setuid(UID_PREEMPT_SA);
+    std::cout << "setUidRet: " << setUidRet << std::endl;
+    auto ret = AudioSystemManager::GetInstance()->DeactivatePreemptMode();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test DeactivatePreemptMode API
+ * @tc.number : DeactivatePreemptMode_002
+ * @tc.desc   : Test DeactivatePreemptMode interface, ERROR return, if not preempt uid: 7015
+ */
+HWTEST(AudioManagerUnitTest, DeactivatePreemptMode_002, TestSize.Level1)
+{
+    int32_t setUidRet = setuid(0);
+    std::cout << "setUidRet: " << setUidRet << std::endl;
     auto ret = AudioSystemManager::GetInstance()->DeactivatePreemptMode();
     EXPECT_EQ(ret, ERROR);
 }

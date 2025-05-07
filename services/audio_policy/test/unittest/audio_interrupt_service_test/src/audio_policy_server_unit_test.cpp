@@ -3298,10 +3298,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_167, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_168
-* @tc.desc  : Test ActivatePreemptMode.
-*/
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_168
+ * @tc.desc  : Test ActivatePreemptMode.
+ */
 HWTEST(AudioPolicyUnitTest, AudioPolicyServer_168, TestSize.Level1)
 {
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
@@ -3312,10 +3312,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_168, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_169
-* @tc.desc  : Test DeactivatePreemptMode.
-*/
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_169
+ * @tc.desc  : Test DeactivatePreemptMode.
+ */
 HWTEST(AudioPolicyUnitTest, AudioPolicyServer_169, TestSize.Level1)
 {
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();

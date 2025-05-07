@@ -3416,10 +3416,10 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_118, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioInterruptService
-* @tc.number: AudioInterruptService_119
-* @tc.desc  : Test AudioInterruptService
-*/
+ * @tc.name  : Test AudioInterruptService
+ * @tc.number: AudioInterruptService_119
+ * @tc.desc  : Test AudioInterruptService
+ */
 HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_119, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
