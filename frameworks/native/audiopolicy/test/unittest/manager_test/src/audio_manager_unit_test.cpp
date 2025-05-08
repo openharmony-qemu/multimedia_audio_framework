@@ -55,11 +55,6 @@ namespace {
     constexpr float VOLUME_MIN = 0;
     constexpr float VOLUME_MAX = 1.0;
     constexpr uid_t UID_CAR_DISTRIBUTED_ENGINE_SA = 65872;
-    constexpr uid_t UID_PREEMPT_SA = 7015;
-    int g_isCallbackReceived = false;
-    std::mutex g_mutex;
-    std::condition_variable g_condVar;
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> g_audioFocusInfoList;
     static constexpr char CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config.xml";
     static constexpr char CONFIG_FILE_NEW[] = "/chip_prod/etc/audio/audio_policy_config.xml";
     // "hello world" sha256
