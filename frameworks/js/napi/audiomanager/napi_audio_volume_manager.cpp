@@ -181,7 +181,7 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentage(napi_env env, napi_cal
         NapiAudioError::ThrowError(env, "GetAppVolumePercentage failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
-    int32_t argNum = 0;
+    size_t argNum = 0;
     auto inputParser = [context, &argNum](size_t argc, napi_value *argv) {
         argNum = argc;
     };
