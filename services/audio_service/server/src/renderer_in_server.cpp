@@ -368,18 +368,19 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 void RendererInServer::ReConfigDupStreamCallback()
 {
     size_t dupTotalSizeInFrameTemp_ = 0;
+
     if (offloadEnable_ == true) {
         dupTotalSizeInFrameTemp_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
-        AUDIO_INFO_LOG("DupBuffer change to offload size");
     } else {
         dupTotalSizeInFrameTemp_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN / DUP_DEFAULT_LEN);
-        AUDIO_INFO_LOG("DupBuffer change to common size");
     }
+    AUDIO_INFO_LOG("dupTotalSizeInFrameTemp_: %{public}zu, dupTotalSizeInFrame_: %{public}zu",
+        dupTotalSizeInFrameTemp_, dupTotalSizeInFrame_);
     if (dupTotalSizeInFrameTemp_ == dupTotalSizeInFrame_) {
-        AUDIO_INFO_LOG("DupBuffer size is true, no need to reconfig");
         return;
     }
     dupTotalSizeInFrame_ = dupTotalSizeInFrameTemp_;
+    
     for (auto it = innerCapIdToDupStreamCallbackMap_.begin(); it != innerCapIdToDupStreamCallbackMap_.end(); ++it) {
         if (captureInfos_[(*it).first].dupStream != nullptr && (*it).second != nullptr &&
             (*it).second->GetDupRingBuffer() != nullptr) {
@@ -1885,11 +1886,10 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
     capInfo.dupStream->GetSpanSizePerFrame(dupSpanSizeInFrame_);
     if (offloadEnable_ == true) {
         dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
-        AUDIO_INFO_LOG("DupBuffer change to offload size");
     } else {
         dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN/DUP_DEFAULT_LEN);
-        AUDIO_INFO_LOG("DupBuffer change to common size");
     }
+
     capInfo.dupStream->GetByteSizePerFrame(dupByteSizePerFrame_);
     if (dupSpanSizeInFrame_ == 0 || dupByteSizePerFrame_ == 0) {
         AUDIO_ERR_LOG("ERR_INVALID_PARAM");
