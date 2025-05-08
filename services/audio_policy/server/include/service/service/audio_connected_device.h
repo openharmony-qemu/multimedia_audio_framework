@@ -81,6 +81,7 @@ private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
     std::mutex dmDeviceMtx_;
     std::unordered_map<std::string, DmDevice> dmDeviceMap_;
+    std::shared_mutex mutex_;
 };
 }
 }
