@@ -1341,6 +1341,7 @@ enum RestoreStatus : int32_t {
     NEED_RESTORE,
     RESTORING,
     RESTORE_ERROR,
+    NEED_RESTORE_TO_NORMAL,
 };
 
 enum RestoreReason : int32_t {

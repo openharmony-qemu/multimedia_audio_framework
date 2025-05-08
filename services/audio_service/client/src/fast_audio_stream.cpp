@@ -1116,6 +1116,12 @@ void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus FastAudioStream::CheckRestoreStatus()
 {
+    if (spkProcClientCb_ == nullptr && micProcClientCb_ == nullptr) {
+        AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
+        renderMode_ = RENDER_MODE_NORMAL;
+        captureMode_ = CAPTURE_MODE_NORMAL;
+        return NEED_RESTORE_TO_NORMAL;
+    }
     return processClient_->CheckRestoreStatus();
 }
 
