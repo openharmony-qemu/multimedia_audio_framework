@@ -354,8 +354,8 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             offloadEnable_ = operation == OPERATION_SET_OFFLOAD_ENABLE ? true : false;
-            if (engineFlag == 1 && offloadEnable_ == true) {
-                ReConfigAllDupStreamCallback();
+            if (engineFlag == 1) {
+                ReConfigDupStreamCallback();
             }
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
@@ -365,12 +365,25 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
     }
 }
 
-void RendererInServer::ReConfigAllDupStreamCallback()
+void RendererInServer::ReConfigDupStreamCallback()
 {
+    size_t dupTotalSizeInFrameTemp_ = 0;
+
+    if (offloadEnable_ == true) {
+        dupTotalSizeInFrameTemp_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
+    } else {
+        dupTotalSizeInFrameTemp_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN / DUP_DEFAULT_LEN);
+    }
+    AUDIO_INFO_LOG("dupTotalSizeInFrameTemp_: %{public}zu, dupTotalSizeInFrame_: %{public}zu",
+        dupTotalSizeInFrameTemp_, dupTotalSizeInFrame_);
+    if (dupTotalSizeInFrameTemp_ == dupTotalSizeInFrame_) {
+        return;
+    }
+    dupTotalSizeInFrame_ = dupTotalSizeInFrameTemp_;
+    
     for (auto it = innerCapIdToDupStreamCallbackMap_.begin(); it != innerCapIdToDupStreamCallbackMap_.end(); ++it) {
         if (captureInfos_[(*it).first].dupStream != nullptr && (*it).second != nullptr &&
             (*it).second->GetDupRingBuffer() != nullptr) {
-            dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
             (*it).second->GetDupRingBuffer()->ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
         }
     }
@@ -1871,8 +1884,12 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 
     auto &capInfo = captureInfos_[innerCapId];
     capInfo.dupStream->GetSpanSizePerFrame(dupSpanSizeInFrame_);
-    // todo offload 350 frames primary 1 frame
-    dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN/DUP_DEFAULT_LEN);
+    if (offloadEnable_ == true) {
+        dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
+    } else {
+        dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN/DUP_DEFAULT_LEN);
+    }
+
     capInfo.dupStream->GetByteSizePerFrame(dupByteSizePerFrame_);
     if (dupSpanSizeInFrame_ == 0 || dupByteSizePerFrame_ == 0) {
         AUDIO_ERR_LOG("ERR_INVALID_PARAM");
