@@ -78,9 +78,9 @@ TEST_F(HpaeSourceInputNodeTest, testSourceInputOutputCase)
     std::shared_ptr<HpaeSourceInputNode> hpaeSoruceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
     EXPECT_EQ(hpaeSoruceInputNode.use_count(), 1);
     {
-        std::shared_ptr<OutputNode<HpaePcmBuffer *>> ouputNode = hpaeSoruceInputNode;
+        std::shared_ptr<OutputNode<HpaePcmBuffer *>> outputNode = hpaeSoruceInputNode;
         EXPECT_EQ(hpaeSoruceInputNode.use_count(), 2);  // 2 for test
-        std::shared_ptr<HpaeNode> hpaeNode = ouputNode->GetSharedInstance();
+        std::shared_ptr<HpaeNode> hpaeNode = outputNode->GetSharedInstance();
         EXPECT_EQ(hpaeSoruceInputNode.use_count(), 3);  // 3 for test
         EXPECT_EQ(hpaeNode->GetSampleRate(), nodeInfo.samplingRate);
         EXPECT_EQ(hpaeNode->GetNodeId(), nodeInfo.nodeId);

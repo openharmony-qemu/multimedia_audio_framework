@@ -40,7 +40,7 @@ private:
     void CheckAndUpdateInfo(HpaePcmBuffer *input);
     void UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo);
     PcmBufferInfo pcmBufferInfo_;
-    HpaePcmBuffer converterOuput_;
+    HpaePcmBuffer converterOutput_;
     HpaeNodeInfo preNodeInfo_;
     std::unique_ptr<Resampler> resampler_ = nullptr;
     ChannelConverter channelConverter_;

@@ -22,6 +22,8 @@
 #include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_engine_log.h"
+#include "audio_utils.h"
+#include "cinttypes"
 
 #define BYTE_SIZE_SAMPLE_U8 1
 #define BYTE_SIZE_SAMPLE_S16 2
@@ -94,17 +96,39 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
     }
 }
 
+std::string HpaeSourceInputNode::GetTraceInfo()
+{
+    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
+    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
+    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
+    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
+    return rate + ch + len + format;
+}
+
+void HpaeSourceInputNode::SetBufferValid(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
+{
+    CHECK_AND_RETURN_LOG(inputAudioBufferMap_.find(bufferType) != inputAudioBufferMap_.end(),
+        "set buffer valid with error type");
+    inputAudioBufferMap_.at(bufferType).SetBufferValid(true);
+    if (frameByteSizeMap_.at(bufferType) != replyBytes) {
+        AUDIO_WARNING_LOG("DoProcess(), request size[%{public}zu], reply size[%{public}" PRIu64 "]",
+            frameByteSizeMap_.at(bufferType), replyBytes);
+        AUDIO_WARNING_LOG("DoProcess(), if reply != request, just drop now");
+        inputAudioBufferMap_.at(bufferType).SetBufferValid(false);
+    }
+}
+
 void HpaeSourceInputNode::DoProcess()
 {
-    if (audioCapturerSource_ == nullptr) {
-        AUDIO_WARNING_LOG("audioCapturerSource_ is nullptr NodeId: %{public}u", GetNodeId());
-        return;
-    }
+    Trace trace("[" + std::to_string(GetNodeId()) + "]HpaeSourceInputNode::DoProcess " + GetTraceInfo());
+    CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr,
+        "audioCapturerSource_ is nullptr NodeId: %{public}u", GetNodeId());
     uint64_t replyBytes = 0;
     if (sourceInputNodeType_ == HpaeSourceInputNodeType::HPAE_SOURCE_MIC_EC) {
         uint64_t replyBytesEc = 0;
         audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,
                                                  &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc);
+        SetBufferValid(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
 #ifdef ENABLE_HOOK_PCM
         if (inputPcmDumperMap_.find(HPAE_SOURCE_BUFFER_TYPE_MIC) != inputPcmDumperMap_.end() &&
             inputPcmDumperMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC)) {
@@ -133,6 +157,7 @@ void HpaeSourceInputNode::DoProcess()
         HpaeSourceBufferType sourceBufferType = nodeInfoMap_.begin()->second.sourceBufferType;
         audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(sourceBufferType).data(),
                                            (uint64_t)frameByteSizeMap_.at(sourceBufferType), replyBytes);
+        SetBufferValid(sourceBufferType, replyBytes);
 #ifdef ENABLE_HOOK_PCM
         if (inputPcmDumperMap_.find(sourceBufferType) != inputPcmDumperMap_.end() &&
             inputPcmDumperMap_.at(sourceBufferType)) {

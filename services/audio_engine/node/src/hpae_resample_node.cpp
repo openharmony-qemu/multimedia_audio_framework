@@ -32,7 +32,7 @@ constexpr int REASAMPLE_QUAILTY = 5;
 HpaeResampleNode::HpaeResampleNode(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo, ResamplerType type)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate),
-    resampleOuput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tempOuput_(preNodeInfo.channels * nodeInfo.frameLen)
+    resampleOutput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tempOutput_(preNodeInfo.channels * nodeInfo.frameLen)
 {
     if (type == ResamplerType::PRORESAMPLER) {
         resampler_ = std::make_unique<ProResampler>(preNodeInfo_.samplingRate, nodeInfo.samplingRate,
@@ -53,7 +53,7 @@ HpaeResampleNode::HpaeResampleNode(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &node
 HpaeResampleNode::HpaeResampleNode(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate),
-    resampleOuput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tempOuput_(preNodeInfo.channels * nodeInfo.frameLen)
+    resampleOutput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tempOutput_(preNodeInfo.channels * nodeInfo.frameLen)
 {   // use ProResampler as default
     resampler_ = std::make_unique<ProResampler>(preNodeInfo_.samplingRate, nodeInfo.samplingRate,
         preNodeInfo_.channels, REASAMPLE_QUAILTY);
@@ -97,13 +97,13 @@ HpaePcmBuffer *HpaeResampleNode::SignalProcess(const std::vector<HpaePcmBuffer *
     if (resampler_ == nullptr) {
         return &silenceData_;
     }
-    resampleOuput_.Reset();
+    resampleOutput_.Reset();
     uint32_t inputFrameLen = preNodeInfo_.frameLen;
     uint32_t outputFrameLen = GetFrameLen();
     float *srcData = (*(inputs[0])).GetPcmDataBuffer();
-    float *dstData = tempOuput_.data();
+    float *dstData = tempOutput_.data();
     if (preNodeInfo_.channels == GetChannelCount()) {
-        dstData = resampleOuput_.GetPcmDataBuffer();
+        dstData = resampleOutput_.GetPcmDataBuffer();
     }
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr) {
@@ -112,7 +112,7 @@ HpaePcmBuffer *HpaeResampleNode::SignalProcess(const std::vector<HpaePcmBuffer *
     }
 #endif
     ResampleProcess(srcData, inputFrameLen, dstData, outputFrameLen);
-    return &resampleOuput_;
+    return &resampleOutput_;
 }
 
 void HpaeResampleNode::ResampleProcess(float *srcData, uint32_t inputFrameLen, float *dstData, uint32_t outputFrameLen)
@@ -125,13 +125,13 @@ void HpaeResampleNode::ResampleProcess(float *srcData, uint32_t inputFrameLen, f
         if (outputPcmDumper_ != nullptr) {
             outputPcmDumper_->CheckAndReopenHandlde();
             outputPcmDumper_->Dump(
-                (int8_t *)(resampleOuput_.GetPcmDataBuffer()), GetFrameLen() * sizeof(float) * GetChannelCount());
+                (int8_t *)(resampleOutput_.GetPcmDataBuffer()), GetFrameLen() * sizeof(float) * GetChannelCount());
         }
 #endif
         return;
     }
     
-    float *targetData = resampleOuput_.GetPcmDataBuffer();
+    float *targetData = resampleOutput_.GetPcmDataBuffer();
     size_t targetChannels = GetChannelCount();
     for (int32_t i = 0; i < (int32_t)outputFrameLen; ++i) {
         for (int32_t ch = 0; ch < (int32_t)targetChannels; ++ch) {
@@ -149,7 +149,7 @@ void HpaeResampleNode::ResampleProcess(float *srcData, uint32_t inputFrameLen, f
     if (outputPcmDumper_ != nullptr) {
         outputPcmDumper_->CheckAndReopenHandlde();
         outputPcmDumper_->Dump(
-            (int8_t *)(resampleOuput_.GetPcmDataBuffer()), GetFrameLen() * sizeof(float) * GetChannelCount());
+            (int8_t *)(resampleOutput_.GetPcmDataBuffer()), GetFrameLen() * sizeof(float) * GetChannelCount());
     }
 #endif
 }
@@ -158,7 +158,7 @@ void HpaeResampleNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmB
     HpaeNodeInfo &nodeInfo)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort(nodeInfo));
-    resampleOuput_.SetSourceBufferType(preNode->GetOutputPortBufferType(nodeInfo));
+    resampleOutput_.SetSourceBufferType(preNode->GetOutputPortBufferType(nodeInfo));
 }
 
 void HpaeResampleNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,

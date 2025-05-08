@@ -435,6 +435,7 @@ bool HpaeManager::CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const H
 {
     auto getKey = [](const HpaeSourceInfo &sourceInfo) {
         return std::tie(
+            sourceInfo.sourceId,
             sourceInfo.deviceNetId,
             sourceInfo.deviceClass,
             sourceInfo.adapterName,
@@ -451,7 +452,15 @@ bool HpaeManager::CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const H
             sourceInfo.volume,
             sourceInfo.openMicSpeaker,
             sourceInfo.ecType,
-            sourceInfo.micRef);
+            sourceInfo.ecFrameLen,
+            sourceInfo.ecSamplingRate,
+            sourceInfo.ecFormat,
+            sourceInfo.ecChannels,
+            sourceInfo.micRef,
+            sourceInfo.micRefFrameLen,
+            sourceInfo.micRefSamplingRate,
+            sourceInfo.micRefFormat,
+            sourceInfo.micRefChannels);
     };
     return getKey(info) != getKey(oldInfo);
 }

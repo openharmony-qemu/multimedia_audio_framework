@@ -174,7 +174,7 @@ public:
 
     size_t GetPreOutputNum() const;
 
-    const std::unordered_map<OutputPort<T> *, std::shared_ptr<HpaeNode>>& GetPreOuputMap();
+    const std::unordered_map<OutputPort<T> *, std::shared_ptr<HpaeNode>>& GetPreOutputMap();
 
     InputPort(const InputPort &that) = delete;
 
@@ -227,7 +227,7 @@ size_t InputPort<T>::GetPreOutputNum() const
 }
 
 template <class T>
-const std::unordered_map<OutputPort<T> *, std::shared_ptr<HpaeNode>>& InputPort<T>::GetPreOuputMap()
+const std::unordered_map<OutputPort<T> *, std::shared_ptr<HpaeNode>>& InputPort<T>::GetPreOutputMap()
 {
     return outputPorts_;
 }
