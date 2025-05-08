@@ -461,7 +461,7 @@ bool HpaeManager::CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const H
             sourceInfo.ecType,
             sourceInfo.ecFrameLen,
             sourceInfo.ecSamplingRate,
-            sourceInfo.ecFormat
+            sourceInfo.ecFormat,
             sourceInfo.ecChannels,
             sourceInfo.micRef,
             sourceInfo.micRefFrameLen,
