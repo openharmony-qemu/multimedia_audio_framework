@@ -23,6 +23,7 @@
 #include "audio_errors.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
+#include "cinttypes"
 
 #define BYTE_SIZE_SAMPLE_U8 1
 #define BYTE_SIZE_SAMPLE_S16 2
@@ -110,7 +111,7 @@ void HpaeSourceInputNode::SetBufferValid(const HpaeSourceBufferType &bufferType,
         "set buffer valid with error type");
     inputAudioBufferMap_.at(bufferType).SetBufferValid(true);
     if (frameByteSizeMap_.at(bufferType) != replyBytes) {
-        AUDIO_WARNING_LOG("DoProcess(), request size[%{public}zu], reply size[%{public}zu]",
+        AUDIO_WARNING_LOG("DoProcess(), request size[%{public}" PRIu64 "], reply size[%{public}" PRIu64 "]",
             frameByteSizeMap_.at(bufferType), replyBytes);
         AUDIO_WARNING_LOG("DoProcess(), if reply != request, just drop now");
         inputAudioBufferMap_.at(bufferType).SetBufferValid(false);
