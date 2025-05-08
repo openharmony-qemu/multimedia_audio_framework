@@ -37,6 +37,7 @@ static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr int32_t SINK_INVALID_ID = -1;
+static const std::string DEFAULT_SINK_NAME = "Speaker";
 static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
     {"s16", SAMPLE_S16LE},
     {"s16le", SAMPLE_S16LE},
@@ -316,14 +317,6 @@ int32_t HpaeManager::TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audi
         AUDIO_ERR_LOG("openaudioport failed,format:%{public}s not supported", audioModuleInfo.format.c_str());
         return ERROR;
     }
-    if (formatFromParserStrToEnum.find(audioModuleInfo.ecFormat) == formatFromParserStrToEnum.end()) {
-        AUDIO_ERR_LOG("openaudioport failed,ec format:%{public}s not supported", audioModuleInfo.ecFormat.c_str());
-        return ERROR;
-    }
-    if (formatFromParserStrToEnum.find(audioModuleInfo.micRefFormat) == formatFromParserStrToEnum.end()) {
-        AUDIO_ERR_LOG("openaudioport failed,mic format:%{public}s not supported", audioModuleInfo.micRefFormat.c_str());
-        return ERROR;
-    }
     sourceInfo.deviceNetId = audioModuleInfo.networkId;
     sourceInfo.deviceClass = audioModuleInfo.className;
     sourceInfo.adapterName = audioModuleInfo.adapterName;
@@ -400,7 +393,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo)
     return SUCCESS;
 }
 
-uint32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
+int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
 {
     if (SafeGetMap(rendererManagerMap_, audioModuleInfo.name)) {
         AUDIO_INFO_LOG("sink name: %{public}s already open", audioModuleInfo.name.c_str());
@@ -463,7 +456,7 @@ bool HpaeManager::CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const H
     return getKey(info) != getKey(oldInfo);
 }
 
-uint32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
+int32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
 {
     HpaeSourceInfo sourceInfo;
     int32_t ret = TransModuleInfoToHpaeSourceInfo(audioModuleInfo, sourceInfo);
@@ -505,7 +498,7 @@ uint32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo,
     return SUCCESS;
 }
 
-uint32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
+int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
 {
     if (SafeGetMap(rendererManagerMap_, audioModuleInfo.name)) {
         AUDIO_INFO_LOG("inner capture name: %{public}s already open", audioModuleInfo.name.c_str());
@@ -601,6 +594,14 @@ int32_t HpaeManager::CloseOutAudioPort(std::string &sinkName)
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
         AUDIO_WARNING_LOG("can not find sinkName: %{public}s in rendererManagerMap_", sinkName.c_str());
         return SUCCESS;
+    }
+    if (sinkName == defaultSink_ && defaultSink_ != DEFAULT_SINK_NAME) {
+        if (GetRendererManagerByNmae(DEFAULT_SINK_NAME) != nullptr) {
+            AUDIO_INFO_LOG("reset default sink to primary.");
+            defaultSink_ = DEFAULT_SINK_NAME;
+        } else {
+            AUDIO_ERR_LOG("can not find primary sink to replace default sink.");
+        }
     }
     rendererManagerMap_[sinkName]->DeInit(sinkName != defaultSink_);
     if (sinkName != defaultSink_) {
