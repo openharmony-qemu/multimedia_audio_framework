@@ -1137,5 +1137,16 @@ void FastAudioStream::SetCallStartByUserTid(pid_t tid)
     std::lock_guard lock(lastCallStartByUserTidMutex_);
     lastCallStartByUserTid_ = tid;
 }
+
+void FastAudioStream::SetCallbackLoopTid(int32_t tid)
+{
+    AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
+    callbackLoopTid_ = tid;
+}
+
+int32_t FastAudioStream::GetCallbackLoopTid()
+{
+    return callbackLoopTid_;
+}
 } // namespace AudioStandard
 } // namespace OHOS

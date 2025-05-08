@@ -224,6 +224,8 @@ public:
     void FetchDeviceForSplitStream() override;
 
     void SetCallStartByUserTid(pid_t tid) override;
+    void SetCallbackLoopTid(int32_t tid) override;
+    int32_t GetCallbackLoopTid() override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -273,6 +275,7 @@ private:
     // callback mode
     AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;
     std::thread callbackLoop_; // thread for callback to client and write.
+    int32_t callbackLoopTid_ = -1;
     std::atomic<bool> cbThreadReleased_ = true;
     std::mutex readCbMutex_; // lock for change or use callback
     std::condition_variable cbThreadCv_;
@@ -1064,6 +1067,7 @@ void CapturerInClientInner::InitCallbackLoop()
     callbackLoop_ = std::thread([weakRef] {
         bool keepRunning = true;
         std::shared_ptr<CapturerInClientInner> strongRef = weakRef.lock();
+        strongRef->SetCallbackLoopTid(gettid());
         if (strongRef != nullptr) {
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", strongRef->sessionId_);
@@ -1531,7 +1535,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         cbThreadCv_.notify_all();
         readDataCV_.notify_all();
         if (callbackLoop_.joinable()) {
-            callbackLoop_.detach();
+            callbackLoop_.join();
         }
     }
     paramsIsSet_ = false;
@@ -2061,6 +2065,17 @@ void CapturerInClientInner::FetchDeviceForSplitStream()
 void CapturerInClientInner::SetCallStartByUserTid(pid_t tid)
 {
     AUDIO_WARNING_LOG("not supported in capturer");
+}
+
+void CapturerInClientInner::SetCallbackLoopTid(int32_t tid)
+{
+    AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
+    callbackLoopTid_ = tid;
+}
+
+int32_t CapturerInClientInner::GetCallbackLoopTid()
+{
+    return callbackLoopTid_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

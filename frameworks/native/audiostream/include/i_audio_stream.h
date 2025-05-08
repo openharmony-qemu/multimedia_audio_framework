@@ -302,6 +302,10 @@ public:
     virtual void FetchDeviceForSplitStream() = 0;
 
     virtual void SetCallStartByUserTid(pid_t tid) = 0;
+
+    virtual void SetCallbackLoopTid(int32_t tid) = 0;
+
+    virtual int32_t GetCallbackLoopTid() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -202,6 +202,8 @@ public:
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
     void SetCallStartByUserTid(pid_t tid) override;
+    void SetCallbackLoopTid(int32_t tid) override;
+    int32_t GetCallbackLoopTid() override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
@@ -250,6 +252,8 @@ private:
 
     std::mutex lastCallStartByUserTidMutex_;
     std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
+
+    int32_t callbackLoopTid_ = -1;
 
     enum {
         STATE_CHANGE_EVENT = 0

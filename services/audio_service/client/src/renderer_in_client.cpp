@@ -388,10 +388,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 
 bool RendererInClientInner::WriteCallbackFunc()
 {
-    if (cbThreadReleased_) {
-        AUDIO_INFO_LOG("Callback thread released");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(!cbThreadReleased_, false, "Callback thread released");
     Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
     if (!WaitForRunning()) {
         return true;
