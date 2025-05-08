@@ -285,6 +285,12 @@ AudioFlag AudioCoreService::CheckIsSpecialStream(std::shared_ptr<AudioStreamDesc
 
 void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
+    if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
+        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        AUDIO_INFO_LOG("Forced normal");
+        return;
+    }
+
     // fast/normal has done in audioCapturerPrivate
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         // in plan: if has two voip, return normal
