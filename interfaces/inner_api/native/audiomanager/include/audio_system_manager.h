@@ -1340,6 +1340,7 @@ public:
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
     int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
+    int32_t SetBackgroundMuteCallback(const std::shared_ptr<AudioBackgroundMuteCallback> &callback);
 
     int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
 
@@ -1386,6 +1387,35 @@ public:
     * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
     */
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
+
+    /**
+    * @brief Set App AVSession state change.
+    *
+    * @param uid Specifies uid of app.
+    * @param pid Specifies pid of app.
+    * @param hasSession Specifies whether app has AVSession.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
+
+    /**
+    * @brief Set App Freeze state change.
+    *
+    * @param pidList Specifies all pid list to change state.
+    * @param isFreeze Specifies Freeze or Unfreeze state.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
+
+        /**
+    * @brief RSS reboot reset all proxy Freeze state change.
+    *
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t ResetAllProxy();
 
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**

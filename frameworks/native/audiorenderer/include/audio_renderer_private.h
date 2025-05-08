@@ -164,7 +164,7 @@ public:
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
-    mutable bool isStillMuted_ = false;
+    mutable bool isStillZeroStreamVolume_ = false;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 

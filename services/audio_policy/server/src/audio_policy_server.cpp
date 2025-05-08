@@ -81,6 +81,7 @@ constexpr uid_t UID_TV_PROCESS_SA = 7501;
 constexpr uid_t UID_DP_PROCESS_SA = 7062;
 constexpr uid_t UID_PENCIL_PROCESS_SA = 7555;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
+constexpr uid_t UID_AVSESSION_SERVICE = 6700;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
@@ -231,6 +232,7 @@ void AudioPolicyServer::AddSystemAbilityListeners()
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(BACKGROUND_TASK_MANAGER_SERVICE_ID);
 #ifdef USB_ENABLE
     AddSystemAbilityListener(USB_SYSTEM_ABILITY_ID);
 #endif
@@ -287,6 +289,9 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case COMMON_EVENT_SERVICE_ID:
             SubscribeCommonEventExecute();
+            break;
+        case BACKGROUND_TASK_MANAGER_SERVICE_ID:
+            SubscribeBackgroundTask();
             break;
 #ifdef USB_ENABLE
         case USB_SYSTEM_ABILITY_ID:
@@ -679,6 +684,12 @@ void AudioCommonEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData 
     }
     AUDIO_INFO_LOG("receive DATA_SHARE_READY action success");
     eventReceiver_(eventData);
+}
+
+void AudioPolicyServer::SubscribeBackgroundTask()
+{
+    AUDIO_INFO_LOG("In");
+    audioPolicyService_.SubscribeBackgroundTask();
 }
 
 void AudioPolicyServer::SubscribeCommonEventExecute()
@@ -2594,10 +2605,9 @@ int32_t AudioPolicyServer::ResumeStreamState()
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, StreamUsage streamUsage)
 {
-    constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by av_session
-    CHECK_AND_RETURN_RET_LOG(callerUid == avSessionUid, ERROR,
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_AVSESSION_SERVICE, ERROR,
         "UpdateStreamState callerUid is error: not av_session");
 
     AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d streamSetState:%{public}d audioStreamUsage:%{public}d",
@@ -3991,6 +4001,36 @@ int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
     return audioPolicyService_.SetVoiceRingtoneMute(isMute);
 }
 
+int32_t AudioPolicyServer::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
+{
+    AUDIO_INFO_LOG("UID:%{public}d, PID:%{public}d, Session State: %{public}d", uid, pid, hasSession);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by av_session
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_AVSESSION_SERVICE, ERROR,
+        "NotifySessionStateChange callerUid is error: not av_session");
+    return audioPolicyService_.NotifySessionStateChange(uid, pid, hasSession);
+}
+
+int32_t AudioPolicyServer::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
+{
+    AUDIO_INFO_LOG("In");
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by RSS
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_RESOURCE_SCHEDULE_SERVICE, ERROR,
+        "NotifyFreezeStateChange callerUid is error: not RSS");
+    return audioPolicyService_.NotifyFreezeStateChange(pidList, isFreeze);
+}
+
+int32_t AudioPolicyServer::ResetAllProxy()
+{
+    AUDIO_INFO_LOG("In");
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by RSS
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_RESOURCE_SCHEDULE_SERVICE, ERROR,
+        "ResetAllProxy callerUid is error: not RSS");
+    return audioPolicyService_.ResetAllProxy();
+}
+
 int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
 {
     constexpr int32_t meetServiceUid = 5523; // "uid" : "meetservice"
@@ -4018,12 +4058,20 @@ int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<Audio
 
 int32_t AudioPolicyServer::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object)
 {
-    constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by av_session
-    CHECK_AND_RETURN_RET_LOG(callerUid == avSessionUid, ERROR,
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_AVSESSION_SERVICE, ERROR,
         "SetQueryAllowedPlaybackCallback callerUid is error: not av_session");
     return audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
+}
+
+int32_t AudioPolicyServer::SetBackgroundMuteCallback(const sptr<IRemoteObject> &object)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    // This function can only be used by media_service
+    CHECK_AND_RETURN_RET_LOG(callerUid == MEDIA_SERVICE_UID, ERROR,
+        "SetBackgroundMuteCallback callerUid is error: not media_service");
+    return audioPolicyService_.SetBackgroundMuteCallback(object);
 }
 
 DirectPlaybackMode AudioPolicyServer::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,

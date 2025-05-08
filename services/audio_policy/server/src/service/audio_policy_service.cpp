@@ -43,6 +43,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_policy_global_parser.h"
+#include "audio_background_manager.h"
 #include "audio_core_service.h"
 
 namespace OHOS {
@@ -56,7 +57,6 @@ static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
 static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
-constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 }
 
 
@@ -65,13 +65,11 @@ static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
 static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
 const int32_t UID_AUDIO = 1041;
-static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
 
 mutex g_dataShareHelperMutex;
 bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;
-mutex g_policyMgrListenerMutex;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -303,6 +301,21 @@ int32_t AudioPolicyService::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
 int32_t AudioPolicyService::SetVoiceRingtoneMute(bool isMute)
 {
     return audioVolumeManager_.SetVoiceRingtoneMute(isMute);
+}
+
+int32_t AudioPolicyService::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
+{
+    return audioBackgroundManager_.NotifySessionStateChange(uid, pid, hasSession);
+}
+
+int32_t AudioPolicyService::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
+{
+    return audioBackgroundManager_.NotifyFreezeStateChange(pidList, isFreeze);
+}
+
+int32_t AudioPolicyService::ResetAllProxy()
+{
+    return audioBackgroundManager_.ResetAllProxy();
 }
 
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType)
@@ -2019,26 +2032,7 @@ bool AudioPolicyService::IsCurrentActiveDeviceA2dp()
 
 bool AudioPolicyService::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
 {
-#ifdef AVSESSION_ENABLE
-    // Temporary solution to avoid performance issues
-    if (uid == BOOTUP_MUSIC_UID) {
-        return true;
-    }
-    lock_guard<mutex> lock(g_policyMgrListenerMutex);
-    bool allowed = false;
-    if (policyManagerListener_ != nullptr) {
-        allowed = policyManagerListener_->OnQueryAllowedPlayback(uid, pid);
-    }
-    if (!allowed) {
-        usleep(WATI_PLAYBACK_TIME); //wait for 200ms
-        AUDIO_INFO_LOG("IsAudioPlaybackAllowed Try again after 200ms");
-        if (policyManagerListener_ != nullptr) {
-            allowed = policyManagerListener_->OnQueryAllowedPlayback(uid, pid);
-        }
-    }
-    return allowed;
-#endif
-    return true;
+    return audioBackgroundManager_.IsAllowedPlayback(uid, pid);
 }
 
 int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
@@ -2162,11 +2156,19 @@ int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
 }
 #endif
 
+void AudioPolicyService::SubscribeBackgroundTask()
+{
+    audioBackgroundManager_.SubscribeBackgroundTask();
+}
+
 int32_t AudioPolicyService::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object)
 {
-    lock_guard<mutex> lock(g_policyMgrListenerMutex);
-    policyManagerListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
-    return SUCCESS;
+    return audioBackgroundManager_.SetQueryAllowedPlaybackCallback(object);
+}
+
+int32_t AudioPolicyService::SetBackgroundMuteCallback(const sptr<IRemoteObject> &object)
+{
+    return audioBackgroundManager_.SetBackgroundMuteCallback(object);
 }
 
 bool AudioPolicyService::IsDevicePlaybackSupport(const AudioProcessConfig &config,

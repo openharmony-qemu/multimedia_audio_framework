@@ -899,6 +899,13 @@ struct Volume {
     uint32_t volumeInt = 0;
 };
 
+enum AppIsBackState {
+    STATE_UNKNOWN = -1,
+    STATE_FOREGROUND,
+    STATE_BACKGROUND,
+    STATE_END,
+};
+
 enum StreamSetState {
     STREAM_PAUSE,
     STREAM_RESUME,

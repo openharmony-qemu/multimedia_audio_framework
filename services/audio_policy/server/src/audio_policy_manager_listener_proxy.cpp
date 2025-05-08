@@ -159,6 +159,22 @@ bool AudioPolicyManagerListenerProxy::OnQueryAllowedPlayback(int32_t uid, int32_
     return reply.ReadBool();
 }
 
+void AudioPolicyManagerListenerProxy::OnBackgroundMute(const int32_t uid)
+{
+    AUDIO_DEBUG_LOG("In");
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()),
+        "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+    data.WriteInt32(uid);
+
+    int error = Remote()->SendRequest(ON_BACKGROUND_MUTE, data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnBackgroundMute failed, error: %{public}d", error);
+}
+
 bool AudioPolicyManagerListenerProxy::OnQueryBundleNameIsInList(const std::string &bundleName)
 {
     AUDIO_DEBUG_LOG("In");

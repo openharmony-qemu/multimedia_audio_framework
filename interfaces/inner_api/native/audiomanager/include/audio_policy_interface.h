@@ -169,6 +169,11 @@ class AudioQueryAllowedPlaybackCallback {
         virtual bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) = 0;
 };
 
+class AudioBackgroundMuteCallback {
+    public:
+        virtual ~AudioBackgroundMuteCallback() = default;
+        virtual void OnBackgroundMute(const int32_t uid) = 0;
+};
 class AudioManagerAudioSceneChangedCallback {
 public:
     virtual ~AudioManagerAudioSceneChangedCallback() = default;

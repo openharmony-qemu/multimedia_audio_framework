@@ -1066,6 +1066,126 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     return SUCCESS;
 }
 
+void AudioStreamCollector::HandleAppStateChange(int32_t uid, bool mute)
+{
+    if (VolumeUtils::IsPCVolumeEnable()) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->clientUID == uid) {
+            AUDIO_INFO_LOG(" uid=%{public}d and state=%{public}d", uid, mute);
+            if (std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
+                changeInfo->rendererInfo.streamUsage) == 0) {
+                continue;
+            }
+            std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
+            if (callback == nullptr) {
+                AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);
+                continue;
+            }
+            StreamSetStateEventInternal setStateEvent = {};
+            setStateEvent.streamSetState = StreamSetState::STREAM_PAUSE;
+            setStateEvent.streamUsage = changeInfo->rendererInfo.streamUsage;
+            if (mute && !changeInfo->backMute) {
+                setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
+                callback->MuteStreamImpl(setStateEvent);
+                changeInfo->backMute = true;
+            } else if (!mute && changeInfo->backMute) {
+                setStateEvent.streamSetState = StreamSetState::STREAM_UNMUTE;
+                callback->UnmuteStreamImpl(setStateEvent);
+                changeInfo->backMute = false;
+            }
+        }
+    }
+}
+
+void AudioStreamCollector::HandleFreezeStateChange(int32_t pid, bool mute, bool hasSession)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->clientPid == pid) {
+            AUDIO_INFO_LOG(" pid=%{public}d state=%{public}d hasession=%{public}d",
+                pid, mute, hasSession);
+            if (!hasSession && !mute && (std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(),
+                BACKGROUND_MUTE_STREAM_USAGE.end(), changeInfo->rendererInfo.streamUsage) != 0)) {
+                continue;
+            }
+            std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
+            if (callback == nullptr) {
+                AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);
+                continue;
+            }
+            StreamSetStateEventInternal setStateEvent = {};
+            setStateEvent.streamSetState = StreamSetState::STREAM_PAUSE;
+            setStateEvent.streamUsage = changeInfo->rendererInfo.streamUsage;
+            if (mute && !changeInfo->backMute) {
+                setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
+                callback->MuteStreamImpl(setStateEvent);
+                changeInfo->backMute = true;
+            } else if (!mute && changeInfo->backMute) {
+                setStateEvent.streamSetState = StreamSetState::STREAM_UNMUTE;
+                callback->UnmuteStreamImpl(setStateEvent);
+                changeInfo->backMute = false;
+            }
+        }
+    }
+}
+
+void AudioStreamCollector::HandleBackTaskStateChange(int32_t uid, bool hasSession)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->clientUID == uid) {
+            AUDIO_INFO_LOG(" uid=%{public}d and hasSession=%{public}d", uid, hasSession);
+            if ((std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
+                changeInfo->rendererInfo.streamUsage) != 0) && !hasSession) {
+                continue;
+            }
+            std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
+            if (callback == nullptr) {
+                AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);
+                continue;
+            }
+            StreamSetStateEventInternal setStateEvent = {};
+            setStateEvent.streamSetState = StreamSetState::STREAM_PAUSE;
+            setStateEvent.streamUsage = changeInfo->rendererInfo.streamUsage;
+            if (changeInfo->backMute) {
+                setStateEvent.streamSetState = StreamSetState::STREAM_UNMUTE;
+                callback->UnmuteStreamImpl(setStateEvent);
+                changeInfo->backMute = false;
+            }
+        }
+    }
+}
+
+void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, bool mute)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->clientUID == uid) {
+            AUDIO_INFO_LOG(" uid=%{public}d and state=%{public}d", uid, mute);
+            std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
+            if (callback == nullptr) {
+                AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);
+                continue;
+            }
+            StreamSetStateEventInternal setStateEvent = {};
+            setStateEvent.streamSetState = StreamSetState::STREAM_PAUSE;
+            setStateEvent.streamUsage = changeInfo->rendererInfo.streamUsage;
+            if (mute && !changeInfo->backMute) {
+                setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
+                callback->MuteStreamImpl(setStateEvent);
+                changeInfo->backMute = true;
+            } else if (!mute && changeInfo->backMute) {
+                setStateEvent.streamSetState = StreamSetState::STREAM_UNMUTE;
+                callback->UnmuteStreamImpl(setStateEvent);
+                changeInfo->backMute = false;
+            }
+        }
+    }
+}
+
 bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
