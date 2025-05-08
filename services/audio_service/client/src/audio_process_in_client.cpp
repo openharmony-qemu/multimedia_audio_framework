@@ -640,6 +640,9 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 {
     logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
     auto weakProcess = weak_from_this();
+    std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
+    CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
+    fastStream->ResetCallbackLoopTid();
     callbackLoop_ = std::thread([weakStream, weakProcess] {
         bool keepRunning = true;
         uint64_t curWritePos = 0;

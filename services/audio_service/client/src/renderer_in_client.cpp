@@ -904,6 +904,12 @@ void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmd
         AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_START);
 }
 
+void RendererInClientInner::ResetCallbackLoopTid()
+{
+    AUDIO_INFO_LOG("Reset callback loop tid to -1");
+    callbackLoopTid_ = -1;
+}
+
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
 {
     AUDIO_INFO_LOG("Instance create");
