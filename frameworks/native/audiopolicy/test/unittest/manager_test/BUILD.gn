@@ -29,7 +29,10 @@ ohos_unittest("audio_manager_unit_test") {
     "-Werror",
   ]
 
-  sources = [ "src/audio_manager_unit_test.cpp" ]
+  sources = [
+    "src/audio_manager_unit_test.cpp",
+    "src/audio_manager_interrupt_unit_test.cpp",
+  ]
 
   deps = [
     "../../../../../../frameworks/native/audioutils:audio_utils",
