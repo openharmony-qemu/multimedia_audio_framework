@@ -57,6 +57,32 @@ OH_AudioCommon_Result OH_GetAudioScene(OH_AudioManager* manager, OH_AudioScene *
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
+OH_AudioCommon_Result OH_AudioManager_RegisterAudioSceneChangeCallback(OH_AudioManager *manager,
+    OH_AudioManager_OnAudioSceneChangeCallback callback, void *userData)
+{
+    if (manager == nullptr || callback == nullptr) {
+        AUDIO_ERR_LOG("invalid OH_AudioManager or callback");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+
+    OHAudioManager *ohAudioManager = (OHAudioManager*)manager;
+    int32_t result = ohAudioManager->SetAudioSceneChangeCallback(callback, userData);
+    return static_cast<OH_AudioCommon_Result>(result);
+}
+
+OH_AudioCommon_Result OH_AudioManager_UnregisterAudioSceneChangeCallback(OH_AudioManager *manager,
+    OH_AudioManager_OnAudioSceneChangeCallback callback)
+{
+    if (manager == nullptr || callback == nullptr) {
+        AUDIO_ERR_LOG("invalid OH_AudioManager or callback");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+
+    OHAudioManager *ohAudioManager = (OHAudioManager*)manager;
+    int32_t result = ohAudioManager->UnsetAudioSceneChangeCallback(callback);
+    return static_cast<OH_AudioCommon_Result>(result);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 OHAudioManager *OHAudioManager::GetInstance()
@@ -76,6 +102,64 @@ AudioScene OHAudioManager::GetAudioScene()
         return AUDIO_SCENE_RINGING;
     }
     return scene;
+}
+
+int32_t OHAudioManager::SetAudioSceneChangeCallback(OH_AudioManager_OnAudioSceneChangeCallback callback, void *userData)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
+        "Failed, pointer to the fuction is nullptr");
+    if (callbacks_.count(callback) != 0) {
+        AUDIO_INFO_LOG("Callback is already registered");
+        return AUDIOCOMMON_RESULT_SUCCESS;
+    }
+
+    auto ohAudioManagerAudioSceneChangedCallback =
+        std::make_shared<OHAudioManagerAudioSceneChangedCallback>(callback, userData);
+    CHECK_AND_RETURN_RET_LOG(ohAudioManagerAudioSceneChangedCallback != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        "Failed, create callback failed");
+
+    AudioSystemManager *audioSystemManager = AudioSystemManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioSystemManager != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        "Failed, audio system manager is nullptr");
+
+    int32_t result = audioSystemManager->SetAudioSceneChangeCallback(
+        ohAudioManagerAudioSceneChangedCallback);
+    if (result == AUDIOCOMMON_RESULT_SUCCESS) {
+        callbacks_.emplace(callback, ohAudioManagerAudioSceneChangedCallback);
+    }
+    return result == AUDIOCOMMON_RESULT_SUCCESS ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+}
+
+int32_t OHAudioManager::UnsetAudioSceneChangeCallback(OH_AudioManager_OnAudioSceneChangeCallback callback)
+{
+    if (callback == nullptr || !callbacks_.count(callback)) {
+        AUDIO_ERR_LOG("Invalid callback or callback not registered");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+
+    AudioSystemManager *audioSystemManager = AudioSystemManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioSystemManager != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        "Failed, audio system manager is nullptr");
+
+    int32_t result = audioSystemManager->UnsetAudioSceneChangeCallback(callbacks_[callback]);
+    if (result == AUDIOCOMMON_RESULT_SUCCESS) {
+        callbacks_.erase(callback);
+    }
+    return result == AUDIOCOMMON_RESULT_SUCCESS ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+}
+
+void OHAudioManagerAudioSceneChangedCallback::OnAudioSceneChange(const AudioScene audioScene)
+{
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "Failed, pointer to the fuction is nullptr");
+    AudioScene scene = audioScene;
+    if (!INVALID_AUDIO_SCENES.count(audioScene)) {
+        AUDIO_WARNING_LOG("Get scene:%{public}d that is not defined, return defalut!", scene);
+        scene = AUDIO_SCENE_DEFAULT;
+    }
+    if (audioScene == AUDIO_SCENE_VOICE_RINGING) {
+        scene = AUDIO_SCENE_RINGING;
+    }
+    callback_(userData_, static_cast<OH_AudioScene>(scene));
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

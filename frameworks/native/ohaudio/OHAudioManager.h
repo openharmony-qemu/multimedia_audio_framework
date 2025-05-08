@@ -17,11 +17,28 @@
 #define OH_AUDIO_MANAGER_H
 
 #include "audio_info.h"
+#include "audio_policy_interface.h"
+#include "audio_system_manager.h"
 #include "native_audio_common.h"
 #include "native_audio_manager.h"
 
+#include <map>
+
 namespace OHOS {
 namespace AudioStandard {
+
+class OHAudioManagerAudioSceneChangedCallback : public AudioManagerAudioSceneChangedCallback {
+public:
+    OHAudioManagerAudioSceneChangedCallback(OH_AudioManager_OnAudioSceneChangeCallback callback, void *userData)
+        : callback_(callback), userData_(userData)
+    {
+    }
+
+    void OnAudioSceneChange(const AudioScene audioScene) override;
+private:
+    OH_AudioManager_OnAudioSceneChangeCallback callback_ = nullptr;
+    void *userData_ = nullptr;
+};
 
 class OHAudioManager {
 public:
@@ -29,8 +46,12 @@ public:
 
     static OHAudioManager *GetInstance();
     AudioScene GetAudioScene();
+    int32_t SetAudioSceneChangeCallback(OH_AudioManager_OnAudioSceneChangeCallback callback, void *userData);
+    int32_t UnsetAudioSceneChangeCallback(OH_AudioManager_OnAudioSceneChangeCallback callback);
 private:
     OHAudioManager() {};
+    std::map<OH_AudioManager_OnAudioSceneChangeCallback,
+        std::shared_ptr<OHAudioManagerAudioSceneChangedCallback>> callbacks_;
 };
 
 } // namespace AudioStandard

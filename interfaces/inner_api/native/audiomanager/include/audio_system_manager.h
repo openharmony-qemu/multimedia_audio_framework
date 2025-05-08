@@ -1409,6 +1409,64 @@ public:
     int32_t OnVoiceWakeupState(bool state);
 
     uint16_t GetDmDeviceType() const;
+
+    /**
+     * @brief Get the maximum volume level for the specified stream usage.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @return Returns the maximum volume level for the specified stream usage.
+     * @since 20
+     */
+    int32_t GetMaxVolumeByUsage(StreamUsage streamUsage);
+
+    /**
+     * @brief Get the minimum volume level for the specified stream usage.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @return Returns the minimum volume level for the specified stream usage.
+     * @since 20
+     */
+    int32_t GetMinVolumeByUsage(StreamUsage streamUsage);
+
+    /**
+     * @brief Get the current volume level for the specified stream usage.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @return Returns the current volume level for the specified stream usage.
+     * @since 20
+     */
+    int32_t GetVolumeByUsage(StreamUsage streamUsage);
+
+    /**
+     * @brief Get the mute state of the specified stream usage.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @param isMute Specifies the mute state.
+     * @return Returns {@link SUCCESS} if the operation is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t IsStreamMuteByUsage(StreamUsage streamUsage, bool &isMute);
+
+    /**
+     * @brief registers the StreamVolumeChange callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t RegisterStreamVolumeChangeCallback(const int32_t clientPid, const std::set<StreamUsage> &streamUsages,
+        const std::shared_ptr<StreamVolumeChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the StreamVolumeChange callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t UnregisterStreamVolumeChangeCallback(const int32_t clientPid,
+        const std::shared_ptr<StreamVolumeChangeCallback> &callback = nullptr);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

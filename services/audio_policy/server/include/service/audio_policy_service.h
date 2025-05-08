@@ -497,6 +497,7 @@ public:
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
 
     void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
         std::string invocationTime);

@@ -410,6 +410,16 @@ public:
     virtual int32_t SetVirtualCall(const bool isVirtual) = 0;
 
     virtual int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) = 0;
+
+    virtual int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) = 0;
+
+    virtual int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) = 0;
+
+    virtual bool GetStreamMuteByUsage(StreamUsage streamUsage) = 0;
+
+    virtual int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

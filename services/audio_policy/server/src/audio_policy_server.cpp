@@ -3838,6 +3838,39 @@ int32_t AudioPolicyServer::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObj
     return audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
 }
 
+int32_t AudioPolicyServer::GetMaxVolumeLevelByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "GetMaxVolumeLevelByUsage: Invalid streamUsage");
+    return GetMaxVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
+}
+
+int32_t AudioPolicyServer::GetMinVolumeLevelByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "GetMinVolumeLevelByUsage: Invalid streamUsage");
+    return GetMinVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
+}
+
+int32_t AudioPolicyServer::GetVolumeLevelByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "GetVolumeLevelByUsage: Invalid streamUsage");
+    return GetSystemVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
+}
+
+bool AudioPolicyServer::GetStreamMuteByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        false, "GetStreamMuteByUsage: Invalid streamUsage");
+    return GetStreamMute(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
+}
+
+int32_t AudioPolicyServer::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
+{
+    return audioPolicyService_.SetCallbackStreamUsageInfo(streamUsages);
+}
+
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);

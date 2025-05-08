@@ -119,6 +119,7 @@ public:
     static AudioStandard::FocusType GetNativeFocusType(int32_t focusType);
     static AudioStandard::InterruptMode GetNativeInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType);
+    static AudioScene GetJsAudioScene(AudioScene audioScene);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);

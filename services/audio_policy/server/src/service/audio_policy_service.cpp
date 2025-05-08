@@ -2126,5 +2126,15 @@ void AudioPolicyService::SaveVolumeKeyRegistrationInfo(std::string keyType, std:
 {
     audioVolumeManager_.SaveVolumeKeyRegistrationInfo(keyType, registrationTime, subscriptionId, registrationResult);
 }
+
+int32_t AudioPolicyService::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
+{
+    if (audioPolicyServerHandler_ != nullptr) {
+        return audioPolicyServerHandler_->SetCallbackStreamUsageInfo(streamUsages);
+    } else {
+        AUDIO_ERR_LOG("audioPolicyServerHandler_ is nullptr");
+        return AUDIO_ERR;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
