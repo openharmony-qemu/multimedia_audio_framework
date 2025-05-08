@@ -445,7 +445,6 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 
 int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
 {
-    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
@@ -453,6 +452,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
         ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     if (isScreenOffOrLock_ && !IsStreamActive(streamInFocus) && !VolumeUtils::IsPCVolumeEnable()) {
         AUDIO_INFO_LOG("screen off or screen lock, this stream is not active, not change volume.");
         return AUDIO_OK;
@@ -504,16 +504,16 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
     int32_t muteKeySubId = im->SubscribeKeyEvent(keyOptionMute,
         [this](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
             AUDIO_INFO_LOG("Receive volume key event: mute");
-            std::lock_guard<std::mutex> lock(systemVolumeMutex_);
             AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
+            bool isStreamMuted = false;
             if (volumeApplyToAll_) {
-                bool isStreamMuted = GetStreamMuteInternal(STREAM_ALL);
-                SetStreamMuteInternal(STREAM_ALL, !isStreamMuted, true);
+                streamInFocus = STREAM_ALL;
             } else {
                 streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
-                bool isMuted = GetStreamMuteInternal(streamInFocus);
-                SetStreamMuteInternal(streamInFocus, !isMuted, true);
             }
+            std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+            isStreamMuted = GetStreamMuteInternal(streamInFocus);
+            SetStreamMuteInternal(streamInFocus, !isStreamMuted, true);
         });
     std::string keyType = "mute";
     std::string RegistrationTime = GetTime();
