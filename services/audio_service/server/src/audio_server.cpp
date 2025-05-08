@@ -496,7 +496,7 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
             break;
         }
     }
-    if (!match) { return ERR_INVALID_PARAM; }
+    CHECK_AND_RETURN_RET_LOG(match, ERR_INVALID_PARAM, "not match");
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
