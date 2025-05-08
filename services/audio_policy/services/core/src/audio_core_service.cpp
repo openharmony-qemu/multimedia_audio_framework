@@ -224,7 +224,7 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     return true;
 }
 
-void AudioCoreService::SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     AUDIO_INFO_LOG("deviceType: %{public}d", streamDesc->newDeviceDescs_.front()->deviceType_);
     // fast/normal has done in audioRendererPrivate

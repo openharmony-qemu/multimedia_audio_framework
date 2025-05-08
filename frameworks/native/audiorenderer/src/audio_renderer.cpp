@@ -863,6 +863,9 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     audioStream_->GetRestoreInfo(restoreInfo);
     IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
     SetClientInfo(restoreInfo.routeFlag, targetClass);
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+    }
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl = nullptr;
@@ -2096,6 +2099,9 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::GetStreamDescBySwit
     streamDesc->callerPid_ = switchInfo.clientPid;
     streamDesc->sessionId_ = switchInfo.sessionId;
     streamDesc->routeFlag_ = restoreInfo.routeFlag;
+    if (restoreInfo.targetStreamFlag == AUDIO_FLAG_FORCED_NORMAL) {
+        streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    }
     return streamDesc;
 }
 

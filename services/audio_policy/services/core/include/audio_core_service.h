@@ -315,7 +315,7 @@ private:
     void SendA2dpConnectedWhileRunning(const RendererState &rendererState, const uint32_t &sessionId);
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
-    void SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag CheckIsSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
