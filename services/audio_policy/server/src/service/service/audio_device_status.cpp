@@ -1114,6 +1114,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     AUDIO_WARNING_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
         "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
         desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
+    std::string portNeedClose = "";
     DeviceUpdateClearRecongnitionStatus(desc);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -1136,7 +1137,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
         audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
             AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
-        audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
+        portNeedClose = BLUETOOTH_SPEAKER;
     }
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
@@ -1146,6 +1147,9 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     OnPreferredStateUpdated(desc, command, reason);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
+    if (portNeedClose != "") {
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(portNeedClose);
+    }
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
