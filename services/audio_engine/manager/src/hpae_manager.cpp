@@ -2116,7 +2116,7 @@ bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string
     CHECK_AND_RETURN_RET_LOG(hpaePolicyManager_ != nullptr, false, "hpaePolicyManager_ is nullptr");
     const auto &[paramKey, paramValue] = params[0];
     if (paramKey != "live_effect" || (paramValue != "NRON" && paramValue != "NROFF")) {
-        AUDIO_ERR_LOG("Parameter not Error");
+        AUDIO_ERR_LOG("Parameter Error");
         return false;
     }
 
@@ -2153,7 +2153,7 @@ bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys
 
     const std::string &targetKey = subKeys[0];
     if (subKeys[0] != "live_effect_supported") {
-        AUDIO_ERR_LOG("Parameter not Error");
+        AUDIO_ERR_LOG("Parameter Error");
         return false;
     }
     if (effectLiveState_ != "") {
