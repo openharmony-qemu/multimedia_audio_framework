@@ -666,7 +666,7 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
 bool AudioServer::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
-    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0 && result.size() > 0, false, "params is empty!");
+    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "params is empty!");
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         return HPAE::IHpaeManager::GetHpaeManager().GetEffectLiveParameter(subKeys, result);
