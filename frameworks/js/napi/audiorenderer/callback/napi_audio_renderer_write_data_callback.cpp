@@ -46,11 +46,6 @@ NapiRendererWriteDataCallback::~NapiRendererWriteDataCallback()
         activeRenderers_.erase(iter);
     }
 #endif
-    if (napiRenderer_ != nullptr) {
-        std::lock_guard lock(napiRenderer_->writeCallbackMutex_);
-        napiRenderer_->enqueued_ = true;
-        napiRenderer_->writeCallbackCv_.notify_all();
-    }
     if (regArWriteDataTsfn_) {
         napi_release_threadsafe_function(arWriteDataTsfn_, napi_tsfn_abort);
     }
