@@ -78,7 +78,7 @@ ohos_shared_library("hdiadapter_new") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_4.0",
-    "drivers_peripheral_bluetooth:hdi_audio_bluetooth_header",
+    "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
     "hilog:libhilog",
     "init:libbegetutil",
