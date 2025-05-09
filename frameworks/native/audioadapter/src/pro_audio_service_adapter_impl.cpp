@@ -309,9 +309,9 @@ std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
 std::vector<SourceOutput> ProAudioServiceAdapterImpl::GetAllSourceOutputs()
 {
     AUDIO_INFO_LOG("GetAllSourceOutputs");
-    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinkInputs", HPAE_SERVICE_IMPL_TIMEOUT,
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSourceOutputs", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("GetAllSinkInputs timeout");
+            AUDIO_ERR_LOG("GetAllSourceOutputs timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     isFinishGetAllSourceOutputs_ = false;
