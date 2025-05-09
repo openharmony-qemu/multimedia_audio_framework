@@ -1908,7 +1908,7 @@ int32_t AudioDeviceCommon::LoadA2dpModule(DeviceType deviceType, const AudioStre
             GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
             uint32_t temp = 0;
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, temp);
-            CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+            CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_OPERATION_FAILED,
                 "OpenAudioPort failed %{public}d", ioHandle);
             audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
         } else {
@@ -1947,7 +1947,7 @@ int32_t AudioDeviceCommon::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devi
     GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
     uint32_t temp = 0;
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, temp);
-    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+    CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
     audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
     return SUCCESS;
