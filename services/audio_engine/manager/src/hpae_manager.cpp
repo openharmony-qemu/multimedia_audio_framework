@@ -2113,7 +2113,6 @@ void HpaeManager::LoadEffectLive()
 
 bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
  {
--    AUDIO_INFO_LOG("Is_sSupported SourceType %{public}d", sourceType);
     CHECK_AND_RETURN_RET_LOG(hpaePolicyManager_ != nullptr, false, "hpaePolicyManager_ is nullptr");
     const auto &[paramKey, paramValue] = params[0];
     if (paramKey != "live_effect" || (paramValue != "NRON" && paramValue != "NROFF")) {
