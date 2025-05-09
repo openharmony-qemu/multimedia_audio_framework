@@ -208,6 +208,7 @@ public:
     bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
     bool SendNnStateChangeCallback(const int32_t &state);
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -254,6 +255,9 @@ private:
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
+    void HandleVolumeChangeCallback(int32_t clientId, sptr<IAudioPolicyClient> audioPolicyClient,
+        const VolumeEvent &volumeEvent);
+
     std::vector<AudioRendererInfo> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
 
@@ -261,6 +265,7 @@ private:
     std::mutex handleMapMutex_;
     std::mutex clientCbRendererInfoMapMutex_;
     std::mutex clientCbCapturerInfoMapMutex_;
+    std::mutex clientCbStreamUsageMapMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
 
@@ -274,6 +279,7 @@ private:
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
     std::unordered_map<int32_t, std::vector<AudioRendererInfo>> clientCbRendererInfoMap_;
     std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
+    std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1701,6 +1701,92 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_APP, STREAM_APP}
 };
 
+std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultVolumeToStreamUsageMap_ = {
+    {STREAM_VOICE_CALL, {
+        STREAM_USAGE_VOICE_COMMUNICATION,
+        STREAM_USAGE_VIDEO_COMMUNICATION,
+        STREAM_USAGE_VOICE_MODEM_COMMUNICATION}},
+    {STREAM_VOICE_CALL_ASSISTANT, {
+        STREAM_USAGE_VOICE_CALL_ASSISTANT}},
+    {STREAM_RING, {
+        STREAM_USAGE_RINGTONE,
+        STREAM_USAGE_SYSTEM,
+        STREAM_USAGE_NOTIFICATION,
+        STREAM_USAGE_ENFORCED_TONE,
+        STREAM_USAGE_DTMF,
+        STREAM_USAGE_VOICE_RINGTONE}},
+    {STREAM_MUSIC, {
+        STREAM_USAGE_UNKNOWN,
+        STREAM_USAGE_MUSIC,
+        STREAM_USAGE_MOVIE,
+        STREAM_USAGE_AUDIOBOOK,
+        STREAM_USAGE_GAME,
+        STREAM_USAGE_VOICE_MESSAGE}},
+    {STREAM_VOICE_ASSISTANT, {
+        STREAM_USAGE_VOICE_ASSISTANT}},
+    {STREAM_ALARM, {
+        STREAM_USAGE_ALARM}},
+    {STREAM_ACCESSIBILITY, {
+        STREAM_USAGE_ACCESSIBILITY}},
+    {STREAM_ULTRASONIC, {
+        STREAM_USAGE_ULTRASONIC}},
+    {STREAM_NAVIGATION, {
+        STREAM_USAGE_NAVIGATION}}
+};
+
+std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::pcVolumeToStreamUsageMap_ = {
+    {STREAM_MUSIC, {
+        STREAM_USAGE_UNKNOWN,
+        STREAM_USAGE_MUSIC,
+        STREAM_USAGE_MOVIE,
+        STREAM_USAGE_GAME,
+        STREAM_USAGE_AUDIOBOOK,
+        STREAM_USAGE_VOICE_MESSAGE,
+        STREAM_USAGE_VOICE_COMMUNICATION,
+        STREAM_USAGE_VIDEO_COMMUNICATION,
+        STREAM_USAGE_VOICE_ASSISTANT,
+        STREAM_USAGE_ALARM,
+        STREAM_USAGE_RINGTONE,
+        STREAM_USAGE_DTMF,
+        STREAM_USAGE_ACCESSIBILITY,
+        STREAM_USAGE_NAVIGATION,
+        STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+        STREAM_USAGE_VOICE_RINGTONE}},
+    {STREAM_SYSTEM, {
+        STREAM_USAGE_SYSTEM,
+        STREAM_USAGE_NOTIFICATION,
+        STREAM_USAGE_ENFORCED_TONE}},
+    {STREAM_ULTRASONIC, {
+        STREAM_USAGE_ULTRASONIC}},
+    {STREAM_VOICE_CALL_ASSISTANT, {
+        STREAM_USAGE_VOICE_CALL_ASSISTANT
+    }}
+};
+
+std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = {
+    {STREAM_USAGE_UNKNOWN, STREAM_MUSIC},
+    {STREAM_USAGE_MUSIC, STREAM_MUSIC},
+    {STREAM_USAGE_VOICE_COMMUNICATION, STREAM_VOICE_COMMUNICATION},
+    {STREAM_USAGE_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
+    {STREAM_USAGE_ALARM, STREAM_ALARM},
+    {STREAM_USAGE_VOICE_MESSAGE, STREAM_VOICE_MESSAGE},
+    {STREAM_USAGE_RINGTONE, STREAM_RING},
+    {STREAM_USAGE_NOTIFICATION, STREAM_NOTIFICATION},
+    {STREAM_USAGE_ACCESSIBILITY, STREAM_ACCESSIBILITY},
+    {STREAM_USAGE_MOVIE, STREAM_MOVIE},
+    {STREAM_USAGE_GAME, STREAM_GAME},
+    {STREAM_USAGE_AUDIOBOOK, STREAM_SPEECH},
+    {STREAM_USAGE_NAVIGATION, STREAM_NAVIGATION},
+    {STREAM_USAGE_VIDEO_COMMUNICATION, STREAM_VOICE_COMMUNICATION},
+    {STREAM_USAGE_SYSTEM, STREAM_SYSTEM},
+    {STREAM_USAGE_ENFORCED_TONE, STREAM_SYSTEM_ENFORCED},
+    {STREAM_USAGE_DTMF, STREAM_DTMF},
+    {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_VOICE_CALL},
+    {STREAM_USAGE_VOICE_RINGTONE, STREAM_RING},
+    {STREAM_USAGE_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
+    {STREAM_USAGE_ULTRASONIC, STREAM_ULTRASONIC}
+};
+
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
 {
     if (isPCVolumeEnable_) {
@@ -1728,6 +1814,35 @@ AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamT
         return it->second;
     }
     return STREAM_MUSIC;
+}
+
+AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamUsage(StreamUsage streamUsage)
+{
+    auto it = streamUsageMap_.find(streamUsage);
+    if (it != streamUsageMap_.end()) {
+        return GetVolumeTypeFromStreamType(it->second);
+    }
+    return STREAM_MUSIC;
+}
+
+std::set<StreamUsage> VolumeUtils::GetOverlapStreamUsageSet(const std::set<StreamUsage> &streamUsages,
+    AudioVolumeType volumeType)
+{
+    std::set<StreamUsage>& tempSet = GetStreamUsageSetForVolumeType(volumeType);
+    std::set<StreamUsage> overlapSet;
+    std::set_intersection(streamUsages.begin(), streamUsages.end(), tempSet.begin(), tempSet.end(),
+        std::inserter(overlapSet, overlapSet.begin()));
+    return overlapSet;
+}
+
+std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeType volumeType)
+{
+    static std::set<StreamUsage> emptySet;
+    if (isPCVolumeEnable_) {
+        return pcVolumeToStreamUsageMap_.count(volumeType) ? pcVolumeToStreamUsageMap_[volumeType] : emptySet;
+    } else {
+        return defaultVolumeToStreamUsageMap_.count(volumeType) ? defaultVolumeToStreamUsageMap_[volumeType] : emptySet;
+    }
 }
 
 std::string GetEncryptStr(const std::string &src)
