@@ -40,6 +40,7 @@ namespace OHOS {
 namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
 static const int32_t OPERATION_TIMEOUT_IN_MS = 10000;  // 10s
+static const int32_t HPAE_SERVICE_IMPL_TIMEOUT = 10; // 10s is better
 
 ProAudioServiceAdapterImpl::~ProAudioServiceAdapterImpl() = default;
 
@@ -67,8 +68,12 @@ uint32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string 
 int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const AudioModuleInfo &audioModuleInfo)
 {
     AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
-    Trace trace("OpenAudioPort");
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::OpenAudioPort", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("OpenAudioPort timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
+    Trace trace("OpenAudioPort");
     isFinishOpenAudioPort_ = false;
     IHpaeManager::GetHpaeManager().OpenAudioPort(audioModuleInfo);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -118,6 +123,10 @@ int32_t ProAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, bo
 bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     AUDIO_INFO_LOG("SetSinkMute: [%{public}s] : [%{public}d] isSync [%{public}d]", sinkName.c_str(), isMute, isSync);
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::SetSinkMute", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("SetSinkMute timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("SetSinkMute:" + sinkName + "isMute:" + std::to_string(isMute));
     if (isSync) {
@@ -159,6 +168,10 @@ int32_t ProAudioServiceAdapterImpl::SetDefaultSource(string name)
 std::vector<SinkInfo> ProAudioServiceAdapterImpl::GetAllSinks()
 {
     AUDIO_INFO_LOG("GetAllSinks: enter");
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinks", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("GetAllSinks timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("GetAllSinks");
     isFinishGetAllSinks_ = false;
@@ -202,6 +215,10 @@ int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
         sinkInputId,
         sinkIndex,
         sinkName.c_str());
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("MoveSinkInputByIndexOrName timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("MoveSinkInputByIndexOrName: " + std::to_string(sinkInputId) + " index:" + std::to_string(sinkIndex) +
                 " sink:" + sinkName);
@@ -227,6 +244,10 @@ int32_t ProAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(
         sourceOutputId,
         sourceIndex,
         sourceName.c_str());
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("MoveSourceOutputByIndexOrName timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("MoveSourceOutputByIndexOrName: " + std::to_string(sourceOutputId) +
                 " index:" + std::to_string(sourceIndex) + " source:" + sourceName);
@@ -266,6 +287,10 @@ int32_t ProAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setMut
 std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
 {
     AUDIO_INFO_LOG("GetAllSinkInputs Enter");
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinkInputs", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("GetAllSinkInputs timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     isFinishGetAllSinkInputs_ = false;
     IHpaeManager::GetHpaeManager().GetAllSinkInputs();
@@ -284,6 +309,10 @@ std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
 std::vector<SourceOutput> ProAudioServiceAdapterImpl::GetAllSourceOutputs()
 {
     AUDIO_INFO_LOG("GetAllSourceOutputs");
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinkInputs", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("GetAllSinkInputs timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     isFinishGetAllSourceOutputs_ = false;
     IHpaeManager::GetHpaeManager().GetAllSourceOutputs();
