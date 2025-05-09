@@ -78,8 +78,8 @@ static constexpr uint64_t MASK_LFE = LOW_FREQUENCY
 | LOW_FREQUENCY_2;
 
 static uint32_t BitCounts(uint64_t bits);
-static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts);
-static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels);
+static bool IsValidChLayout(uint64_t &chLayout, uint32_t chCounts);
+static uint64_t SetDefaultChannelLayout(AudioChannel channels);
 
 // 改成默认构造
 DownMixer::DownMixer()
@@ -92,8 +92,8 @@ int32_t DownMixer::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo out
     uint32_t formatSize, bool mixLfe)
 {
     ResetSelf();
-    inLayout_ = inChannelInfo.channelLayout;
-    outLayout_ = outChannelInfo.channelLayout;
+    inLayout_ = (uint64_t)inChannelInfo.channelLayout;
+    outLayout_ = (uint64_t)outChannelInfo.channelLayout;
     inChannels_ = inChannelInfo.numChannels;
     outChannels_ = outChannelInfo.numChannels;
     mixLfe_ = mixLfe;
@@ -1050,7 +1050,7 @@ static uint32_t BitCounts(uint64_t bits)
     return num;
 }
 
-static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
+static bool IsValidChLayout(uint64_t &chLayout, uint32_t chCounts)
 {
     if (chCounts < MONO || chCounts > CHANNEL_16) {
         return false;
@@ -1061,7 +1061,7 @@ static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
     return true;
 }
 
-static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels)
+static uint64_t SetDefaultChannelLayout(AudioChannel channels)
 {
     if (channels < MONO || channels > CHANNEL_16) {
         return CH_LAYOUT_UNKNOWN;
@@ -1083,12 +1083,20 @@ static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels)
             return CH_LAYOUT_6POINT1;
         case CHANNEL_8:
             return CH_LAYOUT_5POINT1POINT2;
+        case CHANNEL_9:
+            return CH_LAYOUT_5POINT1POINT2 | TOP_FRONT_CENTER;
         case CHANNEL_10:
             return CH_LAYOUT_7POINT1POINT2;
+        case CHANNEL_11:
+            return CH_LAYOUT_7POINT1POINT2 | TOP_FRONT_CENTER;
         case CHANNEL_12:
             return CH_LAYOUT_7POINT1POINT4;
+        case CHANNEL_13:
+            return CH_LAYOUT_7POINT1POINT4 | TOP_FRONT_CENTER;
         case CHANNEL_14:
             return CH_LAYOUT_9POINT1POINT4;
+        case CHANNEL_15:
+            return CH_LAYOUT_9POINT1POINT4 | TOP_FRONT_CENTER;
         case CHANNEL_16:
             return CH_LAYOUT_9POINT1POINT6;
         default:
