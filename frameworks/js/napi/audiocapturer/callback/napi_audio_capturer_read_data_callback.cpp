@@ -35,9 +35,6 @@ NapiCapturerReadDataCallback::NapiCapturerReadDataCallback(napi_env env, NapiAud
 
 NapiCapturerReadDataCallback::~NapiCapturerReadDataCallback()
 {
-    if (napiCapturer_ != nullptr) {
-        napiCapturer_->readCallbackCv_.notify_all();
-    }
     if (regAcReadDataTsfn_) {
         napi_release_threadsafe_function(acReadDataTsfn_, napi_tsfn_abort);
     }
