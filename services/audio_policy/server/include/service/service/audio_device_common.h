@@ -118,7 +118,7 @@ public:
     void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
     int32_t SetVirtualCall(const bool isVirtual);
-    void NotifyDistributedOutputChange(const vector<shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

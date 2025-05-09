@@ -113,10 +113,7 @@ void DeviceStatusCallbackImpl::OnDeviceOffline(const DistributedHardware::DmDevi
     AUDIO_INFO_LOG("Entry. deviceName=%{public}s, dmDeviceType=%{public}d, networkId=%{public}s, extraData=%{public}s",
         dmDeviceInfo.deviceName, dmDeviceInfo.deviceTypeId,
         Hide(dmDeviceInfo.networkId).c_str(), dmDeviceInfo.extraData.c_str());
-    auto dmDev = ParseDmDevice(dmDeviceInfo);
-    if (!dmDev.deviceName_.empty()) {
-        AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), false);
-    }
+    AudioConnectedDevice::GetInstance().UpdateDmDeviceMap({ .networkId_ = dmDeviceInfo.networkId }, false);
 }
 #endif
 } // namespace AudioStandard

@@ -208,6 +208,12 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     return descs;
 }
 
+int32_t AudioRouterCenter::NotifyDistributedOutputChange(bool isRemote)
+{
+    CHECK_AND_RETURN_RET(audioDeviceRefinerCb_, SUCCESS);
+    return audioDeviceRefinerCb_->OnDistributedOutputChange(isRemote);
+}
+
 void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     StreamUsage streamUsage, int32_t clientUID, RouterType &routerType)
 {
