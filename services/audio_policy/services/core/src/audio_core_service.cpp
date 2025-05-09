@@ -69,6 +69,7 @@ AudioCoreService::AudioCoreService()
       audioEcManager_(AudioEcManager::GetInstance()),
       policyConfigMananger_(AudioPolicyConfigManager::GetInstance()),
       audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
+      sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
       pipeManager_(AudioPipeManager::GetPipeManager())
 {
@@ -351,7 +352,6 @@ void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor
     streamDesc->audioFlag_ = AUDIO_FLAG_NONE;
 }
 
-
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("In, session %{public}u", sessionId);
@@ -392,6 +392,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
         streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
     }
+    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
     return SUCCESS;
 }
 
@@ -1064,6 +1065,11 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
         if (!HandleInputStreamInRunning(streamDesc)) {
             continue;
         }
+
+        // handle nearlink
+        int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
+        CHECK_AND_CONTINUE_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
+
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc));
             needUpdateActiveDevice = false;

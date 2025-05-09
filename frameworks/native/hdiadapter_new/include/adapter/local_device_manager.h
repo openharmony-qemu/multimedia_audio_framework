@@ -61,7 +61,7 @@ public:
         const std::string &condition) override;
     int32_t SetVoiceVolume(const std::string &adapterName, float volume) override;
     int32_t SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-        int32_t streamId) override;
+        int32_t streamId, AudioScene scene = AUDIO_SCENE_DEFAULT) override;
     int32_t SetInputRoute(const std::string &adapterName, DeviceType device, int32_t streamId,
         int32_t inputType) override;
     void SetMicMute(const std::string &adapterName, bool isMute) override;
@@ -80,10 +80,11 @@ private:
     std::shared_ptr<LocalAdapterWrapper> GetAdapter(const std::string &adapterName, bool tryCreate = false);
     int32_t SwitchAdapterDesc(struct AudioAdapterDescriptor *descs, const std::string &adapterName, uint32_t size);
     uint32_t GetPortId(const std::string &adapterName, enum AudioPortDirection portFlag);
-    int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink);
+    int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink, AudioScene scene);
     int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source);
     void SaveSetParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value);
+    int32_t HandleNearlinkScene(AudioRouteNode &sink, AudioScene scene);
 
 private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;

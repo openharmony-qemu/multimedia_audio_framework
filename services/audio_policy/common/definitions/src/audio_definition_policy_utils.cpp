@@ -57,6 +57,8 @@ std::unordered_map<std::string, DeviceType> AudioDefinitionPolicyUtils::deviceTy
     {"DEVICE_TYPE_DEFAULT", DEVICE_TYPE_DEFAULT},
     {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
     {"DEVICE_TYPE_ACCESSORY", DEVICE_TYPE_ACCESSORY},
+    {"DEVICE_TYPE_NEARLINK", DEVICE_TYPE_NEARLINK},
+    {"DEVICE_TYPE_NEARLINK_IN", DEVICE_TYPE_NEARLINK_IN},
 };
 
 std::unordered_map<std::string, AudioPin> AudioDefinitionPolicyUtils::pinStrToEnum = {
@@ -73,6 +75,7 @@ std::unordered_map<std::string, AudioPin> AudioDefinitionPolicyUtils::pinStrToEn
     {"PIN_OUT_USB_HEADSET", AUDIO_PIN_OUT_USB_HEADSET},
     {"PIN_OUT_BLUETOOTH_A2DP", AUDIO_PIN_OUT_BLUETOOTH_A2DP},
     {"PIN_OUT_DP", AUDIO_PIN_OUT_DP},
+    {"PIN_OUT_NEARLINK", AUDIO_PIN_OUT_NEARLINK},
     {"PIN_IN_MIC", AUDIO_PIN_IN_MIC},
     {"PIN_IN_HS_MIC", AUDIO_PIN_IN_HS_MIC},
     {"PIN_IN_LINEIN", AUDIO_PIN_IN_LINEIN},
@@ -81,6 +84,7 @@ std::unordered_map<std::string, AudioPin> AudioDefinitionPolicyUtils::pinStrToEn
     {"PIN_IN_DAUDIO_DEFAULT", AUDIO_PIN_IN_DAUDIO_DEFAULT},
     {"PIN_IN_PENCIL", AUDIO_PIN_IN_PENCIL},
     {"PIN_IN_UWB", AUDIO_PIN_IN_UWB},
+    {"PIN_IN_NEARLINK", AUDIO_PIN_IN_NEARLINK},
 };
 
 std::unordered_map<std::string, AudioSampleFormat> AudioDefinitionPolicyUtils::formatStrToEnum = {

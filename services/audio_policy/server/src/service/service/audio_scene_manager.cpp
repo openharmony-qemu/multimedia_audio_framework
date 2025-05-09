@@ -35,6 +35,8 @@
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_device_manager.h"
 #endif
+#include "audio_active_device.h"
+#include "sle_audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -61,6 +63,11 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState();
     }
+    auto activeDevice = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
+    if (activeDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        lastAudioScene_ == AUDIO_SCENE_PHONE_CALL && audioScene_ != AUDIO_SCENE_PHONE_CALL) {
+            SleAudioDeviceManager::GetInstance().StopPlaying(activeDevice, STREAM_USAGE_VOICE_MODEM_COMMUNICATION);
+        }
 }
 
 bool AudioSceneManager::IsStreamActive(AudioStreamType streamType) const

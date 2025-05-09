@@ -460,6 +460,8 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVer
             return DEVICE_TYPE_USB_HEADSET;
         case DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             return DEVICE_TYPE_BLUETOOTH_A2DP;
+        case DEVICE_TYPE_NEARLINK_IN:
+            return DEVICE_TYPE_NEARLINK;
         default:
             return deviceType_;
     }
