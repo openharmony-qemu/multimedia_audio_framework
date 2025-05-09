@@ -31,6 +31,7 @@ audio_sources = [
   "$WORK_DIR/audiocapturer/callback/napi_capturer_period_position_callback.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_capturer_position_callback.cpp",
   "$WORK_DIR/audiocapturer/napi_audio_capturer.cpp",
+  "$WORK_DIR/audiomanager/callback/napi_active_volume_type_change_callback.cpp",
   "$WORK_DIR/audiomanager/callback/napi_appvolume_change_callback.cpp",
   "$WORK_DIR/audiomanager/callback/napi_audio_capturer_state_callback.cpp",
   "$WORK_DIR/audiomanager/callback/napi_audio_manager_callbacks.cpp",

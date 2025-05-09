@@ -146,6 +146,9 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
                 case static_cast<uint32_t>(AudioPolicyClientCode::ON_APP_VOLUME_CHANGE):
                     HandleAppVolumeChange(data, reply);
                     break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_ACTIVE_VOLUME_TYPE_CHANGE):
+                    HandleActiveVolumeTypeChange(data, reply);
+                    break;
                 default:
                     OnMaxRemoteRequest(updateCode, data, reply);
                     break;
@@ -158,6 +161,13 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
         }
     }
     return SUCCESS;
+}
+
+void AudioPolicyClientStub::HandleActiveVolumeTypeChange(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("Handle Active VolumeType Change");
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    OnActiveVolumeTypeChanged(volumeType);
 }
 
 void AudioPolicyClientStub::HandleAppVolumeChange(MessageParcel &data, MessageParcel &reply)

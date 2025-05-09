@@ -511,6 +511,20 @@ int32_t AudioSystemManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
     return AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, owned, isMute);
 }
 
+int32_t AudioSystemManager::UnsetActiveVolumeTypeCallback(
+    const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().UnsetActiveVolumeTypeCallback(callback);
+}
+
+int32_t AudioSystemManager::SetActiveVolumeTypeCallback(
+    const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetActiveVolumeTypeCallback: callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
+}
+
 int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel) const
 {
     AUDIO_INFO_LOG("SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]", volumeType, volumeLevel);

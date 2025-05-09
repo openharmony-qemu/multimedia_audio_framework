@@ -30,6 +30,7 @@ public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
         MessageOption &option) override;
 private:
+    void HandleActiveVolumeTypeChange(MessageParcel &data, MessageParcel &reply);
     void HandleAppVolumeChange(MessageParcel &data, MessageParcel &reply);
     void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply);
     void HandleAudioFocusInfoChange(MessageParcel &data, MessageParcel &reply);
