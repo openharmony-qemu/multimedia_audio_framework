@@ -46,9 +46,9 @@ public:
         uint32_t formatSize, bool mixLfe);
     void Reset();
 private:
-    AudioChannelLayout inLayout_ = CH_LAYOUT_UNKNOWN;
+    uint64_t inLayout_ = (uint64_t)CH_LAYOUT_UNKNOWN;
     uint32_t inChannels_ = 0;
-    AudioChannelLayout outLayout_ = CH_LAYOUT_UNKNOWN;
+    uint64_t outLayout_ = (uint64_t)CH_LAYOUT_UNKNOWN;
     uint32_t outChannels_ = 0;
     uint32_t formatSize_ = INVALID_WIDTH; // work format, for now only supports float
     std::vector<std::vector<float>> downMixTable_;
