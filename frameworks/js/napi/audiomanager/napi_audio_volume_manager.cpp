@@ -217,7 +217,8 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentageForUid(napi_env env, na
     size_t argNum = 0;
     auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
         argNum = argc;
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "Invalid arguments count or types.",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->appUid, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed",
             NAPI_ERR_INPUT_INVALID);
@@ -259,7 +260,8 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentageForUid(napi_env env, na
     size_t argNum = 0;
     auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
         argNum = argc;
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, " Invalid arguments count or types.",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->appUid, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed",
             NAPI_ERR_INPUT_INVALID);
@@ -307,7 +309,8 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentage(napi_env env, napi_cal
     size_t argNum = 0;
     auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
         argNum = argc;
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "Invalid arguments count or types.",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->volLevel, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed",
             NAPI_ERR_INPUT_INVALID);
@@ -325,7 +328,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentage(napi_env env, napi_cal
             context->volLevel);
         CHECK_AND_RETURN(context->intValue != SUCCESS);
         if (context->intValue == ERROR_INVALID_PARAM) {
-            context->SignError(NAPI_ERROR_INVALID_PARAM);
+            context->SignError(NAPI_ERROR_INVALID_PARAM, "Invalid arguments count or types.");
         } else {
             context->SignError(NAPI_ERR_SYSTEM);
         }
@@ -347,7 +350,8 @@ napi_value NapiAudioVolumeManager::SetAppVolumeMutedForUid(napi_env env, napi_ca
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "Invalid arguments count or types.",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->appUid, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueBoolean(env, context->isMute, argv[PARAM1]);
@@ -628,7 +632,8 @@ napi_value NapiAudioVolumeManager::RegisterAppVolumeChangeForUidCallback(napi_en
         napiAudioVolumeManager->appVolumeChangeCallbackForUidNapi_);
     if (ret != SUCCESS) {
         if (ret == ERROR_INVALID_PARAM) {
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Invalid parameter");
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+                "Parameter verification failed. Invalid callback.");
         } else if (ret == ERR_PERMISSION_DENIED) {
             NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Permission denied");
         } else {
@@ -661,7 +666,8 @@ napi_value NapiAudioVolumeManager::RegisterSelfAppVolumeChangeCallback(napi_env 
         napiAudioVolumeManager->selfAppVolumeChangeCallbackNapi_);
     if (ret != SUCCESS) {
         if (ret == ERROR_INVALID_PARAM) {
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Invalid parameter");
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+                "Parameter verification failed. Invalid callback.");
         } else {
             NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error");
         }
