@@ -39,12 +39,6 @@ namespace {
     constexpr uint32_t MIN_DEVICE_COUNT = 2;
     constexpr uint32_t MIN_DEVICE_ID = 1;
     constexpr uint32_t MIN_DEVICE_NUM = 1;
-    constexpr uint32_t CONTENT_TYPE_UPPER_INVALID = 1000;
-    constexpr uint32_t STREAM_USAGE_UPPER_INVALID = 1000;
-    constexpr uint32_t STREAM_TYPE_UPPER_INVALID = 1000;
-    constexpr uint32_t CONTENT_TYPE_LOWER_INVALID = -1;
-    constexpr uint32_t STREAM_USAGE_LOWER_INVALID = -1;
-    constexpr uint32_t STREAM_TYPE_LOWER_INVALID = -1;
     constexpr int32_t MAX_VOL = 15;
     constexpr int32_t MIN_VOL = 0;
     constexpr int32_t INV_CHANNEL = -1;
