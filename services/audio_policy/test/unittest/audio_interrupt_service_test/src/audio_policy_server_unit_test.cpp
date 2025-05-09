@@ -3296,5 +3296,33 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_167, TestSize.Level1)
     auto result = server->GetDirectPlaybackSupport(streamInfo, streamUsage);
     EXPECT_EQ(result, DIRECT_PLAYBACK_NOT_SUPPORTED);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_168
+ * @tc.desc  : Test ActivatePreemptMode.
+ */
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_168, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t result = server->ActivatePreemptMode();
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_169
+ * @tc.desc  : Test DeactivatePreemptMode.
+ */
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_169, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t result = server->DeactivatePreemptMode();
+    EXPECT_EQ(result, ERROR);
+}
 } // AudioStandard
 } // OHOS
