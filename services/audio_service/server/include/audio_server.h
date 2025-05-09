@@ -287,6 +287,11 @@ private:
         bool on, int32_t modifyVolume);
     int32_t CheckAndWaitAudioPolicyReady();
     void NotifyProcessStatus();
+    bool ProcessKeyValuePairs(const std::string &key, const std::vector<std::pair<std::string, std::string>> &kvpairs,
+        const std::unordered_map<std::string, std::set<std::string>> &subKeyMap, std::string &value);
+    bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params);
+    bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;

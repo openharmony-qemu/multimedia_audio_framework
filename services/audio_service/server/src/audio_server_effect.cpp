@@ -416,19 +416,28 @@ void AudioServer::NotifyAccountsChanged()
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
 
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
-    audioEffectChainManager->LoadEffectProperties();
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().NotifyAccountsChanged();
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        audioEffectChainManager->LoadEffectProperties();
+    }
 }
 
 void AudioServer::NotifySettingsDataReady()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
-
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
-    audioEffectChainManager->LoadEffectProperties();
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().NotifySettingsDataReady();
+    } else {
+        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        audioEffectChainManager->LoadEffectProperties();
+    }
 }
 
 bool AudioServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
@@ -436,7 +445,11 @@ bool AudioServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
         "IsAcousticEchoCancelerSupported refused for %{public}d", callingUid);
-    AUDIO_WARNING_LOG("Not Supported");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().IsAcousticEchoCancelerSupported(sourceType);
+    }
+    AUDIO_INFO_LOG("IsAcousticEchoCancelerSupported not support");
     return false;
 }
 } // namespace AudioStandard

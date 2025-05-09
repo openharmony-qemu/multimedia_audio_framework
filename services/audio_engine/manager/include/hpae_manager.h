@@ -162,7 +162,12 @@ public:
         AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
     void UpdateExtraSceneType(
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) override;
+    void NotifySettingsDataReady() override;
+    void NotifyAccountsChanged() override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
+    bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result) override;
 private:
     int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
     bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
@@ -205,6 +210,7 @@ private:
     void AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>> &sinkIdMap,
         const std::pair<uint32_t, std::string> &id, const std::string &name);
     void DestroyCapture(uint32_t sessionId);
+    void LoadEffectLive();
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -234,6 +240,7 @@ private:
     std::weak_ptr<AudioServiceHpaeDumpCallback> dumpCallback_;
     std::unordered_map<std::string, std::string> deviceDumpSinkInfoMap_;
     std::unordered_map<HpaeMsgCode, std::function<void(const std::any &)>> handlers_;
+    std::string effectLiveState_ = "";
 };
 
 }  // namespace HPAE

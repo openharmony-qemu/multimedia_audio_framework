@@ -1150,6 +1150,7 @@ AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sou
     switch (sourceType) {
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_UNPROCESSED:
+        case SOURCE_TYPE_LIVE:
             return STREAM_MUSIC;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
         case SOURCE_TYPE_VOICE_CALL:

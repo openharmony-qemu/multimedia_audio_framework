@@ -23,6 +23,8 @@
 #include "audio_schedule.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
+#include "audio_setting_provider.h"
+#include "system_ability_definition.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -1294,6 +1296,11 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Start(sessionId);
             }
             capturerIdStreamInfoMap_[sessionId].state = I_STATUS_STARTING;
+            if (capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType == SOURCE_TYPE_LIVE &&
+                (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
+                const std::string combinedParam = "live_effect=" + effectLiveState_;
+                hpaePolicyManager_->SetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
+            }               
         } else {
             AUDIO_WARNING_LOG("Start can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
                 streamClassType,
@@ -2044,10 +2051,118 @@ void HpaeManager::UpdateExtraSceneType(
     return;
 }
 
-bool HpaeManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+void HpaeManager::NotifySettingsDataReady()
 {
-    AUDIO_INFO_LOG("Is_sSupported SourceType %{public}d", sourceType);
-    return true;
+    CHECK_AND_RETURN_LOG(hpaePolicyManager_ != nullptr, "hpaePolicyManager_ is nullptr");
+    hpaePolicyManager_->LoadEffectProperties();
+    LoadEffectLive();
+}
+    
+void HpaeManager::NotifyAccountsChanged()
+{
+    CHECK_AND_RETURN_LOG(hpaePolicyManager_ != nullptr, "hpaePolicyManager_ is nullptr");
+    hpaePolicyManager_->LoadEffectProperties();
+    LoadEffectLive();
+}
+    
+ bool HpaeManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
+ {
+    CHECK_AND_RETURN_RET_LOG(hpaePolicyManager_ != nullptr, false, "hpaePolicyManager_ is nullptr");
+
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        return true;
+    }
+    if (sourceType != SOURCE_TYPE_LIVE) {
+        return false;
+    }
+    std::string value = hpaePolicyManager_->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
+        "source_type_live_aec_supported");
+    AUDIO_INFO_LOG("live_aec_supported: %{public}s", value.c_str());
+    if (value == "true") {
+        return true;
+    }
+    return false;
+}
+
+void HpaeManager::LoadEffectLive()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = ERROR;
+    if (!settingProvider.CheckOsAccountReady()) {
+        AUDIO_ERR_LOG("OS account not ready");
+    } else {
+        std::string configValue;
+        ret = settingProvider.GetStringValue("live_effect", configValue, "system");
+        if (ret == SUCCESS && !configValue.empty()) {
+            effectLiveState_ = configValue;
+            return;
+        }
+    }
+    std::string state = hpaePolicyManager_->GetAudioParameter(
+        "primary", AudioParamKey::PARAM_KEY_STATE, "live_effect_supported");
+    if (state != "true") {
+        effectLiveState_ = "NoSupport";
+    } else {
+        effectLiveState_ = "NROFF";
+    }
+    AUDIO_INFO_LOG("EffectLive %{public}s", effectLiveState_.c_str());
+    if (settingProvider.CheckOsAccountReady()) {
+        settingProvider.PutStringValue("live_effect", effectLiveState_, "system");
+    }
+}
+
+bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
+ {
+    CHECK_AND_RETURN_RET_LOG(hpaePolicyManager_ != nullptr, false, "hpaePolicyManager_ is nullptr");
+    const auto &[paramKey, paramValue] = params[0];
+    if (paramKey != "live_effect" || (paramValue != "NRON" && paramValue != "NROFF")) {
+        AUDIO_ERR_LOG("Parameter Error");
+        return false;
+    }
+
+    if (effectLiveState_ == "") {
+        LoadEffectLive();
+    }
+
+    if (effectLiveState_ == "NoSupport") {
+        AUDIO_ERR_LOG("effectLive not supported");
+        return false;
+    }
+
+    const std::string combinedParam = paramKey + "=" + paramValue;
+    hpaePolicyManager_->SetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
+    effectLiveState_ = paramValue;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    if (!settingProvider.CheckOsAccountReady()) {
+        AUDIO_ERR_LOG("OS account not ready");
+        return false;
+    }
+
+    ErrCode ret = settingProvider.PutStringValue(paramKey, paramValue, "system");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to set system value");
+        return false;
+    }
+     return true;
+ }
+    
+bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    CHECK_AND_RETURN_RET_LOG(hpaePolicyManager_ != nullptr, false, "hpaePolicyManager_ is nullptr");
+
+    const std::string &targetKey = subKeys[0];
+    if (subKeys[0] != "live_effect_supported") {
+        AUDIO_ERR_LOG("Parameter Error");
+        return false;
+    }
+    if (effectLiveState_ != "") {
+        result.emplace_back(std::make_pair(subKeys[0], effectLiveState_));
+        return true;
+    }
+    LoadEffectLive();
+    result.emplace_back(targetKey, effectLiveState_);
+     return true;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

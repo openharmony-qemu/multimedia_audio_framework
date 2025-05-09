@@ -202,6 +202,7 @@ ohos_shared_library("audio_engine_manager") {
   include_dirs = [
     "manager/include",
     "../audio_policy/server/include/service/common",
+    "../audio_policy/server/include/service/manager",
     "../../frameworks/native/audioeffect/include",
     "../../frameworks/native/audioschedule/include",
   ]
@@ -225,12 +226,18 @@ ohos_shared_library("audio_engine_manager") {
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
+    "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_policy:audio_foundation",
+    "../audio_policy:audio_setting_provider",
   ]
 
   external_deps = [
     "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
     "hilog:libhilog",
+    "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
   ]
 
   subsystem_name = "multimedia"
