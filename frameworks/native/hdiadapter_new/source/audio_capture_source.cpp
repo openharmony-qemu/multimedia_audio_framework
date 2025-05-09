@@ -130,6 +130,7 @@ int32_t AudioCaptureSource::Start(void)
             case SOURCE_TYPE_MIC:
             case SOURCE_TYPE_CAMCORDER:
             case SOURCE_TYPE_UNPROCESSED:
+            case SOURCE_TYPE_LIVE:
             default:
                 runningLock_ = std::make_shared<AudioRunningLock>(std::string(RUNNING_LOCK_NAME));
         }
