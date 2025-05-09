@@ -35,6 +35,12 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+    constexpr uint32_t CONTENT_TYPE_UPPER_INVALID = 1000;
+    constexpr uint32_t STREAM_USAGE_UPPER_INVALID = 1000;
+    constexpr uint32_t STREAM_TYPE_UPPER_INVALID = 1000;
+    constexpr uint32_t CONTENT_TYPE_LOWER_INVALID = -1;
+    constexpr uint32_t STREAM_USAGE_LOWER_INVALID = -1;
+    constexpr uint32_t STREAM_TYPE_LOWER_INVALID = -1;
     constexpr uid_t UID_PREEMPT_SA = 7015;
     int g_isCallbackReceived = false;
     std::mutex g_mutex;
