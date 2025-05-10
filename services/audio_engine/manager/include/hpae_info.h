@@ -71,6 +71,12 @@ enum StreamManagerState {
     STREAM_MANAGER_RELEASED
 };
 
+enum MOVE_SESSION_TYPE {
+    MOVE_SINGLE,
+    MOVE_ALL,
+    MOVE_PREFER,
+};
+
 struct HpaeStreamInfo {
     uint32_t sessionId;
     size_t frameLen;

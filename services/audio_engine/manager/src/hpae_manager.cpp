@@ -134,6 +134,7 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
     RegisterHandler(MOVE_ALL_SOURCE_OUTPUT, &HpaeManager::HandleMoveAllSourceOutputs);
     RegisterHandler(DUMP_SINK_INFO, &HpaeManager::HandleDumpSinkInfo);
     RegisterHandler(DUMP_SOURCE_INFO, &HpaeManager::HandleDumpSourceInfo);
+    RegisterHandler(MOVE_SESSION_FAILED, &HpaeManager::HandleMoveSessionFailed);
 }
 
 HpaeManager::~HpaeManager()
@@ -669,7 +670,7 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             return;
         }
         std::vector<uint32_t> sessionIds;
-        rendererManager->MoveAllStream(name, sessionIds, true);
+        rendererManager->MoveAllStream(name, sessionIds, MOVE_ALL);
         std::string oldDefaultSink = defaultSink_;
         defaultSink_ = name;
         if (!rendererManager->IsInit()) {
@@ -701,7 +702,7 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             return;
         }
         std::vector<uint32_t> sessionIds;
-        capturerManager->MoveAllStream(name, sessionIds, true);
+        capturerManager->MoveAllStream(name, sessionIds, MOVE_ALL);
         std::string oldDefaultSource_ = defaultSource_;
         defaultSource_ = name;
         if (!capturerManager->IsInit()) {
@@ -731,39 +732,31 @@ int32_t HpaeManager::GetAllSinkInputs()
     return SUCCESS;
 }
 
-void HpaeManager::AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>> &sinkIdMap,
-    const std::pair<uint32_t, std::string> &id, const std::string &name)
-{
-    if (id.second == name && rendererIdSinkNameMap_[id.first] != id.second) {
-        std::string &sinkName = rendererIdSinkNameMap_[id.first];
-        if (sinkIdMap.find(id.second) == sinkIdMap.end()) {
-            sinkIdMap[sinkName] = std::vector<uint32_t>{};
-        }
-        sinkIdMap[sinkName].push_back(id.first);
-    }
-    return;
-}
-
-void HpaeManager::MoveToPreferSink(const std::string &name)
+void HpaeManager::MoveToPreferSink(const std::string &name, std::shared_ptr<AudioServiceHpaeCallback> serviceCallback)
 {
     AUDIO_INFO_LOG("enter in");
-    std::unordered_map<std::string, std::vector<uint32_t>> sinkIdMap;
+    std::vector<uint32_t> sessionIds;
     for (const auto &id : idPreferSinkNameMap_) {
-        AddSinkIdByName(sinkIdMap, id, name);
+        if (id.second == name && rendererIdSinkNameMap_[id.first] != id.second &&
+            rendererIdSinkNameMap_[id.first] == defaultSink_) {
+            sessionIds..emplace_back(id.first);
+        }
     }
-    for (const auto &sinkId : sinkIdMap) {
-        std::string sinkName = sinkId.first;
-        const std::vector<uint32_t> ids = sinkId.second;
-        auto request = [this, sinkName, name, ids]() {
-            AUDIO_INFO_LOG("Move %{public}s To Prefer Sink: %{public}s", sinkName.c_str(), name.c_str());
-            if (!SafeGetMap(rendererManagerMap_, sinkName)) {
-                AUDIO_ERR_LOG("can not find prefer sink: %{public}s", sinkName.c_str());
-                return;
-            }
-            rendererManagerMap_[sinkName]->MoveAllStream(name, ids, false);
-        };
-        SendRequest(request);
+    if (sessionIds.count() == 0) {
+        serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[name]);
+        return;
     }
+
+    auto request = [this, name, sessionIds, serviceCallback]() {
+        AUDIO_INFO_LOG("Move %{public}s To Prefer Sink: %{public}s", defaultSink_.c_str(), name.c_str());
+        if (!SafeGetMap(rendererManagerMap_, defaultSink_)) {
+            AUDIO_ERR_LOG("can not find default sink: %{public}s", defaultSink_.c_str());
+            serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[name]);
+            return;
+        }
+        rendererManagerMap_[defaultSink_]->MoveAllStream(name, sessionIds, MOVE_PREFER);
+    };
+    SendRequest(request);
 }
 
 int32_t HpaeManager::GetAllSourceOutputs()
@@ -955,7 +948,9 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
     }
     rendererManager->AddNodeToSink(sinkInputNode);
     rendererIdSinkNameMap_[sessionId] = sinkName;
-    idPreferSinkNameMap_[sessionId] = sinkName;
+    if (sinkName != defaultSink_) {
+        idPreferSinkNameMap_[sessionId] = sinkName;
+    }
     if (sinkInputs_.find(sessionId) != sinkInputs_.end()) {
         sinkInputs_[sessionId].deviceSinkId = sinkNameSinkIdMap_[sinkName];
         sinkInputs_[sessionId].sinkName = sinkName;
@@ -989,18 +984,24 @@ void HpaeManager::HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std
 }
 
 void HpaeManager::HandleMoveAllSinkInputs(
-    const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, bool isConnect)
+    const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, MOVE_SESSION_TYPE moveType)
 {
     AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", sinkInputs.size(), sinkName.c_str());
     if (sinkName.empty()) {
         AUDIO_INFO_LOG("sink name is empty, move to default sink:%{public}s", defaultSink_.c_str());
         sinkName = defaultSink_;
     }
+
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
         AUDIO_WARNING_LOG("can not find sink: %{public}s", sinkName.c_str());
+        if (moveType == MOVE_PREFER) {
+            if (auto serviceCallback = serviceCallback_.lock()) {
+                serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[sinkName]);
+            }
+        }
         return;
     }
-    rendererManagerMap_[sinkName]->AddAllNodesToSink(sinkInputs, isConnect);
+    rendererManagerMap_[sinkName]->AddAllNodesToSink(sinkInputs, moveType != MOVE_ALL);
     for (const auto &sinkInput : sinkInputs) {
         CHECK_AND_CONTINUE_LOG(sinkInput, "sinkInput is nullptr");
         uint32_t sessionId = sinkInput->GetNodeInfo().sessionId;
@@ -1008,6 +1009,11 @@ void HpaeManager::HandleMoveAllSinkInputs(
         if (sinkInputs_.find(sessionId) != sinkInputs_.end()) {
             sinkInputs_[sessionId].deviceSinkId = sinkNameSinkIdMap_[sinkName];
             sinkInputs_[sessionId].sinkName = sinkName;
+        }
+    }
+    if (moveType == MOVE_PREFER) {
+        if (auto serviceCallback = serviceCallback_.lock()) {
+            serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[sinkName]);
         }
     }
 }
@@ -1028,6 +1034,24 @@ void HpaeManager::HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveIn
         capturerIdSourceNameMap_[it.sessionId] = sourceName;
         if (sourceOutputs_.find(it.sessionId) != sourceOutputs_.end()) {
             sourceOutputs_[it.sessionId].deviceSourceId = sourceNameSourceIdMap_[sourceName];
+        }
+    }
+}
+
+void HpaeManager::HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId,
+    MOVE_SESSION_TYPE moveType, std::string name)
+{
+    AUDIO_INFO_LOG("handle move session:%{public}u failed to %{public}s", sessionId, name.c_str());
+    if (moveType != MOVE_SINGLE) {
+        return;
+    }
+    if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
+        if (auto serviceCallback = serviceCallback_.lock()) {
+            serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
+        }
+    } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
+        if (auto serviceCallback = serviceCallback_.lock()) {
+            serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
         }
     }
 }
@@ -1079,8 +1103,7 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
     auto serviceCallback = serviceCallback_.lock();
     if (serviceCallback && result == SUCCESS) {
         if (sinkNameSinkIdMap_.find(deviceName) != sinkNameSinkIdMap_.end()) {
-            serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[deviceName]);
-            MoveToPreferSink(deviceName);
+            MoveToPreferSink(deviceName, serviceCallback);
         } else if (sourceNameSourceIdMap_.find(deviceName) != sourceNameSourceIdMap_.end()) {
             serviceCallback->OnOpenAudioPortCb(sourceNameSourceIdMap_[deviceName]);
         } else {

@@ -94,14 +94,14 @@ int32_t HpaeInnerCapturerManager::AddAllNodesToSink(
 }
 
 void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &sinkName,
-    const std::vector<uint32_t>& moveIds, bool isMoveAll)
+    const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType)
 {
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
     std::vector<uint32_t> sessionIds;
     std::string idStr;
     for (const auto &it : sinkInputNodeMap_) {
-        if (isMoveAll || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
+        if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
             sinkInputs.emplace_back(it.second);
             sessionIds.emplace_back(it.first);
             idStr.append("[");
@@ -112,21 +112,21 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
     for (const auto &it : sessionIds) {
         DeleteRendererInputSessionInner(it);
     }
-    AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, isMoveAll:%{public}d",
-        idStr.c_str(), name.c_str(), isMoveAll);
-    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, !isMoveAll);
+    AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+        idStr.c_str(), name.c_str(), moveType);
+    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
 }
 
 int32_t HpaeInnerCapturerManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
-    bool isMoveAll)
+    MOVE_SESSION_TYPE moveType)
 {
     if (!IsInit()) {
         AUDIO_INFO_LOG("sink is not init ,use sync mode move to:%{public}s.", sinkName.c_str());
-        MoveAllStreamToNewSinkInner(sinkName, sessionIds, isMoveAll);
+        MoveAllStreamToNewSinkInner(sinkName, sessionIds, moveType);
     } else {
         AUDIO_INFO_LOG("sink is init ,use async mode move to:%{public}s.", sinkName.c_str());
-        auto request = [this, sinkName, sessionIds, isMoveAll]() {
-            MoveAllStreamToNewSinkInner(sinkName, sessionIds, isMoveAll);
+        auto request = [this, sinkName, sessionIds, moveType]() {
+            MoveAllStreamToNewSinkInner(sinkName, sessionIds, moveType);
         };
         SendRequestInner(request);
     }
@@ -140,11 +140,14 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
         if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,can not find session,move %{public}s --> %{public}s",
                 sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
+            TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
             return;
         }
-        
-        CHECK_AND_RETURN_LOG(!sinkName.empty(), "[StartMove] session:%{public}u failed,sinkName is empty",
-            sessionId);
+        if (sinkName.empty()) {
+            AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
+            TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+            return;
+        }
 
         AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
             sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
@@ -261,13 +264,13 @@ int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InnerCapManagerDeInit error, ret %{public}d.\n", ret);
     hpaeInnerCapSinkNode_->ResetAll();
     isInit_.store(false);
-    TriggerCallback(DEINIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
     if (isMoveDefault) {
         std::string sinkName = "";
         std::vector<uint32_t> ids;
         AUDIO_INFO_LOG("move all sink to default sink");
-        MoveAllStreamToNewSinkInner(sinkName, ids, true);
+        MoveAllStreamToNewSinkInner(sinkName, ids, MOVE_ALL);
     }
+    TriggerCallback(DEINIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
     return SUCCESS;
 }
 

@@ -49,7 +49,7 @@ public:
     int32_t Release(uint32_t sessionId) override;
     int32_t MoveStream(uint32_t sessionId, const std::string &sinkName) override;
     int32_t MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
-        bool isMoveAll = true) override;
+        MOVE_SESSION_TYPE moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
     int32_t SetMute(bool isMute) override;
     void Process() override;
@@ -103,7 +103,8 @@ private:
     int32_t DeleteMchInputSession(uint32_t sessionId);
     void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
-    void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds, bool isMoveAll);
+    void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds,
+        MOVE_SESSION_TYPE moveType);
     void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);
     void ConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DisConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
