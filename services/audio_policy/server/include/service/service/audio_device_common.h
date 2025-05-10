@@ -145,7 +145,7 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
 
-    void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
+    void MuteOtherSink(const std::string &sinkName, int64_t muteTime);
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
@@ -252,7 +252,7 @@ private:
         int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
-    void SetHeadsetUnpluggedToSpeakerFlag(DeviceType oldDeviceType, DeviceType newDeviceType);
+    void SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType);
 
 private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
@@ -264,7 +264,7 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFirstScreenOn_ = false;
     bool isRingDualToneOnPrimarySpeaker_ = false;
-    bool isHeadsetUnpluggedToSpeakerFlag_ = false;
+    bool isHeadsetUnpluggedToSpkOrEpFlag_ = false;
     std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
 
     IAudioPolicyInterface& audioPolicyManager_;
