@@ -739,10 +739,10 @@ void HpaeManager::MoveToPreferSink(const std::string &name, std::shared_ptr<Audi
     for (const auto &id : idPreferSinkNameMap_) {
         if (id.second == name && rendererIdSinkNameMap_[id.first] != id.second &&
             rendererIdSinkNameMap_[id.first] == defaultSink_) {
-            sessionIds..emplace_back(id.first);
+            sessionIds.emplace_back(id.first);
         }
     }
-    if (sessionIds.count() == 0) {
+    if (sessionIds.size() == 0) {
         serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[name]);
         return;
     }
