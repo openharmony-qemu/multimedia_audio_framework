@@ -127,8 +127,6 @@ const int32_t COMMON_SCENE_TYPE_INDEX = 0;
 const int32_t SUCCESS = 0;
 const int32_t ERROR = -1;
 const uint64_t FADE_OUT_TIME = 5000; // 5ms
-bool g_isFirstStarted = true;
-const char *BOOT_ANIMATION_FINISHED_EVENT = "bootevent.bootanimation.finished";
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -3690,22 +3688,9 @@ static void SetThreadPriority(char *sinkName)
         return;
     }
 
-    if (g_isFirstStarted) {
-        char paraValue[30] = {0}; // 30 for system parameter
-        int32_t ret = GetParameter(BOOT_ANIMATION_FINISHED_EVENT, "false", paraValue, sizeof(paraValue));
-        if (ret > 0 && !strcmp(paraValue, "false")) {
-            // boot up case
-            ScheduleThreadInServer(getpid(), gettid());
-            SetThreadQosLevelAsync();
-        } else {
-            // audio server recover case
-            SetThreadQosLevel();
-        }
-        g_isFirstStarted = false;
-    } else {
-        // normal thread creating case
-        SetThreadQosLevel();
-    }
+    AUDIO_INFO_LOG("set thread priority start");
+    int32_t setpriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
+    SetProcessDataThreadPriority(setpriority);
 }
 
 static void UnsetThreadPriority(char *sinkName)
@@ -3717,7 +3702,7 @@ static void UnsetThreadPriority(char *sinkName)
     }
 
     // primary case
-    ResetThreadQosLevel();
+    ResetProcessDataThreadPriority();
 }
 
 static void ThreadFuncRendererTimerBus(void *userdata)
