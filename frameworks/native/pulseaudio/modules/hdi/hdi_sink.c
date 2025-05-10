@@ -98,7 +98,6 @@
 #define DEFAULT_BLOCK_USEC 20000
 #define EFFECT_PROCESS_RATE 48000
 #define EFFECT_FRAME_LENGTH_MONO 960 // 48000Hz * 0.02s for 1 channel
-#define MCH_SINK_STANDBY_TIMES 160000 // 160ms
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 const uint64_t DEFAULT_GETLATENCY_LOG_THRESHOLD_MS = 100;
@@ -3206,7 +3205,6 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
     }
     if (u->multiChannel.isHDISinkInited) {
         if (u->multiChannel.sample_attrs.channel != (uint32_t)u->multiChannel.sinkChannel) {
-            usleep(MCH_SINK_STANDBY_TIMES);
             u->multiChannel.sinkAdapter->SinkAdapterStop(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkStarted = false;
             u->multiChannel.sinkAdapter->SinkAdapterDeInit(u->multiChannel.sinkAdapter);
