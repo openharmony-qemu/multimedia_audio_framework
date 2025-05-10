@@ -318,7 +318,7 @@ void HpaeRendererStreamImpl::GetSpanSizePerFrame(size_t &spanSizeInFrame) const
 
 void HpaeRendererStreamImpl::SetStreamIndex(uint32_t index)
 {
-    AUDIO_INFO_LOG("Using index/sessionId %d", index);
+    AUDIO_INFO_LOG("Using index/sessionId %{public}d", index);
     streamIndex_ = index;
 }
 
