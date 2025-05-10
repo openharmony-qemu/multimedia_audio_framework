@@ -78,6 +78,11 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevi
             AUDIO_INFO_LOG("RingRender streamUsage %{public}d clientUID %{public}d"
                 " fetch descs front:%{public}d", streamUsage, clientUID, descs.front()->deviceType_);
             routerType = router->GetRouterType();
+            if (descs.size() > 1 && VolumeUtils::IsPCVolumeEnable()) {
+                vector<shared_ptr<AudioDeviceDescriptor>> newDescs;
+                newDescs.push_back(descs.front());
+                return newDescs;
+            }
             return descs;
         }
     }
