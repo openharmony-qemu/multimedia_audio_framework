@@ -273,13 +273,13 @@ int32_t HpaeOffloadRendererManager::Release(uint32_t sessionId)
 }
 
 void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
-    const std::vector<uint32_t>& moveIds, bool isMoveAll)
+    const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType)
 {
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
     if (sinkInputNode_) {
         uint32_t sessionId = sinkInputNode_->GetSessionId();
-        if (isMoveAll || std::find(moveIds.begin(), moveIds.end(), sessionId) != moveIds.end()) {
+        if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), sessionId) != moveIds.end()) {
             sinkInputs.emplace_back(sinkInputNode_);
             DisConnectInputSession();
             AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [offload] --> [%{public}s]",
@@ -289,19 +289,19 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
     if (sinkInputs.size() == 0) {
         AUDIO_WARNING_LOG("sink count is 0,no need move session");
     }
-    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, !isMoveAll);
+    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
 }
 
 int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
-    bool isMoveAll)
+    MOVE_SESSION_TYPE moveType)
 {
     if (!IsInit()) {
         AUDIO_INFO_LOG("sink is not init ,use sync mode move to:%{public}s.", sinkName.c_str());
-        MoveAllStreamToNewSink(sinkName, sessionIds, isMoveAll);
+        MoveAllStreamToNewSink(sinkName, sessionIds, moveType);
     } else {
         AUDIO_INFO_LOG("sink is init ,use async mode move to:%{public}s.", sinkName.c_str());
-        auto request = [this, sinkName, sessionIds, isMoveAll]() {
-            MoveAllStreamToNewSink(sinkName, sessionIds, isMoveAll);
+        auto request = [this, sinkName, sessionIds, moveType]() {
+            MoveAllStreamToNewSink(sinkName, sessionIds, moveType);
         };
         SendRequest(request);
     }
@@ -311,11 +311,16 @@ int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, c
 int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::string &sinkName)
 {
     auto request = [this, sessionId, sinkName]() {
-        CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
-            "[StartMove] session:%{public}d failed,sink [offload] --> [%{public}s]", sessionId, sinkName.c_str());
+        if (sinkInputNode_ == nullptr || sessionId != sinkInputNode_->GetSessionId()) {
+            AUDIO_ERR_LOG("[StartMove] session:%{public}d failed,sink [offload] --> [%{public}s]",
+                sessionId, sinkName.c_str());
+            TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+            return;
+        }
 
         if (sinkName.empty()) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
+            TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
             return;
         }
 
@@ -445,7 +450,7 @@ int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
         std::string sinkName = "";
         std::vector<uint32_t> ids;
         AUDIO_INFO_LOG("move all sink to default sink");
-        MoveAllStreamToNewSink(sinkName, ids, true);
+        MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
     return SUCCESS;
 }

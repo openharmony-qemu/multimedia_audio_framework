@@ -662,7 +662,7 @@ int32_t HpaeCapturerManager::DeInit(bool isMoveDefault)
         std::string name = "";
         std::vector<uint32_t> ids;
         AUDIO_INFO_LOG("move all source to default sink");
-        MoveAllStreamToNewSource(name, ids, true);
+        MoveAllStreamToNewSource(name, ids, MOVE_ALL);
     }
     return SUCCESS;
 }
@@ -792,15 +792,15 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
 }
 
 int32_t HpaeCapturerManager::MoveAllStream(const std::string &sourceName, const std::vector<uint32_t>& sessionIds,
-    bool isMoveAll)
+    MOVE_SESSION_TYPE moveType)
 {
     if (!IsInit()) {
         AUDIO_INFO_LOG("source is not init ,use sync mode move to: %{public}s", sourceName.c_str());
-        MoveAllStreamToNewSource(sourceName, sessionIds, isMoveAll);
+        MoveAllStreamToNewSource(sourceName, sessionIds, moveType);
     } else {
         AUDIO_INFO_LOG("source is init ,use async mode move to: %{public}s", sourceName.c_str());
-        auto request = [this, sourceName, sessionIds, isMoveAll]() {
-            MoveAllStreamToNewSource(sourceName, sessionIds, isMoveAll);
+        auto request = [this, sourceName, sessionIds, moveType]() {
+            MoveAllStreamToNewSource(sourceName, sessionIds, moveType);
         };
         SendRequest(request);
     }
@@ -808,13 +808,13 @@ int32_t HpaeCapturerManager::MoveAllStream(const std::string &sourceName, const 
 }
 
 void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName,
-    const std::vector<uint32_t>& moveIds, bool isMoveAll = true)
+    const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType)
 {
     std::string name = sourceName;
     std::vector<HpaeCaptureMoveInfo> moveInfos;
     std::string idStr;
     for (const auto &it : sourceOutputNodeMap_) {
-        if (isMoveAll || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
+        if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
             HpaeCaptureMoveInfo moveInfo;
             moveInfo.sessionId = it.first;
             moveInfo.sourceOutputNode = it.second;
@@ -831,8 +831,8 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
     for (const auto &it : moveInfos) {
         DeleteOutputSession(it.sessionId);
     }
-    AUDIO_INFO_LOG("[StartMove] session:%{public}s to source name:%{public}s, isMoveAll:%{public}d",
-        idStr.c_str(), name.c_str(), isMoveAll);
+    AUDIO_INFO_LOG("[StartMove] session:%{public}s to source name:%{public}s, move type:%{public}d",
+        idStr.c_str(), name.c_str(), moveType);
     TriggerCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
 }
 
@@ -842,12 +842,14 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
         if (!SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,not find session,move %{public}s --> %{public}s",
                 sessionId, sourceInfo_.sourceName.c_str(), sourceName.c_str());
+            TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId, MOVE_SINGLE, sourceName);
             return;
         }
         std::shared_ptr<HpaeSourceOutputNode> sourceNode = sourceOutputNodeMap_[sessionId];
         if (sessionNodeMap_.find(sessionId)==sessionNodeMap_.end()) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,not find session node,move %{public}s --> %{public}s",
                 sessionId, sourceInfo_.sourceName.c_str(), sourceName.c_str());
+            TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId, MOVE_SINGLE, sourceName);
             return;
         }
         CHECK_AND_RETURN_LOG(!sourceName.empty(), "[StartMove] session:%{public}u failed,sourceName is empty",

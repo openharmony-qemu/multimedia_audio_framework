@@ -185,9 +185,11 @@ private:
     void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
     void HandleMoveAllSinkInputs(const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
-        bool isConnect);
+        MOVE_SESSION_TYPE moveType);
     void HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std::string sourceName);
     void HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
+    void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MOVE_SESSION_TYPE moveType,
+        std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
 
@@ -205,10 +207,8 @@ private:
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo);
 
-    void MoveToPreferSink(const std::string& name);
+    void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> serviceCallback);
     int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo);
-    void AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>> &sinkIdMap,
-        const std::pair<uint32_t, std::string> &id, const std::string &name);
     void DestroyCapture(uint32_t sessionId);
     void LoadEffectLive();
 
