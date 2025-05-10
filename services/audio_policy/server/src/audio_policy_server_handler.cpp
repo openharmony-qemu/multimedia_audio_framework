@@ -258,6 +258,18 @@ bool AudioPolicyServerHandler::SendRingerModeUpdatedCallback(const AudioRingerMo
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendActiveVolumeTypeChangeCallback(const AudioVolumeType &volumeType)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->volumeType = volumeType;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::ACTIVE_VOLUME_TYPE_CHANGE_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send ACTIVE_VOLUME_TYPE_CHANGE_EVENT event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -810,6 +822,25 @@ void AudioPolicyServerHandler::HandleFocusInfoChangeEvent(const AppExecFwk::Inne
             clientCallbacksMap_[it->first].count(CALLBACK_FOCUS_INFO_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_FOCUS_INFO_CHANGE]) {
             it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
+        }
+    }
+}
+
+void AudioPolicyServerHandler::HandleActiveVolumeTypeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> activeVolumeTypeChangeListenerCb = it->second;
+        if (activeVolumeTypeChangeListenerCb == nullptr) {
+            AUDIO_ERR_LOG("activeVolumeTypeChangeListenerCb: nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE]) {
+            activeVolumeTypeChangeListenerCb->OnActiveVolumeTypeChanged(eventContextObj->volumeType);
         }
     }
 }
@@ -1393,6 +1424,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::APP_VOLUME_CHANGE_EVENT:
             HandleAppVolumeChangeEvent(event);
+            break;
+        case EventAudioServerCmd::ACTIVE_VOLUME_TYPE_CHANGE_EVENT:
+            HandleActiveVolumeTypeChangeEvent(event);
             break;
         default:
             break;

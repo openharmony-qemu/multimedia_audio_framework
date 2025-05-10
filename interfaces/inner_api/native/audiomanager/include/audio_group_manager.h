@@ -67,6 +67,17 @@ public:
     virtual void OnSelfAppVolumeChanged(const VolumeEvent &event) = 0;
 };
 
+class AudioManagerActiveVolumeTypeChangeCallback {
+public:
+    virtual ~AudioManagerActiveVolumeTypeChangeCallback() = default;
+    /**
+     * Called when the active volume type changes
+     *
+     * @param event active volume type change Information.
+     */
+    virtual void OnActiveVolumeTypeChanged(const AudioVolumeType &event) = 0;
+};
+
 class AudioGroupManager {
 public:
     AudioGroupManager(int32_t groupId);

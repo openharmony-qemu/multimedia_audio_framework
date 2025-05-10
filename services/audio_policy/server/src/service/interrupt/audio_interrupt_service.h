@@ -195,6 +195,7 @@ private:
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     void UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
+    void SendActiveVolumeTypeChangeEvent(const int32_t zoneId);
     void RemoveClient(const int32_t zoneId, uint32_t streamId);
     void RemoveFocusInfo(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList,
@@ -273,6 +274,8 @@ private:
     mutable int32_t ownerPid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
+
+    AudioStreamType activeStreamType_ = STREAM_MUSIC;
 };
 } // namespace AudioStandard
 } // namespace OHOS

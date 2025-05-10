@@ -473,6 +473,27 @@ public:
      * @return the app uid muted status
      */
     int32_t IsAppVolumeMute(const int32_t appUid, const bool owned, bool &isMute);
+
+    /**
+     * @brief Unset active volume type change callback.
+     *
+     * @param callback Unset the callback.
+     * @return Returns {@link SUCCESS} if stream change callback is successfully unset; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t UnsetActiveVolumeTypeCallback(
+        const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback = nullptr);
+
+    /**
+     * @brief Set active volume type change callback.
+     *
+     * @param callback callback when active volume type change.
+     * @return Returns {@link SUCCESS} if stream change callback is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetActiveVolumeTypeCallback(
+        const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback);
+
     /**
      * @brief Obtains the current stream volume.
      *

@@ -53,6 +53,9 @@ public:
     int32_t RemoveAllAppVolumeChangeForUidCallback();
     size_t GetAppVolumeChangeCallbackForUidSize() const;
     size_t GetSelfAppVolumeChangeCallbackSize() const;
+    int32_t AddActiveVolumeTypeChangeCallback(const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &cb);
+    int32_t RemoveAllActiveVolumeTypeChangeCallback();
+    int32_t RemoveActiveVolumeTypeChangeCallback(const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &cb);
     int32_t AddSelfAppVolumeChangeCallback(int32_t appUid,
         const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &cb);
     int32_t RemoveSelfAppVolumeChangeCallback(int32_t appUid,
@@ -60,6 +63,7 @@ public:
     int32_t RemoveAllSelfAppVolumeChangeCallback(int32_t appUid);
     int32_t RemoveRingerModeCallback();
     int32_t RemoveRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
+    size_t GetActiveVolumeTypeChangeCallbackSize() const;
     size_t GetRingerModeCallbackSize() const;
     int32_t AddMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb);
     int32_t RemoveMicStateChangeCallback();
@@ -133,6 +137,7 @@ public:
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+    void OnActiveVolumeTypeChanged(const AudioVolumeType& volumeType) override;
     void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
@@ -169,6 +174,7 @@ private:
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
+    std::vector<std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback>> activeVolumeTypeChangeCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<
         AudioManagerAppVolumeChangeCallback>>> appVolumeChangeForUidCallback_;
     std::map<int32_t, int32_t> appVolumeChangeForUidCallbackNum;
@@ -207,6 +213,7 @@ private:
     mutable std::mutex volumeKeyEventMutex_;
     mutable std::mutex deviceChangeMutex_;
     mutable std::mutex ringerModeMutex_;
+    mutable std::mutex activeVolumeTypeChangeMutex_;
     mutable std::mutex appVolumeChangeForUidMutex_;
     mutable std::mutex selfAppVolumeChangeMutex_;
     mutable std::mutex micStateChangeMutex_;
