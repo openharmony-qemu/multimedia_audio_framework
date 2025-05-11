@@ -22,7 +22,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static const char* ENCODING_EAC3_NAME = "eac3";
+static const char *ENCODING_EAC3_NAME = "eac3";
+static const char *FAST_DISTRIBUTE_TAG = "fast_distributed";
 
 // LCOV_EXCL_START
 bool AudioPolicyConfigParser::LoadConfiguration()
@@ -156,6 +157,11 @@ void AudioPolicyConfigParser::ParsePipes(std::shared_ptr<AudioXmlNode> curNode,
             std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>(pipeInfo);
             pipeInfoPtr->adapterInfo_ = adapterInfo;
             curNode->GetProp("name", pipeInfoPtr->name_);
+            if (pipeInfoPtr->name_.find(FAST_DISTRIBUTE_TAG) != string::npos) {
+                AUDIO_WARNING_LOG("Fast distribute is not supported");
+                curNode->MoveToNext();
+                continue;
+            }
             std::string pipeRole;
             curNode->GetProp("role", pipeRole);
             pipeInfoPtr->role_ = AudioDefinitionPolicyUtils::pipeRoleStrToEnum[pipeRole];
