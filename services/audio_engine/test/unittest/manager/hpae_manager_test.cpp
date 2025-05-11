@@ -374,4 +374,35 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
+
+TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported001)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    bool result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_VOICE_COMMUNICATION);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported002)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    bool result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_VOICE_COMMUNICATION);
+    EXPECT_EQ(result, true);
+    result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_VOICE_TRANSCRIPTION);
+    EXPECT_EQ(result, true);
+    result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_MIC);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter001)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    std::vector<std::pair<std::string, std::string>> params;
+    bool result = hpaeManager_->SetEffectLiveParameter(params);
+    EXPECT_EQ(result, false);
+}
+
+
 }  // namespace
