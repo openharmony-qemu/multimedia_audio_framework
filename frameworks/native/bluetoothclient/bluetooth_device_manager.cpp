@@ -480,8 +480,7 @@ void MediaBluetoothDeviceManager::HandleUpdateDeviceCategory(const BluetoothRemo
         return;
     }
     AudioDeviceDescriptor desc = HandleConnectDeviceInner(device);
-    int32_t wearState = 0;
-    wearState = BluetoothAudioManager::GetInstance().IsDeviceWearing(device);
+    int32_t wearState = BluetoothAudioManager::GetInstance().IsDeviceWearing(device);
     if (wearState == 1 && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
         desc.deviceCategory_ = BT_HEADPHONE; 
     }
@@ -1023,8 +1022,7 @@ void HfpBluetoothDeviceManager::HandleUpdateDeviceCategory(const BluetoothRemote
         return;
     }
     AudioDeviceDescriptor desc = HandleConnectDeviceInner(device);
-    int32_t wearState = 0;
-    wearState = BluetoothAudioManager::GetInstance().IsDeviceWearing(device);
+    int32_t wearState = BluetoothAudioManager::GetInstance().IsDeviceWearing(device);
     if (wearState == 1 && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
         desc.deviceCategory_ = BT_HEADPHONE; 
     }
