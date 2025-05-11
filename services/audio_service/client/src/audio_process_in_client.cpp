@@ -377,13 +377,6 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 AudioProcessInClientInner::~AudioProcessInClientInner()
 {
     AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
-    if (callbackLoop_.joinable()) {
-        std::unique_lock<std::mutex> lock(loopThreadLock_);
-        isCallbackLoopEnd_ = true; // change it with lock to break the loop
-        threadStatusCV_.notify_all();
-        lock.unlock(); // should call unlock before join
-        callbackLoop_.detach();
-    }
     if (isInited_) {
         AudioProcessInClientInner::Release();
     }
@@ -647,6 +640,9 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 {
     logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
     auto weakProcess = weak_from_this();
+    std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
+    CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
+    fastStream->ResetCallbackLoopTid();
     callbackLoop_ = std::thread([weakStream, weakProcess] {
         bool keepRunning = true;
         uint64_t curWritePos = 0;
@@ -655,6 +651,7 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
         int64_t clientWriteCost = 0;
         std::shared_ptr<AudioProcessInClientInner> strongProcess = weakProcess.lock();
         std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
+        strongStream->SetCallbackLoopTid(gettid());
         if (strongProcess != nullptr) {
             AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
             strongProcess->processProxy_->RegisterThreadPriority(gettid(),
@@ -1230,6 +1227,14 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
         AUDIO_ERR_LOG("Release may failed in server");
         threadStatusCV_.notify_all(); // avoid thread blocking with status RUNNING
         return ERR_OPERATION_FAILED;
+    }
+
+    if (callbackLoop_.joinable()) {
+        std::unique_lock<std::mutex> lock(loopThreadLock_);
+        isCallbackLoopEnd_ = true; // change it with lock to break the loop
+        threadStatusCV_.notify_all();
+        lock.unlock(); // should call unlock before join
+        callbackLoop_.join();
     }
 
     streamStatus_->store(StreamStatus::STREAM_RELEASED);

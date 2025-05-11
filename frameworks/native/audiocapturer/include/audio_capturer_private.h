@@ -190,6 +190,7 @@ private:
     std::mutex audioCapturerErrCallbackMutex_;
     std::mutex policyServiceDiedCallbackMutex_;
     std::mutex audioInterruptMutex_;
+    int32_t callbackLoopTid_ = -1;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
