@@ -1198,7 +1198,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OnPreferredStateUpdated_001, TestSize.Le
     updateCommand = DeviceInfoUpdateCommand::ENABLE_UPDATE;
     server->audioPolicyService_.audioDeviceStatus_.OnPreferredStateUpdated(desc, updateCommand, reason);
 
-    EXPECT_EQ(reason.isOverride(), false);
+    EXPECT_EQ(reason.IsOverride(), false);
 }
 
 /**

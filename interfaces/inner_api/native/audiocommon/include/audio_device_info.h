@@ -501,7 +501,12 @@ public:
         return reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT;
     }
 
-    bool isOverride() const
+    bool IsNewDeviceAvailable() const
+    {
+        return reason_ == ExtEnum::NEW_DEVICE_AVAILABLE;
+    }
+
+    bool IsOverride() const
     {
         return reason_ == ExtEnum::OVERRODE;
     }
@@ -511,7 +516,7 @@ public:
         return reason_ == ExtEnum::SET_AUDIO_SCENE;
     }
 
-    bool isSetDefaultOutputDevice() const
+    bool IsSetDefaultOutputDevice() const
     {
         return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
     }
