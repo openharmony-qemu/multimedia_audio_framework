@@ -77,5 +77,60 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_GetDirectPlaybackSupp
     EXPECT_EQ(directPlaybackMode, AUDIOSTREAM_DIRECT_PLAYBACK_NOT_SUPPORTED);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsAcousticEchoCancelerSupported.
+ * @tc.number: OH_AudioStreamManager_IsAcousticEchoCancelerSupported_001
+ * @tc.desc  : Test OH_AudioStreamManager_IsAcousticEchoCancelerSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsAcousticEchoCancelerSupported_001, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioStreamManager, nullptr);
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION;
+    bool supported = false;
+    result = OH_AudioStreamManager_IsAcousticEchoCancelerSupported(audioStreamManager, sourceType, &supported);
+    EXPECT_EQ(supported, true);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+}
+
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsAcousticEchoCancelerSupported.
+ * @tc.number: OH_AudioStreamManager_IsAcousticEchoCancelerSupported_002
+ * @tc.desc  : Test OH_AudioStreamManager_IsAcousticEchoCancelerSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsAcousticEchoCancelerSupported_001, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioStreamManager, nullptr);
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_MESSAGE;
+    bool supported = false;
+    result = OH_AudioStreamManager_IsAcousticEchoCancelerSupported(audioStreamManager, sourceType, &supported);
+    EXPECT_EQ(supported, true);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsAcousticEchoCancelerSupported.
+ * @tc.number: OH_AudioStreamManager_IsAcousticEchoCancelerSupported_003
+ * @tc.desc  : Test OH_AudioStreamManager_IsAcousticEchoCancelerSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsAcousticEchoCancelerSupported_001, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioStreamManager, nullptr);
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_MIC;
+    bool supported = false;
+    result = OH_AudioStreamManager_IsAcousticEchoCancelerSupported(audioStreamManager, sourceType, &supported);
+    EXPECT_EQ(supported, false);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
