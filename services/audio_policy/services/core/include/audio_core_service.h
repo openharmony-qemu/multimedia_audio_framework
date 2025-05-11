@@ -415,6 +415,9 @@ private:
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
 
+    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
+    bool isRingDualToneOnPrimarySpeaker_ = false;
+
     // Save the relationship of uid and session id.
     std::map<uint32_t, uid_t> sessionIdMap_;
     std::mutex sessionIdMutex_;
