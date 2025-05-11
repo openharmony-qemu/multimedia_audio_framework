@@ -666,7 +666,7 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
     Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
     if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
 
-    SetHeadsetUnpluggedToSpeakerFlag(rendererChangeInfo->outputDeviceInfo.deviceType_,
+    SetHeadsetUnpluggedToSpkOrEpFlag(rendererChangeInfo->outputDeviceInfo.deviceType_,
         outputDevices.front()->deviceType_);
 
     audioIOHandleMap_.SetMoveFinish(false);
@@ -873,13 +873,18 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
     audioIOHandleMap_.NotifyUnmutePort();
 }
 
-void AudioDeviceCommon::MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime)
+void AudioDeviceCommon::MuteOtherSink(const std::string &sinkName, int64_t muteTime)
 {
     // fix pop when switching devices during multiple concurrent streams
-    if (sinkName == OFFLOAD_PRIMARY_SPEAKER) {
-        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, muteTime, true);
+    if (sinkName == OFFLOAD_PRIMARY_SPEAKER ||
+        ((sinkName == PRIMARY_DIRECT_VOIP || sinkName == PRIMARY_MMAP_VOIP) &&
+        streamCollector_.HasRunningRendererStream())) {
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, muteTime, true, false);
+    } else if (sinkName == PRIMARY_SPEAKER && streamCollector_.IsVoipStreamActive()) {
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_DIRECT_VOIP, muteTime, true, false);
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_MMAP_VOIP, muteTime, true, false);
     } else if (sinkName == PRIMARY_SPEAKER) {
-        audioIOHandleMap_.MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, muteTime, true);
+        audioIOHandleMap_.MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, muteTime, true, false);
     }
 }
 
@@ -891,7 +896,7 @@ void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkName, const std::
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
         }
-        MutePrimaryOrOffloadSink(newSinkName, muteTime);
+        MuteOtherSink(newSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, SELECT_DEVICE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true);
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
@@ -899,7 +904,7 @@ void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkName, const std::
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS;
         }
-        MutePrimaryOrOffloadSink(oldSinkName, muteTime);
+        MuteOtherSink(oldSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true);
     }
@@ -919,12 +924,12 @@ void AudioDeviceCommon::MuteSinkPortLogic(const std::string &oldSinkName, const 
     } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
-        MutePrimaryOrOffloadSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
+        MuteOtherSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
-        if (VolumeUtils::IsPCVolumeEnable() && isHeadsetUnpluggedToSpeakerFlag_) {
+        if (isHeadsetUnpluggedToSpkOrEpFlag_) {
             usleep(OLD_DEVICE_UNAVALIABLE_EXT_SLEEP_US); // sleep fix data cache pop.
-            isHeadsetUnpluggedToSpeakerFlag_ = false;
+            isHeadsetUnpluggedToSpkOrEpFlag_ = false;
         }
     } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
@@ -2038,11 +2043,11 @@ int32_t AudioDeviceCommon::SetVirtualCall(const bool isVirtual)
     return Bluetooth::AudioHfpManager::SetVirtualCall(isVirtual);
 }
 
-void AudioDeviceCommon::SetHeadsetUnpluggedToSpeakerFlag(DeviceType oldDeviceType, DeviceType newDeviceType)
+void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)
 {
     if ((oldDeviceType == DEVICE_TYPE_USB_HEADSET || oldDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) &&
-        newDeviceType == DEVICE_TYPE_SPEAKER) {
-        isHeadsetUnpluggedToSpeakerFlag_ = true;
+        (newDeviceType == DEVICE_TYPE_SPEAKER || newDeviceType == DEVICE_TYPE_EARPIECE)) {
+        isHeadsetUnpluggedToSpkOrEpFlag_ = true;
     }
 }
 }

@@ -223,7 +223,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     return SUCCESS;
 }
 
-void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync)
+void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync, bool isSleepEnabled)
 {
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
         // Mute by render sink. (primary、a2dp、usb、dp、offload)
@@ -240,7 +240,9 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
     desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
     DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
 
-    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
+    if (isSleepEnabled) {
+        usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
+    }
 }
 
 void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)

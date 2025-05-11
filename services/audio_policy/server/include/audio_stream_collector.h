@@ -95,6 +95,7 @@ public:
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
     bool IsMediaPlaying();
+    bool IsVoipStreamActive();
     void UpdateAppVolume(int32_t appUid, int32_t volume);
 
 private:
