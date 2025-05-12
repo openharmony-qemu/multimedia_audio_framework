@@ -2184,7 +2184,7 @@ bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys
         return false;
     }
     if (effectLiveState_ != "") {
-        result.emplace_back(std::make_pair(targetKey, effectLiveState_));
+        result.emplace_back(targetKey, effectLiveState_);
         return true;
     }
     LoadEffectLive();
