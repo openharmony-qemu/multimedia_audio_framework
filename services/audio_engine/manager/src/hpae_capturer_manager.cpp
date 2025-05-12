@@ -625,6 +625,7 @@ int32_t HpaeCapturerManager::Init()
         if (ret == SUCCESS) {
             AUDIO_INFO_LOG("Init HpaeCapturerManager success");
             TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+            CheckIfAnyStreamRunning();
         }
     };
     SendRequest(request, true);
@@ -640,6 +641,9 @@ int32_t HpaeCapturerManager::DeInit(bool isMoveDefault)
         hpaeSignalProcessThread_ = nullptr;
     }
     hpaeNoLockQueue_.HandleRequests();
+    for (auto outputNode : sourceOutputNodeMap_) {
+        outputNode.second->ResetAll();
+    }
     int32_t ret = CapturerSourceStop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
         "capturerSource stop error, ret = %{public}d.\n", ret);
@@ -784,8 +788,9 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
         AUDIO_WARNING_LOG("[FinishMove] session :%{public}u,create effect failed.", sessionId);
         sceneClusterMap_.erase(sceneType);
     }
-    ConnectOutputSession(sessionId);
+
     if (moveInfo.sessionInfo.state == HPAE_SESSION_RUNNING) {
+        ConnectOutputSession(sessionId);
         CHECK_AND_RETURN_LOG(CapturerSourceStart() == SUCCESS, "CapturerSourceStart error.");
         hpaeSignalProcessThread_->Notify();
     }
@@ -892,6 +897,17 @@ void HpaeCapturerManager::DumpSourceInfo()
         AUDIO_INFO_LOG("DumpSourceInfo deviceName %{public}s", sourceInfo_.deviceName.c_str());
         UploadDumpSourceInfo(sourceInfo_.deviceName);
     });
+}
+
+void HpaeCapturerManager::CheckIfAnyStreamRunning()
+{
+    CHECK_AND_RETURN_LOG(!sessionNodeMap_.empty(), "no stream need start");
+    for (auto &sessionPair : sessionNodeMap_) {
+        if (sessionPair.second.state == HPAE_SESSION_RUNNING) {
+            ConnectOutputSession(sessionPair.first);
+            CHECK_AND_RETURN_LOG(CapturerSourceStart() == SUCCESS, "CapturerSourceStart error.");
+        }
+    }
 }
 
 }  // namespace HPAE
