@@ -58,17 +58,6 @@ public:
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) {};
 };
 
-class AudioDistribuitedOutputChangeCallbackTest : public AudioDistribuitedOutputChangeCallback {
-public:
-    /**
-     * Called when Distribuited Output Change.
-     *
-     * @param deviceDesc device descripter
-     * @param isRemote Is remote or local
-     */
-    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) {}
-};
-
 class AudioManagerMicStateChangeCallbackTest : public AudioManagerMicStateChangeCallback {
 public:
     virtual ~AudioManagerMicStateChangeCallbackTest() = default;

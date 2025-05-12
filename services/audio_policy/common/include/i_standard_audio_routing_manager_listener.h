@@ -20,6 +20,7 @@
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
+#include "audio_policy_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,6 +39,7 @@ public:
         ON_AUDIO_OUTPUT_DEVICE_REFINERD,
         ON_AUDIO_INPUT_DEVICE_REFINERD,
         GET_SPLIT_INFO_REFINED,
+        ON_DISTRIBUTED_OUTPUT_CHANGE,
     };
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioRoutingManagerListener");

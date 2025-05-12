@@ -55,7 +55,6 @@ enum class AudioPolicyClientCode {
     ON_MICRO_PHONE_BLOCKED,
     ON_AUDIO_SCENE_CHANGED,
     ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
-    ON_DISTRIBUTED_OUTPUT_CHANGE,
     ON_FORMAT_UNSUPPORTED_ERROR,
     AUDIO_POLICY_CLIENT_CODE_MAX = ON_FORMAT_UNSUPPORTED_ERROR,
 };
@@ -80,7 +79,6 @@ public:
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
     virtual void OnRendererDeviceChange(const uint32_t sessionId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
-    virtual void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) = 0;
     virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) = 0;
     virtual void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,

@@ -196,21 +196,6 @@ HWTEST_F(AudioPolicyClientStubUnitTest, AudioPolicyClientStubUnitTest_011, TestS
 
 /**
 * @tc.name  : Test AudioPolicyClientStub.
-* @tc.number: AudioPolicyClientStubUnitTest_012.
-* @tc.desc  : Test OnMaxRemoteRequest.
-*/
-HWTEST_F(AudioPolicyClientStubUnitTest, AudioPolicyClientStubUnitTest_012, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    uint32_t updateCode = static_cast<uint32_t>(AudioPolicyClientCode::ON_DISTRIBUTED_OUTPUT_CHANGE);
-    std::shared_ptr<AudioPolicyClientStub> audioPolicyClientStub = std::make_shared<AudioPolicyClientStubImpl>();
-    ASSERT_TRUE(audioPolicyClientStub != nullptr);
-    audioPolicyClientStub->OnMaxRemoteRequest(updateCode, data, reply);
-}
-
-/**
-* @tc.name  : Test AudioPolicyClientStub.
 * @tc.number: AudioPolicyClientStubUnitTest_013.
 * @tc.desc  : Test OnMaxRemoteRequest.
 */

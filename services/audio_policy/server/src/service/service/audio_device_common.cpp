@@ -89,9 +89,9 @@ static const std::vector<std::string> SourceNames = {
     std::string(FILE_SOURCE)
 };
 
-static int16_t IsDistributedOutput(const AudioDeviceDescriptor &desc)
+static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
 {
-    return (desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID) ? 1 : 0;
+    return desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID;
 }
 
 void AudioDeviceCommon::Init(std::shared_ptr<AudioPolicyServerHandler> handler)
@@ -1545,16 +1545,14 @@ int32_t AudioDeviceCommon::HandleScoInputDeviceFetched(std::shared_ptr<AudioDevi
     return SUCCESS;
 }
 
-void AudioDeviceCommon::NotifyDistributedOutputChange(const vector<shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+void AudioDeviceCommon::NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc)
 {
-    if (!deviceDescs.empty() && deviceDescs[0]) {
-        int16_t isDistOld = IsDistributedOutput(audioActiveDevice_.GetCurrentOutputDevice());
-        int16_t isDistNew = IsDistributedOutput(deviceDescs[0]);
-        AUDIO_INFO_LOG("Entry. Check Distributed Output Change[%{public}d-->%{public}d]", isDistOld, isDistNew);
-        int16_t flag = isDistNew - isDistOld;
-        if (audioPolicyServerHandler_ && flag != 0) {
-            audioPolicyServerHandler_->SendDistribuitedOutputChangeEvent(deviceDescs[0], flag > 0);
-        }
+    bool isDistOld = IsDistributedOutput(audioActiveDevice_.GetCurrentOutputDevice());
+    bool isDistNew = IsDistributedOutput(deviceDesc);
+    AUDIO_INFO_LOG("Check Distributed Output Change[%{public}d-->%{public}d]", isDistOld, isDistNew);
+    if (isDistOld != isDistNew) {
+        auto ret = audioRouterCenter_.NotifyDistributedOutputChange(isDistNew);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyDistributedOutputChange Failed. ret=%{public}d", ret);
     }
 }
 
