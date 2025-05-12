@@ -109,6 +109,7 @@ const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
+const char *DEVICE_CLASS_DP = "dp";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
 const char *MCH_SINK_NAME = "MCH_Speaker";
@@ -4641,6 +4642,10 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
     }
 
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
+
+    if ((u->primary.sinkAdapter) && !strcmp(u->primary.sinkAdapter->deviceClass, DEVICE_CLASS_DP)) {
+        u->primary.prewrite = u->block_usec * 2; // 2 frame, set cache len in hdi, avoid pop
+    }
 
     u->lastRecodedLatency = 0;
     u->continuesGetLatencyErrCount = 0;
