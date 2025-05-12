@@ -208,22 +208,22 @@ int32_t AudioConcurrencyService::ActivateAudioConcurrencyExt(AudioPipeType incom
 
 bool AudioConcurrencyService::CheckFastActivatedState()
 {
-    // check if fast was activated recently
-    if (fastActivated_ || ClockTime::GetCurNano() - lastFastActivedTime_ < DELAY_CONTROL_TIME_NS) {
-        return true;
+    // fast is activated in history
+    if (!fastActivated_ || ClockTime::GetCurNano() - lastFastActivedTime_ > DELAY_CONTROL_TIME_NS) {
+        fastActivated_ = false;
+        return false;
     }
-    fastActivated_ = false;
-    return false;
+    return true;
 }
 
 bool AudioConcurrencyService::CheckOffloadActivatedState()
 {
-    // check if offload was activated recently
-    if (offloadActivated_ || ClockTime::GetCurNano() - lastOffloadActivedTime_ < DELAY_CONTROL_TIME_NS) {
-        return true;
+    // offload is activated in history
+    if (!offloadActivated_ || ClockTime::GetCurNano() - lastOffloadActivedTime_ > DELAY_CONTROL_TIME_NS) {
+        offloadActivated_ = false;
+        return false;
     }
-    offloadActivated_ = false;
-    return false;
+    return true;
 }
 
 int32_t AudioConcurrencyService::ActivateOffloadConcurrencyExt()
