@@ -2166,7 +2166,7 @@ bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string
         AUDIO_ERR_LOG("Failed to set system value");
         return false;
     }
-     return true;
+    return true;
  }
     
 bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
@@ -2189,7 +2189,7 @@ bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys
     }
     LoadEffectLive();
     result.emplace_back(targetKey, effectLiveState_);
-     return true;
+    return true;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
