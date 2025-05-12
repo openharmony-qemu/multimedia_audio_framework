@@ -39,6 +39,16 @@ static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap =
     {STREAM_MEDIA, HPAE_SCENE_OTHERS}
 };
 
+static std::map<AudioEffectScene, HpaeProcessorType> g_effectSceneToProcessorTypeMap = {
+    {SCENE_OTHERS, HPAE_SCENE_OTHERS},
+    {SCENE_MUSIC, HPAE_SCENE_MUSIC},
+    {SCENE_MOVIE, HPAE_SCENE_MOVIE},
+    {SCENE_GAME, HPAE_SCENE_GAME},
+    {SCENE_SPEECH, HPAE_SCENE_SPEECH},
+    {SCENE_RING, HPAE_SCENE_RING},
+    {SCENE_VOIP_DOWN, HPAE_SCENE_VOIP_DOWN}
+};
+
 static std::unordered_map<SourceType, HpaeProcessorType> g_sourceTypeToSceneTypeMap = {
     {SOURCE_TYPE_MIC, HPAE_SCENE_RECORD},
     {SOURCE_TYPE_CAMCORDER, HPAE_SCENE_RECORD},
@@ -118,6 +128,15 @@ HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType)
         return HPAE_SCENE_EFFECT_NONE;
     } else {
         return g_streamTypeToSceneTypeMap[streamType];
+    }
+}
+
+HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
+{
+    if (g_effectSceneToProcessorTypeMap.find(effectScene) == g_effectSceneToProcessorTypeMap.end()) {
+        return HPAE_SCENE_EFFECT_NONE;
+    } else {
+        return g_effectSceneToProcessorTypeMap[effectScene];
     }
 }
 
