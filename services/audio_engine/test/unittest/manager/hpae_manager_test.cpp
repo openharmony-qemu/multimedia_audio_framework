@@ -374,4 +374,103 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
+
+TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported001)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->hpaePolicyManager_ = nullptr;
+    bool result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_VOICE_COMMUNICATION);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported002)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    bool result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_VOICE_COMMUNICATION);
+    EXPECT_EQ(result, true);
+    result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_VOICE_TRANSCRIPTION);
+    EXPECT_EQ(result, true);
+    result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_MIC);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter001)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->hpaePolicyManager_ = nullptr;
+    std::vector<std::pair<std::string, std::string>> params;
+    bool result = hpaeManager_->SetEffectLiveParameter(params);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter002)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::vector<std::pair<std::string, std::string>> params;
+    params.push_back({"invalidKey","invalidValue"});
+    bool result = hpaeManager_->SetEffectLiveParameter(params);
+    EXPECT_EQ(result, false);
+    params.clear();
+    params.push_back({"live_effect","invalidValue"});
+    result = hpaeManager_->SetEffectLiveParameter(params);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter003)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::vector<std::pair<std::string, std::string>> params;
+    params.push_back({"live_effect","NRON"});
+    hpaeManager_->effectLiveState_ = "NoSupport";
+    bool result = hpaeManager_->SetEffectLiveParameter(params);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter001)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->hpaePolicyManager_ = nullptr;
+    std::vector<std::string> subKeys;
+    std::vector<std::pair<std::string, std::string>> result;
+    bool res = hpaeManager_->GetEffectLiveParameter(subKeys, result);
+    EXPECT_EQ(res, false);
+}
+
+TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter002)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::vector<std::string> subKeys;
+    std::vector<std::pair<std::string, std::string>> result;
+    subKeys.push_back("invalidKey");
+    bool res = hpaeManager_->GetEffectLiveParameter(subKeys, result);
+    EXPECT_EQ(res, false);
+}
+
+TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::vector<std::string> subKeys;
+    std::vector<std::pair<std::string, std::string>> result;
+    subKeys.push_back("live_effect_supported");
+    hpaeManager_->effectLiveState_ = "NoSupport";
+    bool res = hpaeManager_->GetEffectLiveParameter(subKeys, result);
+    EXPECT_EQ(res, true);
+    EXPECT_EQ(subKeys[0],result[0].first);
+    EXPECT_EQ("NoSupport",result[0].second);
+}
 }  // namespace
