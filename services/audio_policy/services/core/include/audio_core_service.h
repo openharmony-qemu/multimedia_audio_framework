@@ -250,6 +250,7 @@ private:
     void CheckModemScene(const AudioStreamDeviceChangeReasonExt reason);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
+    void UpdateInputDeviceWhenStopping(int32_t uid);
     int32_t BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &desc,
         const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> desc,
