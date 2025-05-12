@@ -967,7 +967,8 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
 int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
-    AUDIO_INFO_LOG("Output stream size: %{public}zu", outputStreamDescs.size());
+    AUDIO_INFO_LOG("Output stream size: %{public}zu, connected %{public}s",
+        outputStreamDescs.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
     CheckModemScene(reason);
     if (outputStreamDescs.empty()) {
         return HandleFetchOutputWhenNoRunningStream();
