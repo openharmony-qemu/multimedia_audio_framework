@@ -49,6 +49,8 @@ std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
     {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP},
     {AudioStreamType::STREAM_SOURCE_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_CALL},
+    {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_LIVE},
+    {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_LIVE},
 };
 
 static const std::map<uint32_t, IAudioStream::StreamClass> AUDIO_INPUT_FLAG_GROUP_MAP = {

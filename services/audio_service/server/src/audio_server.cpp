@@ -172,6 +172,7 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
     SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_LIVE,
 };
 
 static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
@@ -665,7 +666,7 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
 bool AudioServer::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
-    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0 && result.size() > 0, false, "params is empty!");
+    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "params is empty!");
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         return HPAE::IHpaeManager::GetHpaeManager().GetEffectLiveParameter(subKeys, result);
