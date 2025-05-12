@@ -1164,12 +1164,22 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
         }
         shouldUpdateDeviceDueToDualTone_ = true;
     } else {
-        if (enableDualHalToneState_) {
-            AUDIO_INFO_LOG("disable dual hal tone for not ringer/alarm.");
-            UpdateDualToneState(false, enableDualHalToneSessionId_);
-        }
         audioVolumeManager_.SetRingerModeMute(true);
-        audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        if (isRingDualToneOnPrimarySpeaker_ && streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
+            activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
+            activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
+            audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
+            AUDIO_INFO_LOG("update desc [%{public}d] with speaker on session [%{public}d]",
+                deviceType, streamDesc->sessionId_);
+            AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
+            if (!IsDualStreamWhenRingDual(streamType)) {
+                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
+                audioPolicyManager_.SetStreamMute(streamType, true, streamUsage);
+            }
+        } else {
+            audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        }
         shouldUpdateDeviceDueToDualTone_ = false;
     }
 }
@@ -1258,6 +1268,11 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
             }
             UpdateDualToneState(true, sessionId);
         } else {
+            if (enableDualHalToneState_ && enableDualHalToneSessionId_ == sessionId) {
+                AUDIO_INFO_LOG("device unavailable, disable dual hal tone.");
+                UpdateDualToneState(false, enableDualHalToneSessionId_);
+            }
+            isRingDualToneOnPrimarySpeaker_ = IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_, sessionId);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
         return true;
@@ -1808,6 +1823,19 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
     }
+
+    AUDIO_INFO_LOG("isRingDualToneOnPrimarySpeaker: %{public}d , usage: %{public}d",
+        isRingDualToneOnPrimarySpeaker_, streamUsage);
+    if (isRingDualToneOnPrimarySpeaker_ && IsOverRunPlayback(mode, rendererState) &&
+        Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+        AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer run over.");
+        isRingDualToneOnPrimarySpeaker_ = false;
+        FetchOutputDeviceAndRoute();
+        for (std::pair<AudioStreamType, StreamUsage> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
+            audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+        }
+        streamsWhenRingDualOnPrimarySpeaker_.clear();
+    }
 }
 
 void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo)
@@ -1822,6 +1850,46 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
         audioEcManager_.UpdateStreamMicRefInfo(pipeInfo->moduleInfo_, sourceType);
         audioEcManager_.SetOpenedNormalSource(sourceType);
     }
+}
+
+bool AudioCoreService::IsDualStreamWhenRingDual(AudioStreamType streamType)
+{
+    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (volumeType == STREAM_RING || volumeType == STREAM_ALARM || volumeType == STREAM_ACCESSIBILITY) {
+        return true;
+    }
+    return false;
+}
+
+bool AudioCoreService::IsOverRunPlayback(AudioMode &mode, RendererState rendererState)
+{
+    if (mode != AUDIO_MODE_PLAYBACK) {
+        return false;
+    }
+    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED &&
+        rendererState != RENDERER_PAUSED) {
+        return false;
+    }
+    return true;
+}
+
+bool AudioCoreService::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+    const int32_t sessionId)
+{
+    if (descs.size() !=  AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT) {
+        return false;
+    }
+    if (AudioPolicyUtils::GetInstance().GetSinkName(*descs.front(), sessionId) != PRIMARY_SPEAKER) {
+        return false;
+    }
+    if (AudioPolicyUtils::GetInstance().GetSinkName(*descs.back(), sessionId) != PRIMARY_SPEAKER) {
+        return false;
+    }
+    if (descs.back()->deviceType_ != DEVICE_TYPE_SPEAKER) {
+        return false;
+    }
+    AUDIO_INFO_LOG("ring dual tone on primary speaker.");
+    return true;
 }
 
 void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo)
