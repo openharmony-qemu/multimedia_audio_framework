@@ -1415,7 +1415,7 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForOutputDevice(napi_env 
         context->outputMaxAmplitude = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxAmplitude(
             context->outputDeviceDescriptor->deviceId_);
         if (FLOAT_COMPARE_EQ(context->outputMaxAmplitude, static_cast<float>(ERR_INVALID_PARAM))) {
-            context->SignError(NAPI_ERR_INVALID_PARAM);
+            context->SignError(NAPI_ERR_INVALID_PARAM, "Parmeter verification faild. OutputDevice not exist.");
         } else if (context->outputMaxAmplitude < 0) {
             context->SignError(NAPI_ERR_SYSTEM);
         } else if (!context->outputBArgTransFlag) {

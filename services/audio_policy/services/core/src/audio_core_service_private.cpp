@@ -1223,7 +1223,7 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
     CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, false,
         "audio devices not in range for ringer or alarmer.");
-    const int32_t sessionId = streamDesc->sessionId_;
+    const int32_t sessionId = static_cast<int32_t>(streamDesc->sessionId_);
     const StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     bool allDevicesInDualDevicesRange = true;
     std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;

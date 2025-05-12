@@ -201,7 +201,7 @@ private:
 
     std::mutex defaultDeviceLoadMutex_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
-    DeviceType curOutputDeviceType_;
+    DeviceType curOutputDeviceType_ = DEVICE_TYPE_NONE;
 
     std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> systemVolumeLevelInfo_ =
         std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);
