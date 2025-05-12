@@ -4614,10 +4614,8 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
     CHECK_AND_RETURN_RET_LOG(u->primary.dq, -1, "Failed to create u->primary.dq");
 
     u->sink = PaHdiSinkInit(u, ma, driver);
-    if (!u->sink) {
-        AUDIO_ERR_LOG("Failed to create sink object");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(u->sink, -1, "Failed to create sink object");
+
     u->render_full_enable = false; // default to false.
     if (u->ss.channels > CHANNEL_COUNT_2) {
         AUDIO_INFO_LOG("multichannel case, will call render_full for dp");
