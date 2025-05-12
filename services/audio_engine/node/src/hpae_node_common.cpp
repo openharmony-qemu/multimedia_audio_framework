@@ -14,11 +14,20 @@
  */
 
 #include "hpae_node_common.h"
+#include "audio_errors.h"
+#include "audio_engine_log.h"
+#include "cinttypes"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint64_t TIME_US_PER_S = 1000000;
+static constexpr uint32_t DEFAULT_MULTICHANNEL_NUM = 6;
+static constexpr uint32_t DEFAULT_MULTICHANNEL_CHANNELLAYOUT = 1551;
+static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
+static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
+static constexpr uint32_t MS_PER_SECOND = 1000;
+
 static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap = {
     {STREAM_MUSIC, HPAE_SCENE_MUSIC},
     {STREAM_GAME, HPAE_SCENE_GAME},
@@ -74,6 +83,17 @@ static std::unordered_map<StreamManagerState, std::string> g_streamMgrStateToStr
     {STREAM_MANAGER_RUNNING, "RUNNING"},
     {STREAM_MANAGER_SUSPENDED, "SUSPENDED"},
     {STREAM_MANAGER_RELEASED, "RELEASED"}
+};
+
+static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
+    {"s16", SAMPLE_S16LE},
+    {"s16le", SAMPLE_S16LE},
+    {"s24", SAMPLE_S24LE},
+    {"s24le", SAMPLE_S24LE},
+    {"s32", SAMPLE_S32LE},
+    {"s32le", SAMPLE_S32LE},
+    {"f32", SAMPLE_F32LE},
+    {"f32le", SAMPLE_F32LE},
 };
 
 std::string ConvertSessionState2Str(HpaeSessionState state)
@@ -184,6 +204,134 @@ uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
 
     return static_cast<uint64_t>(microseconds);
 }
+
+AudioSampleFormat TransFormatFromStringToEnum(std::string format)
+{
+    return static_cast<AudioSampleFormat>(formatFromParserStrToEnum[format]);
+}
+
+void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
+{
+    if (sinkInfo.deviceName != "MCH_Speaker") {
+        return;
+    }
+    sinkInfo.channels = static_cast<AudioChannel>(DEFAULT_MULTICHANNEL_NUM);
+    sinkInfo.channelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
+    sinkInfo.frameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * sinkInfo.samplingRate / MS_PER_SECOND;
+    sinkInfo.volume = MAX_SINK_VOLUME_LEVEL;
+    AUDIO_INFO_LOG("adjust MCH SINK info ch: %{public}u, channelLayout: %{public}" PRIu64
+                   " frameLen: %{public}zu volume %{public}f",
+        sinkInfo.channels,
+        sinkInfo.channelLayout,
+        sinkInfo.frameLen,
+        sinkInfo.volume);
+}
+
+int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
+{
+    if (formatFromParserStrToEnum.find(audioModuleInfo.format) == formatFromParserStrToEnum.end()) {
+        AUDIO_ERR_LOG("openaudioport failed,format:%{public}s not supported", audioModuleInfo.format.c_str());
+        return ERROR;
+    }
+    sinkInfo.deviceNetId = audioModuleInfo.networkId;
+    sinkInfo.deviceClass = audioModuleInfo.className;
+    AUDIO_INFO_LOG("HpaeManager::deviceNetId: %{public}s, deviceClass: %{public}s",
+        sinkInfo.deviceNetId.c_str(),
+        sinkInfo.deviceClass.c_str());
+    sinkInfo.adapterName = audioModuleInfo.adapterName;
+    sinkInfo.lib = audioModuleInfo.lib;
+    sinkInfo.splitMode = audioModuleInfo.extra;
+    sinkInfo.filePath = audioModuleInfo.fileName;
+
+    sinkInfo.samplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.rate.c_str()));
+    sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
+    sinkInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
+    int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
+    sinkInfo.frameLen = bufferSize / (sinkInfo.channels * GetSizeFromFormat(sinkInfo.format));
+    sinkInfo.channelLayout = 0ULL;
+    sinkInfo.deviceType = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
+    sinkInfo.volume = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
+    sinkInfo.openMicSpeaker = static_cast<uint32_t>(std::atol(audioModuleInfo.OpenMicSpeaker.c_str()));
+    sinkInfo.renderInIdleState = static_cast<uint32_t>(std::atol(audioModuleInfo.renderInIdleState.c_str()));
+    sinkInfo.offloadEnable = static_cast<uint32_t>(std::atol(audioModuleInfo.offloadEnable.c_str()));
+    sinkInfo.sinkLatency = static_cast<uint32_t>(std::atol(audioModuleInfo.sinkLatency.c_str()));
+    sinkInfo.fixedLatency = static_cast<uint32_t>(std::atol(audioModuleInfo.fixedLatency.c_str()));
+    sinkInfo.deviceName = audioModuleInfo.name;
+    AdjustMchSinkInfo(audioModuleInfo, sinkInfo);
+    return SUCCESS;
+}
+
+int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo)
+{
+    if (formatFromParserStrToEnum.find(audioModuleInfo.format) == formatFromParserStrToEnum.end()) {
+        AUDIO_ERR_LOG("openaudioport failed,format:%{public}s not supported", audioModuleInfo.format.c_str());
+        return ERROR;
+    }
+    sourceInfo.deviceNetId = audioModuleInfo.networkId;
+    sourceInfo.deviceClass = audioModuleInfo.className;
+    sourceInfo.adapterName = audioModuleInfo.adapterName;
+    sourceInfo.sourceName = audioModuleInfo.name;  // built_in_mic
+    sourceInfo.deviceName = audioModuleInfo.name;
+    sourceInfo.sourceType = static_cast<SourceType>(std::atol(audioModuleInfo.sourceType.c_str()));
+    sourceInfo.filePath = audioModuleInfo.fileName;
+    int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
+    sourceInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
+    sourceInfo.format = TransFormatFromStringToEnum(audioModuleInfo.format);
+    sourceInfo.frameLen = bufferSize / (sourceInfo.channels * GetSizeFromFormat(sourceInfo.format));
+    sourceInfo.samplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.rate.c_str()));
+    sourceInfo.channelLayout = 0ULL;
+    sourceInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
+    sourceInfo.volume = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));  // 1.0f;
+
+    sourceInfo.ecType = static_cast<HpaeEcType>(std::atol(audioModuleInfo.ecType.c_str()));
+    sourceInfo.ecAdapterName = audioModuleInfo.ecAdapter;
+    sourceInfo.ecSamplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.ecSamplingRate.c_str()));
+    sourceInfo.ecFormat = TransFormatFromStringToEnum(audioModuleInfo.ecFormat);
+    sourceInfo.ecChannels = static_cast<AudioChannel>(std::atol(audioModuleInfo.ecChannels.c_str()));
+    sourceInfo.ecFrameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * (sourceInfo.ecSamplingRate / MS_PER_SECOND);
+
+    sourceInfo.micRef = static_cast<HpaeMicRefSwitch>(std::atol(audioModuleInfo.openMicRef.c_str()));
+    sourceInfo.micRefSamplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.micRefRate.c_str()));
+    sourceInfo.micRefFormat = TransFormatFromStringToEnum(audioModuleInfo.micRefFormat);
+    sourceInfo.micRefChannels = static_cast<AudioChannel>(std::atol(audioModuleInfo.micRefChannels.c_str()));
+    sourceInfo.openMicSpeaker = static_cast<uint32_t>(std::atol(audioModuleInfo.OpenMicSpeaker.c_str()));
+    sourceInfo.micRefFrameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * (sourceInfo.micRefSamplingRate / MS_PER_SECOND);
+    return SUCCESS;
+}
+
+bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo)
+{
+    auto getKey = [](const HpaeSourceInfo &sourceInfo) {
+        return std::tie(
+            sourceInfo.deviceNetId,
+            sourceInfo.deviceClass,
+            sourceInfo.adapterName,
+            sourceInfo.sourceName,
+            sourceInfo.sourceType,
+            sourceInfo.filePath,
+            sourceInfo.deviceName,
+            sourceInfo.frameLen,
+            sourceInfo.samplingRate,
+            sourceInfo.format,
+            sourceInfo.channels,
+            sourceInfo.channelLayout,
+            sourceInfo.deviceType,
+            sourceInfo.volume,
+            sourceInfo.openMicSpeaker,
+            sourceInfo.ecType,
+            sourceInfo.ecFrameLen,
+            sourceInfo.ecSamplingRate,
+            sourceInfo.ecFormat,
+            sourceInfo.ecChannels,
+            sourceInfo.micRef,
+            sourceInfo.micRefFrameLen,
+            sourceInfo.micRefSamplingRate,
+            sourceInfo.micRefFormat,
+            sourceInfo.micRefChannels);
+    };
+    return getKey(info) != getKey(oldInfo);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
