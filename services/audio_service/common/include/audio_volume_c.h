@@ -22,6 +22,14 @@
 extern "C" {
 #endif
 
+struct VolumeValues {
+    float volumeSystem;
+    float volumeStream;
+    float volumeApp;
+    float volume;
+    float volumeHistory;
+};
+
 enum FadePauseState {
     NO_FADE,
     DO_FADE,
@@ -39,17 +47,13 @@ enum FadeStrategy {
     FADE_STRATEGY_SHORTER
 };
 
-float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass);
+float GetCurVolume(uint32_t sessionId, const char *streamType, const char *deviceClass, struct VolumeValues *volumes);
 
 float GetStreamVolume(uint32_t sessionId);
 
 float GetPreVolume(uint32_t sessionId);
 
 void SetPreVolume(uint32_t sessionId, float volume);
-
-void GetStreamVolumeFade(uint32_t sessionId, float *fadeBegin, float *fadeEnd);
-
-void SetStreamVolumeFade(uint32_t sessionId, float fadeBegin, float fadeEnd);
 
 bool IsSameVolume(float volumeA, float volumeB);
 

@@ -232,7 +232,8 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
         if (!strcmp(s->name, SINK_NAME_INNER_CAPTURER)) { // inner capturer only stream volume
             volumeFloat = GetStreamVolume(sessionID);
         } else {
-            volumeFloat = GetCurVolume(sessionID, streamType, s->name);
+            struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+            volumeFloat = GetCurVolume(sessionID, streamType, s->name, &volumes);
         }
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);
         pa_cvolume_set(&input->thread_info.soft_volume, input->thread_info.soft_volume.channels, volume);

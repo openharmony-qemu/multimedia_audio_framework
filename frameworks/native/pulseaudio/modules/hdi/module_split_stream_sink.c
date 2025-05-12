@@ -441,13 +441,9 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
     const char *sessionIDStr = SafeProplistGets(sinkIn->proplist, "stream.sessionID", "NULL");
     const char *deviceClass = u->sinkAdapter->deviceClass;
     uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
-    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass);
-    float volumeBeg = GetPreVolume(sessionID);
-    float fadeBeg = 1.0f;
-    float fadeEnd = 1.0f;
-    if (!pa_safe_streq(streamType, "ultrasonic")) {
-        GetStreamVolumeFade(sessionID, &fadeBeg, &fadeEnd);
-    }
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
+    float volumeBeg = volumes.volumeHistory;
     if (pa_memblock_is_silence(pchunk->memblock)) {
         AUTO_CTRACE("module_split_stream_sink::ProcessAudioVolume: is_silence");
         AUDIO_PRERELEASE_LOGI("pa_memblock_is_silence");
@@ -460,25 +456,19 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
         void *data = pa_memblock_acquire_chunk(pchunk);
 
         AUDIO_DEBUG_LOG("length:%{public}zu channels:%{public}d format:%{public}d"
-            " volumeBeg:%{public}f, volumeEnd:%{public}f, fadeBeg:%{public}f, fadeEnd:%{public}f",
-            length, rawFormat.channels, rawFormat.format, volumeBeg, volumeEnd, fadeBeg, fadeEnd);
-        int32_t ret = ProcessVol(data, length, rawFormat, volumeBeg * fadeBeg, volumeEnd * fadeEnd);
+            " volumeBeg:%{public}f, volumeEnd:%{public}f",
+            length, rawFormat.channels, rawFormat.format, volumeBeg, volumeEnd);
+        int32_t ret = ProcessVol(data, length, rawFormat, volumeBeg, volumeEnd);
         if (ret != 0) {
             AUDIO_WARNING_LOG("ProcessVol failed:%{public}d", ret);
         }
         pa_memblock_release(pchunk->memblock);
     }
-    if (volumeBeg != volumeEnd || fadeBeg != fadeEnd) {
-        AUDIO_INFO_LOG("sessionID:%{public}s, length:%{public}zu, volumeBeg:%{public}f, volumeEnd:%{public}f"
-            ", fadeBeg:%{public}f, fadeEnd:%{public}f",
-            sessionIDStr, length, volumeBeg, volumeEnd, fadeBeg, fadeEnd);
-        if (volumeBeg != volumeEnd) {
-            SetPreVolume(sessionID, volumeEnd);
-            MonitorVolume(sessionID, true);
-        }
-        if (fadeBeg != fadeEnd) {
-            SetStreamVolumeFade(sessionID, fadeEnd, fadeEnd);
-        }
+    if (volumeBeg != volumeEnd) {
+        AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
+            sessionID, volumeBeg, volumeEnd);
+        SetPreVolume(sessionID, volumeEnd);
+        MonitorVolume(sessionID, true);
     }
 }
 
