@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <shared_mutex>
 #include "audio_stream_info.h"
+#include "audio_volume_c.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,8 +39,9 @@ public:
     static AudioVolume *GetInstance();
     ~AudioVolume();
 
-    float GetVolume(uint32_t sessionId, int32_t volumeType, const std::string &deviceClass); // all volume
-    float GetStreamVolume(uint32_t sessionId); // only stream volume
+    float GetVolume(uint32_t sessionId, int32_t streamType, const std::string &deviceClass,
+         VolumeValues *volumes); // all volume
+    float GetStreamVolume(uint32_t sessionId); // only stream volume factor
     float GetAppVolume(int32_t appUid, AudioVolumeMode mode);
     // history volume
     float GetHistoryVolume(uint32_t sessionId);
@@ -53,8 +55,6 @@ public:
     void SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor);
     void SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPowerFactor);
     void SetStreamVolumeMute(uint32_t sessionId, bool isMuted);
-    void SetStreamVolumeFade(uint32_t sessionId, float fadeBegin, float fadeEnd);
-    std::pair<float, float> GetStreamVolumeFade(uint32_t sessionId);
 
     // system volume
     void SetSystemVolume(SystemVolume &systemVolume);
@@ -79,22 +79,15 @@ public:
     
     void SetDefaultAppVolume(int32_t level);
     void SetVgsVolumeSupported(bool isVgsSupported);
-    bool IsVgsVolumeSupported() const;
 private:
     AudioVolume();
-    float GetStreamVolumeInternal(uint32_t sessionId, int32_t& volumeType,
-        int32_t& appUid, AudioVolumeMode& volumeMode);
-    float GetSystemVolumeInternal(int32_t volumeType, const std::string &deviceClass, int32_t &volumeLevel);
-    bool IsChangeVolume(uint32_t sessionId, float volumeFloat, int32_t volumeLevel);
+    float GetAppVolumeInternal(int32_t appUid, AudioVolumeMode mode);
+    bool IsVgsVolumeSupported() const;
 private:
     std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};
     std::unordered_map<std::string, SystemVolume> systemVolume_ {};
     std::unordered_map<int32_t, AppVolume> appVolume_ {};
-    std::unordered_map<uint32_t, float> historyVolume_ {};
-    std::unordered_map<uint32_t, std::pair<float, int32_t>> monitorVolume_ {};
     std::shared_mutex volumeMutex_ {};
-    std::shared_mutex systemMutex_ {};
-    std::shared_mutex appMutex_ {};
     bool isVgsVolumeSupported_ = false;
     std::shared_mutex fadoutMutex_ {};
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
@@ -106,22 +99,27 @@ class StreamVolume {
 public:
     StreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage, int32_t uid, int32_t pid,
         bool isSystemApp, int32_t mode) : sessionId_(sessionId), streamType_(streamType), streamUsage_(streamUsage),
-        appUid_(uid), appPid_(pid), isSystemApp_(isSystemApp), volumeMode_(mode) {};
+        appUid_(uid), appPid_(pid), isSystemApp_(isSystemApp) {volumeMode_ = static_cast<AudioVolumeMode>(mode);};
     ~StreamVolume() = default;
     uint32_t GetSessionId() {return sessionId_;};
     int32_t GetStreamType() {return streamType_;};
     int32_t GetStreamUsage() {return streamUsage_;};
     int32_t GetAppUid() {return appUid_;};
     int32_t GetAppPid() {return appPid_;};
-    bool isSystemApp() {return isSystemApp_;};
-    int32_t GetvolumeMode() {return volumeMode_;};
+    bool IsSystemApp() {return isSystemApp_;};
+    AudioVolumeMode GetVolumeMode() {return volumeMode_;};
 public:
     float volume_ = 1.0f;
     float duckFactor_ = 1.0f;
     float lowPowerFactor_ = 1.0f;
     bool isMuted_ = false;
-    float fadeBegin_ = 1.0f;
-    float fadeEnd_ = 1.0f;
+
+    float appVolume_ = 1.0f;
+    float totalVolume_ = 1.0f; // volume_ * duckFactor_ * lowPowerFactor_ * appVolume_
+
+    float historyVolume_ = 0.0f; // used all volume
+    float monitorVolume_ = 0.0f; // monitor all volume change
+    int32_t monitorVolumeLevel_ = 0; // monitor system volume level change
 
 private:
     uint32_t sessionId_ = 0;
@@ -130,7 +128,7 @@ private:
     int32_t appUid_ = 0;
     int32_t appPid_ = 0;
     bool isSystemApp_ = false;
-    int32_t volumeMode_ = 0;
+    AudioVolumeMode volumeMode_ = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
 };
 
 class SystemVolume {
@@ -150,6 +148,7 @@ public:
     float volume_ = 0.0f;
     int32_t volumeLevel_ = 0;
     bool isMuted_ = false;
+    float totalVolume_ = 0.0f;
 };
 
 class AppVolume {
@@ -164,9 +163,10 @@ private:
     int32_t appUid_ = 0;
 
 public:
-    float volume_ = 0.0f;
+    float volume_ = 1.0f;
     int32_t volumeLevel_ = 0;
     bool isMuted_ = false;
+    float totalVolume_ = 1.0f;
 };
 } // namespace AudioStandard
 } // namespace OHOS
