@@ -2174,7 +2174,7 @@ bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys
 {
     CHECK_AND_RETURN_RET_LOG(hpaePolicyManager_ != nullptr, false, "hpaePolicyManager_ is nullptr");
     std::string targetKey;
-    if(subKeys.empty()) {
+    if (subKeys.empty()) {
         targetKey = "live_effect_supported";
     } else {
         targetKey = subKeys[0];
