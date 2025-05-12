@@ -94,7 +94,7 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
     if (writeCallback_.lock() != nullptr) {
         return writeCallback_.lock()->OnStreamData(streamInfo_);
     }
-    AUDIO_ERR_LOG("writeCallback is nullptr");
+    AUDIO_ERR_LOG("sessionId: %{public}d, writeCallback is nullptr", GetSessionId());
     return SUCCESS;
 }
 
