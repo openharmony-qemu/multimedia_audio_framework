@@ -17,11 +17,46 @@
 #define AUDIO_RENDERER_UNIT_TEST_H
 
 #include <functional>
+#include <string>
 #include "gtest/gtest.h"
 #include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+namespace RenderUT {
+const std::string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
+const std::string AUDIORENDER_TEST_PCMFILE_PATH = "/data/avs3_16.wav";
+const std::string AUDIORENDER_TEST_METAFILE_PATH = "/data/avs3_bitstream.bin";
+constexpr int32_t VALUE_NEGATIVE = -1;
+constexpr int32_t VALUE_ZERO = 0;
+constexpr int32_t VALUE_HUNDRED = 100;
+constexpr int32_t VALUE_THOUSAND = 1000;
+constexpr int32_t VALUE_ERROR = -62980098;
+constexpr int32_t RENDERER_FLAG = 0;
+// Writing only 500 buffers of data for test
+constexpr int32_t WRITE_BUFFERS_COUNT = 500;
+constexpr int32_t MAX_BUFFER_SIZE = 20000;
+constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
+constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
+
+constexpr uint64_t BUFFER_DURATION_FIVE = 5;
+constexpr uint64_t BUFFER_DURATION_TEN = 10;
+constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
+constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
+constexpr uint32_t PLAYBACK_DURATION = 2;
+constexpr size_t MAX_RENDERER_INSTANCES = 16;
+
+constexpr size_t AVS3METADATA_SIZE = 19824;
+constexpr size_t AUDIOVIVID_FRAME_COUNT = 1024;
+constexpr int32_t MAX_CACHE_SIZE = 16384;
+constexpr int32_t MIN_CACHE_SIZE = 3528;
+
+inline size_t g_reqBufLen = 0;
+
+constexpr int g_writeOverflowNum = 1000;
+}
+
 class AudioRendererCallbackTest : public AudioRendererCallback {
 public:
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
