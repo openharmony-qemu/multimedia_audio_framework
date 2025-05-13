@@ -140,6 +140,7 @@ int32_t DownMixer::Process(uint32_t frameLen, float* in, uint32_t inLen, float* 
                 out[outChannels_ * i + c] = in[inChannels_ * i];
             }
         }
+        return DMIX_ERR_SUCCESS;
     }
     float a;
     for (; frameLen > 0; frameLen--) {
