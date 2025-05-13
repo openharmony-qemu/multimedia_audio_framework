@@ -2085,7 +2085,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         }
         threadStatus_ = INRUNNING;
         curTime = ClockTime::GetCurNano();
-        Trace loopTrace("AudioEndpoint::loop_trace");
+        Trace loopTrace("AudioEndpoint::loop_trace " + std::to_string(wakeUpTime));
         if (needReSyncPosition_) {
             ReSyncPosition();
             wakeUpTime = curTime;
