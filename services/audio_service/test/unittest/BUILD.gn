@@ -768,6 +768,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../frameworks/native/audiopolicy/include",
     "../../../../frameworks/native/audioinnercall/include",
     "../../../../frameworks/native/audioinnercall/include",
+    "../../../../services/audio_engine/plugin/channel_converter/include",
     "../../../../services/audio_service/client/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
