@@ -73,6 +73,9 @@ void RemoteAudioRenderSink::DeInit(void)
 {
     Trace trace("RemoteAudioRenderSink::DeInit");
     AUDIO_INFO_LOG("in");
+
+    JoinStartThread();
+
     sinkInited_.store(false);
     renderInited_.store(false);
     started_.store(false);
@@ -96,6 +99,16 @@ bool RemoteAudioRenderSink::IsInited(void)
     return sinkInited_.load();
 }
 
+void RemoteAudioRenderSink::JoinStartThread()
+{
+    if (startThread_ != nullptr) {
+        if (startThread_->joinable()) {
+            startThread_->join();
+        }
+        startThread_ = nullptr;
+    }
+}
+
 int32_t RemoteAudioRenderSink::Start(void)
 {
     Trace trace("RemoteAudioRenderSink::Start");
@@ -103,34 +116,50 @@ int32_t RemoteAudioRenderSink::Start(void)
     std::lock_guard<std::mutex> lock(createRenderMutex_);
 
     for (auto &it : audioRenderWrapperMap_) {
-        it.second.dumpFileName_ = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + GetTime() + "_" +
+        it.second.dumpFileName_ = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + std::to_string(it.first) +
+            '_' + GetTime() + "_" +
             std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
             std::to_string(attr_.format) + ".pcm";
         DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, it.second.dumpFileName_ + std::to_string(it.first) +
             ".pcm", &(it.second.dumpFile_));
     }
 
-    if (!renderInited_.load()) {
-        for (auto &it : audioRenderWrapperMap_) {
-            int32_t ret = CreateRender(it.first);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "create render fail");
-            renderInited_.store(true);
-        }
-    }
-
-    if (started_.load()) {
-        AUDIO_INFO_LOG("already started");
+    if (isThreadRunning_.load()) {
+        AUDIO_INFO_LOG("SubThread is already running");
         return SUCCESS;
     }
 
-    for (auto &it : audioRenderWrapperMap_) {
-        CHECK_AND_RETURN_RET_LOG(it.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
-            "render is nullptr, type: %{public}d", it.first);
-        int32_t ret = it.second.audioRender_->Start();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, type: %{public}d, ret: %{public}d",
-            it.first, ret);
-    }
-    started_.store(true);
+    JoinStartThread();
+    isThreadRunning_.store(true);
+
+    startThread_ = std::make_shared<std::thread>([this]() {
+        AUDIO_INFO_LOG("SubThread Start");
+        if (!renderInited_.load()) {
+            for (auto &it : audioRenderWrapperMap_) {
+                int32_t ret = CreateRender(it.first);
+                CHECK_AND_RETURN_LOG(ret == SUCCESS, "create render fail");
+                renderInited_.store(true);
+            }
+        }
+    
+        if (started_.load()) {
+            AUDIO_INFO_LOG("already started");
+            isThreadRunning_.store(false);
+            return;
+        }
+    
+        for (auto &it : audioRenderWrapperMap_) {
+            CHECK_AND_RETURN_LOG(it.second.audioRender_ != nullptr,
+                "render is nullptr, type: %{public}d", it.first);
+            int32_t ret = it.second.audioRender_->Start();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "start fail, type: %{public}d, ret: %{public}d",
+                it.first, ret);
+        }
+        started_.store(true);
+        isThreadRunning_.store(false);
+        AUDIO_INFO_LOG("SubThread End");
+    });
+
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
@@ -139,6 +168,9 @@ int32_t RemoteAudioRenderSink::Stop(void)
 {
     Trace trace("RemoteAudioRenderSink::Stop");
     AUDIO_INFO_LOG("in");
+
+    JoinStartThread();
+
     if (!started_.load()) {
         AUDIO_INFO_LOG("already stopped");
         return SUCCESS;
@@ -152,6 +184,7 @@ int32_t RemoteAudioRenderSink::Stop(void)
             it.first, ret);
     }
     started_.store(false);
+    isThreadRunning_.store(false);
     return SUCCESS;
 }
 
@@ -260,6 +293,7 @@ std::string RemoteAudioRenderSink::GetAudioParameter(const AudioParamKey key, co
 
 int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
 {
+    CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     leftVolume_ = left;
     rightVolume_ = right;
     float volume;
@@ -289,6 +323,7 @@ int32_t RemoteAudioRenderSink::GetVolume(float &left, float &right)
 
 int32_t RemoteAudioRenderSink::GetLatency(uint32_t &latency)
 {
+    CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     uint32_t hdiLatency = 0;
     for (const auto &wrapper : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(wrapper.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -329,8 +364,10 @@ void RemoteAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("not support");
 }
 
-int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
+int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+    bool scoExcludeFlag)
 {
+    CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
@@ -522,7 +559,9 @@ void RemoteAudioRenderSink::InitAudioSampleAttr(AudioSampleAttributes &param, Au
     param.channelCount = attr_.channel;
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
-    param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    }
 
     param.type = type;
 }
@@ -591,6 +630,7 @@ void RemoteAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
 
 int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen, AudioCategory type)
 {
+    CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     AUDIO_DEBUG_LOG("type: %{public}d", type);
     int64_t stamp = ClockTime::GetCurNano();
     sptr<IAudioRender> audioRender = audioRenderWrapperMap_[type].audioRender_;
@@ -606,7 +646,7 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     BufferDesc buffer = { reinterpret_cast<uint8_t *>(&data), len, len };
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
         static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_ + std::to_string(type), volumeDataCount_);
     Trace trace("RemoteAudioRenderSink::RenderFrame inner renderFrame");
     Trace::CountVolume("RemoteAudioRenderSink::RenderFrame", static_cast<uint8_t>(data));
     ret = audioRender->RenderFrame(bufferVec, writeLen);

@@ -41,7 +41,8 @@ int32_t InitSourceAdapter(struct SourceAdapter *adapter, const char *deviceClass
     CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "adapter is nullptr");
 
     adapter->captureId = HDI_INVALID_ID;
-    adapter->deviceClass = nullptr;
+    adapter->deviceClass = strdup(deviceClass);
+    CHECK_AND_RETURN_RET_LOG(adapter->deviceClass != nullptr, ERR_OPERATION_FAILED, "strdup fail");
     if (info == nullptr) {
         adapter->captureId = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(deviceClass,
             static_cast<SourceType>(sourceType), HDI_ID_INFO_DEFAULT, true);
@@ -56,7 +57,6 @@ int32_t InitSourceAdapter(struct SourceAdapter *adapter, const char *deviceClass
         HdiAdapterManager::GetInstance().ReleaseId(adapter->captureId);
         return ERR_OPERATION_FAILED;
     }
-    adapter->deviceClass = strdup(deviceClass);
     adapter->attr = nullptr;
     return SUCCESS;
 }

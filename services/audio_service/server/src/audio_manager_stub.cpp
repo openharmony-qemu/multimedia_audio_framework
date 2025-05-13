@@ -126,6 +126,7 @@ const char *g_audioServerCodeStrs[] = {
     "DEVICE_CONNECTED_FLAG",
     "SET_DM_DEVICE_TYPE",
     "NOTIFY_SETTINGS_DATA_READY",
+    "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -341,7 +342,8 @@ int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &re
     }
     DeviceType activeInputDevice = (static_cast<DeviceType>(data.ReadInt32()));
     BluetoothOffloadState a2dpOffloadFlag =  static_cast<BluetoothOffloadState>(data.ReadInt32());
-    int32_t result = SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag);
+    bool scoExcludeFlag = data.ReadBool();
+    int32_t result = SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag, scoExcludeFlag);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -861,6 +863,8 @@ int AudioManagerStub::HandleSixthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleCreateSourcePort(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::DESTROY_HDI_PORT):
             return HandleDestroyHdiPort(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED):
+            return HandleIsAcousticEchoCancelerSupported(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1341,5 +1345,12 @@ int AudioManagerStub::HandleDestroyHdiPort(MessageParcel &data, MessageParcel &r
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply)
+{
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    bool ret = IsAcousticEchoCancelerSupported(sourceType);
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

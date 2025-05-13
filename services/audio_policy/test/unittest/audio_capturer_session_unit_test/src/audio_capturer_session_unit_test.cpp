@@ -22,7 +22,7 @@ namespace AudioStandard {
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_001
- * @tc.desc  : Test udioCapturerSession::ReloadSourceForEffect()
+ * @tc.desc  : Test AudioCapturerSession::ReloadSourceForEffect()
  */
 HWTEST(AudioCapturerSessionTest, AudioCapturerSession_001, TestSize.Level1)
 {
@@ -347,7 +347,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_016, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_017
- * @tc.desc  : Test udioCapturerSession::IsVoipDeviceChanged()
+ * @tc.desc  : Test AudioCapturerSession::IsVoipDeviceChanged()
  */
 HWTEST(AudioCapturerSessionTest, AudioCapturerSession_017, TestSize.Level1)
 {
@@ -364,7 +364,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_017, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_018
- * @tc.desc  : Test udioCapturerSession::FillWakeupStreamPropInfo()
+ * @tc.desc  : Test AudioCapturerSession::FillWakeupStreamPropInfo()
  */
 HWTEST(AudioCapturerSessionTest, AudioCapturerSession_018, TestSize.Level1)
 {
@@ -382,7 +382,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_018, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_019
- * @tc.desc  : Test udioCapturerSession::FillWakeupStreamPropInfo()
+ * @tc.desc  : Test AudioCapturerSession::FillWakeupStreamPropInfo()
  */
 HWTEST(AudioCapturerSessionTest, AudioCapturerSession_019, TestSize.Level1)
 {
@@ -396,6 +396,105 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_019, TestSize.Level1)
 
     auto ret = audioCapturerSession->FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo);
     EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_020
+ * @tc.desc  : Test AudioCapturerSession::GetInstance()
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_020, TestSize.Level1)
+{
+    shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager = nullptr;
+    {
+        auto& audioCapturerSession = AudioCapturerSession::GetInstance();
+
+        audioA2dpOffloadManager = make_shared<AudioA2dpOffloadManager>();
+        audioCapturerSession.Init(audioA2dpOffloadManager);
+        audioCapturerSession.SetConfigParserFlag();
+
+        audioCapturerSession.DeInit();
+    }
+    EXPECT_EQ(audioA2dpOffloadManager.use_count(), 1);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_021
+ * @tc.desc  : Test AudioCapturerSession::OnCapturerSessionAdded()
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_021, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    sessionInfo.rate = 44100;
+    sessionInfo.channels = 2;
+    AudioStreamInfo streamInfo;
+    audioCapturerSession->SetConfigParserFlag();
+
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    audioVolumeManager.SetDefaultDeviceLoadFlag(true);
+
+
+    uint64_t sessionID = 1;
+    audioCapturerSession->OnCapturerSessionRemoved(sessionID);
+
+    auto ret = audioCapturerSession->OnCapturerSessionAdded(sessionID, sessionInfo, streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_022
+ * @tc.desc  : Test AudioCapturerSession::OnCapturerSessionAdded()
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_022, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    SessionInfo sessionInfo;
+    AudioStreamInfo streamInfo;
+
+    uint64_t sessionID = 1;
+
+    auto ret = audioCapturerSession->OnCapturerSessionAdded(sessionID, sessionInfo, streamInfo);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_023
+ * @tc.desc  : Test AudioCapturerSession::SetWakeUpAudioCapturerFromAudioServer()
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_023, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioStreamInfo streamInfo;
+    AudioProcessConfig config;
+    config.streamInfo = streamInfo;
+
+    auto ret = audioCapturerSession->SetWakeUpAudioCapturerFromAudioServer(config);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_024
+ * @tc.desc  : Test AudioCapturerSession::CloseWakeUpAudioCapturer()
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_024, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    auto ret = audioCapturerSession->CloseWakeUpAudioCapturer();
+    EXPECT_NE(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

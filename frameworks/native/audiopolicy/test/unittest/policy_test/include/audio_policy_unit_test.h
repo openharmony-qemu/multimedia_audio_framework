@@ -42,6 +42,10 @@ class AudioCapturerStateChangeCallbackTest : public AudioCapturerStateChangeCall
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
 };
 
+class AudioFormatUnsupportedErrorCallbackTest : public AudioFormatUnsupportedErrorCallback {
+    virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) {}
+};
+
 class AudioRingerModeCallbackTest : public AudioRingerModeCallback {
 public:
     virtual ~AudioRingerModeCallbackTest() = default;
@@ -52,17 +56,6 @@ public:
      * For details, refer RingerMode enum in audio_info.h
      */
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) {};
-};
-
-class AudioDistribuitedOutputChangeCallbackTest : public AudioDistribuitedOutputChangeCallback {
-public:
-    /**
-     * Called when Distribuited Output Change.
-     *
-     * @param deviceDesc device descripter
-     * @param isRemote Is remote or local
-     */
-    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) {}
 };
 
 class AudioManagerMicStateChangeCallbackTest : public AudioManagerMicStateChangeCallback {

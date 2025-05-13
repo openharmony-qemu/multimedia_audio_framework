@@ -28,7 +28,6 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_recovery_device.h"
-#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,8 +40,10 @@ static const int64_t NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS = 300000; // 300ms
 static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
+static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_SLEEP_US = 50000; // 50ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
+static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int VOLUME_LEVEL_DEFAULT = 5;
 static const int VOLUME_LEVEL_MIN_SIZE = 5;
@@ -87,6 +88,11 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_WAKEUP),
     std::string(FILE_SOURCE)
 };
+
+static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
+{
+    return desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID;
+}
 
 void AudioDeviceCommon::Init(std::shared_ptr<AudioPolicyServerHandler> handler)
 {
@@ -342,7 +348,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         if (audioStateManager_.GetPreferredCallRenderDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallRenderDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), CLEAR_PID);
+                std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "UpdateConnectedDevicesWhenDisconnecting");
         }
         if (audioStateManager_.GetPreferredCallCaptureDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallCaptureDevice())) {
@@ -417,7 +423,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
         ROUTER_TYPE_USER_SELECT).front()) && (usage & VOICE) == VOICE) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), CLEAR_PID);
+            std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID,
+            "UpdateConnectedDevicesWhenConnectingForOutputDevice");
     }
     AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
 }
@@ -512,7 +519,8 @@ bool AudioDeviceCommon::NotifyRecreateDirectStream(std::shared_ptr<AudioRenderer
             AUDIO_OUTPUT_FLAG_NORMAL, reason);
         return true;
     } else if (audioActiveDevice_.IsDirectSupportedDevice() &&
-        rendererChangeInfo->rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC) {
+        rendererChangeInfo->rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC &&
+        streamCollector_.ActivateAudioConcurrency(PIPE_TYPE_DIRECT_MUSIC) == SUCCESS) {
         AudioRendererInfo info = rendererChangeInfo->rendererInfo;
         if (info.streamUsage == STREAM_USAGE_MUSIC && info.rendererFlags == AUDIO_FLAG_NORMAL &&
             info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
@@ -591,12 +599,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetDeviceDescr
     std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(rendererChangeInfo->clientUID);
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
-    } else if (zoneId != 0) {
-        descs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
-            rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID, ROUTER_TYPE_DEFAULT);
     } else {
         descs = audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
             rendererChangeInfo->clientUID);
@@ -662,6 +666,9 @@ void AudioDeviceCommon::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendere
 {
     Trace trace("AudioDeviceCommon::MuteSinkPortForSwitchDevice");
     if (outputDevices.front()->IsSameDeviceDesc(rendererChangeInfo->outputDeviceInfo)) return;
+
+    SetHeadsetUnpluggedToSpkOrEpFlag(rendererChangeInfo->outputDeviceInfo.deviceType_,
+        outputDevices.front()->deviceType_);
 
     audioIOHandleMap_.SetMoveFinish(false);
 
@@ -783,7 +790,8 @@ int32_t AudioDeviceCommon::HandleScoOutputDeviceFetched(std::shared_ptr<AudioDev
             FetchOutputDevice(rendererChangeInfos, reason);
             return ERROR;
         }
-        if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) {
+        if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene() ||
+            !Bluetooth::AudioHfpManager::IsVirtualCall()) {
             Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
             return SUCCESS;
         }
@@ -866,25 +874,30 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
     audioIOHandleMap_.NotifyUnmutePort();
 }
 
-void AudioDeviceCommon::MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime)
+void AudioDeviceCommon::MuteOtherSink(const std::string &sinkName, int64_t muteTime)
 {
     // fix pop when switching devices during multiple concurrent streams
-    if (sinkName == OFFLOAD_PRIMARY_SPEAKER) {
-        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, muteTime, true);
+    if (sinkName == OFFLOAD_PRIMARY_SPEAKER ||
+        ((sinkName == PRIMARY_DIRECT_VOIP || sinkName == PRIMARY_MMAP_VOIP) &&
+        streamCollector_.HasRunningRendererStream())) {
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, muteTime, true, false);
+    } else if (sinkName == PRIMARY_SPEAKER && streamCollector_.IsVoipStreamActive()) {
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_DIRECT_VOIP, muteTime, true, false);
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_MMAP_VOIP, muteTime, true, false);
     } else if (sinkName == PRIMARY_SPEAKER) {
-        audioIOHandleMap_.MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, muteTime, true);
+        audioIOHandleMap_.MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, muteTime, true, false);
     }
 }
 
 void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (reason.isOverride() || reason.isSetDefaultOutputDevice()) {
+    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
         }
-        MutePrimaryOrOffloadSink(newSinkName, muteTime);
+        MuteOtherSink(newSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, SELECT_DEVICE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true);
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
@@ -892,7 +905,7 @@ void AudioDeviceCommon::MuteSinkPort(const std::string &oldSinkName, const std::
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS;
         }
-        MutePrimaryOrOffloadSink(oldSinkName, muteTime);
+        MuteOtherSink(oldSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true);
         audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true);
     }
@@ -912,9 +925,13 @@ void AudioDeviceCommon::MuteSinkPortLogic(const std::string &oldSinkName, const 
     } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
-        MutePrimaryOrOffloadSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
+        MuteOtherSink(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS);
         audioIOHandleMap_.MuteSinkPort(newSinkName, OLD_DEVICE_UNAVALIABLE_MUTE_MS, true);
         usleep(OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS); // sleep fix data cache pop.
+        if (isHeadsetUnpluggedToSpkOrEpFlag_) {
+            usleep(OLD_DEVICE_UNAVALIABLE_EXT_SLEEP_US); // sleep fix data cache pop.
+            isHeadsetUnpluggedToSpkOrEpFlag_ = false;
+        }
     } else if (reason.IsOldDeviceUnavaliableExt() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {
@@ -1282,8 +1299,12 @@ bool AudioDeviceCommon::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         isUpdateActiveDevice, capturerChangeInfo->capturerInfo.capturerFlags,
         capturerChangeInfo->capturerInfo.originalFlag);
     CHECK_AND_RETURN_RET_LOG(isUpdateActiveDevice, false, "isUpdateActiveDevice is false");
-    CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
-        "original flag is false");
+    if (!((capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID) ^
+        (audioActiveDevice_.GetCurrentInputDevice().networkId_ == LOCAL_NETWORK_ID))) {
+        CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
+            "original flag is false");
+    }
+
     // Switch between old and new stream as they have different hals
     std::string oldDevicePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(
         capturerChangeInfo->inputDeviceInfo.deviceType_);
@@ -1398,7 +1419,7 @@ void AudioDeviceCommon::HandleA2dpInputDeviceFetched(std::shared_ptr<AudioDevice
     std::string networkId = audioActiveDevice_.GetCurrentOutputDeviceNetworkId();
     std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(
         audioActiveDevice_.GetCurrentOutputDeviceType());
-        
+
     int32_t ret = LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo, networkId, sinkName,
         sourceType);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "load a2dp input module failed");
@@ -1524,6 +1545,17 @@ int32_t AudioDeviceCommon::HandleScoInputDeviceFetched(std::shared_ptr<AudioDevi
     return SUCCESS;
 }
 
+void AudioDeviceCommon::NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc)
+{
+    bool isDistOld = IsDistributedOutput(audioActiveDevice_.GetCurrentOutputDevice());
+    bool isDistNew = IsDistributedOutput(deviceDesc);
+    AUDIO_INFO_LOG("Check Distributed Output Change[%{public}d-->%{public}d]", isDistOld, isDistNew);
+    if (isDistOld != isDistNew) {
+        auto ret = audioRouterCenter_.NotifyDistributedOutputChange(isDistNew);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyDistributedOutputChange Failed. ret=%{public}d", ret);
+    }
+}
+
 int32_t AudioDeviceCommon::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
     std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
@@ -1606,7 +1638,7 @@ int32_t AudioDeviceCommon::OpenRemoteAudioDevice(std::string networkId, DeviceRo
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
     AudioModuleInfo remoteDeviceInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
         deviceRole, deviceType);
-    
+
     auto ret = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_REMOTE, networkId);
     if (ret) {
         AUDIO_ERR_LOG("load adapter fail");
@@ -1687,12 +1719,13 @@ void AudioDeviceCommon::SetHasDpFlag(bool flag)
     hasDpDevice_ = flag;
 }
 
-bool AudioDeviceCommon::IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState)
+bool AudioDeviceCommon::IsRingOverPlayback(AudioMode &mode, RendererState rendererState)
 {
     if (mode != AUDIO_MODE_PLAYBACK) {
         return false;
     }
-    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED) {
+    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED &&
+        rendererState != RENDERER_PAUSED) {
         return false;
     }
     return true;
@@ -1726,10 +1759,14 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
     }
-    if (isRingDualToneOnPrimarySpeaker_ && IsStopOrReleasePlayback(mode, rendererState) &&
+    if (isRingDualToneOnPrimarySpeaker_ && IsRingOverPlayback(mode, rendererState) &&
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer stop/release.");
         isRingDualToneOnPrimarySpeaker_ = false;
+        // Add delay between end of double ringtone and device switch.
+        // After the ringtone ends, there may still be residual audio data in the pipeline.
+        // Switching the device immediately can cause pop noise due the undrained buffers.
+        usleep(RING_DUAL_END_DELAY_US);
         for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
             audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
         }
@@ -1798,7 +1835,7 @@ void AudioDeviceCommon::BluetoothScoDisconectForRecongnition()
     AUDIO_INFO_LOG("Recongnition scoCategory: %{public}d, deviceType: %{public}d, scoState: %{public}d",
         Bluetooth::AudioHfpManager::GetScoCategory(), tempDesc.deviceType_,
         audioDeviceManager_.GetScoState());
-    if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || audioDeviceManager_.GetScoState()) {
         int32_t ret = ScoInputDeviceFetchedForRecongnition(false, tempDesc.macAddress_,
             tempDesc.connectState_);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
@@ -1825,7 +1862,7 @@ void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
         return;
     }
     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
-    if (tempDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (tempDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
         return;
     }
     if (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
@@ -1879,7 +1916,7 @@ int32_t AudioDeviceCommon::LoadA2dpModule(DeviceType deviceType, const AudioStre
             GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
             uint32_t temp = 0;
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, temp);
-            CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+            CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_OPERATION_FAILED,
                 "OpenAudioPort failed %{public}d", ioHandle);
             audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
         } else {
@@ -1918,7 +1955,7 @@ int32_t AudioDeviceCommon::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devi
     GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
     uint32_t temp = 0;
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, temp);
-    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+    CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
     audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
     return SUCCESS;
@@ -1980,7 +2017,7 @@ int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &device
     float maxMixDbDefault = audioPolicyManager_.GetSystemVolumeInDb(STREAM_VOICE_CALL,
         maxVoiceCall * VOLUME_LEVEL_MID_SIZE / VOLUME_LEVEL_MAX_SIZE, deviceType) *
         audioPolicyManager_.GetSystemVolumeInDb(STREAM_RING, maxRingTone, deviceType);
-    
+
     if (curVoiceCallLevel > VOLUME_LEVEL_DEFAULT) {
         for (int i = 0; i < DEFAULT_ADJUST_TIMES; i++) {
             if (curVoiceRingMixDb < minMixDbDefault && curRingToneLevel <= VOLUME_LEVEL_MAX_SIZE) {
@@ -2007,6 +2044,14 @@ void AudioDeviceCommon::SetFirstScreenOn()
 int32_t AudioDeviceCommon::SetVirtualCall(const bool isVirtual)
 {
     return Bluetooth::AudioHfpManager::SetVirtualCall(isVirtual);
+}
+
+void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)
+{
+    if ((oldDeviceType == DEVICE_TYPE_USB_HEADSET || oldDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) &&
+        (newDeviceType == DEVICE_TYPE_SPEAKER || newDeviceType == DEVICE_TYPE_EARPIECE)) {
+        isHeadsetUnpluggedToSpkOrEpFlag_ = true;
+    }
 }
 }
 }

@@ -31,13 +31,25 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
-    // Init Renderer Options for music
-    static AudioRendererOptions InitializeRendererOptionsForMusic();
-    // Init Renderer Options for ring
-    static AudioRendererOptions InitializeRendererOptionsForRing();
-    // Wait for Callback invoke
-    static void WaitForCallback();
 };
+
+class AudioManagerInterruptUnitTest : public testing::Test {
+    public:
+        // SetUpTestCase: Called before all test cases
+        static void SetUpTestCase(void);
+        // TearDownTestCase: Called after all test case
+        static void TearDownTestCase(void);
+        // SetUp: Called before each test cases
+        void SetUp(void);
+        // TearDown: Called after each test cases
+        void TearDown(void);
+        // Init Renderer Options for music
+        static AudioRendererOptions InitializeRendererOptionsForMusic();
+        // Init Renderer Options for ring
+        static AudioRendererOptions InitializeRendererOptionsForRing();
+        // Wait for Callback invoke
+        static void WaitForCallback();
+    };
 
 class AudioManagerCallbackImpl : public AudioManagerCallback {
 public:

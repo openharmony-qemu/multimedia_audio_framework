@@ -112,7 +112,7 @@ bool AudioCaptureSource::IsInited(void)
 int32_t AudioCaptureSource::Start(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::Start");
 
     if (IsNonblockingSource(adapterNameCase_)) {
@@ -130,6 +130,7 @@ int32_t AudioCaptureSource::Start(void)
             case SOURCE_TYPE_MIC:
             case SOURCE_TYPE_CAMCORDER:
             case SOURCE_TYPE_UNPROCESSED:
+            case SOURCE_TYPE_LIVE:
             default:
                 runningLock_ = std::make_shared<AudioRunningLock>(std::string(RUNNING_LOCK_NAME));
         }
@@ -156,6 +157,13 @@ int32_t AudioCaptureSource::Start(void)
     int32_t ret = audioCapture_->Start(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     started_ = true;
+
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
+    if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+        audioEnhanceChainManager->SetAccessoryDeviceState(true);
+    }
+
     return SUCCESS;
 }
 
@@ -171,6 +179,13 @@ int32_t AudioCaptureSource::Stop(void)
     });
     futurePromiseEnsureLock.get();
     stopThread.detach();
+
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
+    if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+        audioEnhanceChainManager->SetAccessoryDeviceState(false);
+    }
+
     return SUCCESS;
 }
 
@@ -722,7 +737,9 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.isBigEndian = false;
     param.isSignedData = true;
-    param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    }
     param.stopThreshold = INT_MAX;
     param.silenceThreshold = AUDIO_BUFFER_SIZE;
     param.sourceType = SOURCE_TYPE_MIC;
@@ -734,7 +751,9 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
-    param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    if (param.frameSize != 0) {
+        param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
+    }
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
 
     if ((attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) && attr_.channelEc != 0) {
@@ -773,18 +792,18 @@ void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, A
 {
     sceneDesc.scene.id = GetAudioCategory(audioScene);
 
-    AudioPortPin pin = PIN_IN_MIC;
+    AudioPortPin port = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
-        pin = PIN_IN_USB_HEADSET;
+        port = PIN_IN_USB_HEADSET;
     } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
         if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
-            pin = PIN_IN_PENCIL;
+            port = PIN_IN_PENCIL;
         } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
-            pin = PIN_IN_UWB;
+            port = PIN_IN_UWB;
         }
     }
-    AUDIO_DEBUG_LOG("pin: %{public}d", pin);
-    sceneDesc.desc.pins = pin;
+    AUDIO_DEBUG_LOG("port: %{public}d", port);
+    sceneDesc.desc.pins = port;
     sceneDesc.desc.desc = const_cast<char *>("");
 }
 
@@ -842,9 +861,6 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
         attr_.adapterName.c_str(), inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(adapterNameCase_, inputDevice, streamId, inputType);
-    if (inputDevice == DEVICE_TYPE_ACCESSORY) {
-        SetAudioRouteInfoForEnhanceChain();
-    }
     return ret;
 }
 
@@ -1048,6 +1064,9 @@ int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice
     int32_t ret = DoSetInputRoute(inputDevice);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     currentActiveDevice_ = inputDevice;
+    if (inputDevice == DEVICE_TYPE_ACCESSORY) {
+        SetAudioRouteInfoForEnhanceChain();
+    }
     return SUCCESS;
 }
 

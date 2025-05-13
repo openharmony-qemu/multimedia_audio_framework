@@ -333,6 +333,11 @@ int32_t FastAudioStream::SetMute(bool mute)
     return ret;
 }
 
+bool FastAudioStream::GetMute()
+{
+    return processClient_->GetMute();
+}
+
 int32_t FastAudioStream::SetSourceDuration(int64_t duration)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetMute failed: null process");
@@ -347,6 +352,11 @@ int32_t FastAudioStream::SetDuckVolume(float volume)
     int32_t ret = processClient_->SetDuckVolume(volume);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDuckVolume error.");
     return ret;
+}
+
+float FastAudioStream::GetDuckVolume()
+{
+    return processClient_->GetDuckVolume();
 }
 
 void FastAudioStream::SetSilentModeAndMixWithOthers(bool on)
@@ -562,10 +572,48 @@ int32_t FastAudioStream::SetSpeed(float speed)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t FastAudioStream::SetPitch(float pitch)
+{
+    AUDIO_ERR_LOG("SetPitch is not supported");
+    return ERR_OPERATION_FAILED;
+}
+
 float FastAudioStream::GetSpeed()
 {
     AUDIO_ERR_LOG("GetSpeed is not supported");
     return static_cast<float>(ERROR);
+}
+
+// only call from StartAudioStream
+void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
+{
+    pid_t tid;
+    switch (rendererInfo_.playerType) {
+        case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
+            // main thread
+            tid = getpid();
+            break;
+        case PLAYER_TYPE_OH_AUDIO_RENDERER:
+            tid = gettid();
+            break;
+        default:
+            return;
+    }
+
+    if (cmdType == CMD_FROM_CLIENT) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        lastCallStartByUserTid_ = tid;
+    } else if (cmdType == CMD_FROM_SYSTEM) {
+        std::lock_guard lock(lastCallStartByUserTidMutex_);
+        CHECK_AND_RETURN_LOG(lastCallStartByUserTid_.has_value(), "has not value");
+        tid = lastCallStartByUserTid_.value();
+    } else {
+        AUDIO_ERR_LOG("illegal param");
+        return;
+    }
+
+    processClient_->RegisterThreadPriority(tid,
+        AudioSystemManager::GetInstance()->GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
 }
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
@@ -599,6 +647,8 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
+    RegisterThreadPriorityOnStart(cmdType);
 
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
     return true;
@@ -650,6 +700,8 @@ bool FastAudioStream::StopAudioStream()
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
     return true;
 }
 
@@ -864,6 +916,11 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
         info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
     }
 
+    {
+        std::lock_guard<std::mutex> lock(lastCallStartByUserTidMutex_);
+        info.lastCallStartByUserTid = lastCallStartByUserTid_;
+    }
+
     if (spkProcClientCb_) {
         info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();
     }
@@ -1059,6 +1116,12 @@ void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus FastAudioStream::CheckRestoreStatus()
 {
+    if (spkProcClientCb_ == nullptr && micProcClientCb_ == nullptr) {
+        AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
+        renderMode_ = RENDER_MODE_NORMAL;
+        captureMode_ = CAPTURE_MODE_NORMAL;
+        return NEED_RESTORE_TO_NORMAL;
+    }
     return processClient_->CheckRestoreStatus();
 }
 
@@ -1073,6 +1136,39 @@ void FastAudioStream::FetchDeviceForSplitStream()
     if (processClient_) {
         processClient_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
     }
+}
+
+void FastAudioStream::SetCallStartByUserTid(pid_t tid)
+{
+    std::lock_guard lock(lastCallStartByUserTidMutex_);
+    lastCallStartByUserTid_ = tid;
+}
+
+void FastAudioStream::SetCallbackLoopTid(int32_t tid)
+{
+    AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
+    callbackLoopTid_ = tid;
+    callbackLoopTidCv_.notify_all();
+}
+
+int32_t FastAudioStream::GetCallbackLoopTid()
+{
+    std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
+    bool stopWaiting = callbackLoopTidCv_.wait_for(waitLock, std::chrono::seconds(1), [this] {
+        return callbackLoopTid_ != -1; // callbackLoopTid_ will change when got notified.
+    });
+
+    if (!stopWaiting) {
+        AUDIO_WARNING_LOG("Wait timeout");
+        callbackLoopTid_ = 0; // set tid to prevent get operation from getting stuck
+    }
+    return callbackLoopTid_;
+}
+
+void FastAudioStream::ResetCallbackLoopTid()
+{
+    AUDIO_INFO_LOG("Reset callback loop tid to -1");
+    callbackLoopTid_ = -1;
 }
 } // namespace AudioStandard
 } // namespace OHOS

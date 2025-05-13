@@ -208,6 +208,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::sourceTypeMap = {
     {"SOURCE_TYPE_REMOTE_CAST", SOURCE_TYPE_REMOTE_CAST},
     {"SOURCE_TYPE_VOICE_TRANSCRIPTION", SOURCE_TYPE_VOICE_TRANSCRIPTION},
     {"SOURCE_TYPE_UNPROCESSED", SOURCE_TYPE_UNPROCESSED},
+    {"SOURCE_TYPE_LIVE", SOURCE_TYPE_LIVE},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::volumeAdjustTypeMap = {
@@ -490,6 +491,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
     {"FAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD)},
     {"FULL_DUPLEX_STANDARD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD)},
     {"FULL_DUPLEX_NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD)},
+    {"ASR_WHISPER_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::ASR_WHISPER_MODE)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
@@ -1168,6 +1170,7 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_VOICE_TRANSCRIPTION:
         case TYPE_CAMCORDER:
         case TYPE_UNPROCESSED:
+        case TYPE_LIVE:
             result = true;
             break;
         default:
@@ -1392,6 +1395,7 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
         case SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION:
         case SourceType::SOURCE_TYPE_CAMCORDER:
         case SourceType::SOURCE_TYPE_UNPROCESSED:
+        case SourceType::SOURCE_TYPE_LIVE:
             return true;
         default:
             return false;

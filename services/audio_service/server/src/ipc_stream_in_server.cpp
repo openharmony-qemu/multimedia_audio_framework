@@ -22,7 +22,7 @@
 #include "ipc_stream_in_server.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
-#include "audio_schedule.h"
+#include "audio_schedule_guard.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -200,6 +200,11 @@ int32_t IpcStreamInServer::Start()
 
 int32_t IpcStreamInServer::Pause()
 {
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
+
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Pause();
     }
@@ -212,6 +217,11 @@ int32_t IpcStreamInServer::Pause()
 
 int32_t IpcStreamInServer::Stop()
 {
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
+
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Stop();
     }
@@ -224,8 +234,12 @@ int32_t IpcStreamInServer::Stop()
 
 int32_t IpcStreamInServer::Release()
 {
-    UnscheduleReportData(clientPid_, clientTid_, clientBundleName_.c_str());
-    clientThreadPriorityRequested_ = false;
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_WRITE_OR_READ] = nullptr;
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
+
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Release();
     }
@@ -459,18 +473,15 @@ int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
+int32_t IpcStreamInServer::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
+    BoostTriggerMethod method)
 {
-    if (!clientThreadPriorityRequested_) {
-        clientPid_ = IPCSkeleton::GetCallingPid();
-        clientTid_ = tid;
-        clientBundleName_ = bundleName;
-        ScheduleReportData(clientPid_, tid, bundleName.c_str());
-        return SUCCESS;
-    } else {
-        AUDIO_ERR_LOG("client thread priority requested");
-        return ERR_OPERATION_FAILED;
-    }
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, tid, bundleName);
+    std::lock_guard lock(scheduleGuardsMutex_);
+    scheduleGuards_[method].swap(sharedGuard);
+    return SUCCESS;
 }
 
 int32_t IpcStreamInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)

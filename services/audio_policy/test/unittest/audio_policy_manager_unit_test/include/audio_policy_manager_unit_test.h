@@ -63,6 +63,8 @@ public:
         override {return 0;}
     virtual int32_t GetSplitInfoRefined(std::string &splitInfo)
         override {return 0;}
+    virtual int32_t OnDistributedOutputChange(bool isRemote)
+        override {return 0;}
 };
 
 class ConcreteAudioDeviceAnahs : public AudioDeviceAnahs {

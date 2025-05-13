@@ -35,9 +35,6 @@ NapiCapturerReadDataCallback::NapiCapturerReadDataCallback(napi_env env, NapiAud
 
 NapiCapturerReadDataCallback::~NapiCapturerReadDataCallback()
 {
-    if (napiCapturer_ != nullptr) {
-        napiCapturer_->readCallbackCv_.notify_all();
-    }
     if (regAcReadDataTsfn_) {
         napi_release_threadsafe_function(acReadDataTsfn_, napi_tsfn_abort);
     }
@@ -119,6 +116,7 @@ void NapiCapturerReadDataCallback::OnReadData(size_t length)
     cb->readDataCallbackPtr = this;
 
     CHECK_AND_RETURN_LOG(napiCapturer_ != nullptr, "Cannot find the reference to audio capturer napi");
+    CHECK_AND_RETURN_LOG(napiCapturer_->audioCapturer_ != nullptr, "audioCapturer is null");
     napiCapturer_->audioCapturer_->GetBufferDesc(cb->bufDesc);
     if (cb->bufDesc.buffer == nullptr) {
         return;

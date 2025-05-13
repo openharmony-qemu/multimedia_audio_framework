@@ -155,6 +155,8 @@ private:
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     IAudioStream::StreamClass SetCaptureInfo(AudioStreamParams &audioStreamParams);
+    std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
+        const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
     mutable std::shared_mutex switchStreamMutex_;
@@ -187,6 +189,8 @@ private:
     std::mutex capturerPolicyServiceDiedCbMutex_;
     std::mutex audioCapturerErrCallbackMutex_;
     std::mutex policyServiceDiedCallbackMutex_;
+    std::mutex audioInterruptMutex_;
+    int32_t callbackLoopTid_ = -1;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

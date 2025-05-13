@@ -42,20 +42,20 @@ namespace AudioStandard {
 static const int64_t MEDIA_TO_RING_MUTE_DURATION_TIME_US = 200000; // 200ms
 static const int64_t HEADSET_SWITCH_DELAY_US = 100000; //100ms
 
-void AudioSceneManager::SetAudioScenePre(AudioScene audioScene)
+void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    AUDIO_INFO_LOG("Set audio scene start %{public}d, lastScene %{public}d", audioScene, audioScene_);
     lastAudioScene_ = audioScene_;
     audioScene_ = audioScene;
     Bluetooth::AudioHfpManager::SetAudioSceneFromPolicy(audioScene_);
     if (lastAudioScene_ != AUDIO_SCENE_DEFAULT && audioScene_ == AUDIO_SCENE_DEFAULT) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), CLEAR_PID);
+            std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "SetAudioScenePre");
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
             std::make_shared<AudioDeviceDescriptor>());
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
         AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+        Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
 #endif
     }
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
@@ -92,9 +92,6 @@ int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOf
         }
     }
     int32_t result = SUCCESS;
-    if (AudioPolicyUtils::GetInstance().GetScoExcluded()) {
-        return result;
-    }
     if (haveArmUsbDevice) {
         result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
             DEVICE_TYPE_USB_ARM_HEADSET, state);

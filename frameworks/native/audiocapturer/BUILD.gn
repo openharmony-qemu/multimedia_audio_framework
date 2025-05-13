@@ -111,7 +111,10 @@ ohos_executable("audio_capturer_test") {
 
   deps = [ ":audio_capturer" ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

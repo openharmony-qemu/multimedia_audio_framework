@@ -34,7 +34,8 @@ AudioPerformanceMonitor &AudioPerformanceMonitor::GetInstance()
     return mgr;
 }
 
-void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType)
+void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType,
+    uint32_t uid)
 {
     std::lock_guard<std::mutex> lock(silenceMapMutex_);
     if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
@@ -48,7 +49,7 @@ void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSile
     if (silenceDetectMap_[sessionId].historyStateDeque.size() > MAX_RECORD_QUEUE_SIZE) {
         silenceDetectMap_[sessionId].historyStateDeque.pop_front();
     }
-    JudgeNoise(sessionId, isSilence);
+    JudgeNoise(sessionId, isSilence, uid);
 }
 
 void AudioPerformanceMonitor::ClearSilenceMonitor(uint32_t sessionId)
@@ -137,7 +138,7 @@ void AudioPerformanceMonitor::DumpMonitorInfo(std::string &dumpString)
 
 // we use silenceStateCount to record the silence frames bewteen two not silence frame
 // need to check if sessionId exists before use
-void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
+void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uint32_t uid)
 {
     if (isSilence) {
         silenceDetectMap_[sessionId].silenceStateCount++;
@@ -153,7 +154,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
             }
             AUDIO_WARNING_LOG("record %{public}d state, pipeType %{public}d for last %{public}zu times: %{public}s",
                 sessionId, silenceDetectMap_[sessionId].pipeType, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
-            ReportEvent(SILENCE_EVENT, INT32_MAX, silenceDetectMap_[sessionId].pipeType, ADAPTER_TYPE_UNKNOWN);
+            ReportEvent(SILENCE_EVENT, INT32_MAX, silenceDetectMap_[sessionId].pipeType, ADAPTER_TYPE_UNKNOWN, uid);
             silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
             silenceDetectMap_[sessionId].historyStateDeque.clear();
             return;
@@ -163,7 +164,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence)
 }
 
 void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType,
-    AdapterType adapterType)
+    AdapterType adapterType, uint32_t uid)
 {
     int64_t curRealTime = ClockTime::GetRealNano();
     switch (reasonCode) {
@@ -182,7 +183,7 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
             return;
     }
 #ifndef AUDIO_BUILD_VARIANT_ROOT
-    AUDIO_WARNING_LOG("report reasonCode %{public}d", reasonCode);
+    AUDIO_WARNING_LOG("report reasonCode %{public}d for uid:%{public}d", reasonCode, uid);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::JANK_PLAYBACK,
         Media::MediaMonitor::EventType::FAULT_EVENT);
@@ -190,6 +191,8 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
     bean->Add("PERIOD_MS", periodMs);
     bean->Add("PIPE_TYPE", pipeType);
     bean->Add("HDI_ADAPTER", adapterType);
+    bean->Add("POSITION", JANK_POSITON_CODE);
+    bean->Add("UID", static_cast<int32_t>(uid));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 #endif
 }
@@ -203,14 +206,16 @@ extern "C" {
 
 using namespace OHOS::AudioStandard;
 
-void RecordPaSilenceState(uint32_t sessionId, bool isSilence, enum PA_PIPE_TYPE paPipeType)
+void RecordPaSilenceState(uint32_t sessionId, bool isSilence, enum PA_PIPE_TYPE paPipeType, uint32_t uid)
 {
     switch (paPipeType) {
         case PA_PIPE_TYPE_NORMAL:
-            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_NORMAL_OUT);
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_NORMAL_OUT, uid);
             break;
         case PA_PIPE_TYPE_MULTICHANNEL:
-            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_MULTICHANNEL);
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_MULTICHANNEL,
+                uid);
+            break;
         default:
             break;
     }

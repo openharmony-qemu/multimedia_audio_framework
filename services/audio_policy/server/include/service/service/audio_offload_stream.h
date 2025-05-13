@@ -80,6 +80,7 @@ private:
     bool CheckSpatializationAndEffectState();
     void SetOffloadMode();
     int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
+    int32_t SwitchToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     int32_t LoadOffloadModule();
     int32_t UnloadOffloadModule();
     AudioModuleInfo ConstructMchAudioModuleInfo(DeviceType deviceType);

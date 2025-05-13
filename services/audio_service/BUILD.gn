@@ -294,9 +294,10 @@ ohos_prebuilt_etc("audio_server_init") {
 config("audio_service_config") {
   visibility = [ ":*" ]
   visibility += [
+    "../../services/audio_service/test/unittest:audio_process_in_client_unit_test",
+    "../../services/audio_service/test/unittest:capturer_in_server_unit_test",
     "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
     "../../services/audio_service/test/unittest/audio_server_unit_test",
-    "../../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
     "../../test/fuzztest/*",
   ]
@@ -308,6 +309,8 @@ config("audio_service_config") {
     "client/include",
     "server/include",
     "server/include/config",
+    "../audio_engine/manager/include",
+    "../audio_policy/server/include/service/common",
     "../audio_policy/common/definitions/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/server/include/service/effect",
@@ -362,6 +365,10 @@ audio_ohos_library("audio_process_service") {
     "server/src/capturer_in_server.cpp",
     "server/src/core_service_handler.cpp",
     "server/src/core_service_provider_proxy.cpp",
+    "server/src/direct_playback_engine.cpp",
+    "server/src/hpae_adapter_manager.cpp",
+    "server/src/hpae_capturer_stream_impl.cpp",
+    "server/src/hpae_renderer_stream_impl.cpp",
     "server/src/i_stream_manager.cpp",
     "server/src/ipc_offline_stream_stub.cpp",
     "server/src/ipc_stream_in_server.cpp",
@@ -397,6 +404,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../audio_engine:audio_engine_manager",
     "../audio_policy:audio_foundation",
   ]
 
@@ -472,6 +480,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server_asr.cpp",
     "server/src/audio_server_dump.cpp",
     "server/src/audio_server_effect.cpp",
+    "server/src/audio_server_hpae_dump.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
 
@@ -486,6 +495,7 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioutils:audio_xml_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../audio_engine:audio_engine_manager",
   ]
 
   external_deps = [
@@ -651,10 +661,7 @@ ohos_executable("audio_hdi_device_test") {
 
   include_dirs = [
     "../../frameworks/native/audioutils/include",
-    "../../frameworks/native/hdiadapter/common/include",
-    "../../frameworks/native/hdiadapter/sink",
-    "../../frameworks/native/hdiadapter/sink/common",
-    "../../frameworks/native/hdiadapter/sink/fast",
+    "../../frameworks/native/hdiadapter_new/include",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
 
@@ -664,8 +671,7 @@ ohos_executable("audio_hdi_device_test") {
 
   deps = [
     "../../frameworks/native/audioutils:audio_utils",
-    "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   external_deps = [

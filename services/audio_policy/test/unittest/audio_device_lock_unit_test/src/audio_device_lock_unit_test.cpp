@@ -555,5 +555,17 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_029, TestSize.Level1)
     audioDeviceLock->GetVolumeGroupInfos();
     EXPECT_NE(audioDeviceLock, nullptr);
 }
+
+/**
+* @tc.name  :  AudioDeviceLock_030
+* @tc.desc  : Test SetAudioScene IssameScene.
+*/
+HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_030, TestSize.Level1)
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    EXPECT_NE(audioDeviceLock, nullptr);
+    EXPECT_EQ(audioDeviceLock->SetAudioScene(AUDIO_SCENE_DEFAULT), SUCCESS);
+    EXPECT_NE(audioDeviceLock->SetAudioScene(AUDIO_SCENE_RINGING), SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

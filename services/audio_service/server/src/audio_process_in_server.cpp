@@ -228,7 +228,7 @@ int32_t AudioProcessInServer::Start()
     lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     if (processBuffer_ != nullptr) {
-        lastWriteFrame_ = processBuffer_->GetCurReadFrame();
+        lastWriteFrame_ = static_cast<int64_t>(processBuffer_->GetCurReadFrame());
     }
     lastWriteMuteFrame_ = 0;
     return ret;
@@ -276,6 +276,12 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     (void)isFlush;
+
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
+
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_PAUSING,
         ERR_ILLEGAL_STATE, "Pause failed, invalid status.");
@@ -296,6 +302,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
         recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_PAUSE_OK,
             GetLastAudioDuration(), processConfig_);
     }
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_PAUSE);
 
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
     return SUCCESS;
@@ -321,6 +328,7 @@ int32_t AudioProcessInServer::Resume()
         listenerList_[i]->OnStart(this);
     }
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
+    processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
@@ -328,6 +336,11 @@ int32_t AudioProcessInServer::Resume()
 int32_t AudioProcessInServer::Stop()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
 
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STOPPING,
@@ -342,7 +355,7 @@ int32_t AudioProcessInServer::Stop()
     lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     if (processBuffer_ != nullptr) {
-        lastWriteFrame_ = processBuffer_->GetCurReadFrame() - lastWriteFrame_;
+        lastWriteFrame_ = static_cast<int64_t>(processBuffer_->GetCurReadFrame()) - lastWriteFrame_;
     }
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         playerDfx_->WriteDfxStopMsg(sessionId_, RENDERER_STAGE_STOP_OK,
@@ -351,6 +364,7 @@ int32_t AudioProcessInServer::Stop()
         recorderDfx_->WriteDfxStopMsg(sessionId_, CAPTURER_STAGE_STOP_OK,
             GetLastAudioDuration(), processConfig_);
     }
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_STOP);
 
     AUDIO_INFO_LOG("Stop in server success!");
     return SUCCESS;
@@ -359,8 +373,11 @@ int32_t AudioProcessInServer::Stop()
 int32_t AudioProcessInServer::Release(bool isSwitchStream)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
-    UnscheduleReportData(processConfig_.appInfo.appPid, clientTid_, clientBundleName_.c_str());
-    clientThreadPriorityRequested_ = false;
+    {
+        std::lock_guard lock(scheduleGuardsMutex_);
+        scheduleGuards_[METHOD_WRITE_OR_READ] = nullptr;
+        scheduleGuards_[METHOD_START] = nullptr;
+    }
     isInited_ = false;
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
@@ -610,17 +627,15 @@ int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProce
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RegisterThreadPriority(uint32_t tid, const std::string &bundleName)
+int32_t AudioProcessInServer::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
+    BoostTriggerMethod method)
 {
-    if (!clientThreadPriorityRequested_) {
-        clientTid_ = tid;
-        clientBundleName_ = bundleName;
-        ScheduleReportData(processConfig_.appInfo.appPid, tid, bundleName.c_str());
-        return SUCCESS;
-    } else {
-        AUDIO_ERR_LOG("client thread priority requested");
-        return ERR_OPERATION_FAILED;
-    }
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, tid, bundleName);
+    std::lock_guard lock(scheduleGuardsMutex_);
+    scheduleGuards_[method].swap(sharedGuard);
+    return SUCCESS;
 }
 
 void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby)
@@ -724,5 +739,11 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
     return restoreStatus;
 }
 
+int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    AudioService::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

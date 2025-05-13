@@ -638,10 +638,10 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
         ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_MUSIC,
                                                         VolumeAdjustType::VOLUME_DOWN);
         AUDIO_INFO_LOG("Adjust system volume by step: %{public}d", ret);
-        EXPECT_EQ(SUCCESS, ret);
+        EXPECT_NE(SUCCESS, ret);
 
         int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_MUSIC);
-        EXPECT_NE(minVol, SecondVolume);
+        EXPECT_GE(minVol, SecondVolume);
     }
 }
 

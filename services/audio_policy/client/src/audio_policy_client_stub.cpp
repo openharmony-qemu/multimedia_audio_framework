@@ -67,6 +67,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SCENE_CHANGED):
             HandleAudioSceneChange(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_FORMAT_UNSUPPORTED_ERROR):
+            HandleFormatUnsupportedError(data, reply);
+            break;
         default:
             break;
     }
@@ -95,9 +98,6 @@ void AudioPolicyClientStub::OnMaxRemoteRequest(uint32_t updateCode, MessageParce
             break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_RENDERER_DEVICE_CHANGE):
             HandleRendererDeviceChange(data, reply);
-            break;
-        case static_cast<uint32_t>(AudioPolicyClientCode::ON_DISTRIBUTED_OUTPUT_CHANGE):
-            HandleDistribuitedOutputChange(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_RECREATE_RENDERER_STREAM_EVENT):
             HandleRecreateRendererStreamEvent(data, reply);
@@ -221,14 +221,6 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
         deviceChange.deviceDescriptors.emplace_back(AudioDeviceDescriptor::UnmarshallingPtr(data));
     }
     OnDeviceChange(deviceChange);
-}
-
-void AudioPolicyClientStub::HandleDistribuitedOutputChange(MessageParcel &data, MessageParcel &reply)
-{
-    auto descDesc = AudioDeviceDescriptor::UnmarshallingPtr(data);
-    CHECK_AND_RETURN_LOG(descDesc, "descDesc is nullptr");
-    bool isRemote = data.ReadBool();
-    OnDistribuitedOutputChange(*descDesc, isRemote);
 }
 
 void AudioPolicyClientStub::HandleMicrophoneBlocked(MessageParcel &data, MessageParcel &reply)
@@ -423,6 +415,12 @@ void AudioPolicyClientStub::HandleAudioSessionCallback(MessageParcel &data, Mess
     AudioSessionDeactiveEvent deactiveEvent;
     deactiveEvent.deactiveReason = static_cast<AudioSessionDeactiveReason>(data.ReadInt32());
     OnAudioSessionDeactive(deactiveEvent);
+}
+
+void AudioPolicyClientStub::HandleFormatUnsupportedError(MessageParcel &data, MessageParcel &reply)
+{
+    AudioErrors code = static_cast<AudioErrors>(data.ReadInt32());
+    OnFormatUnsupportedError(code);
 }
 } // namespace AudioStandard
 } // namespace OHOS

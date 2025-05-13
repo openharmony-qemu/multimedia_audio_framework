@@ -62,7 +62,7 @@
             "distributed_notification_service",
             "drivers_interface_audio",
             "drivers_interface_distributed_audio",
-            "drivers_peripheral_bluetooth",
+            "drivers_interface_bluetooth",
             "eventhandler",
             "ffrt",
             "hdf_core",
@@ -250,6 +250,16 @@
                   "multimedia_audio_ffi.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/frameworks/cj/include"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_client",
+              "header": {
+                "header_files": [
+                  "audio_zone_manager.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include"
               }
             }
           ],

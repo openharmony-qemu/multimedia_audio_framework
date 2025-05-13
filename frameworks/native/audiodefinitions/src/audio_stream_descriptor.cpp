@@ -43,6 +43,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         parcel.WriteUint64(appInfo_.appFullTokenId) &&
         parcel.WriteUint32(sessionId_) &&
         parcel.WriteInt32(callerUid_) &&
+        parcel.WriteInt32(callerPid_) &&
         parcel.WriteUint32(streamAction_) &&
         WriteDeviceDescVectorToParcel(parcel, oldDeviceDescs_) &&
         WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_);
@@ -63,6 +64,7 @@ void AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     appInfo_.appFullTokenId = parcel.ReadUint64();
     sessionId_ = parcel.ReadUint32();
     callerUid_ = parcel.ReadInt32();
+    callerPid_ = parcel.ReadInt32();
     streamAction_ = static_cast<AudioStreamAction>(parcel.ReadUint32());
     UnmarshallingDeviceDescVector(parcel, oldDeviceDescs_);
     UnmarshallingDeviceDescVector(parcel, newDeviceDescs_);
@@ -90,7 +92,7 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
 {
     int32_t size = 0;
     parcel.ReadInt32(size);
-    if (size == -1) {
+    if (size == -1 || size > MAX_STREAM_DESCRIPTORS_SIZE) {
         AUDIO_ERR_LOG("Invalid vector size");
         return;
     }

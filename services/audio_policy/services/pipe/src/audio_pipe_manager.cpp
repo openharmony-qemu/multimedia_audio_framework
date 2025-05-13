@@ -37,6 +37,8 @@ void AudioPipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     AUDIO_INFO_LOG("Add pipe %{public}s, pipeRole: %{public}d", info->adapterName_.c_str(), info->pipeRole_);
+    // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+    info->pipeAction_ = PIPE_ACTION_DEFAULT;
     curPipeList_.push_back(info);
 }
 
@@ -70,6 +72,8 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
         if (IsSamePipe(newPipe, *iter)) {
             Assign(*iter, newPipe);
+            // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+            (*iter)->pipeAction_ = PIPE_ACTION_DEFAULT;
             break;
         }
     }
@@ -95,13 +99,15 @@ void AudioPipeManager::StartClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
-    streamDesc->streamStatus_ = STREAM_STATUS_STARTTING;
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
 }
 
 void AudioPipeManager::PauseClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
 }
 
@@ -109,6 +115,7 @@ void AudioPipeManager::StopClient(uint32_t sessionId)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
 }
 
@@ -224,6 +231,18 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
     return streamDescs;
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByIoHandle(AudioIOHandle id)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it : curPipeList_) {
+        if (it != nullptr && it->id_ == id) {
+            return it->streamDescriptors_;
+        }
+    }
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {};
+    return streamDescs;
+}
+
 std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetStreamDescById(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -249,7 +268,7 @@ int32_t AudioPipeManager::GetStreamCount(const std::string adapterName, const ui
     int32_t count = 0;
     for (auto it : curPipeList_) {
         if (it->adapterName_ == adapterName && it->routeFlag_ == routeFlag) {
-            count = it->streamDescriptors_.size();
+            count = static_cast<int32_t>(it->streamDescriptors_.size());
         }
     }
     return count;
@@ -275,7 +294,11 @@ void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<Audio
             tempList.push_back(pipeInfo);
         }
     }
-    tempList.insert(tempList.end(), pipeInfos.begin(), pipeInfos.end());
+    // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+    for (auto &pipe : pipeInfos) {
+        pipe->pipeAction_ = PIPE_ACTION_DEFAULT;
+        tempList.push_back(pipe);
+    }
     curPipeList_.clear();
     curPipeList_ = tempList;
 }
@@ -289,7 +312,11 @@ void AudioPipeManager::UpdateCapturerPipeInfos(std::vector<std::shared_ptr<Audio
             tempList.push_back(pipeInfo);
         }
     }
-    tempList.insert(tempList.end(), pipeInfos.begin(), pipeInfos.end());
+    // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+    for (auto &pipe : pipeInfos) {
+        pipe->pipeAction_ = PIPE_ACTION_DEFAULT;
+        tempList.push_back(pipe);
+    }
     curPipeList_.clear();
     curPipeList_ = tempList;
 }

@@ -115,7 +115,9 @@ public:
     int32_t RemoveAudioSceneChangedCallback(
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
     size_t GetAudioSceneChangedCallbackSize() const;
-    int32_t SetDistribuitedOutputChangeCallback(const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb);
+    int32_t AddAudioFormatUnsupportedErrorCallback(const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &cb);
+    int32_t RemoveAudioFormatUnsupportedErrorCallback();
+    size_t GetAudioFormatUnsupportedErrorCallbackSize() const;
 
     void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;
@@ -140,7 +142,6 @@ public:
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void OnRendererDeviceChange(const uint32_t sessionId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
-    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override;
     void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
     void OnSpatializationEnabledChange(const bool &enabled) override;
     void OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
@@ -152,6 +153,7 @@ public:
     void OnNnStateChange(const int32_t &nnState) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
     void OnAudioSceneChange(const AudioScene &audioScene) override;
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
 
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
@@ -178,7 +180,7 @@ private:
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
         microphoneBlockedCallbackList_;
     std::vector<std::shared_ptr<AudioManagerAudioSceneChangedCallback>> audioSceneChangedCallbackList_;
-    std::vector<std::shared_ptr<AudioDistribuitedOutputChangeCallback>> distribuitedOutputChangeCallback_;
+    std::vector<std::shared_ptr<AudioFormatUnsupportedErrorCallback>> AudioFormatUnsupportedErrorCallbackList_;
 
     std::unordered_map<StreamUsage,
         std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>>> preferredOutputDeviceCallbackMap_;
@@ -211,6 +213,7 @@ private:
     mutable std::mutex audioSessionMutex_;
     mutable std::mutex microphoneBlockedMutex_;
     mutable std::mutex audioSceneChangedMutex_;
+    mutable std::mutex formatUnsupportedErrorMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

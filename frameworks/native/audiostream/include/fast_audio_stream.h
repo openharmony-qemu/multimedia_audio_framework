@@ -85,9 +85,11 @@ public:
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
     int32_t SetMute(bool mute) override;
+    bool GetMute() override;
     int32_t SetSourceDuration(int64_t duration) override;
     float GetVolume() override;
     int32_t SetDuckVolume(float volume) override;
+    float GetDuckVolume() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -142,6 +144,7 @@ public:
     int32_t Write(uint8_t *buffer, size_t buffer_size) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     int32_t SetSpeed(float speed) override;
+    int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
 
     // Recording related APIs
@@ -198,10 +201,15 @@ public:
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
+    void SetCallStartByUserTid(pid_t tid) override;
+    void SetCallbackLoopTid(int32_t tid) override;
+    int32_t GetCallbackLoopTid() override;
+    void ResetCallbackLoopTid();
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
     int32_t SetCallbacksWhenRestore();
+    void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;
@@ -242,6 +250,14 @@ private:
 
     std::mutex switchingMutex_;
     StreamSwitchingInfo switchingInfo_ {false, INVALID};
+
+    std::mutex lastCallStartByUserTidMutex_;
+    std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
+
+    int32_t callbackLoopTid_ = -1;
+    std::mutex callbackLoopTidMutex_;
+    std::condition_variable callbackLoopTidCv_;
+
     enum {
         STATE_CHANGE_EVENT = 0
     };

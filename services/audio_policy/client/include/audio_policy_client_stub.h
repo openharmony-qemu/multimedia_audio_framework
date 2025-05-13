@@ -44,7 +44,6 @@ private:
     void HandleRendererStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleCapturerStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleRendererDeviceChange(MessageParcel &data, MessageParcel &reply);
-    void HandleDistribuitedOutputChange(MessageParcel &data, MessageParcel &reply);
     void HandleRecreateRendererStreamEvent(MessageParcel &data, MessageParcel &reply);
     void HandleRecreateCapturerStreamEvent(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply);
@@ -56,6 +55,7 @@ private:
     void HandleNnStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleAudioSessionCallback(MessageParcel &data, MessageParcel &reply);
     void HandleAudioSceneChange(MessageParcel &data, MessageParcel &reply);
+    void HandleFormatUnsupportedError(MessageParcel &data, MessageParcel &reply);
     
     void OnMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
     void OnFirMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);

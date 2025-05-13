@@ -49,7 +49,7 @@ static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
 constexpr int64_t g_value = 0;
 
-void ConfigPayload(uint32_t pid, uint32_t tid, const char *bundleName, int32_t qosLevel,
+void ConfigPayload(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel,
     std::unordered_map<std::string, std::string> &mapPayload)
 {
     std::string strBundleName = bundleName;
@@ -61,7 +61,7 @@ void ConfigPayload(uint32_t pid, uint32_t tid, const char *bundleName, int32_t q
     mapPayload["bundleName"] = strBundleName;
 }
 
-void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName)
+void ScheduleReportData(pid_t pid, pid_t tid, const char *bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportData with qos level 7, pid " + std::to_string(pid) +
         ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
@@ -73,7 +73,7 @@ void ScheduleReportData(uint32_t pid, uint32_t tid, const char *bundleName)
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(g_type, g_value, mapPayload);
 }
 
-void UnscheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
+void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportData with qos level -1, pid " + std::to_string(pid) +
         ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
@@ -84,7 +84,7 @@ void UnscheduleReportData(uint32_t pid, uint32_t tid, const char* bundleName)
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(g_type, g_value, mapPayload);
 }
 
-void UnscheduleThreadInServer(uint32_t pid, uint32_t tid)
+void UnscheduleThreadInServer(pid_t pid, pid_t tid)
 {
     std::lock_guard<std::mutex> lock(g_rssMutex);
     if (g_tidToReport.find(tid) != g_tidToReport.end()) {
@@ -94,7 +94,7 @@ void UnscheduleThreadInServer(uint32_t pid, uint32_t tid)
     UnscheduleReportData(pid, tid, "audio_server");
 }
 
-void ScheduleThreadInServer(uint32_t pid, uint32_t tid)
+void ScheduleThreadInServer(pid_t pid, pid_t tid)
 {
     std::lock_guard<std::mutex> lock(g_rssMutex);
     if (g_tidToReport.find(tid) == g_tidToReport.end()) {
@@ -102,6 +102,33 @@ void ScheduleThreadInServer(uint32_t pid, uint32_t tid)
         g_tidToReport.insert(tid);
     }
     ScheduleReportData(pid, tid, "audio_server");
+}
+
+void SetProcessDataThreadPriority(int32_t priority)
+{
+    struct sched_param param = {0};
+    // setPriority = 50 + priority
+    param.sched_priority = priority;
+    int32_t res = sched_setscheduler(0, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
+    if (res != 0) {
+        AUDIO_ERR_LOG("Set thread 50 + %{public}d priority fail : %{public}d", param.sched_priority, res);
+        return;
+    }
+    AUDIO_INFO_LOG("Set thread 50 + %{public}d priority success", param.sched_priority);
+    return;
+}
+
+void ResetProcessDataThreadPriority()
+{
+    struct sched_param param = {0};
+    param.sched_priority = 0;
+    int32_t res = sched_setscheduler(0, SCHED_OTHER, &param);
+    if (res != 0) {
+        AUDIO_ERR_LOG("Reset thread priority fail : %{public}d", res);
+        return;
+    }
+    AUDIO_INFO_LOG("Reset thread priority success");
+    return;
 }
 
 void OnAddResSchedService(uint32_t audioServerPid)
@@ -141,9 +168,11 @@ bool ResetEndpointThreadPriority()
 };
 #else
 void ScheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
-void ScheduleThreadInServer(uint32_t pid, uint32_t tid) {};
-void UnscheduleThreadInServer(uint32_t tid) {};
+void ScheduleThreadInServer(pid_t pid, pid_t tid) {};
+void UnscheduleThreadInServer(pid_t tid) {};
 void OnAddResSchedService(uint32_t audioServerPid) {};
+void SetProcessDataThreadPriority(int32_t priority) {};
+void ResetProcessDataThreadPriority() {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 bool SetEndpointThreadPriority() { return false; };
 bool ResetEndpointThreadPriority() { return false; };
@@ -155,7 +184,15 @@ bool ResetEndpointThreadPriority() { return false; };
 
 namespace OHOS {
 namespace AudioStandard {
-AudioScheduleGuard::AudioScheduleGuard(uint32_t pid, uint32_t tid, const std::string &bundleName)
+namespace {
+static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
+}
+std::map<std::pair<pid_t, pid_t>,
+    std::weak_ptr<SharedAudioScheduleGuard>> SharedAudioScheduleGuard::guardMap_;
+std::mutex SharedAudioScheduleGuard::mutex_;
+std::condition_variable SharedAudioScheduleGuard::cv_;
+
+AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, const std::string &bundleName)
     : pid_(pid), tid_(tid), bundleName_(bundleName)
 {
     ScheduleReportData(pid, tid, bundleName.c_str());
@@ -169,26 +206,60 @@ AudioScheduleGuard::AudioScheduleGuard(AudioScheduleGuard&& audioScheduleGuard)
     audioScheduleGuard.isReported_ = false;
 }
 
-AudioScheduleGuard& AudioScheduleGuard::operator=(AudioScheduleGuard&& audioScheduleGuard)
-{
-    if (*this == audioScheduleGuard) {
-        audioScheduleGuard.isReported_ = false;
-        return *this;
-    }
-    AudioScheduleGuard temp(std::move(*this));
-    this->bundleName_ = std::move(audioScheduleGuard.bundleName_);
-    this->isReported_ = audioScheduleGuard.isReported_;
-    this->pid_ = audioScheduleGuard.pid_;
-    this->tid_ = audioScheduleGuard.tid_;
-    audioScheduleGuard.isReported_ = false;
-    return *this;
-}
+bool AudioScheduleGuard::operator==(const AudioScheduleGuard&) const = default;
 
 AudioScheduleGuard::~AudioScheduleGuard()
 {
     if (isReported_) {
         UnscheduleReportData(pid_, tid_, bundleName_.c_str());
     }
+}
+
+std::shared_ptr<SharedAudioScheduleGuard> SharedAudioScheduleGuard::Create(pid_t pid, pid_t tid,
+    const std::string &bundleName)
+{
+    std::shared_ptr<SharedAudioScheduleGuard> sharedGuard = nullptr;
+    std::unique_lock lock(mutex_);
+    bool isTimeout = !cv_.wait_for(lock, std::chrono::seconds(WAIT_TIMEOUT_SECONDS), [pid, tid, &sharedGuard] () {
+        if (guardMap_.contains({pid, tid})) {
+            sharedGuard = guardMap_.at({pid, tid}).lock();
+            if (sharedGuard != nullptr) {
+                return true;
+            }
+            AUDIO_INFO_LOG("wait");
+            // if contains but sharedGuard is null, wait last object destroy.
+            return false;
+        } else {
+            return true;
+        }
+    });
+    CHECK_AND_RETURN_RET_LOG(!isTimeout, nullptr, "timeout");
+
+    if (sharedGuard) {
+        AUDIO_INFO_LOG("ret exist obj");
+        return sharedGuard;
+    }
+
+    if (!guardMap_.contains({pid, tid})) {
+        sharedGuard = std::make_shared<SharedAudioScheduleGuard>(pid, tid, bundleName);
+        CHECK_AND_RETURN_RET_LOG(sharedGuard, nullptr, "no mem");
+        guardMap_.insert({{pid, tid}, sharedGuard});
+        AUDIO_INFO_LOG("ret new obj");
+        return sharedGuard;
+    }
+
+    AUDIO_ERR_LOG("unknow err");
+    return nullptr;
+}
+
+SharedAudioScheduleGuard::~SharedAudioScheduleGuard()
+{
+    std::lock_guard lock(mutex_);
+    // unreport must guard by mutex
+    AudioScheduleGuard tempGuard(std::move(guard_));
+    guardMap_.erase({pid_, tid_});
+    cv_.notify_all();
+    AUDIO_INFO_LOG("out");
 }
 } // namespace AudioStandard
 } // namespace OHOS

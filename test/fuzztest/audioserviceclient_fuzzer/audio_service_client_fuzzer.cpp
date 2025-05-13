@@ -26,6 +26,7 @@
 #include "audio_source_type.h"
 #include "audio_process_in_client.h"
 #include "fast_audio_stream.h"
+#include "audio_utils.h"
 
 using namespace std;
 
@@ -121,6 +122,11 @@ void GetAudioProcessInClient()
 
     int32_t frameSize = GetData<int32_t>();
     g_AudioProcessInClient->SetPreferredFrameSize(frameSize);
+
+    uint32_t sessionId = GetData<uint32_t>();
+    std::string adjustTime = GetTime();
+    uint32_t code = static_cast<uint32_t>(GetData<AdjustStreamVolume>());
+    g_AudioProcessInClient->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
 }
 
 void AudioClientUpdateLatencyTimestampTest()

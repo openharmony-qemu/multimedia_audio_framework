@@ -143,6 +143,7 @@ private:
     float clientVolume_ = 1.0f;
     bool initEffectFlag_ = true;
     bool isDoFadeOut = false;
+    std::atomic<bool> isReleased_ = false;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
 

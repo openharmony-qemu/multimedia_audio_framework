@@ -44,20 +44,9 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-// for phone
 const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
-    STREAM_MUSIC,
-    STREAM_VOICE_CALL,
-    STREAM_RING,
     STREAM_VOICE_ASSISTANT,
-    STREAM_ALARM,
-    STREAM_ACCESSIBILITY,
-    STREAM_ULTRASONIC
-};
-
-const std::vector<AudioStreamType> GET_PC_STREAM_ALL_VOLUME_TYPES {
     STREAM_VOICE_CALL,
-    STREAM_VOICE_ASSISTANT,
     STREAM_ACCESSIBILITY,
     STREAM_RING,
     STREAM_ALARM,
@@ -99,6 +88,8 @@ const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
 const std::string CALLER_NAME = "audio_server";
+const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
+static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -311,6 +302,45 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
 }
 
+void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener interruptService_ is nullptr!");
+        return;
+    }
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int32_t currentVauleType = STREAM_MUSIC;
+        ErrCode ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, currentVauleType, "system");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "DEFAULT_VOLUME_KEY get mono value failed");
+        if (currentVauleType == STREAM_RING) {
+            interruptService_->SetDefaultVolumeType(STREAM_RING);
+        } else {
+            interruptService_->SetDefaultVolumeType(STREAM_MUSIC);
+        }
+    };
+    sptr observer = settingProvider.CreateObserver(DEFAULT_VOLUME_KEY, updateFuncMono);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener mono failed");
+    }
+    int32_t result = STREAM_MUSIC;
+    ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, result, "system");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("DEFAULT_VOLUME_KEY GetIntValue failed");
+        return;
+    } else {
+        if (result == STREAM_RING) {
+            interruptService_->SetDefaultVolumeType(STREAM_RING);
+        } else {
+            interruptService_->SetDefaultVolumeType(STREAM_MUSIC);
+        }
+    }
+    AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d",
+        interruptService_->GetDefaultVolumeType());
+}
+
 void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId)
 {
     switch (systemAbilityId) {
@@ -415,7 +445,6 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 
 int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
 {
-    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
@@ -423,6 +452,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
         ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     if (isScreenOffOrLock_ && !IsStreamActive(streamInFocus) && !VolumeUtils::IsPCVolumeEnable()) {
         AUDIO_INFO_LOG("screen off or screen lock, this stream is not active, not change volume.");
         return AUDIO_OK;
@@ -474,16 +504,16 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
     int32_t muteKeySubId = im->SubscribeKeyEvent(keyOptionMute,
         [this](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
             AUDIO_INFO_LOG("Receive volume key event: mute");
-            std::lock_guard<std::mutex> lock(systemVolumeMutex_);
             AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
+            bool isStreamMuted = false;
             if (volumeApplyToAll_) {
-                bool isStreamMuted = GetStreamMuteInternal(STREAM_ALL);
-                SetStreamMuteInternal(STREAM_ALL, !isStreamMuted, true);
+                streamInFocus = STREAM_ALL;
             } else {
                 streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
-                bool isMuted = GetStreamMuteInternal(streamInFocus);
-                SetStreamMuteInternal(streamInFocus, !isMuted, true);
             }
+            std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+            isStreamMuted = GetStreamMuteInternal(streamInFocus);
+            SetStreamMuteInternal(streamInFocus, !isStreamMuted, true);
         });
     std::string keyType = "mute";
     std::string RegistrationTime = GetTime();
@@ -701,6 +731,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
             NotifySettingsDataReady();
             isInitSettingsData_ = true;
         }
+        RegisterDefaultVolumeTypeListener();
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
@@ -747,6 +778,7 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
 
 void AudioPolicyServer::CheckStreamMode(const int64_t activateSessionId)
 {
+    Trace trace("AudioPolicyServer::CheckStreamMode: activateSessionId: " + std::to_string(activateSessionId));
     audioPolicyService_.CheckStreamMode(activateSessionId);
 }
 
@@ -1095,9 +1127,7 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
         streamType, mute, isUpdateUi);
 
     if (streamType == STREAM_ALL) {
-        const std::vector<AudioStreamType> &streamTypeArray =
-            (VolumeUtils::IsPCVolumeEnable())? GET_PC_STREAM_ALL_VOLUME_TYPES : GET_STREAM_ALL_VOLUME_TYPES;
-        for (auto audioStreamType : streamTypeArray) {
+        for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
             AUDIO_INFO_LOG("SetMute of STREAM_ALL for StreamType = %{public}d ", audioStreamType);
             int32_t setResult = SetSingleStreamMute(audioStreamType, mute, isUpdateUi, deviceType);
             if (setResult != SUCCESS) {
@@ -1254,9 +1284,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
     }
     bool mute = GetStreamMuteInternal(streamType);
     if (streamType == STREAM_ALL) {
-        const std::vector<AudioStreamType> &streamTypeArray =
-            (VolumeUtils::IsPCVolumeEnable()) ? GET_PC_STREAM_ALL_VOLUME_TYPES : GET_STREAM_ALL_VOLUME_TYPES;
-        for (auto audioStreamType : streamTypeArray) {
+        for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
             AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d, mute = %{public}d, level = %{public}d",
                 audioStreamType, mute, volumeLevel);
             int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi, mute);
@@ -1640,9 +1668,9 @@ bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
     return audioPolicyService_.IsStreamActive(streamType);
 }
 
-int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid)
+int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
-    return eventEntry_->SetDeviceActive(deviceType, active, pid);
+    return eventEntry_->SetDeviceActive(deviceType, active, uid);
 }
 
 int32_t AudioPolicyServer::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
@@ -1907,9 +1935,9 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
     }
 }
 
-int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene)
+int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    return eventEntry_->SetAudioScene(audioScene);
+    return eventEntry_->SetAudioScene(audioScene, uid, pid);
 }
 
 AudioScene AudioPolicyServer::GetAudioScene()
@@ -1921,10 +1949,29 @@ AudioScene AudioPolicyServer::GetAudioScene()
 int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
     uint32_t clientUid, const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        return interruptService_->SetAudioInterruptCallback(zoneID, sessionID, object, clientUid);
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("The interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
     }
-    return ERR_UNKNOWN;
+    if (coreService_ == nullptr) {
+        AUDIO_ERR_LOG("The coreService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid != MEDIA_SERVICE_UID && callingUid != MCU_UID) {
+        // if the callingUid is not media or mcu, it is necessary to verify whether the parameters are valid.
+        if (callingUid != clientUid) {
+            AUDIO_ERR_LOG("The callingUid is not equal to clientUid and is not MEDIA_SERVICE_UID!");
+            return ERR_UNKNOWN;
+        }
+        if (!coreService_->IsStreamBelongToUid(callingUid, sessionID)) {
+            AUDIO_ERR_LOG("The sessionId %{public}u does not belong to uid %{public}u!", sessionID, callingUid);
+            return ERR_UNKNOWN;
+        }
+    }
+
+    return interruptService_->SetAudioInterruptCallback(zoneID, sessionID, object, clientUid);
 }
 
 int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID)
@@ -2009,6 +2056,7 @@ void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, Int
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
     AudioInterrupt &audioInterrupt, const int32_t zoneID, const bool isUpdatedAudioStrategy)
 {
+    Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
     if (interruptService_ != nullptr) {
         auto it = std::find(CAN_MIX_MUTED_STREAM.begin(), CAN_MIX_MUTED_STREAM.end(),
             audioInterrupt.audioFocusType.streamType);
@@ -2021,7 +2069,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
             }
         }
         int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
-        return interruptService_->ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
+        return AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;
 }
@@ -2030,7 +2078,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 {
     if (interruptService_ != nullptr) {
         int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
-        return interruptService_->DeactivateAudioInterrupt(zoneId, audioInterrupt);
+        return AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, audioInterrupt);
     }
     return ERR_UNKNOWN;
 }
@@ -2385,6 +2433,7 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
 
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
+    Trace trace("AudioPolicyServer::UpdateTracker");
     auto callerPid = IPCSkeleton::GetCallingPid();
     streamChangeInfo.audioRendererChangeInfo.callerPid = callerPid;
     streamChangeInfo.audioCapturerChangeInfo.callerPid = callerPid;
@@ -3345,11 +3394,6 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
 
 int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
 {
-    if (interruptService_ != nullptr) {
-        AudioZoneFocusStrategy context;
-        return interruptService_->CreateAudioInterruptZone(zoneID,
-            AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
-    }
     return ERR_UNKNOWN;
 }
 
@@ -3448,32 +3492,21 @@ int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
     return AudioZoneService::GetInstance().EnableSystemVolumeProxy(clientPid, zoneId, enable);
 }
 
-int32_t AudioPolicyServer::SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-    const int32_t volumeLevel, const int32_t volumeFlag)
-{
-    return AudioZoneService::GetInstance().SetSystemVolumeLevelForZone(zoneId, volumeType, volumeLevel, volumeFlag);
-}
-
-int32_t AudioPolicyServer::GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType)
-{
-    return AudioZoneService::GetInstance().GetSystemVolumeLevelForZone(zoneId, volumeType);
-}
-
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId)
 {
     return AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId);
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudioInterruptForZone(
-    int32_t zoneId, int32_t deviceId)
+    int32_t zoneId, const std::string &deviceTag)
 {
-    return AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId, deviceId);
+    return AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId, deviceTag);
 }
 
-int32_t AudioPolicyServer::EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable)
+int32_t AudioPolicyServer::EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return AudioZoneService::GetInstance().EnableAudioZoneInterruptReport(clientPid, zoneId, deviceId, enable);
+    return AudioZoneService::GetInstance().EnableAudioZoneInterruptReport(clientPid, zoneId, deviceTag, enable);
 }
 
 int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId,
@@ -3482,14 +3515,14 @@ int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId,
     return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, interrupts);
 }
 
-int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts)
 {
-    return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, deviceId, interrupts);
+    return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
 }
 
 int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-    const int32_t pid)
+    const int32_t uid)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
@@ -3505,7 +3538,7 @@ int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bo
             AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
             return ERR_NOT_SUPPORTED;
     }
-    return audioPolicyService_.SetCallDeviceActive(deviceType, active, address, pid);
+    return audioPolicyService_.SetCallDeviceActive(deviceType, active, address, uid);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevice()
@@ -3676,14 +3709,14 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
 }
 
 int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
         AUDIO_ERR_LOG("No permission");
         return ERROR;
     }
-    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc, pid);
+    return audioPolicyUtils_.SetPreferredDevice(preferredType, desc, uid, "SetPreferredDevice");
 }
 
 void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
@@ -3701,8 +3734,8 @@ void AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, DeviceType 
         audioPolicyUtils_.SetPreferredDevice(AUDIO_MEDIA_RENDER, std::make_shared<AudioDeviceDescriptor>());
     }
     if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_) {
-        audioPolicyUtils_.SetPreferredDevice(AUDIO_CALL_RENDER, std::make_shared<AudioDeviceDescriptor>(),
-            SYSTEM_PID);
+        audioPolicyUtils_.SetPreferredDevice(AUDIO_CALL_RENDER, std::make_shared<AudioDeviceDescriptor>(), SYSTEM_UID,
+            "SaveRemoteInfo");
     }
     audioDeviceManager_.SaveRemoteInfo(networkId, deviceType);
 }
@@ -3730,7 +3763,10 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
+    // Asynchronous clear audio focus infos
+    usleep(WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US);
     audioPolicyService_.NotifyAccountsChanged(id);
+    RegisterDefaultVolumeTypeListener();
 }
 
 int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
@@ -3750,6 +3786,7 @@ int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionI
 
 int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
+    Trace trace("AudioPolicyServer::ActivateAudioConcurrency" + std::to_string(pipeType));
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
 }
 
@@ -3989,6 +4026,12 @@ int32_t AudioPolicyServer::SetQueryAllowedPlaybackCallback(const sptr<IRemoteObj
     return audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
 }
 
+DirectPlaybackMode AudioPolicyServer::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+    const StreamUsage &streamUsage)
+{
+    return coreService_->GetDirectPlaybackSupport(streamInfo, streamUsage);
+}
+
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);
@@ -3999,6 +4042,10 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
+}
+bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    return audioPolicyService_.IsAcousticEchoCancelerSupported(sourceType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

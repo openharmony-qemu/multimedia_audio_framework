@@ -98,7 +98,11 @@ public:
 
     int32_t SetDuckVolume(float vol) override;
 
+    float GetDuckVolume() override;
+
     int32_t SetMute(bool mute) override;
+
+    bool GetMute() override;
 
     int32_t SetSourceDuration(int64_t duration) override;
 
@@ -131,6 +135,10 @@ public:
     RestoreStatus CheckRestoreStatus() override;
 
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+
+    void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code) override;
+
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
@@ -369,13 +377,6 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 AudioProcessInClientInner::~AudioProcessInClientInner()
 {
     AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
-    if (callbackLoop_.joinable()) {
-        std::unique_lock<std::mutex> lock(loopThreadLock_);
-        isCallbackLoopEnd_ = true; // change it with lock to break the loop
-        threadStatusCV_.notify_all();
-        lock.unlock(); // should call unlock before join
-        callbackLoop_.detach();
-    }
     if (isInited_) {
         AudioProcessInClientInner::Release();
     }
@@ -441,6 +442,8 @@ int32_t AudioProcessInClientInner::SetVolume(float vol)
     int32_t volumeInt = static_cast<int32_t>(vol * PROCESS_VOLUME_MAX);
     int32_t ret = SetVolume(volumeInt);
     if (ret == SUCCESS) {
+        SaveAdjustStreamVolumeInfo(vol, sessionId_, GetTime(),
+            static_cast<uint32_t>(AdjustStreamVolume::STREAM_VOLUME_INFO));
         volumeInFloat_ = vol;
     }
     return ret;
@@ -457,6 +460,11 @@ int32_t AudioProcessInClientInner::SetMute(bool mute)
     return SUCCESS;
 }
 
+bool AudioProcessInClientInner::GetMute()
+{
+    return std::abs(muteVolumeInFloat_ - 0.0f) <= std::numeric_limits<float>::epsilon();
+}
+
 int32_t AudioProcessInClientInner::SetSourceDuration(int64_t duration)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
@@ -469,8 +477,15 @@ int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
     float maxVol = 1.0f;
     CHECK_AND_RETURN_RET_LOG(vol >= minVol && vol <= maxVol, ERR_INVALID_PARAM,
         "SetDuckVolume failed to with invalid volume:%{public}f", vol);
+    SaveAdjustStreamVolumeInfo(vol, sessionId_, GetTime(),
+        static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO));
     duckVolumeInFloat_ = vol;
     return SUCCESS;
+}
+
+float AudioProcessInClientInner::GetDuckVolume()
+{
+    return duckVolumeInFloat_;
 }
 
 uint32_t AudioProcessInClientInner::GetUnderflowCount()
@@ -625,6 +640,9 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 {
     logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
     auto weakProcess = weak_from_this();
+    std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
+    CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
+    fastStream->ResetCallbackLoopTid();
     callbackLoop_ = std::thread([weakStream, weakProcess] {
         bool keepRunning = true;
         uint64_t curWritePos = 0;
@@ -633,10 +651,12 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
         int64_t clientWriteCost = 0;
         std::shared_ptr<AudioProcessInClientInner> strongProcess = weakProcess.lock();
         std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
+        strongStream->SetCallbackLoopTid(gettid());
         if (strongProcess != nullptr) {
             AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
             strongProcess->processProxy_->RegisterThreadPriority(gettid(),
-                AudioSystemManager::GetInstance()->GetSelfBundleName(strongProcess->processConfig_.appInfo.appUid));
+                AudioSystemManager::GetInstance()->GetSelfBundleName(strongProcess->processConfig_.appInfo.appUid),
+                METHOD_WRITE_OR_READ);
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
         }
@@ -672,7 +692,8 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
         if (strongProcess != nullptr) {
             AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
             strongProcess->processProxy_->RegisterThreadPriority(gettid(),
-                AudioSystemManager::GetInstance()->GetSelfBundleName(strongProcess->processConfig_.appInfo.appUid));
+                AudioSystemManager::GetInstance()->GetSelfBundleName(strongProcess->processConfig_.appInfo.appUid),
+                    METHOD_WRITE_OR_READ);
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
         }
@@ -1208,6 +1229,14 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
         return ERR_OPERATION_FAILED;
     }
 
+    if (callbackLoop_.joinable()) {
+        std::unique_lock<std::mutex> lock(loopThreadLock_);
+        isCallbackLoopEnd_ = true; // change it with lock to break the loop
+        threadStatusCV_.notify_all();
+        lock.unlock(); // should call unlock before join
+        callbackLoop_.join();
+    }
+
     streamStatus_->store(StreamStatus::STREAM_RELEASED);
     AUDIO_INFO_LOG("Success release proc client mode %{public}d.", processConfig_.audioMode);
     isInited_ = false;
@@ -1714,7 +1743,7 @@ void AudioProcessInClientInner::ProcessCallbackFucIndependent()
 {
     AUDIO_INFO_LOG("multi play loop start");
     processProxy_->RegisterThreadPriority(gettid(),
-        AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid));
+        AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
@@ -1867,6 +1896,19 @@ RestoreStatus AudioProcessInClientInner::SetRestoreStatus(RestoreStatus restoreS
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->SetRestoreStatus(restoreStatus);
+}
+
+void AudioProcessInClientInner::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    processProxy_->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
+}
+
+int32_t AudioProcessInClientInner::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
+    BoostTriggerMethod method)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
+    return processProxy_->RegisterThreadPriority(tid, bundleName, method);
 }
 } // namespace AudioStandard
 } // namespace OHOS

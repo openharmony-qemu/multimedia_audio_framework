@@ -361,8 +361,10 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceOutOffload_001, TestSi
     manager->Init();
     manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
     BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     int32_t result = manager->HandleA2dpDeviceOutOffload(a2dpOffloadFlag);
-    EXPECT_EQ(result, manager->HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP));
+    EXPECT_EQ(result, manager->HandleActiveDevice(deviceDescriptor));
     EXPECT_EQ(manager->audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), a2dpOffloadFlag);
 }
 
@@ -837,10 +839,11 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleActiveDevice_001, TestSize.Level
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    DeviceType deviceType = DEVICE_TYPE_NONE;
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(deviceType);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_NONE;
+    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_NONE);
     manager->audioConfigManager_.isUpdateRouteSupported_ = true;
-    int32_t result = manager->HandleActiveDevice(deviceType);
+    int32_t result = manager->HandleActiveDevice(deviceDescriptor);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
 
@@ -854,10 +857,11 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleActiveDevice_002, TestSize.Level
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_EARPIECE);
     manager->audioConfigManager_.isUpdateRouteSupported_ = false;
-    int32_t result = manager->HandleActiveDevice(deviceType);
+    int32_t result = manager->HandleActiveDevice(deviceDescriptor);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -871,10 +875,11 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleActiveDevice_003, TestSize.Level
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    DeviceType deviceType = DEVICE_TYPE_MIC;
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_MIC;
     manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_EARPIECE);
     manager->audioConfigManager_.isUpdateRouteSupported_ = false;
-    int32_t result = manager->HandleActiveDevice(deviceType);
+    int32_t result = manager->HandleActiveDevice(deviceDescriptor);
     EXPECT_EQ(result, SUCCESS);
 }
 

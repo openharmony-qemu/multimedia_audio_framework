@@ -231,7 +231,7 @@ static void SetSinkVolumeBySinkName(pa_sink *s)
         if (IsInnerCapSinkName(s->name)) { // inner capturer only stream volume
             volumeFloat = GetStreamVolume(sessionID);
         } else {
-            struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
+            struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
             volumeFloat = GetCurVolume(sessionID, streamType, s->name, &volumes);
         }
         uint32_t volume = pa_sw_volume_from_linear(volumeFloat);

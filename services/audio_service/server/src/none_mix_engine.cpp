@@ -268,11 +268,10 @@ void NoneMixEngine::AdjustVoipVolume()
     if (isVoip_) {
         uint32_t streamIndx = stream_->GetStreamIndex();
         AudioProcessConfig config = stream_->GetAudioProcessConfig();
-        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(config.streamType);
-        float volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndx);
-        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
-        float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, volumeType, std::string(SINK_ADAPTER_NAME),
-            &volumes);
+        struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+        float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType,
+            std::string(SINK_ADAPTER_NAME), &volumes);
+        float volumeBg = volumes.volumeHistory;
         if ((!firstSetVolume_ && volumeBg != volumeEd) || firstSetVolume_) {
             AUDIO_INFO_LOG("Adjust voip volume");
             AudioVolume::GetInstance()->SetHistoryVolume(streamIndx, volumeEd);
@@ -315,7 +314,7 @@ void NoneMixEngine::MixStreams()
     writeCount_++;
     if (index < 0) {
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_DIRECT_OUT);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_DIRECT_OUT, appUid);
         stream_->ReturnIndex(index);
         failedCount_++;
         if (startFadeout_) {
@@ -326,7 +325,7 @@ void NoneMixEngine::MixStreams()
         ClockTime::RelativeSleep(PERIOD_NS);
         return;
     }
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT, appUid);
     AdjustVoipVolume();
     failedCount_ = 0;
     // fade in or fade out

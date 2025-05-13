@@ -1515,7 +1515,7 @@ napi_value NapiAudioRenderer::SetVolumeWithRamp(napi_env env, napi_callback_info
     NapiParamUtils::GetValueDouble(env, volume, argv[PARAM0]);
     CHECK_AND_RETURN_RET_LOG((volume >= MIN_VOLUME_IN_DOUBLE) && (volume <= MAX_VOLUME_IN_DOUBLE),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: invaild volume index"), "invaild volume index");
+        "Parameter verification failed. Volume param should be in range 0.0-1.0."), "invaild volume index");
 
     int32_t duration;
     NapiParamUtils::GetValueInt32(env, duration, argv[PARAM1]);

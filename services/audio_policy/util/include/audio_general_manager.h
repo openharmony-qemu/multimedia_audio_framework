@@ -46,7 +46,7 @@ public:
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID);
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid = INVALID_UID);
 
     int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback);
@@ -57,8 +57,6 @@ public:
 
     int32_t SetDeviceChangeCallback(const DeviceFlag flag,
         const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback);
-
-    int32_t SetDistribuitedOutputChangeCallback(const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb);
 
     int32_t SetQueryClientTypeCallback(
         const std::shared_ptr<AudioQueryClientTypeCallback>& callback);

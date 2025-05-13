@@ -23,7 +23,6 @@ namespace AudioStandard {
 using namespace std;
 
 #ifdef FEATURE_DEVICE_MANAGER
-constexpr int DEVICE_TYPE_HICAR = 0x0B8;
 constexpr size_t HEAD_LEN = 2;
 constexpr size_t TAIL_LEN = 4;
 
@@ -40,20 +39,29 @@ static string GetExtraDataField(const string &src, const string &field)
         }
     }
     auto value = end == src.length() ? src.substr(pos) : src.substr(pos, end - pos);
-    const string trimStr = "\\\\\\\"";
-    value = value.replace(value.find(trimStr), trimStr.length(), "");
-    value = value.replace(value.find(trimStr), trimStr.length(), "");
-    return value;
+    for (pos = 0; pos < value.length(); pos++) {
+        auto ch = value[pos];
+        if (ch != '\\' && ch != '"') {
+            break;
+        }
+    }
+    for (end = value.length() - 1; end >= 0; end--) {
+        auto ch = value[end];
+        if (ch != '\\' && ch != '"') {
+            break;
+        }
+    }
+    return value.substr(pos, end - pos + 1);
 }
 
 static DmDevice ParseDmDevice(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
 {
-    string carBrand = GetExtraDataField(dmDeviceInfo.extraData, "\\\\\\\"CAR_BRAND\\\\\\\"");
+    string carBrand = GetExtraDataField(dmDeviceInfo.extraData, "\"CAR_BRAND\\");
     CHECK_AND_RETURN_RET_LOG(!carBrand.empty(), {}, "Can not find field: CAR_BRAND");
     return {
         carBrand,
         dmDeviceInfo.networkId,
-        DEVICE_TYPE_HICAR,
+        DistributedHardware::DEVICE_TYPE_CAR,
     };
 }
 
@@ -105,10 +113,7 @@ void DeviceStatusCallbackImpl::OnDeviceOffline(const DistributedHardware::DmDevi
     AUDIO_INFO_LOG("Entry. deviceName=%{public}s, dmDeviceType=%{public}d, networkId=%{public}s, extraData=%{public}s",
         dmDeviceInfo.deviceName, dmDeviceInfo.deviceTypeId,
         Hide(dmDeviceInfo.networkId).c_str(), dmDeviceInfo.extraData.c_str());
-    auto dmDev = ParseDmDevice(dmDeviceInfo);
-    if (!dmDev.deviceName_.empty()) {
-        AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), false);
-    }
+    AudioConnectedDevice::GetInstance().UpdateDmDeviceMap({ .networkId_ = dmDeviceInfo.networkId }, false);
 }
 #endif
 } // namespace AudioStandard

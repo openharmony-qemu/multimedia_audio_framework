@@ -102,6 +102,8 @@ public:
         std::optional<int32_t> userSettedPreferredFrameSize = std::nullopt;
         bool silentModeAndMixWithOthers = false;
         DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
+
+        std::optional<pid_t> lastCallStartByUserTid = std::nullopt;
     };
 
     virtual ~IAudioStream() = default;
@@ -144,11 +146,14 @@ public:
     virtual int32_t SetVolume(float volume) = 0;
     virtual float GetVolume() = 0;
     virtual int32_t SetDuckVolume(float volume) = 0;
+    virtual float GetDuckVolume() = 0;
     virtual int32_t SetMute(bool mute) = 0;
+    virtual bool GetMute() = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
     virtual int32_t SetSpeed(float speed) = 0;
+    virtual int32_t SetPitch(float pitch) = 0;
     virtual float GetSpeed() = 0;
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
@@ -295,6 +300,12 @@ public:
     virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
 
     virtual void FetchDeviceForSplitStream() = 0;
+
+    virtual void SetCallStartByUserTid(pid_t tid) = 0;
+
+    virtual void SetCallbackLoopTid(int32_t tid) = 0;
+
+    virtual int32_t GetCallbackLoopTid() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

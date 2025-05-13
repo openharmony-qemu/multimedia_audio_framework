@@ -26,7 +26,7 @@ enum PA_PIPE_TYPE {
     PA_PIPE_TYPE_MULTICHANNEL
 };
 
-void RecordPaSilenceState(uint32_t sessionId, bool isSilence, enum PA_PIPE_TYPE paPipeType);
+void RecordPaSilenceState(uint32_t sessionId, bool isSilence, enum PA_PIPE_TYPE paPipeType, uint32_t uid);
 
 #ifdef __cplusplus
 }

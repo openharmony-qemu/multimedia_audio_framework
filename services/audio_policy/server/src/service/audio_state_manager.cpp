@@ -29,6 +29,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+const int32_t AUDIO_UID = 1041;
+const int32_t ANCO_SERVICE_BROKER_UID = 5557;
 
 void AudioStateManager::SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
@@ -37,41 +39,43 @@ void AudioStateManager::SetPreferredMediaRenderDevice(const std::shared_ptr<Audi
 }
 
 void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-    const int32_t pid)
+    const int32_t uid, const std::string caller)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("deviceType: %{public}d, pid: %{public}d", deviceDescriptor->deviceType_, pid);
     
-    int32_t callerPid = pid;
-    auto callerUid = IPCSkeleton::GetCallingUid();
+    int32_t callerUid = uid;
+    auto callerPid = IPCSkeleton::GetCallingPid();
     std::string bundleName = GetBundleNameFromUid(callerUid);
-    AUDIO_INFO_LOG("uid: %{public}u, callerPid: %{public}d, bundle name: %{public}s",
-        callerUid, callerPid, bundleName.c_str());
+    AUDIO_INFO_LOG(
+        "deviceType: %{public}d, uid: %{public}d, callerPid: %{public}d, bundle name: %{public}s, caller: %{public}s",
+        deviceDescriptor->deviceType_, callerUid, callerPid, bundleName.c_str(), caller.c_str());
     if (audioClientInfoMgrCallback_ != nullptr) {
         audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid);
     }
-    AUDIO_INFO_LOG("check result pid: %{public}d", callerPid);
+    AUDIO_INFO_LOG("check result uid: %{public}d", callerUid);
     if (deviceDescriptor->deviceType_ == DEVICE_TYPE_NONE) {
-        if (callerPid == CLEAR_PID) {
+        if (callerUid == CLEAR_UID) {
             // clear all
             forcedDeviceMapList_.clear();
-        } else if (callerPid == SYSTEM_PID) {
-            // clear equal ownerPid_ and SYSTEM_PID
-            RemoveForcedDeviceMapData(ownerPid_);
-            RemoveForcedDeviceMapData(SYSTEM_PID);
+        } else if (callerUid == SYSTEM_UID) {
+            // clear equal ownerUid_ and SYSTEM_UID
+            RemoveForcedDeviceMapData(ownerUid_);
+            RemoveForcedDeviceMapData(SYSTEM_UID);
         } else {
-            // clear equal pid
-            RemoveForcedDeviceMapData(callerPid);
+            // clear equal uid
+            RemoveForcedDeviceMapData(callerUid);
         }
     } else {
         std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> currentDeviceMap;
-        if (callerPid == SYSTEM_PID && ownerPid_ != 0) {
-            RemoveForcedDeviceMapData(ownerPid_);
-            currentDeviceMap = {{ownerPid_, deviceDescriptor}};
-        } else {
-            RemoveForcedDeviceMapData(callerPid);
-            currentDeviceMap = {{callerPid, deviceDescriptor}};
+        if (callerUid == SYSTEM_UID && ownerUid_ != 0) {
+            RemoveForcedDeviceMapData(ownerUid_);
+            currentDeviceMap = {{ownerUid_, deviceDescriptor}};
+            forcedDeviceMapList_.push_back(currentDeviceMap);
         }
+
+        RemoveForcedDeviceMapData(callerUid);
+        currentDeviceMap = {{callerUid, deviceDescriptor}};
+        
         forcedDeviceMapList_.push_back(currentDeviceMap);
     }
 }
@@ -152,22 +156,23 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevi
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (ownerPid_ == 0) {
+    if (ownerUid_ == 0) {
         if (!forcedDeviceMapList_.empty()) {
-            AUDIO_INFO_LOG("deviceType: %{public}d",
-                forcedDeviceMapList_.rbegin()->begin()->second->deviceType_);
+            AUDIO_INFO_LOG("ownerUid_: 0, deviceType: %{public}d, Uid: %{public}d",
+                forcedDeviceMapList_.rbegin()->begin()->second->deviceType_,
+                forcedDeviceMapList_.rbegin()->begin()->first);
             return make_shared<AudioDeviceDescriptor>(std::move(forcedDeviceMapList_.rbegin()->begin()->second));
         }
     } else {
         for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
-            if (ownerPid_ == it->begin()->first) {
-                AUDIO_INFO_LOG("deviceType: %{public}d, ownerPid_: %{public}d", it->begin()->second->deviceType_,
-                    ownerPid_);
+            if (ownerUid_ == it->begin()->first) {
+                AUDIO_INFO_LOG("deviceType: %{public}d, ownerUid_: %{public}d", it->begin()->second->deviceType_,
+                    ownerUid_);
                 return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
             }
         }
         for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
-            if (SYSTEM_PID == it->begin()->first) {
+            if (SYSTEM_UID == it->begin()->first) {
                 AUDIO_INFO_LOG("bluetooth already force selected, deviceType: %{public}d",
                     it->begin()->second->deviceType_);
                 return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
@@ -264,15 +269,13 @@ bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
     return false;
 }
 
-int32_t AudioStateManager::GetAudioSceneOwnerPid()
+void AudioStateManager::SetAudioSceneOwnerUid(const int32_t uid)
 {
-    return ownerPid_;
-}
-
-void AudioStateManager::SetAudioSceneOwnerPid(const int32_t pid)
-{
-    AUDIO_INFO_LOG("ownerPid_: %{public}d, pid: %{public}d", ownerPid_, pid);
-    ownerPid_ = pid;
+    AUDIO_INFO_LOG("ownerUid_: %{public}d, uid: %{public}d", ownerUid_, uid);
+    ownerUid_ = uid;
+    if (uid == AUDIO_UID) {
+        ownerUid_ = ANCO_SERVICE_BROKER_UID;
+    }
 }
 
 int32_t AudioStateManager::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
@@ -304,14 +307,14 @@ const std::string AudioStateManager::GetBundleNameFromUid(int32_t uid)
     return bundleName;
 }
 
-void AudioStateManager::RemoveForcedDeviceMapData(int32_t pid)
+void AudioStateManager::RemoveForcedDeviceMapData(int32_t uid)
 {
     if (forcedDeviceMapList_.empty()) {
         return;
     }
     auto it = forcedDeviceMapList_.begin();
     while (it != forcedDeviceMapList_.end()) {
-        if (pid == it->begin()->first) {
+        if (uid == it->begin()->first) {
             it = forcedDeviceMapList_.erase(it);
         } else {
             it++;

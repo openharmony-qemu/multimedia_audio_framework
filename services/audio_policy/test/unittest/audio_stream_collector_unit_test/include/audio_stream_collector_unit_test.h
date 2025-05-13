@@ -24,6 +24,7 @@
 #include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
 #include "audio_concurrency_service.h"
+#include "audio_renderer_proxy_obj.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -182,9 +182,10 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     AUDIO_INFO_LOG("In, name: %{public}s", moduleName.c_str());
     uint32_t paIndex = 0;
     AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
-    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
-        "OpenAudioPort failed %{public}d", ioHandle);
-
+    CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
+    CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+        "OpenAudioPort failed paId[%{public}u]", paIndex);
     std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
     pipeInfo_->id_ = ioHandle;
     pipeInfo_->paIndex_ = paIndex;
@@ -223,7 +224,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     return SUCCESS;
 }
 
-void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync)
+void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync, bool isSleepEnabled)
 {
     if (sinkPortStrToClassStrMap_.count(portName) > 0) {
         // Mute by render sink. (primary、a2dp、usb、dp、offload)
@@ -240,7 +241,9 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
     desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
     DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
 
-    usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
+    if (isSleepEnabled) {
+        usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
+    }
 }
 
 void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)
@@ -314,8 +317,10 @@ int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeI
 
     uint32_t paIndex = 0;
     ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
-    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE,
-        "OpenAudioPort failed %{public}d", ioHandle);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
+    CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+        "OpenAudioPort failed paId[%{public}u]", paIndex);
     AUDIO_INFO_LOG("[open-module] %{public}s, id:%{public}d, paIndex: %{public}u",
         moduleInfo.name.c_str(), ioHandle, paIndex);
 

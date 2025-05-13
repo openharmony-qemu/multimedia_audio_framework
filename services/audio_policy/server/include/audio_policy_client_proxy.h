@@ -47,7 +47,6 @@ public:
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void OnRendererDeviceChange(const uint32_t sessionId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
-    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override;
     void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt) override;
     void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
@@ -63,6 +62,7 @@ public:
     void OnNnStateChange(const int32_t &state) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
     void OnAudioSceneChange(const AudioScene &audioScene) override;
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
     
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;

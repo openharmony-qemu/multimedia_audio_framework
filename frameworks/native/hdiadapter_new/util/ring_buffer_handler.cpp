@@ -18,6 +18,7 @@
 #endif
 
 #include "util/ring_buffer_handler.h"
+#include <cstdint>
 #include "securec.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
@@ -38,7 +39,8 @@ void RingBufferHandler::Init(const uint32_t sampleRate, const uint32_t channelCo
     std::lock_guard<std::mutex> lock(mutex_);
     perFrameLength_ = ((sampleRate * onceFrameNum) / PER_FRAME_LENGTH_RATE) * channelCount * formatBytes;
     maxBufferSize_ = perFrameLength_ * maxFrameNum;
-    CHECK_AND_RETURN_LOG(maxBufferSize_ > 0, "invalid param, maxBufferSize: %{public}u", maxBufferSize_);
+    CHECK_AND_RETURN_LOG(maxBufferSize_ > 0 && maxBufferSize_ <= UINT32_MAX, "invalid param, maxBufferSize: %{public}u",
+        maxBufferSize_);
     maxFrameNum_ = maxFrameNum;
 
     buffer_ = new uint8_t[maxBufferSize_];

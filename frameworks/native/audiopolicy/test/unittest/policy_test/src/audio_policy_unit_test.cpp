@@ -493,18 +493,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_002, Te
 }
 
 /**
- * @tc.name  : Test Audio_Policy_Manager_SetDistribuitedOutputChangeCallback_001 via illegal state
- * @tc.number: Audio_Policy_Manager_SetDistribuitedOutputChangeCallback_001
- * @tc.desc  : Test SetDistribuitedOutputChangeCallback interface. Returns invalid.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDistribuitedOutputChangeCallback_001, TestSize.Level1)
-{
-    auto cb = make_shared<AudioDistribuitedOutputChangeCallbackTest>();
-    int32_t ret = AudioPolicyManager::GetInstance().SetDistribuitedOutputChangeCallback(cb);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_Manager_SetAudioManagerInterruptCallback_001 via illegal state
  * @tc.number: Audio_Policy_Manager_SetAudioManagerInterruptCallback_001
  * @tc.desc  : Test SetAudioManagerInterruptCallback interface. Returns invalid.
@@ -1704,6 +1692,64 @@ HWTEST(AudioPolicyUnitTest, UpdateTracker_005, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioPolicyManager::GetInstance().UpdateTracker(audioMode, streamChangeInfo);
     EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetAudioFormatUnsupportedErrorCallback
+ * @tc.number: Audio_Policy_Manager_SetAudioFormatUnsupportedErrorCallback_001
+ * @tc.desc  : Test SetAudioFormatUnsupportedErrorCallback interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetAudioFormatUnsupportedErrorCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioFormatUnsupportedErrorCallback> callback =
+        std::make_shared<AudioFormatUnsupportedErrorCallbackTest>();
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioFormatUnsupportedErrorCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetAudioFormatUnsupportedErrorCallback();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetAudioFormatUnsupportedErrorCallback
+ * @tc.number: Audio_Policy_Manager_SetAudioFormatUnsupportedErrorCallback_002
+ * @tc.desc  : Test SetAudioFormatUnsupportedErrorCallback interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetAudioFormatUnsupportedErrorCallback_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioFormatUnsupportedErrorCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioFormatUnsupportedErrorCallback(callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetAudioFormatUnsupportedErrorCallback();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Render_Error_001 via legal state
+ * @tc.number: Audio_Render_Error_001
+ * @tc.desc  : Test AudioRenderErrorListenerStub interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Render_Error_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPolicyClientStubImpl> renderErrorStub =
+        std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioFormatUnsupportedErrorCallbackTest> callback =
+        std::make_shared<AudioFormatUnsupportedErrorCallbackTest>();
+    AudioErrors errorCode = AudioErrors::ERROR_UNSUPPORTED_FORMAT;
+
+    renderErrorStub->OnFormatUnsupportedError(errorCode);
+
+    renderErrorStub->AddAudioFormatUnsupportedErrorCallback(callback);
+
+    renderErrorStub->OnFormatUnsupportedError(errorCode);
+
+    uint32_t code = static_cast<uint32_t>(AudioPolicyClientCode::ON_FORMAT_UNSUPPORTED_ERROR);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    int ret = renderErrorStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_LE(ret, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

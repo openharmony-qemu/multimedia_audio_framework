@@ -1261,5 +1261,37 @@ HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_008, T
     bool ret = audioPolicyServerHandler_->SendConcurrencyEventWithSessionIDCallback(sessionId);
     EXPECT_NE(ret, false);
 }
+
+/**
+ * @tc.name  : SendFormatUnsupportedErrorEvent_001
+ * @tc.number: SendFormatUnsupportedErrorEvent_001
+ * @tc.desc  : Test SendFormatUnsupportedErrorEvent method when send FormatUnsupportedError.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendFormatUnsupportedErrorEvent_001, TestSize.Level1)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    AudioErrors errorCode = ERROR_UNSUPPORTED_FORMAT;
+    bool ret = audioPolicyServerHandler_->SendFormatUnsupportedErrorEvent(errorCode);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : HandleFormatUnsupportedErrorEvent_001
+ * @tc.number: HandleFormatUnsupportedErrorEvent_001
+ * @tc.desc  : Test HandleFormatUnsupportedErrorEvent function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleFormatUnsupportedErrorEvent_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 1;
+    sptr<AudioPolicyClientStubImpl> cb;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::FORMAT_UNSUPPORTED_ERROR, 0);
+    audioPolicyServerHandler_->HandleFormatUnsupportedErrorEvent(event);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

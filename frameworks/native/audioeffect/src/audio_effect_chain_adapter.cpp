@@ -168,9 +168,8 @@ int32_t EffectChainManagerMultichannelUpdate(const char *sceneType)
 int32_t EffectChainManagerVolumeUpdate(const char *sessionID)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    if (audioEffectChainManager->EffectVolumeUpdate(audioEffectVolume) != SUCCESS) {
+    if (audioEffectChainManager->EffectVolumeUpdate() != SUCCESS) {
         return ERROR;
     }
     return SUCCESS;
@@ -240,15 +239,12 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
     std::string sceneTypeString = "";
     std::string sessionIDString = "";
     std::string sceneModeString = "";
-    std::string spatializationEnabledString = "";
 
-    if (sceneType && pack.channelLayout && sessionID && pack.sceneMode &&
-        pack.spatializationEnabled && pack.streamUsage && pack.systemVolumeType) {
+    if (sceneType && pack.channelLayout && sessionID && pack.sceneMode && pack.streamUsage) {
         sceneTypeString = sceneType;
         channelLayoutNum = std::strtoull(pack.channelLayout, nullptr, BASE_TEN);
         sessionIDString = sessionID;
         sceneModeString = pack.sceneMode;
-        spatializationEnabledString = pack.spatializationEnabled;
         streamUsage = static_cast<int32_t>(std::strtol(pack.streamUsage, nullptr, BASE_TEN));
         systemVolumeType = static_cast<int32_t>(std::strtol(pack.systemVolumeType, nullptr, BASE_TEN));
     } else {
@@ -261,7 +257,6 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
     info.sceneType = sceneTypeString;
     info.channels = pack.channels;
     info.channelLayout = channelLayoutNum;
-    info.spatializationEnabled = spatializationEnabledString;
     info.streamUsage = streamUsage;
     info.systemVolumeType = systemVolumeType;
     return audioEffectChainManager->SessionInfoMapAdd(sessionIDString, info);

@@ -229,8 +229,11 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             overFlowLogFlag_ = 0;
         }
         overFlowLogFlag_++;
-        BufferDesc dstBuffer = stream_->DequeueBuffer(length);
-        stream_->EnqueueBuffer(dstBuffer);
+        int32_t engineFlag = GetEngineFlag();
+        if (engineFlag != 1) {
+            BufferDesc dstBuffer = stream_->DequeueBuffer(length);
+            stream_->EnqueueBuffer(dstBuffer);
+        }
         stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
         return true;
     }
@@ -292,6 +295,57 @@ int32_t CapturerInServer::OnReadData(size_t length)
 {
     Trace trace(traceTag_ + "::OnReadData:" + std::to_string(length));
     ReadData(length);
+    return SUCCESS;
+}
+
+int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
+{
+    CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
+        "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
+    uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
+    if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
+        return ERR_READ_FAILED;
+    }
+    Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
+    OptResult result = ringCache_->GetWritableSize();
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
+        "RingCache write invalid size %{public}zu", result.size);
+
+    BufferDesc srcBuffer = {reinterpret_cast<uint8_t *>(outputData), requestDataLen, 0};
+
+    ringCache_->Enqueue({srcBuffer.buffer, srcBuffer.bufLength});
+    result = ringCache_->GetReadableSize();
+    if (result.ret != OPERATION_SUCCESS || result.size < spanSizeInBytes_) {
+        return SUCCESS;
+    }
+
+    BufferDesc dstBuffer = {nullptr, 0, 0};
+    uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
+    if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
+        return ERR_READ_FAILED;
+    }
+    if ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
+        LEGACY_MUTE_CAP) || muteFlag_) {
+        dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
+    }
+    if (muteFlag_) {
+        memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
+    }
+    ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
+    VolumeTools::DfxOperation(dstBuffer, processConfig_.streamInfo, traceTag_, volumeDataCount_);
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+            static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
+    }
+
+    uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
+    audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
+    audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
+
+    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
     return SUCCESS;
 }
 
@@ -389,7 +443,7 @@ int32_t CapturerInServer::StartInner()
     std::unique_lock<std::mutex> lock(statusLock_);
 
     if (status_ != I_STATUS_IDLE && status_ != I_STATUS_PAUSED && status_ != I_STATUS_STOPPED) {
-        AUDIO_ERR_LOG("CapturerInServer::Start failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Start failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -420,7 +474,7 @@ int32_t CapturerInServer::Pause()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED) {
-        AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     if (needCheckBackground_) {
@@ -429,6 +483,7 @@ int32_t CapturerInServer::Pause()
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
     return SUCCESS;
 }
 
@@ -442,7 +497,7 @@ int32_t CapturerInServer::Flush()
     } else if (status_ == I_STATUS_STOPPED) {
         status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
-        AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -477,7 +532,7 @@ int32_t CapturerInServer::Stop()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
-        AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_);
+        AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;
@@ -488,6 +543,7 @@ int32_t CapturerInServer::Stop()
 
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     return SUCCESS;
 }
 

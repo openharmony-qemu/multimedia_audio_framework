@@ -71,7 +71,8 @@ public:
     virtual void SetAudioBalanceValue(float audioBalance) = 0;
     virtual int32_t SetSinkMuteForSwitchDevice(bool mute) SUCCESS_RET
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
+        bool scoExcludeFlag = false) = 0;
     virtual int32_t GetAudioScene(void) = 0;
 
     virtual int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) = 0;
@@ -98,6 +99,7 @@ public:
     // offload extend function
     virtual int32_t Drain(AudioDrainType type) NOT_SUPPORT_RET
     virtual void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> callback) {}
+    virtual void RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) {}
     virtual int32_t SetBufferSize(uint32_t sizeMs) NOT_SUPPORT_RET
     virtual int32_t LockOffloadRunningLock(void) NOT_SUPPORT_RET
     virtual int32_t UnLockOffloadRunningLock(void) NOT_SUPPORT_RET
@@ -108,6 +110,8 @@ public:
         
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
+    // for a2dp_offload connection state
+    virtual int32_t UpdatePrimaryConnectionState(uint32_t operation) NOT_SUPPORT_RET;
 };
 
 } // namespace AudioStandard

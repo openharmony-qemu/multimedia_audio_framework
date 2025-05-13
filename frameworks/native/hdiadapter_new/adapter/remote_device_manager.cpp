@@ -313,7 +313,11 @@ void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *pa
 
     sptr<IAudioRender> render = nullptr;
     int32_t ret = wrapper->adapter_->CreateRender(remoteDeviceDesc, remoteParam, render, hdiRenderId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && render != nullptr, nullptr, "create render fail");
+    if (ret != SUCCESS || render == nullptr) {
+        AUDIO_ERR_LOG("create render fail");
+        wrapper->isValid_ = false;
+        return nullptr;
+    }
     IAudioRender *rawRender = render.GetRefPtr();
     render.ForceSetRefPtr(nullptr);
     AUDIO_INFO_LOG("create render success, hdiRenderId: %{public}u, desc: %{public}s", hdiRenderId,
@@ -331,7 +335,13 @@ void RemoteDeviceManager::DestroyRender(const std::string &adapterName, uint32_t
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         adapterName.c_str());
-    CHECK_AND_RETURN_LOG(wrapper->hdiRenderIds_.count(hdiRenderId) != 0, "render not exist");
+    if (wrapper->hdiRenderIds_.count(hdiRenderId) == 0) {
+        AUDIO_ERR_LOG("render not exist");
+        if (!wrapper->isValid_) {
+            UnloadAdapter(adapterName);
+        }
+        return;
+    }
     wrapper->adapter_->DestroyRender(hdiRenderId);
 
     std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
@@ -353,7 +363,11 @@ void *RemoteDeviceManager::CreateCapture(const std::string &adapterName, void *p
 
     sptr<IAudioCapture> capture = nullptr;
     int32_t ret = wrapper->adapter_->CreateCapture(remoteDeviceDesc, remoteParam, capture, hdiCaptureId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && capture != nullptr, nullptr, "create capture fail");
+    if (ret != SUCCESS || capture == nullptr) {
+        AUDIO_ERR_LOG("create capture fail");
+        wrapper->isValid_ = false;
+        return nullptr;
+    }
     IAudioCapture *rawCapture = capture.GetRefPtr();
     capture.ForceSetRefPtr(nullptr);
     AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId,
@@ -371,7 +385,13 @@ void RemoteDeviceManager::DestroyCapture(const std::string &adapterName, uint32_
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         adapterName.c_str());
-    CHECK_AND_RETURN_LOG(wrapper->hdiCaptureIds_.count(hdiCaptureId) != 0, "capture not exist");
+    if (wrapper->hdiCaptureIds_.count(hdiCaptureId) == 0) {
+        AUDIO_ERR_LOG("capture not exist");
+        if (!wrapper->isValid_) {
+            UnloadAdapter(adapterName);
+        }
+        return;
+    }
     wrapper->adapter_->DestroyCapture(hdiCaptureId);
 
     std::lock_guard<std::mutex> lock(wrapper->captureMtx_);

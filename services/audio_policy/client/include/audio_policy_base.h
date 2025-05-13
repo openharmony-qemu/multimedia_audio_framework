@@ -89,7 +89,7 @@ public:
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
         sptr<AudioCapturerFilter> audioCapturerFilter) = 0;
 
-    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t pid = INVALID_PID) = 0;
+    virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID) = 0;
 
     virtual bool IsDeviceActive(InternalDeviceType deviceType) = 0;
 
@@ -357,26 +357,21 @@ public:
 
     virtual int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) = 0;
 
-    virtual int32_t SetSystemVolumeLevelForZone(const int32_t zoneId, const AudioVolumeType volumeType,
-        const int32_t volumeLevel, const int32_t volumeFlag = 0) = 0;
-
-    virtual int32_t GetSystemVolumeLevelForZone(int32_t zoneId, AudioVolumeType volumeType) = 0;
-
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;
 
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
-        int32_t zoneId, int32_t deviceId) = 0;
+        int32_t zoneId, const std::string &deviceTag) = 0;
 
-    virtual int32_t EnableAudioZoneInterruptReport(int32_t zoneId, int32_t deviceId, bool enable) = 0;
+    virtual int32_t EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable) = 0;
 
     virtual int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
     
-    virtual int32_t InjectInterruptToAudioZone(int32_t zoneId, int32_t deviceId,
+    virtual int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
 
     virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t pid = INVALID_PID) = 0;
+        const int32_t uid = INVALID_UID) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() = 0;
 
@@ -408,7 +403,7 @@ public:
     virtual int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason) = 0;
 
     virtual int32_t SetPreferredDevice(const PreferredType preferredType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t pid = INVALID_PID) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid = INVALID_UID) = 0;
 
     virtual int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) = 0;
 
@@ -459,6 +454,11 @@ public:
     virtual int32_t SetVirtualCall(const bool isVirtual) = 0;
 
     virtual int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
+        const StreamUsage &streamUsage) = 0;
+    
+    virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

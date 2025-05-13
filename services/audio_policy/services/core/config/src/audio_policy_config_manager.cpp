@@ -25,6 +25,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr int32_t MS_PER_S = 1000;
+static const unsigned int BUFFER_CALC_20MS = 20;
 static const char* MAX_RENDERERS_NAME = "maxRenderers";
 static const char* MAX_CAPTURERS_NAME = "maxCapturers";
 static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
@@ -32,6 +34,9 @@ static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
 const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
 const int32_t DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
+
+const uint32_t PC_MIC_CHANNEL_NUM = 4;
+const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
 bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
@@ -128,6 +133,11 @@ void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
     AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
+}
+
+void AudioPolicyConfigManager::OnUpdateEac3Support(bool isSupported)
+{
+    isSupportEac3_ = isSupported;
 }
 
 void AudioPolicyConfigManager::OnHasEarpiece()
@@ -374,6 +384,25 @@ void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(
             info = streamProp;
         }
     }
+
+    if (AudioEcManager::GetInstance().GetEcFeatureEnable()) {
+        if (desc->newDeviceDescs_.front() != nullptr &&
+            desc->newDeviceDescs_.front()->deviceType_ != DEVICE_TYPE_MIC &&
+            info->channelLayout_ == PC_MIC_CHANNEL_NUM) {
+            // only built-in mic can use 4 channel, update later by using xml to describe
+            info->channels_ = static_cast<AudioChannel>(HEADPHONE_CHANNEL_NUM);
+            info->channelLayout_ = CH_LAYOUT_STEREO;
+        }
+    }
+
+#ifndef IS_EMULATOR
+    // need change to use profile for all devices later
+    if (isUpdateRouteSupported_) {
+        uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(info->format_);
+        info->bufferSize_ = BUFFER_CALC_20MS * info->sampleRate_ / static_cast<uint32_t>(MS_PER_S)
+            * info->channels_ * sampleFormatBits;
+    }
+#endif
 }
 
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
@@ -451,6 +480,53 @@ bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_NORMAL) ||
         (routeFlag & AUDIO_INPUT_FLAG_WAKEUP)) {
         return true;
+    }
+    return false;
+}
+
+DirectPlaybackMode AudioPolicyConfigManager::GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
+    const AudioStreamInfo &streamInfo)
+{
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
+        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED, "Find device failed");
+    CHECK_AND_RETURN_RET_LOG(streamInfo.encoding != ENCODING_EAC3 || desc->deviceType_ == DEVICE_TYPE_HDMI ||
+        desc->deviceType_ == DEVICE_TYPE_LINE_DIGITAL, DIRECT_PLAYBACK_NOT_SUPPORTED, "Not support eac3");
+
+    if ((streamInfo.encoding == ENCODING_EAC3) &&
+        (desc->deviceType_ == DEVICE_TYPE_HDMI || desc->deviceType_ == DEVICE_TYPE_LINE_DIGITAL)) {
+        for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+            if (pipeIt.second != nullptr && pipeIt.second->supportEncodingEac3_ &&
+                IsStreamPropMatch(streamInfo, pipeIt.second->streamPropInfos_)) {
+                AUDIO_INFO_LOG("Support encoding type eac3");
+                return DIRECT_PLAYBACK_BITSTREAM_SUPPORTED;
+            }
+        }
+        AUDIO_INFO_LOG("Not support eac3");
+    }
+
+    if (streamInfo.encoding == ENCODING_PCM) {
+        for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+            if ((pipeIt.first & AUDIO_OUTPUT_FLAG_DIRECT) && pipeIt.second != nullptr &&
+                IsStreamPropMatch(streamInfo, pipeIt.second->streamPropInfos_)) {
+                AUDIO_INFO_LOG("Support encoding type pcm");
+                return DIRECT_PLAYBACK_PCM_SUPPORTED;
+            }
+        }
+        AUDIO_INFO_LOG("Not support pcm");
+    }
+
+    return DIRECT_PLAYBACK_NOT_SUPPORTED;
+}
+
+bool AudioPolicyConfigManager::IsStreamPropMatch(const AudioStreamInfo &streamInfo,
+    std::list<std::shared_ptr<PipeStreamPropInfo>> &infos)
+{
+    for (auto info : infos) {
+        if (info != nullptr && info->format_ == streamInfo.format && info->sampleRate_ == streamInfo.samplingRate &&
+            info->channels_ == streamInfo.channels) {
+            return true;
+        }
     }
     return false;
 }

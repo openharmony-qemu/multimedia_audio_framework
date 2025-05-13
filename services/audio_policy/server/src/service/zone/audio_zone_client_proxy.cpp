@@ -91,7 +91,7 @@ void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId,
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "send request failed, error: %{public}d", error);
 }
 
-void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId, int32_t deviceId,
+void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId, const std::string &deviceTag,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
     AudioZoneInterruptReason reason)
 {
@@ -101,7 +101,7 @@ void AudioZoneClientProxy::OnInterruptEvent(int32_t zoneId, int32_t deviceId,
     CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()), "write interface token failed");
 
     data.WriteInt32(zoneId);
-    data.WriteInt32(deviceId);
+    data.WriteString(deviceTag);
     data.WriteInt32(static_cast<int32_t>(interrupts.size()));
     for (const auto &it : interrupts) {
         AudioInterrupt::Marshalling(data, it.first);

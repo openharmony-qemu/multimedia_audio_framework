@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioBluetoothManager"
 #endif
 
+#include <shared_mutex>
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
 #include "audio_errors.h"
@@ -37,10 +38,10 @@ std::shared_ptr<AudioA2dpListener> AudioA2dpManager::a2dpListener_ = std::make_s
 int AudioA2dpManager::connectionState_ = static_cast<int>(BTConnectState::DISCONNECTED);
 int32_t AudioA2dpManager::captureConnectionState_ = static_cast<int32_t>(BTHdapConnectState::DISCONNECTED);
 BluetoothRemoteDevice AudioA2dpManager::activeA2dpDevice_;
-std::mutex g_a2dpInstanceLock;
+std::shared_mutex g_a2dpInstanceLock;
 HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
 std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
-AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
+std::atomic<AudioScene> AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 AudioScene AudioHfpManager::sceneFromPolicy_ = AUDIO_SCENE_DEFAULT;
 OHOS::Bluetooth::ScoCategory AudioHfpManager::scoCategory = OHOS::Bluetooth::ScoCategory::SCO_DEFAULT;
 OHOS::Bluetooth::RecognitionStatus AudioHfpManager::recognitionStatus =
@@ -50,7 +51,7 @@ BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
-std::mutex g_hfpInstanceLock;
+std::shared_mutex g_hfpInstanceLock;
 std::mutex g_a2dpPlayingStateChangedLock;
 static const int32_t BT_SET_ACTIVE_DEVICE_TIMEOUT = 8; //BtService SetActiveDevice 8s timeout
 
@@ -109,7 +110,7 @@ static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioSt
 void AudioA2dpManager::RegisterBluetoothA2dpListener()
 {
     AUDIO_INFO_LOG("AudioA2dpManager::RegisterBluetoothA2dpListener");
-    std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
+    std::lock_guard<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     a2dpInstance_ = A2dpSource::GetProfile();
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "Failed to obtain A2DP profile instance");
     a2dpInstance_->RegisterObserver(a2dpListener_);
@@ -118,7 +119,7 @@ void AudioA2dpManager::RegisterBluetoothA2dpListener()
 void AudioA2dpManager::UnregisterBluetoothA2dpListener()
 {
     AUDIO_INFO_LOG("AudioA2dpManager::UnregisterBluetoothA2dpListener");
-    std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
+    std::lock_guard<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
 
     a2dpInstance_->DeregisterObserver(a2dpListener_);
@@ -149,6 +150,7 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSink()
 
 void AudioA2dpManager::DisconnectBluetoothA2dpSource()
 {
+    CHECK_AND_RETURN_LOG(a2dpListener_ != nullptr, "a2dpListener_ is nullptr");
     int captureConnectionState = static_cast<int>(BTHdapConnectState::DISCONNECTED);
     auto a2dpInList = A2dpInBluetoothDeviceManager::GetAllA2dpInBluetoothDevice();
     A2dpCodecInfo defaultCodecInfo = {};
@@ -161,11 +163,10 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSource()
 
 int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
 {
-    std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     AUDIO_WARNING_LOG("incoming device:%{public}s, current device:%{public}s",
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeA2dpDevice_.GetDeviceAddr()).c_str());
-    a2dpInstance_ = A2dpSource::GetProfile();
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "Failed to obtain A2DP profile instance");
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
     BluetoothRemoteDevice device;
     if (macAddress != "") {
         int32_t tmp = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
@@ -181,9 +182,8 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
 
 std::string AudioA2dpManager::GetActiveA2dpDevice()
 {
-    std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
-    a2dpInstance_ = A2dpSource::GetProfile();
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, "", "Failed to obtain A2DP profile instance");
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, "", "A2DP profile instance is null");
     BluetoothRemoteDevice device = a2dpInstance_->GetActiveSinkDevice();
     return device.GetDeviceAddr();
 }
@@ -199,9 +199,8 @@ int32_t AudioA2dpManager::SetDeviceAbsVolume(const std::string& macAddress, int3
 int32_t AudioA2dpManager::GetA2dpDeviceStreamInfo(const std::string& macAddress,
     AudioStreamInfo &streamInfo)
 {
-    std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
-    a2dpInstance_ = A2dpSource::GetProfile();
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "Failed to obtain A2DP profile instance");
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
     BluetoothRemoteDevice device;
     int32_t ret = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
@@ -222,8 +221,8 @@ int32_t AudioA2dpManager::GetA2dpInDeviceStreamInfo(const std::string &macAddres
 
 bool AudioA2dpManager::HasA2dpDeviceConnected()
 {
-    a2dpInstance_ = A2dpSource::GetProfile();
-    CHECK_AND_RETURN_RET(a2dpInstance_, false);
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, false, "A2DP profile instance is null");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
     a2dpInstance_->GetDevicesByStates(states, devices);
@@ -233,6 +232,8 @@ bool AudioA2dpManager::HasA2dpDeviceConnected()
 
 int32_t AudioA2dpManager::A2dpOffloadSessionRequest(const std::vector<A2dpStreamInfo> &info)
 {
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
     CHECK_AND_RETURN_RET_LOG(activeA2dpDevice_.GetDeviceAddr() != "00:00:00:00:00:00", A2DP_NOT_OFFLOAD,
         "Invalid mac address, not request, return A2DP_NOT_OFFLOAD.");
     int32_t ret = a2dpInstance_->A2dpOffloadSessionRequest(activeA2dpDevice_, info);
@@ -242,6 +243,8 @@ int32_t AudioA2dpManager::A2dpOffloadSessionRequest(const std::vector<A2dpStream
 
 int32_t AudioA2dpManager::OffloadStartPlaying(const std::vector<int32_t> &sessionsID)
 {
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
     CHECK_AND_RETURN_RET_LOG(activeA2dpDevice_.GetDeviceAddr() != "00:00:00:00:00:00", ERROR,
         "Invalid mac address, not start, return error.");
     AUDIO_DEBUG_LOG("Start playing %{public}zu stream", sessionsID.size());
@@ -250,6 +253,8 @@ int32_t AudioA2dpManager::OffloadStartPlaying(const std::vector<int32_t> &sessio
 
 int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &sessionsID)
 {
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
     if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
         AUDIO_DEBUG_LOG("Invalid mac address, not stop, return error.");
         return ERROR;
@@ -260,6 +265,8 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
 
 int32_t AudioA2dpManager::GetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
 {
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
     if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
         AUDIO_DEBUG_LOG("Invalid mac address, return error.");
         return ERROR;
@@ -285,10 +292,9 @@ void AudioA2dpManager::OnA2dpPlayingStateChanged(const std::string &deviceAddres
 
 void AudioA2dpManager::CheckA2dpDeviceReconnect()
 {
-    if (a2dpInstance_ == nullptr) {
-        a2dpInstance_ = A2dpSource::GetProfile();
-    }
-    CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
+    CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance is null");
+    CHECK_AND_RETURN_LOG(a2dpListener_ != nullptr, "a2dpListener_ is nullptr");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
     a2dpInstance_->GetDevicesByStates(states, devices);
@@ -316,6 +322,7 @@ void AudioA2dpManager::CheckA2dpDeviceReconnect()
 
 int32_t AudioA2dpManager::Connect(const std::string &macAddress)
 {
+    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance unavailable");
     BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     if (MediaBluetoothDeviceManager::IsA2dpBluetoothDeviceConnecting(macAddress)) {
@@ -413,7 +420,7 @@ void AudioA2dpListener::OnCaptureConnectionStateChanged(const BluetoothRemoteDev
 void AudioHfpManager::RegisterBluetoothScoListener()
 {
     AUDIO_INFO_LOG("AudioHfpManager::RegisterBluetoothScoListener");
-    std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
+    std::lock_guard<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     hfpInstance_ = HandsFreeAudioGateway::GetProfile();
     CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "Failed to obtain HFP AG profile instance");
     hfpInstance_->RegisterObserver(hfpListener_);
@@ -422,7 +429,7 @@ void AudioHfpManager::RegisterBluetoothScoListener()
 void AudioHfpManager::UnregisterBluetoothScoListener()
 {
     AUDIO_INFO_LOG("AudioHfpManager::UnregisterBluetoothScoListene");
-    std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
+    std::lock_guard<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "HFP AG profile instance unavailable");
 
     hfpInstance_->DeregisterObserver(hfpListener_);
@@ -431,9 +438,7 @@ void AudioHfpManager::UnregisterBluetoothScoListener()
 
 void AudioHfpManager::CheckHfpDeviceReconnect()
 {
-    if (hfpInstance_ == nullptr) {
-        hfpInstance_ = HandsFreeAudioGateway::GetProfile();
-    }
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "HFP profile instance unavailable");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices = hfpInstance_->GetDevicesByStates(states);
@@ -460,11 +465,12 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
 
 int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device)
 {
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     bool ret = true;
     if (handleFlag) {
-        int8_t scoCategory = GetScoCategoryFromScene(scene_);
-        if (scoCategory == ScoCategory::SCO_DEFAULT &&
+        int8_t scoCategoryInner = GetScoCategoryFromScene(scene_);
+        if (scoCategoryInner == ScoCategory::SCO_DEFAULT &&
             AudioHfpManager::scoCategory != ScoCategory::SCO_RECOGNITION) {
             AUDIO_INFO_LOG("Recongnition sco connect");
             AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_CONNECTING;
@@ -528,7 +534,7 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         int32_t ret = DisconnectSco();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     }
-    std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     bool res = hfpInstance_->SetActiveDevice(device);
     CHECK_AND_RETURN_RET_LOG(res == true, ERROR, "SetActiveHfpDevice failed, result: %{public}d", res);
@@ -538,7 +544,7 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
 
 std::string AudioHfpManager::GetActiveHfpDevice()
 {
-    std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, "", "HFP AG profile instance unavailable");
     BluetoothRemoteDevice device = hfpInstance_->GetActiveDevice();
     return device.GetDeviceAddr();
@@ -549,6 +555,7 @@ int32_t AudioHfpManager::ConnectScoUponDefaultScene(int8_t category)
     if (category != ScoCategory::SCO_DEFAULT) {
         return SUCCESS;
     }
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     int32_t ret = BluetoothScoManager::HandleScoConnect(ScoCategory::SCO_VIRTUAL);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "ConnectSco failed, result: %{public}d", ret);
@@ -563,7 +570,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     }
 
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
-    int8_t lastScoCategory = GetScoCategoryFromScene(scene_);
+    int8_t lastScoCategory = GetScoCategoryFromScene(scene_.load());
     int8_t newScoCategory = GetScoCategoryFromScene(scene);
     if (newScoCategory == ScoCategory::SCO_VIRTUAL && !IsVirtualCall()) {
         AUDIO_INFO_LOG("Voip change to Call Category");
@@ -577,7 +584,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
         AUDIO_INFO_LOG("sco category %{public}d not change", newScoCategory);
         return SUCCESS;
     }
-    std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     bool isInbardingEnabled = false;
     hfpInstance_->IsInbandRingingEnabled(isInbardingEnabled);
@@ -587,12 +594,10 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     }
     if (lastScoCategory != ScoCategory::SCO_DEFAULT) {
         AUDIO_INFO_LOG("Entered to disConnectSco for last audioScene category.");
-        if (!IsVirtualCall()) {
-            AUDIO_INFO_LOG("voip change to call disconnect sco.");
-            ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_CALLULAR);
+        ret = BluetoothScoManager::HandleScoDisconnect(static_cast<ScoCategory> (lastScoCategory));
+        if (!IsVirtualCall() && lastScoCategory == ScoCategory::SCO_CALLULAR) {
+            AUDIO_INFO_LOG("voip change to disconnect call sco, need setvirtualcall.");
             SetVirtualCall(true);
-        } else {
-            ret = BluetoothScoManager::HandleScoDisconnect(static_cast<ScoCategory> (lastScoCategory));
         }
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
             "ConnectScoWithAudioScene failed as the last SCO failed to be disconnected, result: %{public}d", ret);
@@ -609,7 +614,9 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
 int32_t AudioHfpManager::DisconnectSco()
 {
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
-    int8_t currentScoCategory = GetScoCategoryFromScene(scene_);
+    int8_t currentScoCategory = GetScoCategoryFromScene(scene_.load());
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP profile instance unavailable");
     if (currentScoCategory == ScoCategory::SCO_DEFAULT) {
         CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "nullptr hfpInstance_");
         int32_t ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_VIRTUAL);
@@ -618,8 +625,6 @@ int32_t AudioHfpManager::DisconnectSco()
     }
     AUDIO_INFO_LOG("current sco category %{public}d", currentScoCategory);
 
-    std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
-    CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     int32_t ret;
     if (currentScoCategory == ScoCategory::SCO_VIRTUAL && !IsVirtualCall()) {
         ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_CALLULAR);
@@ -676,14 +681,12 @@ std::string AudioHfpManager::GetCurrentActiveHfpDevice()
 
 void AudioHfpManager::UpdateAudioScene(AudioScene scene)
 {
-    std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
     scene_ = scene;
 }
 
 AudioStandard::AudioScene AudioHfpManager::GetCurrentAudioScene()
 {
-    std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
-    return scene_;
+    return scene_.load();
 }
 
 void AudioHfpManager::SetAudioSceneFromPolicy(AudioScene scene)
@@ -698,6 +701,7 @@ AudioStandard::AudioScene AudioHfpManager::GetPolicyAudioScene()
 
 int32_t AudioHfpManager::Connect(const std::string &macAddress)
 {
+    std::shared_lock<std::shared_mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     if (HfpBluetoothDeviceManager::IsHfpBluetoothDeviceConnecting(macAddress)) {

@@ -143,14 +143,6 @@ napi_value NapiAudioVolumeGroupManager::Init(napi_env env, napi_value exports)
 
 napi_value NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(napi_env env, int32_t groupId)
 {
-    // Check whether the group id is valid.
-    auto groupManager = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-    if (groupManager == nullptr) {
-        AUDIO_ERR_LOG("Failed to get group manager!");
-        NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
-
     napi_status status;
     napi_value result = nullptr;
     napi_value constructor;
@@ -1423,7 +1415,7 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForOutputDevice(napi_env 
         context->outputMaxAmplitude = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxAmplitude(
             context->outputDeviceDescriptor->deviceId_);
         if (FLOAT_COMPARE_EQ(context->outputMaxAmplitude, static_cast<float>(ERR_INVALID_PARAM))) {
-            context->SignError(NAPI_ERR_INVALID_PARAM);
+            context->SignError(NAPI_ERR_INVALID_PARAM, "Parmeter verification faild. OutputDevice not exist.");
         } else if (context->outputMaxAmplitude < 0) {
             context->SignError(NAPI_ERR_SYSTEM);
         } else if (!context->outputBArgTransFlag) {

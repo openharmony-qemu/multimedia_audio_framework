@@ -621,6 +621,9 @@ void AudioEcManager::GetTargetSourceTypeAndMatchingFlag(SourceType source,
         case SOURCE_TYPE_UNPROCESSED:
             targetSource = SOURCE_TYPE_UNPROCESSED;
             break;
+        case SOURCE_TYPE_LIVE:
+            targetSource = SOURCE_TYPE_LIVE;
+            break;
         default:
             targetSource = SOURCE_TYPE_MIC;
             break;

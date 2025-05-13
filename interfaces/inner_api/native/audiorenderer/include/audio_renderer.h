@@ -942,6 +942,13 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
 
     /**
+     * @brief Changes the renderer pitch.
+     * @param Pitch to set. The value type is float, form 0.125 to 4.0.
+     * @since 15
+     */
+    virtual int32_t SetPitch(float pitch) { return 0; }
+
+    /**
      * @brief Get the renderer speed.
      * @since 11
      */

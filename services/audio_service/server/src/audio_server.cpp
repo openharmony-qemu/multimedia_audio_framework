@@ -57,6 +57,8 @@
 #include "offline_stream_in_server.h"
 #include "audio_dump_pcm.h"
 #include "audio_info.h"
+#include "i_hpae_manager.h"
+#include "audio_server_hpae_dump.h"
 
 #define PA
 #ifdef PA
@@ -78,6 +80,7 @@ const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
+const std::string EFFECT_LIVE_KEY = "live_effect";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
@@ -105,6 +108,7 @@ static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
 };
+const int32_t RSS_THRESHOLD = 2;
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;
 enum PermissionStatus {
@@ -130,7 +134,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_REMOTE_CAST,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
-    SOURCE_TYPE_UNPROCESSED
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_LIVE
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
@@ -154,6 +159,7 @@ static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
     SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_LIVE,
 };
 
 static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
@@ -166,6 +172,7 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
     SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_LIVE,
 };
 
 static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
@@ -308,12 +315,23 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         argQue.push(args[index]);
     }
     std::string dumpString;
-
-    AudioServerDump dumpObj;
-    int32_t res = dumpObj.Initialize();
-    CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
-        "Audio Service Dump Not initialised\n");
-    dumpObj.AudioDataDump(dumpString, argQue);
+    int32_t engineFlag = GetEngineFlag();
+    int32_t res = 0;
+    if (engineFlag == 1) {
+        if (hpaeDumpObj_ == nullptr) {
+            hpaeDumpObj_ = std::make_shared<AudioServerHpaeDump>();
+        }
+        res = hpaeDumpObj_->Initialize();
+        CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
+            "Audio Service Hpae Dump Not Initialed");
+        hpaeDumpObj_->AudioDataDump(dumpString, argQue);
+    } else {
+        AudioServerDump dumpObj;
+        res = dumpObj.Initialize();
+        CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
+            "Audio Service Dump Not initialised\n");
+        dumpObj.AudioDataDump(dumpString, argQue);
+    }
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
@@ -348,19 +366,26 @@ void AudioServer::OnStart()
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        HPAE::IHpaeManager::GetHpaeManager().Init();
+        AUDIO_INFO_LOG("IHpaeManager Init\n");
+    } else {
 #ifdef PA
-    int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
-    pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
-    if (ret != 0) {
-        AUDIO_ERR_LOG("pthread_create failed %d", ret);
-        WriteServiceStartupError();
-    }
-    AUDIO_DEBUG_LOG("Created paDaemonThread\n");
+        int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
+        pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
+        if (ret != 0) {
+            AUDIO_ERR_LOG("pthread_create failed %d", ret);
+            WriteServiceStartupError();
+        }
+        AUDIO_DEBUG_LOG("Created paDaemonThread\n");
 #endif
+    }
 
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();
     ParseAudioParameter();
+    NotifyProcessStatus();
     DlopenUtils::DeInit();
 }
 
@@ -371,16 +396,18 @@ void AudioServer::ParseAudioParameter()
         WriteServiceStartupError();
     }
     CHECK_AND_RETURN_LOG(audioParamParser != nullptr, "Failed to create audio extra parameters parser");
-    std::unique_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
     if (audioParamParser->LoadConfiguration(audioParameterKeys)) {
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
-    isAudioParameterParsed_ = true;
+    isAudioParameterParsed_.store(true);
 
-    for (const auto& pair : audioExtraParameterCacheVector_) {
-        SetExtraParameters(pair.first, pair.second);
+    {
+        std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
+        for (const auto &pair : audioExtraParameterCacheVector_) {
+            SetExtraParameters(pair.first, pair.second);
+        }
+        audioExtraParameterCacheVector_.clear();
     }
-    audioExtraParameterCacheVector_.clear();
     AUDIO_INFO_LOG("Audio extra parameters replay cached successfully.");
 }
 
@@ -425,13 +452,29 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
     return AudioCacheMgr::GetInstance().SetDumpParameter(params);
 }
 
-int32_t AudioServer::SetExtraParameters(const std::string& key,
-    const std::vector<std::pair<std::string, std::string>>& kvpairs)
+bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
+{
+    CHECK_AND_RETURN_RET_LOG(params.size() > 0, false, "params is empty!");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetEffectLiveParameter(params);
+    }
+    AUDIO_INFO_LOG("SetEffectLiveParameter not support");
+    return false;
+}
+
+int32_t AudioServer::SetExtraParameters(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "set extra parameters failed: not system app.");
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
+    if (key == EFFECT_LIVE_KEY) {
+        ret = SetEffectLiveParameter(kvpairs);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
+        return SUCCESS;
+    }
 
     if (key == PCM_DUMP_KEY) {
         ret = SetPcmDumpParameter(kvpairs);
@@ -439,9 +482,9 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         return SUCCESS;
     }
 
-    std::shared_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
+    CHECK_AND_RETURN_RET_LOG(!CacheExtraParameters(key, kvpairs), ERROR, "cached");
+
     if (audioParameterKeys.empty()) {
-        CacheExtraParameters(key, kvpairs);
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
     }
@@ -451,9 +494,21 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
         return ERR_INVALID_PARAM;
     }
 
-    std::unordered_map<std::string, std::set<std::string>> subKeyMap = mainKeyIt->second;
     std::string value;
-    bool match = true;
+    bool isParamValid = ProcessKeyValuePairs(key, kvpairs, mainKeyIt->second, value);
+    CHECK_AND_RETURN_RET_LOG(isParamValid, ERR_INVALID_PARAM, "invalid subkey or value");
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
+   return true;
+}
+
+bool AudioServer::ProcessKeyValuePairs(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs,
+    const std::unordered_map<std::string, std::set<std::string>> &subKeyMap, std::string &value)
+{
     for (auto it = kvpairs.begin(); it != kvpairs.end(); it++) {
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
@@ -469,28 +524,28 @@ int32_t AudioServer::SetExtraParameters(const std::string& key,
                 RecognizeAudioEffectType(key, it->first, it->second);
             }
         } else {
-            match = false;
-            break;
+            return false;
         }
     }
-    if (!match) { return ERR_INVALID_PARAM; }
-
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
-    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
-    return SUCCESS;
+    return true;
 }
 
-void AudioServer::CacheExtraParameters(const std::string& key,
-    const std::vector<std::pair<std::string, std::string>>& kvpairs)
+bool AudioServer::CacheExtraParameters(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
-    if (!isAudioParameterParsed_) {
-        AUDIO_INFO_LOG("Audio extra parameters will be cached");
-        std::pair<std::string,
-            std::vector<std::pair<std::string, std::string>>> cache(key, kvpairs);
-        audioExtraParameterCacheVector_.push_back(cache);
+    if (!isAudioParameterParsed_.load()) {
+        std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
+        if (!isAudioParameterParsed_.load()) {
+            AUDIO_INFO_LOG("Audio extra parameters will be cached");
+            std::pair<std::string,
+                std::vector<std::pair<std::string, std::string>>> cache(key, kvpairs);
+            audioExtraParameterCacheVector_.push_back(cache);
+
+            return true;
+        }
     }
+
+    return false;
 }
 
 void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
@@ -608,16 +663,34 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
     return AudioCacheMgr::GetInstance().GetDumpParameter(subKeys, result);
 }
 
+bool AudioServer::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "params is empty!");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().GetEffectLiveParameter(subKeys, result);
+    }
+    AUDIO_INFO_LOG("GetEffectLiveParameter not support");
+    return false;
+}
+
 int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
     const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
+    if (mainKey == EFFECT_LIVE_KEY) {
+        bool ret = GetEffectLiveParameter(subKeys, result);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
+        return SUCCESS;
+    }
     if (mainKey == PCM_DUMP_KEY) {
         bool ret = GetPcmDumpParameter(subKeys, result);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get audiodump parameters failed");
         return SUCCESS;
     }
 
-    std::shared_lock<std::shared_mutex> lock(audioParameterKeyMutex_);
+    CHECK_AND_RETURN_RET_LOG(isAudioParameterParsed_.load(), ERROR, "audioParameterKeys is not ready");
+
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
         return ERROR;
@@ -891,7 +964,7 @@ int32_t AudioServer::OffloadSetVolume(float volume)
 }
 
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag)
+    DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("Scene: %{public}d, device: %{public}d", audioScene, activeInputDevice);
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
@@ -913,6 +986,8 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
     if (activeInputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+    } else if (activeInputDevice == DEVICE_TYPE_ACCESSORY) {
+        source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
     } else {
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
     }
@@ -929,7 +1004,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
         if (activeOutputDevice == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
             activeOutputDevices[0] = DEVICE_TYPE_NONE;
         }
-        sink->SetAudioScene(audioScene, activeOutputDevices);
+        sink->SetAudioScene(audioScene, activeOutputDevices, scoExcludeFlag);
     }
 
     audioScene_ = audioScene;
@@ -1201,6 +1276,23 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
     } else {
         config.isWakeupCapturer = false;
     }
+    if (config.capturerInfo.sourceType == SourceType::SOURCE_TYPE_LIVE) {
+        int32_t engineFlag = GetEngineFlag();
+        if (engineFlag == 1) {
+            HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+            std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+            CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+            std::string res = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
+                "source_type_live_aec_supported");
+            if (res != "true") {
+                AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported");
+                config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+            }
+        } else {
+            AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported");
+            config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+        }
+    }
 }
 
 AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &config)
@@ -1457,6 +1549,31 @@ int32_t AudioServer::CheckAndWaitAudioPolicyReady()
     }
 
     return SUCCESS;
+}
+
+void AudioServer::NotifyProcessStatus()
+{
+    // when audio_server start, set audio_server rssThresHold
+    void *libMemMgrClientHandle = dlopen("libmemmgrclient.z.so", RTLD_NOW);
+    if (!libMemMgrClientHandle) {
+        AUDIO_INFO_LOG("dlopen libmemmgrclient library failed");
+        return;
+    }
+    void *notifyProcessStatusFunc = dlsym(libMemMgrClientHandle, "notify_process_status");
+    if (!notifyProcessStatusFunc) {
+        AUDIO_INFO_LOG("dlsm notify_process_status failed");
+#ifndef TEST_COVERAGE
+        dlclose(libMemMgrClientHandle);
+#endif
+        return;
+    }
+    auto notifyProcessStatus = reinterpret_cast<int(*)(int, int, int, int)>(notifyProcessStatusFunc);
+    AUDIO_INFO_LOG("notify to memmgr when audio_server is started");
+    int pid = getpid();
+    notifyProcessStatus(pid, 1, RSS_THRESHOLD, 0);
+#ifndef TEST_COVERAGE
+    dlclose(libMemMgrClientHandle);
+#endif
 }
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
@@ -2128,6 +2245,10 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
         return;
     }
     renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
+    CHECK_AND_RETURN_LOG(sink, "sink is nullptr");
+    int32_t ret = sink->UpdatePrimaryConnectionState(state);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "sink do not support UpdatePrimaryConnectionState");
 }
 
 void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)

@@ -25,6 +25,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_core_service.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,19 +46,21 @@ static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     {SOURCE_TYPE_VOICE_CALL, 7},
     {SOURCE_TYPE_VOICE_COMMUNICATION, 6},
     {SOURCE_TYPE_VOICE_TRANSCRIPTION, 5},
-    {SOURCE_TYPE_VOICE_RECOGNITION, 4},
-    {SOURCE_TYPE_CAMCORDER, 3},
+    {SOURCE_TYPE_VOICE_RECOGNITION, 2},
+    {SOURCE_TYPE_CAMCORDER, 2},
     {SOURCE_TYPE_MIC, 2},
     {SOURCE_TYPE_UNPROCESSED, 1},
 };
 
 static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
 {
+    AUDIO_INFO_LOG("newSource sourceType:%{public}d, currentSource sourceType:%{public}d", newSource, currentSource);
     if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0 ||
-        NORMAL_SOURCE_PRIORITY.count(currentSource) == 0) {
+        NORMAL_SOURCE_PRIORITY.count(currentSource) == 0 ||
+        (newSource == currentSource)) {
         return false;
     }
-    return NORMAL_SOURCE_PRIORITY[newSource] > NORMAL_SOURCE_PRIORITY[currentSource];
+    return NORMAL_SOURCE_PRIORITY[newSource] >= NORMAL_SOURCE_PRIORITY[currentSource];
 }
 
 void AudioCapturerSession::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager)
@@ -122,6 +125,13 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
         AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
             AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
         UnloadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
+    }
+    // remove device from golbal when device has been added to audio zone in superlanch-dual
+    int32_t res = AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(
+        audioConnectedDevice_.GetConnectedDeviceByType(LOCAL_NETWORK_ID, DEVICE_TYPE_REMOTE_CAST));
+    if (res == SUCCESS) {
+        AUDIO_INFO_LOG("Enable remotecast device for audio zone, remove from global list");
+        audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     }
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();

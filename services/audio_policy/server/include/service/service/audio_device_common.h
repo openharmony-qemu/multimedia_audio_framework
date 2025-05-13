@@ -118,6 +118,7 @@ public:
     void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
     int32_t SetVirtualCall(const bool isVirtual);
+    void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -144,7 +145,7 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
 
-    void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
+    void MuteOtherSink(const std::string &sinkName, int64_t muteTime);
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
@@ -230,7 +231,7 @@ private:
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const int32_t sessionId);
-    bool IsStopOrReleasePlayback(AudioMode &mode, RendererState rendererState);
+    bool IsRingOverPlayback(AudioMode &mode, RendererState rendererState);
     bool IsDualStreamWhenRingDual(AudioStreamType streamType);
 
     // fetchInput
@@ -251,6 +252,8 @@ private:
         int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    void SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType);
+
 private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     bool isCurrentRemoteRenderer = false;
@@ -261,6 +264,7 @@ private:
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFirstScreenOn_ = false;
     bool isRingDualToneOnPrimarySpeaker_ = false;
+    bool isHeadsetUnpluggedToSpkOrEpFlag_ = false;
     std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
 
     IAudioPolicyInterface& audioPolicyManager_;

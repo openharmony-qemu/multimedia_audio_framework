@@ -63,11 +63,6 @@ public:
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override {}
 };
 
-class ConcreteAudioDistribuitedOutputChangeCallback : public AudioDistribuitedOutputChangeCallback {
-public:
-    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override {};
-};
-
 class ConcreteAudioManagerMicStateChangeCallback : public AudioManagerMicStateChangeCallback {
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override {}
 };
@@ -129,6 +124,10 @@ class ConcreteAudioManagerAppVolumeChangeCallback : public AudioManagerAppVolume
 
 class ConcreteAudioManagerAudioSceneChangedCallback : public AudioManagerAudioSceneChangedCallback {
     void OnAudioSceneChange(const AudioScene audioScene) override {};
+};
+
+class ConcreteAudioFormatUnsupportedErrorCallback : public AudioFormatUnsupportedErrorCallback {
+    void OnFormatUnsupportedError(const AudioErrors &errorCode) override {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

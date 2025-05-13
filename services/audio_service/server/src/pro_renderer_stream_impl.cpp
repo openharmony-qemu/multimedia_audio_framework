@@ -399,29 +399,34 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     }
     std::lock_guard lock(peekMutex);
     GetStreamVolume();
-    if (isNeedMcr_ && !isNeedResample_) {
-        ConvertSrcToFloat(bufferDesc);
-        downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleDesBuffer.data());
-        ConvertFloatToDes(writeIndex);
-    } else if (isNeedMcr_ && isNeedResample_) {
-        ConvertSrcToFloat(bufferDesc);
-        downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleSrcBuffer.data());
-    }
-    if (isNeedResample_) {
-        if (!isNeedMcr_) {
+    if (processConfig_.streamInfo.encoding == ENCODING_EAC3) {
+        memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
+            bufferDesc.bufLength);
+    } else {
+        if (isNeedMcr_ && !isNeedResample_) {
             ConvertSrcToFloat(bufferDesc);
+            downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleDesBuffer.data());
+            ConvertFloatToDes(writeIndex);
+        } else if (isNeedMcr_ && isNeedResample_) {
+            ConvertSrcToFloat(bufferDesc);
+            downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleSrcBuffer.data());
         }
-        resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
-        DumpFileUtil::WriteDumpFile(dumpFile_, resampleDesBuffer.data(), resampleDesBuffer.size() * sizeof(float));
-        ConvertFloatToDes(writeIndex);
-    } else if (!isNeedMcr_) {
-        bufferInfo_.bufLength = bufferDesc.bufLength;
-        bufferInfo_.frameSize = bufferDesc.bufLength / bufferInfo_.samplePerFrame;
-        bufferInfo_.buffer = bufferDesc.buffer;
-        if (desFormat_ == AudioSampleFormat::SAMPLE_S16LE) {
-            AudioCommonConverter::ConvertBufferTo16Bit(bufferInfo_, sinkBuffer_[writeIndex]);
-        } else {
-            AudioCommonConverter::ConvertBufferTo32Bit(bufferInfo_, sinkBuffer_[writeIndex]);
+        if (isNeedResample_) {
+            if (!isNeedMcr_) {
+                ConvertSrcToFloat(bufferDesc);
+            }
+            resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
+            DumpFileUtil::WriteDumpFile(dumpFile_, resampleDesBuffer.data(), resampleDesBuffer.size() * sizeof(float));
+            ConvertFloatToDes(writeIndex);
+        } else if (!isNeedMcr_) {
+            bufferInfo_.bufLength = bufferDesc.bufLength;
+            bufferInfo_.frameSize = bufferDesc.bufLength / bufferInfo_.samplePerFrame;
+            bufferInfo_.buffer = bufferDesc.buffer;
+            if (desFormat_ == AudioSampleFormat::SAMPLE_S16LE) {
+                AudioCommonConverter::ConvertBufferTo16Bit(bufferInfo_, sinkBuffer_[writeIndex]);
+            } else {
+                AudioCommonConverter::ConvertBufferTo32Bit(bufferInfo_, sinkBuffer_[writeIndex]);
+            }
         }
     }
     readQueue_.emplace(writeIndex);
@@ -655,10 +660,10 @@ void ProRendererStreamImpl::GetStreamVolume()
         bufferInfo_.volumeEd = 1;
         return;
     }
-    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
-    bufferInfo_.volumeBg = AudioVolume::GetInstance()->GetHistoryVolume(streamIndex_);
-    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f};
-    bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, volumeType, DEVICE_NAME, &volumes);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    bufferInfo_.volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType,
+        DEVICE_NAME, &volumes);
+    bufferInfo_.volumeBg = volumes.volumeHistory;
     if (bufferInfo_.volumeBg != bufferInfo_.volumeEd) {
         AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, bufferInfo_.volumeEd);
         AudioVolume::GetInstance()->Monitor(streamIndex_, true);

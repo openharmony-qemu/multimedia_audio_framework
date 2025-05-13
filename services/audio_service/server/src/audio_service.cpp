@@ -226,7 +226,7 @@ void AudioService::RemoveIdFromMuteControlSet(uint32_t sessionId)
 void AudioService::CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
-    if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+    if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         renderer->SetNonInterruptMute(true);
@@ -236,7 +236,7 @@ void AudioService::CheckRenderSessionMuteState(uint32_t sessionId, std::shared_p
 void AudioService::CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
-    if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+    if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         capturer->SetNonInterruptMute(true);
@@ -247,13 +247,24 @@ void AudioService::CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_
 void AudioService::CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process)
 {
     std::unique_lock<std::mutex> mutedSessionsLock(mutedSessionsMutex_);
-    if (mutedSessions_.find(sessionId) != mutedSessions_.end()) {
+    if (mutedSessions_.find(sessionId) != mutedSessions_.end() || IsMuteSwitchStream(sessionId)) {
         mutedSessionsLock.unlock();
         AUDIO_INFO_LOG("Session %{public}u is in control", sessionId);
         process->SetNonInterruptMute(true);
     }
 }
 #endif
+
+bool AudioService::IsMuteSwitchStream(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> muteSwitchStreamLock(muteSwitchStreamSetMutex_);
+    if (muteSwitchStreams_.count(sessionId)) {
+        AUDIO_INFO_LOG("find session %{public}u in muteSwitchStreams_", sessionId);
+        muteSwitchStreams_.erase(sessionId);
+        return true;
+    }
+    return false;
+}
 
 void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
@@ -934,6 +945,16 @@ void AudioService::CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord)
     }
 }
 
+// must be called with processListMutex_ lock hold
+ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey)
+{
+    if (endpointList_.find(deviceKey) == endpointList_.end()) {
+        return ReuseEndpointType::CREATE_ENDPOINT;
+    }
+    bool reuse = deviceInfo.audioStreamInfo_ == endpointList_[deviceKey]->GetDeviceInfo().audioStreamInfo_;
+    return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
+}
+
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
     const AudioProcessConfig &clientConfig, bool isVoipStream)
 {
@@ -942,23 +963,38 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
     if (deviceInfo.deviceRole_ == INPUT_DEVICE || deviceInfo.networkId_ != LOCAL_NETWORK_ID ||
         deviceInfo.deviceRole_ == OUTPUT_DEVICE || endpointSeparateFlag == 1) {
         // Create shared stream.
-        int32_t endpointFlag = AUDIO_FLAG_MMAP;
-        if (isVoipStream) {
-            endpointFlag = AUDIO_FLAG_VOIP_FAST;
-        }
+        int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
         std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
-        if (endpointList_.find(deviceKey) != endpointList_.end()) {
-            AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
-            return endpointList_[deviceKey];
-        } else {
-            CheckBeforeVoipEndpointCreate(isVoipStream, clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
-            std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ?
-                AudioEndpoint::TYPE_VOIP_MMAP : AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
-            CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
-            AUDIO_INFO_LOG("Add endpoint %{public}s to endpointList_", deviceKey.c_str());
-            endpointList_[deviceKey] = endpoint;
-            return endpoint;
+        ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey);
+        std::shared_ptr<AudioEndpoint> endpoint = nullptr;
+
+        switch (type) {
+            case ReuseEndpointType::REUSE_ENDPOINT: {
+                AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
+                endpoint = endpointList_[deviceKey];
+                break;
+            }
+            case ReuseEndpointType::RECREATE_ENDPOINT: {
+                std::string endpointName = endpointList_[deviceKey]->GetEndpointName();
+                AUDIO_INFO_LOG("Release endpoint %{public}s change to now", endpointName.c_str());
+                DelayCallReleaseEndpoint(endpointName, 0);
+                [[fallthrough]];
+            }
+            case ReuseEndpointType::CREATE_ENDPOINT: {
+                CheckBeforeVoipEndpointCreate(isVoipStream, clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
+                endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ? AudioEndpoint::TYPE_VOIP_MMAP :
+                    AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
+                CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
+                AUDIO_INFO_LOG("Add endpoint %{public}s to endpointList_", deviceKey.c_str());
+                endpointList_[deviceKey] = endpoint;
+                break;
+            }
+            default:
+                AUDIO_ERR_LOG("Create mmap AudioEndpoint failed.");
+                break;
         }
+
+        return endpoint;
     } else {
         // Create Independent stream.
         std::string deviceKey = deviceInfo.networkId_ + std::to_string(deviceInfo.deviceId_) + "_" +
@@ -980,6 +1016,9 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
     int32_t ret = SUCCESS;
 #ifdef SUPPORT_LOW_LATENCY
     for (auto item : endpointList_) {
+        if (item.second == nullptr) {
+            continue;
+        }
         std::string endpointName = item.second->GetEndpointName();
         if (endpointName == item.first) {
             ret = ret != SUCCESS ? ret : item.second->SetVolume(streamType, volume);
@@ -1135,6 +1174,18 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     // need erase it from mutedSessions_ to avoid new stream cannot be set unmute
     if (mutedSessions_.count(sessionId) && !muteFlag) {
         mutedSessions_.erase(sessionId);
+    }
+    // when old stream already released and new stream not create yet
+    // set muteflag 1 but cannot find sessionId in allRendererMap_, allCapturerMap_ and linkedPairedList_
+    // this sessionid will not add into mutedSessions_
+    // so need save it temporarily, when new stream create, check if new stream need mute
+    // if set muteflag 0 again before new stream create, do not mute it
+    std::lock_guard<std::mutex> muteSwitchStreamLock(muteSwitchStreamSetMutex_);
+    if (muteFlag) {
+        muteSwitchStreams_.insert(sessionId);
+        AUDIO_INFO_LOG("Insert into muteSwitchStreams_");
+    } else if (muteSwitchStreams_.count(sessionId)) {
+        muteSwitchStreams_.erase(sessionId);
     }
 }
 
@@ -1389,6 +1440,12 @@ RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo resto
 #endif
     AUDIO_WARNING_LOG("Session not exists, restore failed");
     return RESTORE_ERROR;
+}
+
+void AudioService::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
+    uint32_t code)
+{
+    AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
 }
 } // namespace AudioStandard
 } // namespace OHOS
