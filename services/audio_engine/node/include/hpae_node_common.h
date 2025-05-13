@@ -17,6 +17,7 @@
 #define HPAE_NODE_COMMON_H
 #include "hpae_define.h"
 #include "audio_effect.h"
+#include "audio_module_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,6 +34,11 @@ uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo);
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo);
 std::string ConvertSessionState2Str(HpaeSessionState state);
 std::string ConvertStreamManagerState2Str(StreamManagerState state);
+void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
+int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
+bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
+int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
+AudioSampleFormat TransFormatFromStringToEnum(std::string format);
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

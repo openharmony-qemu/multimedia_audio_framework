@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
-import("../../../../config.gni")
+import("../../../../../config.gni")
 
 module_output_path = "multimedia_audio_framework/audio_engine"
 
@@ -34,7 +34,7 @@ config("audio_engine_private_config") {
 }
 
 ohos_unittest("pro_audio_service_adapter_unit_test") {
-  module_out_path = module_out_path
+  module_out_path = module_output_path
   testonly = true
   cflags = [
     "-Wall",
@@ -63,4 +63,4 @@ ohos_unittest("pro_audio_service_adapter_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-}
+}
