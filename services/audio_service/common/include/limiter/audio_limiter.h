@@ -45,6 +45,8 @@ private:
     float gainAttack_;
     float gainRelease_;
     float *bufHis_;
+    uint32_t sampleRate_;
+    uint32_t channels_;
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
     std::string dumpFileNameIn_ = "";

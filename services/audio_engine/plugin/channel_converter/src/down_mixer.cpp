@@ -77,9 +77,13 @@ static constexpr uint64_t MASK_BOTTOM = BOTTOM_FRONT_CENTER
 static constexpr uint64_t MASK_LFE = LOW_FREQUENCY
 | LOW_FREQUENCY_2;
 
+static const uint64_t MASK_HOA =
+    CH_LAYOUT_HOA_ORDER1_ACN_N3D | CH_LAYOUT_HOA_ORDER1_ACN_SN3D | CH_LAYOUT_HOA_ORDER1_FUMA |
+    CH_LAYOUT_HOA_ORDER2_ACN_N3D | CH_LAYOUT_HOA_ORDER2_ACN_SN3D | CH_LAYOUT_HOA_ORDER2_FUMA |
+    CH_LAYOUT_HOA_ORDER3_ACN_N3D | CH_LAYOUT_HOA_ORDER3_ACN_SN3D | CH_LAYOUT_HOA_ORDER3_FUMA; 
+
 static uint32_t BitCounts(uint64_t bits);
 static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts);
-static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels);
 
 // 改成默认构造
 DownMixer::DownMixer()
@@ -129,7 +133,14 @@ int32_t DownMixer::Process(uint32_t frameLen, float* in, uint32_t inLen, float* 
             expectInLen, inLen, expectOutLen, outLen);
         return DMIX_ERR_ALLOC_FAILED;
     }
-    AUDIO_DEBUG_LOG("Downmixing: frameLen: %{public}d,", frameLen);
+    // For HOA, copy the first channel into all output channels
+    if (inLayout_ & MASK_HOA) {
+        for (uint32_t i = 0; i < frameLen; i++) {
+            for (uint32_t c = 0; c < outChannels_; c++) {
+                out[outChannels_ * i + c] = in[inChannels_ * i];
+            }
+        }
+    }
     float a;
     for (; frameLen > 0; frameLen--) {
         for (uint32_t i = 0; i < outChannels_; i++) {
@@ -1056,12 +1067,12 @@ static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
         return false;
     }
     if (chLayout == CH_LAYOUT_UNKNOWN || BitCounts(chLayout) != chCounts) {
-        chLayout = SetDefaultChannelLayout((AudioChannel)chCounts);
+        chLayout = DownMixer::SetDefaultChannelLayout((AudioChannel)chCounts);
     }
     return true;
 }
 
-static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels)
+AudioChannelLayout DownMixer::SetDefaultChannelLayout(AudioChannel channels)
 {
     if (channels < MONO || channels > CHANNEL_16) {
         return CH_LAYOUT_UNKNOWN;
@@ -1084,19 +1095,13 @@ static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels)
         case CHANNEL_8:
             return CH_LAYOUT_5POINT1POINT2;
         case CHANNEL_9:
-            return CH_LAYOUT_CHANNEL9;
+            return CH_LAYOUT_HOA_ORDER2_ACN_N3D;
         case CHANNEL_10:
             return CH_LAYOUT_7POINT1POINT2;
-        case CHANNEL_11:
-            return CH_LAYOUT_CHANNEL11;
         case CHANNEL_12:
             return CH_LAYOUT_7POINT1POINT4;
-        case CHANNEL_13:
-            return CH_LAYOUT_CHANNEL13;
         case CHANNEL_14:
             return CH_LAYOUT_9POINT1POINT4;
-        case CHANNEL_15:
-            return CH_LAYOUT_CHANNEL15;
         case CHANNEL_16:
             return CH_LAYOUT_9POINT1POINT6;
         default:

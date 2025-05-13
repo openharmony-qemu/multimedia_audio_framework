@@ -31,6 +31,7 @@
 #include "i_hpae_manager.h"
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
+#include "down_mixer.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
@@ -59,6 +60,9 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.samplingRate = processConfig_.streamInfo.samplingRate;
     streamInfo.format = processConfig_.streamInfo.format;
     streamInfo.channelLayout = processConfig_.streamInfo.channelLayout;
+    if (channelLayout == CH_LAYOUT_UNKNOWN) {
+        channelLayout = DownMixer::SetDefaultChannelLayout((AudioChannel)streamInfo.channels);
+    }
     streamInfo.frameLen = spanSizeInFrame_;
     streamInfo.sessionId = processConfig_.originalSessionId;
     streamInfo.streamType = processConfig_.streamType;
