@@ -703,9 +703,10 @@ int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t s
             return;
         }
 
-        if (!SafeGetMap(rendererManagerMap_, sinkName)) {
-            AUDIO_ERR_LOG("move session:%{public}u failed, can not find sink:%{public}s.", sinkInputId,
-                sinkName.c_str());
+        std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
+        if (rendererManager == nullptr || !rendererManager->IsInit()) {
+            AUDIO_ERR_LOG("move session:%{public}u failed, can not find sink:%{public}s or sink is not open.",
+                sinkInputId, sinkName.c_str());
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
@@ -976,10 +977,10 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
             serviceCallback->OnOpenAudioPortCb(sourceNameSourceIdMap_[deviceName]);
         } else {
             AUDIO_ERR_LOG("device:%{public}s is not exist.", deviceName.c_str());
-            serviceCallback->OnOpenAudioPortCb(ERROR);
+            serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
         }
     } else if (serviceCallback) {
-        serviceCallback->OnOpenAudioPortCb(ERROR);
+        serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
         AUDIO_INFO_LOG("HandleInitDeviceResult deviceName:%{public}s "
                        "result:%{public}d error",
             deviceName.c_str(),
