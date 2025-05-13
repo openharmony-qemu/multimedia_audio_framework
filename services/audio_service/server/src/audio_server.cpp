@@ -2253,6 +2253,22 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "sink do not support UpdatePrimaryConnectionState");
 }
 
+void AudioServer::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetLatestMuteState(sessionId, muteFlag);
+}
+
+void AudioServer::SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetSessionMuteState(sessionId, insert, muteFlag);
+}
+
 void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)
 {
     AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);

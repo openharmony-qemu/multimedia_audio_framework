@@ -2624,5 +2624,36 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_004, TestSize.Leve
     bool getTimestamp = audioCapturer->GetTimeStampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getTimestamp);
 }
+
+/**
+ * @tc.name  : Test SetInterruptStrategy_001.
+ * @tc.number: SetInterruptStrategy.
+ * @tc.desc  : Test SetInterruptStrategy at different capturer state.
+ */
+HWTEST(AudioCapturerUnitTest, SetInterruptStrategy_001, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S16LE;
+    capturerParams.samplingRate = SAMPLE_RATE_44100;
+    capturerParams.audioChannel = MONO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+    int32_t result = audioCapturer->SetInterruptStrategy(InterruptStrategy::MUTE);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, result);
+    result = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, result);
+
+    result = audioCapturer->SetInterruptStrategy(InterruptStrategy::DEFAULT);
+    EXPECT_EQ(SUCCESS, result);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    result = audioCapturer->SetInterruptStrategy(InterruptStrategy::MUTE);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, result);
+    audioCapturer->Release();
+}
 } // namespace AudioStandard
 } // namespace OHOS

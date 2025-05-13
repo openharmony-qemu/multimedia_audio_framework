@@ -61,7 +61,7 @@ InterruptDfxBuilder &InterruptDfxBuilder::WriteActionMsg(uint8_t infoIndex, uint
 }
 
 InterruptDfxBuilder &InterruptDfxBuilder::WriteInfoMsg(const AudioInterrupt &audioInterrupt,
-    const AudioSessionStrategy &strategy, InterruptStrategyType interruptType)
+    const AudioSessionStrategy &strategy, InterruptRole interruptType)
 {
     AUDIO_INFO_LOG("[WriteInfoMsg] streamUsage=%{public}d, concurrencyMode=%{public}d",
         audioInterrupt.streamUsage, audioInterrupt.sessionStrategy.concurrencyMode);

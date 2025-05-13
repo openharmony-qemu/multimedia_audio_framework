@@ -38,7 +38,7 @@ class InterruptDfxBuilder {
 public:
     InterruptDfxBuilder &WriteActionMsg(uint8_t infoIndex, uint8_t effectIdx, InterruptStage stage);
     InterruptDfxBuilder &WriteInfoMsg(const AudioInterrupt &audioInterrupt, const AudioSessionStrategy &strategy,
-        InterruptStrategyType interruptType);
+        InterruptRole interruptType);
     InterruptDfxBuilder &WriteEffectMsg(uint8_t appstate, const std::string &bundleName,
         const AudioInterrupt &audioInterrupt, const InterruptHint &hintType);
     InterruptDfxInfo GetResult();

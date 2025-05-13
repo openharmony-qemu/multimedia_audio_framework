@@ -100,6 +100,7 @@ public:
     uint32_t GetOverflowCount() const override;
 
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
+    int32_t SetInterruptStrategy(InterruptStrategy strategy) override;
 
     void ConcedeStream();
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);

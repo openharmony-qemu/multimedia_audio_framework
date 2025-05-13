@@ -498,7 +498,19 @@ typedef enum {
      *
      * @since 10
      */
-    AUDIOSTREAM_INTERRUPT_HINT_UNDUCK = 5
+    AUDIOSTREAM_INTERRUPT_HINT_UNDUCK = 5,
+    /**
+     * Mute the stream.
+     *
+     * @since 20
+     */
+    AUDIOSTREAM_INTERRUPT_HINT_MUTE = 6,
+    /**
+     * Unmute the stream.
+     *
+     * @since 20
+     */
+    AUDIOSTREAM_INTERRUPT_HINT_UNMUTE = 7
 } OH_AudioInterrupt_Hint;
 
 /**
