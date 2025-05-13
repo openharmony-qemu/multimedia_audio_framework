@@ -85,7 +85,8 @@ int32_t RemoteDeviceManager::LoadAdapter(const std::string &adapterName)
     adapters_[adapterName]->adapter_ = adapter;
     AUDIO_INFO_LOG("load adapter %{public}s success", adapterName.c_str());
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-    ret = adapter->RegExtraParamObserver(&adapters_[adapterName]->hdiCallback_, 0);
+    adapters_[adapterName]->hdiCallback_ = new RemoteAdapterHdiCallback(adapterName);
+    ret = adapter->RegExtraParamObserver(adapters_[adapterName]->hdiCallback_, 0);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "regist extra param observer fail, ret: %{public}d", ret);
 #endif
     return SUCCESS;
