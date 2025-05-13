@@ -116,7 +116,7 @@ config("audio_engine_node_config") {
     "../audio_service/common/include",
     "../audio_service/common/include/limiter",
     "../audio_service/server/include",
-    "../audio_policy/server/inlcude/service/common",
+    "../audio_policy/server/include/service/common",
     "../audio_policy/util/include",
     "../../frameworks/native/audioeffect/include",
     "../../interfaces/inner_api/native/audiocommon/include",
