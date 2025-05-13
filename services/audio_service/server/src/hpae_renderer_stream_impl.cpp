@@ -60,8 +60,8 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.samplingRate = processConfig_.streamInfo.samplingRate;
     streamInfo.format = processConfig_.streamInfo.format;
     streamInfo.channelLayout = processConfig_.streamInfo.channelLayout;
-    if (channelLayout == CH_LAYOUT_UNKNOWN) {
-        channelLayout = DownMixer::SetDefaultChannelLayout((AudioChannel)streamInfo.channels);
+    if (streamInfo.channelLayout == CH_LAYOUT_UNKNOWN) {
+        streamInfo.channelLayout = DownMixer::SetDefaultChannelLayout((AudioChannel)streamInfo.channels);
     }
     streamInfo.frameLen = spanSizeInFrame_;
     streamInfo.sessionId = processConfig_.originalSessionId;
