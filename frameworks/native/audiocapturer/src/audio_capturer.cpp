@@ -1044,6 +1044,16 @@ int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<Source
     return SUCCESS;
 }
 
+int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
+{
+    CapturerState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == CAPTURER_PREPARED, ERR_ILLEGAL_STATE,
+        "incorrect state:%{public}d", state);
+    audioInterrupt_.strategy = strategy;
+    AUDIO_INFO_LOG("set InterruptStrategy to %{public}d", static_cast<int32_t>(strategy));
+    return SUCCESS;
+}
+
 int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
 {
     AUDIO_INFO_LOG("Capture mode: %{public}d", captureMode);

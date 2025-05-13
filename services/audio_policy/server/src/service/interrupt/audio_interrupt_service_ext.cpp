@@ -25,6 +25,7 @@
 #include "dfx_utils.h"
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
+#include "audio_server_proxy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -141,6 +142,41 @@ uint32_t AudioInterruptService::AudioInterruptClient::GetCallingUid()
 {
     AUDIO_INFO_LOG("callingUid_: %{public}u", callingUid_);
     return callingUid_;
+}
+
+void AudioInterruptService::SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag)
+{
+    AudioServerProxy::GetInstance().SetSessionMuteState(sessionId, insert, muteFlag);
+}
+
+void AudioInterruptService::SetLatestMuteState(const InterruptEventInternal &interruptEvent,
+    const uint32_t &streamId)
+{
+    CHECK_AND_RETURN_LOG(interruptEvent.hintType == INTERRUPT_HINT_MUTE ||
+        interruptEvent.hintType == INTERRUPT_HINT_UNMUTE, "unsupported hintType: %{public}d",
+        interruptEvent.hintType);
+    bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
+    AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
+}
+
+void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    if (focusEntry.hintType != INTERRUPT_HINT_STOP &&
+        focusEntry.hintType != INTERRUPT_HINT_PAUSE) {
+        AUDIO_INFO_LOG("streamId: %{public}u, keep current hintType=%{public}d",
+            currentInterrupt.streamId, focusEntry.hintType);
+        return;
+    }
+
+    if (incomingInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP ||
+        currentInterrupt.strategy == InterruptStrategy::DEFAULT) {
+        return;
+    }
+    AUDIO_INFO_LOG("streamId: %{public}u enter mute interrupt mode, update hintType", currentInterrupt.streamId);
+    focusEntry.actionOn = CURRENT;
+    focusEntry.isReject = false;
+    focusEntry.hintType = INTERRUPT_HINT_MUTE;
 }
 
 }

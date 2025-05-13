@@ -165,7 +165,9 @@ private:
         const std::vector<SourceType> &existConcurrentSources,
         const std::vector<SourceType> &incomingConcurrentSources);
     bool IsMediaStream(AudioStreamType audioStreamType);
-    void UpdateAudioFocusStrategy(AudioFocusType existAudioFocusType, AudioFocusType incomingAudioFocusType,
+    void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
+        AudioFocusEntry &focusEntry);
+    void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
     bool FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt);
@@ -228,6 +230,8 @@ private:
     void RemoveAllPlaceholderInterrupt(std::list<int32_t> &removeFocusInfoPidList);
     bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
+    void SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag);
+    void SetLatestMuteState(const InterruptEventInternal &interruptEvent, const uint32_t &streamId);
     void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         std::vector<SourceType> incomingConcurrentSources);
     bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,

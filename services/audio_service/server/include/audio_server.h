@@ -213,6 +213,8 @@ public:
         const IAudioSourceAttr &attr) override;
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
+    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
+    void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

@@ -110,6 +110,8 @@ public:
         const IAudioSourceAttr &attr);
     void DestroyHdiPortProxy(uint32_t id);
     void SetDeviceConnectedFlag(bool flag);
+    void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
+    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}
