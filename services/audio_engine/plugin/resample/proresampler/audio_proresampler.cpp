@@ -54,8 +54,6 @@ int32_t ProResampler::Process(const float *inBuffer, uint32_t *inFrameSize, floa
             outBuffer[channels_ * i + c] = tmpOutBuf[c];
         }
     }
-    // ret += memset_s(outBuffer,  expectedOutFrameSize * channels_ * sizeof(float), 0,
-    //     fillZeroSize * channels_ * sizeof(float));
     ret += memcpy_s(outBuffer + fillZeroSize * channels_,
         (expectedOutFrameSize - fillZeroSize) * channels_ * sizeof(float),
         tmpOutBuf.data(), *outFrameSize * channels_ * sizeof(float));
