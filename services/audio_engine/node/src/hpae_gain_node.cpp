@@ -38,6 +38,7 @@ static constexpr float FADE_LOW = 0.0f;
 static constexpr float FADE_HIGH = 1.0f;
 static constexpr float SHORT_FADE_PERIOD = 0.005f; // 5ms fade for 10ms < playback duration <= 40ms
 static constexpr float EPSILON = 1e-6f;
+static constexpr uint32_t FADE_OUT_PUSH_NUM = 4;
 
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
@@ -176,11 +177,12 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     }
     if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
         AUDIO_INFO_LOG("GainNode: fade out started!");
+        pushFrameNum_ = 0;
         ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
         return;
     }
-    if (fadeOutState_ == FadeOutState::DONE_FADEOUT) {
+    if (fadeOutState_ == FadeOutState::DONE_FADEOUT && pushFrameNum_++ == FADE_OUT_PUSH_NUM) {
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
