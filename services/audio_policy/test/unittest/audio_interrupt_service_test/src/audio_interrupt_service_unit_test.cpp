@@ -507,5 +507,395 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_020, TestSize.Level1
     ret = audioInterruptService->SetAudioManagerInterruptCallback(object);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_034
+* @tc.desc  : Test NotifyFocusGranted
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_034, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t clientId = 0;
+    AudioInterrupt audioInterrupt;
+    audioInterruptService->handler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_TRUE(audioInterruptService->handler_ != nullptr);
+    audioInterruptService->NotifyFocusGranted(clientId, audioInterrupt);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_035
+* @tc.desc  : Test NotifyFocusAbandoned
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_035, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t clientId = 0;
+    AudioInterrupt audioInterrupt;
+    audioInterruptService->handler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_TRUE(audioInterruptService->handler_ != nullptr);
+    auto ret = audioInterruptService->NotifyFocusAbandoned(clientId, audioInterrupt);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_036
+* @tc.desc  : Test AbandonAudioFocusInternal
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_036, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t clientId = 0;
+    AudioInterrupt audioInterrupt;
+    auto ret = audioInterruptService->AbandonAudioFocusInternal(clientId, audioInterrupt);
+    EXPECT_EQ(ret, SUCCESS);
+
+    clientId = 10;
+    audioInterruptService->AbandonAudioFocusInternal(clientId, audioInterrupt);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_037
+* @tc.desc  : Test CheckAudioSessionExistence
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_037, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.pid = 0;
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = CURRENT;
+
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
+    auto audioSession = std::make_shared<AudioSession>(incomingInterrupt.pid, strategy, audioSessionStateMonitor);
+    audioInterruptService->sessionService_ = std::make_shared<AudioSessionService>();
+    audioInterruptService->sessionService_->sessionMap_[incomingInterrupt.pid] = audioSession;
+    auto ret = audioInterruptService->CheckAudioSessionExistence(incomingInterrupt, focusEntry);
+    EXPECT_TRUE(ret);
+    audioInterruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
+
+    focusEntry.actionOn = INCOMING;
+    ret = audioInterruptService->CheckAudioSessionExistence(incomingInterrupt, focusEntry);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_038
+* @tc.desc  : Test CheckAudioSessionExistence
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_038, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.pid = 0;
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = CURRENT;
+
+    audioInterruptService->sessionService_ = std::make_shared<AudioSessionService>();
+    audioInterruptService->sessionService_->sessionMap_[incomingInterrupt.pid] = nullptr;
+    auto ret = audioInterruptService->CheckAudioSessionExistence(incomingInterrupt, focusEntry);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_039
+* @tc.desc  : Test UpdateHintTypeForExistingSession
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_039, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt incomingInterrupt;
+    AudioFocusEntry focusEntry;
+    focusEntry.hintType = INTERRUPT_HINT_DUCK;
+    incomingInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::DUCK_OTHERS;
+    audioInterruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
+
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_DUCK);
+
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+    audioInterruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_DUCK);
+
+    focusEntry.hintType = INTERRUPT_HINT_NONE;
+    audioInterruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_040
+* @tc.desc  : Test UpdateHintTypeForExistingSession
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_040, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt incomingInterrupt;
+    AudioFocusEntry focusEntry;
+    incomingInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::PAUSE_OTHERS;
+
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+    audioInterruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+
+    focusEntry.hintType = INTERRUPT_HINT_NONE;
+    audioInterruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_041
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_041, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioFocusEntry focusEntry;
+    AudioInterrupt incomingInterrupt;
+    bool removeFocusInfo = true;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioList;
+    audioList.push_back(std::make_pair(incomingInterrupt, ACTIVE));
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive = audioList.begin();
+
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt,
+        removeFocusInfo, interruptEvent);
+    EXPECT_EQ(interruptEvent.hintType, focusEntry.hintType);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_042
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_042, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioFocusEntry focusEntry;
+    AudioInterrupt incomingInterrupt;
+    bool removeFocusInfo = true;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioList;
+    audioList.push_back(std::make_pair(incomingInterrupt, DUCK));
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive = audioList.begin();
+
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt,
+        removeFocusInfo, interruptEvent);
+    EXPECT_EQ(interruptEvent.hintType, focusEntry.hintType);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_043
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_043, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioFocusEntry focusEntry;
+    AudioInterrupt incomingInterrupt;
+    bool removeFocusInfo = true;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioList;
+    audioList.push_back(std::make_pair(incomingInterrupt, STOP));
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive = audioList.begin();
+
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt,
+        removeFocusInfo, interruptEvent);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_044
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_044, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioFocusEntry focusEntry;
+    AudioInterrupt incomingInterrupt;
+    bool removeFocusInfo = true;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioList;
+    audioList.push_back(std::make_pair(incomingInterrupt, ACTIVE));
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive = audioList.begin();
+
+    focusEntry.hintType = INTERRUPT_HINT_DUCK;
+    audioInterruptService->ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt,
+        removeFocusInfo, interruptEvent);
+    EXPECT_EQ(interruptEvent.hintType, focusEntry.hintType);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_045
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_045, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioFocusEntry focusEntry;
+    AudioInterrupt incomingInterrupt;
+    bool removeFocusInfo = true;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioList;
+    audioList.push_back(std::make_pair(incomingInterrupt, DUCK));
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive = audioList.begin();
+
+    focusEntry.hintType = INTERRUPT_HINT_DUCK;
+    audioInterruptService->ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt,
+        removeFocusInfo, interruptEvent);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_046
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_046, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioFocusEntry focusEntry;
+    AudioInterrupt incomingInterrupt;
+    bool removeFocusInfo = true;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioList;
+    audioList.push_back(std::make_pair(incomingInterrupt, DUCK));
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive = audioList.begin();
+
+    focusEntry.hintType = INTERRUPT_HINT_UNDUCK;
+    audioInterruptService->ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt,
+        removeFocusInfo, interruptEvent);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_047
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_047, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList;
+
+    tmpFocusInfoList.push_back(std::make_pair<>(audioInterrupt, ACTIVE));
+    iterActive = tmpFocusInfoList.begin();
+
+    interruptEvent.hintType = INTERRUPT_HINT_STOP;
+    audioInterruptService->SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_048
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_048, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList;
+
+    tmpFocusInfoList.push_back(std::make_pair<>(audioInterrupt, ACTIVE));
+    iterActive = tmpFocusInfoList.begin();
+
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
+    EXPECT_EQ(iterActive->second, PAUSEDBYREMOTE);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_049
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_049, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList;
+
+    tmpFocusInfoList.push_back(std::make_pair<>(audioInterrupt, DUCK));
+    iterActive = tmpFocusInfoList.begin();
+
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
+    EXPECT_EQ(iterActive->second, PAUSEDBYREMOTE);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_050
+* @tc.desc  : Test ProcessExistInterrupt
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_050, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt;
+    InterruptEventInternal interruptEvent;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList;
+
+    tmpFocusInfoList.push_back(std::make_pair<>(audioInterrupt, PLACEHOLDER));
+    iterActive = tmpFocusInfoList.begin();
+
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
+}
 } // namespace AudioStandard
 } // namespace OHOS
