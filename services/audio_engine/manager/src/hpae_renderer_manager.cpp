@@ -62,7 +62,7 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         nodeInfo.sceneType = TransStreamUsageToSplitSceneType(streamInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
     } else {
-        nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
+        nodeInfo.sceneType = TransEffectSceneToSceneType(streamInfo.effectInfo.effectScene);
     }
     if (IsMchDevice()) {
         nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
