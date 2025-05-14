@@ -564,7 +564,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 #ifdef SUPPORT_LOW_LATENCY
     IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
 #else
-    rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
