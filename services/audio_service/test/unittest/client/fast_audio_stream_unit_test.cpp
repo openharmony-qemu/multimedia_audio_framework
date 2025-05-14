@@ -1541,9 +1541,6 @@ HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_002, TestSize.Level1)
 
     std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
     fastAudioStream->proxyObj_ = proxyObj;
-    if (fastAudioStream->proxyObj_ == nullptr) {
-        std::cout<<"cxk_001"<<std::endl;
-    }
     fastAudioStream->state_ = RUNNING;
     fastAudioStream->RestoreAudioStream();
 }
