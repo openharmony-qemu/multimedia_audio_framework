@@ -41,6 +41,7 @@
 #include "audio_pipe_manager.h"
 #include "audio_pipe_selector.h"
 #include "audio_policy_config_manager.h"
+#include "audio_core_service_utils.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioA2dpOffloadManager;
@@ -416,6 +417,7 @@ private:
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
 
+    // dual tone for same sinks
     std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
     bool isRingDualToneOnPrimarySpeaker_ = false;
 

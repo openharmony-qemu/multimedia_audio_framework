@@ -344,19 +344,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
-        if (streamDesc->newDeviceDescs_.size() == 2) { // 2 for dual use
-            HandleDualStartClient(activeDevices, streamDesc);
-        } else {
-            std::string firstSinkName =
-                AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_[0], streamDesc->sessionId_);
-            AUDIO_INFO_LOG("firstSinkName %{public}s", firstSinkName.c_str());
-            if (firstSinkName == "primary") {
-                activeDevices.push_back(
-                    make_pair(streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
-            }
-        }
-        if (activeDevices.size() != 0) {
-            audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
+        if (policyConfigMananger_.GetUpdateRouteSupport()) {
+            UpdateOutputRoute(streamDesc);
         }
     } else {
         int32_t inputRet = ActivateInputDevice(streamDesc);
