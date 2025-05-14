@@ -3705,7 +3705,8 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
     if (callerUid != UID_AUDIO) {
         return ERROR;
     }
-    return coreService_->TriggerFetchDevice(reason);
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_NULL_POINTER, "eventEntry_ is nullptr");
+    return eventEntry_->TriggerFetchDevice(reason);
 }
 
 int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,
