@@ -215,7 +215,7 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     float curSystemGain = 1.0f;
     float preSystemGain = 1.0f;
     if (isInnerCapturer_) {
-        curSystemGain = audioVolume->GetVolume(GetSessionId());
+        curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
         preSystemGain = audioVolume->GetHistoryVolume(GetSessionId());
     } else {
         curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);

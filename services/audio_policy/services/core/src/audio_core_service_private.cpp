@@ -234,8 +234,25 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
     for (const auto &sessionID : sessionIDSet) {
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
         audioDeviceManager_.RemoveSelectedDefaultOutputDevice(sessionID);
+	if (isRingDualToneOnPrimarySpeaker_ && (streamCollector_.GetStreamType(sessionID) == STREAM_RING ||
+            streamCollector_.GetStreamType(sessionID) == STREAM_ALARM)) {
+            AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer died");
+            isRingDualToneOnPrimarySpeaker_ = false;
+            for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+                audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+            }
+            streamsWhenRingDualOnPrimarySpeaker_.clear();
+        }
     }
-    FetchOutputDeviceAndRoute();
+}
+
+void AudioCoreService::UpdateInputDeviceWhenStopping(int32_t uid)
+{
+    std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
+    for (const auto &sessionID : sessionIDSet) {
+        audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
+    }
+    FetchInputDeviceAndRoute();
 }
 
 int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -1798,6 +1815,12 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
         FetchOutputDeviceAndRoute();
+    }
+    
+    const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
+    if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
+        audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
+        FetchInputDeviceAndRoute();
     }
 
     if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)

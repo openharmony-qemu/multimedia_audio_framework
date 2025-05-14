@@ -250,6 +250,7 @@ private:
     void CheckModemScene(const AudioStreamDeviceChangeReasonExt reason);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
+    void UpdateInputDeviceWhenStopping(int32_t uid);
     int32_t BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &desc,
         const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> desc,
@@ -414,6 +415,9 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+
+    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
+    bool isRingDualToneOnPrimarySpeaker_ = false;
 
     // Save the relationship of uid and session id.
     std::map<uint32_t, uid_t> sessionIdMap_;

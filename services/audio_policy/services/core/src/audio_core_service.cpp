@@ -775,9 +775,11 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
 void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
 {
     UpdateDefaultOutputDeviceWhenStopping(static_cast<int32_t>(uid));
+    UpdateInputDeviceWhenStopping(static_cast<int32_t>(uid));
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
+    FetchOutputDeviceAndRoute();
 
     audioDeviceCommon_.ClientDiedDisconnectScoNormal();
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();

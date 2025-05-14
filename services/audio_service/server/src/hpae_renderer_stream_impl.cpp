@@ -31,6 +31,7 @@
 #include "i_hpae_manager.h"
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
+#include "down_mixer.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
@@ -39,7 +40,6 @@ namespace AudioStandard {
 const int32_t MIN_BUFFER_SIZE = 2;
 const int32_t FRAME_LEN_10MS = 2;
 const int32_t TENMS_PER_SEC = 100;
-static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels);
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isCallbackMode)
 {
@@ -63,8 +63,9 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.channels = processConfig_.streamInfo.channels;
     streamInfo.samplingRate = processConfig_.streamInfo.samplingRate;
     streamInfo.format = processConfig_.streamInfo.format;
-    if (processConfig_.streamInfo.channelLayout == CH_LAYOUT_UNKNOWN) {
-        streamInfo.channelLayout = SetDefaultChannelLayout(streamInfo.channels);
+    streamInfo.channelLayout = processConfig_.streamInfo.channelLayout;
+    if (streamInfo.channelLayout == CH_LAYOUT_UNKNOWN) {
+        streamInfo.channelLayout = DownMixer::SetDefaultChannelLayout((AudioChannel)streamInfo.channels);
     }
     streamInfo.frameLen = spanSizeInFrame_;
     streamInfo.sessionId = processConfig_.originalSessionId;
@@ -508,41 +509,6 @@ void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation)
     auto statusCallback = statusCallback_.lock();
     if (statusCallback) {
         statusCallback->OnStatusUpdate(operation);
-    }
-}
-
-static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels)
-{
-    if (channels < MONO || channels > CHANNEL_16) {
-        return CH_LAYOUT_UNKNOWN;
-    }
-    switch (channels) {
-        case MONO:
-            return CH_LAYOUT_MONO;
-        case STEREO:
-            return CH_LAYOUT_STEREO;
-        case CHANNEL_3:
-            return CH_LAYOUT_SURROUND;
-        case CHANNEL_4:
-            return CH_LAYOUT_3POINT1;
-        case CHANNEL_5:
-            return CH_LAYOUT_4POINT1;
-        case CHANNEL_6:
-            return CH_LAYOUT_5POINT1;
-        case CHANNEL_7:
-            return CH_LAYOUT_6POINT1;
-        case CHANNEL_8:
-            return CH_LAYOUT_5POINT1POINT2;
-        case CHANNEL_10:
-            return CH_LAYOUT_7POINT1POINT2;
-        case CHANNEL_12:
-            return CH_LAYOUT_7POINT1POINT4;
-        case CHANNEL_14:
-            return CH_LAYOUT_9POINT1POINT4;
-        case CHANNEL_16:
-            return CH_LAYOUT_9POINT1POINT6;
-        default:
-            return CH_LAYOUT_UNKNOWN;
     }
 }
 

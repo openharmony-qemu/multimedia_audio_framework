@@ -169,14 +169,9 @@ public:
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
 private:
-    int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
-    bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
-    int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
-    AudioSampleFormat TransFormatFromStringToEnum(std::string format);
     int32_t CloseOutAudioPort(std::string &sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
     int32_t CloseInAudioPort(std::string &sourceName);
-    void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
     template <typename... Args>
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
     void HandleUpdateStatus(

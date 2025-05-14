@@ -38,7 +38,8 @@ ohos_unittest("audio_renderer_unit_test") {
     "-fno-access-control",
   ]
 
-  sources = [ "src/audio_renderer_unit_test.cpp" ]
+  sources = [ "src/audio_renderer_unit_test.cpp",
+              "src/audio_renderer_getter_unit_test.cpp" ]
 
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
