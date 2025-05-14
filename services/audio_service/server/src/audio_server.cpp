@@ -996,7 +996,10 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     } else {
         source->SetAudioScene(audioScene, activeInputDevice);
     }
-
+    std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
+    if (fastSource != nullptr && fastSource->IsInited()) {
+        fastSource->SetAudioScene(audioScene, activeInputDevice);
+    }
     if (sink == nullptr || !sink->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
