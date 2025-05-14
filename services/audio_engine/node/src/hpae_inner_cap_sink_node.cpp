@@ -185,8 +185,8 @@ StreamManagerState HpaeInnerCapSinkNode::GetSinkState(void)
 
 int32_t HpaeInnerCapSinkNode::SetSinkState(StreamManagerState sinkState)
 {
-    AUDIO_INFO_LOG("Sink[innerCap] state change:[%{public}s]-->[%{public}s]",
-        ConvertStreamManagerState2Str(state_).c_str(),
+    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+        GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sinkState).c_str());
     state_ = sinkState;
     return SUCCESS;

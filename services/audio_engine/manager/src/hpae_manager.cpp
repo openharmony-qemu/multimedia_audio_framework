@@ -525,6 +525,8 @@ int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo
     HpaeSinkInfo sinkInfo;
     sinkInfo.sinkId = sinkSourceIndex;
     int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
+    sinkInfo.deviceClass = audioModuleInfo.name;
+    sinkInfo.adapterName = audioModuleInfo.name;
     if (ret != SUCCESS) {
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
@@ -1923,7 +1925,6 @@ void HpaeManager::CreateStreamForCapInner(const HpaeStreamInfo &streamInfo)
     }
     std::string deviceName = streamInfo.deviceName;
     HandleRendererManager(deviceName, streamInfo);
-    HandleRendererManager("RemoteCastInnerCapturer", streamInfo);
     AddStreamToCollection(streamInfo);
     return;
 }
