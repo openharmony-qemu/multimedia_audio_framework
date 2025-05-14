@@ -396,6 +396,10 @@ audio_ohos_library("audio_process_service") {
   }
 
   configs = [ ":audio_service_config" ]
+  
+  include_dirs = [
+    "../../services/audio_engine/plugin/channel_converter/include",
+  ]
 
   deps = [
     ":audio_common",
@@ -405,6 +409,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_engine:audio_engine_manager",
+    "../audio_engine:audio_engine_plugins",
     "../audio_policy:audio_foundation",
   ]
 
