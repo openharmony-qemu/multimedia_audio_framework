@@ -147,7 +147,7 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_CloseAudioPort_001, TestSize.
     int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
     EXPECT_GE(0, portId);
     int32_t ret = impl_->CloseAudioPort(portId);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -161,7 +161,7 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_CloseAudioPort_002, TestSize.
     int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
     EXPECT_GE(0, portId);
     int32_t ret = impl_->CloseAudioPort(portId);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**

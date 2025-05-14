@@ -64,6 +64,7 @@ public:
     virtual int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
     virtual int32_t GetSplitInfoRefined(std::string &splitInfo) = 0;
+    virtual int32_t OnDistributedOutputChange(bool isRemote) = 0;
 };
 
 class AudioClientInfoMgrCallback {
@@ -105,19 +106,6 @@ public:
      * @since 8
      */
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
-};
-
-class AudioDistribuitedOutputChangeCallback {
-public:
-    virtual ~AudioDistribuitedOutputChangeCallback() = default;
-    /**
-     * Called when Distribuited output device changed
-     *
-     * @param deviceDesc selected device
-     * @param isRemote is cast direction remote
-     * @since 16
-     */
-    virtual void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) = 0;
 };
 
 class AudioQueryClientTypeCallback {

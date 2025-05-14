@@ -88,6 +88,26 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
     return SUCCESS;
 }
 
+int32_t AudioRoutingManagerListenerProxy::OnDistributedOutputChange(bool isRemote)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
+        "OnDistributedOutputChange: WriteInterfaceToken failed");
+
+    data.WriteBool(isRemote);
+
+    int error = Remote()->SendRequest(ON_DISTRIBUTED_OUTPUT_CHANGE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "OnDistributedOutputChange, error: %{public}d", error);
+
+    int32_t result = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+        "OnDistributedOutputChange callback failed, error %{public}d", result);
+    return SUCCESS;
+}
+
 int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
     int32_t clientUid, AudioPipeType audioPipeType)

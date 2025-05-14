@@ -165,8 +165,6 @@ public:
     int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag,
         std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
 
-    int32_t SetDistribuitedOutputChangeCallback(const std::shared_ptr<AudioDistribuitedOutputChangeCallback> &cb);
-
     int32_t SetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback, API_VERSION api_v = API_9);
 

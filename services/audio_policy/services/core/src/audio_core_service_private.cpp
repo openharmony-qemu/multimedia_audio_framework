@@ -234,8 +234,25 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
     for (const auto &sessionID : sessionIDSet) {
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
         audioDeviceManager_.RemoveSelectedDefaultOutputDevice(sessionID);
+	if (isRingDualToneOnPrimarySpeaker_ && (streamCollector_.GetStreamType(sessionID) == STREAM_RING ||
+            streamCollector_.GetStreamType(sessionID) == STREAM_ALARM)) {
+            AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer died");
+            isRingDualToneOnPrimarySpeaker_ = false;
+            for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+                audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+            }
+            streamsWhenRingDualOnPrimarySpeaker_.clear();
+        }
     }
-    FetchOutputDeviceAndRoute();
+}
+
+void AudioCoreService::UpdateInputDeviceWhenStopping(int32_t uid)
+{
+    std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
+    for (const auto &sessionID : sessionIDSet) {
+        audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
+    }
+    FetchInputDeviceAndRoute();
 }
 
 int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -1139,6 +1156,7 @@ std::vector<SourceOutput> AudioCoreService::GetSourceOutputs()
 
 void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     InternalDeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
     AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
@@ -1173,7 +1191,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
             AUDIO_INFO_LOG("update desc [%{public}d] with speaker on session [%{public}d]",
                 deviceType, streamDesc->sessionId_);
             AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
-            if (!IsDualStreamWhenRingDual(streamType)) {
+            if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType)) {
                 streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
                 audioPolicyManager_.SetStreamMute(streamType, true, streamUsage);
             }
@@ -1272,7 +1290,8 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
                 AUDIO_INFO_LOG("device unavailable, disable dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
-            isRingDualToneOnPrimarySpeaker_ = IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_, sessionId);
+            isRingDualToneOnPrimarySpeaker_ = AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
+                streamDesc->newDeviceDescs_, sessionId);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
         return true;
@@ -1814,6 +1833,12 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         }
         FetchOutputDeviceAndRoute();
     }
+    
+    const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
+    if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
+        audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
+        FetchInputDeviceAndRoute();
+    }
 
     if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
         && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
@@ -1826,7 +1851,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
 
     AUDIO_INFO_LOG("isRingDualToneOnPrimarySpeaker: %{public}d , usage: %{public}d",
         isRingDualToneOnPrimarySpeaker_, streamUsage);
-    if (isRingDualToneOnPrimarySpeaker_ && IsOverRunPlayback(mode, rendererState) &&
+    if (isRingDualToneOnPrimarySpeaker_ && AudioCoreServiceUtils::IsOverRunPlayback(mode, rendererState) &&
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer run over.");
         isRingDualToneOnPrimarySpeaker_ = false;
@@ -1850,46 +1875,6 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
         audioEcManager_.UpdateStreamMicRefInfo(pipeInfo->moduleInfo_, sourceType);
         audioEcManager_.SetOpenedNormalSource(sourceType);
     }
-}
-
-bool AudioCoreService::IsDualStreamWhenRingDual(AudioStreamType streamType)
-{
-    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (volumeType == STREAM_RING || volumeType == STREAM_ALARM || volumeType == STREAM_ACCESSIBILITY) {
-        return true;
-    }
-    return false;
-}
-
-bool AudioCoreService::IsOverRunPlayback(AudioMode &mode, RendererState rendererState)
-{
-    if (mode != AUDIO_MODE_PLAYBACK) {
-        return false;
-    }
-    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED &&
-        rendererState != RENDERER_PAUSED) {
-        return false;
-    }
-    return true;
-}
-
-bool AudioCoreService::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-    const int32_t sessionId)
-{
-    if (descs.size() !=  AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT) {
-        return false;
-    }
-    if (AudioPolicyUtils::GetInstance().GetSinkName(*descs.front(), sessionId) != PRIMARY_SPEAKER) {
-        return false;
-    }
-    if (AudioPolicyUtils::GetInstance().GetSinkName(*descs.back(), sessionId) != PRIMARY_SPEAKER) {
-        return false;
-    }
-    if (descs.back()->deviceType_ != DEVICE_TYPE_SPEAKER) {
-        return false;
-    }
-    AUDIO_INFO_LOG("ring dual tone on primary speaker.");
-    return true;
 }
 
 void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo)

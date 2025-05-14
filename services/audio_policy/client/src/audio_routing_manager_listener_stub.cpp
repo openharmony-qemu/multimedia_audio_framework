@@ -60,6 +60,10 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
             GetSplitInfoRefinedInternal(data, reply);
             return AUDIO_OK;
         }
+        case ON_DISTRIBUTED_OUTPUT_CHANGE: {
+            OnDistributedOutputChangeInternal(data, reply);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -118,6 +122,13 @@ void AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefinedInternal(Message
     }
 }
 
+void AudioRoutingManagerListenerStub::OnDistributedOutputChangeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool isRemote = data.ReadBool();
+    int32_t result = OnDistributedOutputChange(isRemote);
+    reply.WriteInt32(result);
+}
+
 void AudioRoutingManagerListenerStub::OnAudioInputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
@@ -164,6 +175,17 @@ int32_t AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefined(
 
     return audioDeviceRefinerCallback->OnAudioOutputDeviceRefined(descs, routerType, streamUsage, clientUid,
         audioPipeType);
+}
+
+int32_t AudioRoutingManagerListenerStub::OnDistributedOutputChange(bool isRemote)
+{
+    std::unique_lock<std::mutex> lock(deviceRefinerCallbackMutex_);
+    std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr,
+        ERR_CALLBACK_NOT_REGISTERED, "audioDeviceRefinerCallback_ is nullptr");
+    lock.unlock();
+
+    return audioDeviceRefinerCallback->OnDistributedOutputChange(isRemote);
 }
 
 int32_t AudioRoutingManagerListenerStub::OnAudioInputDeviceRefined(

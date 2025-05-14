@@ -493,18 +493,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDeviceChangeCallback_002, Te
 }
 
 /**
- * @tc.name  : Test Audio_Policy_Manager_SetDistribuitedOutputChangeCallback_001 via illegal state
- * @tc.number: Audio_Policy_Manager_SetDistribuitedOutputChangeCallback_001
- * @tc.desc  : Test SetDistribuitedOutputChangeCallback interface. Returns invalid.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetDistribuitedOutputChangeCallback_001, TestSize.Level1)
-{
-    auto cb = make_shared<AudioDistribuitedOutputChangeCallbackTest>();
-    int32_t ret = AudioPolicyManager::GetInstance().SetDistribuitedOutputChangeCallback(cb);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name  : Test Audio_Policy_Manager_SetAudioManagerInterruptCallback_001 via illegal state
  * @tc.number: Audio_Policy_Manager_SetAudioManagerInterruptCallback_001
  * @tc.desc  : Test SetAudioManagerInterruptCallback interface. Returns invalid.

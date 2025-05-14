@@ -349,6 +349,7 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_019, TestSize.Level1)
     std::shared_ptr<AudioDeviceRefiner> callback = std::make_shared<ConcreteAudioDeviceRefiner>();
     audioPolicyManager_->SetAudioDeviceRefinerCallback(callback);
     EXPECT_NE(audioPolicyManager_, nullptr);
+    EXPECT_EQ(callback->OnDistributedOutputChange(true), SUCCESS);
 }
 
 /**

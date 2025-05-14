@@ -41,6 +41,7 @@
 #include "audio_pipe_manager.h"
 #include "audio_pipe_selector.h"
 #include "audio_policy_config_manager.h"
+#include "audio_core_service_utils.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioA2dpOffloadManager;
@@ -250,6 +251,7 @@ private:
     void CheckModemScene(const AudioStreamDeviceChangeReasonExt reason);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
+    void UpdateInputDeviceWhenStopping(int32_t uid);
     int32_t BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &desc,
         const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> desc,
@@ -357,10 +359,6 @@ private:
     bool NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo, RendererState rendererState);
     void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo);
-    bool IsDualStreamWhenRingDual(AudioStreamType streamType);
-    bool IsOverRunPlayback(AudioMode &mode, RendererState rendererState);
-    bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        const int32_t sessionId);
     void CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo);
     void ReConfigOffloadStatus(uint32_t sessionId, std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
