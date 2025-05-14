@@ -246,6 +246,15 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
     }
 }
 
+void AudioCoreService::UpdateInputDeviceWhenStopping(int32_t uid)
+{
+    std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
+    for (const auto &sessionID : sessionIDSet) {
+        audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
+    }
+    FetchInputDeviceAndRoute();
+}
+
 int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr)
 {
@@ -1806,6 +1815,12 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
         FetchOutputDeviceAndRoute();
+    }
+    
+    const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
+    if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
+        audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
+        FetchInputDeviceAndRoute();
     }
 
     if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
