@@ -1195,10 +1195,11 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
                 streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
                 audioPolicyManager_.SetStreamMute(streamType, true, streamUsage);
             }
+            shouldUpdateDeviceDueToDualTone_ = true;
         } else {
             audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
+            shouldUpdateDeviceDueToDualTone_ = false;
         }
-        shouldUpdateDeviceDueToDualTone_ = false;
     }
 }
 
