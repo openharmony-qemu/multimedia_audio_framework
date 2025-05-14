@@ -210,9 +210,6 @@ private:
     void MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
         const AudioStreamDeviceChangeReasonExt reason);
-    void MuteSinkForSwitchDistributedDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
-        const AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> &desc,
         vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);

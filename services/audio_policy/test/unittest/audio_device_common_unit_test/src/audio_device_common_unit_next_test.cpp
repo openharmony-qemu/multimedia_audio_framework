@@ -277,66 +277,6 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, NotifyRecreateDirectStream_002, TestSize
 }
 
 /**
-* @tc.name  : Test MuteSinkForSwitchDistributedDevice.
-* @tc.number: MuteSinkForSwitchDistributedDevice_001
-* @tc.desc  : Test MuteSinkForSwitchDistributedDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, MuteSinkForSwitchDistributedDevice_001, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    outputDevices.push_back(deviceDesc);
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE;
-    audioDeviceCommon.MuteSinkForSwitchDistributedDevice(rendererChangeInfo, outputDevices, reason);
-    EXPECT_NE(outputDevices.front(), nullptr);
-}
-
-/**
-* @tc.name  : Test MuteSinkForSwitchDistributedDevice.
-* @tc.number: MuteSinkForSwitchDistributedDevice_002
-* @tc.desc  : Test MuteSinkForSwitchDistributedDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, MuteSinkForSwitchDistributedDevice_002, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_EARPIECE;
-    outputDevices.push_back(deviceDesc);
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE;
-    audioDeviceCommon.MuteSinkForSwitchDistributedDevice(rendererChangeInfo, outputDevices, reason);
-    EXPECT_NE(outputDevices.front(), nullptr);
-}
-
-/**
-* @tc.name  : Test MuteSinkForSwitchDistributedDevice.
-* @tc.number: MuteSinkForSwitchDistributedDevice_003
-* @tc.desc  : Test MuteSinkForSwitchDistributedDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, MuteSinkForSwitchDistributedDevice_003, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_EARPIECE;
-    outputDevices.push_back(deviceDesc);
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-    audioDeviceCommon.MuteSinkForSwitchDistributedDevice(rendererChangeInfo, outputDevices, reason);
-    EXPECT_NE(outputDevices.front(), nullptr);
-}
-
-/**
 * @tc.name  : Test SetDeviceConnectedFlagWhenFetchOutputDevice.
 * @tc.number: SetDeviceConnectedFlagWhenFetchOutputDevice_001
 * @tc.desc  : Test SetDeviceConnectedFlagWhenFetchOutputDevice interface.
