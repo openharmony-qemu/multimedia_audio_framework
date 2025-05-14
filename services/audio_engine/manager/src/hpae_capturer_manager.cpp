@@ -453,8 +453,10 @@ int32_t HpaeCapturerManager::PrepareCapturerEc(HpaeNodeInfo &ecNodeInfo)
         sourceInputClusterMap_[HPAE_SOURCE_EC] = std::make_shared<HpaeSourceInputCluster>(ecNodeInfo);
         int32_t ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->GetCapturerSourceInstance(
             DEFAULT_DEVICE_CLASS, DEFAULT_DEVICE_NETWORKID, SOURCE_TYPE_INVALID, HDI_ID_INFO_EC);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
-            "get ec capturer soruce instance error, ret = %{public}d.\n", ret);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("get ec capturer soruce instance error, ret = %{public}d.\n", ret);
+            sourceInputClusterMap_.erase(HPAE_SOURCE_EC);
+        }
     }
     return SUCCESS;
 }
@@ -472,8 +474,10 @@ int32_t HpaeCapturerManager::PrepareCapturerMicRef(HpaeNodeInfo &micRefNodeInfo)
         sourceInputClusterMap_[HPAE_SOURCE_MICREF] = std::make_shared<HpaeSourceInputCluster>(micRefNodeInfo);
         int32_t ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->GetCapturerSourceInstance(
             DEFAULT_DEVICE_CLASS, DEFAULT_DEVICE_NETWORKID, SOURCE_TYPE_INVALID, HDI_ID_INFO_MIC_REF);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
-            "get micRef capturer soruce instance error, ret = %{public}d.\n", ret);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("get micRef capturer soruce instance error, ret = %{public}d.\n", ret);
+            sourceInputClusterMap_.erase(HPAE_SOURCE_MICREF);
+        }
     }
     return SUCCESS;
 }
@@ -519,7 +523,10 @@ int32_t HpaeCapturerManager::InitCapturer()
         attrEc.isBigEndian = false;
         attrEc.openMicSpeaker = sourceInfo_.openMicSpeaker;
         ret = sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceInit(attrEc);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION, "init ec source input node err");
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("init ec source input node err, ret = %{public}d.\n", ret);
+            sourceInputClusterMap_.erase(HPAE_SOURCE_EC);
+        }
     }
     if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         IAudioSourceAttr attrMicRef;
@@ -532,7 +539,10 @@ int32_t HpaeCapturerManager::InitCapturer()
         attrMicRef.isBigEndian = false;
         attrMicRef.openMicSpeaker = sourceInfo_.openMicSpeaker;
         ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceInit(attrMicRef);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION, "init micRef source input node err");
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("init micRef source input node err, ret = %{public}d.\n", ret);
+            sourceInputClusterMap_.erase(HPAE_SOURCE_MICREF);
+        }
     }
     return SUCCESS;
 }
@@ -609,8 +619,8 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     int32_t ret = sourceInputClusterMap_[mainMicType_]->GetCapturerSourceInstance(
         sourceInfo_.deviceClass, sourceInfo_.deviceNetId, sourceInfo_.sourceType, sourceInfo_.sourceName);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get mic capturer soruce instance error, ret = %{public}d.\n", ret);
-    CHECK_AND_RETURN_RET_LOG(PrepareCapturerEc(ecNodeInfo) == SUCCESS, ret, "PrepareCapturerEc error");
-    CHECK_AND_RETURN_RET_LOG(PrepareCapturerMicRef(micRefNodeInfo) == SUCCESS, ret, "PrepareCapturerMicRef error");
+    PrepareCapturerEc(ecNodeInfo);
+    PrepareCapturerMicRef(micRefNodeInfo);
     CHECK_AND_RETURN_RET_LOG(InitCapturer() == SUCCESS, ret, "init main capturer error");
     isInit_.store(true);
     return SUCCESS;
