@@ -191,18 +191,12 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
-            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
-            recorderDfx_->WriteDfxStopMsg(streamIndex_, CAPTURER_STAGE_PAUSE_OK,
-                GetLastAudioDuration(), processConfig_);
+            HandleOperationStopped(CAPTURER_STAGE_PAUSE_OK);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
-            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
-            recorderDfx_->WriteDfxStopMsg(streamIndex_, CAPTURER_STAGE_STOP_OK,
-                GetLastAudioDuration(), processConfig_);
+            HandleOperationStopped(CAPTURER_STAGE_STOP_OK);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
@@ -225,6 +219,15 @@ void CapturerInServer::HandleOperationFlushed()
     } else {
         AUDIO_WARNING_LOG("Invalid status before flusing");
     }
+}
+
+void CapturerInServer::HandleOperationStopped(CapturerStage stage)
+{
+    CHECK_AND_RETURN_LOG(recorderDfx_ != nullptr, "nullptr");
+    lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    recorderDfx_->WriteDfxStopMsg(streamIndex_, stage,
+        GetLastAudioDuration(), processConfig_);
 }
 
 BufferDesc CapturerInServer::DequeueBuffer(size_t length)
@@ -640,6 +643,10 @@ int32_t CapturerInServer::Release()
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
         return ret;
+    }
+    if (status_ != I_STATUS_STOPPING &&
+        status_ != I_STATUS_STOPPED) {
+        HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
     }
     status_ = I_STATUS_RELEASED;
 

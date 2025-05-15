@@ -138,14 +138,14 @@ int32_t AudioProcessProxy::Resume()
     return reply.ReadInt32();
 }
 
-int32_t AudioProcessProxy::Stop()
+int32_t AudioProcessProxy::Stop(AudioProcessStage stage)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-
+    data.WriteInt32(static_cast<int32_t>(stage));
     int ret = Remote()->SendRequest(IAudioProcessMsg::ON_STOP, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "Stop failed, error: %{public}d", ret);
 

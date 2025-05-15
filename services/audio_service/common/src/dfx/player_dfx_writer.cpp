@@ -57,7 +57,8 @@ void PlayerDfxWriter::WriteDfxStopMsg(uint32_t index, RendererStage stage,
     const PlayStat &stat, const AudioProcessConfig &processConfig)
 {
     CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "nullptr");
-    if (stage != RENDERER_STAGE_STOP_OK) {
+    if (stage != RENDERER_STAGE_STOP_OK &&
+        stage != RENDERER_STAGE_STOP_BY_RELEASE) {
         return;
     }
 

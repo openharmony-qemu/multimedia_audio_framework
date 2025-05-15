@@ -76,7 +76,7 @@ public:
 
     virtual int32_t Resume() = 0;
 
-    virtual int32_t Stop() = 0;
+    virtual int32_t Stop(AudioProcessStage stage = AUDIO_PROC_STAGE_STOP) = 0;
 
     virtual int32_t Release(bool isSwitchStream = false) = 0;
 

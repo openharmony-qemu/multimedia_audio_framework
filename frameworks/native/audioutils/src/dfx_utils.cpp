@@ -43,6 +43,7 @@ std::string DfxUtils::SerializeToJSONString(const RendererStats &data)
     json["underrunCnt"] = data.underrunCnt;
     json["originalFlag"] = data.originalFlag;
     json["zeroDataPercent"] = data.zeroDataPercent;
+    json["frameWritten"] = data.frameWritten;
 
     ret = json.dump();
     return ret;

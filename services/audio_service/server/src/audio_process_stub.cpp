@@ -151,8 +151,8 @@ int32_t AudioProcessStub::HandlePause(MessageParcel &data, MessageParcel &reply)
 
 int32_t AudioProcessStub::HandleStop(MessageParcel &data, MessageParcel &reply)
 {
-    (void)data;
-    reply.WriteInt32(Stop());
+    AudioProcessStage stage = static_cast<AudioProcessStage>(data.ReadInt32());
+    reply.WriteInt32(Stop(stage));
     return AUDIO_OK;
 }
 
