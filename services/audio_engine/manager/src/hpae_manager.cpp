@@ -40,6 +40,7 @@ static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr int32_t SINK_INVALID_ID = -1;
 static const std::string DEFAULT_SINK_NAME = "Speaker";
+static const std::string BT_SINK_NAME = "Bt_Speaker";
 static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
     {"s16", SAMPLE_S16LE},
     {"s16le", SAMPLE_S16LE},
@@ -137,6 +138,8 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
     RegisterHandler(DUMP_SINK_INFO, &HpaeManager::HandleDumpSinkInfo);
     RegisterHandler(DUMP_SOURCE_INFO, &HpaeManager::HandleDumpSourceInfo);
     RegisterHandler(MOVE_SESSION_FAILED, &HpaeManager::HandleMoveSessionFailed);
+    RegisterHandler(CONNECT_CO_BUFFER_NODE, &HpaeManager::HandleConnectCoBufferNode);
+    RegisterHandler(DISCONNECT_CO_BUFFER_NODE, &HpaeManager::HandleDisConnectCoBufferNode);
 }
 
 HpaeManager::~HpaeManager()
@@ -2186,6 +2189,35 @@ bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys
     LoadEffectLive();
     result.emplace_back(targetKey, effectLiveState_);
      return true;
+}
+
+int32_t HpaeManager::UpdateCollaborationState(bool isCollaborationEnabled)
+{
+    std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByNmae(BT_SINK_NAME);
+    if (rendererManager != nullptr) {
+        rendererManger->UpdateCollaborationState(isCollaborationEnabled);
+        return true;
+    }
+}
+
+int32_t HpaeManager::HandleConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager)
+{
+    // 获取外放默认renderermanager
+    std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByNmae(DEFAULT_SINK_NAME);
+    // 连接cobuffernode和renderermanger
+    if (auto btRendererManager = rendererManager.lock()) {
+        defaultRendererManger->ConnectCoBufferNode(btRendererManager->GetCoBufferNode());
+    }
+}
+
+int32_t HpaeManager::HandleDisConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager)
+{
+    // 获取外放默认renderermanager
+    std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByNmae(DEFAULT_SINK_NAME);
+    // 连接cobuffernode和renderermanger
+    if (auto btRendererManager = rendererManager.lock()) {
+        defaultRendererManger->DisConnectCoBufferNode(btRendererManager->GetCoBufferNode());
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

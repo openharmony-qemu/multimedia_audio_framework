@@ -168,6 +168,7 @@ public:
     bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
+    int32_t UpdateCollaborationState(bool isCollaborationEnabled) override;
 private:
     int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
     bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);

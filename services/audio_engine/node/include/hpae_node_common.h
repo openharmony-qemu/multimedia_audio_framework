@@ -22,7 +22,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInfo);
-HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType);
+HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType, bool isCollaborationEnabled = false);
 HpaeProcessorType TransSourceTypeToSceneType(SourceType sourceType);
 bool CheckSceneTypeNeedEc(HpaeProcessorType processorType);
 bool CheckSceneTypeNeedMicRef(HpaeProcessorType processorType);

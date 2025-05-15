@@ -62,7 +62,7 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         nodeInfo.sceneType = TransStreamUsageToSplitSceneType(streamInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
     } else {
-        nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
+        nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType, isCollaborationEnabled_);
     }
     if (IsMchDevice()) {
         nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
@@ -305,6 +305,13 @@ void HpaeRendererManager::DeleteProcessCluster(
     }
 
     if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
+        // for collaboration
+        if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+            // todo hpaeCoBufferNode info更新
+            hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+        }
+        // triggerback
+        TriggerCallback(DISCONNECT_CO_BUFFER_NODE, shared_from_this());
         outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
         sceneClusterMap_[sceneType]->SetConnectedFlag(false);
     }
@@ -389,6 +396,13 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         sceneClusterMap_[sceneType]->SetConnectedFlag(true);
     }
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
+    // for collaboration
+    if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+        // todo hpaeCoBufferNode info更新
+        hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
+    }
+    // triggerback
+    TriggerCallback(CONNECT_CO_BUFFER_NODE, shared_from_this());
 }
 
 void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
@@ -534,6 +548,13 @@ void HpaeRendererManager::DisConnectProcessCluster(uint32_t sessionId, HpaeProce
     }
     if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
         outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
+        // for collaboration
+        if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+            // todo hpaeCoBufferNode info更新
+            hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+            // triggerback
+            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, shared_from_this());
+        }
         sceneClusterMap_[sceneType]->SetConnectedFlag(false);
     }
 }
@@ -1023,6 +1044,45 @@ void HpaeRendererManager::DumpSinkInfo()
     SendRequest(request);
 }
 
+int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnabled)
+{
+    // 存储开关
+    isCollaborationEnabled_ = isCollaborationEnabled;
+    // 获取时延
+    size_t latency_ = 200;
+    // 创建buffernode
+    hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(latency_);
+}
+
+std::shared_ptr<HpaeCoBufferNode> HpaeRendererManager::GetCoBufferNode()
+{
+    CHECK_AND_RETURN_RET_LOG(hpaeCoBufferNode_ != nullptr, nullptr,
+        "hpaeCoBufferNode_ is nullptr");
+    return hpaeCoBufferNode_;
+}
+
+int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
+{
+    CHECK_AND_RETURN_RET_LOG((outputCluster != nullptr) && (coBufferNode != nullptr), ERROR,
+        "outputCluster or coBufferNode is nullptr");
+    outputCluster_->Connect(coBufferNode);
+    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+        outputCluster_->Start();
+    }
+    return SUCCESS;
+}
+
+int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
+{
+    CHECK_AND_RETURN_RET_LOG((outputCluster != nullptr) && (coBufferNode != nullptr), ERROR,
+        "outputCluster or coBufferNode is nullptr");
+    outputCluster_->Connect(coBufferNode);
+    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+        // todo check stop/pause
+        outputCluster_->Stop();
+    }
+    return SUCCESS;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
