@@ -2526,33 +2526,33 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_001, TestSize.Leve
     int32_t ret = -1;
     bool isBlockingRead = true;
     AudioCapturerOptions capturerOptions;
- 
+
     AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
- 
+
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(true, isStarted);
- 
+
     size_t bufferLen;
     ret = audioCapturer->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
- 
+
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
     ASSERT_NE(nullptr, buffer);
     int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
     EXPECT_GE(bytesRead, VALUE_ZERO);
- 
+
     Timestamp timestamp;
     bool getAudioTime = audioCapturer->GetTimeStampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioTime);
     EXPECT_GE(timestamp.time.tv_sec, (const long)VALUE_ZERO);
     EXPECT_GE(timestamp.time.tv_nsec, (const long)VALUE_ZERO);
- 
+
     audioCapturer->Flush();
     audioCapturer->Stop();
     audioCapturer->Release();
- 
+
     free(buffer);
 }
  
@@ -2566,7 +2566,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_002, TestSize.Leve
 {
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
- 
+
     Timestamp timestamp;
     bool getTimestamp = audioCapturer->GetTimeStampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getTimestamp);
@@ -2580,21 +2580,21 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_002, TestSize.Leve
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_003, TestSize.Level1)
 {
     AudioCapturerOptions capturerOptions;
- 
+
     AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
- 
+
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(true, isStarted);
- 
+
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
- 
+
     Timestamp timestamp;
     bool getTimestamp = audioCapturer->GetTimeStampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getTimestamp);
- 
+
     audioCapturer->Release();
 }
  
@@ -2606,20 +2606,20 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_003, TestSize.Leve
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_004, TestSize.Level1)
 {
     AudioCapturerOptions capturerOptions;
- 
+
     AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     ASSERT_NE(nullptr, audioCapturer);
- 
+
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(true, isStarted);
- 
+
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
- 
+
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
- 
+
     Timestamp timestamp;
     bool getTimestamp = audioCapturer->GetTimeStampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getTimestamp);
