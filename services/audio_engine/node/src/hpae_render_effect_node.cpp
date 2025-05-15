@@ -51,8 +51,8 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     }
     if (sceneType_ == "SCENE_COLLABORATIVE") {
         PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, CH_LAYOUT_STEREO);
-        directOutput_ = HpaePcmBuffer(pcmBufferInfo);
-        collaborativeOutput_ = HpaePcmBuffer(pcmBufferInfo);
+        directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+        collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
     }
     AUDIO_INFO_LOG("render effect node created, scene type: %{public}s", sceneType_.c_str());
 #ifdef ENABLE_HOOK_PCM
@@ -86,7 +86,7 @@ void HpaeRenderEffectNode::DoProcess()
         return;
     }
 
-    if (enableProcess_ && !preOutputs.empty()) {
+    if (enableProcess_ && !preOutputs.empty() && directOutput_ && collaborativeOutput_) {
         SignalProcess(preOutputs);
         int32_t ret = SplitCollaborativeData();
         if (ret != SUCCESS) {
@@ -94,9 +94,9 @@ void HpaeRenderEffectNode::DoProcess()
             // todo yjy use new function
             // outputStream_.WriteDataToOutput(&silenceData_, flag);
         } else {
-            outputStream_.WriteDataToOutput(&directOutput_);
+            outputStream_.WriteDataToOutput(directOutput_.get());
             // todo yjy use new function
-            // outputStream_.WriteDataToOutput(&collaborativeOutput_, flag);
+            // outputStream_.WriteDataToOutput(collaborativeOutput_.get(), flag);
         }
     } else if (!preOutputs.empty()) {
         outputStream_.WriteDataToOutput(preOutputs[0]);
@@ -108,13 +108,13 @@ void HpaeRenderEffectNode::DoProcess()
         // outputStream_.WriteDataToOutput(&silenceData_, flag);
     }
 #ifdef ENABLE_HOOK_PCM
-    if (directPcmDumper_) {
-        directPcmDumper_->Dump((int8_t *)directOutput_.GetPcmDataBuffer(),
-            directOutput_.GetFrameLen() * sizeof(float) * directOutput_.GetChannelCount());
+    if (directPcmDumper_ && directOutput_) {
+        directPcmDumper_->Dump((int8_t *)directOutput_->GetPcmDataBuffer(),
+            directOutput_->GetFrameLen() * sizeof(float) * directOutput_->GetChannelCount());
     }
-    if (collaborativePcmDumper_) {
-        collaborativePcmDumper_->Dump((int8_t *)collaborativeOutput_.GetPcmDataBuffer(),
-            collaborativeOutput_.GetFrameLen() * sizeof(float) * collaborativeOutput_.GetChannelCount());
+    if (collaborativePcmDumper_ && collaborativeOutput_) {
+        collaborativePcmDumper_->Dump((int8_t *)collaborativeOutput_->GetPcmDataBuffer(),
+            collaborativeOutput_->GetFrameLen() * sizeof(float) * collaborativeOutput_->GetChannelCount());
     }
 #endif
 }
@@ -171,8 +171,8 @@ int32_t HpaeRenderEffectNode::SplitCollaborativeData()
     CHECK_AND_RETURN_RET_LOG(effectOutput_.GetChannelCount() == static_cast<uint32_t>(CHANNEL_4), ERROR,
         "collaborative channel count is invalid, count: %{public}d", CHANNEL_4);
     float *tempOutput = effectOutput_.GetPcmDataBuffer();
-    float *directOutput = directOutput_.GetPcmDataBuffer();
-    float *collaborativeOutput = collaborativeOutput_.GetPcmDataBuffer();
+    float *directOutput = directOutput_->GetPcmDataBuffer();
+    float *collaborativeOutput = collaborativeOutput_->GetPcmDataBuffer();
     for (uint32_t i = 0; i < effectOutput_.GetFrameLen(); ++i) {
         directOutput[DIRECT_CHANNELS * i] = tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i];
         directOutput[DIRECT_CHANNELS * i + 1] = tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + 1];

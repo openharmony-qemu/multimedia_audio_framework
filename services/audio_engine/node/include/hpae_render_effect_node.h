@@ -49,13 +49,15 @@ private:
     int32_t SplitCollaborativeData();
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer effectOutput_;
-    HpaePcmBuffer directOutput_;
-    HpaePcmBuffer collaborativeOutput_;
+    std::unique_ptr<HpaePcmBuffer> directOutput_ = nullptr;
+    std::unique_ptr<HpaePcmBuffer> collaborativeOutput_ = nullptr;
     HpaeNodeInfo nodeInfo_;
     std::string sceneType_ = "EFFECT_NONE";
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
+    std::unique_ptr<HpaePcmDumper> directPcmDumper_;
+    std::unique_ptr<HpaePcmDumper> collaborativePcmDumper_;
 #endif
 };
 
