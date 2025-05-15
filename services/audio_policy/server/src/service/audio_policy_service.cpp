@@ -2181,9 +2181,9 @@ bool AudioPolicyService::IsDevicePlaybackSupport(const AudioProcessConfig &confi
 }
 
 void AudioPolicyService::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
-    std::string callerName, std::string invocationTime)
+    int32_t appUid, std::string invocationTime)
 {
-    audioVolumeManager_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, callerName, invocationTime);
+    audioVolumeManager_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, appUid, invocationTime);
 }
 
 void AudioPolicyService::SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName,

@@ -26,6 +26,7 @@
 #include "dfx_utils.h"
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1222,7 +1223,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
             ++iterActive;
         }
         uint8_t appstate = GetAppState(currentInterrupt.pid);
-        auto info = policyServer_->GetBundleInfoFromUid(currentInterrupt.uid);
+        auto info = AudioBundleManager::GetBundleInfoFromUid(currentInterrupt.uid);
         dfxBuilder.WriteEffectMsg(appstate, info.name, currentInterrupt, interruptEvent.hintType);
         SendActiveInterruptEvent(activeStreamId, interruptEvent, incomingInterrupt, currentInterrupt);
     }
@@ -1399,10 +1400,10 @@ std::string AudioInterruptService::GetRealBundleName(uint32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, "", "policyServer nullptr");
     if (IPCSkeleton::GetCallingUid() == MEDIA_SA_UID) {
-        auto info = policyServer_->GetBundleInfoFromUid(uid);
+        auto info = AudioBundleManager::GetBundleInfoFromUid(uid);
         return info.name;
     }
-    std::string bundleName = policyServer_->GetBundleName();
+    std::string bundleName = AudioBundleManager::GetBundleName();
     return bundleName;
 }
 

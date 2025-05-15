@@ -30,7 +30,11 @@
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_converter_parser.h"
+#include "audio_bundle_manager.h"
 
+namespace {
+const std::string CALLER_NAME = "audio_server";
+};
 
 namespace OHOS {
 namespace AudioStandard {
@@ -452,7 +456,9 @@ void AudioPolicyDump::GetAdjustVolumeDump(std::string &dumpString)
             AppendFormat(dumpString, "\tStreamType: %s     ",
                 AudioInfoDumpUtils::GetStreamName(item.streamType).c_str());
             AppendFormat(dumpString, "\tVolumeLevel: %d\n", item.volumeLevel);
-            AppendFormat(dumpString, "\tCallerName: %s", item.callerName.c_str());
+            AppExecFwk::BundleInfo bundleInfo = AudioBundleManager::GetBundleInfoFromUid(item.appUid);
+            std::string callerName = bundleInfo.name == "" ? CALLER_NAME : bundleInfo.name;
+            AppendFormat(dumpString, "\tCallerName: %s", callerName.c_str());
             AppendFormat(dumpString, "\tInvocationTime: %s\n", item.invocationTime.c_str());
         }
     } else {
