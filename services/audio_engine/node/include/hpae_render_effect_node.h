@@ -32,6 +32,7 @@ enum ModifyAudioEffectChainInfoReason {
 class HpaeRenderEffectNode : public HpaePluginNode {
 public:
     HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo);
+    void DoProcess() override;
     int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo);
@@ -45,8 +46,11 @@ private:
     int32_t ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo);
     void ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo, ModifyAudioEffectChainInfoReason reason);
     void UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo);
+    int32_t SplitCollaborativeData();
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer effectOutput_;
+    HpaePcmBuffer directOutput_;
+    HpaePcmBuffer collaborativeOutput_;
     HpaeNodeInfo nodeInfo_;
     std::string sceneType_ = "EFFECT_NONE";
 #ifdef ENABLE_HOOK_PCM
