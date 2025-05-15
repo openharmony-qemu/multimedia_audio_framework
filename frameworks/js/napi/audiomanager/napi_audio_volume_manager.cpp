@@ -288,7 +288,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentageForUid(napi_env env, na
         } else if (context->intValue == ERR_INVALID_PARAM) {
             context->SignError(NAPI_ERROR_INVALID_PARAM);
         } else {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
         }
     };
 
@@ -330,7 +330,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentage(napi_env env, napi_cal
         if (context->intValue == ERROR_INVALID_PARAM) {
             context->SignError(NAPI_ERROR_INVALID_PARAM, "Invalid arguments count or types.");
         } else {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
         }
     };
 
@@ -373,7 +373,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumeMutedForUid(napi_env env, napi_ca
         } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_PERMISSION_DENIED);
         } else {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
         }
     };
 

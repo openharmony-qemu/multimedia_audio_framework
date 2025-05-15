@@ -166,13 +166,13 @@ napi_value NapiAudioSessionMgr::ActivateAudioSession(napi_env env, napi_callback
         ObjectRefMap objectGuard(obj);
         auto *napiSessionMgr = objectGuard.GetPtr();
         if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. The napiSessionMgr or audioSessionMngr is nullptr.");
             AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
             return;
         }
         context->intValue = napiSessionMgr->audioSessionMngr_->ActivateAudioSession(context->audioSessionStrategy);
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
         }
     };
 
@@ -199,13 +199,13 @@ napi_value NapiAudioSessionMgr::DeactivateAudioSession(napi_env env, napi_callba
         ObjectRefMap objectGuard(obj);
         auto *napiSessionMgr = objectGuard.GetPtr();
         if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. The napiSessionMgr or audioSessionMngr is nullptr.");
             AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
             return;
         }
         context->intValue = napiSessionMgr->audioSessionMngr_->DeactivateAudioSession();
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
         }
     };
 

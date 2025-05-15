@@ -1010,7 +1010,7 @@ napi_value NapiAudioVolumeGroupManager::AdjustVolumeByStep(napi_env env, napi_ca
             if (context->volumeAdjustStatus == ERR_PERMISSION_DENIED) {
                 context->SignError(NAPI_ERR_NO_PERMISSION);
             } else {
-                context->SignError(NAPI_ERR_SYSTEM);
+                context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
             }
         }
     };
@@ -1065,7 +1065,7 @@ napi_value NapiAudioVolumeGroupManager::AdjustSystemVolumeByStep(napi_env env, n
             if (context->volumeAdjustStatus == ERR_PERMISSION_DENIED) {
                 context->SignError(NAPI_ERR_NO_PERMISSION);
             } else {
-                context->SignError(NAPI_ERR_SYSTEM);
+                context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
             }
         }
     };
@@ -1122,7 +1122,7 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDb(napi_env env, napi_c
         if (FLOAT_COMPARE_EQ(context->volumeInDb, static_cast<float>(ERR_INVALID_PARAM))) {
             context->SignError(NAPI_ERR_INVALID_PARAM, "volumeInDb invalid");
         } else if (context->volumeInDb < 0) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
         }
     };
     auto complete = [env, context](napi_value &output) {
@@ -1417,9 +1417,9 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForOutputDevice(napi_env 
         if (FLOAT_COMPARE_EQ(context->outputMaxAmplitude, static_cast<float>(ERR_INVALID_PARAM))) {
             context->SignError(NAPI_ERR_INVALID_PARAM, "Parmeter verification faild. OutputDevice not exist.");
         } else if (context->outputMaxAmplitude < 0) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. OutputMaxAmplitude < 0.");
         } else if (!context->outputBArgTransFlag) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
         }
     };
 
@@ -1459,9 +1459,9 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env e
         if (FLOAT_COMPARE_EQ(context->inputMaxAmplitude, static_cast<float>(ERR_INVALID_PARAM))) {
             context->SignError(NAPI_ERR_INVALID_PARAM, "maxAmplitude invalid");
         } else if (context->inputMaxAmplitude < 0) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. InputMaxAmplitude < 0.");
         } else if (!context->inputBArgTransFlag) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
         }
     };
 
