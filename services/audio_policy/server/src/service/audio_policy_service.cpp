@@ -2009,6 +2009,8 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
         AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
     }
     AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
+    AUDIO_INFO_LOG("fetch device after split stream and open port.");
     return openRet;
 }
 
