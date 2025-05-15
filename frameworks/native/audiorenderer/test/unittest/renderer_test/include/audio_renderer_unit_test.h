@@ -60,15 +60,6 @@ constexpr int g_writeOverflowNum = 1000;
 
 void StartRenderThread(AudioRenderer *audioRenderer, uint32_t limit);
 }
- 
-class AudioRendererUnitTest;
-class AudioRendererCallbackTest : public AudioRendererCallback {
-public:
-    void OnInterrupt(const InterruptEvent &interruptEvent) override { 
-        AudioRendererUnitTest::interruptEventTest_.hintType = interruptEvent.hintType 
-    }
-    void OnStateChange(const RendererState state, const StateChangeCmdType cmdType) override {}
-};
 
 class AudioRendererDeviceChangeCallbackTest : public AudioRendererDeviceChangeCallback {
 public:
@@ -168,6 +159,15 @@ public:
         FILE *&wavFile, FILE *&metaFile);
     static InterruptEvent interruptEventTest_;
 };
+
+class AudioRendererCallbackTest : public AudioRendererCallback {
+public:
+    void OnInterrupt(const InterruptEvent &interruptEvent) override { 
+        AudioRendererUnitTest::interruptEventTest_.hintType = interruptEvent.hintType;
+    }
+    void OnStateChange(const RendererState state, const StateChangeCmdType cmdType) override {}
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 
