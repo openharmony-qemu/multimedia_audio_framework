@@ -2555,7 +2555,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_001, TestSize.Leve
 
     free(buffer);
 }
- 
+
 /**
 * @tc.name  : Test GetTimeStampInfo API via illegal state, 
 *             CAPTURER_NEW: GetTimeStampInfo without initializing the capturer.
@@ -2571,7 +2571,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_002, TestSize.Leve
     bool getTimestamp = audioCapturer->GetTimeStampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getTimestamp);
 }
- 
+
 /**
 * @tc.name  : Test GetTimeStampInfo API via legal state, CAPTURER_STOPPED.
 * @tc.number: Audio_Capturer_GetTimeStampInfo_003
@@ -2597,7 +2597,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_003, TestSize.Leve
 
     audioCapturer->Release();
 }
- 
+
 /**
 * @tc.name  : Test GetTimeStampInfo API via illegal state, CAPTURER_RELEASED: GetAudioTime after Release.
 * @tc.number: Audio_Capturer_GetTimeStampInfo_004
