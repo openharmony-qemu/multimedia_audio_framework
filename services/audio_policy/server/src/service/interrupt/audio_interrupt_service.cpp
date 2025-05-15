@@ -1171,6 +1171,10 @@ void AudioInterruptService::ProcessRemoteInterrupt(std::set<int32_t> streamIds, 
             AudioInterrupt currentInterrupt = iterActive->first;
             SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
             SendInterruptEventCallback(interruptEvent, streamId, currentInterrupt);
+            if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+                SendFocusChangeEvent(ZONEID_DEFAULT, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY,
+                    currentInterrupt);
+            }
         }
         ++iterActive;
     }
