@@ -75,39 +75,39 @@ ohos_shared_library("audio_clock") {
 
 ohos_unittest("audioclock_unit_test") {
   module_out_path = "audio_framework/audio_framework_route/audioclock"
- 
+
   cflags = [
     "-Wall",
     "-Werror",
     "-fno-access-control",
   ]
- 
+
   include_dirs = [
     "./include",
     "../../../interfaces/inner_api/native/audiocommon/include/",
     "../audioutils/include",
   ]
- 
+
   sources = [
     "test/unittest/audio_primary_source_clock_unit_test.cpp",
     "test/unittest/audio_source_clock_unit_test.cpp",
     "test/unittest/capturer_clock_manager_unit_test.cpp",
     "test/unittest/capturer_clock_unit_test.cpp",
   ]
- 
+
   deps = [ 
     ":audio_clock",
     "../audioutils:audio_utils"
   ]
- 
+
   defines = []
- 
+
   external_deps = [
     "drivers_interface_audio:libaudio_proxy_4.0",
     "googletest:gmock",
     "googletest:gtest",
   ]
- 
+
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
