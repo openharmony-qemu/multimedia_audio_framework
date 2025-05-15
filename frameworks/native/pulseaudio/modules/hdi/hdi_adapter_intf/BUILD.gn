@@ -76,6 +76,7 @@ ohos_shared_library("source_adapter") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../audiodefinitions/include",
     "../../../../hdiadapter_new/include",
+    "../../../../audioclock/include"
   ]
 
   sources = [
@@ -83,7 +84,10 @@ ohos_shared_library("source_adapter") {
     "source/source_intf.c",
   ]
 
-  deps = [ "../../../../hdiadapter_new:hdiadapter_new" ]
+  deps = [
+    "../../../../hdiadapter_new:hdiadapter_new",
+    "../../../../audioclock:audio_clock"
+  ]
 
   external_deps = [
     "c_utils:utils",

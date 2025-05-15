@@ -833,7 +833,11 @@ static void PaRtpollProcessFunc(struct Userdata *u)
     }
 
     int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE];
+    int32_t sessionId[PA_MAX_OUTPUTS_PER_SOURCE];
     size_t count = 0;
+    size_t sessionIdCount = 0;
+    memset_s(sessionId, PA_MAX_OUTPUTS_PER_SOURCE * sizeof(uint32_t), 0, PA_MAX_OUTPUTS_PER_SOURCE * sizeof(uint32_t));
+
     void *state = NULL;
     pa_source_output *sourceOutput;
     while ((sourceOutput = pa_hashmap_iterate(u->source->thread_info.outputs, &state, NULL))) {
@@ -841,10 +845,15 @@ static void PaRtpollProcessFunc(struct Userdata *u)
         if (cstringClientUid && (sourceOutput->thread_info.state == PA_SOURCE_OUTPUT_RUNNING)) {
             appsUid[count++] = atoi(cstringClientUid);
         }
+        const char *sessionIdInChar = pa_proplist_gets(sourceOutput->proplist, "stream.sessionID");
+        if (sessionIdInChar && (sourceOutput->thread_info.state == PA_SOURCE_OUTPUT_RUNNING) && u->sourceAdapter) {
+            sessionId[sessionIdCount++] = atoi(sessionIdInChar);
+        }
     }
 
     if (u->sourceAdapter) {
         u->sourceAdapter->SourceAdapterUpdateAppsUid(u->sourceAdapter, appsUid, count);
+        u->sourceAdapter->SourceAdapterUpdateSessionUid(u->sourceAdapter, sessionId, sessionIdCount);
     }
 
     pa_usec_t costTime = pa_rtclock_now() - now;

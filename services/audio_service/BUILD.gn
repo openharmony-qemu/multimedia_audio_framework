@@ -328,6 +328,7 @@ config("audio_service_config") {
     "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
+    "../../frameworks/native/audioclock/include",
   ]
 
   cflags = []
@@ -411,6 +412,7 @@ audio_ohos_library("audio_process_service") {
     "../audio_engine:audio_engine_manager",
     "../audio_engine:audio_engine_plugins",
     "../audio_policy:audio_foundation",
+    "../../frameworks/native/audioclock:audio_clock",
   ]
 
   external_deps = [

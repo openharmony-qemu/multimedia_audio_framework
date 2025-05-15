@@ -43,6 +43,7 @@ ohos_shared_library("hdiadapter_new") {
     "../audioutils/include",
     "../audioeffect/include",
     "../audioschedule/include",
+    "../audioclock/include",
   ]
 
   sources = [
@@ -72,6 +73,7 @@ ohos_shared_library("hdiadapter_new") {
     "../audioeffect:audio_effect",
     "../audioschedule:audio_schedule",
     "../audioutils:audio_utils",
+    "../audioclock:audio_clock",
   ]
 
   external_deps = [

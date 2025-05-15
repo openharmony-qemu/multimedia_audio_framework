@@ -86,6 +86,7 @@ public:
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+    bool GetTimeStampInfo(Timestamp &timestampNs, Timestamp::Timestampbase base) const override;
     int32_t RegisterCapturerPolicyServiceDiedCallback();
     int32_t RemoveCapturerPolicyServiceDiedCallback();
 
