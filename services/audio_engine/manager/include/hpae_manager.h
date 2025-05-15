@@ -198,7 +198,7 @@ private:
 
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerById(uint32_t sessionId);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerById(uint32_t sessionId);
-    std::shared_ptr<IHpaeRendererManager> GetRendererManagerByNmae(const std::string &sinkName);
+    std::shared_ptr<IHpaeRendererManager> GetRendererManagerByName(const std::string &sinkName);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo);
 

@@ -466,7 +466,7 @@ int32_t HpaeManager::CloseOutAudioPort(std::string &sinkName)
         return SUCCESS;
     }
     if (sinkName == defaultSink_ && defaultSink_ != DEFAULT_SINK_NAME) {
-        if (GetRendererManagerByNmae(DEFAULT_SINK_NAME) != nullptr) {
+        if (GetRendererManagerByName(DEFAULT_SINK_NAME) != nullptr) {
             AUDIO_INFO_LOG("reset default sink to primary.");
             defaultSink_ = DEFAULT_SINK_NAME;
         } else {
@@ -528,7 +528,7 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             AUDIO_INFO_LOG("sink is same as default sink");
             return;
         }
-        std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByNmae(defaultSink_);
+        std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(defaultSink_);
         if (rendererManager == nullptr) {
             AUDIO_INFO_LOG("default sink not exist, set default sink direct");
             defaultSink_ = name;
@@ -704,9 +704,10 @@ int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t s
             return;
         }
 
-        if (!SafeGetMap(rendererManagerMap_, sinkName)) {
-            AUDIO_ERR_LOG("move session:%{public}u failed, can not find sink:%{public}s.", sinkInputId,
-                sinkName.c_str());
+        std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
+        if (rendererManager == nullptr || !rendererManager->IsInit()) {
+            AUDIO_ERR_LOG("move session:%{public}u failed, can not find sink:%{public}s or sink is not open.",
+                sinkInputId, sinkName.c_str());
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
@@ -806,7 +807,7 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
 {
     uint32_t sessionId = sinkInputNode->GetNodeInfo().sessionId;
     AUDIO_INFO_LOG("handle move session:%{public}u to new sink:%{public}s", sessionId, sinkName.c_str());
-    std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByNmae(sinkName);
+    std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
     if (rendererManager == nullptr) {
         AUDIO_ERR_LOG("handle move session:%{public}u failed,can not find sink by name:%{public}s",
             sessionId, sinkName.c_str());
@@ -977,10 +978,10 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
             serviceCallback->OnOpenAudioPortCb(sourceNameSourceIdMap_[deviceName]);
         } else {
             AUDIO_ERR_LOG("device:%{public}s is not exist.", deviceName.c_str());
-            serviceCallback->OnOpenAudioPortCb(ERROR);
+            serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
         }
     } else if (serviceCallback) {
-        serviceCallback->OnOpenAudioPortCb(ERROR);
+        serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
         AUDIO_INFO_LOG("HandleInitDeviceResult deviceName:%{public}s "
                        "result:%{public}d error",
             deviceName.c_str(),
@@ -1111,7 +1112,7 @@ void HpaeManager::DestroyCapture(uint32_t sessionId)
     }
     std::string captureName = capturerIdSourceNameMap_[sessionId];
     if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
-        std::shared_ptr<IHpaeRendererManager> renderManager = GetRendererManagerByNmae(captureName);
+        std::shared_ptr<IHpaeRendererManager> renderManager = GetRendererManagerByName(captureName);
         if (renderManager != nullptr) {
             renderManager->DestroyStream(sessionId);
         }
@@ -1538,7 +1539,7 @@ int32_t HpaeManager::GetSessionInfo(
     return SUCCESS;
 }
 
-std::shared_ptr<IHpaeRendererManager> HpaeManager::GetRendererManagerByNmae(const std::string &sinkName)
+std::shared_ptr<IHpaeRendererManager> HpaeManager::GetRendererManagerByName(const std::string &sinkName)
 {
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
         AUDIO_WARNING_LOG("can not find sinkName: %{public}s ", sinkName.c_str());
@@ -1559,7 +1560,7 @@ std::shared_ptr<IHpaeCapturerManager> HpaeManager::GetCapturerManagerByName(cons
 std::shared_ptr<IHpaeRendererManager> HpaeManager::GetRendererManagerById(uint32_t sessionId)
 {
     if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-        return GetRendererManagerByNmae(rendererIdSinkNameMap_[sessionId]);
+        return GetRendererManagerByName(rendererIdSinkNameMap_[sessionId]);
     }
     AUDIO_WARNING_LOG("can not find renderer by sessionId: %{public}u", sessionId);
     return nullptr;
