@@ -241,11 +241,7 @@ void BluetoothDeviceManager::InitAudioManager(void)
     CHECK_AND_RETURN_LOG(audioManager_ == nullptr, "audio manager already inited");
     AUDIO_INFO_LOG("init audio manager");
 
-#if (defined(__aarch64__) || defined(__x86_64__))
-    char resolvedPath[] = "/vendor/lib64/chipsetsdk/libaudio_bluetooth_hdi_proxy_server.z.so";
-#else
-    char resolvedPath[] = "/vendor/lib/chipsetsdk/libaudio_bluetooth_hdi_proxy_server.z.so";
-#endif
+    char resolvedPath[] = "libaudio_bluetooth_hdi_proxy_server.z.so";
     handle_ = dlopen(resolvedPath, RTLD_LAZY);
     CHECK_AND_RETURN_LOG(handle_ != nullptr, "dlopen %{public}s fail", resolvedPath);
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
