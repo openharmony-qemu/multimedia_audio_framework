@@ -236,6 +236,7 @@ void HpaeInnerCapturerManager::InitSinkInner()
     nodeInfo.nodeId = 0;
     nodeInfo.samplingRate = sinkInfo_.samplingRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
+    nodeInfo.deviceClass = sinkInfo_.deviceClass;
     hpaeInnerCapSinkNode_ = std::make_unique<HpaeInnerCapSinkNode>(nodeInfo);
     AUDIO_INFO_LOG("Init innerCapSinkNode");
     hpaeInnerCapSinkNode_->InnerCapturerSinkInit();

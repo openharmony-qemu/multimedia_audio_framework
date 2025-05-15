@@ -42,10 +42,16 @@ static constexpr uint32_t FADE_OUT_PUSH_NUM = 4;
 
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
-    struct VolumeValues volumes;
-    float curSystemGain = AudioVolume::GetInstance()->GetVolume(GetSessionId(),
-        GetStreamType(), GetDeviceClass(), &volumes);
-    AudioVolume::GetInstance()->SetHistoryVolume(GetSessionId(), curSystemGain);
+    isInnerCapturer_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK);
+    auto audioVolume = AudioVolume::GetInstance();
+    float curSystemGain = 1.0f;
+    if (isInnerCapturer_) {
+        curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
+    } else {
+        struct VolumeValues volumes;
+        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
+    }
+    audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
     AUDIO_INFO_LOG("HpaeGainNode curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
     AUDIO_INFO_LOG(
         "HpaeGainNode SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
@@ -208,8 +214,15 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     struct VolumeValues volumes;
     float *inputData = (float *)input->GetPcmDataBuffer();
     AudioVolume *audioVolume = AudioVolume::GetInstance();
-    float curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
-    float preSystemGain = volumes.volumeHistory;
+    float curSystemGain = 1.0f;
+    float preSystemGain = 1.0f;
+    if (isInnerCapturer_) {
+        curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
+        preSystemGain = audioVolume->GetHistoryVolume(GetSessionId());
+    } else {
+        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
+        preSystemGain = volumes.volumeHistory;
+    }
     CHECK_AND_RETURN_LOG(frameLen != 0, "framelen is zero, invalid val.");
     float systemStepGain = (curSystemGain - preSystemGain) / frameLen;
     AUDIO_DEBUG_LOG(
