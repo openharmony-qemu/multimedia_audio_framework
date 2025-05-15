@@ -60,7 +60,8 @@ constexpr int g_writeOverflowNum = 1000;
 
 void StartRenderThread(AudioRenderer *audioRenderer, uint32_t limit);
 }
-
+ 
+class AudioRendererUnitTest;
 class AudioRendererCallbackTest : public AudioRendererCallback {
 public:
     void OnInterrupt(const InterruptEvent &interruptEvent) override { 
