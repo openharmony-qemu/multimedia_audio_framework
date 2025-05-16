@@ -29,9 +29,6 @@ public:
     void OnAppStateChanged(const AppExecFwk::AppProcessData& appProcessData) override;
 private:
     void HandleAppStateChange(int32_t pid, int32_t uid, int32_t state);
-    AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
-
-    static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 };
 
 }

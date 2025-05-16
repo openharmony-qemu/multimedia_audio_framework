@@ -269,6 +269,7 @@ audio_ohos_library("audio_policy_service") {
     "services/pipe/src/audio_pipe_manager.cpp",
     "services/pipe/src/audio_pipe_selector.cpp",
     "util/src/audio_ability_manager.cpp",
+    "util/src/audio_bundle_manager.cpp",
   ]
 
   defines = []
