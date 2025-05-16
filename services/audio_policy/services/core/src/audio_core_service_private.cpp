@@ -197,20 +197,31 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
     if (!pipeManager_->IsModemCommunicationIdExist()) {
         return;
     }
+    if (audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STARTED);
+    } else {
+        pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
+    }
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1);
     CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice modem communication failed");
+    pipeManager_->UpdateModemStreamDevice(descs);
     AUDIO_INFO_LOG("Update route %{public}d", descs.front()->deviceType_);
+    if (!pipeManager_->IsModemStreamDeviceChanged(descs.front())) {
+        AUDIO_INFO_LOG("Modem stream device not change");
+        return;
+    }
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        int32_t ret = HandleScoOutputDeviceFetched(descs.front(), reason);
+        int32_t ret = HandleScoOutputDeviceFetched(pipeManager_->GetModemCommunicationMap().begin()->second, reason);
         AUDIO_INFO_LOG("HandleScoOutputDeviceFetched %{public}d", ret);
     }
     audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
 
     AudioDeviceDescriptor desc = AudioDeviceDescriptor(descs.front());
-    std::unordered_map<uint32_t, int32_t> modemSessionMap = pipeManager_->GetModemCommunicationMap();
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemSessionMap =
+        pipeManager_->GetModemCommunicationMap();
     for (auto it = modemSessionMap.begin(); it != modemSessionMap.end(); ++it) {
-        streamCollector_.UpdateRendererDeviceInfo(it->second, it->first, desc);
+        streamCollector_.UpdateRendererDeviceInfo(GetRealUid(it->second), it->first, desc);
     }
 }
 
@@ -488,12 +499,6 @@ int32_t AudioCoreService::FetchDeviceAndRoute(const AudioStreamDeviceChangeReaso
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     uint32_t &sessionId, uint32_t &audioFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
-    if (sessionId == 0) {
-        streamDesc->sessionId_ = GenerateSessionId();
-        sessionId = streamDesc->sessionId_;
-        AUDIO_INFO_LOG("New sessionId: %{public}u", sessionId);
-    }
-
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipeAndExecute(streamDesc);
 
     uint32_t sinkId = HDI_INVALID_ID;

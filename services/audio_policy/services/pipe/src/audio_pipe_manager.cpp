@@ -372,13 +372,13 @@ bool AudioPipeManager::IsModemCommunicationIdExist(uint32_t sessionId)
     return modemCommunicationIdMap_.find(sessionId) != modemCommunicationIdMap_.end();
 }
 
-void AudioPipeManager::AddModemCommunicationId(uint32_t sessionId, int32_t clientUid)
+void AudioPipeManager::AddModemCommunicationId(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     if (sessionId < FIRST_SESSIONID || sessionId > MAX_VALID_SESSIONID) {
         AUDIO_ERR_LOG("Invalid id %{public}u", sessionId);
     }
-    modemCommunicationIdMap_[sessionId] = clientUid;
+    modemCommunicationIdMap_[sessionId] = streamDesc;
 }
 
 void AudioPipeManager::RemoveModemCommunicationId(uint32_t sessionId)
@@ -392,10 +392,33 @@ void AudioPipeManager::RemoveModemCommunicationId(uint32_t sessionId)
     }
 }
 
-std::unordered_map<uint32_t, int32_t> AudioPipeManager::GetModemCommunicationMap()
+std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetModemCommunicationMap()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     return modemCommunicationIdMap_;
+}
+
+void AudioPipeManager::UpdateModemStreamStatus(AudioStreamStatus streamStatus)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &entry : modemCommunicationIdMap_) {
+        entry.second->streamStatus_ = streamStatus;
+    }
+}
+
+void AudioPipeManager::UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &entry : modemCommunicationIdMap_) {
+        entry.second->oldDeviceDescs_ = entry.second->newDeviceDescs_;
+        entry.second->newDeviceDescs_ = deviceDescs;
+    }
+}
+
+bool AudioPipeManager::IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    return !modemCommunicationIdMap_.begin()->second->oldDeviceDescs_.front()->IsSameDeviceDescPtr(deviceDescs);
 }
 
 std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetNormalSourceInfo(bool isEcFeatureEnable)
