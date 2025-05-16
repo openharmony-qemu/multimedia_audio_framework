@@ -944,13 +944,13 @@ HWTEST_F(AudioPipeManagerUnitTest, AddModemCommunicationId_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     uint32_t sessionId = 99999;
-    int32_t clientUid = 12345;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioPipeManager->modemCommunicationIdMap_.clear();
-    audioPipeManager->AddModemCommunicationId(sessionId, clientUid);
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
 
     auto modemMap = audioPipeManager->GetModemCommunicationMap();
     EXPECT_EQ(modemMap.size(), 1);
-    EXPECT_EQ(modemMap.find(sessionId)->second, clientUid);
+    EXPECT_EQ(modemMap.find(sessionId)->second, streamDesc);
 }
 
 /**
@@ -963,13 +963,13 @@ HWTEST_F(AudioPipeManagerUnitTest, AddModemCommunicationId_002, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     uint32_t sessionId = 4294867296;
-    int32_t clientUid = 12345;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioPipeManager->modemCommunicationIdMap_.clear();
 
-    audioPipeManager->AddModemCommunicationId(sessionId, clientUid);
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
     auto modemMap = audioPipeManager->GetModemCommunicationMap();
     EXPECT_EQ(modemMap.size(), 1);
-    EXPECT_EQ(modemMap.find(sessionId)->second, clientUid);
+    EXPECT_EQ(modemMap.find(sessionId)->second, streamDesc);
 }
 
 /**
@@ -982,13 +982,13 @@ HWTEST_F(AudioPipeManagerUnitTest, AddModemCommunicationId_003, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     uint32_t sessionId = 100000;
-    int32_t clientUid = 12345;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioPipeManager->modemCommunicationIdMap_.clear();
 
-    audioPipeManager->AddModemCommunicationId(sessionId, clientUid);
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
     auto modemMap = audioPipeManager->GetModemCommunicationMap();
     EXPECT_EQ(modemMap.size(), 1);
-    EXPECT_EQ(modemMap.find(sessionId)->second, clientUid);
+    EXPECT_EQ(modemMap.find(sessionId)->second, streamDesc);
 }
 
 /**
@@ -1001,9 +1001,9 @@ HWTEST_F(AudioPipeManagerUnitTest, RemoveModemCommunicationId_001, TestSize.Leve
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     uint32_t sessionId = 12345;
-    int32_t clientUid = 67890;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
 
-    audioPipeManager->modemCommunicationIdMap_[sessionId] = clientUid;
+    audioPipeManager->modemCommunicationIdMap_[sessionId] = streamDesc;
     audioPipeManager->RemoveModemCommunicationId(sessionId);
     auto modemMap = audioPipeManager->GetModemCommunicationMap();
     EXPECT_EQ(modemMap.find(sessionId), modemMap.end());

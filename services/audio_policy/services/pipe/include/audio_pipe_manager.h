@@ -69,16 +69,19 @@ public:
     void Dump(std::string &dumpString);
     bool IsModemCommunicationIdExist();
     bool IsModemCommunicationIdExist(uint32_t sessionId);
-    void AddModemCommunicationId(uint32_t sessionId, int32_t clientUid);
+    void AddModemCommunicationId(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void RemoveModemCommunicationId(uint32_t sessionId);
-    std::unordered_map<uint32_t, int32_t> GetModemCommunicationMap();
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetModemCommunicationMap();
+    void UpdateModemStreamStatus(AudioStreamStatus streamStatus);
+    void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    bool IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs);
     std::shared_ptr<AudioPipeInfo> GetNormalSourceInfo(bool isEcFeatureEnable);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
 
-    std::unordered_map<uint32_t, int32_t> modemCommunicationIdMap_{}; // key -> sessionId, value -> clientUid
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemCommunicationIdMap_{};
     std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_{};
     std::shared_mutex pipeListLock_;
 };

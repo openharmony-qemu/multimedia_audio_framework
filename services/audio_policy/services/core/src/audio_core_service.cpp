@@ -134,13 +134,19 @@ std::shared_ptr<AudioCoreService::EventEntry> AudioCoreService::GetEventEntry()
 int32_t AudioCoreService::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
 {
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "stream desc is nullptr");
+    if (sessionId == 0) {
+        streamDesc->sessionId_ = GenerateSessionId();
+        sessionId = streamDesc->sessionId_;
+        AUDIO_INFO_LOG("New session id: %{public}u", sessionId);
+    }
+    bool isModemStream = false;
     if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
-        audioFlag = AUDIO_FLAG_NORMAL;
-        sessionId = GenerateSessionId();
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
-        pipeManager_->AddModemCommunicationId(sessionId, GetRealUid(streamDesc));
+        isModemStream = true;
+        audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);
-        return SUCCESS;
+        pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
     }
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
     // Select device
@@ -149,6 +155,9 @@ int32_t AudioCoreService::CreateRendererClient(
         audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
     for (auto device : streamDesc->newDeviceDescs_) {
         AUDIO_INFO_LOG("Device type %{public}d", device->deviceType_);
+    }
+    if (isModemStream) {
+        return SUCCESS;
     }
 
     UpdatePlaybackStreamFlag(streamDesc, true);
@@ -334,15 +343,13 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("In, session %{public}u", sessionId);
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
-        AUDIO_INFO_LOG("Modem communication, directly return");
+        AUDIO_INFO_LOG("Modem communication ring, directly return");
         return SUCCESS;
     }
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    if (streamDesc == nullptr) {
-        AUDIO_ERR_LOG("Cannot find session %{public}u", sessionId);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Cannot find session %{public}u", sessionId);
+    pipeManager_->StartClient(sessionId);
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
@@ -362,8 +369,6 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
         streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
     }
-
-    pipeManager_->StartClient(sessionId);
     return SUCCESS;
 }
 
