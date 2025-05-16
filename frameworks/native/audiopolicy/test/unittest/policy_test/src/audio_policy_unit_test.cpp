@@ -479,6 +479,65 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetRingerModeCallback_002, Test
 }
 
 /**
+ * @tc.name  : Test Audio_Policy_Manager_SetActiveVolumeTypeCallback_001
+ * @tc.number: Audio_Policy_Manager_SetActiveVolumeTypeCallback_001
+ * @tc.desc  : Test SetActiveVolumeTypeCallback interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetActiveVolumeTypeCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
+
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_SetActiveVolumeTypeCallback_002
+ * @tc.number: Audio_Policy_Manager_SetActiveVolumeTypeCallback_002
+ * @tc.desc  : Test SetActiveVolumeTypeCallback interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetActiveVolumeTypeCallback_002, TestSize.Level3)
+{
+    std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> callback =
+        std::make_shared<AudioManagerActiveVolumeTypeChangeCallbackTest>();
+    EXPECT_NE(callback, nullptr);
+
+    int32_t ret = AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetActiveVolumeTypeCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_SetActiveVolumeTypeCallback_003
+ * @tc.number: Audio_Policy_Manager_SetActiveVolumeTypeCallback_003
+ * @tc.desc  : Test SetActiveVolumeTypeCallback interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetActiveVolumeTypeCallback_003, TestSize.Level3)
+{
+    std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> callback1 =
+        std::make_shared<AudioManagerActiveVolumeTypeChangeCallbackTest>();
+    EXPECT_NE(callback1, nullptr);
+
+    std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> callback2 =
+        std::make_shared<AudioManagerActiveVolumeTypeChangeCallbackTest>();
+    EXPECT_NE(callback2, nullptr);
+
+    int32_t ret = AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback2);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetActiveVolumeTypeCallback(callback1);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioPolicyManager::GetInstance().UnsetActiveVolumeTypeCallback(callback2);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test Audio_Policy_Manager_SetDeviceChangeCallback_002 via illegal state
  * @tc.number: Audio_Policy_Manager_SetDeviceChangeCallback_002
  * @tc.desc  : Test SetDeviceChangeCallback interface. Returns invalid.

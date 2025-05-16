@@ -178,6 +178,10 @@ public:
 
     int32_t UnsetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
 
+    int32_t SetActiveVolumeTypeCallback(const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback);
+
+    int32_t UnsetActiveVolumeTypeCallback(const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback);
+
     int32_t UnsetRingerModeCallback(const int32_t clientId);
 
     int32_t UnsetRingerModeCallback(const int32_t clientId,
