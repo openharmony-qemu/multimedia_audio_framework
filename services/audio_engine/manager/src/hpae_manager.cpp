@@ -2194,31 +2194,36 @@ bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys
 
 int32_t HpaeManager::UpdateCollaborationState(bool isCollaborationEnabled)
 {
-    std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByNmae(BT_SINK_NAME);
-    if (rendererManager != nullptr) {
-        rendererManger->UpdateCollaborationState(isCollaborationEnabled);
-        return true;
-    }
+    auto request = [this, isCollaborationEnabled]() {
+        std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByNmae(BT_SINK_NAME);
+        CHECK_AND_RETURN_LOG(rendererManager != nullptr,
+            "can not find sink[%{public}s] in rendererManagerMap_", BT_SINK_NAME);
+        rendererManager->UpdateCollaborationState(isCollaborationEnabled);
+    };
+    SendRequest(request);
+    return true;
 }
 
-int32_t HpaeManager::HandleConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager)
+void HpaeManager::HandleConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager)
 {
-    // 获取外放默认renderermanager
-    std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByNmae(DEFAULT_SINK_NAME);
-    // 连接cobuffernode和renderermanger
-    if (auto btRendererManager = rendererManager.lock()) {
-        defaultRendererManger->ConnectCoBufferNode(btRendererManager->GetCoBufferNode());
+    auto request = [this, rendererManger]() {
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByNmae(DEFAULT_SINK_NAME);
+        if (auto btRendererManager = rendererManager.lock()) {
+            defaultRendererManager->ConnectCoBufferNode(btRendererManager->GetCoBufferNode());
+        }
     }
+    SendRequest(request);
 }
 
-int32_t HpaeManager::HandleDisConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager)
+void HpaeManager::HandleDisConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager)
 {
-    // 获取外放默认renderermanager
-    std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByNmae(DEFAULT_SINK_NAME);
-    // 连接cobuffernode和renderermanger
-    if (auto btRendererManager = rendererManager.lock()) {
-        defaultRendererManger->DisConnectCoBufferNode(btRendererManager->GetCoBufferNode());
+    auto request = [this, rendererManager]() {
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByNmae(DEFAULT_SINK_NAME);
+        if (auto btRendererManager = rendererManager.lock()) {
+            defaultRendererManager->DisConnectCoBufferNode(btRendererManager->GetCoBufferNode());
+        }
     }
+    SendRequest(request);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

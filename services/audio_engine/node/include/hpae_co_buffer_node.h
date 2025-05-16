@@ -16,6 +16,8 @@
 #ifndef HPAE_COBUFFER_NODE_H
 #define HPAE_COBUFFER_NODE_H
 #include <memory>
+#include <mutex>
+#include "audio_ring_cache.h"
 #include "hpae_node.h"
 
 namespace OHOS {
@@ -38,7 +40,7 @@ public:
     virtual size_t GetOutputPortNum();
     void Enqueue();
 private:
-    std:mutex mutex_;
+    std::mutex mutex_;
     InputPort<HpaePcmBuffer*> inputStream_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     PcmBufferInfo pcmBufferInfo_;

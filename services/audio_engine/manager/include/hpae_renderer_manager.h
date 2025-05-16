@@ -92,6 +92,7 @@ public:
     int32_t UpdateCollaborationState(bool isCollaborationEnabled) override;
     std::shared_ptr<HpaeCoBufferNode> GetCoBufferNode() override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
+    int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();

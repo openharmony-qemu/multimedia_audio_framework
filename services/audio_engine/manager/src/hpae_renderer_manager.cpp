@@ -1053,6 +1053,7 @@ int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnable
     // 创建buffernode
     hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(latency_);
     // todo update nodeinfo
+    return SUCCESS;
 }
 
 std::shared_ptr<HpaeCoBufferNode> HpaeRendererManager::GetCoBufferNode()
@@ -1062,9 +1063,9 @@ std::shared_ptr<HpaeCoBufferNode> HpaeRendererManager::GetCoBufferNode()
     return hpaeCoBufferNode_;
 }
 
-int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
+int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
 {
-    CHECK_AND_RETURN_RET_LOG((outputCluster != nullptr) && (coBufferNode != nullptr), ERROR,
+    CHECK_AND_RETURN_RET_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr), ERROR,
         "outputCluster or coBufferNode is nullptr");
     outputCluster_->Connect(coBufferNode);
     if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
@@ -1073,9 +1074,9 @@ int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNod
     return SUCCESS;
 }
 
-int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
+int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
 {
-    CHECK_AND_RETURN_RET_LOG((outputCluster != nullptr) && (coBufferNode != nullptr), ERROR,
+    CHECK_AND_RETURN_RET_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr), ERROR,
         "outputCluster or coBufferNode is nullptr");
     outputCluster_->Connect(coBufferNode);
     if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {

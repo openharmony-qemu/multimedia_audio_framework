@@ -193,7 +193,8 @@ private:
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
-
+    void HandleConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager);
+    void HandleDisConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager);
     void SendRequest(Request &&request);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex);

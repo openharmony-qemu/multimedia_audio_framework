@@ -22,6 +22,7 @@
 #include "hpae_stream_manager.h"
 #include "audio_engine_log.h"
 #include "hpae_dfx_tree.h"
+#include "hpae_co_buffer_node.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -101,6 +102,7 @@ public:
     virtual int32_t UpdateCollaborationState(bool isCollaborationEnabled) = 0;
     virtual std::shared_ptr<HpaeCoBufferNode> GetCoBufferNode() = 0;
     virtual int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) = 0;
+    virtual int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) = 0;
 private:
     std::atomic<uint32_t> nodeIdCounter_ = 0;
 #ifdef ENABLE_HIDUMP_DFX
