@@ -377,6 +377,13 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 AudioProcessInClientInner::~AudioProcessInClientInner()
 {
     AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
+    if (callbackLoop_.joinable()) {
+        std::unique_lock<std::mutex> lock(loopThreadLock_);
+        isCallbackLoopEnd_ = true; // change it with lock to break the loop
+        threadStatusCV_.notify_all();
+        lock.unlock(); // should call unlock before join
+        callbackLoop_.join();
+    }
     if (isInited_) {
         AudioProcessInClientInner::Release();
     }
@@ -1227,14 +1234,6 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
         AUDIO_ERR_LOG("Release may failed in server");
         threadStatusCV_.notify_all(); // avoid thread blocking with status RUNNING
         return ERR_OPERATION_FAILED;
-    }
-
-    if (callbackLoop_.joinable()) {
-        std::unique_lock<std::mutex> lock(loopThreadLock_);
-        isCallbackLoopEnd_ = true; // change it with lock to break the loop
-        threadStatusCV_.notify_all();
-        lock.unlock(); // should call unlock before join
-        callbackLoop_.join();
     }
 
     streamStatus_->store(StreamStatus::STREAM_RELEASED);
