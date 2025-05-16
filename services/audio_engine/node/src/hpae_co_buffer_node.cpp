@@ -12,21 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "hpae_cobuffer_node.h"
+#include "hpae_co_buffer_node.h"
 #include "hpae_define.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo)
-    : HpaeNode(nodeInfo), outputStream_(this),
-    pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate), silenceData_(pcmBufferInfo_)
-      
+HpaeCoBufferNode::HpaeCoBufferNode(int32_t delay)
 {
-    silenceData_.Reset();
+    delay_ = delay;
 }
 
-// according latency
+// according to latency
 void HpaeCoBufferNode::SetBufferSize(size_t size)
 {
     if (size == 0) {
@@ -115,6 +112,9 @@ OutputPort<HpaePcmBuffer*>* HpaeCoBufferNode::GetOutputPort()
 
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
+    HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
+    nodeInfo_ = preNodeInfo;
+    SetBufferSize(nodeInfo.frameLen * nodeInfo_.channels * sizeof(float) * 1000 / latency_);
     inputStream_.Connect(GetSharedInstance(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
 }
 

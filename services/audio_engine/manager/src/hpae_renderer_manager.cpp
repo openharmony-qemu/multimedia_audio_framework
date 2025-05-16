@@ -1052,6 +1052,7 @@ int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnable
     size_t latency_ = 200;
     // 创建buffernode
     hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(latency_);
+    // todo update nodeinfo
 }
 
 std::shared_ptr<HpaeCoBufferNode> HpaeRendererManager::GetCoBufferNode()

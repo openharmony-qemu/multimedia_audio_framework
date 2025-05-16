@@ -32,7 +32,7 @@ public:
         const EffectChainManagerParam &effectChainManagerParam,
         const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
     void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
-    int32_t UpdateSpatializationState(  spatializationState);
+    int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     int32_t EffectRotationUpdate(const uint32_t rotationState);

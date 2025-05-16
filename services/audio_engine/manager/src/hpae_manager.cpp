@@ -25,6 +25,7 @@
 #include "audio_utils.h"
 #include "audio_setting_provider.h"
 #include "system_ability_definition.h"
+#include "hpae_co_buffer_node.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {

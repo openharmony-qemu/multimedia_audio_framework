@@ -42,7 +42,8 @@ private:
     InputPort<HpaePcmBuffer*> inputStream_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     PcmBufferInfo pcmBufferInfo_;
-    HpaePcmBuffer silenceData_;
+    HpaeNodeInfo nodeInfo_;
+    int32_t delay_ = 0;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
 };
 }  // namespace HPAE
