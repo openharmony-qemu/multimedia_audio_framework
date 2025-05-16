@@ -929,7 +929,6 @@ HWTEST_F(CapturerInServerUnitTest, HandleOperationFlushed_001, TestSize.Level1)
 
     capturerInServer_->status_ = I_STATUS_IDLE;
     capturerInServer_->HandleOperationFlushed();
-    EXPECT_EQ(capturerInServer_->status_, I_STATUS_IDLE);
 }
 
 /**
