@@ -204,7 +204,7 @@ public:
 
     std::string GetVersion();
     std::shared_ptr<AdapterDeviceInfo> GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
-        const std::string &networkId_, uint32_t flags);
+        const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0);
 
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap {};
     std::unordered_map<std::pair<DeviceType, DeviceRole>,

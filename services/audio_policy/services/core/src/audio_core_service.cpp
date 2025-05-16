@@ -151,7 +151,7 @@ int32_t AudioCoreService::CreateRendererClient(
         AUDIO_INFO_LOG("Device type %{public}d", device->deviceType_);
     }
 
-    SetPlaybackStreamFlag(streamDesc);
+    UpdatePlaybackStreamFlag(streamDesc, true);
     AUDIO_INFO_LOG("Will use audio flag: %{public}u", streamDesc->audioFlag_);
 
     // Fetch pipe
@@ -189,10 +189,12 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     Trace trace("IsStreamSupportMultiChannel");
     AUDIO_INFO_LOG("In");
 
+    // MultiChannel: Speaker, A2dp offload
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
-        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
-            AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
-            return false;
+        (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ||
+        streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ != A2DP_OFFLOAD)) {
+        AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
+        return false;
     }
     if (streamDesc->streamInfo_.channels <= STEREO) {
         AUDIO_INFO_LOG("normal stream beacuse channels.");
@@ -224,7 +226,7 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     return true;
 }
 
-void AudioCoreService::SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
     AUDIO_INFO_LOG("deviceType: %{public}d", streamDesc->newDeviceDescs_.front()->deviceType_);
     // fast/normal has done in audioRendererPrivate
@@ -265,11 +267,17 @@ void AudioCoreService::SetPlaybackStreamFlag(std::shared_ptr<AudioStreamDescript
         default:
             break;
     }
-    streamDesc->audioFlag_ = CheckIsSpecialStream(streamDesc);
+    streamDesc->audioFlag_ = SetFlagForSpecialStream(streamDesc, isCreateProcess);
 }
 
-AudioFlag AudioCoreService::CheckIsSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isCreateProcess)
 {
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_[0] != nullptr, AUDIO_OUTPUT_FLAG_NORMAL, "Invalid stream desc");
+    if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        HandlePlaybackStreamInA2dp(streamDesc, isCreateProcess);
+    }
     if (IsStreamSupportDirect(streamDesc)) {
         return AUDIO_OUTPUT_FLAG_HD;
     }
@@ -983,7 +991,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
             
         AUDIO_INFO_LOG("DeviceType %{public}d, state: %{public}u",
             streamDesc->newDeviceDescs_[0]->deviceType_, streamDesc->streamStatus_);
-        SetPlaybackStreamFlag(streamDesc);
+        UpdatePlaybackStreamFlag(streamDesc, false);
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;
         }

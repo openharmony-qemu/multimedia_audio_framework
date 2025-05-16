@@ -110,10 +110,10 @@ std::string AudioPolicyConfigData::GetVersion()
 }
 
 std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
-    DeviceType type_, DeviceRole role_, const std::string &networkId_, uint32_t flags)
+    DeviceType type_, DeviceRole role_, const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag)
 {
-    AUDIO_INFO_LOG("type_:%{public}d, role_:%{public}d, type_:%{public}s, type_:%{public}u", type_, role_,
-        networkId_.c_str(), flags);
+    AUDIO_INFO_LOG("type_:%{public}d, role_:%{public}d, networkId_:%{public}s, flags:%{public}u,"
+        "a2dpOffloadFlag: %{public}d", type_, role_, networkId_.c_str(), flags, a2dpOffloadFlag);
 
     // use primary to select device when in remote cast;
     DeviceType tempType = (type_ == DEVICE_TYPE_REMOTE_CAST ? DEVICE_TYPE_SPEAKER : type_);
@@ -137,7 +137,7 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
     if (networkId_ != LOCAL_NETWORK_ID) {
         targetAdapterName = "remote";
     } else {
-        if (type_ == DEVICE_TYPE_BLUETOOTH_A2DP && (flags & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) == 0) {
+        if (type_ == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
             targetAdapterName = "a2dp";
         } else {
             targetAdapterName = "primary";
