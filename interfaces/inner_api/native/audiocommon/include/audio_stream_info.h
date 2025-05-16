@@ -555,6 +555,8 @@ struct BufferDesc {
     size_t dataLength;
     uint8_t *metaBuffer;
     size_t metaLength;
+    uint64_t position;
+    uint64_t timeStampInNs;
 };
 
 class AudioStreamInfo {

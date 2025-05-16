@@ -270,6 +270,11 @@ public:
         return sharedAudioCapturer_->GetAudioTimestampInfo(timestamp, base);
     }
 
+    bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override
+    {
+        return sharedAudioCapturer_->GetTimeStampInfo(timestamp, base);
+    }
+
     ~SharedCapturerWrapper() override = default;
 
     SharedCapturerWrapper(const SharedCapturerWrapper&) = delete;

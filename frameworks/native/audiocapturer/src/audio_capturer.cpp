@@ -901,6 +901,13 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     return currentStream->SetBufferSizeInMsec(bufferDuration);
 }
 
+bool AudioCapturerPrivate::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+    return currentStream->GetTimeStampInfo(timestamp, base);
+}
+
 // diffrence from GetAudioPosition only when set speed
 int32_t AudioCapturerPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
 {

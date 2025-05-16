@@ -279,6 +279,9 @@ int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
 
     basicBufferInfo_->underrunCount.store(0);
 
+    basicBufferInfo_->position.store(0);
+    basicBufferInfo_->timeStamp.store(0);
+
     basicBufferInfo_->streamVolume.store(MAX_FLOAT_VOLUME);
     basicBufferInfo_->duckFactor.store(MAX_FLOAT_VOLUME);
     basicBufferInfo_->muteFactor.store(MAX_FLOAT_VOLUME);
@@ -752,6 +755,20 @@ void OHAudioBuffer::SetRestoreInfo(RestoreInfo restoreInfo)
 {
     CHECK_AND_RETURN_LOG(basicBufferInfo_ != nullptr, "basicBufferInfo_ is nullptr");
     basicBufferInfo_->restoreInfo = restoreInfo;
+}
+
+void OHAudioBuffer::GetTimeStampInfo(uint64_t &position, uint64_t &timeStamp)
+{
+    CHECK_AND_RETURN_LOG(basicBufferInfo_ != nullptr, "basicBufferInfo_ is nullptr");
+    position = basicBufferInfo_->position.load();
+    timeStamp = basicBufferInfo_->timeStamp.load();
+}
+
+void OHAudioBuffer::SetTimeStampInfo(uint64_t position, uint64_t timeStamp)
+{
+    CHECK_AND_RETURN_LOG(basicBufferInfo_ != nullptr, "basicBufferInfo_ is nullptr");
+    basicBufferInfo_->position.store(position);
+    basicBufferInfo_->timeStamp.store(timeStamp);
 }
 
 // Compare and swap restore status. If current restore status is NEED_RESTORE, turn it into RESTORING

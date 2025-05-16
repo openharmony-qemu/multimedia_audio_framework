@@ -26,9 +26,11 @@
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
+#include "audio_primary_source_clock.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
 class AudioCaptureSource : public IAudioCaptureSource {
 public:
     explicit AudioCaptureSource(const uint32_t captureId, const std::string &halName = "primary");
@@ -106,6 +108,7 @@ private:
     int32_t UpdateActiveDeviceWithoutLock(DeviceType inputDevice);
     int32_t DoStop(void);
     void DumpData(char *frame, uint64_t &replyBytes);
+    void InitRunningLock(void);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -168,6 +171,8 @@ private:
     std::atomic<bool> muteState_ = false;
     std::string address_ = "";
     uint16_t dmDeviceType_ = 0;
+
+    std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;
 };
 
 } // namespace AudioStandard

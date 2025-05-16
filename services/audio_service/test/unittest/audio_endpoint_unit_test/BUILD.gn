@@ -106,6 +106,7 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "../../../../../frameworks/native/playbackcapturer/include",
     "../../../../../frameworks/native/audioschedule/include",
     "../../../../../frameworks/native/hdiadapter_new/include",
+    "../../../../../frameworks/native/audioclock/include",
   ]
 
   deps = [
@@ -115,6 +116,7 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "../../../../../frameworks/native/audioutils:audio_utils",
     "../../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../../../frameworks/native/playbackcapturer:playback_capturer",
+    "../../../../../frameworks/native/audioclock:audio_clock",
     "../../../../../services/audio_service:audio_client",
     "../../../../../services/audio_service:audio_common",
     "../../../../../services/audio_service:audio_service",
