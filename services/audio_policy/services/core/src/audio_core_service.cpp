@@ -142,8 +142,10 @@ int32_t AudioCoreService::CreateRendererClient(
     }
     bool isModemStream = false;
     if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
-        audioFlag = AUDIO_FLAG_NORMAL;
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
+        isModemStream = true;
+        audioFlag = AUDIO_FLAG_NORMAL;
+        AddSessionId(sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
     }
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;

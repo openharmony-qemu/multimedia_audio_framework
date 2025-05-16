@@ -402,6 +402,7 @@ void AudioPipeManager::UpdateModemStreamStatus(AudioStreamStatus streamStatus)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &entry : modemCommunicationIdMap_) {
+        CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
         entry.second->streamStatus_ = streamStatus;
     }
 }
@@ -410,6 +411,7 @@ void AudioPipeManager::UpdateModemStreamDevice(std::vector<std::shared_ptr<Audio
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &entry : modemCommunicationIdMap_) {
+        CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
         entry.second->oldDeviceDescs_ = entry.second->newDeviceDescs_;
         entry.second->newDeviceDescs_ = deviceDescs;
     }
@@ -418,6 +420,11 @@ void AudioPipeManager::UpdateModemStreamDevice(std::vector<std::shared_ptr<Audio
 bool AudioPipeManager::IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    CHECK_AND_RETURN_RET_LOG(modemCommunicationIdMap_.size() > 0 &&
+        modemCommunicationIdMap_.begin()->second != nullptr &&
+        modemCommunicationIdMap_.begin()->second->oldDeviceDescs_.size() > 0 &&
+        modemCommunicationIdMap_.begin()->second->oldDeviceDescs_.front() != nullptr,
+        false, "Invalid modemCommunicationMap, size: %{public}zu", modemCommunicationIdMap_.size());
     return !modemCommunicationIdMap_.begin()->second->oldDeviceDescs_.front()->IsSameDeviceDescPtr(deviceDescs);
 }
 
