@@ -3604,6 +3604,7 @@ ohos_unittest("audio_recovery_device_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "samgr:samgr_proxy",
   ]
 
   sources = [ "./unittest/audio_recovery_device_unit_test/src/audio_recovery_device_unit_test.cpp" ]
@@ -3880,6 +3881,7 @@ ohos_unittest("audio_device_lock_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "samgr:samgr_proxy",
   ]
 
   sources = [ "./unittest/audio_device_lock_unit_test/src/audio_device_lock_unit_test.cpp" ]
@@ -3992,6 +3994,7 @@ ohos_unittest("audio_usb_manager_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "samgr:samgr_proxy",
   ]
 
   sources = [ "./unittest/audio_usb_manager_unit_test/src/audio_usb_manager_unit_test.cpp" ]
@@ -4289,6 +4292,7 @@ ohos_unittest("audio_core_service_private_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "samgr:samgr_proxy",
   ]
 
   sources = [ "./unittest/audio_core_service_private_unit_test/src/audio_core_service_private_unit_test.cpp" ]

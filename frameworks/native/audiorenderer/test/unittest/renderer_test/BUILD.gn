@@ -54,6 +54,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
+    "samgr:samgr_proxy",
   ]
 
   resource_config_file =
