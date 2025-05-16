@@ -34,11 +34,7 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
 constexpr uint32_t STREAM_FAST = 1;
-const int32_t VALUE_THOUSAND = 1000;
-const int32_t VALUE_ZERO = 0;
-static size_t g_reqBufLen = 0;
 bool g_isFastRenderer = true;
 bool g_isInit = false;
 } // namespace
@@ -50,13 +46,6 @@ public:
     void SetUp();
     void TearDown();
 };
-
-void AudioRenderModeCallbackTest::OnWriteData(size_t length)
-{
-    g_reqBufLen = length;
-}
-
-void AudioRendererCallbackTest::OnInterrupt(const InterruptEvent &interruptEvent) {}
 
 void InitializeFastRendererOptions(AudioRendererOptions &rendererOptions)
 {
@@ -152,13 +141,13 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_002, TestSize.Level0)
     ASSERT_NE(nullptr, GetRenderPtr());
 
     shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
-    ret = GetRenderPtr()->SetRendererPositionCallback(VALUE_THOUSAND, positionCB);
+    ret = GetRenderPtr()->SetRendererPositionCallback(RenderUT::VALUE_THOUSAND, positionCB);
     EXPECT_EQ(SUCCESS, ret);
 
     GetRenderPtr()->UnsetRendererPositionCallback();
 
     shared_ptr<RendererPositionCallbackTest> positionCB1 = std::make_shared<RendererPositionCallbackTest>();
-    ret = GetRenderPtr()->SetRendererPositionCallback(VALUE_THOUSAND, positionCB1);
+    ret = GetRenderPtr()->SetRendererPositionCallback(RenderUT::VALUE_THOUSAND, positionCB1);
     EXPECT_EQ(SUCCESS, ret);
 
     AudioRendererParams getRendererParams;
@@ -177,7 +166,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
         return;
     }
     int32_t ret = -1;
-    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    FILE *wavFile = fopen(RenderUT::AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
     ASSERT_NE(nullptr, GetRenderPtr());
 
@@ -270,7 +259,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
 
     BufferDesc bufDesc {};
     bufDesc.buffer = nullptr;
-    bufDesc.dataLength = g_reqBufLen;
+    bufDesc.dataLength = RenderUT::g_reqBufLen;
     ret = GetRenderPtr()->GetBufferDesc(bufDesc);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_NE(nullptr, bufDesc.buffer);
@@ -392,16 +381,16 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_009, TestSize.Level1)
     EXPECT_EQ(getSampleRateRet, 48000);
 
     shared_ptr<RendererPeriodPositionCallbackTest> positionCB1 = std::make_shared<RendererPeriodPositionCallbackTest>();
-    ret = GetRenderPtr()->SetRendererPeriodPositionCallback(VALUE_ZERO, positionCB1);
+    ret = GetRenderPtr()->SetRendererPeriodPositionCallback(RenderUT::VALUE_ZERO, positionCB1);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
-    ret = GetRenderPtr()->SetRendererPeriodPositionCallback(VALUE_THOUSAND, positionCB1);
+    ret = GetRenderPtr()->SetRendererPeriodPositionCallback(RenderUT::VALUE_THOUSAND, positionCB1);
     EXPECT_EQ(SUCCESS, ret);
 
     GetRenderPtr()->UnsetRendererPeriodPositionCallback();
 
     shared_ptr<RendererPeriodPositionCallbackTest> positionCB2 = std::make_shared<RendererPeriodPositionCallbackTest>();
-    ret = GetRenderPtr()->SetRendererPeriodPositionCallback(VALUE_THOUSAND, positionCB2);
+    ret = GetRenderPtr()->SetRendererPeriodPositionCallback(RenderUT::VALUE_THOUSAND, positionCB2);
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStopped = GetRenderPtr()->Stop();
@@ -478,7 +467,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
                 count++;
                 BufferDesc bufDesc {};
                 bufDesc.buffer = nullptr;
-                bufDesc.dataLength = g_reqBufLen;
+                bufDesc.dataLength = RenderUT::g_reqBufLen;
                 auto ret = audioRenderer->GetBufferDesc(bufDesc);
                 EXPECT_EQ(SUCCESS, ret);
                 EXPECT_NE(nullptr, bufDesc.buffer);
