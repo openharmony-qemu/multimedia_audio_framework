@@ -43,6 +43,13 @@ namespace {
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
 }
 
+enum AudioByteSize : int32_t {
+    BYTE_SIZE_SAMPLE_U8 = 1,
+    BYTE_SIZE_SAMPLE_S16 = 2,
+    BYTE_SIZE_SAMPLE_S24 = 3,
+    BYTE_SIZE_SAMPLE_S32 = 4,
+};
+
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
 {
     processConfig_ = processConfig;
@@ -241,13 +248,6 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
     }
     return false;
 }
-
-enum AudioByteSize : int32_t {
-    BYTE_SIZE_SAMPLE_U8 = 1,
-    BYTE_SIZE_SAMPLE_S16 = 2,
-    BYTE_SIZE_SAMPLE_S24 = 3,
-    BYTE_SIZE_SAMPLE_S32 = 4,
-};
 
 static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 {
