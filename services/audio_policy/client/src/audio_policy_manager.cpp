@@ -585,6 +585,64 @@ std::shared_ptr<ToneInfo> AudioPolicyManager::GetToneConfig(int32_t ltonetype, c
 }
 #endif
 
+int32_t AudioPolicyManager::SetActiveVolumeTypeCallback(
+    const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("enter set active volume type change callback");
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddActiveVolumeTypeChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetActiveVolumeTypeChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE, true);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetActiveVolumeTypeCallback(
+    const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("enter unset active volume type change callback");
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is error");
+        return ERR_NULL_POINTER;
+    }
+    if (callback != nullptr) {
+        AUDIO_DEBUG_LOG("callback is not null");
+        audioPolicyClientStubCB_->RemoveActiveVolumeTypeChangeCallback(callback);
+    } else {
+        AUDIO_DEBUG_LOG("callback is null");
+        audioPolicyClientStubCB_->RemoveAllActiveVolumeTypeChangeCallback();
+    }
+    if (audioPolicyClientStubCB_->GetActiveVolumeTypeChangeCallbackSize() == 0) {
+        AUDIO_DEBUG_LOG("active volumeType change callback list is empty");
+        callbackChangeInfos_[CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_ACTIVE_VOLUME_TYPE_CHANGE, false);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::SetSelfAppVolumeChangeCallback(
     const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback)
 {

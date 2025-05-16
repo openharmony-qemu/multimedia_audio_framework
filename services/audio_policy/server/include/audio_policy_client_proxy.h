@@ -28,6 +28,7 @@ public:
     virtual ~AudioPolicyClientProxy();
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object);
     void UnregisterPolicyCallbackClient();
+    void OnActiveVolumeTypeChanged(const AudioVolumeType &volumeType) override;
     void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
