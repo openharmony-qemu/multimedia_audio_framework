@@ -1786,7 +1786,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateCurrSceneType_001, TestSize.Level1
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_MAX;
     AudioEffectChainManager::GetInstance()->UpdateCurrSceneType(currSceneType, sceneType);
 
-    EXPECT_EQ("SCENE_MUSIC", sceneType);
+    EXPECT_NE(SCENE_OTHERS, currSceneType);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1804,7 +1804,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateCurrSceneType_002, TestSize.Level1
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
     AudioEffectChainManager::GetInstance()->UpdateCurrSceneType(currSceneType, sceneType);
-    EXPECT_EQ("SCENE_MUSIC", sceneType);
+    EXPECT_NE(SCENE_OTHERS, currSceneType);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1820,8 +1820,8 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_001, Te
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
-    AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
-    EXPECT_EQ("SCENE_MUSIC", sceneType);
+    auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
+    EXPECT_EQ(ERROR, ret);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1837,8 +1837,8 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_002, Te
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
-    AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
-    EXPECT_EQ("SCENE_MUSIC", sceneType);
+    auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
+    EXPECT_EQ(ERROR, ret);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 

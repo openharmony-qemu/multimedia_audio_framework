@@ -510,9 +510,8 @@ HWTEST(FastSystemStreamUnitTest, SetAudioStreamInfo_002, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     int32_t res = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
     EXPECT_NE(res, SUCCESS);
-    bool result = false;
-    fastAudioStream->RestoreAudioStream(true);
-    EXPECT_EQ(result, false);
+    auto ret = fastAudioStream->RestoreAudioStream(true);
+    EXPECT_FALSE(ret);
 }
 
 /**
