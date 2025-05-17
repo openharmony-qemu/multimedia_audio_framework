@@ -130,7 +130,7 @@ static std::unordered_map<HpaeProcessorType, std::string> g_processorTypeToEffec
     {HPAE_SCENE_MOVIE, "SCENE_MOVIE"},
     {HPAE_SCENE_SPEECH, "SCENE_SPEECH"},
     {HPAE_SCENE_RING, "SCENE_RING"},
-    {HPAE_SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"}
+    {HPAE_SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"},
     {HPAE_SCENE_COLLABORATIVE, "SCENE_COLLABORATIVE"}};
 
 std::string TransProcessorTypeToSceneType(HpaeProcessorType processorType)

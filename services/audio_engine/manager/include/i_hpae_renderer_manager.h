@@ -99,10 +99,10 @@ public:
         dfxTree_.UpdateNodeInfo(nodeId, nodeInfo);
 #endif
     }
-    virtual int32_t UpdateCollaborationState(bool isCollaborationEnabled) = 0;
-    virtual std::shared_ptr<HpaeCoBufferNode> GetCoBufferNode() = 0;
-    virtual int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) = 0;
-    virtual int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) = 0;
+    virtual int32_t UpdateCollaborationState(bool isCollaborationEnabled) {return 0;};
+    virtual std::shared_ptr<HpaeCoBufferNode> GetCoBufferNode() {return nullptr;};
+    virtual int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
+    virtual int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
 private:
     std::atomic<uint32_t> nodeIdCounter_ = 0;
 #ifdef ENABLE_HIDUMP_DFX

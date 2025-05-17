@@ -19,6 +19,7 @@
 #include <mutex>
 #include "audio_ring_cache.h"
 #include "hpae_node.h"
+#include "hpae_pcm_buffer.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -26,11 +27,11 @@ namespace HPAE {
 
 class HpaeCoBufferNode : public OutputNode<HpaePcmBuffer *>, public InputNode<HpaePcmBuffer *> {
 public:
-    HpaeCoBufferNode(HpaeNodeInfo& nodeInfo);
+    HpaeCoBufferNode(HpaeNodeInfo& nodeInfo, int32_t& delay);
     virtual ~HpaeCoBufferNode() {};
-    virtual void DoProcess() override;
-    virtual bool Reset() override;
-    virtual bool ResetAll() override;
+    void DoProcess() override;
+    bool Reset() override;
+    bool ResetAll() override;
     
     std::shared_ptr<HpaeNode> GetSharedInstance() override;
     OutputPort<HpaePcmBuffer*>* GetOutputPort() override;
@@ -38,7 +39,8 @@ public:
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode) override;
     virtual size_t GetPreOutNum();
     virtual size_t GetOutputPortNum();
-    void Enqueue();
+    void Enqueue(HpaePcmBuffer* buffer) override;
+    void SetBufferSize(size_t size);
 private:
     std::mutex mutex_;
     InputPort<HpaePcmBuffer*> inputStream_;

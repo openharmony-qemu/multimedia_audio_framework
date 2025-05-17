@@ -148,6 +148,7 @@ ohos_shared_library("audio_engine_node") {
   sources = [
     "node/src/hpae_audio_format_converter_node.cpp",
     "node/src/hpae_capture_effect_node.cpp",
+    "node/src/hpae_co_buffer_node.cpp",
     "node/src/hpae_gain_node.cpp",
     "node/src/hpae_inner_cap_sink_node.cpp",
     "node/src/hpae_mixer_node.cpp",

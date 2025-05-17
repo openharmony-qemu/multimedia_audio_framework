@@ -2197,7 +2197,7 @@ int32_t HpaeManager::UpdateCollaborationState(bool isCollaborationEnabled)
     auto request = [this, isCollaborationEnabled]() {
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByNmae(BT_SINK_NAME);
         CHECK_AND_RETURN_LOG(rendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", BT_SINK_NAME);
+            "can not find sink[%{public}s] in rendererManagerMap_", BT_SINK_NAME.c_str());
         rendererManager->UpdateCollaborationState(isCollaborationEnabled);
     };
     SendRequest(request);
@@ -2206,12 +2206,12 @@ int32_t HpaeManager::UpdateCollaborationState(bool isCollaborationEnabled)
 
 void HpaeManager::HandleConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager)
 {
-    auto request = [this, rendererManger]() {
+    auto request = [this, rendererManager]() {
         std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByNmae(DEFAULT_SINK_NAME);
         if (auto btRendererManager = rendererManager.lock()) {
             defaultRendererManager->ConnectCoBufferNode(btRendererManager->GetCoBufferNode());
         }
-    }
+    };
     SendRequest(request);
 }
 
@@ -2222,7 +2222,7 @@ void HpaeManager::HandleDisConnectCoBufferNode(std::weak_ptr<IHpaeRendererManage
         if (auto btRendererManager = rendererManager.lock()) {
             defaultRendererManager->DisConnectCoBufferNode(btRendererManager->GetCoBufferNode());
         }
-    }
+    };
     SendRequest(request);
 }
 }  // namespace HPAE

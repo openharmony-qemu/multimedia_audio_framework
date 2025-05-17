@@ -18,7 +18,8 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-HpaeCoBufferNode::HpaeCoBufferNode(int32_t delay)
+HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo, int32_t& delay)
+    : HpaeNode(nodeInfo), outputStream_(this)
 {
     delay_ = delay;
 }
@@ -33,25 +34,23 @@ void HpaeCoBufferNode::SetBufferSize(size_t size)
         ringCache_ = AudioRingCache::Create(size);
         CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     } else {
-        OptResult = ringCache_->ReConfig(size);
+        OptResult result = ringCache_->ReConfig(size);
         CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "ReConfig ring cache failed");
     }
 }
 
-void HpaeCoBufferNode::Enqueue(const std::vector<HpaePcmBuffer *> &inputs)
+void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    // 1. 获取ringcache的可写大小
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-    // 2. 从ringcache中写入数据
-    size_t requesetDataLen = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount() * sizeof(float);
-    float *data = inputs[0]->GetPcmDataBuffer();
-    CHECK_AND_RETURN_LOG(result.size >= requesetDataLen,
+    size_t writeLen = buffer->GetFrameLen() * buffer->GetChannelCount() * sizeof(float);
+    float *data = buffer->GetPcmDataBuffer();
+    CHECK_AND_RETURN_LOG(result.size >= writeLen,
         "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
-        result.size, requesetDataLen);
-    BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(data), requesetDataLen};
+        result.size, writeLen);
+    BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(data), writeLen};
     result = ringCache_->Enqueue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
 }
@@ -59,12 +58,10 @@ void HpaeCoBufferNode::Enqueue(const std::vector<HpaePcmBuffer *> &inputs)
 void HpaeCoBufferNode::DoProcess()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    // 查询ringcache的可读大小
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
     OptResult result = ringCache_->GetReadableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get readable size failed");
-    // 3. 从ringcache中读取数据
-    size_t requesetDataLen = 20ms;
+    size_t requesetDataLen = nodeInfo_.frameLen * nodeInfo_.channels * sizeof(float) * 1000 / delay_;
     float *data = nullptr;
     CHECK_AND_RETURN_LOG(result.size >= requesetDataLen,
         "Get readable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
@@ -114,7 +111,7 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
 {
     HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
     nodeInfo_ = preNodeInfo;
-    SetBufferSize(nodeInfo.frameLen * nodeInfo_.channels * sizeof(float) * 1000 / latency_);
+    SetBufferSize(nodeInfo_.frameLen * nodeInfo_.channels * sizeof(float) * 1000 / delay_);
     inputStream_.Connect(GetSharedInstance(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
 }
 
