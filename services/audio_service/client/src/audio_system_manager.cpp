@@ -1801,6 +1801,14 @@ int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(
     return AudioPolicyManager::GetInstance().SetQueryAllowedPlaybackCallback(callback);
 }
 
+int32_t AudioSystemManager::SetBackgroundMuteCallback(
+    const std::shared_ptr<AudioBackgroundMuteCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetBackgroundMuteCallback(callback);
+}
+
 int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
 {
     AUDIO_INFO_LOG("%{public}d", state);
@@ -1810,6 +1818,24 @@ int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
 uint16_t AudioSystemManager::GetDmDeviceType() const
 {
     return AudioPolicyManager::GetInstance().GetDmDeviceType();
+}
+
+int32_t AudioSystemManager::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
+{
+    AUDIO_INFO_LOG("Set uid:%{public}d, pid:%{public}d, Session state:%{public}d", uid, pid, hasSession);
+    return AudioPolicyManager::GetInstance().NotifySessionStateChange(uid, pid, hasSession);
+}
+
+int32_t AudioSystemManager::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
+{
+    AUDIO_INFO_LOG("In");
+    return AudioPolicyManager::GetInstance().NotifyFreezeStateChange(pidList, isFreeze);
+}
+
+int32_t AudioSystemManager::ResetAllProxy()
+{
+    AUDIO_INFO_LOG("RSS IN");
+    return AudioPolicyManager::GetInstance().ResetAllProxy();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -26,6 +26,7 @@
 #include "system_ability_definition.h"
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
+#include "audio_background_manager.h"
 #include "iservice_registry.h"
 #include "audio_bundle_manager.h"
 
@@ -41,6 +42,12 @@ static const std::map<AppExecFwk::ApplicationState, DfxAppState> DFX_APPSTATE_MA
     {AppExecFwk::ApplicationState::APP_STATE_TERMINATED, DFX_APP_STATE_END}
 };
 
+static const std::map<AppExecFwk::ApplicationState, AppIsBackState> BACKGROUND_APPSTATE_MAP = {
+    {AppExecFwk::ApplicationState::APP_STATE_FOREGROUND, STATE_FOREGROUND},
+    {AppExecFwk::ApplicationState::APP_STATE_BACKGROUND, STATE_BACKGROUND},
+    {AppExecFwk::ApplicationState::APP_STATE_END, STATE_END},
+    {AppExecFwk::ApplicationState::APP_STATE_TERMINATED, STATE_END}
+};
 AppStateListener::AppStateListener()
 {
     AUDIO_INFO_LOG("enter");
@@ -52,6 +59,7 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
         AUDIO_INFO_LOG("app state changed, bundleName=%{public}s uid=%{public}d pid=%{public}d state=%{public}d",
             appData.appName.c_str(), appData.uid, appProcessData.pid, appProcessData.appState);
         HandleAppStateChange(appProcessData.pid, appData.uid, static_cast<int32_t>(appProcessData.appState));
+        HandleBackgroundAppStateChange(appProcessData.pid, appData.uid, static_cast<int32_t>(appProcessData.appState));
     }
 }
 
@@ -72,6 +80,17 @@ void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t st
     } else {
         manager.UpdateAppState(uid, appState);
     }
+}
+
+void AppStateListener::HandleBackgroundAppStateChange(int32_t pid, int32_t uid, int32_t state)
+{
+    auto pos = BACKGROUND_APPSTATE_MAP.find(static_cast<AppExecFwk::ApplicationState>(state));
+    auto appState = (pos == BACKGROUND_APPSTATE_MAP.end()) ? STATE_UNKNOWN : pos->second;
+    CHECK_AND_RETURN_LOG(pos != BACKGROUND_APPSTATE_MAP.end(), "invalid app state%{public}d", state);
+
+    AUDIO_INFO_LOG("Background app state changed, uid=%{public}d pid=%{public}d state=%{public}d",
+        uid, pid, state);
+    AudioBackgroundManager::GetInstance().NotifyAppStateChange(uid, pid, appState);
 }
 }
 }
