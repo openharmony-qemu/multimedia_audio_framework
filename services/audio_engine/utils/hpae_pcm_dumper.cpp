@@ -15,6 +15,7 @@
 
 #include <unordered_map>
 #include "hpae_pcm_dumper.h"
+#include "audio_dump_pcm.h"
 #include "audio_errors.h"
 #include "audio_engine_log.h"
 #include "audio_utils.h"
@@ -38,6 +39,7 @@ HpaePcmDumper::~HpaePcmDumper()
 int32_t HpaePcmDumper::Dump(const int8_t *buffer, int32_t length)
 {
     DumpFileUtil::WriteDumpFile(dumpFile_, (void *)(buffer), length);
+    AudioCacheMgr::GetInstance().CacheData(filename_, (void *)(buffer), length);
     return SUCCESS;
 }
 
