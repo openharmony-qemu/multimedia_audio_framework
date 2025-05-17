@@ -40,6 +40,7 @@ ohos_shared_library("audio_engine_utils") {
     "dfx",
     "buffer",
     "manager/include",
+    "../audio_service/common/include",
     "../audio_service/server/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../frameworks/native/audioutils/include",
@@ -51,7 +52,10 @@ ohos_shared_library("audio_engine_utils") {
     "-D_FORTIFY_SOURCE=2 -O2",
   ]
 
-  deps = [ "../../frameworks/native/audioutils:audio_utils" ]
+  deps = [
+    "../audio_service:audio_common",
+    "../../frameworks/native/audioutils:audio_utils",
+  ]
 
   external_deps = [
     "c_utils:utils",
