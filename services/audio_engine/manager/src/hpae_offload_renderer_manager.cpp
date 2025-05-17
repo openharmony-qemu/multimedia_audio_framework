@@ -532,6 +532,7 @@ void HpaeOffloadRendererManager::Process()
 int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 {
     auto request = [this, sessionId, state]() {
+        CHECK_AND_RETURN_LOG(sinkInputNode_, "SetOffloadPolicy err, sinkInputNode is nullptr");
         CHECK_AND_RETURN_LOG(sessionId == sinkInputNode_->GetSessionId(),
             "RegisterWriteCallback not find sessionId %{public}u",
             sessionId);
