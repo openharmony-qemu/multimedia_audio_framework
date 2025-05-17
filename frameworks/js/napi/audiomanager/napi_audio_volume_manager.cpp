@@ -328,7 +328,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentage(napi_env env, napi_cal
         context->intValue = napiAudioVolumeManager->audioSystemMngr_->SetSelfAppVolume(
             context->volLevel);
         CHECK_AND_RETURN(context->intValue != SUCCESS);
-        if (context->intValue == ERROR_INVALID_PARAM) {
+        if (context->intValue == ERR_INVALID_PARAM) {
             context->SignError(NAPI_ERROR_INVALID_PARAM, "Invalid arguments count or types.");
         } else {
             context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
