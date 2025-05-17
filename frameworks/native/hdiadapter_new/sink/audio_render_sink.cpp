@@ -227,7 +227,6 @@ int32_t AudioRenderSink::Reset(void)
 
 int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    // WaitForDataLinkConnected();
     int64_t stamp = ClockTime::GetCurNano();
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     if (!started_) {
