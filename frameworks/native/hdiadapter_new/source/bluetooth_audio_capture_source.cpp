@@ -49,6 +49,7 @@ BluetoothAudioCaptureSource::~BluetoothAudioCaptureSource()
         DeInit();
     }
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
+    CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
 
 int32_t BluetoothAudioCaptureSource::Init(const IAudioSourceAttr &attr)
