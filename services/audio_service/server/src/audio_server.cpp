@@ -237,6 +237,12 @@ static void UpdatePrimaryInstance(std::shared_ptr<IAudioRenderSink> &sink,
     }
 }
 
+void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
+{
+    CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is null");
+    audioServer_->RemoveRendererDataTransferCallback(pid_);
+}
+
 class CapturerStateOb final : public IAudioSourceCallback {
 public:
     explicit CapturerStateOb(uint32_t captureId, std::function<void(bool, size_t, size_t)> callback)
@@ -333,6 +339,71 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         dumpObj.AudioDataDump(dumpString, argQue);
     }
     return write(fd, dumpString.c_str(), dumpString.size());
+}
+
+void AudioServer::RemoveRendererDataTransferCallback(const int32_t &pid)
+{
+    std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+    if (audioDataTransferCbMap_.count(pid) > 0) {
+        audioDataTransferCbMap_.erase(pid);
+    }
+}
+
+int32_t AudioServer::RegisterDataTransferCallback(const sptr<IRemoteObject> &object)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
+ 
+    std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+
+    sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);
+
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioServer: listener obj cast failed");
+
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
+    std::make_shared<AudioManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    sptr<ProxyDeathRecipient> recipient = new ProxyDeathRecipient(pid, this);
+    object->AddDeathRecipient(recipient);
+    audioDataTransferCbMap_[pid] = callback;
+    AUDIO_INFO_LOG("Pid: %{public}d registerDataTransferCallback done", pid);
+    return SUCCESS;
+}
+
+int32_t AudioServer::RegisterDataTransferMonitorParam(const int32_t &callbackId,
+    const DataTransferMonitorParam &param)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    // todo: wait for add code
+    return SUCCESS;
+}
+
+int32_t AudioServer::UnregisterDataTransferMonitorParam(const int32_t &callbackId)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    // todo: wait for add code
+    return SUCCESS;
+}
+
+void AudioServer::OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+        if (audioDataTransferCbMap_.count(pid) > 0) {
+            callback = audioDataTransferCbMap_[pid];
+        } else {
+            AUDIO_ERR_LOG("callback is null");
+            return;
+        }
+    }
+    callback->OnDataTransferStateChange(callbackId, info);
 }
 
 void AudioServer::InitMaxRendererStreamCntPerUid()

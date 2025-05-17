@@ -23,6 +23,10 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    constexpr int32_t MAX_REGISTER_COUNT = 10;
+}
+
 AudioManagerListenerStub::AudioManagerListenerStub()
 {
 }
@@ -51,6 +55,13 @@ int AudioManagerListenerStub::OnRemoteRequest(
         case ON_CAPTURER_STATE: {
             bool isActive = data.ReadBool();
             OnCapturerState(isActive);
+            return AUDIO_OK;
+        }
+        case ON_DATATRANSFER_STATE_CHANGE: {
+            int32_t callbackId = data.ReadInt32();
+            AudioRendererDataTransferStateChangeInfo info;
+            info.Unmarshalling(data);
+            OnDataTransferStateChange(callbackId, info);
             return AUDIO_OK;
         }
         default: {
@@ -99,6 +110,60 @@ void AudioManagerListenerStub::OnWakeupClose()
     } else {
         AUDIO_WARNING_LOG("AudioManagerListenerStub: OnWakeupClose error");
     }
+}
+
+void AudioManagerListenerStub::OnDataTransferStateChange(const int32_t &callbackId,
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(stateChangeMutex_);
+        if (stateChangeCallbackMap_.count(callbackId) > 0) {
+            callback = stateChangeCallbackMap_[callbackId].second;
+        }
+    }
+
+    if (callback == nullptr) {
+        return;
+    }
+
+    callback->OnDataTransferStateChange(info);
+}
+
+int32_t AudioManagerListenerStub::AddDataTransferStateChangeCallback(const DataTransferMonitorParam &param,
+    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb)
+{
+    std::lock_guard<std::mutex> lock(stateChangeMutex_);
+    if (stateChangeCallbackMap_.size() > MAX_REGISTER_COUNT) {
+        return -1;
+    }
+
+    for (auto it = stateChangeCallbackMap_.begin(); it != stateChangeCallbackMap_.end(); ++it) {
+        if (it->second.first == param && it->second.second == cb) {
+            return it->first;
+        }
+    }
+
+    ++callbackId_;
+    stateChangeCallbackMap_[callbackId_] = std::make_pair(param, cb);
+    return callbackId_;
+}
+
+std::vector<int32_t> AudioManagerListenerStub::RemoveDataTransferStateChangeCallback(
+    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb)
+{
+    std::lock_guard<std::mutex> lock(stateChangeMutex_);
+    std::vector<int32_t> callbackIds;
+    for (auto it = stateChangeCallbackMap_.begin(); it != stateChangeCallbackMap_.end();) {
+        if (it->second.second == cb) {
+            callbackIds.push_back(it->first);
+            it = stateChangeCallbackMap_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    return callbackIds;
 }
 
 } // namespace AudioStandard
