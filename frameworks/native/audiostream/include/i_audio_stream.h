@@ -288,6 +288,11 @@ public:
 
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
 
+    virtual bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
+    {
+        return false;
+    }
+
     virtual void SetSwitchingStatus(bool isSwitching) = 0;
     virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
 
@@ -302,6 +307,10 @@ public:
     virtual void FetchDeviceForSplitStream() = 0;
 
     virtual void SetCallStartByUserTid(pid_t tid) = 0;
+
+    virtual void SetCallbackLoopTid(int32_t tid) = 0;
+
+    virtual int32_t GetCallbackLoopTid() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

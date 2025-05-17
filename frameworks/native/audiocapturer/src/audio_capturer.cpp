@@ -49,6 +49,8 @@ std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
     {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP},
     {AudioStreamType::STREAM_SOURCE_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_CALL},
+    {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_LIVE},
+    {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_LIVE},
 };
 
 static const std::map<uint32_t, IAudioStream::StreamClass> AUDIO_INPUT_FLAG_GROUP_MAP = {
@@ -276,9 +278,10 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     Trace trace("AudioCapturer::SetParams");
     AUDIO_INFO_LOG("StreamClientState for Capturer::SetParams.");
-
-    std::shared_lock<std::shared_mutex> lockShared(capturerMutex_);
-
+    std::shared_lock<std::shared_mutex> lockShared;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lockShared = std::shared_lock<std::shared_mutex>(capturerMutex_);
+    }
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
     IAudioStream::StreamClass streamClass = SetCaptureInfo(audioStreamParams);
 
@@ -309,6 +312,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         ret = InitAudioStream(audioStreamParams);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init normal audio stream failed");
         audioStream_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+        callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
@@ -547,7 +551,10 @@ int32_t AudioCapturerPrivate::SetCapturerCallback(const std::shared_ptr<AudioCap
 
 void AudioCapturerPrivate::SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback)
 {
-    std::shared_lock sharedLock(capturerMutex_);
+    std::shared_lock<std::shared_mutex> sharedLock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        sharedLock = std::shared_lock<std::shared_mutex>(capturerMutex_);
+    }
     std::lock_guard lock(audioCapturerErrCallbackMutex_);
     audioCapturerErrorCallback_ = errorCallback;
 }
@@ -647,8 +654,10 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 
 int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFunc)
 {
-    std::lock_guard<std::shared_mutex> lock(capturerMutex_);
-
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    }
     // Return in advance if there's no need for restore.
     CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
     RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
@@ -694,7 +703,10 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
 bool AudioCapturerPrivate::Start()
 {
     CheckAndRestoreAudioCapturer("Start");
-    std::lock_guard lock(capturerMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    }
     Trace trace("AudioCapturer::Start");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
@@ -787,7 +799,10 @@ bool AudioCapturerPrivate::GetFirstPkgTimeStampInfo(int64_t &firstTs) const
 
 bool AudioCapturerPrivate::Pause() const
 {
-    std::lock_guard lock(capturerMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    }
     Trace trace("AudioCapturer::Pause");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
@@ -805,7 +820,10 @@ bool AudioCapturerPrivate::Pause() const
 
 bool AudioCapturerPrivate::Stop() const
 {
-    std::lock_guard lock(capturerMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    }
     Trace trace("AudioCapturer::Stop");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
@@ -833,8 +851,10 @@ bool AudioCapturerPrivate::Flush() const
 bool AudioCapturerPrivate::Release()
 {
     AUDIO_INFO_LOG("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
-    std::lock_guard<std::shared_mutex> releaseLock(capturerMutex_);
-
+    std::unique_lock<std::shared_mutex> releaseLock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        releaseLock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    }
     abortRestore_ = true;
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(isValid_, false, "Release when capturer invalid");
@@ -879,6 +899,13 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
+}
+
+bool AudioCapturerPrivate::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+    return currentStream->GetTimeStampInfo(timestamp, base);
 }
 
 // diffrence from GetAudioPosition only when set speed
@@ -1072,6 +1099,7 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
 
 int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources)
 {
+    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     if (targetSources.size() <= 0) {
         AUDIO_ERR_LOG("TargetSources size is 0, set audio source concurrency failed.");
         return ERR_INVALID_PARAM;
@@ -1087,7 +1115,9 @@ int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
     audioCaptureMode_ = captureMode;
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->SetCaptureMode(captureMode);
+    int32_t ret = currentStream->SetCaptureMode(captureMode);
+    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+    return ret;
 }
 
 AudioCaptureMode AudioCapturerPrivate::GetCaptureMode() const
@@ -1368,6 +1398,7 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     audioStream->SetCaptureMode(info.captureMode);
+    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
 
     // set callback
     if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
@@ -1832,7 +1863,10 @@ void CapturerPolicyServiceDiedCallback::RestoreTheadLoop()
 
 void AudioCapturerPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter)
 {
-    std::lock_guard lock(capturerMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    }
     CHECK_AND_RETURN_LOG(audioStream_, "audioStream_ is nullptr, no need for restore");
     AUDIO_INFO_LOG("Restore AudioCapturer %{public}u when server died", sessionID_);
     RestoreInfo restoreInfo;
@@ -1884,7 +1918,10 @@ CapturerState AudioCapturerPrivate::GetStatusInner() const
 
 std::shared_ptr<IAudioStream> AudioCapturerPrivate::GetInnerStream() const
 {
-    std::shared_lock<std::shared_mutex> lock(capturerMutex_);
+    std::shared_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::shared_lock<std::shared_mutex>(capturerMutex_);
+    }
     return audioStream_;
 }
 

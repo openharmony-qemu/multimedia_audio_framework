@@ -50,7 +50,7 @@ public:
     int32_t Release(uint32_t sessionId) override;
     int32_t MoveStream(uint32_t sessionId, const std::string &sinkName) override;
     int32_t MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
-        bool isMoveAll = true) override;
+        MOVE_SESSION_TYPE moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
     int32_t SetMute(bool isMute) override;
     void Process() override;
@@ -105,7 +105,8 @@ private:
     void SendRequestInner(Request &&request, bool isInit = false);
     uint32_t GetSinkInputNodeIdInner();
     void AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
-    void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds, bool isMoveAll);
+    void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
+        MOVE_SESSION_TYPE moveType);
     void InitSinkInner();
     uint32_t sinkInputNodeCounter_ = 0;
     std::atomic<bool> isInit_ = false;

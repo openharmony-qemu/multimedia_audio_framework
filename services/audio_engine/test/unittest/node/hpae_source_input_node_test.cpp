@@ -32,6 +32,7 @@ namespace HPAE {
 
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_NODE_ID = 1243;
+static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 
 class HpaeSourceInputNodeTest : public testing::Test {
 public:
@@ -78,9 +79,9 @@ TEST_F(HpaeSourceInputNodeTest, testSourceInputOutputCase)
     std::shared_ptr<HpaeSourceInputNode> hpaeSoruceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
     EXPECT_EQ(hpaeSoruceInputNode.use_count(), 1);
     {
-        std::shared_ptr<OutputNode<HpaePcmBuffer *>> ouputNode = hpaeSoruceInputNode;
+        std::shared_ptr<OutputNode<HpaePcmBuffer *>> outputNode = hpaeSoruceInputNode;
         EXPECT_EQ(hpaeSoruceInputNode.use_count(), 2);  // 2 for test
-        std::shared_ptr<HpaeNode> hpaeNode = ouputNode->GetSharedInstance();
+        std::shared_ptr<HpaeNode> hpaeNode = outputNode->GetSharedInstance();
         EXPECT_EQ(hpaeSoruceInputNode.use_count(), 3);  // 3 for test
         EXPECT_EQ(hpaeNode->GetSampleRate(), nodeInfo.samplingRate);
         EXPECT_EQ(hpaeNode->GetNodeId(), nodeInfo.nodeId);
@@ -137,13 +138,13 @@ TEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase)
     attr.volume = 0.0f;
     attr.bufferSize = 0;
     attr.isBigEndian = false;
-    attr.filePath = NULL;
+    attr.filePath = g_rootCapturerPath.c_str();
     attr.deviceNetworkId = NULL;
     attr.deviceType = 0;
     attr.sourceType = 0;
     attr.channelLayout = 0;
     attr.audioStreamFlag = 0;
-    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), ERROR);
+    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStart(), SUCCESS);
     EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == STREAM_MANAGER_RUNNING, true);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStop(), SUCCESS);

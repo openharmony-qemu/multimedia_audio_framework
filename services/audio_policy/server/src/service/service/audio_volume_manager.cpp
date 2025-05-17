@@ -1213,13 +1213,13 @@ std::vector<std::shared_ptr<AllDeviceVolumeInfo>> AudioVolumeManager::GetAllDevi
 }
 
 void AudioVolumeManager::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
-    std::string callerName, std::string invocationTime)
+    int32_t appUid, std::string invocationTime)
 {
     AdjustVolumeInfo systemVolumeLevelInfo;
     systemVolumeLevelInfo.deviceType = curOutputDeviceType_;
     systemVolumeLevelInfo.streamType = streamType;
     systemVolumeLevelInfo.volumeLevel = volumeLevel;
-    systemVolumeLevelInfo.callerName = callerName;
+    systemVolumeLevelInfo.appUid = appUid;
     systemVolumeLevelInfo.invocationTime = invocationTime;
     systemVolumeLevelInfo_->Add(systemVolumeLevelInfo);
 }

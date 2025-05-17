@@ -28,6 +28,7 @@
 #include "bundle_mgr_proxy.h"
 #include "audio_background_manager.h"
 #include "iservice_registry.h"
+#include "audio_bundle_manager.h"
 
 
 namespace OHOS {
@@ -62,39 +63,6 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
     }
 }
 
-AppExecFwk::BundleInfo AppStateListener::GetBundleInfoFromUid(int32_t callingUid)
-{
-    AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
-        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    std::string bundleName {"uid:" + std::to_string(callingUid)};
-    AppExecFwk::BundleInfo bundleInfo;
-    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleInfoFromUid");
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, bundleInfo, "systemAbilityManager is nullptr");
-    guard.CheckCurrTimeout();
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_PRELOG(remoteObject != nullptr, bundleInfo, "remoteObject is nullptr");
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, bundleInfo, "bundleMgrProxy is nullptr");
-
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleInfoFromUid");
-    bundleMgrProxy->GetNameForUid(callingUid, bundleName);
-
-    bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
-        bundleInfo,
-        AppExecFwk::Constants::ALL_USERID);
-    reguard.CheckCurrTimeout();
-
-    return bundleInfo;
-}
-
-
 void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t state)
 {
     auto pos = DFX_APPSTATE_MAP.find(static_cast<AppExecFwk::ApplicationState>(state));
@@ -105,7 +73,7 @@ void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t st
     auto &manager = DfxMsgManager::GetInstance();
     if (appState == DFX_APP_STATE_START) {
         if (manager.CheckCanAddAppInfo(uid)) {
-            auto info = GetBundleInfoFromUid(uid);
+            auto info = AudioBundleManager::GetBundleInfoFromUid(uid);
             manager.SaveAppInfo({uid, info.name, info.versionName});
         }
         manager.UpdateAppState(uid, appState, true);

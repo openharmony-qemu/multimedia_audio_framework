@@ -41,6 +41,7 @@ public:
     bool RegisterReadCallback(const std::weak_ptr<ICapturerStreamCallback> &callback);
 private:
     uint64_t GetTimestamp();
+    std::string GetTraceInfo();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
     std::weak_ptr<ICapturerStreamCallback> readCallback_;

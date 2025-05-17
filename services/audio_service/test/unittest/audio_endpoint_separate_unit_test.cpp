@@ -237,6 +237,7 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_008, TestSize.Level1
     uint64_t id = 0;
     AudioStreamType streamType = AudioStreamType::STREAM_DEFAULT;
     std::shared_ptr<AudioEndpointSeparate> ptr = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    ASSERT_TRUE(ptr != nullptr);
     ptr->isInited_ = true;
 }
 

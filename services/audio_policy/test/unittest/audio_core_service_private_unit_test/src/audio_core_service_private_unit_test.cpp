@@ -194,7 +194,8 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_010, TestSize.Level1
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
-    audioCoreService->pipeManager_->modemCommunicationIdMap_.insert(std::make_pair(0, 0));
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioCoreService->pipeManager_->modemCommunicationIdMap_.insert(std::make_pair(0, streamDesc));
 
     audioCoreService->CheckModemScene(reason);
 }

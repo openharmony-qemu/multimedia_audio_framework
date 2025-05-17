@@ -479,10 +479,35 @@ void HpaeManagerImpl::UpdateExtraSceneType(
     manager_->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
 }
 
+void HpaeManagerImpl::NotifySettingsDataReady()
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    return manager_->NotifySettingsDataReady();
+}
+
+void HpaeManagerImpl::NotifyAccountsChanged()
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    return manager_->NotifyAccountsChanged();
+}
+
 bool HpaeManagerImpl::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
     return manager_->IsAcousticEchoCancelerSupported(sourceType);
+}
+
+bool HpaeManagerImpl::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->SetEffectLiveParameter(params);
+}
+
+bool HpaeManagerImpl::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->GetEffectLiveParameter(subKeys, result);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

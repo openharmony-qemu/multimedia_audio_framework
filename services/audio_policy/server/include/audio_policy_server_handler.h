@@ -51,6 +51,7 @@ public:
         FOCUS_INFOCHANGE,
         RINGER_MODEUPDATE_EVENT,
         APP_VOLUME_CHANGE_EVENT,
+        ACTIVE_VOLUME_TYPE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
         INTERRUPT_EVENT,
@@ -79,7 +80,6 @@ public:
         NN_STATE_CHANGE,
         AUDIO_SCENE_CHANGE,
         SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
-        DISTRIBUTED_OUTPUT_CHANGE,
         AUDIO_ZONE_EVENT,
         FORMAT_UNSUPPORTED_ERROR,
     };
@@ -89,6 +89,7 @@ public:
         DeviceChangeAction deviceChangeAction;
         MicrophoneBlockedInfo microphoneBlockedInfo;
         VolumeEvent volumeEvent;
+        AudioVolumeType volumeType;
         AudioInterrupt audioInterrupt;
         std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
         AudioRingerMode ringMode;
@@ -127,15 +128,6 @@ public:
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     };
 
-    struct DistributedOutputChangeEvent {
-        DistributedOutputChangeEvent() = delete;
-        DistributedOutputChangeEvent(const AudioDeviceDescriptor &deviceDesc, const bool isRemote)
-            : deviceDesc_(deviceDesc), isRemote_(isRemote) {}
-
-        const AudioDeviceDescriptor &deviceDesc_;
-        const bool isRemote_;
-    };
-
     struct CapturerCreateEvent {
         CapturerCreateEvent() = delete;
         CapturerCreateEvent(const AudioCapturerInfo &capturerInfo, const AudioStreamInfo &streamInfo,
@@ -170,6 +162,7 @@ public:
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
+    bool SendActiveVolumeTypeChangeCallback(const AudioVolumeType &volumeType);
     bool SendAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent);
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
     bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
@@ -186,7 +179,6 @@ public:
     bool SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
         const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason);
-    bool SendDistribuitedOutputChangeEvent(const AudioDeviceDescriptor &desc, bool isRemote);
     bool SendCapturerCreateEvent(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint64_t sessionId, bool isSync, int32_t &error);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
@@ -240,7 +232,6 @@ private:
     void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleDistributedOutputChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event);
@@ -260,6 +251,7 @@ private:
     void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleActiveVolumeTypeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

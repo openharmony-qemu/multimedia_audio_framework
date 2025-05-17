@@ -31,6 +31,7 @@ ohos_unittest("audio_server_unit_test") {
     "./include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../frameworks/native/audioinnercall/include",
+    "../../../../../frameworks/native/audioclock/include",
     "../../../../../services/audio_service/server/include",
     "../../../../../services/audio_policy/client/include",
   ]
@@ -41,6 +42,7 @@ ohos_unittest("audio_server_unit_test") {
   deps = [
     "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service",
+    "../../../../../frameworks/native/audioclock:audio_clock",
   ]
 
   external_deps = [

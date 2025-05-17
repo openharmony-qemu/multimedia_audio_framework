@@ -162,16 +162,16 @@ public:
         AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
     void UpdateExtraSceneType(
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) override;
+    void NotifySettingsDataReady() override;
+    void NotifyAccountsChanged() override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
+    bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result) override;
 private:
-    int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
-    bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
-    int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
-    AudioSampleFormat TransFormatFromStringToEnum(std::string format);
     int32_t CloseOutAudioPort(std::string &sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
     int32_t CloseInAudioPort(std::string &sourceName);
-    void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
     template <typename... Args>
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
     void HandleUpdateStatus(
@@ -180,9 +180,11 @@ private:
     void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
     void HandleMoveAllSinkInputs(const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
-        bool isConnect);
+        MOVE_SESSION_TYPE moveType);
     void HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std::string sourceName);
     void HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
+    void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MOVE_SESSION_TYPE moveType,
+        std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
 
@@ -196,15 +198,14 @@ private:
 
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerById(uint32_t sessionId);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerById(uint32_t sessionId);
-    std::shared_ptr<IHpaeRendererManager> GetRendererManagerByNmae(const std::string &sinkName);
+    std::shared_ptr<IHpaeRendererManager> GetRendererManagerByName(const std::string &sinkName);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo);
 
-    void MoveToPreferSink(const std::string& name);
+    void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> serviceCallback);
     int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo);
-    void AddSinkIdByName(std::unordered_map<std::string, std::vector<uint32_t>> &sinkIdMap,
-        const std::pair<uint32_t, std::string> &id, const std::string &name);
     void DestroyCapture(uint32_t sessionId);
+    void LoadEffectLive();
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -234,6 +235,7 @@ private:
     std::weak_ptr<AudioServiceHpaeDumpCallback> dumpCallback_;
     std::unordered_map<std::string, std::string> deviceDumpSinkInfoMap_;
     std::unordered_map<HpaeMsgCode, std::function<void(const std::any &)>> handlers_;
+    std::string effectLiveState_ = "";
 };
 
 }  // namespace HPAE

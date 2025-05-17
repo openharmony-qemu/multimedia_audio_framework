@@ -98,7 +98,6 @@
 #define DEFAULT_BLOCK_USEC 20000
 #define EFFECT_PROCESS_RATE 48000
 #define EFFECT_FRAME_LENGTH_MONO 960 // 48000Hz * 0.02s for 1 channel
-#define MCH_SINK_STANDBY_TIMES 160000 // 160ms
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 const uint64_t DEFAULT_GETLATENCY_LOG_THRESHOLD_MS = 100;
@@ -110,6 +109,7 @@ const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
+const char *DEVICE_CLASS_DP = "dp";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
 const char *MCH_SINK_NAME = "MCH_Speaker";
@@ -128,8 +128,6 @@ const int32_t COMMON_SCENE_TYPE_INDEX = 0;
 const int32_t SUCCESS = 0;
 const int32_t ERROR = -1;
 const uint64_t FADE_OUT_TIME = 5000; // 5ms
-bool g_isFirstStarted = true;
-const char *BOOT_ANIMATION_FINISHED_EVENT = "bootevent.bootanimation.finished";
 
 enum HdiInputType { HDI_INPUT_TYPE_PRIMARY, HDI_INPUT_TYPE_OFFLOAD, HDI_INPUT_TYPE_MULTICHANNEL };
 
@@ -3206,7 +3204,6 @@ static void ResetMultiChannelHdiState(struct Userdata *u)
     }
     if (u->multiChannel.isHDISinkInited) {
         if (u->multiChannel.sample_attrs.channel != (uint32_t)u->multiChannel.sinkChannel) {
-            usleep(MCH_SINK_STANDBY_TIMES);
             u->multiChannel.sinkAdapter->SinkAdapterStop(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkStarted = false;
             u->multiChannel.sinkAdapter->SinkAdapterDeInit(u->multiChannel.sinkAdapter);
@@ -3692,22 +3689,9 @@ static void SetThreadPriority(char *sinkName)
         return;
     }
 
-    if (g_isFirstStarted) {
-        char paraValue[30] = {0}; // 30 for system parameter
-        int32_t ret = GetParameter(BOOT_ANIMATION_FINISHED_EVENT, "false", paraValue, sizeof(paraValue));
-        if (ret > 0 && !strcmp(paraValue, "false")) {
-            // boot up case
-            ScheduleThreadInServer(getpid(), gettid());
-            SetThreadQosLevelAsync();
-        } else {
-            // audio server recover case
-            SetThreadQosLevel();
-        }
-        g_isFirstStarted = false;
-    } else {
-        // normal thread creating case
-        SetThreadQosLevel();
-    }
+    AUDIO_INFO_LOG("set thread priority start");
+    int32_t setpriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
+    SetProcessDataThreadPriority(setpriority);
 }
 
 static void UnsetThreadPriority(char *sinkName)
@@ -3719,7 +3703,7 @@ static void UnsetThreadPriority(char *sinkName)
     }
 
     // primary case
-    ResetThreadQosLevel();
+    ResetProcessDataThreadPriority();
 }
 
 static void ThreadFuncRendererTimerBus(void *userdata)
@@ -4630,10 +4614,8 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
     CHECK_AND_RETURN_RET_LOG(u->primary.dq, -1, "Failed to create u->primary.dq");
 
     u->sink = PaHdiSinkInit(u, ma, driver);
-    if (!u->sink) {
-        AUDIO_ERR_LOG("Failed to create sink object");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(u->sink, -1, "Failed to create sink object");
+
     u->render_full_enable = false; // default to false.
     if (u->ss.channels > CHANNEL_COUNT_2) {
         AUDIO_INFO_LOG("multichannel case, will call render_full for dp");
@@ -4658,6 +4640,10 @@ static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, con
     }
 
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
+
+    if ((u->primary.sinkAdapter) && !strcmp(u->primary.sinkAdapter->deviceClass, DEVICE_CLASS_DP)) {
+        u->primary.prewrite = u->block_usec * 2; // 2 frame, set cache len in hdi, avoid pop
+    }
 
     u->lastRecodedLatency = 0;
     u->continuesGetLatencyErrCount = 0;

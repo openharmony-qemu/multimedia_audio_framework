@@ -1,0 +1,113 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../config.gni")
+config("audio_clock_public_config") {
+  include_dirs = [ "./include" ]
+
+  cflags_cc = [ "-std=c++20" ]
+}
+
+ohos_shared_library("audio_clock") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  public_configs = [ ":audio_clock_public_config" ]
+  install_enable = true
+  include_dirs = [
+    "./include",
+    "../../../interfaces/inner_api/native/audiocommon/include/",
+    "../audioutils/include",
+  ]
+
+  deps = [
+    "../audioutils:audio_utils"
+  ]
+
+  sources = [
+    "./src/capturer_clock.cpp",
+    "./src/audio_source_clock.cpp",
+    "./src/capturer_clock_manager.cpp",
+    "./src/audio_primary_source_clock.cpp",
+  ]
+
+  public_external_deps = [ "bounds_checking_function:libsec_shared" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+  ]
+
+  defines = []
+
+  if (build_variant == "user") {
+    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
+  } else if (build_variant == "root") {
+    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
+  }
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_unittest("audioclock_unit_test") {
+  module_out_path = "audio_framework/audio_framework_route/audioclock"
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  include_dirs = [
+    "./include",
+    "../../../interfaces/inner_api/native/audiocommon/include/",
+    "../audioutils/include",
+  ]
+
+  sources = [
+    "test/unittest/audio_primary_source_clock_unit_test.cpp",
+    "test/unittest/audio_source_clock_unit_test.cpp",
+    "test/unittest/capturer_clock_manager_unit_test.cpp",
+    "test/unittest/capturer_clock_unit_test.cpp",
+  ]
+
+  deps = [ 
+    ":audio_clock",
+    "../audioutils:audio_utils"
+  ]
+
+  defines = []
+
+  external_deps = [
+    "drivers_interface_audio:libaudio_proxy_4.0",
+    "googletest:gmock",
+    "googletest:gtest",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}

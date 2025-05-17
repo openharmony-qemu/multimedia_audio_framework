@@ -55,6 +55,7 @@ ohos_unittest("renderer_in_server_unit_test") {
     "../../../../../services/audio_service/server/include",
     "../../../../../services/audio_policy/client/include",
     "../../../../../frameworks/native/audiopolicy/include",
+    "../../../../../frameworks/native/audioclock/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -62,6 +63,7 @@ ohos_unittest("renderer_in_server_unit_test") {
   deps = [
     "../../../../../services/audio_service:audio_service",
     "../../../../audio_service:audio_process_service_static",
+    "../../../../../frameworks/native/audioclock:audio_clock",
   ]
 
   external_deps = [
@@ -109,6 +111,7 @@ ohos_unittest("renderer_in_server_second_unit_test") {
     "../../../../../services/audio_service/server/include",
     "../../../../../services/audio_policy/client/include",
     "../../../../../frameworks/native/audiopolicy/include",
+    "../../../../../frameworks/native/audioclock/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -116,6 +119,7 @@ ohos_unittest("renderer_in_server_second_unit_test") {
   deps = [
     "../../../../../services/audio_service:audio_service",
     "../../../../audio_service:audio_process_service_static",
+    "../../../../../frameworks/native/audioclock:audio_clock",
   ]
 
   external_deps = [

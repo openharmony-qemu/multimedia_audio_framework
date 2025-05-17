@@ -33,6 +33,7 @@ enum HpaeMsgCode {
     MOVE_ALL_SOURCE_OUTPUT,
     DUMP_SINK_INFO,
     DUMP_SOURCE_INFO,
+    MOVE_SESSION_FAILED,
 };
 
 enum NodeOperation { UNDERFLOW, FADED, DRAINED };

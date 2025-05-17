@@ -86,6 +86,7 @@ public:
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+    bool GetTimeStampInfo(Timestamp &timestampNs, Timestamp::Timestampbase base) const override;
     int32_t RegisterCapturerPolicyServiceDiedCallback();
     int32_t RemoveCapturerPolicyServiceDiedCallback();
 
@@ -190,6 +191,7 @@ private:
     std::mutex audioCapturerErrCallbackMutex_;
     std::mutex policyServiceDiedCallbackMutex_;
     std::mutex audioInterruptMutex_;
+    int32_t callbackLoopTid_ = -1;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

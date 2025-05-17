@@ -1580,6 +1580,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     attr.volume = HDI_MAX_SINK_VOLUME_LEVEL;
     attr.filePath = audioModuleInfo.fileName.c_str();
     attr.deviceNetworkId = audioModuleInfo.networkId.c_str();
+    attr.aux = audioModuleInfo.extra == "" ? nullptr : audioModuleInfo.extra.c_str();
     if (!audioModuleInfo.deviceType.empty()) {
         attr.deviceType = std::stoi(audioModuleInfo.deviceType);
     }

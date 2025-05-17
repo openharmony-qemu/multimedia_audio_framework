@@ -40,19 +40,28 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
 #endif
 }
 
-void HpaeSourceOutputNode::DoProcess()
+std::string HpaeSourceOutputNode::GetTraceInfo()
 {
     auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
     auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
     auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
     auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " +
-        rate + ch + len + format);
+    return rate + ch + len + format;
+}
+
+void HpaeSourceOutputNode::DoProcess()
+{
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo());
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     if (outputVec.empty()) {
+        AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), data read is empty", GetSessionId());
         return;
     }
     HpaePcmBuffer *outputData = outputVec.front();
+    if (!outputData->IsValid()) {
+        AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), drop invalid data", GetSessionId());
+        return;
+    }
     ConvertFromFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), sourceOutputData_.data());
 #ifdef ENABLE_HOOK_PCM
@@ -94,7 +103,7 @@ uint64_t HpaeSourceOutputNode::GetTimestamp()
 
 bool HpaeSourceOutputNode::Reset()
 {
-    const auto preOutputMap = inputStream_.GetPreOuputMap();
+    const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
         inputStream_.DisConnect(output);
@@ -104,7 +113,7 @@ bool HpaeSourceOutputNode::Reset()
 
 bool HpaeSourceOutputNode::ResetAll()
 {
-    const auto preOutputMap = inputStream_.GetPreOuputMap();
+    const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
         std::shared_ptr<HpaeNode> hpaeNode = preOutput.second;

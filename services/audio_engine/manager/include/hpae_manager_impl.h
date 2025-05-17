@@ -118,7 +118,12 @@ public:
         AudioEnhancePropertyArray &propertyArray, DeviceType deviceType = DEVICE_TYPE_NONE) override;
     void UpdateExtraSceneType(
         const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType) override;
+    void NotifySettingsDataReady() override;
+    void NotifyAccountsChanged() override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
+    bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

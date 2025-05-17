@@ -553,8 +553,10 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
     Trace trace("AudioRenderer::SetParams");
     AUDIO_INFO_LOG("StreamClientState for Renderer::SetParams.");
-
-    std::shared_lock<std::shared_mutex> lockShared(rendererMutex_);
+    std::shared_lock<std::shared_mutex> lockShared;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lockShared = std::shared_lock<std::shared_mutex>(rendererMutex_);
+    }
     std::lock_guard<std::mutex> lock(setParamsMutex_);
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
@@ -562,7 +564,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 #ifdef SUPPORT_LOW_LATENCY
     IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
 #else
-    rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
@@ -582,6 +584,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         ret = InitAudioStream(audioStreamParams);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
         audioStream_->SetRenderMode(RENDER_MODE_CALLBACK);
+        callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
     }
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioStreamInfo Failed");
@@ -732,7 +735,10 @@ int32_t AudioRendererPrivate::GetStreamInfo(AudioStreamInfo &streamInfo) const
 
 int32_t AudioRendererPrivate::SetRendererCallback(const std::shared_ptr<AudioRendererCallback> &callback)
 {
-    std::shared_lock<std::shared_mutex> lockShared(rendererMutex_);
+    std::shared_lock<std::shared_mutex> lockShared;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lockShared = std::shared_lock<std::shared_mutex>(rendererMutex_);
+    }
     std::lock_guard<std::mutex> lock(setStreamCallbackMutex_);
     // If the client is using the deprecated SetParams API. SetRendererCallback must be invoked, after SetParams.
     // In general, callbacks can only be set after the renderer state is PREPARED.
@@ -839,14 +845,19 @@ bool AudioRendererPrivate::GetStartStreamResult(StateChangeCmdType cmdType)
 
 std::shared_ptr<IAudioStream> AudioRendererPrivate::GetInnerStream() const
 {
-    std::shared_lock<std::shared_mutex> lock(rendererMutex_);
+    std::shared_lock<std::shared_mutex> lockShared;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lockShared = std::shared_lock<std::shared_mutex>(rendererMutex_);
+    }
     return audioStream_;
 }
 
 int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFunc)
 {
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
     // Return in advance if there's no need for restore.
     CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
     RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
@@ -904,10 +915,12 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     Trace trace("AudioRenderer::Start");
     CheckAndRestoreAudioRenderer("Start");
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
-        [](void *) {
-            AUDIO_ERR_LOG("Start timeout");
-        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+        [](void *) { AUDIO_ERR_LOG("Start timeout"); }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
+
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "volume: %{public}f, interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType,
         GetVolumeInner(), audioInterrupt_.mode);
@@ -916,11 +929,9 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
         false, "Start failed. Illegal state:%{public}u", state);
 
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
-        "Start failed. Switching state: %{public}d", isSwitching_);
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Start failed. Switching state: %{public}d", isSwitching_);
 
-    if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
-        audioInterrupt_.streamId == INVALID_SESSION_ID) {
+    if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT || audioInterrupt_.streamId == INVALID_SESSION_ID) {
         return false;
     }
 
@@ -928,7 +939,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 
     float duckVolume = audioStream_->GetDuckVolume();
     bool isMute = audioStream_->GetMute();
-    AUDIO_INFO_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d, "\
+    AUDIO_INFO_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d, MinStreamVolume:"\
         "MinStreamVolume: %{public}f, MaxStreamVolume: %{public}f",
         duckVolume, isMute, GetMinStreamVolume(), GetMaxStreamVolume());
 
@@ -1029,7 +1040,10 @@ bool AudioRendererPrivate::Flush() const
 bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
 {
     Trace trace("AudioRenderer::PauseTransitent");
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
     AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
     if (isSwitching_) {
         AUDIO_ERR_LOG("failed. Switching state: %{public}d", isSwitching_);
@@ -1059,8 +1073,10 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
 bool AudioRendererPrivate::Mute(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Mute");
-    std::shared_lock<std::shared_mutex> lock(rendererMutex_);
-
+    std::shared_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
+    }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Mute. id: %{public}u", sessionID_);
     (void)audioStream_->SetMute(true);
     return true;
@@ -1069,8 +1085,10 @@ bool AudioRendererPrivate::Mute(StateChangeCmdType cmdType) const
 bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Unmute");
-    std::shared_lock<std::shared_mutex> lock(rendererMutex_);
-
+    std::shared_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
+    }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
     (void)audioStream_->SetMute(false);
     return true;
@@ -1083,8 +1101,10 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
         [](void *) {
             AUDIO_ERR_LOG("Pause timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
-
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
 
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
@@ -1119,7 +1139,10 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 bool AudioRendererPrivate::Stop()
 {
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
     if (IsNoStreamRenderer()) {
@@ -1147,7 +1170,10 @@ bool AudioRendererPrivate::Stop()
 
 bool AudioRendererPrivate::Release()
 {
-    std::unique_lock<std::shared_mutex> lock(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
     bool result = audioStream_->ReleaseAudioStream();
@@ -1518,7 +1544,9 @@ int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
     audioRenderMode_ = renderMode;
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->SetRenderMode(renderMode);
+    int32_t ret = currentStream->SetRenderMode(renderMode);
+    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+    return ret;
 }
 
 AudioRenderMode AudioRendererPrivate::GetRenderMode() const
@@ -1593,7 +1621,10 @@ void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
 void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
 {
     Trace trace(std::string("AudioRenderer::SetSilentModeAndMixWithOthers:") + (on ? "on" : "off"));
-    std::shared_lock<std::shared_mutex> sharedLockSwitch(rendererMutex_);
+    std::shared_lock<std::shared_mutex> sharedLockSwitch;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        sharedLockSwitch = std::shared_lock<std::shared_mutex>(rendererMutex_);
+    }
     std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
     if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
         audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
@@ -1715,7 +1746,10 @@ uint32_t AudioRendererPrivate::GetUnderflowCount() const
 
 void AudioRendererPrivate::SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback)
 {
-    std::shared_lock sharedLock(rendererMutex_);
+    std::shared_lock<std::shared_mutex> sharedLock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        sharedLock = std::shared_lock<std::shared_mutex>(rendererMutex_);
+    }
     std::lock_guard lock(audioRendererErrCallbackMutex_);
     audioRendererErrorCallback_ = errorCallback;
 }
@@ -1782,6 +1816,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetAudioStreamInfo failed");
     audioStream->SetDefaultOutputDevice(info.defaultOutputDevice);
     audioStream->SetRenderMode(info.renderMode);
+    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
     audioStream->SetUnderflowCount(info.underFlowCount);
@@ -2341,7 +2376,10 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
 
 void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter)
 {
-    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
     CHECK_AND_RETURN_LOG(audioStream_, "audioStream_ is nullptr, no need for restore");
     AUDIO_INFO_LOG("Restore audio renderer when server died, session %{public}u", sessionID_);
     RestoreInfo restoreInfo;
@@ -2360,8 +2398,10 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     AUDIO_INFO_LOG("set speed %{public}f", speed);
     CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL) && (speed <= MAX_STREAM_SPEED_LEVEL),
         ERR_INVALID_PARAM, "invaild speed index");
-
-    std::lock_guard lock(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
 #ifdef SONIC_ENABLE
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     audioStream_->SetSpeed(speed);
@@ -2375,7 +2415,10 @@ int32_t AudioRendererPrivate::SetPitch(float pitch)
     AUDIO_INFO_LOG("set pitch %{public}f", pitch);
     CHECK_AND_RETURN_RET_LOG((pitch >= MIN_STREAM_SPEED_LEVEL) && (pitch <= MAX_STREAM_SPEED_LEVEL),
         ERR_INVALID_PARAM, "invaild pitch index");
-    std::lock_guard lock(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
 #ifdef SONIC_ENABLE
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     audioStream_->SetPitch(pitch);
@@ -2386,7 +2429,10 @@ int32_t AudioRendererPrivate::SetPitch(float pitch)
 
 float AudioRendererPrivate::GetSpeed()
 {
-    std::shared_lock lock(rendererMutex_);
+    std::shared_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
+    }
 #ifdef SONIC_ENABLE
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return audioStream_->GetSpeed();

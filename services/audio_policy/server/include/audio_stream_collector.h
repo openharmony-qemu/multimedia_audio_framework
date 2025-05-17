@@ -59,6 +59,7 @@ public:
     void HandleStartStreamMuteState(int32_t uid, bool mute);
     bool IsStreamActive(AudioStreamType volumeType);
     bool CheckVoiceCallActive(int32_t sessionId);
+    bool IsVoiceCallActive();
     int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT, int32_t certainChannelCount = 0);
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
@@ -99,6 +100,7 @@ public:
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
     bool IsMediaPlaying();
+    bool IsVoipStreamActive();
     void UpdateAppVolume(int32_t appUid, int32_t volume);
 
 private:

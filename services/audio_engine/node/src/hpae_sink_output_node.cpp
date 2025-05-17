@@ -118,7 +118,7 @@ const char *HpaeSinkOutputNode::GetRenderFrameData(void)
 
 bool HpaeSinkOutputNode::Reset()
 {
-    const auto preOutputMap = inputStream_.GetPreOuputMap();
+    const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
         inputStream_.DisConnect(output);
@@ -128,7 +128,7 @@ bool HpaeSinkOutputNode::Reset()
 
 bool HpaeSinkOutputNode::ResetAll()
 {
-    const auto preOutputMap = inputStream_.GetPreOuputMap();
+    const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
         std::shared_ptr<HpaeNode> hpaeNode = preOutput.second;

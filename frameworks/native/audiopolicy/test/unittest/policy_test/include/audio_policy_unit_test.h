@@ -58,17 +58,6 @@ public:
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) {};
 };
 
-class AudioDistribuitedOutputChangeCallbackTest : public AudioDistribuitedOutputChangeCallback {
-public:
-    /**
-     * Called when Distribuited Output Change.
-     *
-     * @param deviceDesc device descripter
-     * @param isRemote Is remote or local
-     */
-    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) {}
-};
-
 class AudioManagerMicStateChangeCallbackTest : public AudioManagerMicStateChangeCallback {
 public:
     virtual ~AudioManagerMicStateChangeCallbackTest() = default;
@@ -191,6 +180,17 @@ public:
     virtual void GetSingleStreamVolumeImpl(float &volume) {};
     virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) {};
     virtual void UnsetOffloadModeImpl() {};
+};
+
+class AudioManagerActiveVolumeTypeChangeCallbackTest : public AudioManagerActiveVolumeTypeChangeCallback {
+public:
+    virtual ~AudioManagerActiveVolumeTypeChangeCallbackTest() = default;
+    /**
+     * Called when the active volume type changes
+     *
+     * @param event active volume type change Information.
+     */
+    virtual void OnActiveVolumeTypeChanged(const AudioVolumeType &event) {};
 };
 
 class AudioPolicyUnitTest : public testing::Test {

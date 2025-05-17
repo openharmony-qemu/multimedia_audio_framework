@@ -49,6 +49,7 @@ public:
 
     int32_t GetSplitInfo(std::string &splitInfo);
 
+    int32_t NotifyDistributedOutputChange(bool isRemote);
 private:
     AudioRouterCenter()
     {

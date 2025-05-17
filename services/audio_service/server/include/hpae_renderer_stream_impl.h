@@ -19,15 +19,17 @@
 #include <mutex>
 #include <shared_mutex>
 #include "i_renderer_stream.h"
+#include "audio_ring_cache.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererStreamImpl>,
+                               public IStatusCallback,
                                public IStreamCallback,
                                public IRendererStream {
 public:
-    HpaeRendererStreamImpl(AudioProcessConfig processConfig);
+    HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isCallbackMode = true);
     ~HpaeRendererStreamImpl();
     int32_t InitParams(const std::string &deviceName = "");
     int32_t Start() override;
@@ -73,8 +75,11 @@ public:
     int32_t SetClientVolume(float clientVolume) override;
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
+    void OnStatusUpdate(IOperation operation) override;
 private:
     void SyncOffloadMode();
+    void InitRingBuffer();
+    int32_t WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
@@ -107,6 +112,11 @@ private:
     std::string deviceClass_;
     std::string deviceNetId_;
     // record latency
+
+    // buffer mode, write or callback
+    bool isCallbackMode_ = true; // true is callback buffer mode, false is write buffer mode
+    std::unique_ptr<AudioRingCache> ringBuffer_ = nullptr; // used by write buffer mode
+    // buffer mode, write or callback end
 };
 } // namespace AudioStandard
 } // namespace OHOS

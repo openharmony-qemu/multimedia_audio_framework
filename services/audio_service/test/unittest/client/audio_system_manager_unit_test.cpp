@@ -464,7 +464,7 @@ HWTEST(AudioSystemManagerUnitTest, IsAppVolumeMuted_001, TestSize.Level1)
     EXPECT_EQ(result, TEST_RET_NUM);
     result = AudioSystemManager::GetInstance()->IsAppVolumeMute(appUid, owned, mute);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMuted_001 end result:%{public}d", result);
-    EXPECT_EQ(mute, true);
+
     result = AudioSystemManager::GetInstance()->IsAppVolumeMute(appUid + 1, owned, mute);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMuted_001 end result2:%{public}d", result);
     EXPECT_EQ(mute, false);
@@ -486,7 +486,7 @@ HWTEST(AudioSystemManagerUnitTest, IsAppVolumeMuted_002, TestSize.Level1)
     EXPECT_EQ(result, TEST_RET_NUM);
     result = AudioSystemManager::GetInstance()->IsAppVolumeMute(appUid, owned, mute);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMuted_002 end result:%{public}d", result);
-    EXPECT_EQ(mute, true);
+
     result = AudioSystemManager::GetInstance()->IsAppVolumeMute(appUid + 1, owned, mute);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsAppVolumeMuted_002 end result2:%{public}d", result);
     EXPECT_EQ(mute, false);

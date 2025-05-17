@@ -88,7 +88,6 @@ public:
     void SetAudioSceneOwnerUid(const int32_t uid);
     
     int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
-    const std::string GetBundleNameFromUid(int32_t uid);
 
 private:
     AudioStateManager() {};

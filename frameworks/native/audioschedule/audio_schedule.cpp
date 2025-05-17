@@ -104,6 +104,33 @@ void ScheduleThreadInServer(pid_t pid, pid_t tid)
     ScheduleReportData(pid, tid, "audio_server");
 }
 
+void SetProcessDataThreadPriority(int32_t priority)
+{
+    struct sched_param param = {0};
+    // setPriority = 50 + priority
+    param.sched_priority = priority;
+    int32_t res = sched_setscheduler(0, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
+    if (res != 0) {
+        AUDIO_ERR_LOG("Set thread 50 + %{public}d priority fail : %{public}d", param.sched_priority, res);
+        return;
+    }
+    AUDIO_INFO_LOG("Set thread 50 + %{public}d priority success", param.sched_priority);
+    return;
+}
+
+void ResetProcessDataThreadPriority()
+{
+    struct sched_param param = {0};
+    param.sched_priority = 0;
+    int32_t res = sched_setscheduler(0, SCHED_OTHER, &param);
+    if (res != 0) {
+        AUDIO_ERR_LOG("Reset thread priority fail : %{public}d", res);
+        return;
+    }
+    AUDIO_INFO_LOG("Reset thread priority success");
+    return;
+}
+
 void OnAddResSchedService(uint32_t audioServerPid)
 {
     std::lock_guard<std::mutex> lock(g_rssMutex);
@@ -144,6 +171,8 @@ void ScheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* b
 void ScheduleThreadInServer(pid_t pid, pid_t tid) {};
 void UnscheduleThreadInServer(pid_t tid) {};
 void OnAddResSchedService(uint32_t audioServerPid) {};
+void SetProcessDataThreadPriority(int32_t priority) {};
+void ResetProcessDataThreadPriority() {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 bool SetEndpointThreadPriority() { return false; };
 bool ResetEndpointThreadPriority() { return false; };

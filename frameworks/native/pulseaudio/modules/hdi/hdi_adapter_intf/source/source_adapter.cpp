@@ -22,6 +22,7 @@
 #include "audio_hdi_log.h"
 #include "source/i_audio_capture_source.h"
 #include "manager/hdi_adapter_manager.h"
+#include "capturer_clock_manager.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -220,6 +221,25 @@ int32_t SourceAdapterUpdateAppsUid(struct SourceAdapter *adapter, const int32_t 
     CHECK_AND_RETURN_RET_LOG(source->IsInited(), ERR_ILLEGAL_STATE, "source not init");
 
     return source->UpdateAppsUid(appsUid, size);
+}
+
+int32_t SourceAdapterUpdateSessionUid(struct SourceAdapter *adapter, const int32_t sessionId[PA_MAX_OUTPUTS_PER_SOURCE],
+    const size_t size)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr && adapter->captureId != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        "invalid adapter");
+
+    std::shared_ptr<AudioSourceClock> clock =
+        CapturerClockManager::GetInstance().GetAudioSourceClock(adapter->captureId);
+    CHECK_AND_RETURN_RET_LOG(clock != nullptr, ERR_INVALID_HANDLE, "AudioSourceClock unfound!");
+
+    std::vector<int32_t> sessionIdList;
+    for (size_t i = 0; i < size; i++) {
+        sessionIdList.push_back(sessionId[i]);
+    }
+    clock->UpdateSessionId(sessionIdList);
+
+    return SUCCESS;
 }
 
 #ifdef __cplusplus

@@ -23,6 +23,7 @@
 #include "audio_engine_log.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_enhance_chain_manager.h"
+#include "manager/hdi_adapter_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -174,6 +175,29 @@ void HpaePolicyManager::UpdateExtraSceneType(const std::string &mainkey, const s
     const std::string &extraSceneType)
 {
     return AudioEnhanceChainManager::GetInstance()->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+}
+
+void HpaePolicyManager::LoadEffectProperties()
+{
+    return AudioEffectChainManager::GetInstance()->LoadEffectProperties();
+}
+
+std::string HpaePolicyManager::GetAudioParameter(const std::string &adapterName, const AudioParamKey key,
+    const std::string &condition)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, "false", "local device manager is nullptr");
+    return deviceManager->GetAudioParameter(adapterName, key, condition);
+}
+
+void HpaePolicyManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
+    const std::string &condition, const std::string &value)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    deviceManager->SetAudioParameter(adapterName, key, condition, value);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

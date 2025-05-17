@@ -382,7 +382,7 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
         isCallbackLoopEnd_ = true; // change it with lock to break the loop
         threadStatusCV_.notify_all();
         lock.unlock(); // should call unlock before join
-        callbackLoop_.detach();
+        callbackLoop_.join();
     }
     if (isInited_) {
         AudioProcessInClientInner::Release();
@@ -647,6 +647,9 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 {
     logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
     auto weakProcess = weak_from_this();
+    std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
+    CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
+    fastStream->ResetCallbackLoopTid();
     callbackLoop_ = std::thread([weakStream, weakProcess] {
         bool keepRunning = true;
         uint64_t curWritePos = 0;
@@ -655,6 +658,7 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
         int64_t clientWriteCost = 0;
         std::shared_ptr<AudioProcessInClientInner> strongProcess = weakProcess.lock();
         std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
+        strongStream->SetCallbackLoopTid(gettid());
         if (strongProcess != nullptr) {
             AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
             strongProcess->processProxy_->RegisterThreadPriority(gettid(),

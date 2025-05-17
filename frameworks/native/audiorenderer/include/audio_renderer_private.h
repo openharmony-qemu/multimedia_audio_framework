@@ -240,6 +240,7 @@ private:
     mutable std::shared_mutex rendererMutex_;
     mutable std::shared_mutex streamMutex_;
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
+    int32_t callbackLoopTid_ = -1;
     bool isFastVoipSupported_ = false;
     bool isDirectVoipSupported_ = false;
     bool isEnableVoiceModemCommunicationStartStream_ = false;

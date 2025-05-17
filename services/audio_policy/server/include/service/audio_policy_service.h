@@ -506,7 +506,7 @@ public:
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
 
-    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, int32_t appUid,
         std::string invocationTime);
     void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
     void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,

@@ -36,6 +36,7 @@
 #endif
 #include "audio_zone_service.h"
 #include "i_standard_audio_zone_client.h"
+#include "audio_bundle_manager.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -83,7 +84,6 @@ constexpr uid_t UID_PENCIL_PROCESS_SA = 7555;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
 constexpr uid_t UID_AVSESSION_SERVICE = 6700;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
-constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
@@ -1416,11 +1416,11 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
     int32_t ret = audioPolicyService_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (ret == SUCCESS) {
         std::string currentTime = GetTime();
-        std::string callerName = GetBundleName() == "" ? CALLER_NAME : GetBundleName();
+        int32_t appUid = IPCSkeleton::GetCallingUid();
         AUDIO_INFO_LOG("SetSystemVolumeLevelInfo streamType: %{public}d, volumeLevel: %{public}d,"
-            " callerName: %{public}s, setTime: %{public}s",
-            streamType, volumeLevel, callerName.c_str(), currentTime.c_str());
-        audioPolicyService_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, callerName, currentTime);
+            " appUid: %{public}d, setTime: %{public}s",
+            streamType, volumeLevel, appUid, currentTime.c_str());
+        audioPolicyService_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, appUid, currentTime);
         if (updateRingerMode) {
             ProcUpdateRingerMode();
         }
@@ -1738,7 +1738,10 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
     int32_t result = SetRingerModeInner(ringMode);
     if (result == SUCCESS) {
         std::string currentTime = GetTime();
-        std::string callerName = GetBundleName() == "" ? CALLER_NAME : GetBundleName();
+        std::string callerName = AudioBundleManager::GetBundleName();
+        if (callerName == "") {
+            callerName = CALLER_NAME;
+        }
         AUDIO_INFO_LOG("SetRingerModeInfo ringerMode: %{public}d, bundleName: %{public}s, setTime: %{public}s",
             ringMode, callerName.c_str(), currentTime.c_str());
         audioPolicyService_.SaveRingerModeInfo(ringMode, callerName, currentTime);
@@ -2385,7 +2388,7 @@ int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rende
     std::string bundleName = "";
     bool isFastControlled = audioPolicyService_.getFastControlParam();
     if (isFastControlled && rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
-        bundleName = GetBundleName();
+        bundleName = AudioBundleManager::GetBundleName();
         AUDIO_INFO_LOG("bundleName %{public}s", bundleName.c_str());
         return eventEntry_->GetPreferredOutputStreamType(rendererInfo, bundleName);
     }
@@ -2793,7 +2796,7 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
     }
 
     bool targetMuteState = (result.permStateChangeType > 0) ? false : true;
-    int32_t appUid = getUidByBundleName(hapTokenInfo.bundleName, hapTokenInfo.userID);
+    int32_t appUid = AudioBundleManager::GetUidByBundleName(hapTokenInfo.bundleName, hapTokenInfo.userID);
     if (appUid < 0) {
         AUDIO_ERR_LOG("fail to get uid.");
     } else {
@@ -2824,33 +2827,6 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCap
             }
         }
     }
-}
-
-int32_t AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName(std::string bundle_name, int user_id)
-{
-    AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
-        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():getUidByBundleName");
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (systemAbilityManager == nullptr) {
-        return ERR_INVALID_PARAM;
-    }
-    guard.CheckCurrTimeout();
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (remoteObject == nullptr) {
-        return ERR_INVALID_PARAM;
-    }
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    if (bundleMgrProxy == nullptr) {
-        return ERR_INVALID_PARAM;
-    }
-    WatchTimeout reguard("bundleMgrProxy->GetUidByBundleName:getUidByBundleName");
-    int32_t iUid = bundleMgrProxy->GetUidByBundleName(bundle_name, user_id);
-    reguard.CheckCurrTimeout();
-
-    return iUid;
 }
 
 void AudioPolicyServer::RegisterParamCallback()
@@ -3570,12 +3546,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevi
     return btdevice;
 }
 
-std::string AudioPolicyServer::GetBundleName()
-{
-    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
-    return bundleInfo.name;
-}
-
 ConverterConfig AudioPolicyServer::GetConverterConfig()
 {
     return audioPolicyService_.GetConverterConfig();
@@ -3616,41 +3586,9 @@ int32_t AudioPolicyServer::DisableSafeMediaVolume()
     return audioPolicyService_.DisableSafeMediaVolume();
 }
 
-AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid(int32_t callingUid)
-{
-    AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
-        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    std::string bundleName {""};
-    AppExecFwk::BundleInfo bundleInfo;
-    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleInfoFromUid");
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, bundleInfo, "systemAbilityManager is nullptr");
-    guard.CheckCurrTimeout();
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_PRELOG(remoteObject != nullptr, bundleInfo, "remoteObject is nullptr");
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, bundleInfo, "bundleMgrProxy is nullptr");
-
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleInfoFromUid");
-    bundleMgrProxy->GetNameForUid(callingUid, bundleName);
-
-    bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
-        bundleInfo,
-        AppExecFwk::Constants::ALL_USERID);
-    reguard.CheckCurrTimeout();
-
-    return bundleInfo;
-}
-
 int32_t AudioPolicyServer::GetApiTargetVersion()
 {
-    AppExecFwk::BundleInfo bundleInfo = GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
+    AppExecFwk::BundleInfo bundleInfo = AudioBundleManager::GetBundleInfo();
 
     // Taking remainder of large integers
     int32_t apiTargetversion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
@@ -3715,7 +3653,8 @@ int32_t AudioPolicyServer::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt r
     if (callerUid != UID_AUDIO) {
         return ERROR;
     }
-    return coreService_->TriggerFetchDevice(reason);
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_NULL_POINTER, "eventEntry_ is nullptr");
+    return eventEntry_->TriggerFetchDevice(reason);
 }
 
 int32_t AudioPolicyServer::SetPreferredDevice(const PreferredType preferredType,

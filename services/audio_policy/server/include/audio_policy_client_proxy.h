@@ -28,6 +28,7 @@ public:
     virtual ~AudioPolicyClientProxy();
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object);
     void UnregisterPolicyCallbackClient();
+    void OnActiveVolumeTypeChanged(const AudioVolumeType &volumeType) override;
     void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
@@ -47,7 +48,6 @@ public:
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void OnRendererDeviceChange(const uint32_t sessionId,
         const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
-    void OnDistribuitedOutputChange(const AudioDeviceDescriptor &deviceDesc, bool isRemote) override;
     void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt) override;
     void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,

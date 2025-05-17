@@ -30,6 +30,7 @@ public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
         MessageOption &option) override;
 private:
+    void HandleActiveVolumeTypeChange(MessageParcel &data, MessageParcel &reply);
     void HandleAppVolumeChange(MessageParcel &data, MessageParcel &reply);
     void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply);
     void HandleAudioFocusInfoChange(MessageParcel &data, MessageParcel &reply);
@@ -44,7 +45,6 @@ private:
     void HandleRendererStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleCapturerStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleRendererDeviceChange(MessageParcel &data, MessageParcel &reply);
-    void HandleDistribuitedOutputChange(MessageParcel &data, MessageParcel &reply);
     void HandleRecreateRendererStreamEvent(MessageParcel &data, MessageParcel &reply);
     void HandleRecreateCapturerStreamEvent(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply);

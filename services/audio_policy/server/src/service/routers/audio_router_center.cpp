@@ -78,6 +78,11 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevi
             AUDIO_INFO_LOG("RingRender streamUsage %{public}d clientUID %{public}d"
                 " fetch descs front:%{public}d", streamUsage, clientUID, descs.front()->deviceType_);
             routerType = router->GetRouterType();
+            if (descs.size() > 1 && VolumeUtils::IsPCVolumeEnable()) {
+                vector<shared_ptr<AudioDeviceDescriptor>> newDescs;
+                newDescs.push_back(descs.front());
+                return newDescs;
+            }
             return descs;
         }
     }
@@ -206,6 +211,12 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     AUDIO_PRERELEASE_LOGI("usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], id:[%{public}d],"
         " router:%{public}d ", streamUsage, clientUID, descs.size(), type, audioId_, routerType);
     return descs;
+}
+
+int32_t AudioRouterCenter::NotifyDistributedOutputChange(bool isRemote)
+{
+    CHECK_AND_RETURN_RET(audioDeviceRefinerCb_, SUCCESS);
+    return audioDeviceRefinerCb_->OnDistributedOutputChange(isRemote);
 }
 
 void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,

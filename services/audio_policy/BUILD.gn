@@ -267,9 +267,11 @@ audio_ohos_library("audio_policy_service") {
     "services/core/src/audio_core_service.cpp",
     "services/core/src/audio_core_service_entry.cpp",
     "services/core/src/audio_core_service_private.cpp",
+    "services/core/src/audio_core_service_utils.cpp",
     "services/pipe/src/audio_pipe_manager.cpp",
     "services/pipe/src/audio_pipe_selector.cpp",
     "util/src/audio_ability_manager.cpp",
+    "util/src/audio_bundle_manager.cpp",
   ]
 
   defines = []
@@ -810,6 +812,32 @@ ohos_shared_library("audio_policy_common") {
     "ipc:ipc_core",
     "resource_management:global_resmgr",
   ]
+
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
+  innerapi_tags = [ "platformsdk" ]
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("audio_policy_ipc") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = true
+  sources = []
+
+  public_configs = []
+
+  external_deps = []
 
   cflags = [ "-Os" ]
   cflags_cc = cflags

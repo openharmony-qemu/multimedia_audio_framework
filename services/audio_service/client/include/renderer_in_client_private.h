@@ -207,6 +207,8 @@ public:
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
     void SetCallStartByUserTid(pid_t tid) override;
+    void SetCallbackLoopTid(int32_t tid) override;
+    int32_t GetCallbackLoopTid() override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -267,6 +269,7 @@ private:
 
     void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
+    void ResetCallbackLoopTid();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -315,6 +318,10 @@ private:
 
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
+    std::thread callbackLoop_; // thread for callback to client and write.
+    int32_t callbackLoopTid_ = -1;
+    std::mutex callbackLoopTidMutex_;
+    std::condition_variable callbackLoopTidCv_;
     std::atomic<bool> cbThreadReleased_ = true;
     std::mutex writeCbMutex_;
     std::condition_variable cbThreadCv_;

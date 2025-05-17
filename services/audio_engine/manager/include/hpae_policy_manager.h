@@ -65,6 +65,11 @@ public:
         DeviceType deviceType = DEVICE_TYPE_NONE);
     void UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
+    void LoadEffectProperties();
+    std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,
+        const std::string &condition);
+    void SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
+        const std::string &condition, const std::string &value);
 };
 
 } // namespace HPAE

@@ -55,7 +55,7 @@ struct AdjustVolumeInfo {
     DeviceType deviceType;
     AudioStreamType streamType;
     int32_t volumeLevel;
-    std::string callerName;
+    int32_t appUid;
     std::string invocationTime;
 };
 
@@ -115,7 +115,7 @@ public:
     bool GetLoadFlag();
     void UpdateSafeVolumeByS4();
     void SetMaxVolumeForDeviceChange();
-    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, int32_t appUid,
         std::string invocationTime);
     void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
         bool registrationResult);
@@ -201,7 +201,7 @@ private:
 
     std::mutex defaultDeviceLoadMutex_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
-    DeviceType curOutputDeviceType_;
+    DeviceType curOutputDeviceType_ = DEVICE_TYPE_NONE;
 
     std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> systemVolumeLevelInfo_ =
         std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);

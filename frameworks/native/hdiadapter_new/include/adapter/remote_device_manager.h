@@ -52,9 +52,10 @@ private:
 };
 
 typedef struct RemoteAdapterWrapper {
-    RemoteAdapterWrapper(const std::string &adapterName) : hdiCallback_(adapterName) {}
+    RemoteAdapterWrapper(const std::string &adapterName) : adapterName_(adapterName) {}
 
     sptr<RemoteIAudioAdapter> adapter_ = nullptr;
+    std::string adapterName_ = "";
     RemoteAudioAdapterDescriptor adapterDesc_ = {};
     std::unordered_set<uint32_t> hdiRenderIds_;
     std::unordered_set<uint32_t> hdiCaptureIds_;
@@ -65,7 +66,8 @@ typedef struct RemoteAdapterWrapper {
     std::unordered_map<uint32_t, IDeviceManagerCallback *> captureCallbacks_;
     std::mutex renderCallbackMtx_;
     std::mutex captureCallbackMtx_;
-    RemoteAdapterHdiCallback hdiCallback_;
+    sptr<RemoteIAudioCallback> hdiCallback_ = nullptr;
+    bool isValid_ = true;
 } RemoteAdapterWrapper;
 
 class RemoteDeviceManager : public IDeviceManager {

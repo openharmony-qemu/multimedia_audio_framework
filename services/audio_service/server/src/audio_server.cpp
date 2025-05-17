@@ -80,6 +80,7 @@ const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
+const std::string EFFECT_LIVE_KEY = "live_effect";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
@@ -133,7 +134,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_REMOTE_CAST,
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
-    SOURCE_TYPE_UNPROCESSED
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_LIVE
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
@@ -157,6 +159,7 @@ static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
     SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_LIVE,
 };
 
 static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
@@ -169,6 +172,7 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
     SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_LIVE,
 };
 
 static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
@@ -448,6 +452,17 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
     return AudioCacheMgr::GetInstance().SetDumpParameter(params);
 }
 
+bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
+{
+    CHECK_AND_RETURN_RET_LOG(params.size() > 0, false, "params is empty!");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetEffectLiveParameter(params);
+    }
+    AUDIO_INFO_LOG("SetEffectLiveParameter not support");
+    return false;
+}
+
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
@@ -455,6 +470,11 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "set extra parameters failed: not system app.");
     ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
+    if (key == EFFECT_LIVE_KEY) {
+        ret = SetEffectLiveParameter(kvpairs);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
+        return SUCCESS;
+    }
 
     if (key == PCM_DUMP_KEY) {
         ret = SetPcmDumpParameter(kvpairs);
@@ -474,9 +494,21 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
         return ERR_INVALID_PARAM;
     }
 
-    std::unordered_map<std::string, std::set<std::string>> subKeyMap = mainKeyIt->second;
     std::string value;
-    bool match = true;
+    bool isParamValid = ProcessKeyValuePairs(key, kvpairs, mainKeyIt->second, value);
+    CHECK_AND_RETURN_RET_LOG(isParamValid, ERR_INVALID_PARAM, "invalid subkey or value");
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
+   return true;
+}
+
+bool AudioServer::ProcessKeyValuePairs(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs,
+    const std::unordered_map<std::string, std::set<std::string>> &subKeyMap, std::string &value)
+{
     for (auto it = kvpairs.begin(); it != kvpairs.end(); it++) {
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
@@ -492,17 +524,10 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
                 RecognizeAudioEffectType(key, it->first, it->second);
             }
         } else {
-            match = false;
-            break;
+            return false;
         }
     }
-    if (!match) { return ERR_INVALID_PARAM; }
-
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
-    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
-    return SUCCESS;
+    return true;
 }
 
 bool AudioServer::CacheExtraParameters(const std::string &key,
@@ -638,9 +663,25 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
     return AudioCacheMgr::GetInstance().GetDumpParameter(subKeys, result);
 }
 
+bool AudioServer::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().GetEffectLiveParameter(subKeys, result);
+    }
+    AUDIO_INFO_LOG("GetEffectLiveParameter not support");
+    return false;
+}
+
 int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
     const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
+    if (mainKey == EFFECT_LIVE_KEY) {
+        bool ret = GetEffectLiveParameter(subKeys, result);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get effect live parameters failed.");
+        return SUCCESS;
+    }
     if (mainKey == PCM_DUMP_KEY) {
         bool ret = GetPcmDumpParameter(subKeys, result);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get audiodump parameters failed");
@@ -955,7 +996,10 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     } else {
         source->SetAudioScene(audioScene, activeInputDevice);
     }
-
+    std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
+    if (fastSource != nullptr && fastSource->IsInited()) {
+        fastSource->SetAudioScene(audioScene, activeInputDevice);
+    }
     if (sink == nullptr || !sink->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
@@ -1233,6 +1277,23 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
         config.isWakeupCapturer = true;
     } else {
         config.isWakeupCapturer = false;
+    }
+    if (config.capturerInfo.sourceType == SourceType::SOURCE_TYPE_LIVE) {
+        int32_t engineFlag = GetEngineFlag();
+        if (engineFlag == 1) {
+            HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+            std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+            CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+            std::string res = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
+                "source_type_live_aec_supported");
+            if (res != "true") {
+                AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported");
+                config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+            }
+        } else {
+            AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported");
+            config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+        }
     }
 }
 

@@ -41,9 +41,9 @@ protected:
 private:
     void ResampleProcess(float *srcData, uint32_t inputFrameLen, float *dstData, uint32_t outputFrameLen);
     PcmBufferInfo pcmBufferInfo_;
-    HpaePcmBuffer resampleOuput_;
+    HpaePcmBuffer resampleOutput_;
     HpaeNodeInfo preNodeInfo_;
-    std::vector<float> tempOuput_;
+    std::vector<float> tempOutput_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;

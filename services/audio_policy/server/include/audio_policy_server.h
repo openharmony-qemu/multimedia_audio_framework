@@ -554,7 +554,6 @@ public:
         ~PerStateChangeCbCustomizeCallback() {}
 
         void PermStateChangeCallback(Security::AccessToken::PermStateChangeInfo& result);
-        int32_t getUidByBundleName(std::string bundle_name, int user_id);
         void UpdateMicPrivacyByCapturerState(bool targetMuteState, uint32_t targetTokenId, int32_t appUid);
 
         bool ready_;
@@ -586,7 +585,6 @@ public:
     void CheckHibernateState(bool hibernate);
     // for S4 reboot update safevolume
     void UpdateSafeVolumeByS4();
-    AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
 
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
@@ -763,7 +761,6 @@ private:
     using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     pid_t lastMicMuteSettingPid_ = 0;
-    std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;

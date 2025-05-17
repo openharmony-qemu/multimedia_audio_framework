@@ -497,7 +497,7 @@ static unsigned SplitFillMixInfo(pa_sink *s, size_t *length, pa_mix_info *info, 
     while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *usageStr = pa_proplist_gets(i->proplist, "stream.usage");
         AUDIO_DEBUG_LOG("splitFillMixInfo usageStr = %{public}s, streamType = %{public}s", usageStr, streamType);
-        if (IsPeekCurrentSinkInput(streamType, usageStr)) {
+        if (IsPeekCurrentSinkInput(streamType, usageStr) && i->thread_info.state == PA_SINK_INPUT_RUNNING) {
             pa_sink_input_assert_ref(i);
 
             AUTO_CTRACE("module_split_stream_sink::splitFillMixInfo::pa_sink_input_peek:%u len:%zu", i->index, *length);
@@ -847,6 +847,9 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
             g_splitArr[i]);
         if (ShouldSendChunk(i, nSink)) {
             SendStreamData(u, i, chunk);
+        } else {
+            AUDIO_DEBUG_LOG("chunk do not send, release chunk");
+            pa_memblock_unref(chunk.memblock);
         }
     }
     u->timestamp += pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);

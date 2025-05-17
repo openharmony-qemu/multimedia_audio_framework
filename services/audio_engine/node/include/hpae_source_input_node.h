@@ -62,6 +62,9 @@ public:
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);
+    void SetBufferValid(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
+    std::string GetTraceInfo();
+    void DoProcessInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
 
 private:
     std::shared_ptr<IAudioCaptureSource> audioCapturerSource_ = nullptr;

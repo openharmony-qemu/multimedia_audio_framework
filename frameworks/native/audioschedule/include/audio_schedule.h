@@ -27,6 +27,8 @@ void ScheduleReportData(pid_t pid, pid_t tid, const char *bundleName);
 void ScheduleThreadInServer(pid_t pid, pid_t tid);
 void UnscheduleThreadInServer(pid_t pid, pid_t tid);
 void OnAddResSchedService(uint32_t audioServerPid);
+void SetProcessDataThreadPriority(int32_t priority);
+void ResetProcessDataThreadPriority();
 void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName);
 bool SetEndpointThreadPriority();
 bool ResetEndpointThreadPriority();

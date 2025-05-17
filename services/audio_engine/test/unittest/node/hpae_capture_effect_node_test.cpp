@@ -25,6 +25,7 @@ using namespace HPAE;
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_NODE_ID = 1243;
 const uint32_t DEFAULT_FORMAT = 16;
+static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 
 class HpaeCaptureEffectNodeTest : public testing::Test {
 public:
@@ -59,7 +60,7 @@ static void GetTestAudioSourceAttr(IAudioSourceAttr &attr)
     attr.volume = 0.0f;
     attr.bufferSize = 0;
     attr.isBigEndian = false;
-    attr.filePath = NULL;
+    attr.filePath = g_rootCapturerPath.c_str();
     attr.deviceNetworkId = NULL;
     attr.deviceType = 0;
     attr.sourceType = 0;
