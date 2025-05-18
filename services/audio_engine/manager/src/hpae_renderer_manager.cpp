@@ -1049,7 +1049,7 @@ void HpaeRendererManager::DumpSinkInfo()
 
 int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnabled)
 {
-    auto request = [this](isCollaborationEnabled) {
+    auto request = [this, isCollaborationEnabled]() {
         isCollaborationEnabled_ = isCollaborationEnabled;
         size_t latency_ = 200;
         if (isCollaborationEnabled_ && hpaeCoBufferNode_ == nullptr) {
@@ -1082,7 +1082,7 @@ std::shared_ptr<HpaeCoBufferNode> HpaeRendererManager::GetCoBufferNode()
 
 int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
 {
-    auto request = [this](coBufferNode) {
+    auto request = [this, coBufferNode]() {
         CHECK_AND_RETURN_RET_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr), ERROR,
             "outputCluster or coBufferNode is nullptr");
         outputCluster_->Connect(coBufferNode);
@@ -1096,7 +1096,7 @@ int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBuf
 
 int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
 {
-    auto request = [this](coBufferNode) {
+    auto request = [this, coBufferNode]() {
         CHECK_AND_RETURN_RET_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr), ERROR,
             "outputCluster or coBufferNode is nullptr");
         outputCluster_->Connect(coBufferNode);
@@ -1111,7 +1111,7 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
 
 void HpaeRendererManager::HandleCollaborationStateChangedInner(HpaeProcessorType sceneType, uint32_t sessionID)
 {
-    auto request = [this](coBufferNode) {
+    auto request = [this, sceneType, sessionID]() {
         if (sceneType == HPAE_SCENE_COLLABORATIVE) {
             // delete the session
             // todo fade out
@@ -1124,6 +1124,7 @@ void HpaeRendererManager::HandleCollaborationStateChangedInner(HpaeProcessorType
         }
     }
     SendRequest(request);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
