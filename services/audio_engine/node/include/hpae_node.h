@@ -34,7 +34,7 @@ public:
     HpaeNode(HpaeNodeInfo& nodeInfo) : nodeInfo_(nodeInfo)
     {}
     virtual void DoProcess() = 0;
-    virtual void Enqueue(HpaePcmBuffer* buffer);
+    virtual void Enqueue(HpaePcmBuffer* buffer) {};
     // for process node
     virtual bool Reset() = 0;
     virtual bool ResetAll() = 0;

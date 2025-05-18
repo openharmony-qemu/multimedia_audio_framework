@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "HpaeCoBufferNode"
+#endif
+
 #include "hpae_co_buffer_node.h"
 #include "hpae_define.h"
 
@@ -21,6 +25,7 @@ namespace HPAE {
 HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo, int32_t& delay)
     : HpaeNode(nodeInfo), outputStream_(this)
 {
+    AUDIO_INFO_LOG("HpaeCoBufferNode created, delay: %{public}d", delay);
     delay_ = delay;
 }
 
@@ -31,10 +36,12 @@ void HpaeCoBufferNode::SetBufferSize(size_t size)
         return;
     }
     if (ringCache_ == nullptr) {
+        AUDIO_INFO_LOG("Create ring cache, size: %{public}zu", size);
         ringCache_ = AudioRingCache::Create(size);
         CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     } else {
         OptResult result = ringCache_->ReConfig(size);
+        AUDIO_INFO_LOG("ReConfig ring cache, size: %{public}zu", size);
         CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "ReConfig ring cache failed");
     }
 }
@@ -69,7 +76,8 @@ void HpaeCoBufferNode::DoProcess()
     BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(data), requesetDataLen};
     result = ringCache_->Dequeue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
-    PcmBuffer tempOut(pcmBufferInfo_);
+    HpaePcmBuffer tempOut(pcmBufferInfo_);
+    memcpy_s(tempOut.GetPcmDataBuffer(), requesetDataLen, bufferWrap.data, requesetDataLen);
     tempOut.GetPcmDataBuffer() = data;
     outputStream_.WriteDataToOutput(tempOut);
 }
@@ -109,6 +117,7 @@ OutputPort<HpaePcmBuffer*>* HpaeCoBufferNode::GetOutputPort()
 
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
+    AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
     HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
     nodeInfo_ = preNodeInfo;
     SetBufferSize(nodeInfo_.frameLen * nodeInfo_.channels * sizeof(float) * 1000 / delay_);
@@ -117,6 +126,7 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
 
 void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
+    AUDIO_INFO_LOG("HpaeCoBufferNode disconnect from preNode");
     inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
 }
 
