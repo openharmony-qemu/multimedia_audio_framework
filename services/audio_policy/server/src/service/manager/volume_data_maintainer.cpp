@@ -328,7 +328,7 @@ bool VolumeDataMaintainer::SaveMuteStatusInternal(DeviceType deviceType, AudioSt
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write mutestatus: %{public}d to setting db! Err: %{public}d", muteStatus, ret);
     } else {
-        AUDIO_DEBUG_LOG("muteKey:%{public}s, muteStatus:%{public}d", muteKey.c_str(), muteStatus);
+        AUDIO_INFO_LOG("muteKey:%{public}s, muteStatus:%{public}d", muteKey.c_str(), muteStatus);
     }
 
     return true;

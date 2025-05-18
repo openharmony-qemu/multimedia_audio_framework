@@ -220,6 +220,7 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList,
         std::shared_ptr<AudioInterruptZone> &zoneInfo,
         std::list<int32_t> &removeFocusInfoPidList);
+    void PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt);
 
     // zone debug interfaces
     void WriteFocusMigrateEvent(const int32_t &toZoneId);

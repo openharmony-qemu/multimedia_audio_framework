@@ -658,6 +658,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
+    PrintLogsOfFocusStrategyBaseMusic(audioInterrupt); // Print logs for automatic detection tools.
     if (isPreemptMode_) {
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
         SendInterruptEventToIncomingStream(interruptEvent, audioInterrupt);
@@ -712,6 +713,61 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         updateScene = true;
     }
     return SUCCESS;
+}
+
+void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt)
+{
+    // The log printed by this function is critical, so please do not modify it.
+    AudioFocusType audioFocusType;
+    audioFocusType.streamType = AudioStreamType::STREAM_MUSIC;
+    std::pair<AudioFocusType, AudioFocusType> focusPair =
+        std::make_pair(audioFocusType, audioInterrupt.audioFocusType);
+    CHECK_AND_RETURN_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), "no focus cfg");
+    AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
+    if (focusEntry.actionOn != CURRENT) {
+        AUDIO_INFO_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
+            "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
+        return;
+    }
+    // Update focus strategy by audio session.
+    AudioConcurrencyMode concurrencyMode = AudioConcurrencyMode::INVALID;
+    if (sessionService_ != nullptr && sessionService_->IsAudioSessionActivated(audioInterrupt.pid)) {
+        std::shared_ptr<AudioSession> incomingSession = sessionService_->GetAudioSessionByPid(audioInterrupt.pid);
+        if (incomingSession != nullptr) {
+            concurrencyMode = (incomingSession->GetSessionStrategy()).concurrencyMode;
+        }
+    } else {
+        concurrencyMode = audioInterrupt.sessionStrategy.concurrencyMode;
+    }
+    switch (concurrencyMode) {
+        case AudioConcurrencyMode::MIX_WITH_OTHERS:
+        case AudioConcurrencyMode::SILENT:
+            if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
+                focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
+                focusEntry.hintType == INTERRUPT_HINT_STOP) {
+                focusEntry.hintType = INTERRUPT_HINT_NONE;
+            }
+            break;
+
+        case AudioConcurrencyMode::DUCK_OTHERS:
+            if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
+                focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
+                focusEntry.hintType == INTERRUPT_HINT_STOP) {
+                focusEntry.hintType = INTERRUPT_HINT_DUCK;
+            }
+            break;
+        case AudioConcurrencyMode::PAUSE_OTHERS:
+            if (focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
+                focusEntry.hintType == INTERRUPT_HINT_STOP) {
+                focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+            }
+            break;
+        default:
+            break;
+    }
+    AUDIO_INFO_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
+        "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
+    return;
 }
 
 void AudioInterruptService::ResetNonInterruptControl(uint32_t streamId)
