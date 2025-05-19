@@ -110,13 +110,13 @@ void AudioSceneManager::DealAudioSceneOutputDevices(const AudioScene &audioScene
         case AUDIO_SCENE_RINGING:
             descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_RINGTONE, -1);
             if (!descs.empty()) {
-                audioActiveDevice_.SetCurrentInputDeviceType(descs.front()->getType());
+                audioActiveDevice_.SetCurrentOutputDeviceType(descs.front()->getType());
             }
             break;
         case AUDIO_SCENE_VOICE_RINGING:
             descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_RINGTONE, -1);
             if (!descs.empty()) {
-                audioActiveDevice_.SetCurrentInputDeviceType(descs.front()->getType());
+                audioActiveDevice_.SetCurrentOutputDeviceType(descs.front()->getType());
             }
             break;
         default:
