@@ -1501,5 +1501,19 @@ bool AudioStreamCollector::IsMediaPlaying()
     }
     return false;
 }
+
+bool AudioStreamCollector::IsVoipStreamActive()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo != nullptr &&
+            ((changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            (changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) &&
+            changeInfo->rendererState == RENDERER_RUNNING) {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
