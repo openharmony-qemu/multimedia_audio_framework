@@ -132,10 +132,10 @@ private:
     IAudioSourceAttr attr_ = {};
     std::mutex callbackMutex_;
     SourceCallbackWrapper callback_ = {};
-    std::atomic<bool> sourceInited_ = false;
-    std::atomic<bool> captureInited_ = false;
+    bool sourceInited_ = false;
+    bool captureInited_ = false;
     std::atomic<bool> started_ = false;
-    std::atomic<bool> paused_ = false;
+    bool paused_ = false;
     float leftVolume_ = MAX_VOLUME_LEVEL;
     float rightVolume_ = MAX_VOLUME_LEVEL;
     std::mutex statusMutex_;
