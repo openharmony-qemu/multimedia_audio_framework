@@ -251,7 +251,7 @@ void SafeVolumeEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &
 
 void AudioPolicyService::SubscribeSafeVolumeEvent()
 {
-    AUDIO_INFO_LOG("AudioPolicyService::SubscribeSafeVolumeEvent enter.");
+    AUDIO_INFO_LOG("enter.");
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(AUDIO_RESTORE_VOLUME_EVENT);
     matchingSkills.AddEvent(AUDIO_INCREASE_VOLUME_EVENT);
