@@ -58,7 +58,7 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
         mixerNode_->SetNodeInfo(nodeInfoTemp);
         if (renderEffectNode_) {
             nodeInfoTemp.nodeName = "HpaeRenderEffectNode";
-            nodeInfoTemp.nodeInfoTemp = nodeInfoTemp.statusCallback.lock()->OnGetNodeId();
+            nodeInfoTemp.nodeId = nodeInfoTemp.statusCallback.lock()->OnGetNodeId();
             nodeInfoTemp.sessionId = 0;
             renderEffectNode_->SetNodeInfo(nodeInfoTemp);
             AUDIO_INFO_LOG("HpaeProcessCluster, HpaeRenderEffectNode id %{public}u ", nodeInfoTemp.nodeId);
