@@ -115,7 +115,8 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     sessionNodeMap_[sessionId].sinkInputNodeId = nodeInfo.nodeId;
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
 
-    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
+    AUDIO_INFO_LOG("[FinishMove] sceneType is %{public}d, session :%{public}u to sink:%{public}s",
+        nodeInfo.sceneType, sessionId, sinkInfo_.deviceClass.c_str());
     HpaeNodeInfo processNodeInfo = nodeInfo;
     processNodeInfo.samplingRate = (AudioSamplingRate)DEFAULT_EFFECT_RATE;
     processNodeInfo.frameLen = (uint32_t)DEFAULT_EFFECT_FRAME_LEN;
@@ -303,6 +304,9 @@ void HpaeRendererManager::DeleteProcessCluster(
         nodeInfo.sceneType != HPAE_SCENE_EFFECT_NONE) {
         sceneTypeToProcessClusterCountMap_[HPAE_SCENE_EFFECT_NONE]--;
     }
+    AUDIO_INFO_LOG("sceneType %{public}d is deleted, current count: %{public}d, default count: %{public}d",
+        nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType],
+        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
 
     if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
         outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
@@ -986,6 +990,7 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
         "can not get input node of session %{public}u", sessionId);
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
+    AUDIO_INFO_LOG("session %{public}d, sceneType is %{public}d", session, sceneType);
     std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
