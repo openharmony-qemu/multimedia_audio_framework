@@ -31,24 +31,37 @@ namespace HPAE {
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)), sinkInfo_(sinkInfo)
 {
+    HpaeNodeInfo nodeInfoTemp = nodeInfo;
+    if (nodeInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || nodeInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
+        nodeInfoTemp.samplingRate = sinkInfo.samplingRate;
+        nodeInfoTemp.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) / nodeInfo.samplingRate;
+    }
+    mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfoTemp);
+    if (nodeInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || nodeInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
+        if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
+            AUDIO_DEBUG_LOG("mixerNode setupAudioLimiter failed, sessionId: %{public}u", nodeInfo.sessionId);
+        } else {
+            AUDIO_INFO_LOG("mixerNode setupAudioLimiter success, sessionId: %{public}u", nodeInfo.sessionId);
+        }
+    }
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA" && nodeInfo.deviceClass != "remote") {
         renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     } else {
         renderEffectNode_ = nullptr;
     }
 #ifdef ENABLE_HIDUMP_DFX
-    if (nodeInfo.statusCallback.lock()) {
-        nodeInfo.nodeName = "HpaeMixerNode";
-        nodeInfo.sessionId = 0;
-        nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
-        AUDIO_INFO_LOG("HpaeProcessCluster, HpaeMixerNode id %{public}u ", nodeInfo.nodeId);
-        mixerNode_->SetNodeInfo(nodeInfo);
+    if (nodeInfoTemp.statusCallback.lock()) {
+        nodeInfoTemp.nodeName = "HpaeMixerNode";
+        nodeInfoTemp.sessionId = 0;
+        nodeInfoTemp.nodeId = nodeInfoTemp.statusCallback.lock()->OnGetNodeId();
+        AUDIO_INFO_LOG("HpaeProcessCluster, HpaeMixerNode id %{public}u ", nodeInfoTemp.nodeId);
+        mixerNode_->SetNodeInfo(nodeInfoTemp);
         if (renderEffectNode_) {
-            nodeInfo.nodeName = "HpaeRenderEffectNode";
-            nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
-            nodeInfo.sessionId = 0;
-            renderEffectNode_->SetNodeInfo(nodeInfo);
-            AUDIO_INFO_LOG("HpaeProcessCluster, HpaeRenderEffectNode id %{public}u ", nodeInfo.nodeId);
+            nodeInfoTemp.nodeName = "HpaeRenderEffectNode";
+            nodeInfoTemp.nodeInfoTemp = nodeInfoTemp.statusCallback.lock()->OnGetNodeId();
+            nodeInfoTemp.sessionId = 0;
+            renderEffectNode_->SetNodeInfo(nodeInfoTemp);
+            AUDIO_INFO_LOG("HpaeProcessCluster, HpaeRenderEffectNode id %{public}u ", nodeInfoTemp.nodeId);
         }
     }
 #endif
