@@ -144,6 +144,7 @@ private:
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
+    void DumpPipeManager(std::string &dumpString);
 
     // Called by EventEntry - with lock
     // Stream operations
