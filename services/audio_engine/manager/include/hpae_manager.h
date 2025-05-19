@@ -179,9 +179,9 @@ private:
     void HandleInitDeviceResult(std::string deviceName, int32_t result);
     void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
-    void HandleMoveAllSinkInputs(const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
+    void HandleMoveAllSinkInputs(std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
         MOVE_SESSION_TYPE moveType);
-    void HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std::string sourceName);
+    void HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::string sourceName);
     void HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
     void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MOVE_SESSION_TYPE moveType,
         std::string name);
@@ -207,6 +207,10 @@ private:
     void DestroyCapture(uint32_t sessionId);
     void LoadEffectLive();
 
+    bool MovingSinkStateChange(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode>& sinkInput);
+    bool IsMovingSessionId(HpaeStreamClassType streamType, uint32_t sessionId,
+        HpaeSessionState status, HpaeSessionState state, IOperation operation);
+
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
     std::unique_ptr<HpaePolicyManager> hpaePolicyManager_ = nullptr;
@@ -221,6 +225,7 @@ private:
     std::unordered_map<uint32_t, SourceOutput> sourceOutputs_;
     std::unordered_map<std::string, uint32_t> sinkNameSinkIdMap_;  // todo
     std::unordered_map<uint32_t, std::string> sinkIdSinkNameMap_;
+    std::unordered_map<uint32_t, HpaeSessionState> movingIds_;
     std::string defaultSink_ = "Speaker";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
