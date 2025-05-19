@@ -31,7 +31,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "capturer_clock_manager.h"
-#include "audio_settings_provider.h"
+#include "audio_setting_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
