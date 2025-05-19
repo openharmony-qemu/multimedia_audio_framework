@@ -87,7 +87,7 @@ void HpaeSourceOutputNode::DoProcess()
         AUDIO_DEBUG_LOG("sessionId %{public}u, readCallback_ write read data overflow", GetSessionId());
         return;
     }
-    CHECK_AND_RETURN_LOG(ret == 0, "sessionId %{public}u, readCallback_ write read data error", GetSessionId())
+    CHECK_AND_RETURN_LOG(ret == 0, "sessionId %{public}u, readCallback_ write read data error", GetSessionId());
     totalFrames_ += GetFrameLen();
     framesRead_.store(totalFrames_);
     return;
