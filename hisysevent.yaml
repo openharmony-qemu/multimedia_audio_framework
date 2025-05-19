@@ -220,3 +220,9 @@ PLAYING_AUDIO_STAT:
   APP_STATE: {type: UINT8, desc: app is background or foreground }
   APP_STATE_TIMESTAMP: {type: UINT64, desc: app state change timestamp }
   SUMMARY: {type: UINT64, desc: summary }
+
+HDF_AUDIO_ERROR_EVENT:
+  __BASE: {type: FAULT, level: CRITICAL, tag: HdfAudio, desc: HdfAudioErrorEvent}
+  ERROR_DESC: {type: STRING, desc: error descriptor}
+  ERROR_CODE: {type: INT32, desc: error code}
+  OVER_TIME: {type: INT32, desc: over time}
