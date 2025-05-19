@@ -93,7 +93,7 @@ void AudioCaptureSource::DeInit(void)
     AudioXCollie audioXCollie("AudioCaptureSource::DeInit", TIMEOUT_SECONDS_5,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     sourceInited_ = false;
     started_ = false;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -228,7 +228,7 @@ int32_t AudioCaptureSource::Resume(void)
 int32_t AudioCaptureSource::Pause(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::Pause");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -242,7 +242,7 @@ int32_t AudioCaptureSource::Pause(void)
 int32_t AudioCaptureSource::Flush(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::Flush");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -255,7 +255,7 @@ int32_t AudioCaptureSource::Flush(void)
 int32_t AudioCaptureSource::Reset(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::Reset");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -283,6 +283,11 @@ static uint64_t GetFirstTimeStampFromAlgo(const std::string &adapterNameCase)
 int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    if (!started_.load()) {
+        AUDIO_WARNING_LOG("not start, invalid state");
+        return ERR_ILLEGAL_STATE;
+    }
+
     Trace trace("AudioCaptureSource::CaptureFrame");
     AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
 
