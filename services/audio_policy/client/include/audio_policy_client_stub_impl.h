@@ -34,6 +34,11 @@ public:
     int32_t AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     int32_t RemoveVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     size_t GetVolumeKeyEventCallbackSize() const;
+    size_t GetStreamVolumeChangeCallbackSize() const;
+    std::set<StreamUsage> GetStreamVolumeChangeCallbackStreamUsages() const;
+    int32_t AddStreamVolumeChangeCallback(const std::set<StreamUsage> &streamUsages,
+        const std::shared_ptr<StreamVolumeChangeCallback> &cb);
+    int32_t RemoveStreamVolumeChangeCallback(const std::shared_ptr<StreamVolumeChangeCallback> &cb);
     int32_t AddFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb);
     int32_t RemoveFocusInfoChangeCallback();
     int32_t AddDeviceChangeCallback(const DeviceFlag &flag,
@@ -159,12 +164,15 @@ public:
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
     void OnAudioSceneChange(const AudioScene &audioScene) override;
     void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
+    void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override;
 
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc);
 
     std::vector<std::weak_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
+    std::vector<std::pair<std::set<StreamUsage>,
+        std::weak_ptr<StreamVolumeChangeCallback>>> streamVolumeChangeCallbackList_;
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
@@ -221,6 +229,7 @@ private:
     mutable std::mutex microphoneBlockedMutex_;
     mutable std::mutex audioSceneChangedMutex_;
     mutable std::mutex formatUnsupportedErrorMutex_;
+    mutable std::mutex streamVolumeChangeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -700,6 +700,35 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
     }
 }
 
+void AudioPolicyServerHandler::HandleVolumeChangeCallback(int32_t clientId, sptr<IAudioPolicyClient> audioPolicyClient,
+    const VolumeEvent &volumeEvent)
+{
+    bool callbackRegistered = clientCallbacksMap_.count(clientId) > 0 &&
+        clientCallbacksMap_[clientId].count(CALLBACK_STREAM_VOLUME_CHANGE) > 0;
+    bool callbackEnabled = clientCallbacksMap_[clientId][CALLBACK_STREAM_VOLUME_CHANGE];
+    if (!callbackRegistered || !callbackEnabled) {
+        return;
+    }
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(volumeEvent.volumeType);
+    std::set<StreamUsage> streamUsages;
+    {
+        std::lock_guard<std::mutex> streamUsagelock(clientCbStreamUsageMapMutex_);
+        if (clientCbStreamUsageMap_.count(clientId) > 0) {
+            streamUsages = VolumeUtils::GetOverlapStreamUsageSet(clientCbStreamUsageMap_[clientId], volumeType);
+        }
+    }
+    for (auto streamUsage : streamUsages) {
+        StreamVolumeEvent streamVolumeEvent;
+        streamVolumeEvent.streamUsage = streamUsage;
+        streamVolumeEvent.volume = volumeEvent.volume;
+        streamVolumeEvent.updateUi = volumeEvent.updateUi;
+        streamVolumeEvent.volumeGroupId = volumeEvent.volumeGroupId;
+        streamVolumeEvent.networkId = volumeEvent.networkId;
+        streamVolumeEvent.volumeMode = volumeEvent.volumeMode;
+        audioPolicyClient->OnStreamVolumeChange(streamVolumeEvent);
+    }
+}
+
 void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -725,6 +754,7 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_KEY_EVENT]) {
             volumeChangeCb->OnVolumeKeyEvent(eventContextObj->volumeEvent);
         }
+        HandleVolumeChangeCallback(it->first, volumeChangeCb, eventContextObj->volumeEvent);
     }
 }
 
@@ -1558,6 +1588,19 @@ void AudioPolicyServerHandler::HandleAudioZoneEvent(const AppExecFwk::InnerEvent
     lock.unlock();
     CHECK_AND_RETURN_LOG(dispatcher != nullptr, "dispatcher is nullptr");
     dispatcher->DispatchEvent(eventContextObj->audioZoneEvent);
+}
+
+int32_t AudioPolicyServerHandler::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
+{
+    int32_t clientId = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("Set clientId:%{public}d, streamUsages size:%{public}d", clientId, (int32_t)streamUsages.size());
+    lock_guard<mutex> lock(clientCbStreamUsageMapMutex_);
+    if (streamUsages.empty() && clientCbStreamUsageMap_.count(clientId)) {
+        clientCbStreamUsageMap_.erase(clientId);
+    } else {
+        clientCbStreamUsageMap_[clientId] = streamUsages;
+    }
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

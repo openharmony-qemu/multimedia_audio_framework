@@ -450,6 +450,16 @@ public:
         const StreamUsage &streamUsage) override;
 
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+
+    int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    bool GetStreamMuteByUsage(StreamUsage streamUsage) override;
+
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

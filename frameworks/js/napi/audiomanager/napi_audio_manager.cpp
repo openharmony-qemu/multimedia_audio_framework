@@ -36,6 +36,7 @@
 #include "napi_audio_ringermode_callback.h"
 #include "napi_audio_manager_interrupt_callback.h"
 #include "napi_audio_volume_key_event.h"
+#include "napi_audio_scene_callbacks.h"
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "napi_audio_effect_manager.h"
 #include "napi_audio_session_manager.h"
@@ -1246,7 +1247,7 @@ napi_value NapiAudioManager::DisableSafeMediaVolume(napi_env env, napi_callback_
 }
 
 napi_value NapiAudioManager::RegisterCallback(napi_env env, napi_value jsThis,
-    napi_value *argv, const std::string &cbName)
+    napi_value *argv, size_t argc, const std::string &cbName)
 {
     napi_value undefinedResult = nullptr;
     NapiAudioManager *napiAudioManager = nullptr;
@@ -1267,6 +1268,8 @@ napi_value NapiAudioManager::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterVolumeChangeCallback(env, argv, napiAudioManager);
     } else if (!cbName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         RegisterDeviceChangeCallback(env, argv, napiAudioManager);
+    } else if (!cbName.compare(AUDIO_SCENE_CHANGE_CALLBACK_NAME)) {
+        RegisterAudioSceneChangeCallback(env, argv, argc, napiAudioManager);
     }
     return undefinedResult;
 }
@@ -1362,6 +1365,33 @@ template<typename T> void NapiAudioManager::RegisterDeviceChangeCallback(napi_en
     }
 }
 
+template<typename T> void NapiAudioManager::RegisterAudioSceneChangeCallback(napi_env env, const T &argv,
+    size_t argc, NapiAudioManager *napiAudioManager)
+{
+    CHECK_AND_RETURN_LOG(napiAudioManager != nullptr, "napiAudioManager is nullptr");
+    CHECK_AND_RETURN_LOG(napiAudioManager->audioMngr_ != nullptr, "audioMngr_ is nullptr");
+    CHECK_AND_RETURN_LOG(argv != nullptr, "argv is nullptr");
+    CHECK_AND_RETURN_LOG(argc >= ARGS_TWO, "argc < ARGS_TWO");
+
+    if (napiAudioManager->audioSceneChangedCallbackNapi_ == nullptr) {
+        auto audioSceneChangedCallbackNapi = std::make_shared<NapiAudioSceneChangedCallback>(env);
+        CHECK_AND_RETURN_LOG(audioSceneChangedCallbackNapi != nullptr, "no memory");
+
+        int32_t ret = napiAudioManager->audioMngr_->SetAudioSceneChangeCallback(audioSceneChangedCallbackNapi);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetAudioSceneChangeCallback Failed %{public}d", ret);
+        napiAudioManager->audioSceneChangedCallbackNapi_ = audioSceneChangedCallbackNapi;
+    }
+
+    std::shared_ptr<NapiAudioSceneChangedCallback> cb =
+        std::static_pointer_cast<NapiAudioSceneChangedCallback>(napiAudioManager->audioSceneChangedCallbackNapi_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "static_pointer_cast failed");
+
+    cb->SaveCallbackReference(AUDIO_SCENE_CHANGE_CALLBACK_NAME, argv[PARAM1]);
+    if (!cb->GetSceneChgTsfnFlag()) {
+        cb->CreateSceneChgTsfn(env);
+    }
+}
+
 napi_value NapiAudioManager::On(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;
@@ -1395,7 +1425,7 @@ napi_value NapiAudioManager::On(napi_env env, napi_callback_info info)
         }
     }
 
-    return RegisterCallback(env, jsThis, argv, callbackName);
+    return RegisterCallback(env, jsThis, argv, argCount, callbackName);
 }
 
 template<typename T> void NapiAudioManager::UnregisterInterruptCallback(napi_env env, const T &argv,
@@ -1468,6 +1498,31 @@ void NapiAudioManager::UnregisterDeviceChangeCallback(napi_env env, napi_value c
     }
 }
 
+void NapiAudioManager::UnregisterAudioSceneChangeCallback(napi_env env, napi_value callback,
+    NapiAudioManager *audioMgrNapi)
+{
+    CHECK_AND_RETURN_LOG(audioMgrNapi != nullptr, "audioMgrNapi is nullptr");
+    CHECK_AND_RETURN_LOG(audioMgrNapi->audioMngr_ != nullptr, "audioMngr_ is nullptr");
+    CHECK_AND_RETURN_LOG(audioMgrNapi->audioSceneChangedCallbackNapi_ != nullptr,
+        "audioSceneChangedCallbackNapi_ is nullptr");
+
+    std::shared_ptr<NapiAudioSceneChangedCallback> cb =
+        std::static_pointer_cast<NapiAudioSceneChangedCallback>(audioMgrNapi->audioSceneChangedCallbackNapi_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "static_pointer_cast failed");
+
+    if (callback != nullptr) {
+        cb->RemoveCallbackReference(env, callback);
+    }
+    if (callback == nullptr || cb->GetAudioSceneCbListSize() == 0) {
+        int32_t ret = audioMgrNapi->audioMngr_->UnsetAudioSceneChangeCallback(
+            audioMgrNapi->audioSceneChangedCallbackNapi_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetAudioSceneChangeCallback Failed");
+        audioMgrNapi->audioSceneChangedCallbackNapi_.reset();
+        audioMgrNapi->audioSceneChangedCallbackNapi_ = nullptr;
+        cb->RemoveAllCallbackReference();
+    }
+}
+
 napi_value NapiAudioManager::Off(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;
@@ -1499,6 +1554,8 @@ napi_value NapiAudioManager::Off(napi_env env, napi_callback_info info)
         UnregisterInterruptCallback(env, argv, argCount, napiAudioManager);
     } else if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         UnregisterDeviceChangeCallback(env, argv[PARAM1], napiAudioManager);
+    } else if (!callbackName.compare(AUDIO_SCENE_CHANGE_CALLBACK_NAME)) {
+        UnregisterAudioSceneChangeCallback(env, argv[PARAM1], napiAudioManager);
     } else {
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
     }

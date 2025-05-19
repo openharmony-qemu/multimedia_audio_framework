@@ -229,6 +229,11 @@ private:
     void NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void ResetAllProxyInternal(MessageParcel &data, MessageParcel &reply);
     void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMaxVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMinVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
+    void GetVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
+    void GetStreamMuteByUsageInternal(MessageParcel &data, MessageParcel &reply);
+    void SetCallbackStreamUsageInfoInternal(MessageParcel &data, MessageParcel &reply);
 
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

@@ -467,6 +467,16 @@ public:
         const StreamUsage &streamUsage) = 0;
     
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
+
+    virtual int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) = 0;
+
+    virtual int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) = 0;
+
+    virtual int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) = 0;
+
+    virtual bool GetStreamMuteByUsage(StreamUsage streamUsage) = 0;
+
+    virtual int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

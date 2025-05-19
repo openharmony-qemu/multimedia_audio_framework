@@ -70,6 +70,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_FORMAT_UNSUPPORTED_ERROR):
             HandleFormatUnsupportedError(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_STREAM_VOLUME_CHANGE):
+            HandleStreamVolumeChange(data, reply);
+            break;
         default:
             break;
     }
@@ -431,6 +434,13 @@ void AudioPolicyClientStub::HandleFormatUnsupportedError(MessageParcel &data, Me
 {
     AudioErrors code = static_cast<AudioErrors>(data.ReadInt32());
     OnFormatUnsupportedError(code);
+}
+
+void AudioPolicyClientStub::HandleStreamVolumeChange(MessageParcel &data, MessageParcel &reply)
+{
+    StreamVolumeEvent streamVolumeEvent;
+    streamVolumeEvent.Unmarshalling(data);
+    OnStreamVolumeChange(streamVolumeEvent);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -31,6 +31,7 @@ public:
     void OnActiveVolumeTypeChanged(const AudioVolumeType &volumeType) override;
     void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+    void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
     void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
     void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
