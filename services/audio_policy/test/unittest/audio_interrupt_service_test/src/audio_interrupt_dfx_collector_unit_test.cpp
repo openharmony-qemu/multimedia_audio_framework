@@ -91,7 +91,7 @@ HWTEST(AudioInterruptDfxCollectorUnitTest, WriteInfoMsg_001, TestSize.Level1)
     InterruptDfxBuilder dfxBuilder;
     AudioInterrupt audioInterrupt;
     AudioSessionStrategy strategy;
-    InterruptStrategyType interruptType = INTERRUPT_TYPE_DEFAULT;
+    InterruptRole interruptType = INTERRUPT_ROLE_DEFAULT;
 
     strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
     auto &ret = dfxBuilder.WriteInfoMsg(audioInterrupt, strategy, interruptType);

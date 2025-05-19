@@ -112,6 +112,8 @@ public:
     void SetDeviceConnectedFlag(bool flag);
     void NotifySettingsDataReady();
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+    void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
+    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

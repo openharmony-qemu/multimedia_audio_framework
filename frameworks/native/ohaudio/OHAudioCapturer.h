@@ -179,6 +179,7 @@ class OHAudioCapturer {
         void SetStreamEventCallback(CapturerCallback capturerCallbacks, void* userData);
         void SetCapturerReadDataCallbackType(ReadDataCallbackType readDataCallbackType);
         void SetCapturerStreamEventCallbackType(StreamEventCallbackType streamEventCallbackType);
+        void SetCapturerWillMuteWhenInterrupted(InterruptStrategy strategy);
         ReadDataCallbackType GetCapturerReadDataCallbackType();
         StreamEventCallbackType GetCapturerStreamEventCallbackType();
 

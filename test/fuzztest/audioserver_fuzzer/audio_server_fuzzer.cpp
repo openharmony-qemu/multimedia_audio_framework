@@ -495,6 +495,45 @@ void AudioServerCheckHibernateStateTest(const uint8_t *rawData, size_t size)
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_HIBERNATE_STATE),
         data, reply, option);
 }
+
+void AudioServerSetSessionMuteStateTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    uint32_t sessionId = 10;
+    data.WriteInt32(sessionId);
+    data.WriteBool(true);
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_SESSION_MUTE_STATE),
+        data, reply, option);
+}
+
+void AudioServerNotifyMuteStateChangeTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    uint32_t sessionId = 10;
+    data.WriteInt32(sessionId);
+    data.WriteBool(true);
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_MUTE_STATE_CHANGE),
+        data, reply, option);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -520,7 +559,9 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest,
     OHOS::AudioStandard::AudioServerSetOffloadModeTest,
     OHOS::AudioStandard::AudioServerUnsetOffloadTest,
-    OHOS::AudioStandard::AudioServerCheckHibernateStateTest
+    OHOS::AudioStandard::AudioServerCheckHibernateStateTest,
+    OHOS::AudioStandard::AudioServerSetSessionMuteStateTest,
+    OHOS::AudioStandard::AudioServerNotifyMuteStateChangeTest,
 };
 
 /* Fuzzer entry point */
