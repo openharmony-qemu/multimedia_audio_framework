@@ -386,6 +386,11 @@ HpaeNodeInfo &HpaeSourceInputNode::GetNodeInfoWithInfo(HpaeSourceBufferType &typ
         "can't find nodeKey in nodeInfoMap_.");
     return it->second;
 }
+
+uint32_t HpaeSourceInputNode::GetCaptureId() const
+{
+    return captureId_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
