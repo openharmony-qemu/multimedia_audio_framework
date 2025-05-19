@@ -836,14 +836,17 @@ void AudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, Audi
 
 void AudioRenderSink::SetAudioRouteInfoForEnhanceChain(void)
 {
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    if (halName_ == HDI_ID_INFO_USB) {
-        audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_USB_ARM_HEADSET);
-    } else if (halName_ == HDI_ID_INFO_DP) {
-        audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_DP);
-    } else {
-        audioEnhanceChainManager->SetOutputDevice(renderId_, currentActiveDevice_);
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        if (halName_ == HDI_ID_INFO_USB) {
+            audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_USB_ARM_HEADSET);
+        } else if (halName_ == HDI_ID_INFO_DP) {
+            audioEnhanceChainManager->SetOutputDevice(renderId_, DEVICE_TYPE_DP);
+        } else {
+            audioEnhanceChainManager->SetOutputDevice(renderId_, currentActiveDevice_);
+        }
     }
 }
 

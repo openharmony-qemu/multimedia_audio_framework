@@ -853,12 +853,15 @@ void AudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
         AUDIO_ERR_LOG("non blocking source not support");
         return;
     }
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    if (halName_ == HDI_ID_INFO_USB) {
-        audioEnhanceChainManager->SetInputDevice(captureId_, DEVICE_TYPE_USB_ARM_HEADSET, "");
-    } else {
-        audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        if (halName_ == HDI_ID_INFO_USB) {
+            audioEnhanceChainManager->SetInputDevice(captureId_, DEVICE_TYPE_USB_ARM_HEADSET, "");
+        } else {
+            audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+        }
     }
 }
 
