@@ -51,7 +51,7 @@ public:
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName, bool isSync = false);
 
     void NotifyUnmutePort();
-    void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync);
+    void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync, bool isSleepEnabled = true);
     void SetMoveFinish(bool flag);
     void MuteDefaultSinkPort(std::string networkID, std::string sinkName);
     void UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName);
