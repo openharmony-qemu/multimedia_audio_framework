@@ -17,6 +17,7 @@
 #define AUDIO_COMMON_UTILS_H
 
 #include <unordered_map>
+#include <set>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -26,11 +27,20 @@ public:
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
     static void SetPCVolumeEnable(const bool& isPCVolumeEnable);
     static bool IsPCVolumeEnable();
+    static AudioVolumeType GetVolumeTypeFromStreamUsage(StreamUsage streamUsage);
+    static std::set<StreamUsage> GetOverlapStreamUsageSet(const std::set<StreamUsage>& streamUsages,
+        AudioVolumeType volumeType);
+
 private:
+    static std::set<StreamUsage>& GetStreamUsageSetForVolumeType(AudioVolumeType volumeType);
+
     static std::unordered_map<AudioStreamType, AudioVolumeType> defaultVolumeMap_;
     static std::unordered_map<AudioStreamType, AudioVolumeType> audioPCVolumeMap_;
     static std::unordered_map<AudioStreamType, AudioVolumeType>& GetVolumeMap();
     static bool isPCVolumeEnable_;
+    static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> defaultVolumeToStreamUsageMap_;
+    static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> pcVolumeToStreamUsageMap_;
+    static std::unordered_map<StreamUsage, AudioStreamType> streamUsageMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

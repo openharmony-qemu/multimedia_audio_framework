@@ -598,6 +598,15 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+
+    int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage);
+    int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage);
+    int32_t GetVolumeLevelByUsage(StreamUsage streamUsage);
+    bool GetStreamMuteByUsage(StreamUsage streamUsage);
+    int32_t SetStreamVolumeChangeCallback(const int32_t clientPid, const std::set<StreamUsage> &streamUsages,
+        const std::shared_ptr<StreamVolumeChangeCallback> &callback);
+    int32_t UnsetStreamVolumeChangeCallback(const std::shared_ptr<StreamVolumeChangeCallback> &callback);
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

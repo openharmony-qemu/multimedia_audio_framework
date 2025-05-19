@@ -303,6 +303,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
+    CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -344,6 +345,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
+    CALLBACK_STREAM_VOLUME_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -368,6 +370,33 @@ struct VolumeEvent {
     void Unmarshalling(Parcel &parcel)
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+        volume = parcel.ReadInt32();
+        updateUi = parcel.ReadInt32();
+        volumeGroupId = parcel.ReadInt32();
+        networkId = parcel.ReadString();
+        volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+    }
+};
+
+struct StreamVolumeEvent {
+    StreamUsage streamUsage = STREAM_USAGE_INVALID;
+    int32_t volume = -1;
+    bool updateUi = false;
+    int32_t volumeGroupId = -1;
+    std::string networkId = "";
+    AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteInt32(volume)
+            && parcel.WriteBool(updateUi)
+            && parcel.WriteInt32(volumeGroupId)
+            && parcel.WriteString(networkId)
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
         updateUi = parcel.ReadInt32();
         volumeGroupId = parcel.ReadInt32();

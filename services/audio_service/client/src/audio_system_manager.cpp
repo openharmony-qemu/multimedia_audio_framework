@@ -60,6 +60,7 @@ AudioSystemManager::~AudioSystemManager()
     if (volumeChangeClientPid_ != -1) {
         AUDIO_DEBUG_LOG("UnregisterVolumeKeyEventCallback");
         (void)UnregisterVolumeKeyEventCallback(volumeChangeClientPid_);
+        (void)UnregisterStreamVolumeChangeCallback(volumeChangeClientPid_);
     }
 }
 
@@ -1102,7 +1103,6 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(callback);
     if (!ret) {
         AUDIO_DEBUG_LOG("UnsetVolumeKeyEventCallback success");
-        volumeChangeClientPid_ = -1;
     }
     return ret;
 }
@@ -1836,6 +1836,74 @@ int32_t AudioSystemManager::ResetAllProxy()
 {
     AUDIO_INFO_LOG("RSS IN");
     return AudioPolicyManager::GetInstance().ResetAllProxy();
+}
+
+int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "Invalid streamUsage");
+
+    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    }
+    return AudioPolicyManager::GetInstance().GetMaxVolumeLevelByUsage(streamUsage);
+}
+
+int32_t AudioSystemManager::GetMinVolumeByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "Invalid streamUsage");
+
+    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    }
+    return AudioPolicyManager::GetInstance().GetMinVolumeLevelByUsage(streamUsage);
+}
+
+int32_t AudioSystemManager::GetVolumeByUsage(StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "Invalid streamUsage");
+
+    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    }
+    return AudioPolicyManager::GetInstance().GetVolumeLevelByUsage(streamUsage);
+}
+
+int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &isMute)
+{
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "Invalid streamUsage");
+
+    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    }
+    isMute = AudioPolicyManager::GetInstance().GetStreamMuteByUsage(streamUsage);
+    return SUCCESS;
+}
+
+
+int32_t AudioSystemManager::RegisterStreamVolumeChangeCallback(const int32_t clientPid,
+    const std::set<StreamUsage> &streamUsages, const std::shared_ptr<StreamVolumeChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("register StreamVolumeChangeCallback clientPid:%{public}d", clientPid);
+
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    volumeChangeClientPid_ = clientPid;
+
+    return AudioPolicyManager::GetInstance().SetStreamVolumeChangeCallback(clientPid, streamUsages, callback);
+}
+
+int32_t AudioSystemManager::UnregisterStreamVolumeChangeCallback(const int32_t clientPid,
+    const std::shared_ptr<StreamVolumeChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("unregister StreamVolumeChangeCallback clientPid:%{public}d", clientPid);
+    return AudioPolicyManager::GetInstance().UnsetStreamVolumeChangeCallback(callback);
 }
 } // namespace AudioStandard
 } // namespace OHOS

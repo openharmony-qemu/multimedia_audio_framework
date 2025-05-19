@@ -2206,5 +2206,15 @@ bool AudioPolicyService::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     return AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
 }
+
+int32_t AudioPolicyService::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
+{
+    if (audioPolicyServerHandler_ != nullptr) {
+        return audioPolicyServerHandler_->SetCallbackStreamUsageInfo(streamUsages);
+    } else {
+        AUDIO_ERR_LOG("audioPolicyServerHandler_ is nullptr");
+        return AUDIO_ERR;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

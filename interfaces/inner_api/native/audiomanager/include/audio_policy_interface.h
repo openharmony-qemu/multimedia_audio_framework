@@ -126,6 +126,18 @@ public:
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
 };
 
+class StreamVolumeChangeCallback {
+public:
+    virtual ~StreamVolumeChangeCallback() = default;
+    /**
+     * @brief StreamVolumeChangeCallback will be executed when stream volume changed
+     *
+     * @param volumeEvent the volume event info.
+     * @since 20
+     */
+    virtual void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) = 0;
+};
+
 class AudioCapturerStateChangeCallback {
 public:
     virtual ~AudioCapturerStateChangeCallback() = default;

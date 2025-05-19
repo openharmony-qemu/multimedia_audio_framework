@@ -1069,5 +1069,59 @@ void AudioPolicyClientStubImpl::OnFormatUnsupportedError(const AudioErrors &erro
         callback->OnFormatUnsupportedError(errorCode);
     }
 }
+
+size_t AudioPolicyClientStubImpl::GetStreamVolumeChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(streamVolumeChangeMutex_);
+    return streamVolumeChangeCallbackList_.size();
+}
+
+std::set<StreamUsage> AudioPolicyClientStubImpl::GetStreamVolumeChangeCallbackStreamUsages() const
+{
+    std::lock_guard<std::mutex> lockCbMap(streamVolumeChangeMutex_);
+    std::set<StreamUsage> allStreamUsages;
+    for (auto &[streamUsages, cb] : streamVolumeChangeCallbackList_) {
+        (void)cb;
+        allStreamUsages.insert(streamUsages.begin(), streamUsages.end());
+    }
+    return allStreamUsages;
+}
+
+int32_t AudioPolicyClientStubImpl::AddStreamVolumeChangeCallback(const std::set<StreamUsage> &streamUsages,
+    const std::shared_ptr<StreamVolumeChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(streamVolumeChangeMutex_);
+    streamVolumeChangeCallbackList_.emplace_back(streamUsages, cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveStreamVolumeChangeCallback(
+    const std::shared_ptr<StreamVolumeChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(streamVolumeChangeMutex_);
+    if (cb == nullptr) {
+        streamVolumeChangeCallbackList_.clear();
+        return SUCCESS;
+    }
+    auto it = find_if(streamVolumeChangeCallbackList_.begin(), streamVolumeChangeCallbackList_.end(),
+        [&cb](const std::pair<std::set<StreamUsage>, std::weak_ptr<StreamVolumeChangeCallback>> &elem) {
+            return elem.second.lock() == cb;
+        });
+    if (it != streamVolumeChangeCallbackList_.end()) {
+        streamVolumeChangeCallbackList_.erase(it);
+    }
+    return SUCCESS;
+}
+
+void AudioPolicyClientStubImpl::OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeKeyEventMutex_);
+    for (auto &[streamUsages, cb] : streamVolumeChangeCallbackList_) {
+        std::shared_ptr<StreamVolumeChangeCallback> streamVolumeChangeCallback = cb.lock();
+        if (streamVolumeChangeCallback != nullptr && streamUsages.count(streamVolumeEvent.streamUsage)) {
+            streamVolumeChangeCallback->OnStreamVolumeChange(streamVolumeEvent);
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
