@@ -60,7 +60,7 @@ ohos_unittest("audio_endpoint_separate_unit_test") {
 
   external_deps = [
     "c_utils:utils",
-    "drivers_interface_audio:libaudio_proxy_4.0",
+    "drivers_interface_audio:libaudio_proxy_5.0",
     "googletest:gtest",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
