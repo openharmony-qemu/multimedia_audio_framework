@@ -38,6 +38,7 @@ ohos_shared_library("hdiadapter_new") {
 
   include_dirs = [
     "include",
+    "../../../services/audio_policy/server/include/service/manager",
     "../../../services/audio_service/common/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../audioutils/include",
@@ -69,6 +70,7 @@ ohos_shared_library("hdiadapter_new") {
   ]
 
   deps = [
+    "../../../services/audio_policy:audio_settings_provider",
     "../../../services/audio_service:audio_common",
     "../audioeffect:audio_effect",
     "../audioschedule:audio_schedule",
@@ -79,6 +81,8 @@ ohos_shared_library("hdiadapter_new") {
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
     "drivers_interface_audio:libaudio_proxy_4.0",
     "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
@@ -87,6 +91,7 @@ ohos_shared_library("hdiadapter_new") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
 

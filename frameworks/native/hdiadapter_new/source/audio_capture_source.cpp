@@ -31,6 +31,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "capturer_clock_manager.h"
+#include "audio_settings_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -181,7 +182,7 @@ int32_t AudioCaptureSource::Start(void)
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
     if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
-        audioEnhanceChainManager->SetAccessoryDeviceState(true);
+        SetAccessoryDeviceState(true);
     }
 
     return SUCCESS;
@@ -203,7 +204,7 @@ int32_t AudioCaptureSource::Stop(void)
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
     if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
-        audioEnhanceChainManager->SetAccessoryDeviceState(false);
+        SetAccessoryDeviceState(false);
     }
 
     return SUCCESS;
@@ -1106,6 +1107,21 @@ int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice
     if (inputDevice == DEVICE_TYPE_ACCESSORY) {
         SetAudioRouteInfoForEnhanceChain();
     }
+    return SUCCESS;
+}
+
+int32_t AudioCaptureSource::SetAccessoryDeviceState(bool state)
+{
+    ErrCode ret;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), ERROR, "os account not ready");
+    if (state) {
+        ret = settingProvider.PutStringValue("hw.pencil.mic_ack.state", "1", "global");
+    } else {
+        ret = settingProvider.PutStringValue("hw.pencil.mic_ack.state", "0", "global");
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Write Accessory state to Database failed");
+    AUDIO_INFO_LOG("success write hw.pencil.mic_ack.state %{public}d to Database", state);
     return SUCCESS;
 }
 

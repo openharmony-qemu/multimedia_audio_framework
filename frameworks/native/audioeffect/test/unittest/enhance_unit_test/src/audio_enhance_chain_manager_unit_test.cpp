@@ -399,28 +399,6 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhanceProperty_007, TestSize
 }
 
 /*
- * tc.name   : Test SetAccessoryDeviceState
- * tc.number : SetAccessoryDeviceState_001
- * tc.desc   : Ensures the function sets accessory device state for stream start and stop.
- */
-HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAccessoryDeviceState_001, TestSize.Level1)
-{
-    int32_t result = manager_->SetAccessoryDeviceState(true);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/*
- * tc.name   : Test SetAccessoryDeviceState
- * tc.number : SetAccessoryDeviceState_002
- * tc.desc   : Ensures the function sets accessory device state for stream start and stop.
- */
-HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAccessoryDeviceState_002, TestSize.Level1)
-{
-    int32_t result = manager_->SetAccessoryDeviceState(false);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/*
  * tc.name   : Test GetAudioEnhanceProperty API
  * tc.number : GetAudioEnhanceProperty_001
  * tc.desc   : Ensures the function correctly retrieves an empty property list if no properties are set.

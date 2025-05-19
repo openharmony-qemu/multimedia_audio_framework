@@ -72,7 +72,7 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     void SetAddress(const std::string &address) override;
-
+    int32_t SetAccessoryDeviceState(bool state);
     void DumpInfo(std::string &dumpString) override;
 
     void SetDmDeviceType(uint16_t dmDeviceType) override;
