@@ -70,7 +70,7 @@ ohos_shared_library("hdiadapter_new") {
   ]
 
   deps = [
-    "../../../services/audio_policy:audio_settings_provider",
+    "../../../services/audio_policy:audio_setting_provider",
     "../../../services/audio_service:audio_common",
     "../audioeffect:audio_effect",
     "../audioschedule:audio_schedule",
