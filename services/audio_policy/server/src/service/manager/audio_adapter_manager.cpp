@@ -1057,7 +1057,8 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> 
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        ioHandle = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, pipeInfo->moduleInfo_);
+        int32_t ret = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, pipeInfo->moduleInfo_);
+        ioHandle = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
         paIndex = ioHandle;
         return ioHandle;
     } else {
@@ -1193,7 +1194,8 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        ioHandle = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, audioModuleInfo);
+        int32_t ret = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, audioModuleInfo);
+        ioHandle = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
         paIndex = ioHandle;
     } else {
         std::string identity = IPCSkeleton::ResetCallingIdentity();
