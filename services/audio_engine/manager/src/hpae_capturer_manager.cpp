@@ -322,8 +322,10 @@ int32_t HpaeCapturerManager::DisConnectOutputSession(uint32_t sessionId)
         DisConnectSceneClusterFromSourceInputCluster(sceneType);
     } else {
         AUDIO_INFO_LOG("sceneType[%{public}u] do not exist sceneCluster", sceneType);
-        sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(sourceInputClusterMap_[mainMicType_],
-            sourceOutputNodeMap_[sessionId]->GetNodeInfo());
+        if (SafeGetMap(sourceInputClusterMap_, mainMicType_)) {
+            sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(sourceInputClusterMap_[mainMicType_],
+                sourceOutputNodeMap_[sessionId]->GetNodeInfo());
+        }
     }
 
     if (sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0) {

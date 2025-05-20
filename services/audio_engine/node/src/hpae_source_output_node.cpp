@@ -142,18 +142,19 @@ void HpaeSourceOutputNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpae
 
 void HpaeSourceOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
+    CHECK_AND_RETURN_LOG(preNode != nullptr, "preNode is nullptr");
     inputStream_.DisConnect(preNode->GetOutputPort());
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
-    }
-#endif
 }
 
 void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode,
     HpaeNodeInfo &nodeInfo)
 {
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+    }
+#endif
 }
 
 
