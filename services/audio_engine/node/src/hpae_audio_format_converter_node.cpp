@@ -80,7 +80,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     auto len = "len[" + std::to_string(GetFrameLen()) + "]";
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeAudioFormatConverterNode::SignalProcess "
      + rate + ch + len);
-    if (inputs.empty()) {
+    if (inputs.empty() || inputs[0] == nullptr) {
         AUDIO_WARNING_LOG("HpaeConverterNode inputs size is empty, SessionId:%{public}d", GetSessionId());
         return nullptr;
     }
