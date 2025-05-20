@@ -769,8 +769,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
-        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     DeviceRole deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(devType);
