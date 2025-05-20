@@ -621,8 +621,8 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
 
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
         rendererSceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
-        if (rendererSceneClusterMap_[nodeInfo.sceneType]->SetupProcessClusterAudioLimiter() != SUCCESS) {
-            AUDIO_ERR_LOG("SetupProcessClusterAudioLimiter failed, sessionId %{public}u", nodeInfo.sessionId);
+        if (rendererSceneClusterMap_[nodeInfo.sceneType]->SetupAudioLimiter() != SUCCESS) {
+            AUDIO_ERR_LOG("SetupAudioLimiter failed, sessionId %{public}u", nodeInfo.sessionId);
         }
     }
     // todo change nodeInfo

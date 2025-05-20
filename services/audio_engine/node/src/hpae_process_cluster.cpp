@@ -289,7 +289,7 @@ bool HpaeProcessCluster::GetConnectedFlag() const
     return isConnectedToOutputCluster;
 }
 
-int32_t HpaeProcessCluster::SetupProcessClusterAudioLimiter()
+int32_t HpaeProcessCluster::SetupAudioLimiter()
 {
     if (mixerNode_ != nullptr) {
         return mixerNode_->SetupAudioLimiter();
