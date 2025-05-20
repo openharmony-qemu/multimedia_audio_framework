@@ -386,6 +386,8 @@ void HpaeSourceInputNode::UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUi
     std::shared_ptr<AudioSourceClock> clock =
         CapturerClockManager::GetInstance().GetAudioSourceClock(captureId_);
     clock->UpdateSessionId(sessionsId);
+}
+
 uint32_t HpaeSourceInputNode::GetCaptureId() const
 {
     return captureId_;
