@@ -170,6 +170,8 @@ int32_t HpaeRenderEffectNode::SplitCollaborativeData()
 {
     CHECK_AND_RETURN_RET_LOG(effectOutput_.GetChannelCount() == static_cast<uint32_t>(CHANNEL_4), ERROR,
         "collaborative channel count is invalid, count: %{public}d", CHANNEL_4);
+    // need to check whether the sample rate or frame length changes
+    // currently, sample rate and frame length will not change
     float *tempOutput = effectOutput_.GetPcmDataBuffer();
     float *directOutput = directOutput_->GetPcmDataBuffer();
     float *collaborativeOutput = collaborativeOutput_->GetPcmDataBuffer();
