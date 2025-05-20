@@ -117,9 +117,9 @@ public:
     virtual std::string GetTraceInfo()
     {
         std::ostringstream oss;
-        oss << "rate[" << nodeInfo_.samplingRate<< "]_"
-            << "ch[" << static_cast<int32_t>(nodeInfo_.channels) << "]_";
-            << "len[" << nodeInfo_.frameLen << "]_";
+        oss << "rate[" << nodeInfo_.samplingRate << "]_"
+            << "ch[" << static_cast<int32_t>(nodeInfo_.channels) << "]_"
+            << "len[" << nodeInfo_.frameLen << "]_"
             << "bit[" << static_cast<int32_t>(nodeInfo_.format) << "]";
         return oss.str();
     }
