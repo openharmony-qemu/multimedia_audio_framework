@@ -1868,7 +1868,7 @@ int32_t AudioEffectChainManager::QueryEffectChannelInfoInner(const std::string &
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     audioEffectChain->GetInputChannelInfo(channels, channelLayout);
-    AUDIO_INFO_LOG("get input channels is %{public}u, channelLayout is %{public}u", channels, channelLayout);
+    AUDIO_INFO_LOG("get input channels is %{public}u, channelLayout is %{public}lu", channels, channelLayout);
     return SUCCESS;
 }
 } // namespace AudioStandard
