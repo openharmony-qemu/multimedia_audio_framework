@@ -2339,8 +2339,9 @@ void AudioPolicyServer::AudioSessionInfoDump(std::string &dumpString)
 
 void AudioPolicyServer::AudioPipeManagerDump(std::string &dumpString)
 {
-    dumpString += "\nAudioPipeManager Info\n";
-    AudioPipeManager::GetPipeManager()->Dump(dumpString);
+    if (coreService_ != nullptr) {
+        coreService_->DumpPipeManager(dumpString);
+    }
 }
 
 void AudioPolicyServer::ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue)
@@ -2371,7 +2372,7 @@ void AudioPolicyServer::ArgInfoDump(std::string &dumpString, std::queue<std::u16
 void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
 {
     AppendFormat(dumpString, "usage:\n");
-    AppendFormat(dumpString, "  -h\t\t\t|help text for hidumper audio\n");
+    AppendFormat(dumpString, "  -h\t\t\t|help text for hidumper audio policy\n");
     AppendFormat(dumpString, "  -d\t\t\t|dump devices info\n");
     AppendFormat(dumpString, "  -m\t\t\t|dump ringer mode and call status\n");
     AppendFormat(dumpString, "  -v\t\t\t|dump stream volume info\n");
@@ -2379,8 +2380,9 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -apc\t\t\t|dump audio policy config xml parser info\n");
     AppendFormat(dumpString, "  -s\t\t\t|dump stream info\n");
     AppendFormat(dumpString, "  -xp\t\t\t|dump xml data map\n");
-    AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager Info\n");
+    AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager info\n");
     AppendFormat(dumpString, "  -as\t\t\t|dump audio session info\n");
+    AppendFormat(dumpString, "  -ap\t\t\t|dump audio pipe manager info\n");
 }
 
 int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)

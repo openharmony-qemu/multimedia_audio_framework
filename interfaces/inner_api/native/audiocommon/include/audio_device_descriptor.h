@@ -17,7 +17,7 @@
 #define AUDIO_DEVICE_DESCRIPTOR_H
 
 #include <memory>
-
+#include <map>
 #include "parcel.h"
 #include "audio_device_info.h"
 
@@ -157,6 +157,13 @@ public:
             return lhs->IsSameDeviceDesc(*rhs);
         }
     };
+
+private:
+    bool IsOutput()
+    {
+        return deviceRole_ == OUTPUT_DEVICE;
+    }
+    static const std::map<DeviceType, std::string> deviceTypeStringMap;
 };
 } // namespace AudioStandard
 } // namespace OHOS

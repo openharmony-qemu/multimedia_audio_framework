@@ -131,6 +131,13 @@ std::shared_ptr<AudioCoreService::EventEntry> AudioCoreService::GetEventEntry()
     return eventEntry_;
 }
 
+void AudioCoreService::DumpPipeManager(std::string &dumpString)
+{
+    if (pipeManager_ != nullptr) {
+        pipeManager_->Dump(dumpString);
+    }
+}
+
 int32_t AudioCoreService::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
 {
