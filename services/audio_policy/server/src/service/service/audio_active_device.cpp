@@ -399,7 +399,7 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
 void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFlag deviceFlag,
     const std::string &deviceName)
 {
-    Trace trace("AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
+    Trace trace("KeyAction AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
     AUDIO_INFO_LOG("Active route with type[%{public}d] name[%{public}s]", deviceType, deviceName.c_str());
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back(make_pair(deviceType, deviceFlag));

@@ -25,6 +25,7 @@
 #include "audio_service_log.h"
 #include "audio_effect_server.h"
 #include "media_monitor_manager.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -96,6 +97,8 @@ static void LoadLibraries(const std::vector<Library> &libs, std::vector<std::sha
             AUDIO_ERR_LOG("<log error> loadLibrary fail, please check logs!");
 
             // hisysevent for load engine error
+            Trace trace("SYSEVENT FAULT EVENT LOAD_EFFECT_ENGINE_ERROR, ENGINE_TYPE: "
+                + std::to_string(Media::MediaMonitor::AUDIO_EFFECT_PROCESS_ENGINE));
             std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
                 Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_EFFECT_ENGINE_ERROR,
                 Media::MediaMonitor::FAULT_EVENT);

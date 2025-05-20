@@ -433,13 +433,14 @@ void AudioPolicyService::RestoreSession(const uint32_t &sessionID, RestoreInfo r
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    Trace trace("AudioPolicyService::SelectOutputDevice");
+    Trace trace("KeyAction AudioPolicyService::SelectOutputDevice");
     return audioDeviceLock_.SelectOutputDevice(audioRendererFilter, selectedDesc);
 }
 
 int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
+    Trace trace("KeyAction AudioPolicyService::SelectInputDevice");
     return audioDeviceLock_.SelectInputDevice(audioCapturerFilter, selectedDesc);
 }
 
