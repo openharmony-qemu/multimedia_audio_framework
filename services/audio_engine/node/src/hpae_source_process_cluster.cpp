@@ -32,7 +32,7 @@ HpaeSourceProcessCluster::HpaeSourceProcessCluster(HpaeNodeInfo& nodeInfo)
 #ifdef ENABLE_HIDUMP_DFX
     if (nodeInfo.statusCallback.lock()) {
         HpaeNodeInfo &effectNodeInfo = captureEffectNode_->GetNodeInfo();
-        effectNodeInfo.nodeInfo = "HpaeCaptureEffectNode";
+        effectNodeInfo.nodeName = "HpaeCaptureEffectNode";
         effectNodeInfo.nodeId = nodeInfo.statusCallback.lock()->GetNodeId();
         captureEffectNode_->SetNodeInfo(effectNodeInfo);
     }

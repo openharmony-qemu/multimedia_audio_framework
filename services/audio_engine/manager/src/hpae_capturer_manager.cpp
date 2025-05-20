@@ -257,7 +257,6 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     if (sceneType != HPAE_SCENE_EFFECT_NONE && SafeGetMap(sceneClusterMap_, sceneType)) {
         HpaeNodeInfo micNodeInfo;
-        micNodeInfo.statusCallback = weak_from_this();
         if (sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MIC)) {
             sceneClusterMap_[sceneType]->ConnectWithInfo(sourceInputClusterMap_[mainMicType_], micNodeInfo); // mic
         }
@@ -445,10 +444,10 @@ void HpaeCapturerManager::UpdateAppsUidAndSessionId()
     sessionsId_.clear();
     for (auto &sessionPair : sessionNodeMap_) {
         if (streamInfoMap_.find(sessionPair.first) != streamInfoMap_.end() &&
-            streamInfoMap_.second.state == HPAE_SESSION_RUNNING) {
-                appsUid_.emplace_back(streamInfoMap_[sessionPair.first].uid);
-                sessionsId_.emplace_back(sessionPair.first);
-            }
+            sessionPair.second.state == HPAE_SESSION_RUNNING) {
+            appsUid_.emplace_back(streamInfoMap_[sessionPair.first].uid);
+            sessionsId_.emplace_back(sessionPair.first);
+        }
     }
     if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
         sourceInputClusterMap_[mainMicType_]->UpdateAppsUidAndSessionId(appsUid_, sessionsId_);
