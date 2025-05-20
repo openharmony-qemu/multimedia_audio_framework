@@ -29,8 +29,14 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
-    : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)), sinkInfo_(sinkInfo)
+    : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {
+    nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) / nodeInfo.samplingRate;
+    nodeInfo.samplingRate = sinkInfo.samplingRate;
+    // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.
+    // so we need to make a prediction here on the output of the formatConverter node.
+    // don't worry, Nodeinfo will still be modified during DoProcess.
+    mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA" && nodeInfo.deviceClass != "remote") {
         renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     } else {
@@ -284,6 +290,15 @@ void HpaeProcessCluster::SetConnectedFlag(bool flag)
 bool HpaeProcessCluster::GetConnectedFlag() const
 {
     return isConnectedToOutputCluster;
+}
+
+int32_t HpaeProcessCluster::SetupAudioLimiter()
+{
+    if (mixerNode_ != nullptr) {
+        return mixerNode_->SetupAudioLimiter();
+    }
+    AUDIO_ERR_LOG("mixerNode_ is nullptr");
+    return ERROR;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
