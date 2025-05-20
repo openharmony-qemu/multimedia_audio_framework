@@ -68,7 +68,7 @@ void HpaeCoBufferNode::DoProcess()
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
     OptResult result = ringCache_->GetReadableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get readable size failed");
-    size_t requesetDataLen = nodeInfo_.frameLen * nodeInfo_.channels * sizeof(float) * 1000 / delay_;
+    size_t requesetDataLen = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) * sizeof(float) * 20 / 1000;
     float *data = nullptr;
     CHECK_AND_RETURN_LOG(result.size >= requesetDataLen,
         "Get readable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
@@ -77,13 +77,13 @@ void HpaeCoBufferNode::DoProcess()
     result = ringCache_->Dequeue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
     HpaePcmBuffer tempOut(pcmBufferInfo_);
-    memcpy_s(tempOut.GetPcmDataBuffer(), requesetDataLen, bufferWrap.data, requesetDataLen);
-    tempOut.GetPcmDataBuffer() = data;
-    outputStream_.WriteDataToOutput(tempOut);
+    memcpy_s(tempOut.GetPcmDataBuffer(), requesetDataLen, bufferWrap.dataPtr, requesetDataLen);
+    outputStream_.WriteDataToOutput(&tempOut);
 }
 
 bool HpaeCoBufferNode::Reset()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
@@ -94,6 +94,7 @@ bool HpaeCoBufferNode::Reset()
 
 bool HpaeCoBufferNode::ResetAll()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
@@ -107,25 +108,31 @@ bool HpaeCoBufferNode::ResetAll()
 
 std::shared_ptr<HpaeNode> HpaeCoBufferNode::GetSharedInstance()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return shared_from_this();
 }
 
 OutputPort<HpaePcmBuffer*>* HpaeCoBufferNode::GetOutputPort()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return &outputStream_;
 }
 
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
     HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
-    nodeInfo_ = preNodeInfo;
-    SetBufferSize(nodeInfo_.frameLen * nodeInfo_.channels * sizeof(float) * 1000 / delay_);
+    HpaeNodeInfo nodeInfo = preNodeInfo;
+    nodeInfo.nodeName = "HpaeCoBufferNode";
+    SetNodeInfo(nodeInfo);
+    SetBufferSize(nodeInfo.samplingRate * nodeInfo.channels * sizeof(float) * delay_ / 1000);
     inputStream_.Connect(GetSharedInstance(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
 }
 
 void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("HpaeCoBufferNode disconnect from preNode");
     inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
 }
@@ -133,11 +140,13 @@ void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer
 // todo delete
 size_t HpaeCoBufferNode::GetPreOutNum()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return inputStream_.GetPreOutputNum();
 }
 
 size_t HpaeCoBufferNode::GetOutputPortNum()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return outputStream_.GetInputNum();
 }
 }  // namespace HPAE

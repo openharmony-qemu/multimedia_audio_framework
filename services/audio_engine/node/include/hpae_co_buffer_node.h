@@ -46,9 +46,9 @@ private:
     InputPort<HpaePcmBuffer*> inputStream_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     PcmBufferInfo pcmBufferInfo_;
-    HpaeNodeInfo nodeInfo_;
-    int32_t delay_ = 0;
+    PcmBuffer coBufferOut_;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
+    int32_t delay_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

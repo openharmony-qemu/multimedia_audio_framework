@@ -312,9 +312,9 @@ void HpaeRendererManager::DeleteProcessCluster(
         if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
             // todo hpaeCoBufferNode info更新
             hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+            // triggerback
+            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, shared_from_this());
         }
-        // triggerback
-        TriggerCallback(DISCONNECT_CO_BUFFER_NODE, shared_from_this());
         outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
         sceneClusterMap_[sceneType]->SetConnectedFlag(false);
     }
@@ -403,9 +403,9 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
     if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
         // todo hpaeCoBufferNode info更新
         hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
+        // triggerback
+        TriggerCallback(CONNECT_CO_BUFFER_NODE, shared_from_this());
     }
-    // triggerback
-    TriggerCallback(CONNECT_CO_BUFFER_NODE, shared_from_this());
 }
 
 void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
