@@ -142,11 +142,11 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
 {
     HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
     uint32_t sessionId = preNodeInfo.sessionId;
-    AUDIO_INFO_LOG("HpaeProcessCluster sessionId is %{public}u, streamType is %{public}d, "
+    AUDIO_INFO_LOG("HpaeProcessCluster sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d"
         "HpaeProcessCluster rate is %{public}u, ch is %{public}u, "
         "HpaeProcessCluster preNodeId %{public}u, preNodeName is %{public}s",
-        preNodeInfo.sessionId, preNodeInfo.streamType, preNodeInfo.samplingRate, preNodeInfo.channels,
-        preNodeInfo.nodeId, preNodeInfo.nodeName.c_str());
+        preNodeInfo.sessionId, preNodeInfo.streamType, preNodeInfo.sceneType ,preNodeInfo.samplingRate,
+        preNodeInfo.channels, preNodeInfo.nodeId, preNodeInfo.nodeName.c_str());
     ConnectMixerNode();
     if (!SafeGetMap(idGainMap_, sessionId)) {
         HpaeNodeInfo gainNodeInfo = preNodeInfo;
@@ -197,8 +197,8 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
 {
     uint32_t sessionId = preNode->GetNodeInfo().sessionId;
     AUDIO_INFO_LOG(
-        "Process DisConnect sessionId is %{public}u, streamType is %{public}d",
-        sessionId, preNode->GetNodeInfo().streamType);
+        "Process DisConnect sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d",
+        sessionId, preNode->GetNodeInfo().streamType, preNode->GetNodeInfo().sceneType);
 #ifdef ENABLE_HIDUMP_DFX
     auto callBack = mixerNode_->GetNodeStatusCallback().lock();
     if (callBack != nullptr && SafeGetMap(idConverterMap_, sessionId)) {
