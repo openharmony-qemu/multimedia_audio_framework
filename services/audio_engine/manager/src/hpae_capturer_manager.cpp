@@ -49,11 +49,6 @@ HpaeCapturerManager::~HpaeCapturerManager()
     }
 }
 
-void HpaeCapturerManager::SetCaptureId(uint32_t captureId)
-{
-    captureId_ = captureId;
-}
-
 int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &processorType,
     const AudioEnhanceScene &sceneType)
 {
@@ -637,6 +632,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     sourceInputClusterMap_[mainMicType_]->SetSourceInputNodeType(mainMicType_);  // to do rewrite, optimise
     int32_t ret = sourceInputClusterMap_[mainMicType_]->GetCapturerSourceInstance(
         sourceInfo_.deviceClass, sourceInfo_.deviceNetId, sourceInfo_.sourceType, sourceInfo_.sourceName);
+    captureId_ = sourceInputClusterMap_[mainMicType_]->GetCaptureId();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get mic capturer soruce instance error, ret = %{public}d.\n", ret);
     PrepareCapturerEc(ecNodeInfo);
     PrepareCapturerMicRef(micRefNodeInfo);
@@ -655,6 +651,7 @@ int32_t HpaeCapturerManager::Init()
             AUDIO_INFO_LOG("Init HpaeCapturerManager success");
             TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
             CheckIfAnyStreamRunning();
+            TriggerCallback(GET_CAPTURE_ID, captureId_, sourceInfo_.deviceType);
         }
     };
     SendRequest(request, true);

@@ -20,6 +20,7 @@
 #include <hpae_source_output_node.h>
 #include "audio_engine_log.h"
 #include "hpae_format_convert.h"
+#include "audio_errors.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -71,15 +72,13 @@ void HpaeSourceOutputNode::DoProcess()
         .outputData = (int8_t *)sourceOutputData_.data(),
         .requestDataLen = sourceOutputData_.size(),
     };
-    if (readCallback_.lock()) {
-        int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
-        if (ret != 0) {
-            AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ write read data error", GetSessionId());
-        }
-    } else {
-        AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+    CHECK_AND_RETURN_LOG(readCallback_.lock(), "sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+    int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
+    if (ret == ERR_WRITE_FAILED) {
+        AUDIO_DEBUG_LOG("sessionId %{public}u, readCallback_ write read data overflow", GetSessionId());
         return;
     }
+    CHECK_AND_RETURN_LOG(ret == 0, "sessionId %{public}u, readCallback_ write read data error", GetSessionId());
     totalFrames_ += GetFrameLen();
     framesRead_.store(totalFrames_);
     return;

@@ -187,6 +187,7 @@ private:
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
+    void HandleGetCaptureId(uint32_t captureId, int32_t deviceType);
 
     void SendRequest(Request &&request);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);

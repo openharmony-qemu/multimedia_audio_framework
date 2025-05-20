@@ -60,6 +60,7 @@ public:
     void SetSourceInputNodeType(HpaeSourceInputNodeType type);
     HpaeNodeInfo& GetNodeInfoWithInfo(HpaeSourceBufferType &type);
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
+    uint32_t GetCaptureId() const;
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);
