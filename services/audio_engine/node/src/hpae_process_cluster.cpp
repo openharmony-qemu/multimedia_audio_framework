@@ -29,39 +29,29 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
-    : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)), sinkInfo_(sinkInfo)
+    : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {
-    HpaeNodeInfo nodeInfoTemp = nodeInfo;
-    if (nodeInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || nodeInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
-        nodeInfoTemp.samplingRate = sinkInfo.samplingRate;
-        nodeInfoTemp.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) / nodeInfo.samplingRate;
-    }
-    mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfoTemp);
-    if (nodeInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || nodeInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
-        if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
-            AUDIO_DEBUG_LOG("mixerNode setupAudioLimiter failed, sessionId: %{public}u", nodeInfo.sessionId);
-        } else {
-            AUDIO_INFO_LOG("mixerNode setupAudioLimiter success, sessionId: %{public}u", nodeInfo.sessionId);
-        }
-    }
+    nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) / nodeInfo.samplingRate;
+    nodeInfo.samplingRate = sinkInfo.samplingRate;
+    mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA" && nodeInfo.deviceClass != "remote") {
         renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     } else {
         renderEffectNode_ = nullptr;
     }
 #ifdef ENABLE_HIDUMP_DFX
-    if (nodeInfoTemp.statusCallback.lock()) {
-        nodeInfoTemp.nodeName = "HpaeMixerNode";
-        nodeInfoTemp.sessionId = 0;
-        nodeInfoTemp.nodeId = nodeInfoTemp.statusCallback.lock()->OnGetNodeId();
-        AUDIO_INFO_LOG("HpaeProcessCluster, HpaeMixerNode id %{public}u ", nodeInfoTemp.nodeId);
-        mixerNode_->SetNodeInfo(nodeInfoTemp);
+    if (nodeInfo.statusCallback.lock()) {
+        nodeInfo.nodeName = "HpaeMixerNode";
+        nodeInfo.sessionId = 0;
+        nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
+        AUDIO_INFO_LOG("HpaeProcessCluster, HpaeMixerNode id %{public}u ", nodeInfo.nodeId);
+        mixerNode_->SetNodeInfo(nodeInfo);
         if (renderEffectNode_) {
-            nodeInfoTemp.nodeName = "HpaeRenderEffectNode";
-            nodeInfoTemp.nodeId = nodeInfoTemp.statusCallback.lock()->OnGetNodeId();
-            nodeInfoTemp.sessionId = 0;
-            renderEffectNode_->SetNodeInfo(nodeInfoTemp);
-            AUDIO_INFO_LOG("HpaeProcessCluster, HpaeRenderEffectNode id %{public}u ", nodeInfoTemp.nodeId);
+            nodeInfo.nodeName = "HpaeRenderEffectNode";
+            nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
+            nodeInfo.sessionId = 0;
+            renderEffectNode_->SetNodeInfo(nodeInfo);
+            AUDIO_INFO_LOG("HpaeProcessCluster, HpaeRenderEffectNode id %{public}u ", nodeInfo.nodeId);
         }
     }
 #endif
@@ -297,6 +287,15 @@ void HpaeProcessCluster::SetConnectedFlag(bool flag)
 bool HpaeProcessCluster::GetConnectedFlag() const
 {
     return isConnectedToOutputCluster;
+}
+
+int32_t HpaeProcessCluster::SetupProcessClusterAudioLimiter()
+{
+    if (mixerNode_ != nullptr) {
+        return mixerNode_->SetupAudioLimiter();
+    }
+    AUDIO_ERR_LOG("mixerNode_ is nullptr");
+    return ERROR;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
