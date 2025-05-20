@@ -88,7 +88,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
         AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
     }
     // pass valid tag to next node
-    if (!inputs[0].IsValid()) {
+    if (!inputs[0]->IsValid()) {
         return &silenceData_;
     }
     float *srcData = (*(inputs[0])).GetPcmDataBuffer();
