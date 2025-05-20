@@ -115,7 +115,6 @@ struct HpaeDfxNodeInfo {
     std::string deviceClass;
     std::string deviceNetId;
     std::string nodeName;
-    SourceType sourceType;
 };
 
 class INodeCallback {
