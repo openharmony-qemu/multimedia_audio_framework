@@ -16,7 +16,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeRenderEffectNode"
 #endif
- 
+
 #include <cinttypes>
 #include "audio_errors.h"
 #include "audio_engine_log.h"
@@ -170,6 +170,8 @@ int32_t HpaeRenderEffectNode::SplitCollaborativeData()
 {
     CHECK_AND_RETURN_RET_LOG(effectOutput_.GetChannelCount() == static_cast<uint32_t>(CHANNEL_4), ERROR,
         "collaborative channel count is invalid, count: %{public}d", CHANNEL_4);
+    // need to check whether the sample rate or frame length changes
+    // currently, sample rate and frame length will not change
     float *tempOutput = effectOutput_.GetPcmDataBuffer();
     float *directOutput = directOutput_->GetPcmDataBuffer();
     float *collaborativeOutput = collaborativeOutput_->GetPcmDataBuffer();
@@ -348,13 +350,11 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
             sceneType_.c_str(), nodeInfo_.channels, channels, nodeInfo_.channelLayout, channelLayout);
         nodeInfo_.channels = static_cast<AudioChannel>(channels);
         nodeInfo_.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
+        nodeInfo_.samplingRate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+        nodeInfo_.frameLen = static_cast<uint32_t>(DEFAULT_EFFECT_FRAMELEN);
         PcmBufferInfo pcmBufferInfo = PcmBufferInfo(channels, DEFAULT_EFFECT_FRAMELEN,
             DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames(), effectOutput_.IsMultiFrames());
         effectOutput_.ReConfig(pcmBufferInfo);
-        nodeInfo_.channels = (AudioChannel)channels;
-        nodeInfo_.channelLayout = (AudioChannelLayout)channelLayout;
-        nodeInfo_.samplingRate = (AudioSamplingRate)DEFUALT_EFFECT_RATE;
-        nodeInfo_.frameLen = (uint32_t)DEFAULT_EFFECT_FRAMELEN;
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = GetNodeStatusCallback().lock()) {
             callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), nodeInfo_);
