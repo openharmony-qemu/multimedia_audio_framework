@@ -33,7 +33,7 @@ HpaeSourceProcessCluster::HpaeSourceProcessCluster(HpaeNodeInfo& nodeInfo)
     if (nodeInfo.statusCallback.lock()) {
         HpaeNodeInfo &effectNodeInfo = captureEffectNode_->GetNodeInfo();
         effectNodeInfo.nodeName = "HpaeCaptureEffectNode";
-        effectNodeInfo.nodeId = nodeInfo.statusCallback.lock()->GetNodeId();
+        effectNodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
         captureEffectNode_->SetNodeInfo(effectNodeInfo);
     }
 #endif
