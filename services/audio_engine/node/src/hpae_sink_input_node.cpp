@@ -91,7 +91,11 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
         .deviceNetId = GetDeviceNetId(),
         .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
     GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
-    return writeCallback_.lock()->OnStreamData(streamInfo_);
+    if (writeCallback_.lock() != nullptr) {
+        return writeCallback_.lock()->OnStreamData(streamInfo_);
+    }
+    AUDIO_ERR_LOG("sessionId: %{public}d, writeCallback is nullptr", GetSessionId());
+    return SUCCESS;
 }
 
 std::string HpaeSinkInputNode::GetTraceInfo()
