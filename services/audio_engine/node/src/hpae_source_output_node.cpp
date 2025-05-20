@@ -40,15 +40,6 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
 #endif
 }
 
-std::string HpaeSourceOutputNode::GetTraceInfo()
-{
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    return rate + ch + len + format;
-}
-
 void HpaeSourceOutputNode::DoProcess()
 {
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo());
@@ -144,9 +135,8 @@ void HpaeSourceOutputNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpae
     std::shared_ptr<HpaeNode> realPreNode = preNode->GetSharedInstance(nodeInfo);
     inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeInfo().statusCallback.lock()) {
-        callback->OnNotifyDfxNodeInfo(
-            true, realPreNode->GetNodeId(), GetNodeInfo());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeInfo());
     }
 #endif
 }
@@ -154,6 +144,11 @@ void HpaeSourceOutputNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpae
 void HpaeSourceOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode,

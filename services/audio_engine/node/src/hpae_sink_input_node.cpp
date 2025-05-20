@@ -94,15 +94,6 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
     return writeCallback_.lock()->OnStreamData(streamInfo_);
 }
 
-std::string HpaeSinkInputNode::GetTraceInfo()
-{
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    return rate + ch + len + format;
-}
-
 void HpaeSinkInputNode::DoProcess()
 {
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " +

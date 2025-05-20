@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <vector>
 #include <set>
+#include <sstream>
 #include "hpae_pcm_buffer.h"
 #include "hpae_define.h"
 
@@ -111,6 +112,16 @@ public:
     virtual std::weak_ptr<INodeCallback> GetNodeStatusCallback()
     {
         return nodeInfo_.statusCallback;
+    }
+
+    virtual std::string GetTraceInfo()
+    {
+        std::ostringstream oss;
+        oss << "rate[" << nodeInfo_.samplingRate<< "]_"
+            << "ch[" << static_cast<int32_t>(nodeInfo_.channels) << "]_";
+            << "len[" << nodeInfo_.frameLen << "]_";
+            << "bit[" << static_cast<int32_t>(nodeInfo_.format) << "]";
+        return oss.str();
     }
 private:
     HpaeNodeInfo nodeInfo_;

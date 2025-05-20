@@ -48,6 +48,7 @@ public:
     size_t GetOutputPortNum(HpaeNodeInfo &nodeInfo);
     HpaeSourceInputNodeType GetSourceInputNodeType();
     void SetSourceInputNodeType(HpaeSourceInputNodeType type);
+    void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
 
     // for test
     uint32_t GetConverterNodeCount();

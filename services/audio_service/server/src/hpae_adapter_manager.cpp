@@ -210,7 +210,7 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
     processConfig.originalSessionId = sessionId;
     std::string deviceName;
     int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "getdevicename err: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "get devicename err: %{public}d", ret);
 
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, deviceName);

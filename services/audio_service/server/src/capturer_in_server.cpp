@@ -406,6 +406,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
+    UpdateBufferTimeStamp(dstBuffer);
+
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
     return SUCCESS;
 }
