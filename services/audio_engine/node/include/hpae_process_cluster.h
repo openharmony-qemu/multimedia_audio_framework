@@ -47,6 +47,7 @@ public:
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
     void SetConnectedFlag(bool flag);
     bool GetConnectedFlag() const;
+    int32_t SetupAudioLimiter();
 private:
     void ConnectMixerNode();
     std::shared_ptr<HpaeMixerNode> mixerNode_;

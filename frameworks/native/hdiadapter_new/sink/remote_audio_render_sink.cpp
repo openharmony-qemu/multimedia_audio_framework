@@ -518,7 +518,7 @@ AudioCategory RemoteAudioRenderSink::GetAudioCategory(AudioScene audioScene)
 void RemoteAudioRenderSink::InitSplitStream(const char *splitStreamStr, std::vector<AudioCategory> &splitStreamVector)
 {
     AUDIO_INFO_LOG("splitStreamStr: %{public}s", splitStreamStr);
-    if (splitStreamStr == nullptr) {
+    if (splitStreamStr == nullptr || strlen(splitStreamStr) == 0) {
         splitStreamVector.push_back(AudioCategory::AUDIO_IN_MEDIA);
         AUDIO_INFO_LOG("split stream use default 1");
         return;

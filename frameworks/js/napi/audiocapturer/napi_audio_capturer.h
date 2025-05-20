@@ -68,6 +68,7 @@ private:
         AudioStreamInfo streamInfo;
         Timestamp timeStamp;
         uint32_t overflowCount;
+        bool muteWhenInterrupted;
     };
 
     static napi_status InitAudioCapturer(napi_env env, napi_value &constructor);
@@ -102,6 +103,7 @@ private:
     static napi_value GetOverflowCount(napi_env env, napi_callback_info info);
     static napi_value SetInputDeviceToAccessory(napi_env env, napi_callback_info info);
     static napi_value GetOverflowCountSync(napi_env env, napi_callback_info info);
+    static napi_value SetWillMuteWhenInterrupted(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *argv, const std::string &cbName);
     static napi_value RegisterCapturerCallback(napi_env env, napi_value *argv,

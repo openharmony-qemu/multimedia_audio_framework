@@ -32,6 +32,7 @@ public:
     virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
     virtual bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) = 0;
     virtual bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) = 0;
+    virtual void OnBackgroundMute(const int32_t uid) = 0;
     virtual bool OnQueryBundleNameIsInList(const std::string &bundleName) = 0;
 
     bool hasBTPermission_ = true;
@@ -44,6 +45,7 @@ public:
         ON_QUERY_CLIENT_TYPE,
         ON_CHECK_CLIENT_INFO,
         ON_QUERY_ALLOWED_PLAYBACK,
+        ON_BACKGROUND_MUTE,
         ON_QUERY_BUNDLE_NAME_LIST,
     };
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioManagerListener");

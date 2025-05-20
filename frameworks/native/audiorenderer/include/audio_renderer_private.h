@@ -126,7 +126,6 @@ public:
     bool IsOffloadEnable() override;
 
     int32_t SetSpeed(float speed) override;
-    int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
     bool IsFastRenderer() override;
     void ConcedeStream();
@@ -164,7 +163,7 @@ public:
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
-    mutable bool isStillMuted_ = false;
+    mutable bool isStillZeroStreamVolume_ = false;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -219,6 +218,7 @@ private:
     int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
+    int32_t SetPitch(float pitch);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

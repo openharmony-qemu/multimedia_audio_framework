@@ -78,6 +78,9 @@ struct BasicBufferInfo {
     std::atomic<uint64_t> handlePos;
     std::atomic<int64_t> handleTime;
 
+    std::atomic<uint64_t> position;
+    std::atomic<uint64_t> timeStamp;
+
     std::atomic<float> streamVolume;
     std::atomic<float> duckFactor;
     std::atomic<float> muteFactor;
@@ -186,6 +189,10 @@ public:
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus);
     void GetRestoreInfo(RestoreInfo &restoreInfo);
     void SetRestoreInfo(RestoreInfo restoreInfo);
+
+    void GetTimeStampInfo(uint64_t &position, uint64_t &timeStamp);
+    void SetTimeStampInfo(uint64_t position, uint64_t timeStamp);
+
 private:
     int32_t Init(int dataFd, int infoFd);
     int32_t SizeCheck();

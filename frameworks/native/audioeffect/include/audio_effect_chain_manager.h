@@ -153,7 +153,7 @@ public:
     void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value);
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
-    void UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation);
+    int32_t UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation);
     uint32_t GetSceneTypeToChainCount(const std::string &sceneType);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);

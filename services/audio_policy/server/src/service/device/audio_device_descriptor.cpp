@@ -13,12 +13,49 @@
  * limitations under the License.
  */
 
-#include "audio_service_log.h"
 #include "audio_device_descriptor.h"
+
+#include <cinttypes>
+#include "audio_service_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t API_VERSION_18 = 18;
+
+const std::map<DeviceType, std::string> deviceTypeStringMap = {
+    {DEVICE_TYPE_INVALID, "INVALID"},
+    {DEVICE_TYPE_EARPIECE, "EARPIECE"},
+    {DEVICE_TYPE_SPEAKER, "SPEAKER"},
+    {DEVICE_TYPE_WIRED_HEADSET, "WIRED_HEADSET"},
+    {DEVICE_TYPE_WIRED_HEADPHONES, "WIRED_HEADPHONES"},
+    {DEVICE_TYPE_BLUETOOTH_SCO, "BLUETOOTH_SCO"},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, "BLUETOOTH_A2DP"},
+    {DEVICE_TYPE_BLUETOOTH_A2DP_IN, "BLUETOOTH_A2DP_IN"},
+    {DEVICE_TYPE_MIC, "MIC"},
+    {DEVICE_TYPE_WAKEUP, "WAKEUP"},
+    {DEVICE_TYPE_USB_HEADSET, "USB_HEADSET"},
+    {DEVICE_TYPE_DP, "DP"},
+    {DEVICE_TYPE_REMOTE_CAST, "REMOTE_CAST"},
+    {DEVICE_TYPE_USB_DEVICE, "USB_DEVICE"},
+    {DEVICE_TYPE_ACCESSORY, "ACCESSORY"},
+    {DEVICE_TYPE_REMOTE_DAUDIO, "REMOTE_DAUDIO"},
+    {DEVICE_TYPE_HDMI, "HDMI"},
+    {DEVICE_TYPE_LINE_DIGITAL, "LINE_DIGITAL"},
+    {DEVICE_TYPE_FILE_SINK, "FILE_SINK"},
+    {DEVICE_TYPE_FILE_SOURCE, "FILE_SOURCE"},
+    {DEVICE_TYPE_EXTERN_CABLE, "EXTERN_CABLE"},
+    {DEVICE_TYPE_DEFAULT, "DEFAULT"},
+    {DEVICE_TYPE_USB_ARM_HEADSET, "USB_ARM_HEADSET"}
+};
+
+static const char *DeviceTypeToString(DeviceType type)
+{
+    if (deviceTypeStringMap.count(type) != 0) {
+        return deviceTypeStringMap.at(type).c_str();
+    }
+    return "UNKNOWN";
+}
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(int32_t descriptorType)
     : AudioDeviceDescriptor(DeviceType::DEVICE_TYPE_NONE, DeviceRole::DEVICE_ROLE_NONE)
@@ -401,13 +438,9 @@ bool AudioDeviceDescriptor::IsDistributedSpeaker() const
 
 void AudioDeviceDescriptor::Dump(std::string &dumpString)
 {
-    dumpString += "deviceName: " + deviceName_ + " deviceRole: ";
-    if (deviceRole_ != INPUT_DEVICE && deviceRole_ != OUTPUT_DEVICE) {
-        dumpString += "INVALID";
-    } else {
-        dumpString += deviceRole_ == INPUT_DEVICE ? "INPUT" : "OUTPUT";
-    }
-    dumpString += " deviceType: " + std::to_string(deviceType_);
+    AppendFormat(dumpString, "      - device %d: role %s type %d (%s) name: %s\n",
+        deviceId_, IsOutput() ? "Output" : "Input",
+        deviceType_, DeviceTypeToString(deviceType_), deviceName_.c_str());
 }
 
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVersion) const

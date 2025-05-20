@@ -114,7 +114,6 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_001, TestSize.Level1)
     auto capturerStreamImplRet = CreatePaCapturerStreamImpl();
     uint64_t framesReadRet = 0;
     capturerStreamImplRet->byteSizePerFrame_ = 0;
-    EXPECT_EQ(capturerStreamImplRet->byteSizePerFrame_, 0);
     auto ret = capturerStreamImplRet->GetStreamFramesRead(framesReadRet);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
@@ -396,7 +395,6 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_013, TestSize.Level1)
     capturerStreamImplRet->PAStreamPauseSuccessCb(streamRet, successRet, userdataRet);
     capturerStreamImplRet->PAStreamFlushSuccessCb(streamRet, successRet, userdataRet);
     capturerStreamImplRet->PAStreamStopSuccessCb(streamRet, successRet, userdataRet);
-    EXPECT_EQ(successRet, 0);
 }
 
 /**

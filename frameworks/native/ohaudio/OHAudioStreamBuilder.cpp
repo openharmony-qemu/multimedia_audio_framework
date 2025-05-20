@@ -182,6 +182,14 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerErrorCallback(OH_AudioStr
     return audioStreamBuilder->SetCapturerErrorCallback(callback, userData);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerWillMuteWhenInterrupted(OH_AudioStreamBuilder* builder,
+    bool muteWhenInterrupted)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    return audioStreamBuilder->SetMuteWhenInterrupted(muteWhenInterrupted);
+}
+
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(OH_AudioStreamBuilder *builder,
     OH_AudioRenderer_OutputDeviceChangeCallback callback, void *userData)
 {
@@ -396,6 +404,11 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSourceType(SourceType type)
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OHAudioStreamBuilder::SetMuteWhenInterrupted(bool muteWhenInterrupted)
+{
+    strategy_ = muteWhenInterrupted ? InterruptStrategy::MUTE : InterruptStrategy::DEFAULT;
+    return AUDIOSTREAM_SUCCESS;
+}
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetLatencyMode(int32_t latencyMode)
 {
@@ -496,6 +509,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         audioCapturer->SetCapturerInterruptEventCallbackType(interruptCallbackType_);
         audioCapturer->SetCapturerErrorCallbackType(errorCallbackType_);
         audioCapturer->SetCapturerCallback(capturerCallbacks_, userData_);
+        audioCapturer->SetCapturerWillMuteWhenInterrupted(strategy_);
         if (nullptr == capturer) {
             AUDIO_ERR_LOG("capturer is nullptr");
             delete audioCapturer;

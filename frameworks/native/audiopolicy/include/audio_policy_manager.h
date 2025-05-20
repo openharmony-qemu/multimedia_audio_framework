@@ -178,6 +178,10 @@ public:
 
     int32_t UnsetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
 
+    int32_t SetActiveVolumeTypeCallback(const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback);
+
+    int32_t UnsetActiveVolumeTypeCallback(const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback);
+
     int32_t UnsetRingerModeCallback(const int32_t clientId);
 
     int32_t UnsetRingerModeCallback(const int32_t clientId,
@@ -555,6 +559,12 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
+    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
+
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
+
+    int32_t ResetAllProxy();
+
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
@@ -567,6 +577,8 @@ public:
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
 
     int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
+
+    int32_t SetBackgroundMuteCallback(const std::shared_ptr<AudioBackgroundMuteCallback> &callback);
 
     int32_t SetAudioFormatUnsupportedErrorCallback(
         const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback);
@@ -586,6 +598,15 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+
+    int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage);
+    int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage);
+    int32_t GetVolumeLevelByUsage(StreamUsage streamUsage);
+    bool GetStreamMuteByUsage(StreamUsage streamUsage);
+    int32_t SetStreamVolumeChangeCallback(const int32_t clientPid, const std::set<StreamUsage> &streamUsages,
+        const std::shared_ptr<StreamVolumeChangeCallback> &callback);
+    int32_t UnsetStreamVolumeChangeCallback(const std::shared_ptr<StreamVolumeChangeCallback> &callback);
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

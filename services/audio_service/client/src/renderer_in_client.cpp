@@ -368,7 +368,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
     }
-    if (curStreamParams_.encoding == ENCODING_PCM) {
+    if (curStreamParams_.encoding == ENCODING_PCM || curStreamParams_.encoding == ENCODING_EAC3) {
         if (bufferDesc.dataLength != 0) {
             result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
             sleepCount_ = LOG_COUNT_LIMIT;

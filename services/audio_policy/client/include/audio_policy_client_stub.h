@@ -30,6 +30,7 @@ public:
     virtual int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
         MessageOption &option) override;
 private:
+    void HandleActiveVolumeTypeChange(MessageParcel &data, MessageParcel &reply);
     void HandleAppVolumeChange(MessageParcel &data, MessageParcel &reply);
     void HandleVolumeKeyEvent(MessageParcel &data, MessageParcel &reply);
     void HandleAudioFocusInfoChange(MessageParcel &data, MessageParcel &reply);
@@ -56,7 +57,8 @@ private:
     void HandleAudioSessionCallback(MessageParcel &data, MessageParcel &reply);
     void HandleAudioSceneChange(MessageParcel &data, MessageParcel &reply);
     void HandleFormatUnsupportedError(MessageParcel &data, MessageParcel &reply);
-    
+    void HandleStreamVolumeChange(MessageParcel &data, MessageParcel &reply);
+
     void OnMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
     void OnFirMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
 };

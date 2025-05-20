@@ -245,7 +245,9 @@ const std::map<std::string, int32_t> NapiAudioEnum::interruptHintTypeMap = {
     {"INTERRUPT_HINT_RESUME", INTERRUPT_HINT_RESUME},
     {"INTERRUPT_HINT_STOP", INTERRUPT_HINT_STOP},
     {"INTERRUPT_HINT_DUCK", INTERRUPT_HINT_DUCK},
-    {"INTERRUPT_HINT_UNDUCK", INTERRUPT_HINT_UNDUCK}
+    {"INTERRUPT_HINT_UNDUCK", INTERRUPT_HINT_UNDUCK},
+    {"INTERRUPT_HINT_MUTE", INTERRUPT_HINT_MUTE},
+    {"INTERRUPT_HINT_UNMUTE", INTERRUPT_HINT_UNMUTE},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioSampleFormatMap = {
@@ -1630,6 +1632,27 @@ bool NapiAudioEnum::IsLegalInputArgumentSpatializationSceneType(int32_t spatiali
             break;
     }
     return result;
+}
+
+AudioScene NapiAudioEnum::GetJsAudioScene(AudioScene audioScene)
+{
+    AudioScene newAudioScene = AudioScene::AUDIO_SCENE_DEFAULT;
+    switch (audioScene) {
+        case AudioScene::AUDIO_SCENE_DEFAULT:
+        case AudioScene::AUDIO_SCENE_RINGING:
+        case AudioScene::AUDIO_SCENE_PHONE_CALL:
+        case AudioScene::AUDIO_SCENE_PHONE_CHAT:
+            newAudioScene = audioScene;
+            break;
+        case AudioScene::AUDIO_SCENE_VOICE_RINGING:
+            newAudioScene = AudioScene::AUDIO_SCENE_RINGING;
+            break;
+        default:
+            newAudioScene = AudioScene::AUDIO_SCENE_DEFAULT;
+            AUDIO_ERR_LOG("Unknown audio scene, Set it to default AUDIO_SCENE_DEFAULT!");
+            break;
+    }
+    return newAudioScene;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

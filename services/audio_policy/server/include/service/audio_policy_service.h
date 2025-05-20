@@ -76,6 +76,7 @@
 #include "audio_device_lock.h"
 #include "audio_capturer_session.h"
 #include "audio_device_status.h"
+#include "audio_background_manager.h"
 #include "audio_global_config_manager.h"
 
 namespace OHOS {
@@ -477,6 +478,9 @@ public:
     bool IsCurrentActiveDeviceA2dp();
 
     int32_t SetVoiceRingtoneMute(bool isMute);
+    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
+    int32_t ResetAllProxy();
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
@@ -496,11 +500,14 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
+    int32_t SetBackgroundMuteCallback(const sptr<IRemoteObject> &object);
+    void SubscribeBackgroundTask();
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
 
-    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, std::string callerName,
+    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, int32_t appUid,
         std::string invocationTime);
     void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
     void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
@@ -530,6 +537,7 @@ private:
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioSceneManager_(AudioSceneManager::GetInstance()),
+        audioBackgroundManager_(AudioBackgroundManager::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioVolumeManager_(AudioVolumeManager::GetInstance()),
         audioEcManager_(AudioEcManager::GetInstance()),
@@ -686,6 +694,7 @@ private:
     AudioActiveDevice& audioActiveDevice_;
     AudioA2dpDevice& audioA2dpDevice_;
     AudioSceneManager& audioSceneManager_;
+    AudioBackgroundManager& audioBackgroundManager_;
     AudioOffloadStream& audioOffloadStream_;
     AudioVolumeManager& audioVolumeManager_;
     AudioEcManager& audioEcManager_;
@@ -696,7 +705,6 @@ private:
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
 
-    sptr<IStandardAudioPolicyManagerListener> policyManagerListener_;
 };
 
 class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {

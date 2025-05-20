@@ -43,6 +43,13 @@ namespace {
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
 }
 
+enum AudioByteSize : int32_t {
+    BYTE_SIZE_SAMPLE_U8 = 1,
+    BYTE_SIZE_SAMPLE_S16 = 2,
+    BYTE_SIZE_SAMPLE_S24 = 3,
+    BYTE_SIZE_SAMPLE_S32 = 4,
+};
+
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
 {
     processConfig_ = processConfig;
@@ -136,6 +143,8 @@ int32_t CapturerInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct CapturerInServer failed: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
+    capturerClock_ = CapturerClockManager::GetInstance().CreateCapturerClock(
+        streamIndex_, processConfig_.streamInfo.samplingRate);
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ConfigServerBuffer failed: %{public}d", ret);
     stream_->RegisterStatusCallback(shared_from_this());
@@ -149,6 +158,10 @@ int32_t CapturerInServer::Init()
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpS2C_);
     recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, streamIndex_);
+    AudioService::GetInstance()->RegisterMuteStateChangeCallback(streamIndex_, [this](bool flag) {
+        AUDIO_INFO_LOG("recv mute state change flag %{public}d", flag ? 1 : 0);
+        muteFlag_ = flag;
+    });
 
     return SUCCESS;
 }
@@ -240,6 +253,50 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
     return false;
 }
 
+static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
+{
+    uint32_t byteSize = 0;
+    switch (format) {
+        case AudioSampleFormat::SAMPLE_U8:
+            byteSize = BYTE_SIZE_SAMPLE_U8;
+            break;
+        case AudioSampleFormat::SAMPLE_S16LE:
+            byteSize = BYTE_SIZE_SAMPLE_S16;
+            break;
+        case AudioSampleFormat::SAMPLE_S24LE:
+            byteSize = BYTE_SIZE_SAMPLE_S24;
+            break;
+        case AudioSampleFormat::SAMPLE_S32LE:
+            byteSize = BYTE_SIZE_SAMPLE_S32;
+            break;
+        case AudioSampleFormat::SAMPLE_F32LE:
+            byteSize = BYTE_SIZE_SAMPLE_S32;
+            break;
+        default:
+            byteSize = BYTE_SIZE_SAMPLE_S16;
+            break;
+    }
+    return byteSize;
+}
+
+void CapturerInServer::UpdateBufferTimeStamp(const BufferDesc &dstBuffer)
+{
+    CHECK_AND_RETURN_LOG(capturerClock_ != nullptr, "capturerClock_ is nullptr");
+    uint64_t timestamp = 0;
+    uint32_t sizePerPos = static_cast<uint32_t>(GetByteSizeByFormat(processConfig_.streamInfo.format)) *
+        processConfig_.streamInfo.channels;
+
+    curProcessPos_ += dstBuffer.bufLength / sizePerPos;
+
+    if (!capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp)) {
+        AUDIO_ERR_LOG("GetTimeStampByPosition fail!");
+    }
+
+    AUDIO_DEBUG_LOG("update buffer timestamp pos:%{public}" PRIu64 " ts:%{public}" PRIu64,
+        curProcessPos_, timestamp);
+    audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
+}
+
 void CapturerInServer::ReadData(size_t length)
 {
     CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
@@ -264,10 +321,12 @@ void CapturerInServer::ReadData(size_t length)
     }
 
     BufferDesc dstBuffer = {nullptr, 0, 0};
+
     uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
     if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
         return;
     }
+
     if ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
@@ -286,6 +345,8 @@ void CapturerInServer::ReadData(size_t length)
     uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
     audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
+
+    UpdateBufferTimeStamp(dstBuffer);
 
     stream_->EnqueueBuffer(srcBuffer);
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
@@ -306,7 +367,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
-        return ERR_READ_FAILED;
+        return ERR_WRITE_FAILED;
     }
     Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
@@ -323,9 +384,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 
     BufferDesc dstBuffer = {nullptr, 0, 0};
     uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
-    if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
-        return ERR_READ_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) >= 0, ERR_READ_FAILED,
+        "GetWriteBuffer failed");
     if ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
@@ -467,12 +527,18 @@ int32_t CapturerInServer::StartInner()
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
+
+    if (capturerClock_ != nullptr) {
+        capturerClock_->Start();
+    }
+
     return SUCCESS;
 }
 
 int32_t CapturerInServer::Pause()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
+
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
@@ -484,6 +550,9 @@ int32_t CapturerInServer::Pause()
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
+    if (capturerClock_ != nullptr) {
+        capturerClock_->Stop();
+    }
     return SUCCESS;
 }
 
@@ -531,6 +600,9 @@ int32_t CapturerInServer::DrainAudioBuffer()
 int32_t CapturerInServer::Stop()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
+    if (capturerClock_ != nullptr) {
+        capturerClock_->Stop();
+    }
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
         AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
@@ -570,6 +642,9 @@ int32_t CapturerInServer::Release()
         return ret;
     }
     status_ = I_STATUS_RELEASED;
+
+    capturerClock_ = nullptr;
+    CapturerClockManager::GetInstance().DeleteCapturerClock(streamIndex_);
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         AUDIO_INFO_LOG("Disable inner capturer for %{public}u, innerCapId :%{public}d, innerCapMode:%{public}d",

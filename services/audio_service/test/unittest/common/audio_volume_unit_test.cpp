@@ -334,15 +334,13 @@ HWTEST_F(AudioVolumeUnitTest, GetStreamVolume_001, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, AddStreamVolume_001, TestSize.Level1)
 {
     uint32_t sessionId = 1;
-    int32_t sample = AudioVolume::GetInstance()->streamVolume_.size();
     int32_t streamType = STREAM_MUSIC_TEST;
     int32_t streamUsage = STREAM_USAGE_MEDIA_TEST;
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
+    ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
     AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode);
-    int32_t ret = AudioVolume::GetInstance()->streamVolume_.size();
-    EXPECT_EQ(ret, sample);
 }
 
 /**

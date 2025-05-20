@@ -24,6 +24,7 @@
 #include "audio_proxy_manager.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
+#include "capturer_clock_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -132,6 +133,8 @@ private:
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
     bool muteState_ = false;
+
+    std::shared_ptr<AudioSourceClock> audioSrcClock_ = nullptr;
 };
 
 } // namespace AudioStandard

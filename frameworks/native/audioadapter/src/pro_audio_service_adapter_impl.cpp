@@ -90,6 +90,10 @@ int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const Au
 
 int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, bool isSync)
 {
+    if (audioHandleIndex <= 0) {
+        AUDIO_ERR_LOG("Core modules, not allowed to close!");
+        return ERROR;
+    }
     AUDIO_INFO_LOG("CloseAudioPort:audioHandleIndex:%{public}d isSync [%{public}d]", audioHandleIndex, isSync);
     Trace trace("CloseAudioPort");
     lock_guard<mutex> lock(lock_);
@@ -161,7 +165,7 @@ int32_t ProAudioServiceAdapterImpl::SetDefaultSource(string name)
     lock_guard<mutex> lock(lock_);
     Trace trace("SetDefaultSource:" + name);
     IHpaeManager::GetHpaeManager().SetDefaultSource(name);
-    AUDIO_INFO_LOG("SetDefaultSink: [%{public}s]", name.c_str());
+    AUDIO_INFO_LOG("SetDefaultSource: [%{public}s]", name.c_str());
     return SUCCESS;
 }
 
@@ -286,7 +290,7 @@ int32_t ProAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setMut
 
 std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
 {
-    AUDIO_INFO_LOG("GetAllSinkInputs Enter");
+    AUDIO_INFO_LOG("Enter");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinkInputs", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("GetAllSinkInputs timeout");

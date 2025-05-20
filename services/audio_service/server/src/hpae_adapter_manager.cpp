@@ -29,9 +29,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const char* PRO_INNER_CAPTURER_SOURCE = "Speaker.monitor";
-const char* PRO_NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
-const char* PRO_MONITOR_SOURCE_SUFFIX = ".monitor";
+const char* PRO_INNER_CAPTURER_SOURCE = "Speaker";
+const char* PRO_DUAL_PLAYBACK_SINK = "Speaker";
 
 HpaeAdapterManager::HpaeAdapterManager(ManagerType type)
 {
@@ -44,7 +43,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     AUDIO_DEBUG_LOG("Create renderer start");
     uint32_t sessionId = 0;
     sessionId = processConfig.originalSessionId;
-    if (managerType_ == DUP_PLAYBACK ||
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK ||
         processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
         AUDIO_ERR_LOG("Create [%{public}d] type renderer:[%{public}u] error",
@@ -184,12 +183,14 @@ int32_t HpaeAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processCo
                 deviceName = PRO_INNER_CAPTURER_SOURCE;
             }
         } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
-            deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME) + std::string(PRO_MONITOR_SOURCE_SUFFIX);
+            deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
         }
         return PolicyHandler::GetInstance().NotifyCapturerAdded(processConfig.capturerInfo,
             processConfig.streamInfo, sessionId);
     } else if (managerType_ == DUP_PLAYBACK) {
         deviceName = std::string(INNER_CAPTURER_SINK) + std::to_string(processConfig.innerCapId);
+    } else if (managerType_ == DUAL_PLAYBACK) {
+        deviceName = PRO_DUAL_PLAYBACK_SINK;
     }
     return SUCCESS;
 }
@@ -256,13 +257,16 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
     const std::string &deviceName)
 {
     std::lock_guard<std::mutex> lock(paElementsMutex_);
+    bool isCallbackMode = true;
     if (managerType_ == DUP_PLAYBACK) {
         // todo check
         processConfig.isInnerCapturer = true;
         AUDIO_INFO_LOG("Create dup playback renderer stream");
+    } else if (managerType_ == DUAL_PLAYBACK) {
+        isCallbackMode = false;
     }
     std::shared_ptr<HpaeRendererStreamImpl> rendererStream =
-        std::make_shared<HpaeRendererStreamImpl>(processConfig);
+        std::make_shared<HpaeRendererStreamImpl>(processConfig, isCallbackMode);
     if (rendererStream->InitParams(deviceName) != SUCCESS) {
         AUDIO_ERR_LOG("Create rendererStream Failed");
         return nullptr;

@@ -236,6 +236,7 @@ void HpaeInnerCapturerManager::InitSinkInner()
     nodeInfo.nodeId = 0;
     nodeInfo.samplingRate = sinkInfo_.samplingRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
+    nodeInfo.deviceClass = sinkInfo_.deviceClass;
     hpaeInnerCapSinkNode_ = std::make_unique<HpaeInnerCapSinkNode>(nodeInfo);
     AUDIO_INFO_LOG("Init innerCapSinkNode");
     hpaeInnerCapSinkNode_->InnerCapturerSinkInit();
@@ -620,6 +621,9 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
 
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
         rendererSceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+        if (rendererSceneClusterMap_[nodeInfo.sceneType]->SetupAudioLimiter() != SUCCESS) {
+            AUDIO_ERR_LOG("SetupAudioLimiter failed, sessionId %{public}u", nodeInfo.sessionId);
+        }
     }
     // todo change nodeInfo
     return SUCCESS;

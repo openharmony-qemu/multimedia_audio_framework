@@ -328,6 +328,7 @@ config("audio_service_config") {
     "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
+    "../../frameworks/native/audioclock/include",
   ]
 
   cflags = []
@@ -396,6 +397,10 @@ audio_ohos_library("audio_process_service") {
   }
 
   configs = [ ":audio_service_config" ]
+  
+  include_dirs = [
+    "../../services/audio_engine/plugin/channel_converter/include",
+  ]
 
   deps = [
     ":audio_common",
@@ -405,7 +410,9 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_engine:audio_engine_manager",
+    "../audio_engine:audio_engine_plugins",
     "../audio_policy:audio_foundation",
+    "../../frameworks/native/audioclock:audio_clock",
   ]
 
   external_deps = [

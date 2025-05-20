@@ -503,6 +503,12 @@ public:
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
+    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession) override;
+
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze) override;
+
+    int32_t ResetAllProxy() override;
+
     int32_t SetVirtualCall(const bool isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -510,8 +516,20 @@ public:
 
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetBackgroundMuteCallback(const sptr<IRemoteObject> &object) override;
+
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) override;
+
+    int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    bool GetStreamMuteByUsage(StreamUsage streamUsage) override;
+
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
@@ -546,7 +564,6 @@ public:
         ~PerStateChangeCbCustomizeCallback() {}
 
         void PermStateChangeCallback(Security::AccessToken::PermStateChangeInfo& result);
-        int32_t getUidByBundleName(std::string bundle_name, int user_id);
         void UpdateMicPrivacyByCapturerState(bool targetMuteState, uint32_t targetTokenId, int32_t appUid);
 
         bool ready_;
@@ -578,7 +595,6 @@ public:
     void CheckHibernateState(bool hibernate);
     // for S4 reboot update safevolume
     void UpdateSafeVolumeByS4();
-    AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
 
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
@@ -693,6 +709,7 @@ private:
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
+    void SubscribeBackgroundTask();
     void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);
     void RegisterDefaultVolumeTypeListener();
 
@@ -754,7 +771,6 @@ private:
     using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     pid_t lastMicMuteSettingPid_ = 0;
-    std::string GetBundleName();
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
     AudioPolicyDump &audioPolicyDump_;
     int32_t sessionIdByRemote_ = -1;

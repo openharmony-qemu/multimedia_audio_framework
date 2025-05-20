@@ -428,6 +428,12 @@ public:
 
     virtual int32_t SetVoiceRingtoneMute(bool isMute) = 0;
 
+    virtual int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession) = 0;
+
+    virtual int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze) = 0;
+
+    virtual int32_t ResetAllProxy() = 0;
+
     virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
 
     virtual int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -455,10 +461,22 @@ public:
 
     virtual int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) = 0;
 
+    virtual int32_t SetBackgroundMuteCallback(const sptr<IRemoteObject> &object) = 0;
+
     virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) = 0;
     
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
+
+    virtual int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) = 0;
+
+    virtual int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) = 0;
+
+    virtual int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) = 0;
+
+    virtual bool GetStreamMuteByUsage(StreamUsage streamUsage) = 0;
+
+    virtual int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

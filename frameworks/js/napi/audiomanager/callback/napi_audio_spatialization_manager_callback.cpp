@@ -147,7 +147,7 @@ int32_t NapiAudioSpatializationEnabledChangeCallback::GetSpatializationEnabledCh
 
 void NapiAudioSpatializationEnabledChangeCallback::OnSpatializationEnabledChange(const bool &enabled)
 {
-    AUDIO_INFO_LOG("OnSpatializationEnabledChange entered");
+    AUDIO_INFO_LOG("enter");
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (auto it = spatializationEnabledChangeCbList_.begin(); it != spatializationEnabledChangeCbList_.end(); it++) {
@@ -346,7 +346,7 @@ int32_t NapiAudioCurrentSpatializationEnabledChangeCallback::GetCurrentSpatializ
 void NapiAudioCurrentSpatializationEnabledChangeCallback::OnSpatializationEnabledChangeForCurrentDevice(
     const bool &enabled)
 {
-    AUDIO_INFO_LOG("OnSpatializationEnabledChangeForCurrentDevice entered");
+    AUDIO_INFO_LOG("enter");
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (auto it = spatializationEnabledChangeCbForCurrentDeviceList_.begin();
@@ -534,7 +534,7 @@ int32_t NapiAudioHeadTrackingEnabledChangeCallback::GetHeadTrackingEnabledChange
 
 void NapiAudioHeadTrackingEnabledChangeCallback::OnHeadTrackingEnabledChange(const bool &enabled)
 {
-    AUDIO_INFO_LOG("OnHeadTrackingEnabledChange entered");
+    AUDIO_INFO_LOG("enter");
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); it++) {

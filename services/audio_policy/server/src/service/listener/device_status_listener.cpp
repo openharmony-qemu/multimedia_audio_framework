@@ -20,7 +20,7 @@
 #include <securec.h>
 #include <cstring>
 #include "hdf_device_class.h"
-#include "v4_0/audio_types.h"
+#include "v5_0/audio_types.h"
 
 #ifdef BLUETOOTH_ENABLE
 
