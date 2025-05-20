@@ -222,7 +222,8 @@ private:
     std::unordered_map<uint32_t, SourceOutput> sourceOutputs_;
     std::unordered_map<std::string, uint32_t> sinkNameSinkIdMap_;  // todo
     std::unordered_map<uint32_t, std::string> sinkIdSinkNameMap_;
-    std::string defaultSink_ = "Speaker";
+    std::string defaultSink_ = "";
+    std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
     std::string defaultSource_ = "Built_in_mic";
