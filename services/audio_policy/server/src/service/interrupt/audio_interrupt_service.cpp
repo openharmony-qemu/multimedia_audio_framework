@@ -1825,6 +1825,10 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
             bool bConcurrency = IsAudioSourceConcurrency(existSourceType, incomingSourceType,
                 existConcurrentSources, incomingConcurrentSources);
             if (EvaluateWhetherContinue(incoming, inprocessing, focusEntry, bConcurrency)) { continue; }
+            if (focusEntry.hintType == INTERRUPT_HINT_STOP &&
+                GetClientTypeByStreamId(inprocessing.streamId) == CLIENT_TYPE_GAME) {
+                focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+            }
             auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
             if (pos == HINT_STATE_MAP.end()) { continue; }
             if (focusEntry.actionOn == CURRENT) {
