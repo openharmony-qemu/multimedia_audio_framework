@@ -233,6 +233,10 @@ static void UpdatePrimaryInstance(std::shared_ptr<IAudioRenderSink> &sink,
 #ifdef SUPPORT_LOW_LATENCY
         AUDIO_INFO_LOG("Use fast capturer source instance");
         source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
+        if (source && !source->IsInited()) {
+            AUDIO_INFO_LOG("Use fast capturer voip source instance");
+            source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
+        }
 #endif
     }
 }
