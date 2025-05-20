@@ -262,6 +262,11 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetSourceInputNodeOutputPor
     CHECK_AND_RETURN_RET_LOG(sourceInputNode_, nullptr, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetOutputPort();
 }
+
+uint32_t HpaeSourceInputCluster::GetCaptureId()
+{
+    return sourceInputNode_->GetCaptureId();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

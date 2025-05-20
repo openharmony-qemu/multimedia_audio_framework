@@ -48,6 +48,7 @@ public:
     size_t GetOutputPortNum(HpaeNodeInfo &nodeInfo);
     HpaeSourceInputNodeType GetSourceInputNodeType();
     void SetSourceInputNodeType(HpaeSourceInputNodeType type);
+    uint32_t GetCaptureId();
 
     // for test
     uint32_t GetConverterNodeCount();
