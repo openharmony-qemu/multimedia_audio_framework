@@ -35,7 +35,6 @@ static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
     SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_REMOTE_CAST};
 }  // namespace
 constexpr int32_t SINK_INVALID_ID = -1;
-static const std::string DEFAULT_SINK_NAME = "Speaker";
 
 // base + offset * 8
 static uint32_t GetRenderId(const std::string &deviceClass)
@@ -316,6 +315,11 @@ int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo,
     rendererManagerMap_[audioModuleInfo.name] = rendererManager;
     sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
+    if (defaultSink_ == "" && coreSink_ == "") {
+        defaultSink_ = audioModuleInfo.name;
+        coreSink_ = audioModuleInfo.name;
+        AUDIO_INFO_LOG("SetDefaultSink name: %{pubilc}s", defaultSink_.c_str();
+    }
     rendererManager->Init();
     rendererManager->RegisterSendMsgCallback(weak_from_this());
     AUDIO_INFO_LOG(
