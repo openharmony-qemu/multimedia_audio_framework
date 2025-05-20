@@ -1164,8 +1164,7 @@ void AudioCaptureSource::DumpData(char *frame, uint64_t &replyBytes)
     VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void*>(frame), replyBytes);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(frame), replyBytes);
     }
 }
 
