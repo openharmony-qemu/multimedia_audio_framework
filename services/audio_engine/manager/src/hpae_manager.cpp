@@ -471,12 +471,12 @@ int32_t HpaeManager::CloseOutAudioPort(std::string &sinkName)
         AUDIO_WARNING_LOG("can not find sinkName: %{public}s in rendererManagerMap_", sinkName.c_str());
         return SUCCESS;
     }
-    if (sinkName == defaultSink_ && defaultSink_ != DEFAULT_SINK_NAME) {
-        if (GetRendererManagerByName(DEFAULT_SINK_NAME) != nullptr) {
-            AUDIO_INFO_LOG("reset default sink to primary.");
-            defaultSink_ = DEFAULT_SINK_NAME;
+    if (sinkName == defaultSink_ && defaultSink_ != coreSink_) {
+        if (GetRendererManagerByName(coreSink_) != nullptr) {
+            AUDIO_INFO_LOG("reset default sink to core sink.");
+            defaultSink_ = coreSink_;
         } else {
-            AUDIO_ERR_LOG("can not find primary sink to replace default sink.");
+            AUDIO_ERR_LOG("can not find core sink to replace default sink.");
         }
     }
     rendererManagerMap_[sinkName]->DeInit(sinkName != defaultSink_);
