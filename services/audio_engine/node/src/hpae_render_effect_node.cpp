@@ -16,7 +16,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeRenderEffectNode"
 #endif
- 
+
 #include <cinttypes>
 #include "audio_errors.h"
 #include "audio_engine_log.h"
@@ -350,13 +350,11 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
             sceneType_.c_str(), nodeInfo_.channels, channels, nodeInfo_.channelLayout, channelLayout);
         nodeInfo_.channels = static_cast<AudioChannel>(channels);
         nodeInfo_.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
+        nodeInfo_.samplingRate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+        nodeInfo_.frameLen = static_cast<uint32_t>(DEFAULT_EFFECT_FRAMELEN);
         PcmBufferInfo pcmBufferInfo = PcmBufferInfo(channels, DEFAULT_EFFECT_FRAMELEN,
             DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames(), effectOutput_.IsMultiFrames());
         effectOutput_.ReConfig(pcmBufferInfo);
-        nodeInfo_.channels = (AudioChannel)channels;
-        nodeInfo_.channelLayout = (AudioChannelLayout)channelLayout;
-        nodeInfo_.samplingRate = (AudioSamplingRate)DEFUALT_EFFECT_RATE;
-        nodeInfo_.frameLen = (uint32_t)DEFAULT_EFFECT_FRAMELEN;
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = GetNodeStatusCallback().lock()) {
             callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), nodeInfo_);
