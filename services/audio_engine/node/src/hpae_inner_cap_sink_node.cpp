@@ -41,7 +41,7 @@ HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
     sleepTime_ = std::chrono::nanoseconds(0);
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeInnerCapSinkNode_bit_" +
-                       std::to_string(sizeof(float)) + "_ch_" + std::to_string(GetChannelCount()) +
+                       std::to_string(SAMPLE_F32LE) + "_ch_" + std::to_string(GetChannelCount()) +
                        "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
 }
@@ -56,7 +56,7 @@ void HpaeInnerCapSinkNode::DoProcess()
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump((int8_t *)outputData->GetPcmDataBuffer(), GetChannelCount() *
-            GetFrameLen() * GetSizeFromFormat(sizeof(float)));
+            GetFrameLen() * GetSizeFromFormat(SAMPLE_F32LE));
     }
 #endif
     // no need convert
