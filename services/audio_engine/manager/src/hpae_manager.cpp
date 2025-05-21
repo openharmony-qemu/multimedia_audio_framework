@@ -318,7 +318,7 @@ int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo,
     if (defaultSink_ == "" && coreSink_ == "") {
         defaultSink_ = audioModuleInfo.name;
         coreSink_ = audioModuleInfo.name;
-        AUDIO_INFO_LOG("SetDefaultSink name: %{pubilc}s", defaultSink_.c_str());
+        AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", defaultSink_.c_str());
     }
     rendererManager->Init();
     rendererManager->RegisterSendMsgCallback(weak_from_this());
