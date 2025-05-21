@@ -505,7 +505,7 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
-   return true;
+    return SUCCESS;
 }
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
