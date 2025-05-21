@@ -1275,66 +1275,66 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterTracker_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test IsDevicePlaybackSupport.
- * @tc.number: IsDevicePlaybackSupport_001
- * @tc.desc  : Test IsDevicePlaybackSupport interfaces.
+ * @tc.name  : Test IsDevicePlaybackSupported.
+ * @tc.number: IsDevicePlaybackSupported_001
+ * @tc.desc  : Test IsDevicePlaybackSupported interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupport_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioProcessConfig config;
     config.streamInfo.encoding = ENCODING_EAC3;
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    auto ret = server->audioPolicyService_.IsDevicePlaybackSupport(config, desc);
+    auto ret = server->audioPolicyService_.IsDevicePlaybackSupported(config, desc);
     EXPECT_EQ(ret, false);
 }
 
 /**
- * @tc.name  : Test IsDevicePlaybackSupport.
- * @tc.number: IsDevicePlaybackSupport_002
- * @tc.desc  : Test IsDevicePlaybackSupport interfaces.
+ * @tc.name  : Test IsDevicePlaybackSupported.
+ * @tc.number: IsDevicePlaybackSupported_002
+ * @tc.desc  : Test IsDevicePlaybackSupported interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupport_002, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_002, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioProcessConfig config;
     config.streamInfo.encoding = ENCODING_PCM;
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    auto ret = server->audioPolicyService_.IsDevicePlaybackSupport(config, desc);
+    auto ret = server->audioPolicyService_.IsDevicePlaybackSupported(config, desc);
     EXPECT_EQ(ret, true);
 }
 
 /**
- * @tc.name  : Test IsDevicePlaybackSupport.
- * @tc.number: IsDevicePlaybackSupport_003
- * @tc.desc  : Test IsDevicePlaybackSupport interfaces.
+ * @tc.name  : Test IsDevicePlaybackSupported.
+ * @tc.number: IsDevicePlaybackSupported_003
+ * @tc.desc  : Test IsDevicePlaybackSupported interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupport_003, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_003, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioProcessConfig config;
     config.streamInfo.encoding = ENCODING_EAC3;
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_HDMI;
-    auto ret = server->audioPolicyService_.IsDevicePlaybackSupport(config, desc);
+    auto ret = server->audioPolicyService_.IsDevicePlaybackSupported(config, desc);
     EXPECT_EQ(ret, true);
 }
 
 /**
- * @tc.name  : Test IsDevicePlaybackSupport.
- * @tc.number: IsDevicePlaybackSupport_004
- * @tc.desc  : Test IsDevicePlaybackSupport interfaces.
+ * @tc.name  : Test IsDevicePlaybackSupported.
+ * @tc.number: IsDevicePlaybackSupported_004
+ * @tc.desc  : Test IsDevicePlaybackSupported interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupport_004, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_004, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioProcessConfig config;
     config.streamInfo.encoding = ENCODING_EAC3;
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_LINE_DIGITAL;
-    auto ret = server->audioPolicyService_.IsDevicePlaybackSupport(config, desc);
+    auto ret = server->audioPolicyService_.IsDevicePlaybackSupported(config, desc);
     EXPECT_EQ(ret, true);
 }
 
