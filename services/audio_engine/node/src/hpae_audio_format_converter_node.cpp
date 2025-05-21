@@ -80,12 +80,16 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     auto len = "len[" + std::to_string(GetFrameLen()) + "]";
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeAudioFormatConverterNode::SignalProcess "
      + rate + ch + len);
-    if (inputs.empty()) {
+    if (inputs.empty() || inputs[0] == nullptr) {
         AUDIO_WARNING_LOG("HpaeConverterNode inputs size is empty, SessionId:%{public}d", GetSessionId());
-        return nullptr;
+        return &silenceData_;
     }
     if (inputs.size() != 1) {
         AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
+    }
+    // pass valid tag to next node
+    if (!inputs[0]->IsValid()) {
+        return &silenceData_;
     }
     float *srcData = (*(inputs[0])).GetPcmDataBuffer();
 #ifdef ENABLE_HOOK_PCM
@@ -118,8 +122,6 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
             converterOutput_.GetFrameLen() * sizeof(float) * channelConverter_.GetOutChannelInfo().numChannels);
     }
 #endif
-    // pass valid tag to next node
-    converterOutput_.SetBufferValid(inputs[0]->IsValid());
     return &converterOutput_;
 }
 
@@ -299,10 +301,12 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
         AUDIO_INFO_LOG("NodeId %{public}d: output format info is changed, update output PCM buffer info!", GetNodeId());
         converterOutput_.ReConfig(outPcmBufferInfo);
         silenceData_.ReConfig(outPcmBufferInfo);
+        // reconfig need reset valid
+        silenceData_.SetBufferValid(false);
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = GetNodeStatusCallback().lock()) {
-        callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), GetNodeInfo());
-    }
+        if (auto callBack = GetNodeStatusCallback().lock()) {
+            callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), GetNodeInfo());
+        }
 #endif
     }
 }
