@@ -46,6 +46,7 @@ constexpr int32_t ERROR_62980101 = -62980101;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
+static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 
 class AudioServiceUnitTest : public testing::Test {
@@ -1417,8 +1418,10 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_001, TestSize.Level1)
     EXPECT_NE(nullptr, endpoint);
 
     bool isSwitchStream = false;
-    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream);
+    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false);
     EXPECT_EQ(ret, VOIP_ENDPOINT_RELEASE_DELAY_TIME);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
+    EXPECT_EQ(ret, VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME);
 }
 
 /**
@@ -1438,7 +1441,9 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_002, TestSize.Level1)
     EXPECT_NE(nullptr, endpoint);
 
     bool isSwitchStream = false;
-    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream);
+    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false);
+    EXPECT_EQ(ret, NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
     EXPECT_EQ(ret, NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 }
 
@@ -1461,10 +1466,14 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_003, TestSize.Level1)
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
     bool isSwitchStream = false;
-    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream);
+    int ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false);
+    EXPECT_EQ(ret, A2DP_ENDPOINT_RELEASE_DELAY_TIME);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
     EXPECT_EQ(ret, A2DP_ENDPOINT_RELEASE_DELAY_TIME);
     isSwitchStream = true;
-    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false);
+    EXPECT_EQ(ret, A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME);
+    ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
     EXPECT_EQ(ret, A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME);
 }
 

@@ -44,6 +44,7 @@ static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
+static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
@@ -107,7 +108,8 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
                 needRelease = true;
                 endpointName = (*paired).second->GetEndpointName();
-                delayTime = GetReleaseDelayTime((*paired).second, isSwitchStream);
+                delayTime = GetReleaseDelayTime((*paired).second, isSwitchStream,
+                    processConfig.audioMode == AUDIO_MODE_RECORD);
             }
             linkedPairedList_.erase(paired);
             isFind = true;
@@ -139,21 +141,17 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
     releaseEndpointThread.detach();
 }
 
-int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream)
+int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord)
 {
     if (endpoint->GetEndpointType() == AudioEndpoint::EndpointType::TYPE_VOIP_MMAP) {
-        return VOIP_ENDPOINT_RELEASE_DELAY_TIME;
+        return isRecord ? VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME : VOIP_ENDPOINT_RELEASE_DELAY_TIME;
     }
-
     if (endpoint->GetDeviceInfo().deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
         return NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS;
     }
-    if (!isSwitchStream) {
-        return A2DP_ENDPOINT_RELEASE_DELAY_TIME;
-    }
     // The delay for destruction and reconstruction cannot be set to 0, otherwise there may be a problem:
     // An endpoint exists at check process, but it may be destroyed immediately - during the re-create process
-    return A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME;
+    return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
 }
 #endif
 
