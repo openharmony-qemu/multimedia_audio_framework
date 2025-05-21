@@ -101,6 +101,15 @@ const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL"
 const std::string CALLER_NAME = "audio_server";
 static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 
+constexpr int32_t UID_MEDIA = 1013;
+constexpr int32_t UID_MCU = 7500;
+constexpr int32_t UID_CAAS = 5527;
+const std::set<int32_t> INTERRUPT_CALLBACK_TRUST_LIST = {
+    UID_MEDIA,
+    UID_MCU,
+    UID_CAAS
+};
+
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
@@ -1932,8 +1941,10 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, c
     }
 
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-    if (callingUid != MEDIA_SERVICE_UID && callingUid != MCU_UID) {
-        // if the callingUid is not media or mcu, it is necessary to verify whether the parameters are valid.
+    AUDIO_INFO_LOG("The sessionId %{public}u, callingUid %{public}u, clientUid %{public}u",
+        sessionID, callingUid, clientUid);
+    if (INTERRUPT_CALLBACK_TRUST_LIST.count(callingUid) == 0) {
+        // Verify whether the clientUid is valid.
         if (callingUid != clientUid) {
             AUDIO_ERR_LOG("The callingUid is not equal to clientUid and is not MEDIA_SERVICE_UID!");
             return ERR_UNKNOWN;

@@ -600,7 +600,6 @@ private:
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
     static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 0;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
-    static constexpr int32_t MCU_UID = 7500;
     static constexpr int32_t EDM_SERVICE_UID = 3057;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
