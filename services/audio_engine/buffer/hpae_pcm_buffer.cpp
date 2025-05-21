@@ -48,7 +48,7 @@ HpaePcmBuffer::HpaePcmBuffer(HpaePcmBuffer &&other)
     pcmBufferInfo_ = other.pcmBufferInfo_;
     bufferByteSize_ = other.bufferByteSize_;
     bufferFloatSize_ = other.bufferFloatSize_;
-    int32_t errNo_    dataByteSize_ = other.dataByteSize_;
+    dataByteSize_ = other.dataByteSize_;
     pcmDataBuffer_ = std::move(other.pcmDataBuffer_);
     pcmProcessVec_ = std::move(other.pcmProcessVec_);
     other.pcmBufferInfo_.frames = 0;
