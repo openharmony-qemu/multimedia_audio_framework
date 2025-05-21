@@ -488,7 +488,7 @@ bool TonePlayerImpl::InitAudioRenderer()
     AUDIO_DEBUG_LOG("SetRenderMode Sucessful");
 
     if (ret == 0 && targetSize != 0) {
-        uint64_t bufferDuration = GetEngineFlag() == 1 ? C60MS : C20MS; // 20 -> 20ms
+        size_t bufferDuration = GetEngineFlag() == 1 ? C60MS : C20MS; // 20 -> 20ms
         audioRenderer_->SetBufferDuration(bufferDuration);
         AUDIO_INFO_LOG("Init renderer with buffer %{public}zu, duration %{public}zu", targetSize, bufferDuration);
     }
