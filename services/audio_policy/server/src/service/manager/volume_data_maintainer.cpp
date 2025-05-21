@@ -706,6 +706,7 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
             return type;
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_DP:
+        case DEVICE_TYPE_HDMI:
             type = "_builtin";
             return type;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
