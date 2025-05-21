@@ -52,7 +52,7 @@ public:
 private:
     std::atomic<bool> running_;
     std::atomic<bool> recvSignal_;
-    HpaeManager *m_hpaeManager;
+    HpaeManager *m_hpaeManager = nullptr;
     std::condition_variable condition_;
     std::mutex mutex_;
     std::thread thread_;

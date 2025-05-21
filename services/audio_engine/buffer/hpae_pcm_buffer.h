@@ -158,6 +158,11 @@ public:
         return bufferByteSize_;
     }
 
+    size_t DataSize() const
+    {
+        return dataByteSize_;
+    }
+
     size_t GetFrames() const
     {
         return pcmBufferInfo_.frames;
@@ -246,6 +251,7 @@ private:
     size_t frameFloatSize_;
     size_t frameByteSize_;
     size_t frameSample_;
+    size_t dataByteSize_;
     std::atomic<size_t> readPos_;
     std::atomic<size_t> writePos_;
     std::atomic<size_t> curFrames_;
