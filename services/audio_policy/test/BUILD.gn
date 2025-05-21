@@ -331,7 +331,7 @@ ohos_unittest("audio_zone_unit_test") {
   ]
 
   sources = [
-    "../../audio_policy/client/src/audio_zone_client.cpp",
+    "../../audio_policy/client/stub/src/audio_zone_client.cpp",
     "../../audio_policy/server/src/service/zone/audio_zone_service.cpp",
     "./unittest/audio_zone_unit_test/src/audio_policy_manager_zone_stub_unit_test.cpp",
     "./unittest/audio_zone_unit_test/src/audio_zone_class_unit_test.cpp",
@@ -832,7 +832,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
   ]
 
   sources = [
-    "../../audio_policy/client/src/audio_client_tracker_callback_stub.cpp",
+    "../../audio_policy/client/stub/src/audio_client_tracker_callback_stub.cpp",
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_second_unit_test.cpp",
     "./unittest/audio_policy_service_unit_test/src/get_server_util.cpp",
   ]
@@ -1328,6 +1328,7 @@ ohos_unittest("audio_effect_config_parser_test") {
   include_dirs = [
     "./unittest/audio_effect_config_parser_test/include",
     "../../audio_policy/server/include/service/effect",
+    "../../audio_policy/server/infra/config/parser/include",
   ]
 
   cflags = [
@@ -1358,6 +1359,7 @@ ohos_unittest("audio_pnp_server_unit_test") {
   include_dirs = [
     "./unittest/audio_pnp_server_unit_test/include",
     "../../audio_policy/server/include/service/effect",
+    "../../audio_policy/server/infra/config/parser/include",
   ]
 
   cflags = [
@@ -2650,7 +2652,7 @@ ohos_unittest("audio_policy_async_action_handler_test") {
   ]
 
   sources = [
-    "../../../services/audio_policy/server/src/audio_policy_async_action_handler.cpp",
+    "../../../services/audio_policy/server/infra/async_action_handler/audio_policy_async_action_handler.cpp",
     "../../../services/audio_service/server/src/audio_manager_listener_proxy.cpp",
     "./unittest/audio_policy_async_action_handler_test/audio_policy_async_action_handler_test.cpp",
   ]
@@ -3191,6 +3193,7 @@ ohos_unittest("audio_effect_config_parser_unit_test") {
   include_dirs = [
     "./unittest/audio_effect_config_parser_unit_test/include",
     "../../audio_policy/server/include/service/effect",
+    "../../audio_policy/server/infra/config/parser/include",
   ]
 
   use_exceptions = true
@@ -3436,8 +3439,10 @@ ohos_unittest("audio_general_manager_unit_test") {
   include_dirs = [
     "./unittest/audio_general_manager_unit_test/include",
     "../../../services/audio_policy/util/include",
+    "../../../services/audio_policy/client/service/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../services/audio_policy/server/include/service/effect",
+    "../../../services/audio_policy/server/infra/config/parser/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../services/audio_service/client/include",
   ]
@@ -3935,8 +3940,8 @@ ohos_unittest("audio_client_tracker_callback_proxy_unit_test") {
   ]
 
   sources = [
-    "../../../services/audio_policy/client/src/audio_client_tracker_callback_stub.cpp",
-    "../../../services/audio_policy/server/src/audio_client_tracker_callback_proxy.cpp",
+    "../../../services/audio_policy/client/stub/src/audio_client_tracker_callback_stub.cpp",
+    "../../../services/audio_policy/server/proxy/src/audio_client_tracker_callback_proxy.cpp",
     "./unittest/audio_client_tracker_callback_proxy_unit_test/src/audio_client_tracker_callback_proxy_unit_test.cpp",
   ]
 
@@ -4242,7 +4247,7 @@ ohos_unittest("audio_policy_client_proxy_unit_test") {
   ]
 
   sources = [
-    "../../../services/audio_policy/server/src/audio_policy_client_proxy.cpp",
+    "../../../services/audio_policy/server/proxy/src/audio_policy_client_proxy.cpp",
     "../../../services/audio_policy/server/src/service/device/audio_device_descriptor.cpp",
     "./unittest/audio_policy_client_proxy_unit_test/src/audio_policy_client_proxy_unit_test.cpp",
   ]
