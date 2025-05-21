@@ -62,7 +62,7 @@ struct DfxStatAction : public DfxStatInt32 {
     DfxStatAction() = default;
     DfxStatAction(uint8_t param1, uint8_t param2, uint8_t param3, uint8_t param4);
 
-    time_t timestamp{};
+    uint64_t timestamp{};
 };
 
 struct InterruptEffect {
@@ -78,6 +78,7 @@ struct RendererStats {
     uint32_t underrunCnt{};
     uint16_t originalFlag{};
     uint16_t zeroDataPercent{};
+    int64_t frameWritten{};
 };
 
 struct CapturerStats {

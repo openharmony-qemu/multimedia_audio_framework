@@ -64,7 +64,7 @@ public:
 
     int32_t Resume() override;
 
-    int32_t Stop() override;
+    int32_t Stop(AudioProcessStage stage = AUDIO_PROC_STAGE_STOP) override;
 
     int32_t RequestHandleInfo(bool isAsync) override;
 

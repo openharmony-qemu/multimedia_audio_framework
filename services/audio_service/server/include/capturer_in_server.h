@@ -72,6 +72,7 @@ private:
     int32_t StartInner();
     int64_t GetLastAudioDuration();
     void HandleOperationFlushed();
+    void HandleOperationStopped(CapturerStage stage);
     void UpdateBufferTimeStamp(const BufferDesc &dstBuffer);
 
     std::mutex statusLock_;

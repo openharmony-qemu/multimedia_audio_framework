@@ -143,6 +143,7 @@ private:
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
     void ReConfigDupStreamCallback();
+    void HandleOperationStopped(RendererStage stage);
 
 private:
     std::mutex statusLock_;
