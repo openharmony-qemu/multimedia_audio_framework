@@ -64,13 +64,13 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
 HpaeSinkInputNode::~HpaeSinkInputNode()
 {}
 
-void HpaeSinkInputNode::CheckAndDestoryHistoryBuffer()
+void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 {
     HpaeNodeInfo nodeInfo = GetNodeInfo();
-    // historyBuffer_ has no data, check if historyFrameCount is 0 and distory it
+    // historyBuffer_ has no data, check if historyFrameCount is 0 and destroy it
     if (nodeInfo.historyFrameCount == 0) {
         if (historyBuffer_) {
-            AUDIO_INFO_LOG("HpaeSinkInputNode::historyBuffer_ useless, distory it");
+            AUDIO_INFO_LOG("HpaeSinkInputNode::historyBuffer_ useless, destroy it");
         }
         historyBuffer_ = nullptr;
     } else if (historyBuffer_ == nullptr) {  // this case need to create historyBuffer_
@@ -113,7 +113,7 @@ void HpaeSinkInputNode::DoProcess()
         outputStream_.WriteDataToOutput(&inputAudioBuffer_);
         return;
     }
-    CheckAndDestoryHistoryBuffer();
+    CheckAndDestroyHistoryBuffer();
     if (nodeCallback && ret) {
         nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
         if (isDrain_) {

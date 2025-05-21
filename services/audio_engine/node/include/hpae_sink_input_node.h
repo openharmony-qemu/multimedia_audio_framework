@@ -52,7 +52,7 @@ public:
 
 private:
     int32_t GetDataFromSharedBuffer();
-    void CheckAndDestoryHistoryBuffer();
+    void CheckAndDestroyHistoryBuffer();
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;

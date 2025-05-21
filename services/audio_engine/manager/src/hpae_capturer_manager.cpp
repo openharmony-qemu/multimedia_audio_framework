@@ -174,8 +174,9 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
             CaptureEffectRelease(sceneType);
             sceneClusterMap_.erase(sceneType);
         }
-    } else {
-        sourceOutputNodeMap_[sessionId]->DisConnect(sourceInputClusterMap_[mainMicType_]);
+    } else if (SafeGetMap(sourceInputClusterMap_, mainMicType_)) {
+        sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(sourceInputClusterMap_[mainMicType_],
+            sourceOutputNodeMap_[sessionId]->GetNodeInfo());
     }
     sourceOutputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
@@ -320,12 +321,10 @@ int32_t HpaeCapturerManager::DisConnectOutputSession(uint32_t sessionId)
         sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(
             sceneClusterMap_[sceneType], sourceOutputNodeMap_[sessionId]->GetNodeInfo());
         DisConnectSceneClusterFromSourceInputCluster(sceneType);
-    } else {
+    } else if (SafeGetMap(sourceInputClusterMap_, mainMicType_)) {
         AUDIO_INFO_LOG("sceneType[%{public}u] do not exist sceneCluster", sceneType);
-        if (SafeGetMap(sourceInputClusterMap_, mainMicType_)) {
-            sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(sourceInputClusterMap_[mainMicType_],
-                sourceOutputNodeMap_[sessionId]->GetNodeInfo());
-        }
+        sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(sourceInputClusterMap_[mainMicType_],
+            sourceOutputNodeMap_[sessionId]->GetNodeInfo());
     }
 
     if (sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0) {
