@@ -931,7 +931,7 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
     return deviceInfo;
 }
 
-void AudioService::CheckBeforeVoipEndpointCreate(bool isRecord)
+void AudioService::CheckBeforeRecordEndpointCreate(bool isRecord)
 {
     // release at once to avoid normal fastsource and voip fastsource existing at the same time
     if (isRecord) {
