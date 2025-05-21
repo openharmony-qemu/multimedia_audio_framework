@@ -17,6 +17,8 @@
 #define SHARED_AUDIO_CAPTURER_WRAPPER_H
 
 #include "audio_capturer.h"
+#include "audio_errors.h"
+#include "audio_capturer_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -254,6 +256,13 @@ public:
         return sharedAudioCapturer_->SetInputDevice(deviceType);
     }
 
+    int32_t SetInterruptStrategy(InterruptStrategy strategy) override
+    {
+        CHECK_AND_RETURN_RET_LOG(sharedAudioCapturer_ != nullptr,
+            ERR_MEMORY_ALLOC_FAILED, "sharedAudioCapturer_ is nullptr");
+        return sharedAudioCapturer_->SetInterruptStrategy(strategy);
+    }
+
     void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override
     {
         return sharedAudioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
@@ -268,6 +277,11 @@ public:
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override
     {
         return sharedAudioCapturer_->GetAudioTimestampInfo(timestamp, base);
+    }
+
+    bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override
+    {
+        return sharedAudioCapturer_->GetTimeStampInfo(timestamp, base);
     }
 
     ~SharedCapturerWrapper() override = default;

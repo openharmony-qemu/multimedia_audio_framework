@@ -187,6 +187,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/audio_routing_manager_listener_proxy.cpp",
     "server/src/audio_spatialization_state_change_listener_proxy.cpp",
     "server/src/audio_stream_collector.cpp",
+    "server/src/background_task_listener.cpp",
     "server/src/service/audio_affinity_manager.cpp",
     "server/src/service/audio_device_manager.cpp",
     "server/src/service/audio_global_config_manager.cpp",
@@ -233,6 +234,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/service/audio_a2dp_offload_flag.cpp",
     "server/src/service/service/audio_a2dp_offload_manager.cpp",
     "server/src/service/service/audio_active_device.cpp",
+    "server/src/service/service/audio_background_manager.cpp",
     "server/src/service/service/audio_capturer_session.cpp",
     "server/src/service/service/audio_config_manager.cpp",
     "server/src/service/service/audio_connected_device.cpp",
@@ -265,9 +267,11 @@ audio_ohos_library("audio_policy_service") {
     "services/core/src/audio_core_service.cpp",
     "services/core/src/audio_core_service_entry.cpp",
     "services/core/src/audio_core_service_private.cpp",
+    "services/core/src/audio_core_service_utils.cpp",
     "services/pipe/src/audio_pipe_manager.cpp",
     "services/pipe/src/audio_pipe_selector.cpp",
     "util/src/audio_ability_manager.cpp",
+    "util/src/audio_bundle_manager.cpp",
   ]
 
   defines = []
@@ -332,17 +336,19 @@ audio_ohos_library("audio_policy_service") {
     "ability_runtime:app_manager",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "access_token:libprivacy_sdk",
     "access_token:libtokenid_sdk",
     "access_token:libtokensetproc_shared",
+    "background_task_mgr:bgtaskmgr_innerkits",
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_4.0",
+    "drivers_interface_audio:libaudio_proxy_5.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -806,6 +812,32 @@ ohos_shared_library("audio_policy_common") {
     "ipc:ipc_core",
     "resource_management:global_resmgr",
   ]
+
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
+  innerapi_tags = [ "platformsdk" ]
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("audio_policy_ipc") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = true
+  sources = []
+
+  public_configs = []
+
+  external_deps = []
 
   cflags = [ "-Os" ]
   cflags_cc = cflags

@@ -872,8 +872,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_001, TestSize.Level1
     AudioProcessConfig config;
     config.audioMode = AUDIO_MODE_RECORD;
     int32_t errorCode = 0;
-    audioServer->CreateAudioProcess(config, errorCode);
-    EXPECT_EQ(errorCode, 0);
+    auto ret = audioServer->CreateAudioProcess(config, errorCode);
+    EXPECT_EQ(ret, nullptr);
 }
 
 /**

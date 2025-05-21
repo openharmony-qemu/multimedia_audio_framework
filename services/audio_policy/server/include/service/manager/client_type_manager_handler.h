@@ -55,7 +55,7 @@ public:
     class EventObj {
     public:
         std::string bundleName;
-        uint32_t uid;
+        uint32_t uid = 0;
     };
 
     void RegisterClientTypeListener(ClientTypeListener *clientTypeListener);

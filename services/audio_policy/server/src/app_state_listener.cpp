@@ -26,7 +26,9 @@
 #include "system_ability_definition.h"
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
+#include "audio_background_manager.h"
 #include "iservice_registry.h"
+#include "audio_bundle_manager.h"
 
 
 namespace OHOS {
@@ -40,6 +42,12 @@ static const std::map<AppExecFwk::ApplicationState, DfxAppState> DFX_APPSTATE_MA
     {AppExecFwk::ApplicationState::APP_STATE_TERMINATED, DFX_APP_STATE_END}
 };
 
+static const std::map<AppExecFwk::ApplicationState, AppIsBackState> BACKGROUND_APPSTATE_MAP = {
+    {AppExecFwk::ApplicationState::APP_STATE_FOREGROUND, STATE_FOREGROUND},
+    {AppExecFwk::ApplicationState::APP_STATE_BACKGROUND, STATE_BACKGROUND},
+    {AppExecFwk::ApplicationState::APP_STATE_END, STATE_END},
+    {AppExecFwk::ApplicationState::APP_STATE_TERMINATED, STATE_END}
+};
 AppStateListener::AppStateListener()
 {
     AUDIO_INFO_LOG("enter");
@@ -51,41 +59,9 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
         AUDIO_INFO_LOG("app state changed, bundleName=%{public}s uid=%{public}d pid=%{public}d state=%{public}d",
             appData.appName.c_str(), appData.uid, appProcessData.pid, appProcessData.appState);
         HandleAppStateChange(appProcessData.pid, appData.uid, static_cast<int32_t>(appProcessData.appState));
+        HandleBackgroundAppStateChange(appProcessData.pid, appData.uid, static_cast<int32_t>(appProcessData.appState));
     }
 }
-
-AppExecFwk::BundleInfo AppStateListener::GetBundleInfoFromUid(int32_t callingUid)
-{
-    AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
-        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    std::string bundleName {"uid:" + std::to_string(callingUid)};
-    AppExecFwk::BundleInfo bundleInfo;
-    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleInfoFromUid");
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, bundleInfo, "systemAbilityManager is nullptr");
-    guard.CheckCurrTimeout();
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_PRELOG(remoteObject != nullptr, bundleInfo, "remoteObject is nullptr");
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, bundleInfo, "bundleMgrProxy is nullptr");
-
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleInfoFromUid");
-    bundleMgrProxy->GetNameForUid(callingUid, bundleName);
-
-    bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
-        bundleInfo,
-        AppExecFwk::Constants::ALL_USERID);
-    reguard.CheckCurrTimeout();
-
-    return bundleInfo;
-}
-
 
 void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t state)
 {
@@ -97,13 +73,24 @@ void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t st
     auto &manager = DfxMsgManager::GetInstance();
     if (appState == DFX_APP_STATE_START) {
         if (manager.CheckCanAddAppInfo(uid)) {
-            auto info = GetBundleInfoFromUid(uid);
+            auto info = AudioBundleManager::GetBundleInfoFromUid(uid);
             manager.SaveAppInfo({uid, info.name, info.versionName});
         }
         manager.UpdateAppState(uid, appState, true);
     } else {
         manager.UpdateAppState(uid, appState);
     }
+}
+
+void AppStateListener::HandleBackgroundAppStateChange(int32_t pid, int32_t uid, int32_t state)
+{
+    auto pos = BACKGROUND_APPSTATE_MAP.find(static_cast<AppExecFwk::ApplicationState>(state));
+    auto appState = (pos == BACKGROUND_APPSTATE_MAP.end()) ? STATE_UNKNOWN : pos->second;
+    CHECK_AND_RETURN_LOG(pos != BACKGROUND_APPSTATE_MAP.end(), "invalid app state%{public}d", state);
+
+    AUDIO_INFO_LOG("Background app state changed, uid=%{public}d pid=%{public}d state=%{public}d",
+        uid, pid, state);
+    AudioBackgroundManager::GetInstance().NotifyAppStateChange(uid, pid, appState);
 }
 }
 }

@@ -287,7 +287,7 @@ void AudioVolumeManager::InitKVStore()
 
 void AudioVolumeManager::CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel)
 {
-    AUDIO_INFO_LOG("AudioPolicyService::CheckVolumeCloseNotification enter.");
+    AUDIO_INFO_LOG("enter.");
     int32_t sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
     if (volumeLevel < sVolumeLevel && DeviceIsSupportSafeVolume() &&
         VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
@@ -829,7 +829,7 @@ void AudioVolumeManager::SetSafeVolumeCallback(AudioStreamType streamType)
 
 void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
 {
-    AUDIO_INFO_LOG("AudioVolumeManager::OnReceiveEvent enter.");
+    AUDIO_INFO_LOG("enter.");
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
     if (action == AUDIO_RESTORE_VOLUME_EVENT) {
@@ -1213,13 +1213,13 @@ std::vector<std::shared_ptr<AllDeviceVolumeInfo>> AudioVolumeManager::GetAllDevi
 }
 
 void AudioVolumeManager::SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel,
-    std::string callerName, std::string invocationTime)
+    int32_t appUid, std::string invocationTime)
 {
     AdjustVolumeInfo systemVolumeLevelInfo;
     systemVolumeLevelInfo.deviceType = curOutputDeviceType_;
     systemVolumeLevelInfo.streamType = streamType;
     systemVolumeLevelInfo.volumeLevel = volumeLevel;
-    systemVolumeLevelInfo.callerName = callerName;
+    systemVolumeLevelInfo.appUid = appUid;
     systemVolumeLevelInfo.invocationTime = invocationTime;
     systemVolumeLevelInfo_->Add(systemVolumeLevelInfo);
 }

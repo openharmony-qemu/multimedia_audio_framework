@@ -352,6 +352,17 @@ public:
     virtual CapturerState GetStatus() const = 0;
 
     /**
+     * @brief Obtains the Timestamp from lower layer.
+     *
+     * @param timestamp Indicates a {@link Timestamp} instance reference provided by the caller.
+     * @param base Indicates the time base, which can be {@link Timestamp.Timestampbase#BOOTTIME} or
+     * {@link Timestamp.Timestampbase#MONOTONIC}.
+     * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
+     * @since 16
+     */
+    virtual bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
+
+    /**
      * @brief Obtains the Timestamp.
      *
      * @param timestamp Indicates a {@link Timestamp} instance reference provided by the caller.
@@ -708,6 +719,8 @@ public:
     virtual int32_t SetInputDevice(DeviceType deviceType) const = 0;
 
     virtual int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) = 0;
+
+    virtual int32_t SetInterruptStrategy(InterruptStrategy strategy) = 0;
 
     virtual ~AudioCapturer();
 

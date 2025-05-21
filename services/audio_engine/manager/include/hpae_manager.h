@@ -170,14 +170,9 @@ public:
         std::vector<std::pair<std::string, std::string>> &result) override;
     int32_t UpdateCollaborationState(bool isCollaborationEnabled) override;
 private:
-    int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
-    bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
-    int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
-    AudioSampleFormat TransFormatFromStringToEnum(std::string format);
     int32_t CloseOutAudioPort(std::string &sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
     int32_t CloseInAudioPort(std::string &sourceName);
-    void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo);
     template <typename... Args>
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
     void HandleUpdateStatus(
@@ -193,8 +188,10 @@ private:
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
+    void HandleGetCaptureId(uint32_t captureId, int32_t deviceType);
     void HandleConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager);
     void HandleDisConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager);
+
     void SendRequest(Request &&request);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex);
@@ -205,7 +202,7 @@ private:
 
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerById(uint32_t sessionId);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerById(uint32_t sessionId);
-    std::shared_ptr<IHpaeRendererManager> GetRendererManagerByNmae(const std::string &sinkName);
+    std::shared_ptr<IHpaeRendererManager> GetRendererManagerByName(const std::string &sinkName);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo);
 
@@ -228,7 +225,8 @@ private:
     std::unordered_map<uint32_t, SourceOutput> sourceOutputs_;
     std::unordered_map<std::string, uint32_t> sinkNameSinkIdMap_;  // todo
     std::unordered_map<uint32_t, std::string> sinkIdSinkNameMap_;
-    std::string defaultSink_ = "Speaker";
+    std::string defaultSink_ = "";
+    std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
     std::string defaultSource_ = "Built_in_mic";

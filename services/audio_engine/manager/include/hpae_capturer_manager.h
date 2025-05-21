@@ -95,6 +95,7 @@ private:
     void CreateSourceAttr(IAudioSourceAttr &attr);
     int32_t CapturerSourceStart();
     int32_t CapturerSourceStop();
+    void CheckIfAnyStreamRunning();
 
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;

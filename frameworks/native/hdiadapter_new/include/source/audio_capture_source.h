@@ -21,14 +21,16 @@
 #include <cstring>
 #include <mutex>
 #include <thread>
-#include "v4_0/iaudio_manager.h"
+#include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
+#include "audio_primary_source_clock.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
 class AudioCaptureSource : public IAudioCaptureSource {
 public:
     explicit AudioCaptureSource(const uint32_t captureId, const std::string &halName = "primary");
@@ -70,7 +72,7 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     void SetAddress(const std::string &address) override;
-
+    int32_t SetAccessoryDeviceState(bool state);
     void DumpInfo(std::string &dumpString) override;
 
     void SetDmDeviceType(uint16_t dmDeviceType) override;
@@ -106,6 +108,7 @@ private:
     int32_t UpdateActiveDeviceWithoutLock(DeviceType inputDevice);
     int32_t DoStop(void);
     void DumpData(char *frame, uint64_t &replyBytes);
+    void InitRunningLock(void);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -131,7 +134,7 @@ private:
     SourceCallbackWrapper callback_ = {};
     bool sourceInited_ = false;
     bool captureInited_ = false;
-    bool started_ = false;
+    std::atomic<bool> started_ = false;
     bool paused_ = false;
     float leftVolume_ = MAX_VOLUME_LEVEL;
     float rightVolume_ = MAX_VOLUME_LEVEL;
@@ -168,6 +171,8 @@ private:
     std::atomic<bool> muteState_ = false;
     std::string address_ = "";
     uint16_t dmDeviceType_ = 0;
+
+    std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;
 };
 
 } // namespace AudioStandard

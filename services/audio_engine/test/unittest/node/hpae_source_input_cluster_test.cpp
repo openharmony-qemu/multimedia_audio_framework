@@ -27,6 +27,7 @@ namespace AudioStandard {
 namespace HPAE {
 
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
+static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 
 class HpaeSourceInputClusterTest : public ::testing::Test {
 public:
@@ -109,13 +110,13 @@ TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
     attr.volume = 0.0f;
     attr.bufferSize = 0;
     attr.isBigEndian = false;
-    attr.filePath = NULL;
+    attr.filePath = g_rootCapturerPath.c_str();
     attr.deviceNetworkId = NULL;
     attr.deviceType = 0;
     attr.sourceType = 0;
     attr.channelLayout = 0;
     attr.audioStreamFlag = 0;
-    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceInit(attr), ERROR);
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStart(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputCluster->GetSourceState() == STREAM_MANAGER_RUNNING, true);
     EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStop(), SUCCESS);

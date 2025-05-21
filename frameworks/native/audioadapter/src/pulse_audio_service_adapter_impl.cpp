@@ -377,7 +377,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
 
 std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
 {
-    AUDIO_PRERELEASE_LOGI("GetAllSinks enter.");
+    AUDIO_PRERELEASE_LOGI("enter.");
     AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::GetAllSinks", PA_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("GetAllSinks timeout");
@@ -553,7 +553,7 @@ int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setM
 
 vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
 {
-    AUDIO_PRERELEASE_LOGI("GetAllSinkInputs enter");
+    AUDIO_PRERELEASE_LOGI("enter");
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
     userData->sinkInfos = GetAllSinks();

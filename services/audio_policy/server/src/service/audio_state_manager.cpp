@@ -22,13 +22,13 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "ipc_skeleton.h"
+#include "audio_bundle_manager.h"
 
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 
-static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 const int32_t AUDIO_UID = 1041;
 const int32_t ANCO_SERVICE_BROKER_UID = 5557;
 
@@ -45,7 +45,7 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
     
     int32_t callerUid = uid;
     auto callerPid = IPCSkeleton::GetCallingPid();
-    std::string bundleName = GetBundleNameFromUid(callerUid);
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
     AUDIO_INFO_LOG(
         "deviceType: %{public}d, uid: %{public}d, callerPid: %{public}d, bundle name: %{public}s, caller: %{public}s",
         deviceDescriptor->deviceType_, callerUid, callerPid, bundleName.c_str(), caller.c_str());
@@ -282,29 +282,6 @@ int32_t AudioStateManager::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPoli
 {
     audioClientInfoMgrCallback_ = callback;
     return 0;
-}
-
-const std::string AudioStateManager::GetBundleNameFromUid(int32_t uid)
-{
-    AudioXCollie audioXCollie("AudioRecoveryDevice::GetBundleNameFromUid",
-        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    std::string bundleName {""};
-    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetBundleNameFromUid");
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, "", "systemAbilityManager is nullptr");
-    guard.CheckCurrTimeout();
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, "", "remoteObject is nullptr");
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
-
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
-    bundleMgrProxy->GetNameForUid(uid, bundleName);
-    reguard.CheckCurrTimeout();
-
-    return bundleName;
 }
 
 void AudioStateManager::RemoveForcedDeviceMapData(int32_t uid)

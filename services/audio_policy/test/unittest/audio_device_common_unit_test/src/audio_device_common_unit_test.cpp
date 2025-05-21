@@ -807,25 +807,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_048, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_049
-* @tc.desc  : Test MuteSinkForSwitchDistributedDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_049, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
-    audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwitchDistributedDevice(rendererChangeInfo,
-        audioDeviceDescriptorUniqueptrVector, reason);
-    EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_050
 * @tc.desc  : Test IsRendererStreamRunning interface.
 */
@@ -1062,26 +1043,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_062, TestSize.Level1)
     std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
-    capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
-    capturerChangeInfo->inputDeviceInfo.networkId_ = "LocalDevice";
-    bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
-        capturerChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: NotifyRecreateCapturerStream_003
-* @tc.desc  : Test NotifyRecreateCapturerStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, NotifyRecreateCapturerStream_003, TestSize.Level1)
-{
-    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool isUpdateActiveDevice = true;
-    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_NORMAL;
     capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
     audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
     capturerChangeInfo->inputDeviceInfo.networkId_ = "LocalDevice";

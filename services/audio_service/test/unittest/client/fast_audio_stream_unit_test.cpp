@@ -510,9 +510,8 @@ HWTEST(FastSystemStreamUnitTest, SetAudioStreamInfo_002, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     int32_t res = fastAudioStream->SetAudioStreamInfo(info, proxyObj);
     EXPECT_NE(res, SUCCESS);
-    bool result = false;
-    fastAudioStream->RestoreAudioStream(true);
-    EXPECT_EQ(result, false);
+    auto ret = fastAudioStream->RestoreAudioStream(true);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -1541,9 +1540,6 @@ HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_002, TestSize.Level1)
 
     std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
     fastAudioStream->proxyObj_ = proxyObj;
-    if (fastAudioStream->proxyObj_ == nullptr) {
-        std::cout<<"cxk_001"<<std::endl;
-    }
     fastAudioStream->state_ = RUNNING;
     fastAudioStream->RestoreAudioStream();
 }

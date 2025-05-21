@@ -564,7 +564,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 #ifdef SUPPORT_LOW_LATENCY
     IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
 #else
-    rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
@@ -943,12 +943,12 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         "MinStreamVolume: %{public}f, MaxStreamVolume: %{public}f",
         duckVolume, isMute, GetMinStreamVolume(), GetMaxStreamVolume());
 
-    if (GetVolumeInner() == 0 && isStillMuted_) {
-        AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillMuted_=%{public}d",
-            GetVolumeInner(), isStillMuted_);
+    if ((GetVolumeInner() == 0 && isStillZeroStreamVolume_) || isMute) {
+        AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillZeroStreamVolume_=%{public}d"
+            " isMute=%{public}d", GetVolumeInner(), isStillZeroStreamVolume_, isMute);
         audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
     } else {
-        isStillMuted_ = false;
+        isStillZeroStreamVolume_ = false;
     }
 
     {
@@ -1251,11 +1251,12 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
     State currentState = currentStream->GetState();
+    bool isMute = currentStream->GetMute();
     if (currentState == NEW || currentState == PREPARED) {
         AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
-        isStillMuted_ = (volume == 0);
-    } else if (isStillMuted_ && volume > 0) {
-        isStillMuted_ = false;
+        isStillZeroStreamVolume_ = (volume == 0);
+    } else if ((isStillZeroStreamVolume_ || !isMute) && volume > 0) {
+        isStillZeroStreamVolume_ = false;
         audioInterrupt_.sessionStrategy.concurrencyMode =
             (originalStrategy_.concurrencyMode == AudioConcurrencyMode::INVALID ?
             AudioConcurrencyMode::DEFAULT : originalStrategy_.concurrencyMode);
@@ -2406,6 +2407,13 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     audioStream_->SetSpeed(speed);
 #endif
     speed_ = speed;
+
+    if (lock.owns_lock()) {
+        lock.unlock();
+    }
+    if (speed < NORMAL_STREAM_SPEED_LEVEL) {
+        SetPitch(speed);
+    }
     return SUCCESS;
 }
 

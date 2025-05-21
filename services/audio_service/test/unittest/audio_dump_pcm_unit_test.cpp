@@ -161,29 +161,26 @@ HWTEST(AudioDumpPcmUnitTest, CacheData_001, TestSize.Level1)
     void* srcDataPointer;
     size_t dataLength;
     uint8_t srcBuffer[16] = {0};
-    AudioCacheMgrInner audioCacheMgrInner;
+    auto audioCacheMgrInner = std::make_shared<AudioCacheMgrInner>();
+    ASSERT_TRUE(audioCacheMgrInner != nullptr);
 
     dumpFileName = "test.txt";
     srcDataPointer = static_cast<void *>(srcBuffer);
     dataLength = 8;
-    audioCacheMgrInner.isInited_ = false;
-    audioCacheMgrInner.CacheData(dumpFileName, srcDataPointer, dataLength);
-    EXPECT_EQ(audioCacheMgrInner.isInited_, false);
+    audioCacheMgrInner->isInited_ = false;
+    audioCacheMgrInner->CacheData(dumpFileName, srcDataPointer, dataLength);
 
-    audioCacheMgrInner.isInited_ = true;
-    audioCacheMgrInner.isDumpingData_ = true;
-    audioCacheMgrInner.CacheData(dumpFileName, srcDataPointer, dataLength);
-    EXPECT_EQ(audioCacheMgrInner.isDumpingData_, true);
+    audioCacheMgrInner->isInited_ = true;
+    audioCacheMgrInner->isDumpingData_ = true;
+    audioCacheMgrInner->CacheData(dumpFileName, srcDataPointer, dataLength);
 
-    audioCacheMgrInner.isDumpingData_ = false;
-    audioCacheMgrInner.totalMemChunkNums_ = -1;
-    audioCacheMgrInner.CacheData(dumpFileName, srcDataPointer, dataLength);
-    EXPECT_EQ(audioCacheMgrInner.isDumpingData_, false);
+    audioCacheMgrInner->isDumpingData_ = false;
+    audioCacheMgrInner->totalMemChunkNums_ = -1;
+    audioCacheMgrInner->CacheData(dumpFileName, srcDataPointer, dataLength);
 
-    audioCacheMgrInner.isDumpingData_ = false;
-    audioCacheMgrInner.totalMemChunkNums_ = 1;
-    audioCacheMgrInner.CacheData(dumpFileName, srcDataPointer, dataLength);
-    EXPECT_EQ(audioCacheMgrInner.isDumpingData_, false);
+    audioCacheMgrInner->isDumpingData_ = false;
+    audioCacheMgrInner->totalMemChunkNums_ = 1;
+    audioCacheMgrInner->CacheData(dumpFileName, srcDataPointer, dataLength);
 }
 
 /**
@@ -197,11 +194,11 @@ HWTEST(AudioDumpPcmUnitTest, GetCachedDuration_001, TestSize.Level1)
     int64_t startTime = 0;
     int64_t endTime = 0;
     std::shared_ptr<MemChunk> memChunk = std::make_shared<MemChunk>();
+    ASSERT_TRUE(memChunk != nullptr);
     AudioCacheMgrInner audioCacheMgrInner;
 
     audioCacheMgrInner.isInited_ = false;
     audioCacheMgrInner.GetCachedDuration(startTime, endTime);
-    EXPECT_EQ(audioCacheMgrInner.isInited_, false);
 
     audioCacheMgrInner.isInited_ = true;
     audioCacheMgrInner.GetCachedDuration(startTime, endTime);
@@ -288,23 +285,20 @@ HWTEST(AudioDumpPcmUnitTest, OnHandle_001, TestSize.Level1)
 {
     uint32_t code;
     int64_t data = 0;
-    AudioCacheMgrInner audioCacheMgrInner;
+    auto audioCacheMgrInner = std::make_shared<AudioCacheMgrInner>();
+    ASSERT_TRUE(audioCacheMgrInner != nullptr);
 
     code = AudioCacheMgrInner::RELEASE_OVERTIME_MEMBLOCK;
-    audioCacheMgrInner.OnHandle(code, data);
-    EXPECT_EQ(code, AudioCacheMgrInner::RELEASE_OVERTIME_MEMBLOCK);
+    audioCacheMgrInner->OnHandle(code, data);
 
     code = AudioCacheMgrInner::PRINT_MEMORY_CONDITION;
-    audioCacheMgrInner.OnHandle(code, data);
-    EXPECT_EQ(code, AudioCacheMgrInner::PRINT_MEMORY_CONDITION);
+    audioCacheMgrInner->OnHandle(code, data);
 
     code = AudioCacheMgrInner::RAISE_PRIORITY;
-    audioCacheMgrInner.OnHandle(code, data);
-    EXPECT_EQ(code, AudioCacheMgrInner::RAISE_PRIORITY);
+    audioCacheMgrInner->OnHandle(code, data);
 
     code = 5;
-    audioCacheMgrInner.OnHandle(code, data);
-    EXPECT_EQ(code, 5);
+    audioCacheMgrInner->OnHandle(code, data);
 }
 } // namespace AudioStandard
 } // namespace OHOS

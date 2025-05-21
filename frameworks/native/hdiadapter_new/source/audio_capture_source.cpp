@@ -30,19 +30,26 @@
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "capturer_clock_manager.h"
+#include "audio_setting_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+static constexpr uint32_t DECIMAL_BASE = 10;
+
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
 {
+    audioSrcClock_ = std::make_shared<AudioCapturerSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(captureId, audioSrcClock_);
 }
 
 AudioCaptureSource::~AudioCaptureSource()
 {
-    AUDIO_WARNING_LOG("in");
     isCaptureThreadRunning_ = false;
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
+    CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
@@ -72,6 +79,11 @@ int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
         ringBufferHandler_ = std::make_shared<RingBufferHandler>();
         ringBufferHandler_->Init(attr.sampleRate, attr.channel, GetByteSizeByFormat(attr.format));
     }
+
+    if (audioSrcClock_ != nullptr) {
+        audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
+    }
+
     return SUCCESS;
 }
 
@@ -82,9 +94,9 @@ void AudioCaptureSource::DeInit(void)
     AudioXCollie audioXCollie("AudioCaptureSource::DeInit", TIMEOUT_SECONDS_5,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     sourceInited_ = false;
-    started_ = false;
+    started_.store(false);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN(deviceManager != nullptr);
@@ -109,17 +121,8 @@ bool AudioCaptureSource::IsInited(void)
     return sourceInited_;
 }
 
-int32_t AudioCaptureSource::Start(void)
+void AudioCaptureSource::InitRunningLock(void)
 {
-    std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
-    Trace trace("AudioCaptureSource::Start");
-
-    if (IsNonblockingSource(adapterNameCase_)) {
-        return NonblockingStart();
-    }
-
-    InitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ == nullptr) {
         WatchTimeout guard("create AudioRunningLock start");
@@ -142,6 +145,24 @@ int32_t AudioCaptureSource::Start(void)
         AUDIO_ERR_LOG("running lock is null, playback can not work well");
     }
 #endif
+}
+
+int32_t AudioCaptureSource::Start(void)
+{
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    Trace trace("AudioCaptureSource::Start");
+    if (audioSrcClock_ != nullptr) {
+        audioSrcClock_->Reset();
+    }
+
+    if (IsNonblockingSource(adapterNameCase_)) {
+        return NonblockingStart();
+    }
+
+    InitLatencyMeasurement();
+    InitRunningLock();
+
     // eg: primary_source_0_20240527202236189_44100_2_1.pcm
     dumpFileName_ = halName_ + "_source_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
         std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
@@ -149,19 +170,19 @@ int32_t AudioCaptureSource::Start(void)
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     logUtilsTag_ = "AudioSource";
 
-    if (started_) {
+    if (started_.load()) {
         return SUCCESS;
     }
     callback_.OnCaptureState(true);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     int32_t ret = audioCapture_->Start(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
-    started_ = true;
+    started_.store(true);
 
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
     if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
-        audioEnhanceChainManager->SetAccessoryDeviceState(true);
+        SetAccessoryDeviceState(true);
     }
 
     return SUCCESS;
@@ -183,7 +204,7 @@ int32_t AudioCaptureSource::Stop(void)
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
     if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
-        audioEnhanceChainManager->SetAccessoryDeviceState(false);
+        SetAccessoryDeviceState(false);
     }
 
     return SUCCESS;
@@ -208,10 +229,10 @@ int32_t AudioCaptureSource::Resume(void)
 int32_t AudioCaptureSource::Pause(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::Pause");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
-    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
+    CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
 
     int32_t ret = audioCapture_->Pause(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "pause fail");
@@ -222,10 +243,10 @@ int32_t AudioCaptureSource::Pause(void)
 int32_t AudioCaptureSource::Flush(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::Flush");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
-    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
+    CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
 
     int32_t ret = audioCapture_->Flush(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "flush fail");
@@ -235,20 +256,41 @@ int32_t AudioCaptureSource::Flush(void)
 int32_t AudioCaptureSource::Reset(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::Reset");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
-    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
+    CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
 
     int32_t ret = audioCapture_->Flush(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "reset fail");
     return SUCCESS;
 }
 
+static uint64_t GetFirstTimeStampFromAlgo(const std::string &adapterNameCase)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, 0, "GetDeviceManager fail!");
+
+    AudioParamKey key = NONE;
+    std::string value = deviceManager->GetAudioParameter(adapterNameCase, key, "record_algo_first_ts");
+    CHECK_AND_RETURN_RET_LOG(value != "", 0, "record_algo_first_ts fail!");
+
+    uint64_t firstTimeStamp = std::strtoull(value.c_str(), nullptr, DECIMAL_BASE);
+    AUDIO_INFO_LOG("record_algo_first_ts:%{public}" PRIu64, firstTimeStamp);
+    return firstTimeStamp;
+}
+
 int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    if (!started_.load()) {
+        AUDIO_WARNING_LOG("not start, invalid state");
+        return ERR_ILLEGAL_STATE;
+    }
+
     Trace trace("AudioCaptureSource::CaptureFrame");
+    AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
 
     // only mic ref
     if (attr_.sourceType == SOURCE_TYPE_MIC_REF) {
@@ -269,6 +311,9 @@ int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uin
     uint32_t frameLen = static_cast<uint32_t>(requestBytes);
     int32_t ret = audioCapture_->CaptureFrame(audioCapture_, reinterpret_cast<int8_t *>(frame), &frameLen, &replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "fail, ret: %{public}x", ret);
+    if (audioSrcClock_ != nullptr && audioSrcClock_->GetFrameCnt() == 0) {
+        audioSrcClock_->SetFirstTimestampFromHdi(GetFirstTimeStampFromAlgo(adapterNameCase_));
+    }
     CheckLatencySignal(reinterpret_cast<uint8_t *>(frame), replyBytes);
 
     DumpData(frame, replyBytes);
@@ -515,7 +560,7 @@ void AudioCaptureSource::SetAddress(const std::string &address)
 
 void AudioCaptureSource::DumpInfo(std::string &dumpString)
 {
-    dumpString += "type: PrimarySource\tstarted: " + std::string(started_ ? "true" : "false") + "\thalName: " +
+    dumpString += "type: PrimarySource\tstarted: " + std::string(started_.load() ? "true" : "false") + "\thalName: " +
         halName_ + "\tcurrentActiveDevice: " + std::to_string(currentActiveDevice_) + "\tsourceType: " +
         std::to_string(attr_.sourceType) + "\n";
 }
@@ -813,12 +858,15 @@ void AudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
         AUDIO_ERR_LOG("non blocking source not support");
         return;
     }
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    if (halName_ == HDI_ID_INFO_USB) {
-        audioEnhanceChainManager->SetInputDevice(captureId_, DEVICE_TYPE_USB_ARM_HEADSET, "");
-    } else {
-        audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        if (halName_ == HDI_ID_INFO_USB) {
+            audioEnhanceChainManager->SetInputDevice(captureId_, DEVICE_TYPE_USB_ARM_HEADSET, "");
+        } else {
+            audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+        }
     }
 }
 
@@ -956,13 +1004,13 @@ bool AudioCaptureSource::IsNonblockingSource(const std::string &adapterName)
 
 int32_t AudioCaptureSource::NonblockingStart(void)
 {
-    if (started_) {
+    if (started_.load()) {
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     int32_t ret = audioCapture_->Start(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
-    started_ = true;
+    started_.store(true);
 
     isCaptureThreadRunning_ = true;
     captureThread_ = std::make_unique<std::thread>(&AudioCaptureSource::CaptureThreadLoop, this);
@@ -979,13 +1027,13 @@ int32_t AudioCaptureSource::NonblockingStop(void)
         captureThread_->join();
     }
 
-    if (!started_) {
+    if (!started_.load()) {
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     int32_t ret = audioCapture_->Stop(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
-    started_ = false;
+    started_.store(false);
     return SUCCESS;
 }
 
@@ -1070,6 +1118,21 @@ int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice
     return SUCCESS;
 }
 
+int32_t AudioCaptureSource::SetAccessoryDeviceState(bool state)
+{
+    ErrCode ret;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), ERROR, "os account not ready");
+    if (state) {
+        ret = settingProvider.PutStringValue("hw.pencil.mic_ack.state", "1", "global");
+    } else {
+        ret = settingProvider.PutStringValue("hw.pencil.mic_ack.state", "0", "global");
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Write Accessory state to Database failed");
+    AUDIO_INFO_LOG("success write hw.pencil.mic_ack.state %{public}d to Database", state);
+    return SUCCESS;
+}
+
 int32_t AudioCaptureSource::DoStop(void)
 {
     AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
@@ -1091,7 +1154,7 @@ int32_t AudioCaptureSource::DoStop(void)
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     int32_t ret = audioCapture_->Stop(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
-    started_ = false;
+    started_.store(false);
     callback_.OnCaptureState(false);
     return SUCCESS;
 }

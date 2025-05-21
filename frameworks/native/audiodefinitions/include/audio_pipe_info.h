@@ -58,6 +58,20 @@ public:
     virtual ~AudioPipeInfo();
 
     AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo);
+
+    void Dump(std::string &dumpString);
+
+private:
+    bool IsOutput()
+    {
+        return pipeRole_ == PIPE_ROLE_OUTPUT;
+    }
+
+    void DumpCommonAttrs(std::string &dumpString);
+
+    void DumpOutputAttrs(std::string &dumpString);
+
+    void DumpInputAttrs(std::string &dumpString);
 };
 } // namespace AudioStandard
 } // namespace OHOS

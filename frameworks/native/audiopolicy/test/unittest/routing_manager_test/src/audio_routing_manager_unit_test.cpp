@@ -136,23 +136,17 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredInputDeviceCh
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophones_001, TestSize.Level1)
 {
-    int32_t ret = -1;
     auto inputDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
-    if (inputDeviceDescriptors.size() == 0) {
-        ret = SUCCESS;
-        EXPECT_EQ(SUCCESS, ret);
-        return;
-    }
+    EXPECT_FALSE(inputDeviceDescriptors.empty());
     auto microphoneDescriptors = AudioRoutingManager::GetInstance()->GetAvailableMicrophones();
-    EXPECT_GT(microphoneDescriptors.size(), 0);
-    for (auto inputDescriptor : inputDeviceDescriptors) {
-        for (auto micDescriptor : microphoneDescriptors) {
-            if (micDescriptor->deviceType_ == inputDescriptor->deviceType_) {
-                ret = SUCCESS;
-            }
-        }
-    }
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_FALSE(microphoneDescriptors.empty());
+    EXPECT_TRUE(std::any_of(inputDeviceDescriptors.begin(), inputDeviceDescriptors.end(),
+        [&](const auto& inputDesc) {
+            return std::any_of(microphoneDescriptors.begin(), microphoneDescriptors.end(),
+                [&](const auto& micDesc) {
+                    return micDesc->deviceType_ == inputDesc->deviceType_;
+                });
+        }));
 }
 
 /**

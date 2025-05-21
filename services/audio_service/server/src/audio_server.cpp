@@ -666,7 +666,6 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
 bool AudioServer::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
-    CHECK_AND_RETURN_RET_LOG(subKeys.size() > 0, false, "params is empty!");
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         return HPAE::IHpaeManager::GetHpaeManager().GetEffectLiveParameter(subKeys, result);
@@ -680,7 +679,7 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
 {
     if (mainKey == EFFECT_LIVE_KEY) {
         bool ret = GetEffectLiveParameter(subKeys, result);
-        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get effect live parameters failed.");
         return SUCCESS;
     }
     if (mainKey == PCM_DUMP_KEY) {
@@ -997,7 +996,10 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     } else {
         source->SetAudioScene(audioScene, activeInputDevice);
     }
-
+    std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
+    if (fastSource != nullptr && fastSource->IsInited()) {
+        fastSource->SetAudioScene(audioScene, activeInputDevice);
+    }
     if (sink == nullptr || !sink->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
@@ -2249,6 +2251,22 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
     CHECK_AND_RETURN_LOG(sink, "sink is nullptr");
     int32_t ret = sink->UpdatePrimaryConnectionState(state);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "sink do not support UpdatePrimaryConnectionState");
+}
+
+void AudioServer::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetLatestMuteState(sessionId, muteFlag);
+}
+
+void AudioServer::SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetSessionMuteState(sessionId, insert, muteFlag);
 }
 
 void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)

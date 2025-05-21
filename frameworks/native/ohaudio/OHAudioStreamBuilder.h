@@ -66,6 +66,7 @@ public:
         OH_AudioCapturer_OnInterruptCallback callback, void *userData);
     OH_AudioStream_Result SetCapturerErrorCallback(OH_AudioCapturer_OnErrorCallback callback,
         void *userData);
+    OH_AudioStream_Result SetMuteWhenInterrupted(bool muteWhenInterrupted);
 
 private:
     int32_t streamType_;
@@ -117,6 +118,7 @@ private:
     void *outputDeviceChangeuserData_ = nullptr;
     void *metadataUserData_ = nullptr;
     InterruptMode interruptMode_ = SHARE_MODE;
+    InterruptStrategy strategy_ = InterruptStrategy::DEFAULT;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

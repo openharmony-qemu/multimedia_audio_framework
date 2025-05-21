@@ -28,6 +28,7 @@ namespace AudioStandard {
 namespace {
 constexpr int MAX_PID_COUNT = 1000;
 const unsigned int ON_REMOTE_REQUEST_TIMEOUT_SEC = 20;
+constexpr int32_t MAX_STREAM_USAGE_COUNT = StreamUsage::STREAM_USAGE_MAX + 1;
 const char *g_audioPolicyCodeStrs[] = {
     "GET_MAX_VOLUMELEVEL",
     "GET_MIN_VOLUMELEVEL",
@@ -222,7 +223,16 @@ const char *g_audioPolicyCodeStrs[] = {
     "DEACTIVATE_PREEMPT_MODE",
     "GET_DM_DEVICE_TYPE",
     "GET_DIRECT_PLAYBACK_SUPPORT",
+    "NOFITY_SESSION_STATE_CHANGE",
+    "NOFITY_FREEZE_STATE_CHANGE",
+    "RESET_ALL_PROXY",
+    "SET_BACKGROUND_MUTE_CALLBACK",
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
+    "GET_MAX_VOLUME_LEVEL_BY_USAGE",
+    "GET_MIN_VOLUME_LEVEL_BY_USAGE",
+    "GET_VOLUME_LEVEL_BY_USAGE",
+    "GET_STREAM_MUTE_BY_USAGE",
+    "SET_CALLBACK_STREAM_USAGE_INFO",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1238,6 +1248,43 @@ void AudioPolicyManagerStub::SetQueryBundleNameListCallbackInternal(MessageParce
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::NotifySessionStateChangeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t uid = data.ReadInt32();
+    int32_t pid = data.ReadInt32();
+    bool hasSession = data.ReadBool();
+
+    int32_t result = NotifySessionStateChange(uid, pid, hasSession);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::set<int32_t> pidList;
+    bool isFreeze = data.ReadBool();
+    int32_t pidListSize = data.ReadInt32();
+    for (int32_t i = 0; i < pidListSize; i ++) {
+        pidList.insert(data.ReadInt32());
+    }
+
+    int32_t result = NotifyFreezeStateChange(pidList, isFreeze);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::ResetAllProxyInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = ResetAllProxy();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetBackgroundMuteCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "SetBackgroundMuteCallbackInternal is null");
+    int32_t result = SetBackgroundMuteCallback(object);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1248,8 +1295,35 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DIRECT_PLAYBACK_SUPPORT):
             GetDirectPlaybackSupportInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::NOFITY_SESSION_STATE_CHANGE):
+            NotifySessionStateChangeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::NOFITY_FREEZE_STATE_CHANGE):
+            NotifyFreezeStateChangeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::RESET_ALL_PROXY):
+            ResetAllProxyInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_BACKGROUND_MUTE_CALLBACK):
+            SetBackgroundMuteCallbackInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED):
             IsAcousticEchoCancelerSupportedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUME_LEVEL_BY_USAGE):
+            GetMaxVolumeLevelByUsageInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUME_LEVEL_BY_USAGE):
+            GetMinVolumeLevelByUsageInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_LEVEL_BY_USAGE):
+            GetVolumeLevelByUsageInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE_BY_USAGE):
+            GetStreamMuteByUsageInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK_STREAM_USAGE_INFO):
+            SetCallbackStreamUsageInfoInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
@@ -2245,6 +2319,49 @@ void AudioPolicyManagerStub::IsAcousticEchoCancelerSupportedInternal(MessageParc
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
     bool result = IsAcousticEchoCancelerSupported(sourceType);
     reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::GetMaxVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    int32_t result = GetMaxVolumeLevelByUsage(streamUsage);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetMinVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    int32_t result = GetMinVolumeLevelByUsage(streamUsage);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    int32_t result = GetVolumeLevelByUsage(streamUsage);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetStreamMuteByUsageInternal(MessageParcel &data, MessageParcel &reply)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    bool result = GetStreamMuteByUsage(streamUsage);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::SetCallbackStreamUsageInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size >= 0 && size <= MAX_STREAM_USAGE_COUNT, "size upper limit.");
+    std::set<StreamUsage> streamUsages;
+    for (int i = 0; i < size; i++) {
+        int32_t streamUsage = data.ReadInt32();
+        CHECK_AND_RETURN_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+            "streamUsage is invalid.");
+        streamUsages.insert(static_cast<StreamUsage>(streamUsage));
+    }
+    int32_t result = SetCallbackStreamUsageInfo(streamUsages);
+    reply.WriteInt32(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

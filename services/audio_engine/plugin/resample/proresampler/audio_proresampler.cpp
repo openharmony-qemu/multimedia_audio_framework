@@ -49,8 +49,11 @@ int32_t ProResampler::Process(const float *inBuffer, uint32_t *inFrameSize, floa
         AUDIO_WARNING_LOG("ProResampler process failed with error %{public}s", ErrCodeToString(ret).c_str());
     }
     uint32_t fillZeroSize = expectedOutFrameSize - *outFrameSize > 0 ? expectedOutFrameSize - *outFrameSize : 0;
-    ret += memset_s(outBuffer,  expectedOutFrameSize * channels_ * sizeof(float), 0,
-        fillZeroSize * channels_ * sizeof(float));
+    for (uint32_t i = 0; i < fillZeroSize; i++) {
+        for (uint32_t c = 0; c < channels_; c++) {
+            outBuffer[channels_ * i + c] = tmpOutBuf[c];
+        }
+    }
     ret += memcpy_s(outBuffer + fillZeroSize * channels_,
         (expectedOutFrameSize - fillZeroSize) * channels_ * sizeof(float),
         tmpOutBuf.data(), *outFrameSize * channels_ * sizeof(float));

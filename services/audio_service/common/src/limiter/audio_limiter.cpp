@@ -83,7 +83,8 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
         maxRequest, biteSize, sampleRate, channels, algoFrameLen_, latency_);
     bufHis_ = new (std::nothrow) float[algoFrameLen_]();
     CHECK_AND_RETURN_RET_LOG(bufHis_ != nullptr, ERROR, "allocate limit algorithm buffer failed");
-
+    sampleRate_ = sampleRate;
+    channels_ = channels;
     dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);
@@ -99,6 +100,18 @@ int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffe
     CHECK_AND_RETURN_RET_LOG(algoFrameLen_ * PROC_COUNT == frameLen, ERROR,
         "error, algoFrameLen_ = %{public}d, frameLen = %{public}d", algoFrameLen_, frameLen);
     int32_t ptrIndex = 0;
+    if (dumpFileInput_ == nullptr) {
+        dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" +
+            std::to_string(sampleRate_) + "_" + std::to_string(channels_) + "_" + std::to_string(format_) + ".pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);
+        AUDIO_DEBUG_LOG("Reopen dump file: %{public}s", dumpFileNameIn_.c_str());
+    }
+    if (dumpFileOutput_ == nullptr) {
+        dumpFileNameOut_ = std::to_string(sinkIndex_) + "_limiter_out_" + GetTime() + "_" +
+            std::to_string(sampleRate_) + "_" + std::to_string(channels_) + "_" + std::to_string(format_) + ".pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameOut_, &dumpFileOutput_);
+        AUDIO_DEBUG_LOG("Reopen dump file: %{public}s", dumpFileNameOut_.c_str());
+    }
     DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(inBuffer), frameLen * sizeof(float));
     for (int32_t i = 0; i < PROC_COUNT; i++) {
         ProcessAlgo(algoFrameLen_, inBuffer + ptrIndex, outBuffer + ptrIndex);

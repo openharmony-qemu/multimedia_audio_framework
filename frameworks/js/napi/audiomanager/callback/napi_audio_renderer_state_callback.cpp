@@ -102,7 +102,7 @@ bool NapiAudioRendererStateCallback::GetRendererStateTsfnFlag()
 void NapiAudioRendererStateCallback::OnRendererStateChange(
     const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    AUDIO_PRERELEASE_LOGI("OnRendererStateChange entered");
+    AUDIO_PRERELEASE_LOGI("enter");
 
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -137,7 +137,6 @@ void NapiAudioRendererStateCallback::SafeJsCallbackRendererStateWork(
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-    AUDIO_INFO_LOG("SafeJsCallbackRingModeWork: safe js callback working.");
 
     do {
         napi_value jsCallback = nullptr;

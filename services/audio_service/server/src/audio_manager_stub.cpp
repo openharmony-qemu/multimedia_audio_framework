@@ -127,6 +127,8 @@ const char *g_audioServerCodeStrs[] = {
     "SET_DM_DEVICE_TYPE",
     "NOTIFY_SETTINGS_DATA_READY",
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
+    "SET_SESSION_MUTE_STATE",
+    "NOTIFY_MUTE_STATE_CHANGE",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -865,6 +867,10 @@ int AudioManagerStub::HandleSixthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleDestroyHdiPort(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED):
             return HandleIsAcousticEchoCancelerSupported(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_SESSION_MUTE_STATE):
+            return HandleSetSessionMuteState(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_MUTE_STATE_CHANGE):
+            return HandleOnMuteStateChange(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1352,5 +1358,23 @@ int AudioManagerStub::HandleIsAcousticEchoCancelerSupported(MessageParcel &data,
     reply.WriteBool(ret);
     return AUDIO_OK;
 }
+
+int AudioManagerStub::HandleSetSessionMuteState(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    bool insert = data.ReadBool();
+    bool muteFlag = data.ReadBool();
+    SetSessionMuteState(sessionId, insert, muteFlag);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleOnMuteStateChange(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    bool muteFlag = data.ReadBool();
+    SetLatestMuteState(sessionId, muteFlag);
+    return AUDIO_OK;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

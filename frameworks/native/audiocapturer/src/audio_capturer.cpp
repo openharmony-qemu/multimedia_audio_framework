@@ -901,6 +901,13 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     return currentStream->SetBufferSizeInMsec(bufferDuration);
 }
 
+bool AudioCapturerPrivate::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+    return currentStream->GetTimeStampInfo(timestamp, base);
+}
+
 // diffrence from GetAudioPosition only when set speed
 int32_t AudioCapturerPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
 {
@@ -1099,6 +1106,16 @@ int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<Source
     }
     AUDIO_INFO_LOG("Set audio source concurrency success.");
     audioInterrupt_.currencySources.sourcesTypes = targetSources;
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
+{
+    CapturerState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == CAPTURER_PREPARED, ERR_ILLEGAL_STATE,
+        "incorrect state:%{public}d", state);
+    audioInterrupt_.strategy = strategy;
+    AUDIO_INFO_LOG("set InterruptStrategy to %{public}d", static_cast<int32_t>(strategy));
     return SUCCESS;
 }
 

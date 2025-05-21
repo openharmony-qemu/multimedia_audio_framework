@@ -51,6 +51,7 @@ public:
         FOCUS_INFOCHANGE,
         RINGER_MODEUPDATE_EVENT,
         APP_VOLUME_CHANGE_EVENT,
+        ACTIVE_VOLUME_TYPE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
         INTERRUPT_EVENT,
@@ -88,6 +89,7 @@ public:
         DeviceChangeAction deviceChangeAction;
         MicrophoneBlockedInfo microphoneBlockedInfo;
         VolumeEvent volumeEvent;
+        AudioVolumeType volumeType;
         AudioInterrupt audioInterrupt;
         std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
         AudioRingerMode ringMode;
@@ -160,6 +162,7 @@ public:
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
+    bool SendActiveVolumeTypeChangeCallback(const AudioVolumeType &volumeType);
     bool SendAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent);
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
     bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
@@ -205,6 +208,7 @@ public:
     void SetAudioZoneEventDispatcher(const std::shared_ptr<IAudioZoneEventDispatcher> dispatcher);
     bool SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent> event);
     bool SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode);
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -248,10 +252,14 @@ private:
     void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleActiveVolumeTypeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
+
+    void HandleVolumeChangeCallback(int32_t clientId, sptr<IAudioPolicyClient> audioPolicyClient,
+        const VolumeEvent &volumeEvent);
 
     std::vector<AudioRendererInfo> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
@@ -260,6 +268,7 @@ private:
     std::mutex handleMapMutex_;
     std::mutex clientCbRendererInfoMapMutex_;
     std::mutex clientCbCapturerInfoMapMutex_;
+    std::mutex clientCbStreamUsageMapMutex_;
     std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
     std::weak_ptr<IAudioZoneEventDispatcher> audioZoneEventDispatcher_;
@@ -274,6 +283,7 @@ private:
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
     std::unordered_map<int32_t, std::vector<AudioRendererInfo>> clientCbRendererInfoMap_;
     std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
+    std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

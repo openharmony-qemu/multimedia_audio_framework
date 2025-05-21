@@ -138,6 +138,7 @@ struct SourceAdapter {
     uint32_t captureId;
     const char *deviceClass;
     struct SourceAdapterAttr *attr;
+    uint32_t sessionId[PA_MAX_OUTPUTS_PER_SOURCE];
 
     int32_t (*SourceAdapterInit)(struct SourceAdapter *adapter, const struct SourceAdapterAttr *attr);
     void (*SourceAdapterDeInit)(struct SourceAdapter *adapter);
@@ -156,6 +157,8 @@ struct SourceAdapter {
 
     int32_t (*SourceAdapterUpdateAppsUid)(struct SourceAdapter *adapter,
         const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size);
+    int32_t (*SourceAdapterUpdateSessionUid)(struct SourceAdapter *adapter,
+        const int32_t sessionId[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size);
 };
 
 typedef enum EcType {

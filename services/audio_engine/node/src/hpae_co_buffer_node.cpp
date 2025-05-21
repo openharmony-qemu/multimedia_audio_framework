@@ -23,7 +23,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo, int32_t& delay)
-    : HpaeNode(nodeInfo), outputStream_(this)
+    : HpaeNode(nodeInfo), outputStream_(this), PcmBufferInfo_(SAMPLE_RATE_48000, STEREO,
+        nodeInfo.format, nodeInfo.frameLen, nodeInfo.channelLayout),
 {
     AUDIO_INFO_LOG("HpaeCoBufferNode created, delay: %{public}d", delay);
     delay_ = delay;

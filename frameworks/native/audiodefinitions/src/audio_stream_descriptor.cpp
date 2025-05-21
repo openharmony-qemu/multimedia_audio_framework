@@ -14,11 +14,32 @@
  */
 
 #include "audio_stream_descriptor.h"
+
+#include <cinttypes>
 #include "audio_common_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 static const int32_t MAX_STREAM_DESCRIPTORS_SIZE = 1000;
+
+static const char *StreamStatusToString(AudioStreamStatus status)
+{
+    switch (status) {
+        case STREAM_STATUS_NEW:
+            return "NEW";
+        case STREAM_STATUS_STARTED:
+            return "STARTED";
+        case STREAM_STATUS_PAUSED:
+            return "PAUSED";
+        case STREAM_STATUS_STOPPED:
+            return "STOPPED";
+        case STREAM_STATUS_RELEASED:
+            return "RELEASED";
+        default:
+            return "UNKNOWN";
+    }
+}
 
 AudioStreamDescriptor::AudioStreamDescriptor()
 {
@@ -103,43 +124,71 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
 
 void AudioStreamDescriptor::Dump(std::string &dumpString)
 {
-    dumpString += "\nstreamId: " + std::to_string(sessionId_) + "\t\tcallerUid: " + std::to_string(callerUid_);
-    dumpString += "\nSampleRate: " + std::to_string(streamInfo_.samplingRate) +
-        " Channels: " + std::to_string(streamInfo_.channels) + " Format: " + std::to_string(streamInfo_.format) +
-        " Encoding: " + std::to_string(streamInfo_.encoding) +
-        " ChannelLayout: " + std::to_string(streamInfo_.channelLayout);
+    AppendFormat(dumpString, "  Stream %d:\n", sessionId_);
 
-    dumpString += "\naudioMode: ";
+    DumpCommonAttrs(dumpString);
+
     if (audioMode_ == AUDIO_MODE_PLAYBACK) {
-        dumpString += "PLAYBACK";
-        dumpString += "\n\tstreamUsage: " + std::to_string(rendererInfo_.streamUsage);
-        dumpString += "\n\toriginalFlag: " + std::to_string(rendererInfo_.originalFlag) +
-            "rendererFlags: " + std::to_string(rendererInfo_.rendererFlags);
-        dumpString += "\n\tisOffloadAllowed: ";
-        dumpString += (rendererInfo_.isOffloadAllowed ? "true" : "false");
+        DumpRendererStreamAttrs(dumpString);
     } else {
-        dumpString += "RECORD";
-        dumpString += "\n\tsourceType: " + std::to_string(capturerInfo_.sourceType);
-        dumpString += "\n\toriginalFlag: " + std::to_string(capturerInfo_.originalFlag) +
-            "capturerFlags: " + std::to_string(capturerInfo_.capturerFlags);
+        DumpCapturerStreamAttrs(dumpString);
     }
 
-    dumpString += "\naudioFlag: " + std::to_string(audioFlag_);
-    dumpString += "\nrouteFlag: " + std::to_string(routeFlag_);
-    dumpString += "\nstartTimeStamp: " + std::to_string(startTimeStamp_);
-    dumpString += "\nstreamStatus: " + std::to_string(streamStatus_);
-    dumpString += "\nstreamAction: " + std::to_string(streamAction_);
-    dumpString += "appUid: " + std::to_string(appInfo_.appUid) + "appTokenId: " + std::to_string(appInfo_.appTokenId) +
-        "appPid: " + std::to_string(appInfo_.appPid) + "appFullTokenId: " + std::to_string(appInfo_.appFullTokenId);
-    dumpString += "\noldDevices:\n";
-    for (size_t idx = 0; idx < oldDeviceDescs_.size(); ++idx) {
-        dumpString += "\t" + std::to_string(idx + 1) + ". ";
-        oldDeviceDescs_[idx]->Dump(dumpString);
+    DumpDeviceAttrs(dumpString);
+}
+
+void AudioStreamDescriptor::DumpCommonAttrs(std::string &dumpString)
+{
+    AppendFormat(dumpString, "    - StreamStatus: %u (%s)\n",
+        streamStatus_, StreamStatusToString(streamStatus_));
+
+    AppendFormat(dumpString, "    - CallerUid: %d\n", callerUid_);
+    AppendFormat(dumpString, "    - CallerPid: %d\n", callerPid_);
+    AppendFormat(dumpString, "    - AppUid: %d\n", appInfo_.appUid);
+    AppendFormat(dumpString, "    - AppPid: %d\n", appInfo_.appPid);
+
+    AppendFormat(dumpString, "    - SampleRate: %d\n", streamInfo_.samplingRate);
+    AppendFormat(dumpString, "    - ChannelCount: %u\n", streamInfo_.channels);
+    AppendFormat(dumpString, "    - ChannelLayout: %" PRIu64"\n", streamInfo_.channelLayout);
+    AppendFormat(dumpString, "    - Format: %u\n", streamInfo_.format);
+    AppendFormat(dumpString, "    - Encoding: %d\n", streamInfo_.encoding);
+
+    AppendFormat(dumpString, "    - AudioFlag: 0x%x\n", audioFlag_);
+    AppendFormat(dumpString, "    - RouteFlag: 0x%x\n", routeFlag_);
+    AppendFormat(dumpString, "    - StartTimestamp: %" PRId64"\n", startTimeStamp_);
+}
+
+void AudioStreamDescriptor::DumpRendererStreamAttrs(std::string &dumpString)
+{
+    AppendFormat(dumpString, "    - StreamUsage: %d\n", rendererInfo_.streamUsage);
+    AppendFormat(dumpString, "    - OriginalFlag: %d\n", rendererInfo_.originalFlag);
+    AppendFormat(dumpString, "    - RendererFlag: %d\n", rendererInfo_.rendererFlags);
+    AppendFormat(dumpString, "    - OffloadAllowed: %d\n", rendererInfo_.isOffloadAllowed);
+    AppendFormat(dumpString, "    - PlayerType: %d\n", rendererInfo_.playerType);
+}
+
+void AudioStreamDescriptor::DumpCapturerStreamAttrs(std::string &dumpString)
+{
+    AppendFormat(dumpString, "    - SourceType: %d\n", capturerInfo_.sourceType);
+    AppendFormat(dumpString, "    - OriginalFlag: %d\n", capturerInfo_.originalFlag);
+    AppendFormat(dumpString, "    - RendererFlag: %d\n", capturerInfo_.capturerFlags);
+    AppendFormat(dumpString, "    - RecorderType: %d\n", capturerInfo_.recorderType);
+}
+
+void AudioStreamDescriptor::DumpDeviceAttrs(std::string &dumpString)
+{
+    AppendFormat(dumpString, "    - OldDevices:\n");
+    for (auto &desc : oldDeviceDescs_) {
+        if (desc != nullptr) {
+            desc->Dump(dumpString);
+        }
     }
-    dumpString += "\nnewDevices:\n";
-    for (size_t idx = 0; idx < newDeviceDescs_.size(); ++idx) {
-        dumpString += "\t" + std::to_string(idx + 1) + ". ";
-        newDeviceDescs_[idx]->Dump(dumpString);
+
+    AppendFormat(dumpString, "    - NewDevices:\n");
+    for (auto &desc : newDeviceDescs_) {
+        if (desc != nullptr) {
+            desc->Dump(dumpString);
+        }
     }
 }
 

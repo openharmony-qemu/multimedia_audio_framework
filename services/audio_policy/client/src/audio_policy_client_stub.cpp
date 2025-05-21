@@ -70,6 +70,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_FORMAT_UNSUPPORTED_ERROR):
             HandleFormatUnsupportedError(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_STREAM_VOLUME_CHANGE):
+            HandleStreamVolumeChange(data, reply);
+            break;
         default:
             break;
     }
@@ -146,6 +149,9 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
                 case static_cast<uint32_t>(AudioPolicyClientCode::ON_APP_VOLUME_CHANGE):
                     HandleAppVolumeChange(data, reply);
                     break;
+                case static_cast<uint32_t>(AudioPolicyClientCode::ON_ACTIVE_VOLUME_TYPE_CHANGE):
+                    HandleActiveVolumeTypeChange(data, reply);
+                    break;
                 default:
                     OnMaxRemoteRequest(updateCode, data, reply);
                     break;
@@ -158,6 +164,13 @@ int AudioPolicyClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
         }
     }
     return SUCCESS;
+}
+
+void AudioPolicyClientStub::HandleActiveVolumeTypeChange(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("Handle Active VolumeType Change");
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    OnActiveVolumeTypeChanged(volumeType);
 }
 
 void AudioPolicyClientStub::HandleAppVolumeChange(MessageParcel &data, MessageParcel &reply)
@@ -421,6 +434,13 @@ void AudioPolicyClientStub::HandleFormatUnsupportedError(MessageParcel &data, Me
 {
     AudioErrors code = static_cast<AudioErrors>(data.ReadInt32());
     OnFormatUnsupportedError(code);
+}
+
+void AudioPolicyClientStub::HandleStreamVolumeChange(MessageParcel &data, MessageParcel &reply)
+{
+    StreamVolumeEvent streamVolumeEvent;
+    streamVolumeEvent.Unmarshalling(data);
+    OnStreamVolumeChange(streamVolumeEvent);
 }
 } // namespace AudioStandard
 } // namespace OHOS

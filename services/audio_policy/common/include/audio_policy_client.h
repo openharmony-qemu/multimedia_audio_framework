@@ -36,6 +36,7 @@ enum class AudioPolicyClientCode {
     ON_FOCUS_ABANDON_CHANGED,
     ON_DEVICE_CHANGE,
     ON_APP_VOLUME_CHANGE,
+    ON_ACTIVE_VOLUME_TYPE_CHANGE,
     ON_RINGERMODE_UPDATE,
     ON_MIC_STATE_UPDATED,
     ON_ACTIVE_OUTPUT_DEVICE_UPDATED,
@@ -56,7 +57,8 @@ enum class AudioPolicyClientCode {
     ON_AUDIO_SCENE_CHANGED,
     ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     ON_FORMAT_UNSUPPORTED_ERROR,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_FORMAT_UNSUPPORTED_ERROR,
+    ON_STREAM_VOLUME_CHANGE,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_STREAM_VOLUME_CHANGE,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -68,6 +70,7 @@ public:
     virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
     virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
     virtual void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) = 0;
+    virtual void OnActiveVolumeTypeChanged(const AudioVolumeType& volumeType) = 0;
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
     virtual void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
@@ -95,6 +98,7 @@ public:
     virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
     virtual void OnAudioSceneChange(const AudioScene &audioScene) = 0;
     virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) = 0;
+    virtual void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) = 0;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;

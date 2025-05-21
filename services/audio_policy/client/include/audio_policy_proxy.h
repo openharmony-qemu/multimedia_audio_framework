@@ -438,10 +438,28 @@ public:
 
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetBackgroundMuteCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession) override;
+
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze) override;
+
+    int32_t ResetAllProxy() override;
+
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) override;
 
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+
+    int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) override;
+
+    bool GetStreamMuteByUsage(StreamUsage streamUsage) override;
+
+    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
