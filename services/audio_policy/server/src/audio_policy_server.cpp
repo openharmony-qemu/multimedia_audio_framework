@@ -2226,6 +2226,7 @@ bool AudioPolicyServer::VerifyBluetoothPermission()
 #endif
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
 
+    WatchTimeout guard("VerifyBluetooth");
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, USE_BLUETOOTH_PERMISSION);
     CHECK_AND_RETURN_RET(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, false);
 

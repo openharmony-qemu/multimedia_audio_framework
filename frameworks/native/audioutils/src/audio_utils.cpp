@@ -402,6 +402,7 @@ bool PermissionUtil::VerifyIsSystemApp()
     return true;
 #endif
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    WatchTimeout guard("Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID");
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
 
