@@ -1757,5 +1757,113 @@ void AudioManagerProxy::SetSessionMuteState(const uint32_t sessionId, const bool
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_SESSION_MUTE_STATE), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
 }
+
+int32_t AudioManagerProxy::CreateAudioWorkgroup(int32_t pid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(pid);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOWORKGROUP), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_ERR, "CreateAudioWorkgroup failed, error: %{public}d", error);
+    int workgroupId = reply.ReadInt32(); // workgroupId < 0 represents errorCode
+    CHECK_AND_RETURN_RET_LOG(workgroupId >= 0, AUDIO_ERR, "errcode: %{public}d", workgroupId);
+    return workgroupId;
+}
+
+int32_t AudioManagerProxy::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(pid);
+    data.WriteInt32(workgroupId);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_AUDIOWORKGROUP), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_ERR, "ReleaseAudioWorkgroup failed, error: %{public}d", error);
+    return AUDIO_OK;
+}
+
+int32_t AudioManagerProxy::AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(pid);
+    data.WriteInt32(workgroupId);
+    data.WriteInt32(tokenId);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::ADD_THREAD_TO_AUDIOWORKGROUP), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_ERR, "AddThreadToGroup failed, error: %{public}d", error);
+    return AUDIO_OK;
+}
+
+int32_t AudioManagerProxy::RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(pid);
+    data.WriteInt32(workgroupId);
+    data.WriteInt32(tokenId);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::REMOVE_THREAD_FROM_AUDIOWORKGROUP), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_ERR, "RemoveThreadFromGroup failed, error: %{public}d", error);
+    return AUDIO_OK;
+}
+
+int32_t AudioManagerProxy::StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(pid);
+    data.WriteInt32(workgroupId);
+    data.WriteUint64(startTime);
+    data.WriteUint64(deadlineTime);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::START_AUDIOWORKGROUP), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_ERR, "StartGroup failed, error: %{public}d", error);
+    return AUDIO_OK;
+}
+
+int32_t AudioManagerProxy::StopGroup(int32_t pid, int32_t workgroupId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(pid);
+    data.WriteInt32(workgroupId);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::STOP_AUDIOWORKGROUP), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_ERR, "StopGroup failed, error: %{public}d", error);
+    return AUDIO_OK;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

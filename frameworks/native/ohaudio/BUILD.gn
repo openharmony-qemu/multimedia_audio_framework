@@ -65,6 +65,8 @@ ohos_shared_library("ohaudio") {
     "./OHAudioStreamBuilder.cpp",
     "./OHAudioStreamManager.cpp",
     "./OHAudioVolumeManager.cpp",
+    "./OHAudioWorkgroup.cpp",
+    "./OHAudioResourceManager.cpp",
   ]
 
   deps = [

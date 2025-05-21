@@ -129,6 +129,12 @@ const char *g_audioServerCodeStrs[] = {
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
     "SET_SESSION_MUTE_STATE",
     "NOTIFY_MUTE_STATE_CHANGE",
+    "CREATE_AUDIOWORKGROUP",
+    "RELEASE_AUDIOWORKGROUP",
+    "ADD_THREAD_TO_AUDIOWORKGROUP",
+    "REMOVE_THREAD_FROM_AUDIOWORKGROUP",
+    "START_AUDIOWORKGROUP",
+    "STOP_AUDIOWORKGROUP",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -871,6 +877,18 @@ int AudioManagerStub::HandleSixthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetSessionMuteState(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_MUTE_STATE_CHANGE):
             return HandleOnMuteStateChange(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOWORKGROUP):
+            return HandleCreateAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_AUDIOWORKGROUP):
+            return HandleReleaseAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::ADD_THREAD_TO_AUDIOWORKGROUP):
+            return HandleAddThreadToAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REMOVE_THREAD_FROM_AUDIOWORKGROUP):
+            return HandleRemoveThreadFromAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::START_AUDIOWORKGROUP):
+            return HandleStartAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::STOP_AUDIOWORKGROUP):
+            return HandleStopAudioWorkgroup(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1376,5 +1394,61 @@ int AudioManagerStub::HandleOnMuteStateChange(MessageParcel &data, MessageParcel
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleCreateAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = CreateAudioWorkgroup(pid);
+    reply.WriteInt32(workgroupId);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleReleaseAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    int32_t ret = ReleaseAudioWorkgroup(pid, workgroupId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleAddThreadToAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    int32_t tokenId = data.ReadInt32();
+    int32_t ret = AddThreadToGroup(pid, workgroupId, tokenId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleRemoveThreadFromAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    int32_t tokenId = data.ReadInt32();
+    int32_t ret = RemoveThreadFromGroup(pid, workgroupId, tokenId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleStartAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    uint64_t startTime = data.ReadUint64();
+    uint64_t deadlineTime = data.ReadUint64();
+    int32_t ret = StartGroup(pid, workgroupId, startTime, deadlineTime);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleStopAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    int32_t ret = StopGroup(pid, workgroupId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

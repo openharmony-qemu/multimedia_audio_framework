@@ -57,5 +57,6 @@ ohos_unittest("audio_server_unit_test") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 }

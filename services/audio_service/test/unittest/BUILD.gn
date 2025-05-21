@@ -310,6 +310,7 @@ ohos_unittest("audio_service_unit_test") {
     "hilog:libhilog",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
+    "qos_manager:concurrent_task_client",
   ]
 
   defines = []
