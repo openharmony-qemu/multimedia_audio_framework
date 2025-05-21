@@ -108,6 +108,15 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             OnCheckClientInfo(bundleName, uid, pid);
             return AUDIO_OK;
         }
+        default:
+            return OnMiddleFirRemoteRequest(code, data, reply, option);
+    }
+}
+
+int32_t AudioPolicyManagerListenerStub::OnMiddleFirRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
         case ON_QUERY_BUNDLE_NAME_LIST: {
             std::string bundleName = data.ReadString();
             OnQueryBundleNameIsInList(bundleName);

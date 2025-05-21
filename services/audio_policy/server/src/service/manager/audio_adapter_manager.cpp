@@ -1774,7 +1774,7 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     // first boot
     char firstboot[3] = {0};
     GetParameter("persist.multimedia.audio.firstboot", "0", firstboot, sizeof(firstboot));
-    if (stoi(firstboot) == 1) {
+    if (atoi(firstboot) == 1) {
         AUDIO_INFO_LOG("first boot, ready init data to database");
         isFirstBoot = true;
         SetFirstBoot(false);

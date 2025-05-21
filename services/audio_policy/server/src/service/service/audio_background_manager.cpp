@@ -111,8 +111,9 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
             "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
             appState.hasBackTask, appState.isFreeze);
         bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-        streamCollector_.HandleAppStateChange(uid, needMute);
-        if (needMute && !VolumeUtils::IsPCVolumeEnable()) {
+        bool notifyMute = false;
+        streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
+        if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
             lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
             CHECK_AND_RETURN_LOG(backgroundMuteListener_ != nullptr, "backgroundMuteListener_ is nulptr");
             AUDIO_INFO_LOG("OnBackground with uid: %{public}d", uid);
@@ -165,8 +166,9 @@ void AudioBackgroundManager::HandleSessionStateChange(const int32_t uid, const i
     bool isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
     AppState &appState = appStatesMap_[pid];
     bool needMute = !appState.hasSession && appState.isBack && !isSystem;
-    streamCollector_.HandleAppStateChange(uid, needMute);
-    if (needMute && !VolumeUtils::IsPCVolumeEnable()) {
+    bool notifyMute = false;
+    streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
+    if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
         lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
         CHECK_AND_RETURN_LOG(backgroundMuteListener_ != nullptr, "backgroundMuteListener_ is nulptr");
         AUDIO_INFO_LOG("OnBackground with uid: %{public}d", uid);

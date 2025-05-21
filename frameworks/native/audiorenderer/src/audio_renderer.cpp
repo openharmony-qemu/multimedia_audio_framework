@@ -1091,6 +1091,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
     (void)audioStream_->SetMute(false);
+    UpdateAudioInterruptStrategy(GetVolumeInner());
     return true;
 }
 
