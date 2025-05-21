@@ -1360,6 +1360,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = GetExistFlag(sinkIn, sSceneType, sSceneMode);
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sSceneType, sceneType);
+        AUTO_CTRACE("hdi_sink::PrimaryCluster:existFlag:%d sceneTypeFlag:%d", existFlag, sceneTypeFlag);
         if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             AUTO_CTRACE("hdi_sink::PrimaryCluster:InnerCapturer and CaptureSilently or not primary");
             continue;
@@ -1381,6 +1382,8 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
             infoIn++;
             n++;
             maxInfo--;
+        } else {
+            AUDIO_WARNING_LOG("SinkRenderPrimaryCluster failed");
         }
     }
 
