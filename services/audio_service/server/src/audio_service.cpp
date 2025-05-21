@@ -143,22 +143,17 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
 
 int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord)
 {
-    if (endpoint->GetEndpointType() == AudioEndpoint::EndpointType::TYPE_VOIP_MMAP && !isRecord) {
-        return VOIP_ENDPOINT_RELEASE_DELAY_TIME;
+    if (endpoint->GetEndpointType() == AudioEndpoint::EndpointType::TYPE_VOIP_MMAP) {
+        return isRecord ? VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME : VOIP_ENDPOINT_RELEASE_DELAY_TIME;
     }
-    if (endpoint->GetEndpointType() == AudioEndpoint::EndpointType::TYPE_VOIP_MMAP && isRecord) {
-        return VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME;
-    }
-
     if (endpoint->GetDeviceInfo().deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
         return NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS;
     }
-    if (!isSwitchStream) {
-        return A2DP_ENDPOINT_RELEASE_DELAY_TIME;
-    }
+
     // The delay for destruction and reconstruction cannot be set to 0, otherwise there may be a problem:
     // An endpoint exists at check process, but it may be destroyed immediately - during the re-create process
-    return A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME;
+    return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME
+            : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
 }
 #endif
 
