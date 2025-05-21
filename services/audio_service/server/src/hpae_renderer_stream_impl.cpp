@@ -375,6 +375,15 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
     return audioRendererSinkInstance->SetVolume(volume, volume);
 }
 
+int32_t HpaeRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)
+{
+    AUDIO_INFO_LOG("SetOffloadDataCallbackState state: %{public}d", state);
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
+    return IHpaeManager::GetHpaeManager().SetOffloadRenderCallbackType(processConfig_.originalSessionId, state);
+}
+
 int32_t HpaeRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
 {
     return SUCCESS;

@@ -109,6 +109,8 @@ public:
 
     virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
 
+    virtual int32_t SetOffloadDataCallbackState(int32_t state) { return 0; }
+
     virtual sptr<IRemoteObject> AsObject() { return nullptr; }
 };
 

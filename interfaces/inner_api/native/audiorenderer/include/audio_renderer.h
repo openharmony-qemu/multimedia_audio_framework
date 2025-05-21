@@ -1005,6 +1005,24 @@ public:
      */
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
+    /**
+     * @brief only start data call back for offload by hdi state.
+     *
+     * @return Returns {@link SUCCESS} if the start data call back is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    virtual int32_t StartDataCallback() { return -1; };
+
+    /**
+     * @brief only stop data call back for offload by hdi state.
+     *
+     * @return Returns {@link SUCCESS} if the stop data call back is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    virtual int32_t StopDataCallback() { return -1; };
+
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);

@@ -1832,5 +1832,12 @@ int32_t RendererInClientInner::GetCallbackLoopTid()
     }
     return callbackLoopTid_;
 }
+
+int32_t RendererInClientInner::SetOffloadDataCallbackState(int cbState)
+{
+    Trace trace("RendererInClientInner::SetOffloadDataCallbackState: " + std::to_string(cbState));
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    return ipcStream_->SetOffloadDataCallbackState(cbState);
+}
 } // namespace AudioStandard
 } // namespace OHOS

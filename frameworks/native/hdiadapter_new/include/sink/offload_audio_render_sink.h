@@ -83,6 +83,7 @@ public:
     int32_t Drain(AudioDrainType type) override;
     void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> callback) override;
     int32_t SetBufferSize(uint32_t sizeMs) override;
+    int32_t SetOffloadRenderCallbackType(RenderCallbackType type) override;
     int32_t LockOffloadRunningLock(void) override;
     int32_t UnLockOffloadRunningLock(void) override;
 

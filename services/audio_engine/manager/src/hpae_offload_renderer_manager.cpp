@@ -532,9 +532,8 @@ void HpaeOffloadRendererManager::Process()
 int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 {
     auto request = [this, sessionId, state]() {
-        CHECK_AND_RETURN_LOG(sinkInputNode_, "SetOffloadPolicy err, sinkInputNode is nullptr");
-        CHECK_AND_RETURN_LOG(sessionId == sinkInputNode_->GetSessionId(),
-            "RegisterWriteCallback not find sessionId %{public}u",
+        CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
+            "SetOffloadPolicy not find sessionId %{public}u",
             sessionId);
         if (sinkOutputNode_) {
             sinkOutputNode_->SetPolicyState(state);
@@ -557,6 +556,20 @@ int32_t HpaeOffloadRendererManager::UpdateSpatializationState(
 
 int32_t HpaeOffloadRendererManager::UpdateMaxLength(uint32_t sessionId, uint32_t maxLength)
 {
+    return SUCCESS;
+}
+
+int32_t HpaeOffloadRendererManager::SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type)
+{
+    auto request = [this, sessionId, type]() {
+        CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
+            "SetOffloadRenderCallbackType not find sessionId %{public}u",
+            sessionId);
+        if (sinkOutputNode_) {
+            sinkOutputNode_->SetOffloadRenderCallbackType(type);
+        }
+    };
+    SendRequest(request);
     return SUCCESS;
 }
 

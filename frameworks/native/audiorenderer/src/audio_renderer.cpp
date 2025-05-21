@@ -564,7 +564,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 #ifdef SUPPORT_LOW_LATENCY
     IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
 #else
-    rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    if (rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD) {
+        rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    }
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
@@ -2589,6 +2591,24 @@ void FormatUnsupportedErrorCallbackImpl::OnFormatUnsupportedError(const AudioErr
     std::shared_ptr<AudioRendererErrorCallback> cb = callback_.lock();
     CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->OnError(errorCode);
+}
+
+int32_t AudioRendererPrivate::StartDataCallback()
+{
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+        "StartDataCallback failed. Illegal state:%{public}u", state);
+    return audioStream_->SetOffloadDataCallbackState(0); // 0 hdi state need data
+}
+
+int32_t AudioRendererPrivate::StopDataCallback()
+{
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+        "StopDataCallback failed. Illegal state:%{public}u", state);
+    return audioStream_->SetOffloadDataCallbackState(3); // 3 hdi state full
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
