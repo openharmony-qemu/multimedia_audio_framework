@@ -317,7 +317,7 @@ void HpaeRendererManager::DeleteProcessCluster(
             // todo hpaeCoBufferNode info更新
             hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
             // triggerback
-            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, shared_from_this());
+            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
         }
         outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
         sceneClusterMap_[sceneType]->SetConnectedFlag(false);
@@ -403,12 +403,9 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         sceneClusterMap_[sceneType]->SetConnectedFlag(true);
     }
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
-    // for collaboration
     if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
-        // todo hpaeCoBufferNode info更新
         hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
-        // triggerback
-        TriggerCallback(CONNECT_CO_BUFFER_NODE, shared_from_this());
+        TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
     }
 }
 
@@ -557,10 +554,9 @@ void HpaeRendererManager::DisConnectProcessCluster(uint32_t sessionId, HpaeProce
         outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
         // for collaboration
         if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
-            // todo hpaeCoBufferNode info更新
             hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
             // triggerback
-            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, shared_from_this());
+            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
         }
         sceneClusterMap_[sceneType]->SetConnectedFlag(false);
     }
@@ -1059,21 +1055,21 @@ int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnable
         isCollaborationEnabled_ = isCollaborationEnabled;
         // todo get latency
         int32_t latency_ = 200;
-        if (isCollaborationEnabled_ && hpaeCoBufferNode_ == nullptr) {
-            HpaeNodeInfo nodeInfo;
-            hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(nodeInfo, latency_);
-            for (auto it : sessionNodeMap_) {
-                // to do change effectscene
-                HandleCollaborationStateChangedInner(TransStreamTypeToSceneType(it->second.sceneType,
-                    isCollaborationEnabled_), it.first);
+        if (isCollaborationEnabled_) {
+            if (hpaeCoBufferNode_ == nullptr) {
+                HpaeNodeInfo nodeInfo;
+                hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(nodeInfo, latency_);
             }
-            TriggerCallback(CONNECT_CO_BUFFER_NODE, shared_from_this());
+            for (auto it : sessionNodeMap_) {
+                HandleCollaborationStateChangedInner(it->second.sceneType, it.first);
+            }
+            TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
         } else if (!isCollaborationEnabled_ && hpaeCoBufferNode_ != nullptr) {
             for (auto it : sessionNodeMap_) {
                 HandleCollaborationStateChangedInner(it.second.sceneType, it.first);
             }
-            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, shared_from_this());
-            hpaeCoBufferNode_ = nullptr;
+            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+            hpaeCoBufferNode_.reset();
         }
     };
     SendRequest(request);
@@ -1119,16 +1115,14 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
 void HpaeRendererManager::HandleCollaborationStateChangedInner(HpaeProcessorType sceneType, uint32_t sessionID)
 {
     AUDIO_INFO_LOG("sceneType:%{public}d sessionId %{public}u", sceneType, sessionID);
-    if (sceneType == HPAE_SCENE_COLLABORATIVE) {
-        // delete the session
-        // todo fade out
-        DeleteInputSession(sessionID);
-        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionID),
-            "sinkInputNodeMap_ not find sessionId %{public}u", sessionID);
-        if (SafeGetMap(sinkInputNodeMap_, sessionID)) {
-            AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionID);
-            AddSingleNodeToSink(sinkInputNodeMap_[sessionID], false);
-        }
+    // delete the session
+    // todo fade out
+    DeleteInputSession(sessionID);
+    CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionID),
+        "sinkInputNodeMap_ not find sessionId %{public}u", sessionID);
+    if (SafeGetMap(sinkInputNodeMap_, sessionID)) {
+        AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionID);
+        AddSingleNodeToSink(sinkInputNodeMap_[sessionID], false);
     }
 }
 }  // namespace HPAE

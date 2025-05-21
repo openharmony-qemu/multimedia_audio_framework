@@ -189,8 +189,8 @@ private:
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
     void HandleGetCaptureId(uint32_t captureId, int32_t deviceType);
-    void HandleConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager);
-    void HandleDisConnectCoBufferNode(std::weak_ptr<IHpaeRendererManager> &rendererManager);
+    void HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode);
+    void HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode);
 
     void SendRequest(Request &&request);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
