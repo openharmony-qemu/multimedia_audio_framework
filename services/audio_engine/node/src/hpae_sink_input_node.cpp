@@ -64,13 +64,13 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
 HpaeSinkInputNode::~HpaeSinkInputNode()
 {}
 
-void HpaeSinkInputNode::CheckAndDestoryHistoryBuffer()
+void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 {
     HpaeNodeInfo nodeInfo = GetNodeInfo();
-    // historyBuffer_ has no data, check if historyFrameCount is 0 and distory it
+    // historyBuffer_ has no data, check if historyFrameCount is 0 and destroy it
     if (nodeInfo.historyFrameCount == 0) {
         if (historyBuffer_) {
-            AUDIO_INFO_LOG("HpaeSinkInputNode::historyBuffer_ useless, distory it");
+            AUDIO_INFO_LOG("HpaeSinkInputNode::historyBuffer_ useless, destroy it");
         }
         historyBuffer_ = nullptr;
     } else if (historyBuffer_ == nullptr) {  // this case need to create historyBuffer_
@@ -98,15 +98,6 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
     return SUCCESS;
 }
 
-std::string HpaeSinkInputNode::GetTraceInfo()
-{
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    return rate + ch + len + format;
-}
-
 void HpaeSinkInputNode::DoProcess()
 {
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " +
@@ -126,7 +117,7 @@ void HpaeSinkInputNode::DoProcess()
         outputStream_.WriteDataToOutput(&inputAudioBuffer_);
         return;
     }
-    CheckAndDestoryHistoryBuffer();
+    CheckAndDestroyHistoryBuffer();
     if (nodeCallback && ret) {
         nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
         if (isDrain_) {
