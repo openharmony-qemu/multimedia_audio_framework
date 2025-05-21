@@ -50,12 +50,11 @@ void HpaeCoBufferNode::SetBufferSize(size_t size)
         CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "ReConfig ring cache failed");
     }
     // todo set latency
-    int32_t offset;
+    int32_t offset = 0;
     while (offset < delay_) {
         OptResult result = ringCache_->GetWritableSize();
         CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-        size_t writeLen = buffer->GetFrameLen() * buffer->GetChannelCount() *
-            sizeof(float) * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
+        size_t writeLen = coBufferOut_.GetFrameLen() * coBufferOut_.GetChannelCount() * sizeof(float);
         memset_s(coBufferOut_.GetPcmDataBuffer(), writeLen, 0, writeLen);
         CHECK_AND_RETURN_LOG(result.size >= writeLen,
             "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
@@ -63,7 +62,7 @@ void HpaeCoBufferNode::SetBufferSize(size_t size)
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), writeLen};
         result = ringCache_->Enqueue(bufferWrap);
         CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
-        offset += 20;
+        offset += DEFAULT_FRAME_LEN_MS;
     }
 }
 
@@ -73,7 +72,7 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-    size_t writeLen = buffer->GetFrameLen() * buffer->GetChannelCount() * sizeof(float);
+    size_t writeLen = SAMPLE_RATE_48000 * buffer->GetFrameLen() * buffer->GetChannelCount() * sizeof(float);
     CHECK_AND_RETURN_LOG(result.size >= writeLen,
         "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
         result.size, writeLen);
@@ -144,7 +143,7 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
     HpaeNodeInfo nodeInfo = preNodeInfo;
     nodeInfo.nodeName = "HpaeCoBufferNode";
     SetNodeInfo(nodeInfo);
-    SetBufferSize(nodeInfo.samplingRate * nodeInfo.channels * sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND);
+    SetBufferSize(nodeInfo.samplingRate * static_cast<int32_t>(nodeInfo.channels) * sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND);
     inputStream_.Connect(GetSharedInstance(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
 }
 
