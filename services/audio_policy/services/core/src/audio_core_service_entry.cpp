@@ -302,6 +302,10 @@ int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilte
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
     Trace trace("KeyAction AudioCoreService::SelectOutputDevice");
+    if (!selectedDesc.empty() && selectedDesc[0] &&
+        audioRendererFilter->rendererInfo.streamUsage == STREAM_USAGE_UNKNOWN) {
+        coreService_->NotifyDistributedOutputChange(selectedDesc[0]);
+    }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->SelectOutputDevice(audioRendererFilter, selectedDesc);
 }
