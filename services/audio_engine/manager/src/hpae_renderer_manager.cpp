@@ -404,6 +404,8 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
     }
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
     if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+        int32_t latency = outputCluster_->GetLatency();
+        hpaeCoBufferNode_->SetLatency(latency);
         hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
         TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
     }
@@ -1053,12 +1055,10 @@ int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnable
     auto request = [this, isCollaborationEnabled]() {
         AUDIO_INFO_LOG("UpdateCollaborationState %{public}d", isCollaborationEnabled);
         isCollaborationEnabled_ = isCollaborationEnabled;
-        // todo get latency
-        int32_t latency_ = 200;
         if (isCollaborationEnabled_) {
             if (hpaeCoBufferNode_ == nullptr) {
                 HpaeNodeInfo nodeInfo;
-                hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(nodeInfo, latency_);
+                hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(nodeInfo);
             }
             for (auto it : sessionNodeMap_) {
                 HandleCollaborationStateChangedInner(it->second.sceneType, it.first);
@@ -1102,8 +1102,8 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
     auto request = [this, coBufferNode]() {
         CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr),
             "outputCluster or coBufferNode is nullptr");
-        outputCluster_->Connect(coBufferNode);
-        if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+        outputCluster_->DisConnect(coBufferNode);
+        if (outputCluster_->GetState() == STREAM_MANAGER_RUNNING) {
             // todo check stop/pause
             outputCluster_->Stop();
         }

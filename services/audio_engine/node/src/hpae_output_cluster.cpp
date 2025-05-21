@@ -242,6 +242,11 @@ bool HpaeOutputCluster::IsProcessClusterConnected(HpaeProcessorType sceneType)
 {
     return connectedProcessCluster_.find(sceneType) != connectedProcessCluster_.end();
 }
+
+int32_t HpaeOutputCluster::GetLatency()
+{
+    return hpaeSinkOutputNode_->GetLatency();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

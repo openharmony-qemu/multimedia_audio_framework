@@ -331,6 +331,14 @@ size_t HpaeSinkOutputNode::GetPreOutNum()
     return inputStream_.GetPreOutputNum();
 }
 
+int32_t HpaeSinkOutputNode::GetLatency()
+{
+    if (audioRendererSink_ == nullptr) {
+        return ERROR;
+    }
+    audioRendererSink_->GetLatency(latency_);
+    return latency_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

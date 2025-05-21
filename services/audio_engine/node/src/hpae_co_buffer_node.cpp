@@ -26,44 +26,16 @@ static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 
-HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo, int32_t& delay)
+HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo)
     : HpaeNode(nodeInfo), outputStream_(this),
       pcmBufferInfo_(STEREO, 960, SAMPLE_RATE_48000), coBufferOut_(pcmBufferInfo_)
 {
-    AUDIO_INFO_LOG("HpaeCoBufferNode created, delay: %{public}d", delay);
-    delay_ = delay;
-}
-
-// according to latency
-void HpaeCoBufferNode::SetBufferSize(size_t size)
-{
-    if (size == 0) {
-        return;
-    }
-    if (ringCache_ == nullptr) {
-        AUDIO_INFO_LOG("Create ring cache, size: %{public}zu", size);
-        ringCache_ = AudioRingCache::Create(size);
-        CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
-    } else {
-        OptResult result = ringCache_->ReConfig(size);
-        AUDIO_INFO_LOG("ReConfig ring cache, size: %{public}zu", size);
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "ReConfig ring cache failed");
-    }
-    // todo set latency
-    int32_t offset = 0;
-    while (offset < delay_) {
-        OptResult result = ringCache_->GetWritableSize();
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-        size_t writeLen = coBufferOut_.GetFrameLen() * coBufferOut_.GetChannelCount() * sizeof(float);
-        memset_s(coBufferOut_.GetPcmDataBuffer(), writeLen, 0, writeLen);
-        CHECK_AND_RETURN_LOG(result.size >= writeLen,
-            "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
-            result.size, writeLen);
-        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), writeLen};
-        result = ringCache_->Enqueue(bufferWrap);
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
-        offset += DEFAULT_FRAME_LEN_MS;
-    }
+    AUDIO_INFO_LOG("HpaeCoBufferNode created");
+    size_t size = nodeInfo.samplingRate * static_cast<int32_t>(nodeInfo.channels) *
+        sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
+    AUDIO_INFO_LOG("Create ring cache, size: %{public}zu", size);
+    ringCache_ = AudioRingCache::Create(size);
+    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
 }
 
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
@@ -72,7 +44,7 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-    size_t writeLen = SAMPLE_RATE_48000 * buffer->GetFrameLen() * buffer->GetChannelCount() * sizeof(float);
+    size_t writeLen = buffer->GetFrameLen() * buffer->GetChannelCount() * sizeof(float);
     CHECK_AND_RETURN_LOG(result.size >= writeLen,
         "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
         result.size, writeLen);
@@ -143,8 +115,7 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
     HpaeNodeInfo nodeInfo = preNodeInfo;
     nodeInfo.nodeName = "HpaeCoBufferNode";
     SetNodeInfo(nodeInfo);
-    SetBufferSize(nodeInfo.samplingRate * static_cast<int32_t>(nodeInfo.channels) * sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND);
-    inputStream_.Connect(GetSharedInstance(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
+    inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
 }
 
 void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
@@ -165,6 +136,28 @@ size_t HpaeCoBufferNode::GetOutputPortNum()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return outputStream_.GetInputNum();
+}
+
+void HpaeCoBufferNode::SetLatency(int32_t latency)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("latency is %{public}d", latency);
+    CHECK_AND_RETURN(ringCache_ != nullptr, "ring cache is null");
+    ringCache_->ResetBuffer();
+    int32_t offset = 0;
+    while (offset < latency) {
+        OptResult result = ringCache_->GetWritableSize();
+        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
+        size_t writeLen = coBufferOut_.GetFrameLen() * coBufferOut_.GetChannelCount() * sizeof(float);
+        memset_s(coBufferOut_.GetPcmDataBuffer(), writeLen, 0, writeLen);
+        CHECK_AND_RETURN_LOG(result.size >= writeLen,
+            "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
+            result.size, writeLen);
+        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), writeLen};
+        result = ringCache_->Enqueue(bufferWrap);
+        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
+        offset += DEFAULT_FRAME_LEN_MS;
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

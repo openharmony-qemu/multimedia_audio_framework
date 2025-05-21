@@ -41,6 +41,7 @@ public:
     virtual size_t GetOutputPortNum();
     void Enqueue(HpaePcmBuffer* buffer) override;
     void SetBufferSize(size_t size);
+    void SetLatency(int32_t latency);
 private:
     std::mutex mutex_;
     InputPort<HpaePcmBuffer*> inputStream_;
@@ -48,7 +49,6 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     PcmBuffer coBufferOut_;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
-    int32_t delay_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

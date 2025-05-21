@@ -2035,28 +2035,28 @@ int32_t HpaeManager::UpdateCollaborationState(bool isCollaborationEnabled)
     return true;
 }
 
-void HpaeManager::HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode)
+void HpaeManager::HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode)
 {
-    auto request = [this, hpaeCobufferNode]() {
+    auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleConnectCoBufferNode");
         std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(DEFAULT_SINK_NAME);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
             "can not find sink[%{public}s] in rendererManagerMap_", DEFAULT_SINK_NAME.c_str());
-        CHECK_AND_RETURN_LOG(hpaeCobufferNode != nullptr, "hpaeCobufferNode is nullptr");
-        defaultRendererManager->ConnectCoBufferNode(hpaeCobufferNode);
+        CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
+        defaultRendererManager->ConnectCoBufferNode(hpaeCoBufferNode);
     };
     SendRequest(request);
 }
 
-void HpaeManager::HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode)
+void HpaeManager::HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode)
 {
-    auto request = [this, hpaeCobufferNode]() {
+    auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleDisConnectCoBufferNode");
         std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(DEFAULT_SINK_NAME);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
             "can not find sink[%{public}s] in rendererManagerMap_", DEFAULT_SINK_NAME.c_str());
-        CHECK_AND_RETURN_LOG(hpaeCobufferNode != nullptr, "hpaeCobufferNode is nullptr");
-        defaultRendererManager->DisConnectCoBufferNode(hpaeCobufferNode);
+        CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
+        defaultRendererManager->DisConnectCoBufferNode(hpaeCoBufferNode);
     };
     SendRequest(request);
 }
