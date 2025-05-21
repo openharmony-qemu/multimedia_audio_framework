@@ -676,6 +676,8 @@ void DownMixer::Setup5Point1Point4DmixTablePart1(uint64_t bit, uint32_t i)
                 downMixTable_[SW][i] = COEF_0DB_F;
             }
             break;
+        default:
+            break;
     }
 }
 
@@ -993,6 +995,8 @@ void DownMixer::DownMixMidRear(uint64_t inBit, uint64_t outBit, uint32_t i, uint
             } else {
                 DownMixMidFront(WIDE_RIGHT, outBit, i, j);
             }
+            break;
+        default:
             break;
     }
 }
