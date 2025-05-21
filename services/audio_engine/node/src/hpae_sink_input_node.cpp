@@ -64,13 +64,13 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
 HpaeSinkInputNode::~HpaeSinkInputNode()
 {}
 
-void HpaeSinkInputNode::CheckAndDestoryHistoryBuffer()
+void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 {
     HpaeNodeInfo nodeInfo = GetNodeInfo();
-    // historyBuffer_ has no data, check if historyFrameCount is 0 and distory it
+    // historyBuffer_ has no data, check if historyFrameCount is 0 and destroy it
     if (nodeInfo.historyFrameCount == 0) {
         if (historyBuffer_) {
-            AUDIO_INFO_LOG("HpaeSinkInputNode::historyBuffer_ useless, distory it");
+            AUDIO_INFO_LOG("HpaeSinkInputNode::historyBuffer_ useless, destroy it");
         }
         historyBuffer_ = nullptr;
     } else if (historyBuffer_ == nullptr) {  // this case need to create historyBuffer_
@@ -91,16 +91,11 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
         .deviceNetId = GetDeviceNetId(),
         .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
     GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
-    return writeCallback_.lock()->OnStreamData(streamInfo_);
-}
-
-std::string HpaeSinkInputNode::GetTraceInfo()
-{
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    return rate + ch + len + format;
+    if (writeCallback_.lock() != nullptr) {
+        return writeCallback_.lock()->OnStreamData(streamInfo_);
+    }
+    AUDIO_ERR_LOG("sessionId: %{public}d, writeCallback is nullptr", GetSessionId());
+    return SUCCESS;
 }
 
 void HpaeSinkInputNode::DoProcess()
@@ -122,7 +117,7 @@ void HpaeSinkInputNode::DoProcess()
         outputStream_.WriteDataToOutput(&inputAudioBuffer_);
         return;
     }
-    CheckAndDestoryHistoryBuffer();
+    CheckAndDestroyHistoryBuffer();
     if (nodeCallback && ret) {
         nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
         if (isDrain_) {

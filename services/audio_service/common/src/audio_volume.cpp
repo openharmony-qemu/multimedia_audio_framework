@@ -159,6 +159,7 @@ uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t a
 void AudioVolume::SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
     doNotDisturbStatusWhiteList)
 {
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     doNotDisturbStatusWhiteListVolume_.clear();
     for (const auto& obj : doNotDisturbStatusWhiteList) {
         for (const auto& [key, val] : obj) {

@@ -124,14 +124,15 @@ HWTEST(ProRendererStreamImplUnitTest, GetDirectFormat_001, TestSize.Level1)
     bool isDirect = false;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-    AudioSampleFormat format1 = SAMPLE_S16LE;
-    AudioSampleFormat format2 = SAMPLE_S32LE;
+    AudioStreamInfo streamInfo;
+    streamInfo.format = SAMPLE_S16LE;
     AudioSampleFormat ret;
 
-    ret = rendererStreamImpl->GetDirectFormat(format1);
+    ret = rendererStreamImpl->GetDirectFormat(streamInfo);
     EXPECT_EQ(ret, SAMPLE_S16LE);
 
-    ret = rendererStreamImpl->GetDirectFormat(format2);
+    streamInfo.format = SAMPLE_S32LE;
+    ret = rendererStreamImpl->GetDirectFormat(streamInfo);
     EXPECT_EQ(ret, SAMPLE_S32LE);
 }
 
@@ -146,28 +147,47 @@ HWTEST(ProRendererStreamImplUnitTest, GetDirectFormat_002, TestSize.Level1)
     bool isDirect = true;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-    AudioSampleFormat format = SAMPLE_S32LE;
+    AudioStreamInfo streamInfo;
+    streamInfo.format = SAMPLE_S32LE;
     AudioSampleFormat ret;
 
     rendererStreamImpl->isDirect_ = true;
-    ret = rendererStreamImpl->GetDirectFormat(format);
+    ret = rendererStreamImpl->GetDirectFormat(streamInfo);
     EXPECT_EQ(ret, SAMPLE_S32LE);
 
     rendererStreamImpl->isDirect_ = false;
-    ret = rendererStreamImpl->GetDirectFormat(format);
+    ret = rendererStreamImpl->GetDirectFormat(streamInfo);
     EXPECT_EQ(ret, SAMPLE_S32LE);
 
-    format = SAMPLE_S16LE;
-    ret = rendererStreamImpl->GetDirectFormat(format);
+    streamInfo.format = SAMPLE_S16LE;
+    ret = rendererStreamImpl->GetDirectFormat(streamInfo);
     EXPECT_EQ(ret, SAMPLE_S16LE);
 
-    format = SAMPLE_F32LE;
-    ret = rendererStreamImpl->GetDirectFormat(format);
+    streamInfo.format = SAMPLE_F32LE;
+    ret = rendererStreamImpl->GetDirectFormat(streamInfo);
     EXPECT_EQ(ret, SAMPLE_S16LE);
 
-    format = SAMPLE_S24LE;
-    ret = rendererStreamImpl->GetDirectFormat(format);
+    streamInfo.format = SAMPLE_S24LE;
+    ret = rendererStreamImpl->GetDirectFormat(streamInfo);
     EXPECT_EQ(ret, SAMPLE_S32LE);
+}
+
+/**
+ * @tc.name  : Test GetDirectChannel API
+ * @tc.type  : FUNC
+ * @tc.number: GetDirectChannel_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetDirectChannel_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    bool isDirect = false;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    AudioStreamInfo streamInfo;
+    streamInfo.encoding = ENCODING_EAC3;
+    streamInfo.channels = CHANNEL_6;
+    int32_t ret = rendererStreamImpl->GetDirectChannel(streamInfo);
+    EXPECT_EQ(ret, CHANNEL_6);
 }
 
 /**

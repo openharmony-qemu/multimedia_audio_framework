@@ -19,6 +19,7 @@
 #include "audio_device_parser.h"
 #include "media_monitor_manager.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 #include "config_policy_utils.h"
 
 namespace OHOS {
@@ -46,6 +47,8 @@ bool AudioDeviceParser::LoadConfiguration()
     curNode_ = AudioXmlNode::Create();
     int32_t ret = curNode_->Config(path, nullptr, 0);
     if (ret != SUCCESS) {
+        Trace trace("SYSEVENT FAULT EVENT LOAD_CONFIG_ERROR, CATEGORY: "
+            + std::to_string(Media::MediaMonitor::AUDIO_DEVICE_PRIVACY));
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::FAULT_EVENT);

@@ -26,6 +26,7 @@
 #include "audio_volume_parser.h"
 #include "audio_policy_server.h"
 #include "audio_volume.h"
+#include "audio_utils.h"
 
 using namespace std;
 
@@ -382,6 +383,8 @@ bool AudioAdapterManager::IsCurDeviceNeedSaveVolumeToDatabase()
 
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
+    Trace trace("KeyAction AudioAdapterManager::SetSystemVolumeLevel streamType:"
+        + std::to_string(streamType) + ", volumeLevel:" + std::to_string(volumeLevel));
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_.deviceType_, volumeLevel);
     if (GetSystemVolumeLevel(streamType) == volumeLevel &&
@@ -1057,7 +1060,8 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> 
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        ioHandle = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, pipeInfo->moduleInfo_);
+        int32_t ret = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, pipeInfo->moduleInfo_);
+        ioHandle = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
         paIndex = ioHandle;
         return ioHandle;
     } else {
@@ -1193,7 +1197,8 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        ioHandle = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, audioModuleInfo);
+        int32_t ret = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, audioModuleInfo);
+        ioHandle = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
         paIndex = ioHandle;
     } else {
         std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -1580,6 +1585,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     attr.volume = HDI_MAX_SINK_VOLUME_LEVEL;
     attr.filePath = audioModuleInfo.fileName.c_str();
     attr.deviceNetworkId = audioModuleInfo.networkId.c_str();
+    attr.aux = audioModuleInfo.extra == "" ? nullptr : audioModuleInfo.extra.c_str();
     if (!audioModuleInfo.deviceType.empty()) {
         attr.deviceType = std::stoi(audioModuleInfo.deviceType);
     }

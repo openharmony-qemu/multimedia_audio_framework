@@ -72,6 +72,8 @@ static int32_t ParseEffectConfigFile(std::shared_ptr<AudioXmlNode> curNode)
 #endif
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("error: could not parse audio_effect_config.xml!");
+        Trace trace("SYSEVENT FAULT EVENT LOAD_CONFIG_ERROR, CATEGORY: "
+            + std::to_string(Media::MediaMonitor::AUDIO_EFFECT_CONFIG));
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::FAULT_EVENT);

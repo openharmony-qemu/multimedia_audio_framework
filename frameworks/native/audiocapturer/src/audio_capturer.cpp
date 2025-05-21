@@ -132,7 +132,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
     const AppInfo &appInfo)
 {
-    Trace trace("AudioCapturer::Create");
+    Trace trace("KeyAction AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
     if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
@@ -707,7 +707,7 @@ bool AudioCapturerPrivate::Start()
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
-    Trace trace("AudioCapturer::Start");
+    Trace trace("KeyAction AudioCapturer::Start " + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
 
@@ -803,7 +803,7 @@ bool AudioCapturerPrivate::Pause() const
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
-    Trace trace("AudioCapturer::Pause");
+    Trace trace("KeyAction AudioCapturer::Pause " + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
@@ -824,7 +824,7 @@ bool AudioCapturerPrivate::Stop() const
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
-    Trace trace("AudioCapturer::Stop");
+    Trace trace("KeyAction AudioCapturer::Stop " + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
@@ -841,7 +841,7 @@ bool AudioCapturerPrivate::Stop() const
 
 bool AudioCapturerPrivate::Flush() const
 {
-    Trace trace("AudioCapturer::Flush");
+    Trace trace("KeyAction AudioCapturer::Flush");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Flush. id %{public}u", sessionID_);
@@ -850,6 +850,7 @@ bool AudioCapturerPrivate::Flush() const
 
 bool AudioCapturerPrivate::Release()
 {
+    Trace trace("KeyAction AudioCapturer::Release" + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
     std::unique_lock<std::shared_mutex> releaseLock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
@@ -899,6 +900,13 @@ int32_t AudioCapturerPrivate::SetBufferDuration(uint64_t bufferDuration) const
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
+}
+
+bool AudioCapturerPrivate::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+    return currentStream->GetTimeStampInfo(timestamp, base);
 }
 
 // diffrence from GetAudioPosition only when set speed
@@ -1099,6 +1107,16 @@ int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<Source
     }
     AUDIO_INFO_LOG("Set audio source concurrency success.");
     audioInterrupt_.currencySources.sourcesTypes = targetSources;
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
+{
+    CapturerState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == CAPTURER_PREPARED, ERR_ILLEGAL_STATE,
+        "incorrect state:%{public}d", state);
+    audioInterrupt_.strategy = strategy;
+    AUDIO_INFO_LOG("set InterruptStrategy to %{public}d", static_cast<int32_t>(strategy));
     return SUCCESS;
 }
 
@@ -1519,7 +1537,10 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 {
     bool switchResult = false;
 
-    Trace trace("SwitchToTargetStream");
+    Trace trace("KeyAction AudioCapturer::SwitchToTargetStream " + std::to_string(sessionID_)
+        + ", target class " + std::to_string(targetClass) + ", reason " + std::to_string(restoreInfo.restoreReason)
+        + ", device change reason " + std::to_string(restoreInfo.deviceChangeReason)
+        + ", target flag " + std::to_string(restoreInfo.targetStreamFlag));
     AUDIO_INFO_LOG("Restore AudioCapturer %{public}u, target class %{public}d, reason: %{public}d, "
         "device change reason %{public}d, target flag %{public}d", sessionID_, targetClass,
         restoreInfo.restoreReason, restoreInfo.deviceChangeReason, restoreInfo.targetStreamFlag);

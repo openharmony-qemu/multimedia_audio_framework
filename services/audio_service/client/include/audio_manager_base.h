@@ -609,6 +609,10 @@ public:
     virtual void DestroyHdiPort(uint32_t id) = 0;
 
     virtual void SetDeviceConnectedFlag(bool flag) = 0;
+
+    virtual void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) = 0;
+
+    virtual void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -707,6 +711,8 @@ private:
     int HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply);
     int HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply);
     int HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply);
+    int HandleSetSessionMuteState(MessageParcel &data, MessageParcel &reply);
+    int HandleOnMuteStateChange(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

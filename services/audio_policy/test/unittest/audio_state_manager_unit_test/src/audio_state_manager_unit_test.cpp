@@ -169,17 +169,5 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_010, TestSize.Leve
     EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice()->connectState_,
         ConnectState::CONNECTED);
 }
-
-/**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: AudioStateManagerUnitTest_011
-* @tc.desc  : Test GetBundleNameFromUid interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_011, TestSize.Level1)
-{
-    std::string bundleName = "";
-    int32_t uid = 1041;
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetBundleNameFromUid(uid), bundleName);
-}
 } // namespace AudioStandard
 } // namespace OHOS

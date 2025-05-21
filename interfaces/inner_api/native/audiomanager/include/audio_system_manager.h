@@ -461,6 +461,27 @@ public:
      * @return the app uid muted status
      */
     int32_t IsAppVolumeMute(const int32_t appUid, const bool owned, bool &isMute);
+
+    /**
+     * @brief Unset active volume type change callback.
+     *
+     * @param callback Unset the callback.
+     * @return Returns {@link SUCCESS} if stream change callback is successfully unset; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t UnsetActiveVolumeTypeCallback(
+        const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback = nullptr);
+
+    /**
+     * @brief Set active volume type change callback.
+     *
+     * @param callback callback when active volume type change.
+     * @return Returns {@link SUCCESS} if stream change callback is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetActiveVolumeTypeCallback(
+        const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &callback);
+
     /**
      * @brief Obtains the current stream volume.
      *
@@ -1340,6 +1361,7 @@ public:
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
     int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
+    int32_t SetBackgroundMuteCallback(const std::shared_ptr<AudioBackgroundMuteCallback> &callback);
 
     int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
 
@@ -1387,6 +1409,35 @@ public:
     */
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
 
+    /**
+    * @brief Set App AVSession state change.
+    *
+    * @param uid Specifies uid of app.
+    * @param pid Specifies pid of app.
+    * @param hasSession Specifies whether app has AVSession.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
+
+    /**
+    * @brief Set App Freeze state change.
+    *
+    * @param pidList Specifies all pid list to change state.
+    * @param isFreeze Specifies Freeze or Unfreeze state.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
+
+        /**
+    * @brief RSS reboot reset all proxy Freeze state change.
+    *
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t ResetAllProxy();
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
     * @brief check capture limit
@@ -1418,6 +1469,64 @@ public:
     int32_t OnVoiceWakeupState(bool state);
 
     uint16_t GetDmDeviceType() const;
+
+    /**
+     * @brief Get the maximum volume level for the specified stream usage.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @return Returns the maximum volume level for the specified stream usage.
+     * @since 20
+     */
+    int32_t GetMaxVolumeByUsage(StreamUsage streamUsage);
+
+    /**
+     * @brief Get the minimum volume level for the specified stream usage.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @return Returns the minimum volume level for the specified stream usage.
+     * @since 20
+     */
+    int32_t GetMinVolumeByUsage(StreamUsage streamUsage);
+
+    /**
+     * @brief Get the current volume level for the specified stream usage.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @return Returns the current volume level for the specified stream usage.
+     * @since 20
+     */
+    int32_t GetVolumeByUsage(StreamUsage streamUsage);
+
+    /**
+     * @brief Get the mute state of the specified stream usage.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @param isMute Specifies the mute state.
+     * @return Returns {@link SUCCESS} if the operation is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t IsStreamMuteByUsage(StreamUsage streamUsage, bool &isMute);
+
+    /**
+     * @brief registers the StreamVolumeChange callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t RegisterStreamVolumeChangeCallback(const int32_t clientPid, const std::set<StreamUsage> &streamUsages,
+        const std::shared_ptr<StreamVolumeChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the StreamVolumeChange callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t UnregisterStreamVolumeChangeCallback(const int32_t clientPid,
+        const std::shared_ptr<StreamVolumeChangeCallback> &callback = nullptr);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

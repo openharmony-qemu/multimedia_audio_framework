@@ -30,6 +30,7 @@
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
 #include "audio_core_service.h"
+#include "audio_utils_c.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -186,6 +187,11 @@ void AudioDeviceStatus::WriteOutputDeviceChangedSysEvents(
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    AUTO_CTRACE("SYSEVENT BEHAVIOR EVENT DEVICE_CHANGE, ISOUTPUT: 1, STREAMID: %d, STREAMTYPE: %d, DEVICETYPE: %d, "
+        "NETWORKID: %s, ADDRESS: %s, DEVICE_NAME: %s, BT_TYPE: %d", sinkInput.streamId, sinkInput.streamType,
+        deviceDescriptor->deviceType_, ConvertNetworkId(deviceDescriptor->networkId_).c_str(),
+        GetEncryptAddr(deviceDescriptor->macAddress_).c_str(),
+        deviceDescriptor->deviceName_.c_str(), deviceDescriptor->deviceCategory_);
 }
 
 void AudioDeviceStatus::WriteInputDeviceChangedSysEvents(
@@ -203,6 +209,11 @@ void AudioDeviceStatus::WriteInputDeviceChangedSysEvents(
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    AUTO_CTRACE("SYSEVENT BEHAVIOR EVENT DEVICE_CHANGE, ISOUTPUT: 0, STREAMID: %d, STREAMTYPE: %d, DEVICETYPE: %d, "
+        "NETWORKID: %s, ADDRESS: %s, DEVICE_NAME: %s, BT_TYPE: %d", sourceOutput.streamId, sourceOutput.streamType,
+        deviceDescriptor->deviceType_, ConvertNetworkId(deviceDescriptor->networkId_).c_str(),
+        GetEncryptAddr(deviceDescriptor->macAddress_).c_str(),
+        deviceDescriptor->deviceName_.c_str(), deviceDescriptor->deviceCategory_);
 }
 
 
@@ -761,15 +772,15 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
             audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2.1 param");
         return;
     }
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
-    int32_t ret = HandleDistributedDeviceUpdate(statusInfo, descForCb);
+    int32_t ret = HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "HandleDistributedDeviceUpdate return directly.");
 
     TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
-        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     DeviceRole deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(devType);
@@ -825,7 +836,7 @@ int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType d
 }
 
 int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, AudioStreamDeviceChangeReasonExt &reason)
 {
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
@@ -854,6 +865,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         }
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
+        reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE;
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
             AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
         std::string currentActivePort = REMOTE_CLASS;

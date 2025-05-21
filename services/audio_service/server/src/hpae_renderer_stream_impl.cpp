@@ -41,12 +41,16 @@ const int32_t MIN_BUFFER_SIZE = 2;
 const int32_t FRAME_LEN_10MS = 2;
 const int32_t TENMS_PER_SEC = 100;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
-HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig)
+HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isCallbackMode)
 {
     processConfig_ = processConfig;
     spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / TENMS_PER_SEC);
     byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
+    isCallbackMode_ = isCallbackMode;
+    if (!isCallbackMode_) {
+        InitRingBuffer();
+    }
 }
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
@@ -88,11 +92,15 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     AUDIO_INFO_LOG("InitParams sessionId %{public}u  end", streamInfo.sessionId);
     AUDIO_INFO_LOG("InitParams streamClassType %{public}u  end", streamInfo.streamClassType);
     AUDIO_INFO_LOG("InitParams sourceType %{public}d  end", streamInfo.sourceType);
-    int32_t ret = IHpaeManager::GetHpaeManager().CreateStream(streamInfo);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("CreateStream is error");
-        return ERR_INVALID_PARAM;
-    }
+    auto &hpaeManager = IHpaeManager::GetHpaeManager();
+    int32_t ret = hpaeManager.CreateStream(streamInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "CreateStream is error");
+
+    // Register Callback
+    ret = hpaeManager.RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId, shared_from_this());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "RegisterStatusCallback is error");
+    ret = hpaeManager.RegisterWriteCallback(streamInfo.sessionId, shared_from_this());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "RegisterWriteCallback is error");
     return SUCCESS;
 }
 
@@ -224,7 +232,11 @@ int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)
 int32_t HpaeRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 {
     AUDIO_INFO_LOG("SetAudioEffectMode: %d", effectMode);
-   
+    int32_t ret = IHpaeManager::GetHpaeManager().SetAudioEffectMode(processConfig_.originalSessionId, effectMode);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("SetAudioEffectMode is error");
+        return ERR_INVALID_PARAM;
+    }
     effectMode_ = effectMode;
     return SUCCESS;
 }
@@ -248,28 +260,15 @@ int32_t HpaeRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
     return SUCCESS;
 }
 
-
 void HpaeRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterStatusCallback in");
-    int32_t ret = IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY,
-        processConfig_.originalSessionId, callback);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("RegisterStatusCallback is error");
-        return;
-    }
     statusCallback_ = callback;
 }
 
 void HpaeRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterWriteCallback in");
-    int32_t ret = IHpaeManager::GetHpaeManager().RegisterWriteCallback(processConfig_.originalSessionId,
-        shared_from_this());
-    if (ret != 0) {
-        AUDIO_ERR_LOG("RegisterWriteCallback is error");
-        return;
-    }
     writeCallback_ = callback;
 }
 
@@ -284,8 +283,13 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
         deviceClass_ = callBackStreamInfo.deviceClass;
         deviceNetId_ = callBackStreamInfo.deviceNetId;
     }
-    if (callBackStreamInfo.needData && writeCallback_.lock()) {
-        return writeCallback_.lock()->OnWriteData(callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
+    if (isCallbackMode_) { // callback buffer
+        auto writeCallback = writeCallback_.lock();
+        if (callBackStreamInfo.needData && writeCallback) {
+            return writeCallback->OnWriteData(callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
+        }
+    } else { // write buffer
+        return WriteDataFromRingBuffer(callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
     }
     return SUCCESS;
 }
@@ -298,7 +302,28 @@ BufferDesc HpaeRendererStreamImpl::DequeueBuffer(size_t length)
 
 int32_t HpaeRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
-    return SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(!isCallbackMode_, ERROR, "Not write buffer mode");
+    CHECK_AND_RETURN_RET_LOG(ringBuffer_ != nullptr, ERROR, "RingBuffer is nullptr");
+
+    size_t targetSize = bufferDesc.bufLength;
+    OptResult result = ringBuffer_->GetWritableSize();
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
+        "Get writable size failed, ret:%{public}d size:%{public}zu", result.ret, result.size);
+
+    size_t writableSize = result.size;
+    if (targetSize > writableSize) {
+        AUDIO_ERR_LOG("Enqueue buffer overflow, targetSize: %{public}zu, writableSize: %{public}zu",
+            targetSize, writableSize);
+    }
+
+    size_t writeSize = std::min(writableSize, targetSize);
+    BufferWrap bufferWrap = {bufferDesc.buffer, writeSize};
+    result = ringBuffer_->Enqueue(bufferWrap);
+    if (result.ret != OPERATION_SUCCESS) {
+        AUDIO_ERR_LOG("Enqueue buffer failed, ret:%{public}d size:%{public}zu", result.ret, result.size);
+        return ERROR;
+    }
+    return writeSize; // success return written in length
 }
 
 int32_t HpaeRendererStreamImpl::GetMinimumBufferSize(size_t &minBufferSize) const
@@ -412,6 +437,14 @@ int32_t HpaeRendererStreamImpl::UnsetOffloadMode()
 
 int32_t HpaeRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
 {
+    size_t bufferSize = maxLength * spanSizeInFrame_ * byteSizePerFrame_;
+    AUDIO_INFO_LOG("bufferSize: %{public}zu, spanSizeInFrame: %{public}zu, byteSizePerFrame: %{public}zu,"
+        "maxLength:%{public}u", bufferSize, spanSizeInFrame_, byteSizePerFrame_, maxLength);
+    if (ringBuffer_ != nullptr) {
+        ringBuffer_->ReConfig(bufferSize, false);
+    } else {
+        AUDIO_ERR_LOG("ring buffer is nullptr!");
+    }
     return SUCCESS;
 }
 
@@ -446,6 +479,41 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
     }
     clientVolume_ = clientVolume;
     return SUCCESS;
+}
+
+void HpaeRendererStreamImpl::InitRingBuffer()
+{
+    size_t bufferSize = MIN_BUFFER_SIZE * spanSizeInFrame_ * byteSizePerFrame_;
+    AUDIO_INFO_LOG("bufferSize: %{public}zu, spanSizeInFrame: %{public}zu, byteSizePerFrame: %{public}zu,"
+        "maxLength:%{public}u", bufferSize, spanSizeInFrame_, byteSizePerFrame_, MIN_BUFFER_SIZE);
+    // create ring buffer
+    ringBuffer_ = AudioRingCache::Create(bufferSize);
+    if (ringBuffer_ == nullptr) {
+        AUDIO_ERR_LOG("Create ring buffer failed!");
+    }
+}
+
+int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen)
+{
+    CHECK_AND_RETURN_RET_LOG(ringBuffer_ != nullptr, ERROR, "RingBuffer is nullptr");
+    OptResult result = ringBuffer_->GetReadableSize();
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
+        "RingBuffer get readable size failed, size is:%{public}zu", result.size);
+    CHECK_AND_RETURN_RET_LOG((result.size != 0) && (result.size >= requestDataLen), ERROR,
+        "Readable size is invalid, result.size:%{public}zu, requestDataLen:%{public}zu, buffer underflow.",
+        result.size, requestDataLen);
+    AUDIO_DEBUG_LOG("requestDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
+    result = ringBuffer_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "RingBuffer dequeue failed");
+    return SUCCESS;
+}
+
+void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation)
+{
+    auto statusCallback = statusCallback_.lock();
+    if (statusCallback) {
+        statusCallback->OnStatusUpdate(operation);
+    }
 }
 
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)

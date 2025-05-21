@@ -119,6 +119,8 @@ public:
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
     void SetDefaultAdapterEnable(bool isEnable) override;
     void NotifyAudioPolicyReady() override;
+    void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
+    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;

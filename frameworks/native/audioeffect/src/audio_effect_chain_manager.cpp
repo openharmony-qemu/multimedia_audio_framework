@@ -1435,9 +1435,10 @@ int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArray
     return AUDIO_OK;
 }
 
-void AudioEffectChainManager::UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation)
+int32_t AudioEffectChainManager::UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
     if (operation == ADD_SCENE_TYPE) {
         auto it = std::find_if(sceneTypeCountList_.begin(), sceneTypeCountList_.end(),
             [sceneType](const std::pair<std::string, int32_t> &element) {
@@ -1457,7 +1458,7 @@ void AudioEffectChainManager::UpdateSceneTypeList(const std::string &sceneType, 
             });
         if (it == sceneTypeCountList_.end()) {
             AUDIO_WARNING_LOG("scene type %{public}s to be removed is not found", sceneType.c_str());
-            return;
+            return ERROR;
         }
         if (it->second <= 1) {
             sceneTypeCountList_.erase(it);
@@ -1468,7 +1469,9 @@ void AudioEffectChainManager::UpdateSceneTypeList(const std::string &sceneType, 
         }
     } else {
         AUDIO_ERR_LOG("Wrong operation to sceneTypeToEffectChainCountBackupMap.");
+        return ERROR;
     }
+    return SUCCESS;
 }
 
 uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sceneType)

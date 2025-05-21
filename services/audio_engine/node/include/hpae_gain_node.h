@@ -38,6 +38,7 @@ public:
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
+    bool isInnerCapturer_ = false;
     float preGain_ = 1.0f;
     float curGain_ = 1.0f;
     bool isGainChanged_ = false;
@@ -45,6 +46,7 @@ private:
     bool fadeInState_ = false;
     FadeOutState fadeOutState_ = FadeOutState::NO_FADEOUT;
     IOperation operation_;
+    uint32_t pushFrameNum_ = 0;
     void DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t channelCount);
     void DoFading(HpaePcmBuffer *input);
     void SlienceData(HpaePcmBuffer *pcmBuffer);

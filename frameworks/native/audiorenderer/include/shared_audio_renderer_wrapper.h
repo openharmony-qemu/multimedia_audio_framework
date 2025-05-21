@@ -375,13 +375,6 @@ public:
         return sharedAudioRenderer_->SetSpeed(speed);
     }
 
-    int32_t SetPitch(float pitch) override
-    {
-        CHECK_AND_RETURN_RET_LOG(sharedAudioRenderer_ != nullptr,
-            ERR_MEMORY_ALLOC_FAILED, "sharedAudioRenderer_ is nullptr");
-        return sharedAudioRenderer_->SetPitch(pitch);
-    }
-
     float GetSpeed() override
     {
         return sharedAudioRenderer_->GetSpeed();

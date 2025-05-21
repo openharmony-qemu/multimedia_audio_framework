@@ -413,6 +413,9 @@ void AudioServer::ParseAudioParameter()
 
 void AudioServer::WriteServiceStartupError()
 {
+    Trace trace("SYSEVENT FAULT EVENT AUDIO_SERVICE_STARTUP_ERROR, SERVICE_ID: "
+            + std::to_string(Media::MediaMonitor::AUDIO_SERVER_ID) + ", ERROR_CODE: "
+            + std::to_string(Media::MediaMonitor::AUDIO_SERVER));
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
@@ -2251,6 +2254,22 @@ void AudioServer::UpdateSessionConnectionState(const int32_t &sessionId, const i
     CHECK_AND_RETURN_LOG(sink, "sink is nullptr");
     int32_t ret = sink->UpdatePrimaryConnectionState(state);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "sink do not support UpdatePrimaryConnectionState");
+}
+
+void AudioServer::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetLatestMuteState(sessionId, muteFlag);
+}
+
+void AudioServer::SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag)
+{
+    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SetSessionMuteState(sessionId, insert, muteFlag);
 }
 
 void AudioServer::SetNonInterruptMute(const uint32_t sessionId, const bool muteFlag)

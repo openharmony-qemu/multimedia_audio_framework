@@ -110,6 +110,23 @@ void AudioPolicyClientProxy::OnAudioFocusAbandoned(const AudioInterrupt &abandon
     }
 }
 
+void AudioPolicyClientProxy::OnActiveVolumeTypeChanged(const AudioVolumeType &volumeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_ACTIVE_VOLUME_TYPE_CHANGE));
+    data.WriteInt32(static_cast<int32_t>(volumeType));
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("Error while sending active volume type info, error: %{public}d", error);
+    }
+}
+
 void AudioPolicyClientProxy::OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
 {
     MessageParcel data;
@@ -620,6 +637,27 @@ void AudioPolicyClientProxy::OnFormatUnsupportedError(const AudioErrors &errorCo
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending enabled info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
+void AudioPolicyClientProxy::OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_STREAM_VOLUME_CHANGE));
+    streamVolumeEvent.Marshalling(data);
+
+    CHECK_AND_RETURN_LOG(Remote() != nullptr, "Remote() is nullptr");
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending stream volume change %{public}d", error);
     }
     reply.ReadInt32();
 }

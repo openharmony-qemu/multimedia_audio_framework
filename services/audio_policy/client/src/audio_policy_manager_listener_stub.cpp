@@ -96,6 +96,11 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             reply.WriteBool(ret);
             return AUDIO_OK;
         }
+        case ON_BACKGROUND_MUTE: {
+            int32_t uid = data.ReadInt32();
+            OnBackgroundMute(uid);
+            return AUDIO_OK;
+        }
         case ON_CHECK_CLIENT_INFO: {
             std::string bundleName = data.ReadString();
             int32_t uid = data.ReadInt32();
@@ -168,6 +173,16 @@ bool AudioPolicyManagerListenerStub::OnQueryAllowedPlayback(int32_t uid, int32_t
     return audioQueryAllowedPlaybackCallback->OnQueryAllowedPlayback(uid, pid);
 }
 
+void AudioPolicyManagerListenerStub::OnBackgroundMute(const int32_t uid)
+{
+    std::shared_ptr<AudioBackgroundMuteCallback> audioBackgroundMuteCallback =
+    audioBackgroundMuteCallback_.lock();
+
+    CHECK_AND_RETURN_LOG(audioBackgroundMuteCallback != nullptr, "audioBackgroundMuteCallback_ is nullptr");
+
+    audioBackgroundMuteCallback->OnBackgroundMute(uid);
+}
+
 bool AudioPolicyManagerListenerStub::OnQueryBundleNameIsInList(const std::string &bundleName)
 {
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
@@ -204,6 +219,11 @@ void AudioPolicyManagerListenerStub::SetQueryAllowedPlaybackCallback(
     const std::weak_ptr<AudioQueryAllowedPlaybackCallback> &cb)
 {
     audioQueryAllowedPlaybackCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStub::SetBackgroundMuteCallback(const std::weak_ptr<AudioBackgroundMuteCallback> &cb)
+{
+    audioBackgroundMuteCallback_ = cb;
 }
 
 void AudioPolicyManagerListenerStub::SetQueryBundleNameListCallback(

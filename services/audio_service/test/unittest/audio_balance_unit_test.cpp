@@ -56,6 +56,7 @@ void AudioBalanceUnitTest::TearDown(void)
 HWTEST(AudioBalanceUnitTest, SetAudioMonoState_001, TestSize.Level1)
 {
     bool audioMonoState = true;
+    ASSERT_TRUE(AudioSystemManager::GetInstance() != nullptr);
     AudioSystemManager::GetInstance()->SetAudioMonoState(audioMonoState);
 }
 
@@ -68,6 +69,7 @@ HWTEST(AudioBalanceUnitTest, SetAudioMonoState_001, TestSize.Level1)
 HWTEST(AudioBalanceUnitTest, SetAudioMonoState_002, TestSize.Level1)
 {
     bool audioMonoState = false;
+    ASSERT_TRUE(AudioSystemManager::GetInstance() != nullptr);
     AudioSystemManager::GetInstance()->SetAudioMonoState(audioMonoState);
 }
 
@@ -80,6 +82,7 @@ HWTEST(AudioBalanceUnitTest, SetAudioMonoState_002, TestSize.Level1)
 HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_001, TestSize.Level1)
 {
     float audioBalanceValue = -1.0f;
+    ASSERT_TRUE(AudioSystemManager::GetInstance() != nullptr);
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 
@@ -92,6 +95,7 @@ HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_001, TestSize.Level1)
 HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_002, TestSize.Level1)
 {
     float audioBalanceValue = -0.5f;
+    ASSERT_TRUE(AudioSystemManager::GetInstance() != nullptr);
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 
@@ -104,6 +108,7 @@ HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_002, TestSize.Level1)
 HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_003, TestSize.Level1)
 {
     float audioBalanceValue = 0.5f;
+    ASSERT_TRUE(AudioSystemManager::GetInstance() != nullptr);
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 
@@ -116,6 +121,7 @@ HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_003, TestSize.Level1)
 HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_004, TestSize.Level1)
 {
     float audioBalanceValue = 1.0f;
+    ASSERT_TRUE(AudioSystemManager::GetInstance() != nullptr);
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 
@@ -128,6 +134,7 @@ HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_004, TestSize.Level1)
 HWTEST(AudioBalanceUnitTest, SetAudioBalanceValue_005, TestSize.Level1)
 {
     float audioBalanceValue = 0.0f;
+    ASSERT_TRUE(AudioSystemManager::GetInstance() != nullptr);
     AudioSystemManager::GetInstance()->SetAudioBalanceValue(audioBalanceValue);
 }
 } // namespace AudioStandard

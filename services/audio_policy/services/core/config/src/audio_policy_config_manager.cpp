@@ -330,8 +330,8 @@ uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescr
     // device -> adapter -> flag -> stream
     uint32_t flag = AUDIO_FLAG_NONE; // input or output? default?
     auto newDeviceDesc = desc->newDeviceDescs_.front();
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        newDeviceDesc->deviceType_, newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_);
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, flag, "Find device failed; use none flag");
 
     for (auto &pipeIt : deviceInfo->supportPipeMap_) {
@@ -409,8 +409,8 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
     auto newDeviceDesc = desc->newDeviceDescs_.front();
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        newDeviceDesc->deviceType_, newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_);
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);

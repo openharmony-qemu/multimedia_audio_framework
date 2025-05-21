@@ -39,6 +39,8 @@ BluetoothAudioCaptureSource::BluetoothAudioCaptureSource(const uint32_t captureI
     : captureId_(captureId)
 {
     halName_ = "bt_hdap";
+    audioSrcClock_ = std::make_shared<AudioSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(captureId, audioSrcClock_);
 }
 
 BluetoothAudioCaptureSource::~BluetoothAudioCaptureSource()
@@ -47,6 +49,7 @@ BluetoothAudioCaptureSource::~BluetoothAudioCaptureSource()
         DeInit();
     }
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
+    CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
 
 int32_t BluetoothAudioCaptureSource::Init(const IAudioSourceAttr &attr)
@@ -64,6 +67,10 @@ int32_t BluetoothAudioCaptureSource::Init(const IAudioSourceAttr &attr)
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     SetMute(muteState_);
     sourceInited_ = true;
+
+    if (audioSrcClock_ != nullptr) {
+        audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
+    }
     return SUCCESS;
 }
 
@@ -204,6 +211,7 @@ int32_t BluetoothAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestB
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     Trace trace("BluetoothAudioCaptureSource::CaptureFrame");
+    AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
 
     int64_t stamp = ClockTime::GetCurNano();
     uint32_t frameLen = static_cast<uint32_t>(requestBytes);
@@ -423,9 +431,12 @@ void BluetoothAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &d
 
 void BluetoothAudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
 {
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+    }
 }
 
 int32_t BluetoothAudioCaptureSource::CreateCapture(void)

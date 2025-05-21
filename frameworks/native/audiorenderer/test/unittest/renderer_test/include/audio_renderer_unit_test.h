@@ -20,6 +20,8 @@
 #include <string>
 #include "gtest/gtest.h"
 #include "audio_renderer.h"
+#include "fast_audio_stream.h"
+
 
 namespace OHOS {
 namespace AudioStandard {
@@ -55,13 +57,9 @@ constexpr int32_t MIN_CACHE_SIZE = 3528;
 inline size_t g_reqBufLen = 0;
 
 constexpr int g_writeOverflowNum = 1000;
-}
 
-class AudioRendererCallbackTest : public AudioRendererCallback {
-public:
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
-    void OnStateChange(const RendererState state, const StateChangeCmdType cmdType) override {}
-};
+void StartRenderThread(AudioRenderer *audioRenderer, uint32_t limit);
+}
 
 class AudioRendererDeviceChangeCallbackTest : public AudioRendererDeviceChangeCallback {
 public:
@@ -86,7 +84,31 @@ public:
 
 class AudioRenderModeCallbackTest : public AudioRendererWriteCallback {
 public:
-    void OnWriteData(size_t length) override;
+    void OnWriteData(size_t length) override { RenderUT::g_reqBufLen = length; }
+};
+
+class CapturerPositionCallbackTest : public CapturerPositionCallback {
+public:
+    void OnMarkReached(const int64_t &framePosition) override {}
+};
+
+class CapturerPeriodPositionCallbackTest : public CapturerPeriodPositionCallback {
+public:
+    void OnPeriodReached(const int64_t &frameNumber) override {}
+};
+
+class TestAudioStremStub : public FastAudioStream {
+public:
+    TestAudioStremStub() : FastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0) {}
+    uint32_t GetOverflowCount() override { return RenderUT::g_writeOverflowNum; }
+    State GetState() override { return state_; }
+    bool StopAudioStream() override { return true; }
+    bool StartAudioStream(StateChangeCmdType cmdType,
+        AudioStreamDeviceChangeReasonExt reason) override { return true; }
+    bool ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce) override { return true; }
+
+    State state_ = State::RUNNING;
 };
 
 class AudioRendererWriteCallbackMock : public AudioRendererWriteCallback {
@@ -116,13 +138,13 @@ private:
 class AudioRendererUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
-    static void SetUpTestCase(void);
+    static void SetUpTestCase(void) {}
     // TearDownTestCase: Called after all test case
-    static void TearDownTestCase(void);
+    static void TearDownTestCase(void) {}
     // SetUp: Called before each test cases
-    void SetUp(void);
+    void SetUp(void) {};
     // TearDown: Called after each test cases
-    void TearDown(void);
+    void TearDown(void) {};
     // Init Renderer
     static int32_t InitializeRenderer(std::unique_ptr<AudioRenderer> &audioRenderer);
     // Init Renderer Options
@@ -137,6 +159,15 @@ public:
         FILE *&wavFile, FILE *&metaFile);
     static InterruptEvent interruptEventTest_;
 };
+
+class AudioRendererCallbackTest : public AudioRendererCallback {
+public:
+    void OnInterrupt(const InterruptEvent &interruptEvent) override { 
+        AudioRendererUnitTest::interruptEventTest_.hintType = interruptEvent.hintType;
+    }
+    void OnStateChange(const RendererState state, const StateChangeCmdType cmdType) override {}
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 

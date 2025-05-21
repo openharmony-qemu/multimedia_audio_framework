@@ -41,7 +41,7 @@ HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
     sleepTime_ = std::chrono::nanoseconds(0);
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeInnerCapSinkNode_bit_" +
-                       std::to_string(GetBitWidth()) + "_ch_" + std::to_string(GetChannelCount()) +
+                       std::to_string(SAMPLE_F32LE) + "_ch_" + std::to_string(GetChannelCount()) +
                        "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
 }
@@ -56,7 +56,7 @@ void HpaeInnerCapSinkNode::DoProcess()
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump((int8_t *)outputData->GetPcmDataBuffer(), GetChannelCount() *
-            GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
+            GetFrameLen() * GetSizeFromFormat(SAMPLE_F32LE));
     }
 #endif
     // no need convert
@@ -185,8 +185,8 @@ StreamManagerState HpaeInnerCapSinkNode::GetSinkState(void)
 
 int32_t HpaeInnerCapSinkNode::SetSinkState(StreamManagerState sinkState)
 {
-    AUDIO_INFO_LOG("Sink[innerCap] state change:[%{public}s]-->[%{public}s]",
-        ConvertStreamManagerState2Str(state_).c_str(),
+    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+        GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sinkState).c_str());
     state_ = sinkState;
     return SUCCESS;

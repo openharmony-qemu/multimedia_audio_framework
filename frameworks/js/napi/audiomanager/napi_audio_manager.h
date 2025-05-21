@@ -106,8 +106,9 @@ struct AudioManagerAsyncContext : public ContextBase {
     static void UnregisterDeviceChangeCallback(napi_env env, napi_value callback, NapiAudioManager *audioMgrNapi);
     template<typename T> static void UnregisterInterruptCallback(napi_env env, const T &argv,
         const size_t argCount, NapiAudioManager *napiAudioManager);
+    static void UnregisterAudioSceneChangeCallback(napi_env env, napi_value callback, NapiAudioManager *audioMgrNapi);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
-    napi_value *argv, const std::string &cbName);
+        napi_value *argv, size_t argc, const std::string &cbName);
     template<typename T> static void RegisterInterruptCallback(napi_env env, const T &argv,
     NapiAudioManager *napiAudioManager);
     template<typename T> static void RegisterRingerModeCallback(napi_env env, const T &argv,
@@ -116,6 +117,8 @@ struct AudioManagerAsyncContext : public ContextBase {
     NapiAudioManager *napiAudioManager);
     template<typename T> static void RegisterDeviceChangeCallback(napi_env env, const T &argv,
     NapiAudioManager *napiAudioManager);
+    template<typename T> static void RegisterAudioSceneChangeCallback(napi_env env, const T &argv,
+        size_t argc, NapiAudioManager *napiAudioManager);
 
     AudioSystemManager *audioMngr_;
     int32_t cachedClientId_ = -1;
@@ -123,6 +126,7 @@ struct AudioManagerAsyncContext : public ContextBase {
     std::shared_ptr<AudioManagerCallback> interruptCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerAudioSceneChangedCallback> audioSceneChangedCallbackNapi_ = nullptr;
     napi_env env_;
 };
 }  // namespace AudioStandard

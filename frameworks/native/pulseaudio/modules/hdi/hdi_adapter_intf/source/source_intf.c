@@ -48,6 +48,7 @@ static void FillAdapterFuncPtr(struct SourceAdapter *adapter)
     adapter->SourceAdapterGetMute = SourceAdapterGetMute;
 
     adapter->SourceAdapterUpdateAppsUid = SourceAdapterUpdateAppsUid;
+    adapter->SourceAdapterUpdateSessionUid = SourceAdapterUpdateSessionUid;
 }
 
 struct SourceAdapter *GetSourceAdapter(const char *deviceClass, const int32_t sourceType, const char *info)

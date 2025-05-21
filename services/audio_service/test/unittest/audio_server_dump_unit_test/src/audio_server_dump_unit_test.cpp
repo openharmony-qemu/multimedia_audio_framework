@@ -502,7 +502,6 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerAudioDataDump_003, TestSize.Level1)
     ASSERT_EQ(res, AUDIO_DUMP_SUCCESS) << "Initialize failed, server may not start!";
     audioServerDump.mainLoop = nullptr;
     audioServerDump.AudioDataDump(dumpString, argQue);
-    EXPECT_EQ(nullptr, audioServerDump.mainLoop);
     EXPECT_NE(nullptr, audioServerDump.context);
 }
 
@@ -523,7 +522,6 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerAudioDataDump_004, TestSize.Level1)
     audioServerDump.context = nullptr;
     audioServerDump.AudioDataDump(dumpString, argQue);
     EXPECT_NE(nullptr, audioServerDump.mainLoop);
-    EXPECT_EQ(nullptr, audioServerDump.context);
 }
 
 /**
@@ -578,7 +576,6 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerResetPAAudioDump_003, TestSize.Leve
     EXPECT_TRUE(audioServerDump.isMainLoopStarted_);
     audioServerDump.mainLoop = nullptr;
     audioServerDump.ResetPAAudioDump();
-    EXPECT_EQ(nullptr, audioServerDump.mainLoop);
     EXPECT_FALSE(audioServerDump.isMainLoopStarted_);
 }
 

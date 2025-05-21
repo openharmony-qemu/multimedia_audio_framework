@@ -86,6 +86,7 @@ public:
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+    bool GetTimeStampInfo(Timestamp &timestampNs, Timestamp::Timestampbase base) const override;
     int32_t RegisterCapturerPolicyServiceDiedCallback();
     int32_t RemoveCapturerPolicyServiceDiedCallback();
 
@@ -99,6 +100,7 @@ public:
     uint32_t GetOverflowCount() const override;
 
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
+    int32_t SetInterruptStrategy(InterruptStrategy strategy) override;
 
     void ConcedeStream();
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);

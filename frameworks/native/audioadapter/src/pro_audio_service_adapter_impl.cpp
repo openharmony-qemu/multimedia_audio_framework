@@ -290,7 +290,7 @@ int32_t ProAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setMut
 
 std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
 {
-    AUDIO_INFO_LOG("GetAllSinkInputs Enter");
+    AUDIO_INFO_LOG("Enter");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinkInputs", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("GetAllSinkInputs timeout");

@@ -24,6 +24,7 @@ namespace AudioStandard {
 namespace HPAE {
 bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInfo);
 HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType);
+HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene);
 HpaeProcessorType TransSourceTypeToSceneType(SourceType sourceType);
 bool CheckSceneTypeNeedEc(HpaeProcessorType processorType);
 bool CheckSceneTypeNeedMicRef(HpaeProcessorType processorType);

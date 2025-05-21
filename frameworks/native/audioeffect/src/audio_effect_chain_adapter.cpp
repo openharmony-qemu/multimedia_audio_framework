@@ -107,7 +107,9 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
     if (!audioEffectChainManager->CheckAndAddSessionID(sessionIDString)) {
         return SUCCESS;
     }
-    audioEffectChainManager->UpdateSceneTypeList(sceneTypeString, ADD_SCENE_TYPE);
+    if (audioEffectChainManager->UpdateSceneTypeList(sceneTypeString, ADD_SCENE_TYPE) != SUCCESS) {
+        return ERROR;
+    }
     if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }
@@ -135,7 +137,9 @@ int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID
     if (!audioEffectChainManager->CheckAndRemoveSessionID(sessionIDString)) {
         return SUCCESS;
     }
-    audioEffectChainManager->UpdateSceneTypeList(sceneTypeString, REMOVE_SCENE_TYPE);
+    if (audioEffectChainManager->UpdateSceneTypeList(sceneTypeString, REMOVE_SCENE_TYPE) != SUCCESS) {
+        return ERROR;
+    }
     if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }

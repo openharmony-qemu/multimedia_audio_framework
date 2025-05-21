@@ -23,6 +23,7 @@
 
 namespace {
 constexpr int MAX_PID_COUNT = 1000;
+constexpr int32_t MAX_STREAM_USAGE_COUNT = OHOS::AudioStandard::StreamUsage::STREAM_USAGE_MAX + 1;
 }
 
 namespace OHOS {
@@ -499,6 +500,57 @@ int32_t AudioPolicyProxy::SetVoiceRingtoneMute(bool isMute)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOICE_RINGTONE_MUTE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SetVoiceRingtoneMute failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(uid);
+    data.WriteInt32(pid);
+    data.WriteBool(hasSession);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::NOFITY_SESSION_STATE_CHANGE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "NotifySessionStateChange failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteBool(isFreeze);
+    data.WriteInt32(pidList.size());
+    for (int32_t pid : pidList) {
+        data.WriteInt32(pid);
+    }
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::NOFITY_FREEZE_STATE_CHANGE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "NotifyFreezeStateChange failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::ResetAllProxy()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::RESET_ALL_PROXY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "ResetAllProxy failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 
@@ -2396,6 +2448,106 @@ bool AudioPolicyProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
         error);
     
     return reply.ReadBool();
+}
+
+int32_t AudioPolicyProxy::GetMaxVolumeLevelByUsage(StreamUsage streamUsage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, ERROR, "Remote() is nullptr");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_VOLUME_LEVEL_BY_USAGE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetMinVolumeLevelByUsage(StreamUsage streamUsage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, ERROR, "Remote() is nullptr");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MIN_VOLUME_LEVEL_BY_USAGE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetVolumeLevelByUsage(StreamUsage streamUsage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, ERROR, "Remote() is nullptr");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_LEVEL_BY_USAGE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+bool AudioPolicyProxy::GetStreamMuteByUsage(StreamUsage streamUsage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE_BY_USAGE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadBool();
+}
+
+int32_t AudioPolicyProxy::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    int32_t size = static_cast<int32_t>(streamUsages.size());
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= MAX_STREAM_USAGE_COUNT, ERROR, "size upper limit.");
+    data.WriteInt32(size);
+    for (auto streamUsage : streamUsages) {
+        data.WriteInt32(static_cast<int32_t>(streamUsage));
+    }
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, ERROR, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK_STREAM_USAGE_INFO), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

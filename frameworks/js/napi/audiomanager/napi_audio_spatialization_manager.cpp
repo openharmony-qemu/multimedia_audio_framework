@@ -185,7 +185,7 @@ napi_value NapiAudioSpatializationManager::Init(napi_env env, napi_value exports
 
 napi_value NapiAudioSpatializationManager::IsSpatializationEnabled(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("IsSpatializationEnabled in");
+    AUDIO_INFO_LOG("in");
     napi_value result = nullptr;
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
@@ -310,7 +310,7 @@ napi_value NapiAudioSpatializationManager::updateSpatializationEnabled(napi_env 
 
 napi_value NapiAudioSpatializationManager::IsHeadTrackingEnabled(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("IsHeadTrackingEnabled in");
+    AUDIO_INFO_LOG("in");
     napi_value result = nullptr;
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
@@ -435,7 +435,7 @@ napi_value NapiAudioSpatializationManager::updateHeadTrackingEnabled(napi_env en
 
 napi_value NapiAudioSpatializationManager::IsSpatializationSupported(napi_env env, napi_callback_info info)
 {
-    AUDIO_DEBUG_LOG("IsSpatializationSupported in");
+    AUDIO_DEBUG_LOG("in");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
@@ -494,7 +494,7 @@ napi_value NapiAudioSpatializationManager::IsSpatializationSupportedForDevice(na
 
 napi_value NapiAudioSpatializationManager::IsHeadTrackingSupported(napi_env env, napi_callback_info info)
 {
-    AUDIO_DEBUG_LOG("IsHeadTrackingSupported in");
+    AUDIO_DEBUG_LOG("in");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
@@ -942,7 +942,7 @@ napi_value NapiAudioSpatializationManager::Off(napi_env env, napi_callback_info 
 napi_value NapiAudioSpatializationManager::IsSpatializationEnabledForCurrentDevice(napi_env env,
     napi_callback_info info)
 {
-    AUDIO_INFO_LOG("IsSpatializationEnabledForCurrentDevice in");
+    AUDIO_INFO_LOG("in");
     napi_value result = nullptr;
 
     size_t argc = PARAM0;

@@ -272,5 +272,477 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerdualToneStreamInStart_002,
     server->dualToneStream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
     server->dualToneStreamInStart();
 }
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerPause_001
+ * @tc.desc  : Test Pause interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_001, TestSize.Level1)
+{
+    AudioBufferHolder bufferHolder;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = true;
+    server->playerDfx_ = nullptr;
+    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+        byteSizePerFrame);
+    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    server->audioServerBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto ret = server->Pause();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerPause_002
+ * @tc.desc  : Test Pause interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_002, TestSize.Level1)
+{
+    AudioBufferHolder bufferHolder;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = true;
+    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+        byteSizePerFrame);
+    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    server->audioServerBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    AppInfo appInfo;
+    uint32_t index = 0;
+    server->playerDfx_ = std::make_unique<PlayerDfxWriter>(appInfo, index);
+    auto ret = server->Pause();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerRelease_001
+ * @tc.desc  : Test Release interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerRelease_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->status_ = I_STATUS_STARTING;
+    server->Release();
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetLowPowerVolume_001
+ * @tc.desc  : Test SetLowPowerVolume interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLowPowerVolume_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    server->isDualToneEnabled_ = true;
+    server->offloadEnable_ = true;
+
+    float volume = 0.5f;
+    auto ret = server->SetLowPowerVolume(volume);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerDisableInnerCap_001
+ * @tc.desc  : Test DisableInnerCap interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCap_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t innerCapId = 0;
+    server->captureInfos_[innerCapId].isInnerCapEnabled = true;
+    auto ret = server->DisableInnerCap(innerCapId);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetOffloadMode_001
+ * @tc.desc  : Test SetOffloadMode interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetOffloadMode_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    server->isDualToneEnabled_ = true;
+    server->dualToneStream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    int32_t state = 0;
+    bool isAppBack = false;
+    auto ret = server->SetOffloadMode(state, isAppBack);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerOffloadSetVolumeInner_001
+ * @tc.desc  : Test OffloadSetVolumeInner interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerOffloadSetVolumeInner_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto ret = server->OffloadSetVolumeInner();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerIsHighResolution_001
+ * @tc.desc  : Test IsHighResolution interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerIsHighResolution_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    processConfig.streamType = STREAM_MUSIC;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_44100;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    auto ret = server->IsHighResolution();
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerIsHighResolution_002
+ * @tc.desc  : Test IsHighResolution interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerIsHighResolution_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    processConfig.streamType = STREAM_MUSIC;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_44100;
+    processConfig.streamInfo.format = SAMPLE_F32LE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    auto ret = server->IsHighResolution();
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerIsHighResolution_003
+ * @tc.desc  : Test IsHighResolution interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerIsHighResolution_003, TestSize.Level1)
+{
+    int rate = 193000;
+    AudioProcessConfig processConfig;
+    processConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    processConfig.streamType = STREAM_MUSIC;
+    processConfig.streamInfo.samplingRate = static_cast<AudioSamplingRate>(rate);
+    processConfig.streamInfo.format = SAMPLE_F32LE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    auto ret = server->IsHighResolution();
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetSilentModeAndMixWithOthers_001
+ * @tc.desc  : Test SetSilentModeAndMixWithOthers interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetSilentModeAndMixWithOthers_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    server->isDualToneEnabled_ = true;
+    server->offloadEnable_ = true;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    auto ret = server->SetSilentModeAndMixWithOthers(false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetClientVolume_001
+ * @tc.desc  : Test SetClientVolume interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetClientVolume_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioBufferHolder bufferHolder;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+        byteSizePerFrame);
+    server->playerDfx_ = nullptr;
+
+    auto ret = server->SetClientVolume();
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetClientVolume_002
+ * @tc.desc  : Test SetClientVolume interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetClientVolume_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioBufferHolder bufferHolder;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+        byteSizePerFrame);
+
+    AppInfo appInfo;
+    uint32_t index = 0;
+    server->playerDfx_ = std::make_unique<PlayerDfxWriter>(appInfo, index);
+    ASSERT_TRUE(server->playerDfx_ != nullptr);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    server->isDualToneEnabled_ = true;
+    server->offloadEnable_ = true;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    auto ret = server->SetClientVolume();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetSetMute_001
+ * @tc.desc  : Test SetMute interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetSetMute_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    server->isDualToneEnabled_ = true;
+    server->offloadEnable_ = true;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    auto ret = server->SetMute(true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetDuckFactor_001
+ * @tc.desc  : Test SetDuckFactor interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetDuckFactor_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    float duckFactor = -0.5f;
+    auto ret = server->SetDuckFactor(duckFactor);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    duckFactor = 2.0f;
+    ret = server->SetDuckFactor(duckFactor);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetDuckFactor_002
+ * @tc.desc  : Test SetDuckFactor interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetDuckFactor_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    server->isDualToneEnabled_ = true;
+    server->offloadEnable_ = true;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    float duckFactor = 0.5f;
+    auto ret = server->SetDuckFactor(duckFactor);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetSetNonInterruptMute_001
+ * @tc.desc  : Test SetDuckFactor interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetSetNonInterruptMute_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    server->isDualToneEnabled_ = true;
+    server->offloadEnable_ = true;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    bool muteFlag = false;
+    server->SetNonInterruptMute(muteFlag);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerRestoreSession_001
+ * @tc.desc  : Test SetDuckFactor interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerRestoreSession_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    AudioBufferHolder bufferHolder;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    server->muteFlag_ = true;
+    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+        byteSizePerFrame);
+
+    RestoreInfo restoreInfo;
+    auto ret = server->RestoreSession(restoreInfo);
+    EXPECT_EQ(ret, RESTORE_ERROR);
+
+    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    ret = server->RestoreSession(restoreInfo);
+    EXPECT_EQ(ret, NO_NEED_FOR_RESTORE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

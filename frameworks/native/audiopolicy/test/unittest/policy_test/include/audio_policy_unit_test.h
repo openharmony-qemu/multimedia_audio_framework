@@ -182,6 +182,17 @@ public:
     virtual void UnsetOffloadModeImpl() {};
 };
 
+class AudioManagerActiveVolumeTypeChangeCallbackTest : public AudioManagerActiveVolumeTypeChangeCallback {
+public:
+    virtual ~AudioManagerActiveVolumeTypeChangeCallbackTest() = default;
+    /**
+     * Called when the active volume type changes
+     *
+     * @param event active volume type change Information.
+     */
+    virtual void OnActiveVolumeTypeChanged(const AudioVolumeType &event) {};
+};
+
 class AudioPolicyUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

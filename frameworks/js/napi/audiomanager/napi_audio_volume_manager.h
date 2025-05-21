@@ -83,6 +83,10 @@ private:
         napi_value *args, const std::string &cbName);
     static std::shared_ptr<NapiAudioVolumeKeyEvent> GetVolumeEventNapiCallback(napi_value argv,
         NapiAudioVolumeManager *napiVolumeManager);
+    static napi_value RegisterActiveVolumeTypeChangeCallback(napi_env env, napi_value *args,
+        const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static void UnregisterActiveVolumeTypeChangeCallback(napi_env env, napi_value callback, napi_value *args,
+        size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager);
 
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
@@ -92,6 +96,7 @@ private:
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerAppVolumeChangeCallback> selfAppVolumeChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerAppVolumeChangeCallback> appVolumeChangeCallbackForUidNapi_ = nullptr;
+    std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> activeVolumeTypeChangeCallbackNapi_ = nullptr;
     std::list<std::shared_ptr<NapiAudioVolumeKeyEvent>> volumeKeyEventCallbackNapiList_;
 
     napi_env env_;

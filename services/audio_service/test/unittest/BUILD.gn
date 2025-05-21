@@ -46,6 +46,7 @@ ohos_unittest("audio_endpoint_separate_unit_test") {
     "../../../../services/audio_service/server/src",
     "../../../../frameworks/native/audioschedule/include",
     "../../../../frameworks/native/playbackcapturer/include",
+    "../../../../frameworks/native/audioclock/include",
   ]
 
   deps = [
@@ -54,11 +55,12 @@ ohos_unittest("audio_endpoint_separate_unit_test") {
     "../../../audio_service:audio_client",
     "../../../audio_service:audio_common",
     "../../../audio_service:audio_process_service_static",
+    "../../../../frameworks/native/audioclock:audio_clock",
   ]
 
   external_deps = [
     "c_utils:utils",
-    "drivers_interface_audio:libaudio_proxy_4.0",
+    "drivers_interface_audio:libaudio_proxy_5.0",
     "googletest:gtest",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -92,6 +94,7 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../../services/audio_service/client/src",
     "../../../../services/audio_service/server/include",
     "../../../../frameworks/native/playbackcapturer/include",
+    "../../../../frameworks/native/audioclock/include",
   ]
   sources = [
     "audio_group_manager_unit_test.cpp",
@@ -111,6 +114,7 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
     "../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../services/audio_service:audio_process_service_static",
     "../../../../services/audio_service:audio_service",
     "../../../audio_service:audio_client",
@@ -260,6 +264,7 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../frameworks/native/audiopolicy/include",
     "../../../../frameworks/native/hdiadapter_new/include",
     "../../../../frameworks/native/playbackcapturer/include",
+    "../../../../frameworks/native/audioclock/include",
   ]
 
   sources = [
@@ -283,6 +288,7 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
     "../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../services/audio_policy:audio_foundation",
     "../../../../services/audio_service:audio_client",
     "../../../../services/audio_service:audio_common",
@@ -400,6 +406,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
   include_dirs = [
     "../../../../frameworks/native/audioschedule/include",
     "../../../../frameworks/native/audioutils/include",
+    "../../../../frameworks/native/audioclock/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
@@ -412,6 +419,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
 
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service_static",
   ]
@@ -469,6 +477,7 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "../../../../frameworks/native/audioinnercall/include",
     "../../../../frameworks/native/hdiadapter_new/include",
     "../../../../frameworks/native/audioinnercall/include",
+    "../../../../frameworks/native/audioclock/include",
     "../../../../services/audio_service/client/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
@@ -480,6 +489,7 @@ ohos_unittest("audio_process_in_server_unit_test") {
 
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_service:audio_client",
     "../../../../services/audio_service:audio_common",
@@ -669,6 +679,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_policy:audio_policy_service",
     "../../../../services/audio_service:audio_client",
@@ -724,6 +735,7 @@ ohos_unittest("ipc_stream_stub_unit_test") {
 
   include_dirs = [
     "../../../../frameworks/native/audioutils/include",
+    "../../../../frameworks/native/audioclock/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/server/include",
@@ -738,6 +750,7 @@ ohos_unittest("ipc_stream_stub_unit_test") {
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service_static",
+    "../../../../frameworks/native/audioclock:audio_clock",
   ]
 
   cflags = [ "-fno-access-control" ]
@@ -817,6 +830,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../services/audio_engine:audio_engine_manager",
     "../../../../services/audio_engine:audio_engine_plugins",
     "../../../../services/audio_policy:audio_policy_client",
@@ -943,6 +957,7 @@ ohos_unittest("policy_provider_stub_unit_test") {
     "../../../../services/audio_service/client/include",
     "../../../../services/audio_service/common/include/dfx",
     "../../../../frameworks/native/playbackcapturer/include",
+    "../../../../frameworks/native/audioclock/include",
   ]
 
   sources = [ "policy_provider_stub_unit_test.cpp" ]
@@ -952,7 +967,10 @@ ohos_unittest("policy_provider_stub_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-std=c++20" ]
 
-  deps = [ "../../../audio_service:audio_client" ]
+  deps = [
+    "../../../audio_service:audio_client",
+    "../../../../frameworks/native/audioclock:audio_clock"
+  ]
 
   defines = []
   if (audio_framework_feature_inner_capturer) {

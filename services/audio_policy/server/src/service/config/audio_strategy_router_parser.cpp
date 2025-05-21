@@ -48,6 +48,8 @@ bool AudioStrategyRouterParser::LoadConfiguration()
 #endif
     
     if (ret != SUCCESS) {
+        Trace trace("SYSEVENT FAULT EVENT LOAD_CONFIG_ERROR, CATEGORY: "
+            + std::to_string(Media::MediaMonitor::AUDIO_STRATEGY_ROUTER));
         AUDIO_ERR_LOG("Not found audio_strategy_router.xml!");
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR, Media::MediaMonitor::FAULT_EVENT);
