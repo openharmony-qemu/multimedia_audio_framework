@@ -89,6 +89,8 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
 
 void AudioVolumeParser::WriteVolumeConfigErrorEvent()
 {
+    Trace trace("SYSEVENT FAULT EVENT LOAD_CONFIG_ERROR, CATEGORY: "
+        + std::to_string(Media::MediaMonitor::AUDIO_VOLUME_CONFIG));
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
@@ -103,6 +105,8 @@ int32_t AudioVolumeParser::LoadConfig(StreamVolumeInfoMap &streamVolumeInfoMap)
 #ifdef USE_CONFIG_POLICY
     CfgFiles *cfgFiles = GetCfgFiles(AUDIO_VOLUME_CONFIG_FILE);
     if (cfgFiles == nullptr) {
+        Trace trace("SYSEVENT FAULT EVENT LOAD_CONFIG_ERROR, CATEGORY: "
+            + std::to_string(Media::MediaMonitor::AUDIO_VOLUME_CONFIG));
         AUDIO_ERR_LOG("Not found audio_volume_config.xml!");
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,

@@ -25,6 +25,7 @@
 #include "audio_policy_log.h"
 #include "audio_inner_call.h"
 #include "audio_tone_parser.h"
+#include "audio_utils.h"
 #include "media_monitor_manager.h"
 
 #include "audio_policy_utils.h"
@@ -43,6 +44,8 @@ bool AudioToneManager::LoadToneDtmfConfig()
     CHECK_AND_RETURN_RET_LOG(audioToneParser != nullptr, false, "Failed to create AudioToneParser");
     if (audioToneParser->LoadNewConfig(AudioToneParser::AUDIO_TONE_CONFIG_FILE, toneDescriptorMap_,
         customToneDescriptorMap_)) {
+        Trace trace("SYSEVENT FAULT EVENT LOAD_CONFIG_ERROR, CATEGORY: "
+            + std::to_string(Media::MediaMonitor::AUDIO_TONE_DTMF_CONFIG));
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::LOAD_CONFIG_ERROR,
             Media::MediaMonitor::EventType::FAULT_EVENT);

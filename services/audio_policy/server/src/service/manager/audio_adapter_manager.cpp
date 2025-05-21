@@ -26,6 +26,7 @@
 #include "audio_volume_parser.h"
 #include "audio_policy_server.h"
 #include "audio_volume.h"
+#include "audio_utils.h"
 
 using namespace std;
 
@@ -382,6 +383,8 @@ bool AudioAdapterManager::IsCurDeviceNeedSaveVolumeToDatabase()
 
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
+    Trace trace("KeyAction AudioAdapterManager::SetSystemVolumeLevel streamType:"
+        + std::to_string(streamType) + ", volumeLevel:" + std::to_string(volumeLevel));
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_.deviceType_, volumeLevel);
     if (GetSystemVolumeLevel(streamType) == volumeLevel &&

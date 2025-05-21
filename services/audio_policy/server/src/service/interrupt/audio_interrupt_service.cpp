@@ -19,6 +19,7 @@
 #include "audio_interrupt_service.h"
 
 #include "audio_focus_parser.h"
+#include "audio_utils_c.h"
 #include "audio_policy_manager_listener_proxy.h"
 #include "media_monitor_manager.h"
 #include "audio_log.h"
@@ -460,6 +461,8 @@ bool AudioInterruptService::IsActiveStreamLowPriority(const AudioFocusEntry &foc
 
 void AudioInterruptService::WriteServiceStartupError()
 {
+    AUTO_CTRACE("SYSEVENT FAULT EVENT AUDIO_SERVICE_STARTUP_ERROR, SERVICE_ID: %d, ERROR_CODE: %d",
+        Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID, Media::MediaMonitor::AUDIO_INTERRUPT_SERVER);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
@@ -2161,12 +2164,15 @@ void AudioInterruptService::RemoveClient(const int32_t zoneId, uint32_t streamId
 void AudioInterruptService::WriteFocusMigrateEvent(const int32_t &toZoneId)
 {
     auto uid = IPCSkeleton::GetCallingUid();
+    std::string deviceDesc = (toZoneId == 1) ? REMOTE_NETWORK_ID : LOCAL_NETWORK_ID;
+    AUTO_CTRACE("SYSEVENT BEHAVIOR EVENT AUDIO_FOCUS_MIGRATE, CLIENT_UID: %d, MIGRATE_DIRECTION: %d, DEVICE_DESC: %s",
+        static_cast<int32_t>(uid), toZoneId, deviceDesc.c_str());
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_FOCUS_MIGRATE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
     bean->Add("CLIENT_UID", static_cast<int32_t>(uid));
     bean->Add("MIGRATE_DIRECTION", toZoneId);
-    bean->Add("DEVICE_DESC", (toZoneId == 1) ? REMOTE_NETWORK_ID : LOCAL_NETWORK_ID);
+    bean->Add("DEVICE_DESC", deviceDesc);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

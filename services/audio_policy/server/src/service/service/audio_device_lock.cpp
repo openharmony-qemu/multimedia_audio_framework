@@ -62,6 +62,7 @@ void AudioDeviceLock::DeInit()
 
 int32_t AudioDeviceLock::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
+    Trace trace("KeyAction AudioDeviceLock::SetAudioScene");
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     AUDIO_INFO_LOG("Set audio scene start: %{public}d, lastScene: %{public}d, uid: %{public}d, pid: %{public}d",
@@ -103,6 +104,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetDevices(
 
 int32_t AudioDeviceLock::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
+    Trace trace("KeyAction AudioDeviceLock::SetDeviceActive");
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active, uid);
@@ -369,6 +371,7 @@ void AudioDeviceLock::OnDeviceStatusUpdated(DeviceType devType, bool isConnected
     const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role, bool hasPair)
 {
     // Pnp device status update
+    Trace trace("KeyAction AudioDeviceLock::OnDeviceStatusUpdated");
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     audioDeviceStatus_.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
 }
@@ -376,6 +379,7 @@ void AudioDeviceLock::OnDeviceStatusUpdated(DeviceType devType, bool isConnected
 void AudioDeviceLock::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, bool isConnected)
 {
     // Bluetooth device status updated
+    Trace trace("KeyAction AudioDeviceLock::OnDeviceStatusUpdated");
     DeviceType devType = updatedDesc.deviceType_;
     string macAddress = updatedDesc.macAddress_;
     string deviceName = updatedDesc.deviceName_;
