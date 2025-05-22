@@ -50,7 +50,7 @@ const std::vector<StreamUsage> BACKGROUND_NOSTART_STREAM_USAGE {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
 static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
-static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
+static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 60;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
@@ -1310,7 +1310,7 @@ uint32_t AudioRendererPrivate::GetRendererSamplingRate() const
 int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
 {
     CHECK_AND_RETURN_RET_LOG(bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC,
-        ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 20ms");
+        ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 60ms");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
