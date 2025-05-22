@@ -57,6 +57,12 @@ void AudioServerUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+class DataTransferStateChangeCallbackInnerTest : public DataTransferStateChangeCallbackInner {
+public:
+    void OnDataTransferStateChange(const int32_t &callbackId,
+            const AudioRendererDataTransferStateChangeInfo &info) override {}
+};
+
 /**
  * @tc.name  : Test OnAddSystemAbility API
  * @tc.type  : FUNC
@@ -1327,6 +1333,27 @@ HWTEST_F(AudioServerUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
     bool isEnable = false;
     audioServer->SetDefaultAdapterEnable(isEnable);
     EXPECT_NE(nullptr, audioServer);
+}
+
+/**
+ * @tc.name  : Test RendererDataTransferCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendererDataTransferCallback_001
+ * @tc.desc  : Test RendererDataTransferCallback interface.
+ */
+HWTEST_F(AudioServerUnitTest, RendererDataTransferCallback_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->RemoveRendererDataTransferCallback(0);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerTest>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    AudioRendererDataTransferStateChangeInfo info;
+    audioServer->OnDataTransferStateChange(pid, 0, info);
+    audioServer->RemoveRendererDataTransferCallback(pid);
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

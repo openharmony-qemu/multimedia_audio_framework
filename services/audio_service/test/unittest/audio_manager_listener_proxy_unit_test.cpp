@@ -95,7 +95,7 @@ HWTEST(AudioManagerListenerProxyUnitTest, AudioManagerListenerProxy_002, TestSiz
     std::string value = 0;
 
     sptr<IStandardAudioServerManagerListener> listener = nullptr;
-    auto audioManagerListenerCallback = std::make_shared<AudioManagerListenerCallback>(nullptr);
+    auto audioManagerListenerCallback = std::make_shared<AudioManagerListenerCallback>(listener);
     audioManagerListenerCallback->OnAudioParameterChange(networkId, AudioParamKey::A2DP_OFFLOAD_STATE,
         condition, value);
     ASSERT_TRUE(audioManagerListenerCallback != nullptr);
@@ -173,6 +173,39 @@ HWTEST(AudioManagerListenerProxyUnitTest, AudioManagerListenerProxy_007, TestSiz
     audioManagerListenerCallback->isFirstOnCapturerStateCallbackSent_ = true;
     audioManagerListenerCallback->TrigerFirstOnCapturerStateCallback(true);
     ASSERT_TRUE(audioManagerListenerCallback != nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioManagerListenerProxy
+ * @tc.type  : FUNC
+ * @tc.number: AudioManagerListenerProxy_008.
+ * @tc.desc  : Test OnDataTransferStateChange.
+ */
+HWTEST(AudioManagerListenerProxyUnitTest, AudioManagerListenerProxy_008, TestSize.Level1)
+{
+    sptr<IStandardAudioServerManagerListener> listener = nullptr;
+    auto audioManagerListenerCallback = std::make_shared<AudioManagerListenerCallback>(listener);
+    int32_t callbackId = 0;
+    AudioRendererDataTransferStateChangeInfo info;
+    ASSERT_TRUE(audioManagerListenerCallback != nullptr);
+    audioManagerListenerCallback->OnDataTransferStateChange(callbackId, info);
+}
+
+/**
+ * @tc.name  : Test AudioManagerListenerProxy
+ * @tc.type  : FUNC
+ * @tc.number: AudioManagerListenerProxy_009.
+ * @tc.desc  : Test OnDataTransferStateChange.
+ */
+HWTEST(AudioManagerListenerProxyUnitTest, AudioManagerListenerProxy_009, TestSize.Level1)
+{
+    sptr<IStandardAudioServerManagerListener> listener = new AudioManagerListenerProxy(impl);
+    ASSERT_TRUE(listener != nullptr);
+    auto audioManagerListenerCallback = std::make_shared<AudioManagerListenerCallback>(listener);
+    int32_t callbackId = 0;
+    AudioRendererDataTransferStateChangeInfo info;
+    ASSERT_TRUE(audioManagerListenerCallback != nullptr);
+    audioManagerListenerCallback->OnDataTransferStateChange(callbackId, info);
 }
 } // namespace AudioStandard
 } // namespace OHOS
