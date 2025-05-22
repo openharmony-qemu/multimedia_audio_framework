@@ -348,8 +348,11 @@ void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
 
     // inner-cap not working
-    if (workingConfigs_.size() == 0) {
-        return;
+    {
+        std::lock_guard<std::mutex> lock(workingConfigsMutex_);
+        if (workingConfigs_.size() == 0) {
+            return;
+        }
     }
     // in plan: check if meet with the workingConfig_
     std::set<int32_t> captureIds;
@@ -390,6 +393,7 @@ bool isFilterMatched(const std::vector<T> &params, T param, FilterMode mode)
 bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId)
 {
     bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    std::lock_guard<std::mutex> lock(workingConfigsMutex_);
     if (!canBeCaptured || innerCapId == 0 || !workingConfigs_.count(innerCapId)) {
         AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
         return false;
@@ -405,6 +409,7 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, st
         return false;
     }
     bool ret = false;
+    std::lock_guard<std::mutex> lock(workingConfigsMutex_);
     for (auto& filter : workingConfigs_) {
         if (CheckShouldCap(rendererConfig, filter.first)) {
             ret = true;
@@ -500,6 +505,7 @@ void AudioService::FilterAllFastProcess()
 
 int32_t AudioService::CheckDisableFastInner(std::shared_ptr<AudioEndpoint> endpoint)
 {
+    std::lock_guard<std::mutex> lock(workingConfigsMutex_);
     for (auto workingConfig : workingConfigs_) {
         if (!endpoint->ShouldInnerCap(workingConfig.first)) {
             endpoint->DisableFastInnerCap(workingConfig.first);
@@ -616,15 +622,21 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
     // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
     // step 2: if sessionId is already in using, this means the config is changed. Check the filtered renderer before,
     // call disable inner-cap for those not meet with the new config, than filter all allRendererMap_.
-
-    if (workingConfigs_.count(innerCapId)) {
-        workingConfigs_[innerCapId] = newConfig;
+    bool isOldCap = false;
+    {
+        std::lock_guard<std::mutex> lock(workingConfigsMutex_);
+        if (workingConfigs_.count(innerCapId)) {
+            workingConfigs_[innerCapId] = newConfig;
+            isOldCap = true;  
+        } else {
+            workingConfigs_[innerCapId] = newConfig; 
+        }
+    }
+    if (isOldCap) {
         return OnUpdateInnerCapList(innerCapId);
     } else {
-        workingConfigs_[innerCapId] = newConfig;
         return OnInitInnerCapList(innerCapId);
     }
-
     AUDIO_WARNING_LOG("%{public}u is working, comming %{public}u will not work!", innerCapId, sessionId);
     return ERR_OPERATION_FAILED;
 #endif
@@ -634,11 +646,14 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
 int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId)
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
-    if (!workingConfigs_.count(innerCapId)) {
-        AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", innerCapId, sessionId);
-        return SUCCESS;
+    {
+        std::lock_guard<std::mutex> lock(workingConfigsMutex_);
+        if (!workingConfigs_.count(innerCapId)) {
+            AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", innerCapId, sessionId);
+            return SUCCESS;
+        }
+        workingConfigs_.erase(innerCapId);
     }
-    workingConfigs_.erase(innerCapId);
 
 #ifdef SUPPORT_LOW_LATENCY
     std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
@@ -1030,10 +1045,13 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
 void AudioService::Dump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("AudioService dump begin");
-    for (auto &workingConfig_ : workingConfigs_) {
-        AppendFormat(dumpString, "InnerCapid: %s  - InnerCap filter: %s\n",
+    {
+        std::lock_guard<std::mutex> lock(workingConfigsMutex_);
+        for (auto &workingConfig_ : workingConfigs_) {
+            AppendFormat(dumpString, "InnerCapid: %s  - InnerCap filter: %s\n",
             std::to_string(workingConfig_.first).c_str(),
             ProcessConfig::DumpInnerCapConfig(workingConfig_.second).c_str());
+        }
     }
 #ifdef SUPPORT_LOW_LATENCY
     // dump process
