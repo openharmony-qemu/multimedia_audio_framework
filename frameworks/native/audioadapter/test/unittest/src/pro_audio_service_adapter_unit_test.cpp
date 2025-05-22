@@ -35,29 +35,17 @@ void ProAudioServiceAdapterUnitTest::SetUp(void)
     IdHandler::GetInstance();
     HdiAdapterManager::GetInstance();
     std::unique_ptr<ProAudioServiceCallbackTest> cb = std::make_unique<ProAudioServiceCallbackTest>();
-    impl_ = AudioServiceAdapter::CreateAudioAdapter(std::move(cb));
+    impl_ = std::make_shared<ProAudioServiceAdapterImpl>(std::move(cb));
     impl_->Connect();
     HPAE::IHpaeManager::GetHpaeManager().Init();
 }
 
 void ProAudioServiceAdapterUnitTest::TearDown(void)
 {
-    impl_ = nullptr;
-    if (engineFlag_ != 1) {
-        const char *key = "const.multimedia.audio.proaudioEnable";
-        SetSysPara(key, engineFlag_);
-    }
 }
 
 ProAudioServiceAdapterUnitTest::ProAudioServiceAdapterUnitTest()
 {
-    engineFlag_ = GetEngineFlag();
-    std::cout<<"engine flag:"<<engineFlag_<<std::endl;
-    if (engineFlag_ != 1) {
-        const char *key = "const.multimedia.audio.proaudioEnable";
-        const int32_t value = 1;
-        SetSysPara(key, value);
-    }
 }
 
 ProAudioServiceAdapterUnitTest::~ProAudioServiceAdapterUnitTest()

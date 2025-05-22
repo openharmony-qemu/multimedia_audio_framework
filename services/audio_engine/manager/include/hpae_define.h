@@ -25,7 +25,7 @@ constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 
 struct HpaeSessionInfo {
     HpaeStreamInfo streamInfo;
-    uint32_t state = I_STATUS_IDLE;
+    HpaeSessionState state = HPAE_SESSION_NEW;
     std::weak_ptr<IStatusCallback> statusCallback;
 };
 
