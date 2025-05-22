@@ -72,9 +72,6 @@ static DeviceType GetInternalDeviceType(PnpDeviceType pnpDeviceType)
         case PnpDeviceType::PNP_DEVICE_ACCESSORY:
             internalDeviceType = DEVICE_TYPE_ACCESSORY;
             break;
-        case PnpDeviceType::PNP_DEVICE_HDMI_DEVICE:
-            internalDeviceType = DEVICE_TYPE_HDMI;
-            break;
         default:
             internalDeviceType = DEVICE_TYPE_NONE;
             break;
