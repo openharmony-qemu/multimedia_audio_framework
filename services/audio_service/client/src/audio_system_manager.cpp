@@ -33,12 +33,16 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_policy_interface.h"
 #include "audio_focus_info_change_callback_impl.h"
+#include "audio_qosmanager.h"
+#include "rtg_interface.h"
+using namespace OHOS::RME;
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
+constexpr unsigned int MS_PER_SECOND = 1000;
 constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
@@ -1960,6 +1964,55 @@ int32_t AudioSystemManager::UnregisterStreamVolumeChangeCallback(const int32_t c
 {
     AUDIO_DEBUG_LOG("unregister StreamVolumeChangeCallback clientPid:%{public}d", clientPid);
     return AudioPolicyManager::GetInstance().UnsetStreamVolumeChangeCallback(callback);
+}
+
+int32_t AudioSystemManager::CreateAudioWorkgroup()
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->CreateAudioWorkgroup(getpid());
+}
+
+int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->ReleaseAudioWorkgroup(getpid(), workgroupId);
+}
+
+int32_t AudioSystemManager::AddThreadToGroup(int32_t workgroupId, int32_t tokenId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->AddThreadToGroup(getpid(), workgroupId, tokenId);
+}
+
+int32_t AudioSystemManager::RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->RemoveThreadFromGroup(getpid(), workgroupId, tokenId);
+}
+
+int32_t AudioSystemManager::StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
+{
+    CHECK_AND_RETURN_RET_LOG(deadlineTime > startTime, ERR_INVALID_PARAM, "Invalid Audio Deadline params");
+    SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
+    SetThreadQosLevel();
+    if (BeginFrameFreq(0) != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] Audio Deadline BeginFrame failed");
+        return AUDIO_ERR;
+    }
+    return AUDIO_OK;
+}
+
+int32_t AudioSystemManager::StopGroup(int32_t workgroupId)
+{
+    if (EndFrameFreq(0) != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] Audio Deadline EndFrame failed");
+        return AUDIO_ERR;
+    }
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

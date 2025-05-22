@@ -306,7 +306,8 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-    audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
+    audioEffectServer_(std::make_unique<AudioEffectServer>()),
+    audioResourceService_(std::make_unique<AudioResourceService>()) {}
 
 void AudioServer::OnDump() {}
 
@@ -2637,6 +2638,36 @@ void AudioServer::SetDeviceConnectedFlag(bool flag)
     std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
     CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
     primarySink->SetDeviceConnectedFlag(flag);
+}
+
+int32_t AudioServer::CreateAudioWorkgroup(int32_t pid)
+{
+    return audioResourceService_->CreateAudioWorkgroup(pid);
+}
+
+int32_t AudioServer::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)
+{
+    return audioResourceService_->ReleaseAudioWorkgroup(pid, workgroupId);
+}
+
+int32_t AudioServer::AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+{
+    return audioResourceService_->AddThreadToGroup(pid, workgroupId, tokenId);
+}
+
+int32_t AudioServer::RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+{
+    return audioResourceService_->RemoveThreadFromGroup(pid, workgroupId, tokenId);
+}
+
+int32_t AudioServer::StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
+{
+    return audioResourceService_->StartGroup(pid, workgroupId, startTime, deadlineTime);
+}
+
+int32_t AudioServer::StopGroup(int32_t pid, int32_t workgroupId)
+{
+    return audioResourceService_->StopGroup(pid, workgroupId);
 }
 
 } // namespace AudioStandard

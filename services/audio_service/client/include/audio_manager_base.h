@@ -615,6 +615,17 @@ public:
 
     virtual void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) = 0;
     /**
+     * Create AudioWorkgroup.
+     *
+     * @return Returns workgroup id for current process.
+     */
+    virtual int32_t CreateAudioWorkgroup(int32_t pid) = 0;
+    virtual int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) = 0;
+    virtual int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) = 0;
+    virtual int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) = 0;
+    virtual int32_t StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) = 0;
+    virtual int32_t StopGroup(int32_t pid, int32_t workgroupId) = 0;
+    /**
      * Regiest data transfer callback.
      *
      * @return result code.
@@ -741,6 +752,12 @@ private:
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFifthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleSixthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    int HandleCreateAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleReleaseAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleAddThreadToAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleRemoveThreadFromAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleStartAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleStopAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS
