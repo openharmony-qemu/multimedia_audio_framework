@@ -23,6 +23,7 @@
 #include "media_monitor_manager.h"
 #include "audio_xml_parser.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -97,6 +98,8 @@ static std::map<std::string, AudioChannelLayout> str2layout = {
 
 static void WriteConverterConfigError()
 {
+    Trace trace("SYSEVENT FAULT EVENT LOAD_EFFECT_ENGING_ERROR, ENGING_TYPE: "
+        + std::to_string(Media::MediaMonitor::AUDIO_CONVERTER_CONFIG));
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
         Media::MediaMonitor::FAULT_EVENT);

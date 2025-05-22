@@ -402,6 +402,7 @@ bool PermissionUtil::VerifyIsSystemApp()
     return true;
 #endif
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    WatchTimeout guard("Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID");
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
 
@@ -1490,6 +1491,8 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
             AUDIO_ERR_LOG("LatencyMeas GetExtraParameter failed!");
             AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s",
                 rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+            AUTO_CTRACE("LatencyMeas RendererMockTime:%s, SinkDetectedTime:%s",
+                rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
             return;
         }
         dspBeforeSmartPa_ = dspDetectedTime_.substr(extraStrLen_, DATE_LENGTH);
@@ -1498,11 +1501,16 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
         AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s, "
                        "DspBeforeSmartPa:%{public}s, DspAfterSmartPa:%{public}s", rendererMockTime_.c_str(),
                        sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
+        AUTO_CTRACE("LatencyMeas RendererMockTime:%s, SinkDetectedTime:%s, "
+                       "DspBeforeSmartPa:%s, DspAfterSmartPa:%s", rendererMockTime_.c_str(),
+                       sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
     } else {
         AUDIO_INFO_LOG("renderer mock time %{public}s", rendererMockTime_.c_str());
         if (dspDetectedTime_.length() == 0) {
             AUDIO_ERR_LOG("LatencyMeas GetExtraParam failed!");
             AUDIO_INFO_LOG("LatencyMeas CapturerDetectedTime:%{public}s, SourceDetectedTime:%{public}s",
+                capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str());
+            AUTO_CTRACE("LatencyMeas CapturerDetectedTime:%s, SourceDetectedTime:%s",
                 capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str());
             return;
         }
@@ -1511,12 +1519,17 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
         AUDIO_INFO_LOG("LatencyMeas CapturerDetectedTime:%{public}s, SourceDetectedTime:%{public}s, "
                        "DspMockTime:%{public}s", capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str(),
                        dspMockTime_.c_str());
+        AUTO_CTRACE("LatencyMeas CapturerDetectedTime:%s, SourceDetectedTime:%s, "
+                       "DspMockTime:%s", capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str(),
+                       dspMockTime_.c_str());
     }
 }
 
 void LatencyMonitor::ShowBluetoothTimestamp()
 {
     AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
+        rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+    AUTO_CTRACE("LatencyMeas RendererMockTime:%s, BTSinkDetectedTime:%s",
         rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
 }
 

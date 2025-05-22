@@ -34,39 +34,7 @@ constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;  // 3s to stop hdi
 static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
     SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_REMOTE_CAST};
 }  // namespace
-constexpr int32_t SINK_INVALID_ID = -1;
-static const std::string DEFAULT_SINK_NAME = "Speaker";
-
-// base + offset * 8
-static uint32_t GetRenderId(const std::string &deviceClass)
-{
-    uint32_t renderId = 0;
-    if (deviceClass == "usb") {
-        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_USB);
-    } else if (deviceClass == "dp") {
-        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DP);
-    } else if (deviceClass == "voip") {
-        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP);
-    } else if (deviceClass == "direct") {
-        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT);
-    } else {
-        renderId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
-    }
-    return renderId;
-}
-
-static uint32_t GetCaptureId(const std::string &deviceClass)
-{
-    uint32_t captureId = 0;
-    if (deviceClass == "usb") {
-        captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_USB);
-    } else if (deviceClass == "a2dp") {
-        captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_BLUETOOTH);
-    } else {
-        captureId = GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
-    }
-    return captureId;
-}
+static constexpr int32_t SINK_INVALID_ID = -1;
 
 HpaeManagerThread::~HpaeManagerThread()
 {
@@ -123,6 +91,7 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
     RegisterHandler(DUMP_SINK_INFO, &HpaeManager::HandleDumpSinkInfo);
     RegisterHandler(DUMP_SOURCE_INFO, &HpaeManager::HandleDumpSourceInfo);
     RegisterHandler(MOVE_SESSION_FAILED, &HpaeManager::HandleMoveSessionFailed);
+    RegisterHandler(GET_CAPTURE_ID, &HpaeManager::HandleGetCaptureId);
 }
 
 HpaeManager::~HpaeManager()
@@ -316,13 +285,15 @@ int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo,
     rendererManagerMap_[audioModuleInfo.name] = rendererManager;
     sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
+    if (defaultSink_ == "" && coreSink_ == "") {
+        defaultSink_ = audioModuleInfo.name;
+        coreSink_ = audioModuleInfo.name;
+        AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", defaultSink_.c_str());
+    }
     rendererManager->Init();
     rendererManager->RegisterSendMsgCallback(weak_from_this());
     AUDIO_INFO_LOG(
         "open sink name: %{public}s end sinkIndex is %{public}u", audioModuleInfo.name.c_str(), sinkSourceIndex);
-    uint32_t renderId = GetRenderId(sinkInfo.deviceClass);
-    // todo: set renderId to CaptureManger
-    hpaePolicyManager_->SetOutputDevice(renderId, static_cast<DeviceType>(sinkInfo.deviceType));
     return SUCCESS;
 }
 
@@ -362,9 +333,6 @@ int32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, 
     capturerManager->RegisterSendMsgCallback(weak_from_this());
     AUDIO_INFO_LOG(
         "open source name: %{public}s end sourceIndex is %{public}u", audioModuleInfo.name.c_str(), sinkSourceIndex);
-    uint32_t captureId = GetCaptureId(sourceInfo.deviceClass);
-    capturerManager->SetCaptureId(captureId);
-    hpaePolicyManager_->SetInputDevice(captureId, static_cast<DeviceType>(sourceInfo.deviceType));
     return SUCCESS;
 }
 
@@ -467,12 +435,12 @@ int32_t HpaeManager::CloseOutAudioPort(std::string &sinkName)
         AUDIO_WARNING_LOG("can not find sinkName: %{public}s in rendererManagerMap_", sinkName.c_str());
         return SUCCESS;
     }
-    if (sinkName == defaultSink_ && defaultSink_ != DEFAULT_SINK_NAME) {
-        if (GetRendererManagerByName(DEFAULT_SINK_NAME) != nullptr) {
-            AUDIO_INFO_LOG("reset default sink to primary.");
-            defaultSink_ = DEFAULT_SINK_NAME;
+    if (sinkName == defaultSink_ && defaultSink_ != coreSink_) {
+        if (GetRendererManagerByName(coreSink_) != nullptr) {
+            AUDIO_INFO_LOG("reset default sink to core sink.");
+            defaultSink_ = coreSink_;
         } else {
-            AUDIO_ERR_LOG("can not find primary sink to replace default sink.");
+            AUDIO_ERR_LOG("can not find core sink to replace default sink.");
         }
     }
     rendererManagerMap_[sinkName]->DeInit(sinkName != defaultSink_);
@@ -1029,6 +997,11 @@ void HpaeManager::HandleDeInitDeviceResult(std::string deviceName, int32_t resul
     }
 }
 
+void HpaeManager::HandleGetCaptureId(uint32_t captureId, int32_t deviceType)
+{
+    hpaePolicyManager_->SetInputDevice(captureId, static_cast<DeviceType>(deviceType));
+}
+
 void HpaeManager::SendRequest(Request &&request)
 {
     hpaeNoLockQueue_.PushRequest(std::move(request));
@@ -1519,6 +1492,21 @@ int32_t HpaeManager::UpdateMaxLength(uint32_t sessionId, uint32_t maxLength)
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->UpdateMaxLength(sessionId, maxLength);
         } else {
             AUDIO_WARNING_LOG("UpdateMaxLength can not find sessionId, sessionId %{public}u", sessionId);
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type)
+{
+    auto request = [this, sessionId, type]() {
+        AUDIO_INFO_LOG("SetOffloadRenderCallbackType sessionId %{public}u %{public}d", sessionId, type);
+        auto rendererManager = GetRendererManagerById(sessionId);
+        if (rendererManager != nullptr) {
+            rendererManager->SetOffloadRenderCallbackType(sessionId, type);
+        } else {
+            AUDIO_WARNING_LOG("SetOffloadRenderCallbackType can not find sessionId, sessionId %{public}u", sessionId);
         }
     };
     SendRequest(request);

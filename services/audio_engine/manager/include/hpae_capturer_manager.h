@@ -96,6 +96,7 @@ private:
     int32_t CapturerSourceStart();
     int32_t CapturerSourceStop();
     void CheckIfAnyStreamRunning();
+    void UpdateAppsUidAndSessionId();
 
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;
@@ -112,6 +113,9 @@ private:
     HpaeSourceInfo sourceInfo_;
     uint32_t captureId_ = 0;
     uint32_t renderId_ = 0;
+
+    std::vector<int32_t> appsUid_;
+    std::vector<int32_t> sessionsId_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

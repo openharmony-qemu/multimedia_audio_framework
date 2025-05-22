@@ -858,12 +858,15 @@ void AudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
         AUDIO_ERR_LOG("non blocking source not support");
         return;
     }
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
-    if (halName_ == HDI_ID_INFO_USB) {
-        audioEnhanceChainManager->SetInputDevice(captureId_, DEVICE_TYPE_USB_ARM_HEADSET, "");
-    } else {
-        audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
+        if (halName_ == HDI_ID_INFO_USB) {
+            audioEnhanceChainManager->SetInputDevice(captureId_, DEVICE_TYPE_USB_ARM_HEADSET, "");
+        } else {
+            audioEnhanceChainManager->SetInputDevice(captureId_, currentActiveDevice_, "");
+        }
     }
 }
 
@@ -1164,8 +1167,7 @@ void AudioCaptureSource::DumpData(char *frame, uint64_t &replyBytes)
     VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
-        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer(dumpFileName_,
-            static_cast<void*>(frame), replyBytes);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(frame), replyBytes);
     }
 }
 

@@ -233,8 +233,18 @@ static void UpdatePrimaryInstance(std::shared_ptr<IAudioRenderSink> &sink,
 #ifdef SUPPORT_LOW_LATENCY
         AUDIO_INFO_LOG("Use fast capturer source instance");
         source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
+        if (source && !source->IsInited()) {
+            AUDIO_INFO_LOG("Use fast capturer voip source instance");
+            source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
+        }
 #endif
     }
+}
+
+void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
+{
+    CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is null");
+    audioServer_->RemoveRendererDataTransferCallback(pid_);
 }
 
 class CapturerStateOb final : public IAudioSourceCallback {
@@ -336,6 +346,71 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
+void AudioServer::RemoveRendererDataTransferCallback(const int32_t &pid)
+{
+    std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+    if (audioDataTransferCbMap_.count(pid) > 0) {
+        audioDataTransferCbMap_.erase(pid);
+    }
+}
+
+int32_t AudioServer::RegisterDataTransferCallback(const sptr<IRemoteObject> &object)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
+ 
+    std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+
+    sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);
+
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioServer: listener obj cast failed");
+
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
+    std::make_shared<AudioManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    sptr<ProxyDeathRecipient> recipient = new ProxyDeathRecipient(pid, this);
+    object->AddDeathRecipient(recipient);
+    audioDataTransferCbMap_[pid] = callback;
+    AUDIO_INFO_LOG("Pid: %{public}d registerDataTransferCallback done", pid);
+    return SUCCESS;
+}
+
+int32_t AudioServer::RegisterDataTransferMonitorParam(const int32_t &callbackId,
+    const DataTransferMonitorParam &param)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    // todo: wait for add code
+    return SUCCESS;
+}
+
+int32_t AudioServer::UnregisterDataTransferMonitorParam(const int32_t &callbackId)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    // todo: wait for add code
+    return SUCCESS;
+}
+
+void AudioServer::OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+        if (audioDataTransferCbMap_.count(pid) > 0) {
+            callback = audioDataTransferCbMap_[pid];
+        } else {
+            AUDIO_ERR_LOG("callback is null");
+            return;
+        }
+    }
+    callback->OnDataTransferStateChange(callbackId, info);
+}
+
 void AudioServer::InitMaxRendererStreamCntPerUid()
 {
     bool result = GetSysPara("const.multimedia.audio.stream_cnt_uid", maxRendererStreamCntPerUid_);
@@ -414,6 +489,9 @@ void AudioServer::ParseAudioParameter()
 
 void AudioServer::WriteServiceStartupError()
 {
+    Trace trace("SYSEVENT FAULT EVENT AUDIO_SERVICE_STARTUP_ERROR, SERVICE_ID: "
+            + std::to_string(Media::MediaMonitor::AUDIO_SERVER_ID) + ", ERROR_CODE: "
+            + std::to_string(Media::MediaMonitor::AUDIO_SERVER));
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
@@ -503,7 +581,7 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
-   return true;
+    return SUCCESS;
 }
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,

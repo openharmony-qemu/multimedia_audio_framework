@@ -20,6 +20,7 @@
 #include <hpae_source_output_node.h>
 #include "audio_engine_log.h"
 #include "hpae_format_convert.h"
+#include "audio_errors.h"
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -38,15 +39,6 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
         "HpaeSourceOutputNode_id_" + std::to_string(GetSessionId()) + "_ch_" + std::to_string(GetChannelCount()) +
         "_rate_" + std::to_string(GetSampleRate()) + "_bit_" + std::to_string(GetBitWidth()) + ".pcm");
 #endif
-}
-
-std::string HpaeSourceOutputNode::GetTraceInfo()
-{
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    return rate + ch + len + format;
 }
 
 void HpaeSourceOutputNode::DoProcess()
@@ -80,15 +72,13 @@ void HpaeSourceOutputNode::DoProcess()
         .outputData = (int8_t *)sourceOutputData_.data(),
         .requestDataLen = sourceOutputData_.size(),
     };
-    if (readCallback_.lock()) {
-        int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
-        if (ret != 0) {
-            AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ write read data error", GetSessionId());
-        }
-    } else {
-        AUDIO_WARNING_LOG("sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+    CHECK_AND_RETURN_LOG(readCallback_.lock(), "sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+    int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
+    if (ret == ERR_WRITE_FAILED) {
+        AUDIO_DEBUG_LOG("sessionId %{public}u, readCallback_ write read data overflow", GetSessionId());
         return;
     }
+    CHECK_AND_RETURN_LOG(ret == 0, "sessionId %{public}u, readCallback_ write read data error", GetSessionId());
     totalFrames_ += GetFrameLen();
     framesRead_.store(totalFrames_);
     return;
@@ -144,15 +134,15 @@ void HpaeSourceOutputNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpae
     std::shared_ptr<HpaeNode> realPreNode = preNode->GetSharedInstance(nodeInfo);
     inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeInfo().statusCallback.lock()) {
-        callback->OnNotifyDfxNodeInfo(
-            true, realPreNode->GetNodeId(), GetNodeInfo());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeInfo());
     }
 #endif
 }
 
 void HpaeSourceOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
+    CHECK_AND_RETURN_LOG(preNode != nullptr, "preNode is nullptr");
     inputStream_.DisConnect(preNode->GetOutputPort());
 }
 
@@ -160,6 +150,11 @@ void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<H
     HpaeNodeInfo &nodeInfo)
 {
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+    }
+#endif
 }
 
 

@@ -136,6 +136,10 @@ public:
         const IAudioSourceAttr &attr) override;
     uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
         const IAudioSourceAttr &attr) override;
+    int32_t RegisterDataTransferCallback(const sptr<IRemoteObject> &object) override;
+    int32_t RegisterDataTransferMonitorParam(const int32_t &callbackId,
+        const DataTransferMonitorParam &param) override;
+    int32_t UnregisterDataTransferMonitorParam(const int32_t &callbackId) override;
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;

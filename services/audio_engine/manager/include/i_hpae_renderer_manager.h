@@ -66,6 +66,7 @@ public:
     virtual int32_t UpdateSpatializationState(
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) = 0;
     virtual int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) = 0;
+    virtual int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) { return ERR_NOT_SUPPORTED; };
     virtual std::vector<SinkInput> GetAllSinkInputsInfo() = 0;
     virtual int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) = 0;
     virtual HpaeSinkInfo GetSinkInfo() = 0;

@@ -22,6 +22,7 @@
 #include <string>
 #include <iostream>
 #include "media_monitor_manager.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -235,6 +236,8 @@ bool LibLoader::AddAlgoHandle(Library library)
     libEntry_->libraryName = library.name;
     bool loadLibrarySuccess = LoadLibrary(library.path);
     if (!loadLibrarySuccess) {
+        Trace trace("SYSEVENT FAULT EVENT LOAD_EFFECT_ENGINE_ERROR, ENGINE_TYPE: "
+            + std::to_string(Media::MediaMonitor::AUDIO_CONVERTER_ENGINE));
         // hisysevent for load engine error
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_EFFECT_ENGINE_ERROR,

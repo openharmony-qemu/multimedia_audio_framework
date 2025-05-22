@@ -48,6 +48,7 @@ const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::s
     = AudioSystemManager::CreateStreamMap();
 mutex g_asProxyMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
+sptr<AudioManagerListenerStub> g_audioListener = nullptr;
 
 AudioSystemManager::AudioSystemManager()
 {
@@ -200,6 +201,61 @@ void AudioSystemManager::AudioServerDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("audio server died, will restore proxy in next call");
     lock_guard<mutex> lock(g_asProxyMutex);
     g_asProxy = nullptr;
+    g_audioListener = nullptr;
+}
+
+int32_t AudioSystemManager::RegisterRendererDataTransferCallback(const DataTransferMonitorParam &param,
+    const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR_INVALID_PARAM, "callback is null");
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERROR, "Audio service unavailable.");
+
+    int32_t ret = SUCCESS;
+    if (g_audioListener == nullptr) {
+        g_audioListener = new(std::nothrow) AudioManagerListenerStub();
+        if (g_audioListener == nullptr) {
+            AUDIO_ERR_LOG("g_audioListener is null");
+            return ERROR;
+        }
+
+        sptr<IRemoteObject> object = g_audioListener->AsObject();
+        if (object == nullptr) {
+            AUDIO_ERR_LOG("as object result is null");
+            g_audioListener = nullptr;
+            return ERROR;
+        }
+
+        ret = gasp->RegisterDataTransferCallback(object);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "ret: %{public}d", ret);
+    }
+
+    auto callbackId = g_audioListener->AddDataTransferStateChangeCallback(param, callback);
+    CHECK_AND_RETURN_RET_LOG(callbackId != -1, ERROR_SYSTEM, "out of max register count");
+    ret = gasp->RegisterDataTransferMonitorParam(callbackId, param);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "ret: %{public}d", ret);
+    return ret;
+}
+
+
+int32_t AudioSystemManager::UnregisterRendererDataTransferCallback(
+    const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR_INVALID_PARAM, "callback is null");
+    CHECK_AND_RETURN_RET_LOG(g_audioListener != nullptr, ERROR_INVALID_PARAM, "audio listener is null");
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERROR, "Audio service unavailable.");
+
+    auto callbackIds = g_audioListener->RemoveDataTransferStateChangeCallback(callback);
+
+    for (auto callbackId : callbackIds)
+    {
+        gasp->UnregisterDataTransferMonitorParam(callbackId);
+    }
+    
+    return SUCCESS;
 }
 
 int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)

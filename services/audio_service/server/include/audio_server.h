@@ -42,6 +42,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioServer;
+class ProxyDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    ProxyDeathRecipient(int32_t pid, AudioServer *audioServer) : pid_(pid), audioServer_(audioServer) {};
+    virtual ~ProxyDeathRecipient() = default;
+    // overridde for DeathRecipient
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override;
+private:
+    int32_t pid_ = 0;
+    AudioServer *audioServer_ = nullptr;
+};
+
 class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback,
     public IAudioServerInnerCall {
     DECLARE_SYSTEM_ABILITY(AudioServer);
@@ -220,6 +232,13 @@ public:
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
+    void RemoveRendererDataTransferCallback(const int32_t &pid);
+    int32_t RegisterDataTransferCallback(const sptr<IRemoteObject> &object) override;
+    int32_t RegisterDataTransferMonitorParam(const int32_t &callbackId,
+        const DataTransferMonitorParam &param) override;
+    int32_t UnregisterDataTransferMonitorParam(const int32_t &callbackId) override;
+    void OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info);
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -346,6 +365,9 @@ private:
 
     int32_t waitCreateStreamInServerCount_ = 0;
     std::shared_ptr<IAudioServerHpaeDump> hpaeDumpObj_ = nullptr;
+
+    std::mutex audioDataTransferMutex_;
+    std::map<int32_t, std::shared_ptr<DataTransferStateChangeCallbackInner>> audioDataTransferCbMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

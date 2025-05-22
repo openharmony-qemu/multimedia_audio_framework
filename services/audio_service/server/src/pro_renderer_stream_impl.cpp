@@ -500,6 +500,12 @@ int32_t ProRendererStreamImpl::OffloadSetVolume(float volume)
     return SUCCESS;
 }
 
+int32_t ProRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)
+{
+    AUDIO_WARNING_LOG("SetOffloadDataCallbackState not support");
+    return ERR_NOT_SUPPORTED;
+}
+
 size_t ProRendererStreamImpl::GetWritableSize()
 {
     return writeQueue_.size() * minBufferSize_;

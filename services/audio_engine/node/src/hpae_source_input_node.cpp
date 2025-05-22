@@ -24,6 +24,7 @@
 #include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "cinttypes"
+#include "capturer_clock_manager.h"
 
 #define BYTE_SIZE_SAMPLE_U8 1
 #define BYTE_SIZE_SAMPLE_S16 2
@@ -94,15 +95,6 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
                 "_bit_"+ std::to_string(nodeInfo.format) + TransSourceBufferTypeToString(sourceBufferType)));
 #endif
     }
-}
-
-std::string HpaeSourceInputNode::GetTraceInfo()
-{
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    return rate + ch + len + format;
 }
 
 void HpaeSourceInputNode::SetBufferValid(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
@@ -385,6 +377,22 @@ HpaeNodeInfo &HpaeSourceInputNode::GetNodeInfoWithInfo(HpaeSourceBufferType &typ
     CHECK_AND_RETURN_RET_LOG(it != nodeInfoMap_.end(), nodeInfoMap_.begin()->second,
         "can't find nodeKey in nodeInfoMap_.");
     return it->second;
+}
+
+void HpaeSourceInputNode::UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId)
+{
+    CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr, "audioCapturerSource_ is nullptr");
+    audioCapturerSource_->UpdateAppsUid(appsUid);
+    std::shared_ptr<AudioSourceClock> clock =
+        CapturerClockManager::GetInstance().GetAudioSourceClock(captureId_);
+    if (clock != nullptr) {
+        clock->UpdateSessionId(sessionsId);
+    }
+}
+
+uint32_t HpaeSourceInputNode::GetCaptureId() const
+{
+    return captureId_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

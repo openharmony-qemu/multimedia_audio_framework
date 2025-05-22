@@ -942,13 +942,6 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
 
     /**
-     * @brief Changes the renderer pitch.
-     * @param Pitch to set. The value type is float, form 0.125 to 4.0.
-     * @since 15
-     */
-    virtual int32_t SetPitch(float pitch) { return 0; }
-
-    /**
      * @brief Get the renderer speed.
      * @since 11
      */
@@ -1011,6 +1004,24 @@ public:
      * @since 15
      */
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
+
+    /**
+     * @brief only start data call back for offload by hdi state.
+     *
+     * @return Returns {@link SUCCESS} if the start data call back is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    virtual int32_t StartDataCallback() { return -1; };
+
+    /**
+     * @brief only stop data call back for offload by hdi state.
+     *
+     * @return Returns {@link SUCCESS} if the stop data call back is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    virtual int32_t StopDataCallback() { return -1; };
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

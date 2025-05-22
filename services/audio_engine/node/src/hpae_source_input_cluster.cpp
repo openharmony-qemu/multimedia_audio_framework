@@ -54,10 +54,12 @@ HpaeSourceInputCluster::HpaeSourceInputCluster(std::vector<HpaeNodeInfo> &nodeIn
 {
 #ifdef ENABLE_HIDUMP_DFX
     auto nodeInfo = *nodeInfos.begin();
-    nodeInfo.nodeName = "HpaeSourceInputNode[" + TransSourceBufferTypeToString(nodeInfo.sourceBufferType) + "]";
-    nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
-    sourceInputNode_->SetNodeInfo(nodeInfo);
-    nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(true, 0, nodeInfo);
+    if (nodeInfo.statusCallback.lock()) {
+        nodeInfo.nodeName = "HpaeSourceInputNode[MIC_EC]";
+        nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
+        sourceInputNode_->SetNodeInfo(nodeInfo);
+        nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(true, 0, nodeInfo);
+    }
 #endif
 }
 
@@ -76,6 +78,11 @@ bool HpaeSourceInputCluster::Reset()
         fmtConverterNode.second->Reset();
     }
     sourceInputNode_->Reset();
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = sourceInputNode_->GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(false, sourceInputNode_->GetNodeId(), sourceInputNode_->GetNodeInfo());
+    }
+#endif
     return true;
 }
 
@@ -107,18 +114,19 @@ std::shared_ptr<HpaeNode> HpaeSourceInputCluster::GetSharedInstance(HpaeNodeInfo
     if (!SafeGetMap(fmtConverterNodeMap_, preNodeKey)) {
         fmtConverterNodeMap_[preNodeKey] =
             std::make_shared<HpaeAudioFormatConverterNode>(GetNodeInfoWithInfo(nodeInfo.sourceBufferType), nodeInfo);
-        nodeInfo.nodeName = "HpaeAudioFormatConverterNode";
-        nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
-        fmtConverterNodeMap_[preNodeKey]->SetNodeInfo(nodeInfo);
-    }
-    fmtConverterNodeMap_[preNodeKey]->ConnectWithInfo(sourceInputNode_,
-        fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = sourceInputNode_->GetNodeInfo().statusCallback.lock()) {
-        callback->OnNotifyDfxNodeInfo(
-            true, sourceInputNode_->GetNodeId(), fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
-    }
+        if (auto callback = sourceInputNode_->GetNodeInfo().statusCallback.lock()) {
+            HpaeNodeInfo &fmtConverterNodeInfo = fmtConverterNodeMap_[preNodeKey]->GetNodeInfo();
+            fmtConverterNodeInfo.nodeName = "HpaeAudioFormatConverterNode";
+            fmtConverterNodeInfo.nodeId = callback->OnGetNodeId();
+            fmtConverterNodeMap_[preNodeKey]->SetNodeInfo(fmtConverterNodeInfo);
+            callback->OnNotifyDfxNodeInfo(
+                true, sourceInputNode_->GetNodeId(), fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
+        }
 #endif
+    }
+    fmtConverterNodeMap_[preNodeKey]->ConnectWithInfo(
+        sourceInputNode_, fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
     return fmtConverterNodeMap_[preNodeKey];
 }
 
@@ -144,6 +152,12 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort(HpaeNodeInfo 
     if (isDisConnect && fmtConverterNodeMap_[preNodeKey]->GetOutputPortNum() <= 1) {
         AUDIO_INFO_LOG("disconnect fmtConverterNode between preNode[%{public}s] and sourceInputNode[%{public}s]",
             preNodeKey.c_str(), inputNodeKey.c_str());
+#ifdef ENABLE_HIDUMP_DFX
+        if (auto callback = sourceInputNode_->GetNodeInfo().statusCallback.lock()) {
+            callback->OnNotifyDfxNodeInfo(
+                false, fmtConverterNodeMap_[preNodeKey]->GetNodeId(), fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
+        }
+#endif
         fmtConverterNodeMap_[preNodeKey]->DisConnectWithInfo(
             sourceInputNode_, fmtConverterNodeMap_[preNodeKey]->GetNodeInfo());
     }
@@ -240,6 +254,11 @@ HpaeNodeInfo &HpaeSourceInputCluster::GetNodeInfoWithInfo(HpaeSourceBufferType &
     return sourceInputNode_->GetNodeInfoWithInfo(type);
 }
 
+void HpaeSourceInputCluster::UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId)
+{
+    sourceInputNode_->UpdateAppsUidAndSessionId(appsUid, sessionsId);
+}
+
 // for test
 uint32_t HpaeSourceInputCluster::GetConverterNodeCount()
 {
@@ -261,6 +280,11 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetSourceInputNodeOutputPor
 {
     CHECK_AND_RETURN_RET_LOG(sourceInputNode_, nullptr, "sourceInputNode_ is nullptr");
     return sourceInputNode_->GetOutputPort();
+}
+
+uint32_t HpaeSourceInputCluster::GetCaptureId()
+{
+    return sourceInputNode_->GetCaptureId();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

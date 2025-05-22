@@ -191,18 +191,12 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
-            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
-            recorderDfx_->WriteDfxStopMsg(streamIndex_, CAPTURER_STAGE_PAUSE_OK,
-                GetLastAudioDuration(), processConfig_);
+            HandleOperationStopped(CAPTURER_STAGE_PAUSE_OK);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
-            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
-            recorderDfx_->WriteDfxStopMsg(streamIndex_, CAPTURER_STAGE_STOP_OK,
-                GetLastAudioDuration(), processConfig_);
+            HandleOperationStopped(CAPTURER_STAGE_STOP_OK);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
@@ -225,6 +219,15 @@ void CapturerInServer::HandleOperationFlushed()
     } else {
         AUDIO_WARNING_LOG("Invalid status before flusing");
     }
+}
+
+void CapturerInServer::HandleOperationStopped(CapturerStage stage)
+{
+    CHECK_AND_RETURN_LOG(recorderDfx_ != nullptr, "nullptr");
+    lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    recorderDfx_->WriteDfxStopMsg(streamIndex_, stage,
+        GetLastAudioDuration(), processConfig_);
 }
 
 BufferDesc CapturerInServer::DequeueBuffer(size_t length)
@@ -367,7 +370,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
-        return ERR_READ_FAILED;
+        return ERR_WRITE_FAILED;
     }
     Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
@@ -384,9 +387,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 
     BufferDesc dstBuffer = {nullptr, 0, 0};
     uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
-    if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
-        return ERR_READ_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) >= 0, ERR_READ_FAILED,
+        "GetWriteBuffer failed");
     if ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
@@ -405,6 +407,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
     audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
+
+    UpdateBufferTimeStamp(dstBuffer);
 
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
     return SUCCESS;
@@ -641,6 +645,10 @@ int32_t CapturerInServer::Release()
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
         return ret;
+    }
+    if (status_ != I_STATUS_STOPPING &&
+        status_ != I_STATUS_STOPPED) {
+        HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
     }
     status_ = I_STATUS_RELEASED;
 

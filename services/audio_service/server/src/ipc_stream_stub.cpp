@@ -72,6 +72,8 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetMute(data, reply);
         case ON_SET_DUCK_FACTOR:
             return HandleSetDuckFactor(data, reply);
+        case ON_SET_OFFLOAD_DATA_CALLBACK_STATE:
+            return HandleSetOffloadDataCallbackState(data, reply);
         default:
             return OnMiddleCodeRemoteRequestExt(code, data, reply, option);
     }
@@ -441,6 +443,13 @@ int32_t IpcStreamStub::HandleSetSourceDuration(MessageParcel &data, MessageParce
 {
     int64_t sourceDuration = data.ReadInt64();
     reply.WriteInt32(SetSourceDuration(sourceDuration));
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleSetOffloadDataCallbackState(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t state = data.ReadInt32();
+    reply.WriteInt32(SetOffloadDataCallbackState(state));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

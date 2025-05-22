@@ -264,11 +264,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
-            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
-            lastWriteFrame_ = static_cast<int64_t>(audioServerBuffer_->GetCurReadFrame()) - lastWriteFrame_;
-            playerDfx_->WriteDfxStopMsg(streamIndex_, RENDERER_STAGE_STOP_OK,
-                {lastWriteFrame_, lastWriteMuteFrame_, GetLastAudioDuration(), underrunCount_}, processConfig_);
+            HandleOperationStopped(RENDERER_STAGE_STOP_OK);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
@@ -473,6 +469,16 @@ void RendererInServer::HandleOperationFlushed()
         default:
             AUDIO_WARNING_LOG("Invalid status before flusing");
     }
+}
+
+void RendererInServer::HandleOperationStopped(RendererStage stage)
+{
+    CHECK_AND_RETURN_LOG(audioServerBuffer_ != nullptr && playerDfx_ != nullptr, "nullptr");
+    lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    lastWriteFrame_ = static_cast<int64_t>(audioServerBuffer_->GetCurReadFrame()) - lastWriteFrame_;
+    playerDfx_->WriteDfxStopMsg(streamIndex_, stage,
+        {lastWriteFrame_, lastWriteMuteFrame_, GetLastAudioDuration(), underrunCount_}, processConfig_);
 }
 
 BufferDesc RendererInServer::DequeueBuffer(size_t length)
@@ -1169,6 +1175,10 @@ int32_t RendererInServer::Release()
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
         return ret;
+    }
+    if (status_ != I_STATUS_STOPPING &&
+        status_ != I_STATUS_STOPPED) {
+        HandleOperationStopped(RENDERER_STAGE_STOP_BY_RELEASE);
     }
     status_ = I_STATUS_RELEASED;
     {
@@ -1931,6 +1941,11 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
         DumpFileUtil::WriteDumpFile(dumpDupIn_, static_cast<void *>(bufferDesc.buffer), writeSize);
     }
     return SUCCESS;
+}
+
+int32_t RendererInServer::SetOffloadDataCallbackState(int32_t state)
+{
+    return stream_->SetOffloadDataCallbackState(state);
 }
 } // namespace AudioStandard
 } // namespace OHOS

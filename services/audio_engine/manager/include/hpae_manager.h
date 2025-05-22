@@ -52,7 +52,7 @@ public:
 private:
     std::atomic<bool> running_;
     std::atomic<bool> recvSignal_;
-    HpaeManager *m_hpaeManager;
+    HpaeManager *m_hpaeManager = nullptr;
     std::condition_variable condition_;
     std::mutex mutex_;
     std::thread thread_;
@@ -122,6 +122,7 @@ public:
     int32_t UpdateSpatializationState(
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
+    int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) override;
     // only interface for unit test
     int32_t GetSessionInfo(HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionInfo &sessionInfo);
 
@@ -187,6 +188,7 @@ private:
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
+    void HandleGetCaptureId(uint32_t captureId, int32_t deviceType);
 
     void SendRequest(Request &&request);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
@@ -221,7 +223,8 @@ private:
     std::unordered_map<uint32_t, SourceOutput> sourceOutputs_;
     std::unordered_map<std::string, uint32_t> sinkNameSinkIdMap_;  // todo
     std::unordered_map<uint32_t, std::string> sinkIdSinkNameMap_;
-    std::string defaultSink_ = "Speaker";
+    std::string defaultSink_ = "";
+    std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
     std::string defaultSource_ = "Built_in_mic";

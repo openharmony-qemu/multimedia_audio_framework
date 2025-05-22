@@ -311,6 +311,8 @@ public:
     virtual void SetCallbackLoopTid(int32_t tid) = 0;
 
     virtual int32_t GetCallbackLoopTid() = 0;
+
+    virtual int32_t SetOffloadDataCallbackState(int32_t cbState) { return 0; };
 };
 } // namespace AudioStandard
 } // namespace OHOS

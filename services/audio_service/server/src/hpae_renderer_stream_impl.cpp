@@ -232,7 +232,11 @@ int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)
 int32_t HpaeRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 {
     AUDIO_INFO_LOG("SetAudioEffectMode: %d", effectMode);
-   
+    int32_t ret = IHpaeManager::GetHpaeManager().SetAudioEffectMode(processConfig_.originalSessionId, effectMode);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("SetAudioEffectMode is error");
+        return ERR_INVALID_PARAM;
+    }
     effectMode_ = effectMode;
     return SUCCESS;
 }
@@ -369,6 +373,15 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
         return ERROR;
     }
     return audioRendererSinkInstance->SetVolume(volume, volume);
+}
+
+int32_t HpaeRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)
+{
+    AUDIO_INFO_LOG("SetOffloadDataCallbackState state: %{public}d", state);
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
+    return IHpaeManager::GetHpaeManager().SetOffloadRenderCallbackType(processConfig_.originalSessionId, state);
 }
 
 int32_t HpaeRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)

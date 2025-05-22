@@ -24,6 +24,7 @@
 #include "media_monitor_manager.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
+#include "audio_utils_c.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -95,6 +96,8 @@ void AudioPerformanceMonitor::RecordTimeStamp(AdapterType adapterType, int64_t c
             (rawOvertimeMs >= INT32_MAX ? INT32_MAX : rawOvertimeMs));
         AUDIO_WARNING_LOG("AdapterType %{public}d, PipeType %{public}d, write time interval %{public}d ms! overTime!",
             adapterType, PIPE_TYPE_MAP[adapterType], overtimeMs);
+        AUTO_CTRACE("Audio HAL detect OVERTIME_EVENT, overtimeMs: %d, pipeType %d, adapterType: %d",
+            overtimeMs, PIPE_TYPE_MAP[adapterType], adapterType);
         ReportEvent(OVERTIME_EVENT, overtimeMs, PIPE_TYPE_MAP[adapterType], adapterType);
     }
     overTimeDetectMap_[adapterType] = curTimeStamp;
@@ -154,6 +157,8 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
             }
             AUDIO_WARNING_LOG("record %{public}d state, pipeType %{public}d for last %{public}zu times: %{public}s",
                 sessionId, silenceDetectMap_[sessionId].pipeType, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
+            AUTO_CTRACE("Audio FWK detect SILENCE_EVENT, pipeType %d, PreState: %s",
+                silenceDetectMap_[sessionId].pipeType, printStr.c_str());
             ReportEvent(SILENCE_EVENT, INT32_MAX, silenceDetectMap_[sessionId].pipeType, ADAPTER_TYPE_UNKNOWN, uid);
             silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
             silenceDetectMap_[sessionId].historyStateDeque.clear();

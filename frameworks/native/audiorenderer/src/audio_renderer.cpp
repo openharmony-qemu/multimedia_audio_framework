@@ -50,7 +50,7 @@ const std::vector<StreamUsage> BACKGROUND_NOSTART_STREAM_USAGE {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
 static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
-static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
+static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 60;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
@@ -280,7 +280,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
     const AppInfo &appInfo)
 {
-    Trace trace("AudioRenderer::Create");
+    Trace trace("KeyAction AudioRenderer::Create");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
         nullptr, "sa not start");
@@ -564,7 +564,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 #ifdef SUPPORT_LOW_LATENCY
     IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
 #else
-    rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    if (rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD) {
+        rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    }
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
@@ -912,7 +914,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
 
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
-    Trace trace("AudioRenderer::Start");
+    Trace trace("KeyAction AudioRenderer::Start");
     CheckAndRestoreAudioRenderer("Start");
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) { AUDIO_ERR_LOG("Start timeout"); }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
@@ -1023,7 +1025,7 @@ bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Tim
 
 bool AudioRendererPrivate::Drain() const
 {
-    Trace trace("AudioRenderer::Drain");
+    Trace trace("KeyAction AudioRenderer::Drain");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->DrainAudioStream();
@@ -1031,7 +1033,7 @@ bool AudioRendererPrivate::Drain() const
 
 bool AudioRendererPrivate::Flush() const
 {
-    Trace trace("AudioRenderer::Flush");
+    Trace trace("KeyAction AudioRenderer::Flush");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->FlushAudioStream();
@@ -1039,7 +1041,7 @@ bool AudioRendererPrivate::Flush() const
 
 bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
 {
-    Trace trace("AudioRenderer::PauseTransitent");
+    Trace trace("KeyAction AudioRenderer::PauseTransitent");
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
@@ -1091,12 +1093,13 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
     (void)audioStream_->SetMute(false);
+    UpdateAudioInterruptStrategy(GetVolumeInner());
     return true;
 }
 
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 {
-    Trace trace("AudioRenderer::Pause");
+    Trace trace("KeyAction AudioRenderer::Pause");
     AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS,
         [](void *) {
             AUDIO_ERR_LOG("Pause timeout");
@@ -1138,6 +1141,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 
 bool AudioRendererPrivate::Stop()
 {
+    Trace trace("KeyAction AudioRenderer::Stop");
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
@@ -1170,6 +1174,7 @@ bool AudioRendererPrivate::Stop()
 
 bool AudioRendererPrivate::Release()
 {
+    Trace trace("KeyAction AudioRenderer::Release");
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
@@ -1307,7 +1312,7 @@ uint32_t AudioRendererPrivate::GetRendererSamplingRate() const
 int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
 {
     CHECK_AND_RETURN_RET_LOG(bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC,
-        ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 20ms");
+        ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 60ms");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
@@ -2078,7 +2083,10 @@ bool AudioRendererPrivate::ContinueAfterSplit(RestoreInfo restoreInfo)
 bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo)
 {
     bool switchResult = false;
-    Trace trace("SwitchToTargetStream:" + std::to_string(sessionID_));
+    Trace trace("KeyAction AudioRenderer::SwitchToTargetStream " + std::to_string(sessionID_)
+        + ", target class " + std::to_string(targetClass) + ", reason " + std::to_string(restoreInfo.restoreReason)
+        + ", device change reason " + std::to_string(restoreInfo.deviceChangeReason)
+        + ", target flag " + std::to_string(restoreInfo.targetStreamFlag));
     AUDIO_INFO_LOG("Restore AudioRenderer %{public}u, target class %{public}d, reason: %{public}d, "
         "device change reason %{public}d, target flag %{public}d", sessionID_, targetClass,
         restoreInfo.restoreReason, restoreInfo.deviceChangeReason, restoreInfo.targetStreamFlag);
@@ -2407,6 +2415,13 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     audioStream_->SetSpeed(speed);
 #endif
     speed_ = speed;
+
+    if (lock.owns_lock()) {
+        lock.unlock();
+    }
+    if (speed < NORMAL_STREAM_SPEED_LEVEL) {
+        SetPitch(speed);
+    }
     return SUCCESS;
 }
 
@@ -2582,6 +2597,24 @@ void FormatUnsupportedErrorCallbackImpl::OnFormatUnsupportedError(const AudioErr
     std::shared_ptr<AudioRendererErrorCallback> cb = callback_.lock();
     CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->OnError(errorCode);
+}
+
+int32_t AudioRendererPrivate::StartDataCallback()
+{
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+        "StartDataCallback failed. Illegal state:%{public}u", state);
+    return audioStream_->SetOffloadDataCallbackState(0); // 0 hdi state need data
+}
+
+int32_t AudioRendererPrivate::StopDataCallback()
+{
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+        "StopDataCallback failed. Illegal state:%{public}u", state);
+    return audioStream_->SetOffloadDataCallbackState(3); // 3 hdi state full
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -2461,5 +2461,19 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetQueryAllowedPlaybackCallback_001, T
     int32_t ret = server->audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test RegisterDefaultVolumeTypeListener.
+ * @tc.number: RegisterDefaultVolumeTypeListener_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, RegisterDefaultVolumeTypeListener_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioStreamType ret = server->interruptService_->GetDefaultVolumeType();
+    EXPECT_EQ(ret, STREAM_MUSIC);
+}
 } // namespace AudioStandard
 } // namespace OHOS

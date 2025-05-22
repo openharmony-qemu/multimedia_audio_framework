@@ -119,6 +119,8 @@ public:
 
     int32_t SetSourceDuration(int64_t duration) override;
 
+    int32_t SetOffloadDataCallbackState(int32_t state) override;
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();

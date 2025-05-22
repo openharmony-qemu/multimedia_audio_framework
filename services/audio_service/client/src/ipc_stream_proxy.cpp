@@ -572,5 +572,18 @@ int32_t IpcStreamProxy::SetSourceDuration(int64_t duration)
     CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set source duration failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
+
+int32_t IpcStreamProxy::SetOffloadDataCallbackState(int32_t state)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(state);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_OFFLOAD_DATA_CALLBACK_STATE, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "offload set render state failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

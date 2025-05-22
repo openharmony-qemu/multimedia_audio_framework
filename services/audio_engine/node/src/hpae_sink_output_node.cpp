@@ -63,11 +63,7 @@ void HpaeSinkOutputNode::HandleRemoteTiming()
 
 void HpaeSinkOutputNode::DoProcess()
 {
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    Trace trace("HpaeSinkOutputNode::DoProcess " + rate + ch + len + format);
+    Trace trace("HpaeSinkOutputNode::DoProcess " + GetTraceInfo());
     if (audioRendererSink_ == nullptr) {
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;

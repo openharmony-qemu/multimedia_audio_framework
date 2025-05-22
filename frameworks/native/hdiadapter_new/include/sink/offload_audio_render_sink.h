@@ -19,7 +19,7 @@
 #include "sink/i_audio_render_sink.h"
 #include <iostream>
 #include <cstring>
-#include "v4_0/iaudio_manager.h"
+#include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
@@ -83,6 +83,7 @@ public:
     int32_t Drain(AudioDrainType type) override;
     void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> callback) override;
     int32_t SetBufferSize(uint32_t sizeMs) override;
+    int32_t SetOffloadRenderCallbackType(RenderCallbackType type) override;
     int32_t LockOffloadRunningLock(void) override;
     int32_t UnLockOffloadRunningLock(void) override;
 

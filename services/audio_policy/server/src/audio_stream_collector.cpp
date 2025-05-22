@@ -1066,7 +1066,7 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     return SUCCESS;
 }
 
-void AudioStreamCollector::HandleAppStateChange(int32_t uid, bool mute)
+void AudioStreamCollector::HandleAppStateChange(int32_t uid, bool mute, bool &notifyMute)
 {
     if (VolumeUtils::IsPCVolumeEnable()) {
         return;
@@ -1091,6 +1091,7 @@ void AudioStreamCollector::HandleAppStateChange(int32_t uid, bool mute)
                 setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
                 callback->MuteStreamImpl(setStateEvent);
                 changeInfo->backMute = true;
+                notifyMute = true;
             } else if (!mute && changeInfo->backMute) {
                 setStateEvent.streamSetState = StreamSetState::STREAM_UNMUTE;
                 callback->UnmuteStreamImpl(setStateEvent);

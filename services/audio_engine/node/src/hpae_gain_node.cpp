@@ -157,20 +157,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     rawFormat.channels = GetChannelCount();
     uint32_t byteLength = 0;
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
-    switch (GetNodeInfo().fadeType) {
-        case FadeType::SHORT_FADE: {
-            byteLength = static_cast<float>(GetSampleRate()) * SHORT_FADE_PERIOD * rawFormat.channels * sizeof(float);
-            AUDIO_DEBUG_LOG("GainNode: short fade length in Bytes: %{public}u", byteLength);
-            break;
-        }
-        case FadeType::DEFAULT_FADE: {
-            byteLength = input->Size();
-            AUDIO_DEBUG_LOG("GainNode: default fade length in Bytes: %{public}u", byteLength);
-            break;
-        }
-        default:
-            break;
-    }
+    GetFadeLength(byteLength, input);
     if (fadeInState_) {
         CHECK_AND_RETURN_LOG(input->IsValid(), "GainNode: invalid data no need to do fade in");
         if (IsSilentData(input)) {
@@ -250,6 +237,25 @@ bool HpaeGainNode::IsSilentData(HpaePcmBuffer *pcmBuffer)
     return std::all_of(data, data + length, [](float value) {
         return fabs(value) < EPSILON;
         });
+}
+
+void HpaeGainNode::GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input)
+{
+    uint32_t channels = GetChannelCount();
+    switch (GetNodeInfo().fadeType) {
+        case FadeType::SHORT_FADE: {
+            byteLength = static_cast<float>(GetSampleRate()) * SHORT_FADE_PERIOD * channels * sizeof(float);
+            AUDIO_DEBUG_LOG("GainNode: short fade length in Bytes: %{public}u", byteLength);
+            break;
+        }
+        case FadeType::DEFAULT_FADE: {
+            byteLength = input->DataSize();
+            AUDIO_DEBUG_LOG("GainNode: default fade length in Bytes: %{public}u", byteLength);
+            break;
+        }
+        default:
+            break;
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

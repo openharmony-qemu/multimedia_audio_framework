@@ -19,7 +19,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-constexpr float FLOAT_EPS  = 1e-9f;
+constexpr float FLOAT_EPS  = 1e-6f;
 constexpr int OFFSET_BIT_24 = 3;
 constexpr int BIT_DEPTH_TWO = 2;
 constexpr int BIT_8 = 8;

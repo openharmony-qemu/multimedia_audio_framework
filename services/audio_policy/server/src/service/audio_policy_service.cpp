@@ -433,13 +433,14 @@ void AudioPolicyService::RestoreSession(const uint32_t &sessionID, RestoreInfo r
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    Trace trace("AudioPolicyService::SelectOutputDevice");
+    Trace trace("KeyAction AudioPolicyService::SelectOutputDevice");
     return audioDeviceLock_.SelectOutputDevice(audioRendererFilter, selectedDesc);
 }
 
 int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
+    Trace trace("KeyAction AudioPolicyService::SelectInputDevice");
     return audioDeviceLock_.SelectInputDevice(audioCapturerFilter, selectedDesc);
 }
 
@@ -864,6 +865,14 @@ void AudioPolicyService::RegisterAccessiblilityBalance()
         AUDIO_ERR_LOG("RegisterObserver balance failed");
     }
     AUDIO_INFO_LOG("Register accessibility balance successfully");
+    float balance = 0;
+    auto gret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
+    CHECK_AND_RETURN_LOG(gret == SUCCESS, "get balance value failed");
+    if (balance < -1.0f || balance > 1.0f) {
+        AUDIO_WARNING_LOG("audioBalance value is out of range [-1.0, 1.0]");
+    } else {
+        OnAudioBalanceChanged(balance);
+    }
 }
 
 void AudioPolicyService::RegisterAccessiblilityMono()
@@ -882,6 +891,10 @@ void AudioPolicyService::RegisterAccessiblilityMono()
         AUDIO_ERR_LOG("RegisterObserver mono failed");
     }
     AUDIO_INFO_LOG("Register accessibility mono successfully");
+    int32_t value = 0;
+    auto gret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
+    CHECK_AND_RETURN_LOG(gret == SUCCESS, "get mono value failed");
+    OnMonoAudioConfigChanged(value != 0);
 }
 
 void AudioPolicyService::RegisterDoNotDisturbStatus()

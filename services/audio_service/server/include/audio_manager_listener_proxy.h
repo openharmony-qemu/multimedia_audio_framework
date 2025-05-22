@@ -17,6 +17,7 @@
 #define AUDIO_MANAGER_LISTENER_PROXY_H
 
 #include "iremote_proxy.h"
+#include "audio_manager_base.h"
 #include "audio_system_manager.h"
 #include "i_standard_audio_server_manager_listener.h"
 
@@ -31,6 +32,8 @@ public:
         const std::string& condition, const std::string& value) override;
     void OnCapturerState(bool isActive) override;
     void OnWakeupClose() override;
+    void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override;
 
 private:
     static inline BrokerDelegator<AudioManagerListenerProxy> delegator_;
@@ -38,7 +41,8 @@ private:
         const std::string& condition, const std::string& value);
 };
 
-class AudioManagerListenerCallback : public AudioParameterCallback, public WakeUpSourceCallback {
+class AudioManagerListenerCallback : public AudioParameterCallback, public WakeUpSourceCallback,
+    public DataTransferStateChangeCallbackInner {
 public:
     AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener);
     virtual ~AudioManagerListenerCallback();
@@ -48,6 +52,8 @@ public:
     void OnCapturerState(bool isActive) override final;
     void OnWakeupClose() override;
     void TrigerFirstOnCapturerStateCallback(bool isActive);
+    void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override;
 private:
     sptr<IStandardAudioServerManagerListener> listener_ = nullptr;
     std::atomic<bool> isFirstOnCapturerStateCallbackSent_ = false;

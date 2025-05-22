@@ -29,8 +29,14 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
-    : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)), sinkInfo_(sinkInfo)
+    : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {
+    nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) / nodeInfo.samplingRate;
+    nodeInfo.samplingRate = sinkInfo.samplingRate;
+    // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.
+    // so we need to make a prediction here on the output of the formatConverter node.
+    // don't worry, Nodeinfo will still be modified during DoProcess.
+    mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA" && nodeInfo.deviceClass != "remote") {
         renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     } else {
@@ -142,11 +148,11 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
 {
     HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
     uint32_t sessionId = preNodeInfo.sessionId;
-    AUDIO_INFO_LOG("HpaeProcessCluster sessionId is %{public}u, streamType is %{public}d, "
+    AUDIO_INFO_LOG("HpaeProcessCluster sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d"
         "HpaeProcessCluster rate is %{public}u, ch is %{public}u, "
         "HpaeProcessCluster preNodeId %{public}u, preNodeName is %{public}s",
-        preNodeInfo.sessionId, preNodeInfo.streamType, preNodeInfo.samplingRate, preNodeInfo.channels,
-        preNodeInfo.nodeId, preNodeInfo.nodeName.c_str());
+        preNodeInfo.sessionId, preNodeInfo.streamType, preNodeInfo.sceneType ,preNodeInfo.samplingRate,
+        preNodeInfo.channels, preNodeInfo.nodeId, preNodeInfo.nodeName.c_str());
     ConnectMixerNode();
     if (!SafeGetMap(idGainMap_, sessionId)) {
         HpaeNodeInfo gainNodeInfo = preNodeInfo;
@@ -197,8 +203,8 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
 {
     uint32_t sessionId = preNode->GetNodeInfo().sessionId;
     AUDIO_INFO_LOG(
-        "Process DisConnect sessionId is %{public}u, streamType is %{public}d",
-        sessionId, preNode->GetNodeInfo().streamType);
+        "Process DisConnect sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d",
+        sessionId, preNode->GetNodeInfo().streamType, preNode->GetNodeInfo().sceneType);
 #ifdef ENABLE_HIDUMP_DFX
     auto callBack = mixerNode_->GetNodeStatusCallback().lock();
     if (callBack != nullptr && SafeGetMap(idConverterMap_, sessionId)) {
@@ -284,6 +290,15 @@ void HpaeProcessCluster::SetConnectedFlag(bool flag)
 bool HpaeProcessCluster::GetConnectedFlag() const
 {
     return isConnectedToOutputCluster;
+}
+
+int32_t HpaeProcessCluster::SetupAudioLimiter()
+{
+    if (mixerNode_ != nullptr) {
+        return mixerNode_->SetupAudioLimiter();
+    }
+    AUDIO_ERR_LOG("mixerNode_ is nullptr");
+    return ERROR;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

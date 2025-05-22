@@ -144,6 +144,7 @@ private:
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
+    void DumpPipeManager(std::string &dumpString);
 
     // Called by EventEntry - with lock
     // Stream operations
@@ -191,6 +192,7 @@ private:
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+    void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);

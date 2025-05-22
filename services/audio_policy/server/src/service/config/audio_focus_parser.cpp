@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_focus_parser.h"
+#include "audio_utils.h"
 #ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"
 #endif
@@ -180,6 +181,8 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
 
 void AudioFocusParser::WriteConfigErrorEvent()
 {
+    Trace trace("SYSEVENT FAULT EVENT LOAD_CONFIG_ERROR, CATEGORY: "
+        + std::to_string(Media::MediaMonitor::AUDIO_INTERRUPT_POLICY_CONFIG));
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR, Media::MediaMonitor::FAULT_EVENT);
     bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_INTERRUPT_POLICY_CONFIG);

@@ -24,6 +24,7 @@
 #include <unordered_map>
 
 #include "parcel.h"
+#include "audio_stutter.h"
 #include "audio_device_descriptor.h"
 #include "audio_stream_change_info.h"
 #include "audio_interrupt_callback.h"
@@ -305,6 +306,15 @@ public:
 
     virtual int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) = 0;
 };
+
+
+class AudioRendererDataTransferStateChangeCallback {
+public:
+    virtual ~AudioRendererDataTransferStateChangeCallback() = default;
+
+    virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
+};
+
 
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
@@ -976,6 +986,28 @@ public:
      */
     int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
+
+    /**
+     * @brief registers the renderer data transfer callback listener
+     *
+     * @param param {@link DataTransferMonitorParam}
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t RegisterRendererDataTransferCallback(const DataTransferMonitorParam &param,
+        const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the renderer data transfer callback listener
+     *
+     * @param param {@link DataTransferMonitorParam}
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t UnregisterRendererDataTransferCallback(
+        const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback);
 
     /**
      * @brief Set mono audio state

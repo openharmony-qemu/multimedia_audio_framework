@@ -1600,13 +1600,17 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         AUDIO_INFO_LOG("normal stream beacuse renderInfo not support offload.");
         return false;
     }
-    if (streamDesc->streamInfo_.channels < MONO || streamDesc->streamInfo_.channels > STEREO) {
+    if (streamDesc->streamInfo_.channels > STEREO &&
+        (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
+         streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
         AUDIO_INFO_LOG("normal stream beacuse channels.");
         return false;
     }
 
     if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC &&
-        streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_AUDIOBOOK) {
+        streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_AUDIOBOOK &&
+        (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
+         streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
         AUDIO_INFO_LOG("normal stream beacuse streamUsage.");
         return false;
     }

@@ -92,6 +92,15 @@ const std::string CALLER_NAME = "audio_server";
 const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 
+constexpr int32_t UID_MEDIA = 1013;
+constexpr int32_t UID_MCU = 7500;
+constexpr int32_t UID_CAAS = 5527;
+const std::set<int32_t> INTERRUPT_CALLBACK_TRUST_LIST = {
+    UID_MEDIA,
+    UID_MCU,
+    UID_CAAS
+};
+
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
@@ -230,7 +239,6 @@ void AudioPolicyServer::AddSystemAbilityListeners()
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
 #endif
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
-    AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(BACKGROUND_TASK_MANAGER_SERVICE_ID);
 #ifdef USB_ENABLE
@@ -275,9 +283,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             RegisterBluetoothListener();
-            break;
-        case ACCESSIBILITY_MANAGER_SERVICE_ID:
-            SubscribeAccessibilityConfigObserver();
             break;
         case POWER_MANAGER_SERVICE_ID:
             SubscribePowerStateChangeEvents();
@@ -743,6 +748,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
             isInitSettingsData_ = true;
         }
         RegisterDefaultVolumeTypeListener();
+        SubscribeAccessibilityConfigObserver();
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
@@ -1973,8 +1979,10 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, c
     }
 
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-    if (callingUid != MEDIA_SERVICE_UID && callingUid != MCU_UID) {
-        // if the callingUid is not media or mcu, it is necessary to verify whether the parameters are valid.
+    AUDIO_INFO_LOG("The sessionId %{public}u, callingUid %{public}u, clientUid %{public}u",
+        sessionID, callingUid, clientUid);
+    if (INTERRUPT_CALLBACK_TRUST_LIST.count(callingUid) == 0) {
+        // Verify whether the clientUid is valid.
         if (callingUid != clientUid) {
             AUDIO_ERR_LOG("The callingUid is not equal to clientUid and is not MEDIA_SERVICE_UID!");
             return ERR_UNKNOWN;
@@ -2215,6 +2223,7 @@ bool AudioPolicyServer::VerifyBluetoothPermission()
 #endif
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
 
+    WatchTimeout guard("VerifyBluetooth");
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, USE_BLUETOOTH_PERMISSION);
     CHECK_AND_RETURN_RET(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, false);
 
@@ -2339,8 +2348,9 @@ void AudioPolicyServer::AudioSessionInfoDump(std::string &dumpString)
 
 void AudioPolicyServer::AudioPipeManagerDump(std::string &dumpString)
 {
-    dumpString += "\nAudioPipeManager Info\n";
-    AudioPipeManager::GetPipeManager()->Dump(dumpString);
+    if (coreService_ != nullptr) {
+        coreService_->DumpPipeManager(dumpString);
+    }
 }
 
 void AudioPolicyServer::ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue)
@@ -2371,7 +2381,7 @@ void AudioPolicyServer::ArgInfoDump(std::string &dumpString, std::queue<std::u16
 void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
 {
     AppendFormat(dumpString, "usage:\n");
-    AppendFormat(dumpString, "  -h\t\t\t|help text for hidumper audio\n");
+    AppendFormat(dumpString, "  -h\t\t\t|help text for hidumper audio policy\n");
     AppendFormat(dumpString, "  -d\t\t\t|dump devices info\n");
     AppendFormat(dumpString, "  -m\t\t\t|dump ringer mode and call status\n");
     AppendFormat(dumpString, "  -v\t\t\t|dump stream volume info\n");
@@ -2379,8 +2389,9 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -apc\t\t\t|dump audio policy config xml parser info\n");
     AppendFormat(dumpString, "  -s\t\t\t|dump stream info\n");
     AppendFormat(dumpString, "  -xp\t\t\t|dump xml data map\n");
-    AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager Info\n");
+    AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager info\n");
     AppendFormat(dumpString, "  -as\t\t\t|dump audio session info\n");
+    AppendFormat(dumpString, "  -ap\t\t\t|dump audio pipe manager info\n");
 }
 
 int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)

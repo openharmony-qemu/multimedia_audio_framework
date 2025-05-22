@@ -30,6 +30,7 @@
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
 #include "audio_core_service.h"
+#include "audio_utils_c.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -186,6 +187,11 @@ void AudioDeviceStatus::WriteOutputDeviceChangedSysEvents(
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    AUTO_CTRACE("SYSEVENT BEHAVIOR EVENT DEVICE_CHANGE, ISOUTPUT: 1, STREAMID: %d, STREAMTYPE: %d, DEVICETYPE: %d, "
+        "NETWORKID: %s, ADDRESS: %s, DEVICE_NAME: %s, BT_TYPE: %d", sinkInput.streamId, sinkInput.streamType,
+        deviceDescriptor->deviceType_, ConvertNetworkId(deviceDescriptor->networkId_).c_str(),
+        GetEncryptAddr(deviceDescriptor->macAddress_).c_str(),
+        deviceDescriptor->deviceName_.c_str(), deviceDescriptor->deviceCategory_);
 }
 
 void AudioDeviceStatus::WriteInputDeviceChangedSysEvents(
@@ -203,6 +209,11 @@ void AudioDeviceStatus::WriteInputDeviceChangedSysEvents(
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    AUTO_CTRACE("SYSEVENT BEHAVIOR EVENT DEVICE_CHANGE, ISOUTPUT: 0, STREAMID: %d, STREAMTYPE: %d, DEVICETYPE: %d, "
+        "NETWORKID: %s, ADDRESS: %s, DEVICE_NAME: %s, BT_TYPE: %d", sourceOutput.streamId, sourceOutput.streamType,
+        deviceDescriptor->deviceType_, ConvertNetworkId(deviceDescriptor->networkId_).c_str(),
+        GetEncryptAddr(deviceDescriptor->macAddress_).c_str(),
+        deviceDescriptor->deviceName_.c_str(), deviceDescriptor->deviceCategory_);
 }
 
 
@@ -769,8 +780,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
-        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     DeviceRole deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(devType);

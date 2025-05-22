@@ -126,7 +126,6 @@ public:
     bool IsOffloadEnable() override;
 
     int32_t SetSpeed(float speed) override;
-    int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
     bool IsFastRenderer() override;
     void ConcedeStream();
@@ -144,6 +143,9 @@ public:
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+
+    int32_t StartDataCallback() override;
+    int32_t StopDataCallback() override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
@@ -219,6 +221,7 @@ private:
     int32_t UnsetOffloadModeInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
+    int32_t SetPitch(float pitch);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

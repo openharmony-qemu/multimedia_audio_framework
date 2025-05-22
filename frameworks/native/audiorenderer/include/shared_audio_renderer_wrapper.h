@@ -375,13 +375,6 @@ public:
         return sharedAudioRenderer_->SetSpeed(speed);
     }
 
-    int32_t SetPitch(float pitch) override
-    {
-        CHECK_AND_RETURN_RET_LOG(sharedAudioRenderer_ != nullptr,
-            ERR_MEMORY_ALLOC_FAILED, "sharedAudioRenderer_ is nullptr");
-        return sharedAudioRenderer_->SetPitch(pitch);
-    }
-
     float GetSpeed() override
     {
         return sharedAudioRenderer_->GetSpeed();
@@ -440,6 +433,16 @@ public:
     void SetSourceDuration(int64_t duration) override
     {
         return sharedAudioRenderer_->SetSourceDuration(duration);
+    }
+
+    int32_t StartDataCallback() override
+    {
+        return sharedAudioRenderer_->StartDataCallback();
+    }
+
+    int32_t StopDataCallback() override
+    {
+        return sharedAudioRenderer_->StopDataCallback();
     }
 
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)

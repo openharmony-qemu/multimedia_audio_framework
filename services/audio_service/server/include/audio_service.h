@@ -142,7 +142,7 @@ private:
         std::shared_ptr<AudioEndpoint> audioEndpoint);
 
     void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
-    int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream);
+    int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord);
 #endif
     InnerCapFilterPolicy GetInnerCapFilterPolicy(int32_t innerCapId);
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
@@ -183,6 +183,7 @@ private:
     std::mutex rendererMapMutex_;
     std::mutex capturerMapMutex_;
     std::mutex muteSwitchStreamSetMutex_;
+    std::mutex workingConfigsMutex_;
     std::unordered_map<int32_t, std::vector<std::weak_ptr<RendererInServer>>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
