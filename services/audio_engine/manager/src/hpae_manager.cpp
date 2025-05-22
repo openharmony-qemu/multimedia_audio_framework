@@ -779,7 +779,6 @@ void HpaeManager::RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(A
 bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode>& sinkInput)
 {
     if (movingIds_.find(sessionId) != movingIds_.end()) {
-        
         if (movingIds_[sessionId] == HPAE_SESSION_RELEASED) {
             rendererIdSinkNameMap_.erase(sessionId);
             rendererIdStreamInfoMap_.erase(sessionId);
