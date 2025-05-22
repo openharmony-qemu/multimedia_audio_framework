@@ -1942,5 +1942,10 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
     }
     return SUCCESS;
 }
+
+int32_t RendererInServer::SetOffloadDataCallbackState(int32_t state)
+{
+    return stream_->SetOffloadDataCallbackState(state);
+}
 } // namespace AudioStandard
 } // namespace OHOS

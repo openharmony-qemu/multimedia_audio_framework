@@ -212,7 +212,9 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
         AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
         return false;
     }
-    if (streamDesc->streamInfo_.channels <= STEREO) {
+    if (streamDesc->streamInfo_.channels <= STEREO ||
+        (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_MOVIE &&
+         streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD)) {
         AUDIO_INFO_LOG("normal stream beacuse channels.");
         return false;
     }

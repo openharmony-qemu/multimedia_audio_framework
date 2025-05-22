@@ -209,6 +209,7 @@ public:
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
+    int32_t SetOffloadDataCallbackState(int32_t cbState) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);

@@ -435,6 +435,16 @@ public:
         return sharedAudioRenderer_->SetSourceDuration(duration);
     }
 
+    int32_t StartDataCallback() override
+    {
+        return sharedAudioRenderer_->StartDataCallback();
+    }
+
+    int32_t StopDataCallback() override
+    {
+        return sharedAudioRenderer_->StopDataCallback();
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }

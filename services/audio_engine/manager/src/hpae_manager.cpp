@@ -1498,6 +1498,21 @@ int32_t HpaeManager::UpdateMaxLength(uint32_t sessionId, uint32_t maxLength)
     return SUCCESS;
 }
 
+int32_t HpaeManager::SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type)
+{
+    auto request = [this, sessionId, type]() {
+        AUDIO_INFO_LOG("SetOffloadRenderCallbackType sessionId %{public}u %{public}d", sessionId, type);
+        auto rendererManager = GetRendererManagerById(sessionId);
+        if (rendererManager != nullptr) {
+            rendererManager->SetOffloadRenderCallbackType(sessionId, type);
+        } else {
+            AUDIO_WARNING_LOG("SetOffloadRenderCallbackType can not find sessionId, sessionId %{public}u", sessionId);
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
 // only interface for unit test
 int32_t HpaeManager::GetSessionInfo(
     HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionInfo &sessionInfo)

@@ -44,6 +44,7 @@ const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_OFFLOAD = 500;
 const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
 const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
+const int32_t OFFLOAD_HDI_CACHE3 = 500; // ms, should equal with val in hdi_sink.c for movie
 const uint32_t OFFLOAD_BUFFER = 50;
 const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_NS_PER_US = 1000;
@@ -999,6 +1000,18 @@ int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
     return sink->SetVolume(volume, volume);
 }
 
+int32_t PaRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)
+{
+    AUDIO_INFO_LOG("SetOffloadDataCallbackState state: %{public}d", state);
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "Renderer is null.");
+    return sink->SetOffloadRenderCallbackType(static_cast<RenderCallbackType>(state));
+}
+
 int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
 {
     PaLockGuard lock(mainloop_);
@@ -1160,7 +1173,8 @@ int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, 
 
         if ((statePolicy != OFFLOAD_DEFAULT && offloadStatePolicy_ != OFFLOAD_DEFAULT) ||
             offloadStatePolicy_ == OFFLOAD_INACTIVE_BACKGROUND) {
-            const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
+            const uint32_t bufLenMs = processConfig_.streamType == STREAM_MOVIE ? OFFLOAD_HDI_CACHE3 :
+                (statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
             OffloadSetBufferSize(bufLenMs);
         }
 

@@ -317,6 +317,12 @@ int32_t HpaeManagerImpl::UpdateMaxLength(uint32_t sessionId, uint32_t maxLength)
     return manager_->UpdateMaxLength(sessionId, maxLength);
 }
 
+int32_t HpaeManagerImpl::SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->SetOffloadRenderCallbackType(sessionId, type);
+}
+
 // interfaces for render effect
 void HpaeManagerImpl::InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectChainManagerParam,
