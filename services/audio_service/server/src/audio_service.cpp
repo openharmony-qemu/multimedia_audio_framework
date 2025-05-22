@@ -982,7 +982,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
                 [[fallthrough]];
             }
             case ReuseEndpointType::CREATE_ENDPOINT: {
-                CheckBeforeVoipEndpointCreate(clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
+                CheckBeforeRecordEndpointCreate(clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
                 endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ? AudioEndpoint::TYPE_VOIP_MMAP :
                     AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
                 CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
