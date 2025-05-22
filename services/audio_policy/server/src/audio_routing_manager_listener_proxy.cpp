@@ -91,14 +91,14 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
 int32_t AudioRoutingManagerListenerProxy::OnDistributedOutputChange(bool isRemote)
 {
     MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
         "OnDistributedOutputChange: WriteInterfaceToken failed");
 
     data.WriteBool(isRemote);
 
+    MessageParcel reply;
+    MessageOption option;
     int error = Remote()->SendRequest(ON_DISTRIBUTED_OUTPUT_CHANGE, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "OnDistributedOutputChange, error: %{public}d", error);
 

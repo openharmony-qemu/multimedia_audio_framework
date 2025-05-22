@@ -83,6 +83,7 @@ private:
     void NotifyDevice(const UsbAudioDevice &device, const bool isConnected);
     void HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p);
     bool FillUsbAudioDevice(UsbAudioDevice &device);
+    // must be called in mutex_ lock
     void UpdateDevice(const UsbAudioDevice &dev, std::__wrap_iter<UsbAudioDevice *> &it);
 
     vector<UsbAudioDevice> audioDevices_;
