@@ -1382,8 +1382,6 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
             infoIn++;
             n++;
             maxInfo--;
-        } else {
-            AUDIO_WARNING_LOG("SinkRenderPrimaryCluster failed");
         }
     }
 
