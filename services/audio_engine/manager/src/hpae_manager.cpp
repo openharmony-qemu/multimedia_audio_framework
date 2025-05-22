@@ -1149,7 +1149,7 @@ void HpaeManager::DestroyCapture(uint32_t sessionId)
     }
 }
 
-bool HpaeManager::IsMovingSessionId(HpaeStreamClassType streamType, uint32_t sessionId,
+bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t sessionId,
         HpaeSessionState status, HpaeSessionState state, IOperation operation)
 {
     if (movingIds_.find(sessionId) == movingIds_.end()) {
@@ -1165,7 +1165,9 @@ bool HpaeManager::IsMovingSessionId(HpaeStreamClassType streamType, uint32_t ses
         }
     }
     if (streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
-        rendererIdStreamInfoMap_[sessionId].statusCallback.lock()->OnStatusUpdate(operation);
+        if (auto statusCallback = rendererIdStreamInfoMap_[sessionId].statusCallback.lock()) {
+            statusCallback->OnStatusUpdate(operation);
+        }
         if (operation == OPERATION_RELEASED) {
             sinkInputs_.erase(sessionId);
             idPreferSinkNameMap_.erase(sessionId);
@@ -1192,7 +1194,7 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
 {
     auto request = [this, streamClassType, sessionId]() {
         AUDIO_INFO_LOG("DestroyStream streamClassType %{public}d, sessionId %{public}u", streamClassType, sessionId);
-        if (IsMovingSessionId(streamClassType, sessionId, HPAE_SESSION_RELEASED,
+        if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_RELEASED,
             HPAE_SESSION_RELEASED, OPERATION_RELEASED)) {
             return;
         }
@@ -1231,7 +1233,7 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
         }
         AUDIO_INFO_LOG(
             "HpaeManager::Start sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
-        if (IsMovingSessionId(streamClassType, sessionId, HPAE_SESSION_RUNNING,
+        if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_RUNNING,
             HPAE_SESSION_RUNNING, OPERATION_STARTED)) {
             return;
         }
@@ -1278,7 +1280,7 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
         }
         AUDIO_INFO_LOG(
             "HpaeManager::Pause sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
-        if (IsMovingSessionId(streamClassType, sessionId, HPAE_SESSION_PAUSED,
+        if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_PAUSED,
             HPAE_SESSION_PAUSING, OPERATION_PAUSED)) {
             return;
         }
@@ -1319,7 +1321,7 @@ int32_t HpaeManager::Flush(HpaeStreamClassType streamClassType, uint32_t session
         }
         AUDIO_INFO_LOG(
             "HpaeManager::Flush sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
-        if (IsMovingSessionId(streamClassType, sessionId,
+        if (SetMovingStreamState(streamClassType, sessionId,
             HPAE_SESSION_INVALID, HPAE_SESSION_INVALID, OPERATION_FLUSHED)) {
             return;
         }
@@ -1358,7 +1360,7 @@ int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t session
         }
         AUDIO_INFO_LOG(
             "HpaeManager::Drain sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
-        if (IsMovingSessionId(streamClassType, sessionId,
+        if (SetMovingStreamState(streamClassType, sessionId,
             HPAE_SESSION_INVALID, HPAE_SESSION_INVALID, OPERATION_DRAINED)) {
             return;
         }
@@ -1397,7 +1399,7 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
         }
         AUDIO_INFO_LOG(
             "HpaeManager::Stop sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
-        if (IsMovingSessionId(streamClassType, sessionId, HPAE_SESSION_STOPPED,
+        if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_STOPPED,
             HPAE_SESSION_STOPPING, OPERATION_STOPPED)) {
             return;
         }

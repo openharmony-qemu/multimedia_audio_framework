@@ -209,7 +209,7 @@ private:
     void LoadEffectLive();
 
     bool MovingSinkStateChange(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode>& sinkInput);
-    bool IsMovingSessionId(HpaeStreamClassType streamType, uint32_t sessionId,
+    bool SetMovingStreamState(HpaeStreamClassType streamType, uint32_t sessionId,
         HpaeSessionState status, HpaeSessionState state, IOperation operation);
 
 private:
