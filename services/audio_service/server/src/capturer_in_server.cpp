@@ -526,8 +526,6 @@ int32_t CapturerInServer::StartInner()
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     }
 
-    AudioService::GetInstance()->UpdateSourceType(processConfig_.capturerInfo.sourceType);
-
     status_ = I_STATUS_STARTING;
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
