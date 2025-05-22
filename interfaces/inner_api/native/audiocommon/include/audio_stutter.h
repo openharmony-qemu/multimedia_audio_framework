@@ -51,8 +51,7 @@ struct AudioRendererDataTransferStateChangeInfo {
             parcel.WriteInt32(sessionId) && parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
             parcel.WriteUint32(static_cast<int32_t>(stateChangeType));
 
-        for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++)
-        {
+        for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             ret = ret && parcel.WriteInt32(badDataRatio[i]);
         }
         
@@ -66,8 +65,7 @@ struct AudioRendererDataTransferStateChangeInfo {
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         stateChangeType = static_cast<DataTransferStateChangeType>(parcel.ReadInt32());
 
-        for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++)
-        {
+        for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             badDataRatio[i] = parcel.ReadInt32();
         }
     }

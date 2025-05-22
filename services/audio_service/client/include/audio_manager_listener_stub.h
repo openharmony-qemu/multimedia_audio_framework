@@ -47,7 +47,8 @@ public:
     std::vector<int32_t> RemoveDataTransferStateChangeCallback(
         std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb);
 private:
-    using ParamPair = std::pair<DataTransferMonitorParam, std::shared_ptr<AudioRendererDataTransferStateChangeCallback>>;
+    using ParamPair = std::pair<DataTransferMonitorParam,
+        std::shared_ptr<AudioRendererDataTransferStateChangeCallback>>;
     std::weak_ptr<AudioParameterCallback> callback_;
     std::weak_ptr<WakeUpSourceCallback> wakeUpCallback_;
     int32_t callbackId_ = 0;

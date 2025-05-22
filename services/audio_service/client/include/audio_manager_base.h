@@ -626,7 +626,7 @@ public:
     virtual int32_t StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) = 0;
     virtual int32_t StopGroup(int32_t pid, int32_t workgroupId) = 0;
     /**
-     * Regiest data transfer callback.
+     * Register data transfer callback.
      *
      * @return result code.
      */
