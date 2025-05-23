@@ -139,6 +139,7 @@ void AudioCoreService::EventEntry::OnPnpDeviceStatusUpdated(AudioDeviceDescripto
 void AudioCoreService::EventEntry::OnDeviceConfigurationChanged(DeviceType deviceType, const std::string &macAddress,
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->OnDeviceConfigurationChanged(deviceType, macAddress, deviceName, streamInfo);
 }
 
