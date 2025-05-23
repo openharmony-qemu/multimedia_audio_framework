@@ -25,6 +25,7 @@ namespace HPAE {
 static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
+static constexpr int32_t DEFAULT_SINK_LATENCY = 40;
 
 HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo)
     : HpaeNode(nodeInfo), outputStream_(this),
@@ -41,6 +42,12 @@ HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo)
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+#ifdef ENABLE_HOOK_PCM
+    if (inputPcmDumper_ && buffer) {
+        inputPcmDumper_->Dump((int8_t *)buffer->GetPcmDataBuffer(),
+            buffer->GetFrameLen() * sizeof(float) * buffer->GetChannelCount());
+    }
+#endif
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
@@ -68,6 +75,12 @@ void HpaeCoBufferNode::DoProcess()
     result = ringCache_->Dequeue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
     outputStream_.WriteDataToOutput(&coBufferOut_);
+#ifdef ENABLE_HOOK_PCM
+    if (outputPcmDumper_ && coBufferOut_) {
+        outputPcmDumper_->Dump((int8_t *)coBufferOut_.GetPcmDataBuffer(),
+            coBufferOut_.GetFrameLen() * sizeof(float) * coBufferOut_.GetChannelCount());
+    }
+#endif
 }
 
 bool HpaeCoBufferNode::Reset()
@@ -116,6 +129,12 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
     nodeInfo.nodeName = "HpaeCoBufferNode";
     SetNodeInfo(nodeInfo);
     inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
+#ifdef ENABLE_HOOK_PCM
+    inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+        "HpaeCoBufferNodeInput_id_" + std::to_string(GetNodeId()) + ".pcm");
+    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+        "HpaeCoBufferNodeOutput_id_" + std::to_string(GetNodeId()) + ".pcm");
+#endif
 }
 
 void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
@@ -138,14 +157,14 @@ size_t HpaeCoBufferNode::GetOutputPortNum()
     return outputStream_.GetInputNum();
 }
 
-void HpaeCoBufferNode::SetLatency(int32_t latency)
+void HpaeCoBufferNode::SetLatency(uint32_t latency)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("latency is %{public}d", latency);
     CHECK_AND_RETURN(ringCache_ != nullptr, "ring cache is null");
     ringCache_->ResetBuffer();
-    int32_t offset = 0;
-    while (offset < latency) {
+    uint32_t offset = 0;
+    while (offset < latency - DEFAULT_SINK_LATENCY) {
         OptResult result = ringCache_->GetWritableSize();
         CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
         size_t writeLen = coBufferOut_.GetFrameLen() * coBufferOut_.GetChannelCount() * sizeof(float);

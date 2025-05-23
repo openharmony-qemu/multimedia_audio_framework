@@ -404,7 +404,7 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
     }
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
     if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
-        int32_t latency = outputCluster_->GetLatency();
+        uint32_t latency = outputCluster_->GetLatency();
         hpaeCoBufferNode_->SetLatency(latency);
         hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
         TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
@@ -1061,7 +1061,7 @@ int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnable
                 hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(nodeInfo);
             }
             for (auto it : sessionNodeMap_) {
-                HandleCollaborationStateChangedInner(it->second.sceneType, it.first);
+                HandleCollaborationStateChangedInner(it.second.sceneType, it.first);
             }
             TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
         } else if (!isCollaborationEnabled_ && hpaeCoBufferNode_ != nullptr) {

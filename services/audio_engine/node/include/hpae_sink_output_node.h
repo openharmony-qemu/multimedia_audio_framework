@@ -53,7 +53,7 @@ public:
     const char *GetRenderFrameData(void);
     StreamManagerState GetSinkState(void);
     int32_t SetSinkState(StreamManagerState sinkState);
-    int32_t GetLatency();
+    uint32_t GetLatency();
 private:
     void HandleRemoteTiming();
     InputPort<HpaePcmBuffer *> inputStream_;
@@ -66,7 +66,7 @@ private:
     HighResolutionTimer remoteTimer_;
     TimePoint remoteTimePoint_;
     std::chrono::milliseconds remoteSleepTime_ = std::chrono::milliseconds(0);
-    int32_t latency_ = 0;
+    uint32_t latency_ = 0;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;

@@ -21,13 +21,17 @@
 #include "hpae_node.h"
 #include "hpae_pcm_buffer.h"
 
+#ifdef ENABLE_HOOK_PCM
+#include "hpae_pcm_dumper.h"
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
 class HpaeCoBufferNode : public OutputNode<HpaePcmBuffer *>, public InputNode<HpaePcmBuffer *> {
 public:
-    HpaeCoBufferNode(HpaeNodeInfo& nodeInfo, int32_t& delay);
+    HpaeCoBufferNode(HpaeNodeInfo& nodeInfo);
     virtual ~HpaeCoBufferNode() {};
     void DoProcess() override;
     bool Reset() override;
@@ -41,14 +45,18 @@ public:
     virtual size_t GetOutputPortNum();
     void Enqueue(HpaePcmBuffer* buffer) override;
     void SetBufferSize(size_t size);
-    void SetLatency(int32_t latency);
+    void SetLatency(uint32_t latency);
 private:
     std::mutex mutex_;
     InputPort<HpaePcmBuffer*> inputStream_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     PcmBufferInfo pcmBufferInfo_;
-    PcmBuffer coBufferOut_;
+    HpaePcmBuffer coBufferOut_;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
+#ifdef ENABLE_HOOK_PCM
+    std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
+    std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
+#endif
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
