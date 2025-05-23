@@ -25,6 +25,7 @@
 #include "hpae_capturer_stream_impl.h"
 #include "audio_utils.h"
 #include "audio_info.h"
+#include "core_service_handler.h"
 #include "policy_handler.h"
 namespace OHOS {
 namespace AudioStandard {
@@ -49,12 +50,18 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
         AUDIO_ERR_LOG("Create [%{public}d] type renderer:[%{public}u] error",
             managerType_, processConfig.originalSessionId);
     }
-    AUDIO_INFO_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
-    std::string deviceName;
-    int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "getdevicename err: %{public}d", ret);
-
     processConfig.originalSessionId = sessionId;
+    AUDIO_INFO_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
+    std::string deviceName = "";
+    int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "get devicename err: %{public}d", ret);
+    if (managerType_ != DUP_PLAYBACK && managerType_ != DUAL_PLAYBACK) {
+        deviceName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+    }
+    if (deviceName == "") {
+        AUDIO_INFO_LOG("sink name is null");
+        deviceName = "Speaker";
+    }
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
@@ -199,19 +206,27 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
 {
     AUDIO_DEBUG_LOG("Create capturer start");
     CHECK_AND_RETURN_RET_LOG(managerType_ == RECORDER, ERROR, "Invalid managerType:%{public}d", managerType_);
-    uint32_t sessionId = 0;
+    uint32_t sessionId = processConfig.originalSessionId;
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
         AUDIO_ERR_LOG("Create capturer originalSessionId is error %{public}d, get new sessionId:%{public}u",
             processConfig.originalSessionId, sessionId);
-    } else {
-        sessionId = processConfig.originalSessionId;
     }
     processConfig.originalSessionId = sessionId;
-    std::string deviceName;
+
+    std::string deviceName = "";
     int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "get devicename err: %{public}d", ret);
-
+    SourceType &sourceType = processConfig.capturerInfo.sourceType;
+    if (sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE &&
+        sourceType != SOURCE_TYPE_REMOTE_CAST &&
+        sourceType != SOURCE_TYPE_WAKEUP) {
+        deviceName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+    }
+    if (deviceName = "") {
+        AUDIO_INFO_LOG("source name is null");
+        deviceName = "Built_in_mic";
+    }
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, deviceName);
     CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
