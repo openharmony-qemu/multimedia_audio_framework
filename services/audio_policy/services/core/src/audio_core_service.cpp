@@ -276,10 +276,12 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     AUDIO_INFO_LOG("rendererFlag: %{public}d", streamDesc->rendererInfo_.rendererFlags);
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
-            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+            streamDesc->audioFlag_ =
+                IsFastAllowed(streamDesc->bundleName_) ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_OUTPUT_FLAG_NORMAL;
             return;
         case AUDIO_FLAG_VOIP_FAST:
-            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
+            streamDesc->audioFlag_ =
+                IsFastAllowed(streamDesc->bundleName_) ? AUDIO_OUTPUT_FLAG_VOIP : AUDIO_OUTPUT_FLAG_NORMAL;
             return;
         case AUDIO_FLAG_VOIP_DIRECT:
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;

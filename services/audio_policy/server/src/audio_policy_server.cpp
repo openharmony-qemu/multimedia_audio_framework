@@ -2414,6 +2414,12 @@ int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &captur
 int32_t AudioPolicyServer::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr && eventEntry_ != nullptr, ERR_NULL_POINTER,
+        "Core service not inited");
+    bool disableFastStream = coreService_->GetFastControlParam();
+    if (disableFastStream) {
+        streamDesc->SetBunduleName(AudioBundleManager::GetBundleName());
+    }
     return eventEntry_->CreateRendererClient(streamDesc, flag, sessionId);
 }
 
