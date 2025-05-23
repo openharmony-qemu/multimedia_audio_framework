@@ -197,7 +197,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     framePosition = framePosition_;
     timestamp = timestamp_;
     latency = latency_;
-    if (deviceClass_ != DEVICE_CLASS_OFFLOAD){
+    if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
         uint32_t SinkLatency = 0;
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
