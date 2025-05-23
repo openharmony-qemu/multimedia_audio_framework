@@ -367,7 +367,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
         for (auto &desc : outputDescs) {
             desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
-                GetReadUid(desc));
+                GetRealUid(desc));
         }
     }
 
