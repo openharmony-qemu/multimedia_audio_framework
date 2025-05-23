@@ -1494,6 +1494,12 @@ void AudioDeviceManager::GetAllConnectedDeviceByType(std::string networkId, Devi
     }
     return;
 }
+
+bool AudioDeviceManager::IsSessionSetDefaultDevice(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    return selectedDefaultOutputDeviceInfo_.find(sessionId) != selectedDefaultOutputDeviceInfo_.end();
+}
 // LCOV_EXCL_STOP
 }
 }
