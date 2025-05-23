@@ -468,7 +468,8 @@ bool HpaeOffloadRendererManager::IsInit()
 bool HpaeOffloadRendererManager::IsRunning(void)
 {
     if (sinkOutputNode_ != nullptr && hpaeSignalProcessThread_ != nullptr) {
-        return sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING && hpaeSignalProcessThread_->IsRunning();
+        return sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING && hpaeSignalProcessThread_->IsRunning() &&
+            enableProcess_;
     }
     return false;
 }
@@ -529,7 +530,7 @@ int32_t HpaeOffloadRendererManager::RegisterReadCallback(
 
 void HpaeOffloadRendererManager::Process()
 {
-    if (sinkOutputNode_ != nullptr && IsRunning() && enableProcess_) {
+    if (IsRunning()) {
         sinkOutputNode_->DoProcess();
     }
 }
@@ -540,7 +541,7 @@ int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t
         CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
             "SetOffloadPolicy not find sessionId %{public}u",
             sessionId);
-        enableProcess_ = state != OFFLOAD_DEFAULT;
+        enableProcess_ = true;
         if (sinkOutputNode_) {
             sinkOutputNode_->SetPolicyState(state);
         }
