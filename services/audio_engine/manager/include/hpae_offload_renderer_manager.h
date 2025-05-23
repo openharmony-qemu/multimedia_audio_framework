@@ -96,6 +96,7 @@ private:
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t ConnectInputSession();
     int32_t DisConnectInputSession();
+    void DeleteInputSession();
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MOVE_SESSION_TYPE moveType);
