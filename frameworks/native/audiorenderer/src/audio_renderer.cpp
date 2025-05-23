@@ -1253,10 +1253,9 @@ int32_t AudioRendererPrivate::SetVolume(float volume) const
 
 void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
 {
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
-    State currentState = currentStream->GetState();
-    bool isMute = currentStream->GetMute();
+    CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "audioStream_ is nullptr");
+    State currentState = audioStream_->GetState();
+    bool isMute = audioStream_->GetMute();
     if (currentState == NEW || currentState == PREPARED) {
         AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
         isStillZeroStreamVolume_ = (volume == 0);
