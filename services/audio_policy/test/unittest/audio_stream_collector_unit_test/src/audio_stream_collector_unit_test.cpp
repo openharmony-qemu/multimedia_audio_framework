@@ -1661,5 +1661,167 @@ HWTEST_F(AudioStreamCollectorUnitTest, ResumeStreamState_001, TestSize.Level1)
     int32_t ret = collector.ResumeStreamState();
     EXPECT_EQ(ret, 0);
 }
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleAppStateChange_001
+* @tc.desc  : Test HandleAppStateChange.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleAppStateChange_001, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    int32_t clientUid = 1001;
+    bool notifyMute = false;
+    // Create and add AudioRendererChangeInfo
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientUID = clientUid;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    changeInfo->sessionId = 1;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.HandleAppStateChange(clientUid, true, notifyMute);
+    EXPECT_TRUE(changeInfo->backMute);
+    audioStreamCollector_.HandleAppStateChange(clientUid, false, notifyMute);
+    EXPECT_FALSE(changeInfo->backMute);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleAppStateChange_002
+* @tc.desc  : Test HandleAppStateChange.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleAppStateChange_002, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    int32_t clientUid = 1001;
+    bool notifyMute = false;
+    // Create and add AudioRendererChangeInfo
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientUID = clientUid;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    changeInfo->sessionId = 1;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.HandleAppStateChange(clientUid, true, notifyMute);
+    EXPECT_FALSE(changeInfo->backMute);
+    changeInfo->backMute = true;
+    audioStreamCollector_.HandleAppStateChange(clientUid, false, notifyMute);
+    EXPECT_TRUE(changeInfo->backMute);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleFreezeStateChange_001
+* @tc.desc  : Test HandleFreezeStateChange.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleFreezeStateChange_001, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    int32_t clientPid = 1001;
+    bool hasSession = false;
+    // Create and add AudioRendererChangeInfo
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientPid = clientPid;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    changeInfo->sessionId = 1;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.HandleFreezeStateChange(clientPid, true, hasSession);
+    EXPECT_TRUE(changeInfo->backMute);
+    audioStreamCollector_.HandleFreezeStateChange(clientPid, false, hasSession);
+    EXPECT_TRUE(changeInfo->backMute);
+    hasSession = true;
+    audioStreamCollector_.HandleFreezeStateChange(clientPid, false, hasSession);
+    EXPECT_FALSE(changeInfo->backMute);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleFreezeStateChange_002
+* @tc.desc  : Test HandleFreezeStateChange.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleFreezeStateChange_002, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    int32_t clientPid = 1001;
+    bool hasSession = false;
+    // Create and add AudioRendererChangeInfo
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientPid = clientPid;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    changeInfo->sessionId = 1;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.HandleFreezeStateChange(clientPid, true, hasSession);
+    EXPECT_TRUE(changeInfo->backMute);
+    audioStreamCollector_.HandleFreezeStateChange(clientPid, false, hasSession);
+    EXPECT_TRUE(changeInfo->backMute);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleBackTaskStateChange_001
+* @tc.desc  : Test HandleBackTaskStateChange.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleBackTaskStateChange_001, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    int32_t clientUid = 1001;
+    bool hasSession = false;
+    // Create and add AudioRendererChangeInfo
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientUID = clientUid;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    changeInfo->sessionId = 1;
+    changeInfo->backMute = true;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.HandleBackTaskStateChange(clientUid, hasSession);
+    EXPECT_TRUE(changeInfo->backMute);
+    hasSession = true;
+    audioStreamCollector_.HandleBackTaskStateChange(clientUid, hasSession);
+    EXPECT_FALSE(changeInfo->backMute);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleBackTaskStateChange_002
+* @tc.desc  : Test HandleBackTaskStateChange.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleBackTaskStateChange_002, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    int32_t clientUid = 1001;
+    bool hasSession = false;
+    // Create and add AudioRendererChangeInfo
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientUID = clientUid;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    changeInfo->sessionId = 1;
+    changeInfo->backMute = true;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.HandleBackTaskStateChange(clientUid, hasSession);
+    EXPECT_FALSE(changeInfo->backMute);
+    changeInfo->backMute = true;
+    hasSession = true;
+    audioStreamCollector_.HandleBackTaskStateChange(clientUid, hasSession);
+    EXPECT_FALSE(changeInfo->backMute);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleStartStreamMuteState_001
+* @tc.desc  : Test HandleStartStreamMuteState.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_001, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    int32_t clientUid = 1001;
+    // Create and add AudioRendererChangeInfo
+    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
+    changeInfo->clientUID = clientUid;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    changeInfo->sessionId = 1;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, true);
+    EXPECT_TRUE(changeInfo->backMute);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, false);
+    EXPECT_FALSE(changeInfo->backMute);
+}
 } // namespace AudioStandard
 } // namespace OHOS
