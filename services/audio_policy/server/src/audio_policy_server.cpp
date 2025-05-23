@@ -2418,7 +2418,7 @@ int32_t AudioPolicyServer::CreateRendererClient(
         "Core service not inited");
     bool disableFastStream = coreService_->GetDisableFastStreamParam();
     if (disableFastStream) {
-        streamDesc->SetBunduleName(AudioBundleManager::GetBundleName());
+        streamDesc->SetBunduleName(GetBundleName());
     }
     return eventEntry_->CreateRendererClient(streamDesc, flag, sessionId);
 }
