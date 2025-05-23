@@ -223,7 +223,7 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
         sourceType != SOURCE_TYPE_WAKEUP) {
         deviceName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
     }
-    if (deviceName = "") {
+    if (deviceName == "") {
         AUDIO_INFO_LOG("source name is null");
         deviceName = "Built_in_mic";
     }
