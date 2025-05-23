@@ -455,5 +455,19 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeByModuleAndFlag(const st
     AUDIO_ERR_LOG("Can not find pipe %{public}s", moduleName.c_str());
     return nullptr;
 }
+
+void AudioPipeManager::UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs)
+{
+    std::shared_lock<std::shared_mutex> lock(pipeListLock_);
+    for (auto &it : curPipeList_) {
+        if (it != nullptr && it->id_ == id) {
+            it->streamDescriptors_ = descs;
+            AUDIO_INFO_LOG("Update stream desc for %{public}u", id);
+            return;
+        }
+    }
+    AUDIO_WARNING_LOG("Cannot find ioHandle: %{public}u", id);
+}
 } // namespace AudioStandard
 } // namespace OHOS
