@@ -1228,6 +1228,7 @@ void AudioServer::SetAudioMonoState(bool audioMono)
         return SUCCESS;
     };
     (void)HdiAdapterManager::GetInstance().ProcessSink(processFunc);
+    HdiAdapterManager::GetInstance().UpdateSinkPrestoreInfo<bool>(PRESTORE_INFO_AUDIO_MONO, audioMono);
 }
 
 void AudioServer::SetAudioBalanceValue(float audioBalance)
@@ -1260,6 +1261,7 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
         return SUCCESS;
     };
     (void)HdiAdapterManager::GetInstance().ProcessSink(processFunc);
+    HdiAdapterManager::GetInstance().UpdateSinkPrestoreInfo<float>(PRESTORE_INFO_AUDIO_BALANCE, audioBalance);
 }
 
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
