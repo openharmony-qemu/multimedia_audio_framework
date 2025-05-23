@@ -76,7 +76,8 @@ public:
     void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
     bool IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs);
     std::shared_ptr<AudioPipeInfo> GetNormalSourceInfo(bool isEcFeatureEnable);
-    void UpdateOutputStreamDescsByIoHandle(AudioIOHandle id, std::vector<std::shared_ptr<AudioStreamDescriptor>> descs);
+    void UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

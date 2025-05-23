@@ -457,7 +457,7 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeByModuleAndFlag(const st
 }
 
 void AudioPipeManager::UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs)
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs)
 {
     std::shared_lock<std::shared_mutex> lock(pipeListLock_);
     for (auto &it : curPipeList_) {
