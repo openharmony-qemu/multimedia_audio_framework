@@ -2182,14 +2182,14 @@ void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDes
 #endif
 }
 
-bool AudioCoreService::GetFastControlParam()
+bool AudioCoreService::GetDisableFastStreamParam()
 {
     int32_t disableFastStream = 1; // default 1, set disableFastStream true
     GetSysPara("persist.multimedia.audioflag.fastcontrolled", disableFastStream);
     return disableFastStream == 0 ? false : true;
 }
 
-bool AudioCoreService::IsFastAllowed(std::string &bundleName);
+bool AudioCoreService::IsFastAllowed(std::string &bundleName)
 {
     CHECK_AND_RETURN_RET(bundleName != "", true);
     std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;

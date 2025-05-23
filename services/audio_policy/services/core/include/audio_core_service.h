@@ -240,7 +240,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchInputDeviceAndRoute();
     void SetAudioServerProxy();
-    bool GetFastControlParam();
+    bool GetDisableFastStreamParam();
     bool IsFastAllowed(std::string &bundleName);
 
 private:

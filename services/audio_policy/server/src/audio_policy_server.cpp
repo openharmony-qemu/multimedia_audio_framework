@@ -2416,7 +2416,7 @@ int32_t AudioPolicyServer::CreateRendererClient(
 {
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr && eventEntry_ != nullptr, ERR_NULL_POINTER,
         "Core service not inited");
-    bool disableFastStream = coreService_->GetFastControlParam();
+    bool disableFastStream = coreService_->GetDisableFastStreamParam();
     if (disableFastStream) {
         streamDesc->SetBunduleName(AudioBundleManager::GetBundleName());
     }
