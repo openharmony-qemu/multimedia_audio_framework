@@ -92,7 +92,8 @@
             "opensles",
             "qos_manager",
             "media_foundation",
-            "usb_manager"
+            "usb_manager",
+            "frame_aware_sched"
             ],
           "third_party": [
             "glib",

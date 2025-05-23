@@ -168,6 +168,12 @@ const int32_t ERR_CONFIG_NAME_ERROR = BASE_AUDIO_ERR_OFFSET - 35;
 /** retry in client */
 const int32_t ERR_RETRY_IN_CLIENT = BASE_AUDIO_ERR_OFFSET - 36;
 
+/** stream register num exceed max */
+const int32_t ERR_AUDIO_STREAM_REGISTER_EXCEED_MAX = BASE_AUDIO_ERR_OFFSET - 37;
+
+/** stream register repeat */
+const int32_t ERR_AUDIO_STREAM_REGISTER_REPEAT = BASE_AUDIO_ERR_OFFSET - 38;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard

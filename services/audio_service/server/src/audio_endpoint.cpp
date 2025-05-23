@@ -1420,6 +1420,12 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
                 streamData.bufferDesc.bufLength);
             WriteMuteDataSysEvent(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength, i);
             HandleMuteWriteData(streamData.bufferDesc, i);
+        } else {
+            auto tempProcess = processList_[i];
+            CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
+            if (tempProcess->GetStreamStatus() == STREAM_RUNNING) {
+                tempProcess->AddNoDataFrameSize();
+            }
         }
     }
 }
@@ -1428,10 +1434,11 @@ void AudioEndpointInner::HandleMuteWriteData(BufferDesc &bufferDesc, int32_t ind
 {
     auto tempProcess = processList_[index];
     CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
-
+    tempProcess->AddNormalFrameSize();
     int64_t muteFrameCnt = 0;
     VolumeTools::CalcMuteFrame(bufferDesc, dstStreamInfo_, logUtilsTag_, volumeDataCount_, muteFrameCnt);
     tempProcess->AddMuteWriteFrameCnt(muteFrameCnt);
+    tempProcess->AddMuteFrameSize(volumeDataCount_);
 }
 
 bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)

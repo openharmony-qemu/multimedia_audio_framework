@@ -23,7 +23,8 @@
 #include "i_stream_manager.h"
 #include "audio_effect.h"
 #include "audio_ring_cache.h"
-
+#include "audio_stream_monitor.h"
+#include "audio_stream_checker.h"
 #include "player_dfx_writer.h"
 
 namespace OHOS {
@@ -224,6 +225,7 @@ private:
     int64_t lastWriteMuteFrame_{};
     int64_t sourceDuration_ = -1;
     std::unique_ptr<PlayerDfxWriter> playerDfx_;
+    std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
