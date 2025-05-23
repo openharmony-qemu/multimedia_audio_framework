@@ -110,6 +110,8 @@ private:
     std::atomic<bool> isInit_ = false;
     HpaeSinkInfo sinkInfo_;
     bool isMute_ = false;
+    // only set offload mode enableProcessing
+    bool enableProcess_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

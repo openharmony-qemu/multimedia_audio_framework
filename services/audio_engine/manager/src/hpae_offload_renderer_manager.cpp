@@ -524,7 +524,7 @@ int32_t HpaeOffloadRendererManager::RegisterReadCallback(
 
 void HpaeOffloadRendererManager::Process()
 {
-    if (sinkOutputNode_ != nullptr && IsRunning()) {
+    if (sinkOutputNode_ != nullptr && IsRunning() && enableProcess_) {
         sinkOutputNode_->DoProcess();
     }
 }
@@ -535,6 +535,7 @@ int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t
         CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
             "SetOffloadPolicy not find sessionId %{public}u",
             sessionId);
+        enableProcess_ = state != OFFLOAD_DEFAULT;
         if (sinkOutputNode_) {
             sinkOutputNode_->SetPolicyState(state);
         }
