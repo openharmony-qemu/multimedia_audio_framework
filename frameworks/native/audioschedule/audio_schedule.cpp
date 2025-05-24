@@ -152,8 +152,7 @@ bool SetEndpointThreadPriority()
     struct sched_param param = {0};
     int32_t policy = 0;
     int32_t cnt = 0;
-    while ((pthread_getschedparam(pthread_self(), &policy, &param) == 0) && (cnt < MAX_RETRY_TIMES)) {
-        cnt++;
+    while ((pthread_getschedparam(pthread_self(), &policy, &param) == 0) && (cnt++ < MAX_RETRY_TIMES)) {
         if (policy == SCHED_RR || policy == SCHED_FIFO) {
             break;
         }
