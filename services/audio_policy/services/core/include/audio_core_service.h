@@ -240,6 +240,8 @@ private:
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchInputDeviceAndRoute();
     void SetAudioServerProxy();
+    bool GetDisableFastStreamParam();
+    bool IsFastAllowed(std::string &bundleName);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);

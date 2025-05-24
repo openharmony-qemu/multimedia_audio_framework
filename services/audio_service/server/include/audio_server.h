@@ -39,6 +39,7 @@
 #include "audio_asr.h"
 #include "policy_handler.h"
 #include "audio_resource_service.h"
+#include "audio_stream_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -55,7 +56,7 @@ private:
 };
 
 class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback,
-    public IAudioServerInnerCall {
+    public IAudioServerInnerCall, public DataTransferStateChangeCallbackForMonitor {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
@@ -238,7 +239,7 @@ public:
         const DataTransferMonitorParam &param) override;
     int32_t UnregisterDataTransferMonitorParam(const int32_t &callbackId) override;
     void OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
-        const AudioRendererDataTransferStateChangeInfo &info);
+        const AudioRendererDataTransferStateChangeInfo &info) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

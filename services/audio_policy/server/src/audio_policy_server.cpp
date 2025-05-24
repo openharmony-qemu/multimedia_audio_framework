@@ -1685,6 +1685,12 @@ bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
     return audioPolicyService_.IsStreamActive(streamType);
 }
 
+bool AudioPolicyServer::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    return audioPolicyService_.IsFastStreamSupported(streamInfo, desc);
+}
+
 int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
     return eventEntry_->SetDeviceActive(deviceType, active, uid);
@@ -2414,6 +2420,13 @@ int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &captur
 int32_t AudioPolicyServer::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr && eventEntry_ != nullptr, ERR_NULL_POINTER,
+        "Core service not inited");
+    bool disableFastStream = coreService_->GetDisableFastStreamParam();
+    if (disableFastStream) {
+        std::string bundleName = AudioBundleManager::GetBundleName();
+        streamDesc->SetBunduleName(bundleName);
+    }
     return eventEntry_->CreateRendererClient(streamDesc, flag, sessionId);
 }
 

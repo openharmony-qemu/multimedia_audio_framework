@@ -887,6 +887,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         interruptCbImpl->StartSwitch();
     }
 
+    bool bFlag = GetFastStatus();
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
     AUDIO_INFO_LOG("Before %{public}s, restore audiorenderer %{public}u", callingFunc.c_str(), sessionID_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
@@ -903,6 +904,8 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
             AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
             return ERR_OPERATION_FAILED;
         }
+    } else {
+        FastStatusChangeCallback(bFlag);
     }
 
     // Unblock interrupt callback.
@@ -1253,10 +1256,9 @@ int32_t AudioRendererPrivate::SetVolume(float volume) const
 
 void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
 {
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
-    State currentState = currentStream->GetState();
-    bool isMute = currentStream->GetMute();
+    CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "audioStream_ is nullptr");
+    State currentState = audioStream_->GetState();
+    bool isMute = audioStream_->GetMute();
     if (currentState == NEW || currentState == PREPARED) {
         AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
         isStillZeroStreamVolume_ = (volume == 0);
@@ -1806,6 +1808,13 @@ int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback(
 
     outputDeviceChangeCallback_->RemoveCallback(callback);
     return SUCCESS;
+}
+
+void AudioRendererPrivate::SetFastStatusChangeCallback(
+    const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback)
+{
+    std::lock_guard lock(fastStatusChangeCallbackMutex_);
+    fastStatusChangeCallback_ = callback;
 }
 
 bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
@@ -2572,6 +2581,13 @@ int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
     return currentStream->SetDefaultOutputDevice(deviceType);
 }
 
+bool AudioRendererPrivate::GetFastStatus()
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+    return currentStream->GetFastStatus();
+}
+
 // diffrence from GetAudioPosition only when set speed
 int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
 {
@@ -2590,6 +2606,20 @@ int32_t AudioRendererPrivate::InitFormatUnsupportedErrorCallback()
         formatUnsupportedErrorCallback_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register failed");
     return SUCCESS;
+}
+
+void AudioRendererPrivate::FastStatusChangeCallback(bool flag)
+{
+    bool bRet = GetFastStatus();
+
+    if (bRet != flag) {
+        AudioStreamFastStatus fastStatus = (bRet)
+            ? AudioStreamFastStatus::FASTSTATUS_FAST : AudioStreamFastStatus::FASTSTATUS_NORMAL;
+
+        if (fastStatusChangeCallback_ != nullptr) {
+            fastStatusChangeCallback_->OnFastStatusChange(fastStatus);
+        }
+    }
 }
 
 void FormatUnsupportedErrorCallbackImpl::OnFormatUnsupportedError(const AudioErrors &errorCode)

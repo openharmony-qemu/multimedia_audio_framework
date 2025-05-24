@@ -37,7 +37,7 @@ public:
     virtual int32_t Release(uint32_t sessionId) = 0;
     virtual int32_t MoveStream(uint32_t sessionId, const std::string &sinkName) = 0;
     virtual int32_t MoveAllStream(const std::string &name, const std::vector<uint32_t>& sessionIds,
-        MOVE_SESSION_TYPE moveType = MOVE_ALL) = 0;
+        MoveSessionType moveType = MOVE_ALL) = 0;
     virtual int32_t SetMute(bool isMute) = 0;
     virtual void Process() = 0;
     virtual void HandleMsg() = 0;

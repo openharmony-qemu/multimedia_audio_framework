@@ -472,5 +472,20 @@ std::vector<uint32_t> AudioPipeManager::GetSessionIdsByUid(uint32_t uid)
     AUDIO_INFO_LOG("Session number of uid %{public}u: %{public}zu", uid, sessionIds.size());
     return sessionIds;
 }
+
+void AudioPipeManager::UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs)
+{
+    std::lock_guard<std::shared_mutex> lock(pipeListLock_);
+    for (auto &it : curPipeList_) {
+        if (it != nullptr && it->id_ == id) {
+            it->streamDescriptors_ = descs;
+            AUDIO_INFO_LOG("Update stream desc for %{public}u", id);
+            return;
+        }
+    }
+    AUDIO_WARNING_LOG("Cannot find ioHandle: %{public}u", id);
+}
+}
 } // namespace AudioStandard
 } // namespace OHOS

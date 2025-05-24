@@ -181,16 +181,16 @@ private:
     void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
     void HandleMoveAllSinkInputs(std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
-        MOVE_SESSION_TYPE moveType);
+        MoveSessionType moveType);
     void HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::string sourceName);
     void HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
-    void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MOVE_SESSION_TYPE moveType,
+    void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MoveSessionType moveType,
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
     void HandleGetCaptureId(uint32_t captureId, int32_t deviceType);
 
-    void SendRequest(Request &&request);
+    void SendRequest(Request &&request, std::string funcName);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex);
     int32_t OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex);

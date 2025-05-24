@@ -184,7 +184,9 @@ bool AudioPipeSelector::IsPipeExist(std::vector<std::shared_ptr<AudioPipeInfo>> 
             AUDIO_INFO_LOG("Stream action: %{public}d", streamDesc->streamAction_);
         }
         newPipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
-        newPipeInfo->pipeAction_ = PIPE_ACTION_UPDATE;
+        if (newPipeInfo->pipeAction_ != PIPE_ACTION_NEW) {
+            newPipeInfo->pipeAction_ = PIPE_ACTION_UPDATE;
+        }
         isFindPipeInfo = true;
         break;
     }

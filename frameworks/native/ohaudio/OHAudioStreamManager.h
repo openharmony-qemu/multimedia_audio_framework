@@ -40,6 +40,9 @@ public:
     
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 
+    bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+    bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
+
 private:
     OHAudioStreamManager();
     static OHAudioStreamManager *ohAudioStreamManager_;

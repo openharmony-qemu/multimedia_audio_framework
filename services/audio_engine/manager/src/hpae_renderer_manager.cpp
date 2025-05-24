@@ -396,7 +396,7 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
 }
 
 void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
-    const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType)
+    const std::vector<uint32_t>& moveIds, MoveSessionType moveType)
 {
     Trace trace("HpaeRendererManager::MoveAllStreamToNewSink[" + sinkName + "]");
     std::string name = sinkName;
@@ -421,7 +421,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
 }
 
 int32_t HpaeRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
-    MOVE_SESSION_TYPE moveType)
+    MoveSessionType moveType)
 {
     if (!IsInit()) {
         AUDIO_INFO_LOG("sink is not init ,use sync mode move to:%{public}s.", sinkName.c_str());
@@ -819,7 +819,14 @@ int32_t HpaeRendererManager::SetAudioEffectMode(uint32_t sessionId, int32_t effe
     HpaeNodeInfo &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     if (nodeInfo.effectInfo.effectMode != static_cast<AudioEffectMode>(effectMode)) {
         nodeInfo.effectInfo.effectMode = static_cast<AudioEffectMode>(effectMode);
-        UpdateProcessClusterConnection(sessionId, effectMode);
+        size_t sinkInputNodeConnectNum = sinkInputNodeMap_[sessionId]->GetOutputPort()->GetInputNum();
+        if (sinkInputNodeConnectNum != 0) {
+            AUDIO_INFO_LOG("UpdateProcessClusterConnection because effectMode to be %{public}d", effectMode);
+            UpdateProcessClusterConnection(sessionId, effectMode);
+        } else {
+            AUDIO_INFO_LOG("no need to ProcessClusterConnection, sinkInputNodeConnectNum is %{public}zu",
+                sinkInputNodeConnectNum);
+        }
     }
     return SUCCESS;
 }
@@ -990,7 +997,13 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
         "can not get input node of session %{public}u", sessionId);
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
-    AUDIO_INFO_LOG("session %{public}d, sceneType is %{public}d", sessionId, sceneType);
+    HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
+    int32_t effectMode = nodeInfo.effectInfo.effectMode;
+    AUDIO_INFO_LOG("session %{public}d, sceneType is %{public}d, effectMode is %{public}d",
+        sessionId, sceneType, effectMode);
+    if (effectMode == EFFECT_NONE && !isSplitProcessorType(sceneType)) {
+        sceneType = HPAE_SCENE_EFFECT_NONE;
+    }
     std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);

@@ -35,7 +35,7 @@ void ProAudioServiceAdapterUnitTest::SetUp(void)
     IdHandler::GetInstance();
     HdiAdapterManager::GetInstance();
     std::unique_ptr<ProAudioServiceCallbackTest> cb = std::make_unique<ProAudioServiceCallbackTest>();
-    impl_ = std::make_shared<ProAudioServiceAdapterImpl>(std::move(cb));
+    impl_ = std::make_shared<ProAudioServiceAdapterImpl>(std::move(cb), true);
     impl_->Connect();
     HPAE::IHpaeManager::GetHpaeManager().Init();
 }

@@ -825,7 +825,7 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
 }
 
 int32_t HpaeCapturerManager::MoveAllStream(const std::string &sourceName, const std::vector<uint32_t>& sessionIds,
-    MOVE_SESSION_TYPE moveType)
+    MoveSessionType moveType)
 {
     if (!IsInit()) {
         AUDIO_INFO_LOG("source is not init ,use sync mode move to: %{public}s", sourceName.c_str());
@@ -841,7 +841,7 @@ int32_t HpaeCapturerManager::MoveAllStream(const std::string &sourceName, const 
 }
 
 void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName,
-    const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType)
+    const std::vector<uint32_t>& moveIds, MoveSessionType moveType)
 {
     std::string name = sourceName;
     std::vector<HpaeCaptureMoveInfo> moveInfos;

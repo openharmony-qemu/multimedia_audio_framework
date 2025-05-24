@@ -41,12 +41,12 @@ namespace AudioStandard {
 AudioServiceAdapter::~AudioServiceAdapter() = default;
 
 std::shared_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(
-    std::unique_ptr<AudioServiceAdapterCallback> cb)
+    std::unique_ptr<AudioServiceAdapterCallback> cb, bool isAudioEngine)
 {
     CHECK_AND_RETURN_RET_LOG(cb != nullptr, nullptr, "CreateAudioAdapter cb is nullptr!");
     AUDIO_INFO_LOG("CreateAudioAdapter");
     int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
+    if (engineFlag == 1 || isAudioEngine) {
         return make_shared<ProAudioServiceAdapterImpl>(cb);
     } else {
         return make_shared<PulseAudioServiceAdapterImpl>(cb);

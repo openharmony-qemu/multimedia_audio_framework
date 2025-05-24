@@ -468,6 +468,12 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
     return audioSceneManager_.IsStreamActive(streamType);
 }
 
+bool AudioPolicyService::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    return audioConfigManager_.IsFastStreamSupported(streamInfo, desc);
+}
+
 void AudioPolicyService::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
@@ -2023,6 +2029,10 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, OUTPUT_DEVICE);
     std::string currentActivePort = REMOTE_CLASS;
     audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+    AudioIOHandle oldModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, oldModuleId);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors =
+        AudioPipeManager::GetPipeManager()->GetStreamDescsByIoHandle(oldModuleId);
     audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
 
     AudioModuleInfo moudleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
@@ -2034,6 +2044,9 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     if (openRet != 0) {
         AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
     }
+    AudioIOHandle newModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, newModuleId);
+    AudioPipeManager::GetPipeManager()->UpdateOutputStreamDescsByIoHandle(newModuleId, streamDescriptors);
     AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
     AUDIO_INFO_LOG("fetch device after split stream and open port.");

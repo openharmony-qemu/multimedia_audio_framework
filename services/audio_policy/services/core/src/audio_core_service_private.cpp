@@ -52,6 +52,7 @@ static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_SLEEP_US = 350000; // 350ms
 static const int32_t DISTRIBUTED_DEVICE = 1003;
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
     SOURCE_TYPE_WAKEUP,
@@ -2179,6 +2180,25 @@ void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDes
     }
     streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = A2DP_OFFLOAD;
 #endif
+}
+
+bool AudioCoreService::GetDisableFastStreamParam()
+{
+    int32_t disableFastStream = 1; // default 1, set disableFastStream true
+    GetSysPara("persist.multimedia.audioflag.fastcontrolled", disableFastStream);
+    return disableFastStream == 0 ? false : true;
+}
+
+bool AudioCoreService::IsFastAllowed(std::string &bundleName)
+{
+    CHECK_AND_RETURN_RET(bundleName != "", true);
+    std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
+    std::string result = AudioServerProxy::GetInstance().GetAudioParameterProxy(bundleNamePre);
+    if (result == "true") { // "true" means in control
+        AUDIO_INFO_LOG("%{public}s not in fast list", bundleName.c_str());
+        return false;
+    }
+    return true;
 }
 }
 }

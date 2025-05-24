@@ -2228,5 +2228,54 @@ HWTEST(AudioManagerUnitTest, LoadSplitModule_004, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 }
 
+/**
+ * @tc.name   : Test NotifySessionStateChange API
+ * @tc.number : NotifySessionStateChange_001
+ * @tc.desc   : Test NotifySessionStateChange interface.
+ */
+HWTEST(AudioManagerUnitTest, NotifySessionStateChange_001, TestSize.Level1)
+{
+    int32_t ret;
+    int32_t uid = 1;
+    int32_t pid = 1;
+    ret = AudioSystemManager::GetInstance()->NotifySessionStateChange(uid, pid, true);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->NotifySessionStateChange(uid, pid, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name   : Test NotifyFreezeStateChange API
+ * @tc.number : NotifyFreezeStateChange_001
+ * @tc.desc   : Test NotifyFreezeStateChange interface.
+ */
+HWTEST(AudioManagerUnitTest, NotifyFreezeStateChange_001, TestSize.Level1)
+{
+    int32_t ret;
+    int32_t pid = 1;
+    std::set<int32_t> pidList;
+    pidList.insert(pid);
+    ret = AudioSystemManager::GetInstance()->NotifyFreezeStateChange(pidList, true);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->NotifyFreezeStateChange(pidList, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name   : Test ResetAllProxy API
+ * @tc.number : ResetAllProxy_001
+ * @tc.desc   : Test ResetAllProxy interface.
+ */
+HWTEST(AudioManagerUnitTest, ResetAllProxy_001, TestSize.Level1)
+{
+    int32_t ret;
+    ret = AudioSystemManager::GetInstance()->ResetAllProxy();
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->ResetAllProxy();
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

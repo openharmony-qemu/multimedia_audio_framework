@@ -307,7 +307,10 @@ void *AudioServer::paDaemonThread(void *arg)
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
     audioEffectServer_(std::make_unique<AudioEffectServer>()),
-    audioResourceService_(std::make_unique<AudioResourceService>()) {}
+    audioResourceService_(std::make_unique<AudioResourceService>())
+{
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(this);
+}
 
 void AudioServer::OnDump() {}
 
@@ -383,7 +386,11 @@ int32_t AudioServer::RegisterDataTransferMonitorParam(const int32_t &callbackId,
 {
     bool result = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    // todo: wait for add code
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(
+        param, pid, callbackId);
+    AUDIO_INFO_LOG("Register end, pid = %{public}d, callbackId = %{public}d",
+        pid, callbackId);
     return SUCCESS;
 }
 
@@ -391,7 +398,11 @@ int32_t AudioServer::UnregisterDataTransferMonitorParam(const int32_t &callbackI
 {
     bool result = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    // todo: wait for add code
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    AudioStreamMonitor::GetInstance().UnregisterAudioRendererDataTransferStateListener(
+        pid, callbackId);
+    AUDIO_INFO_LOG("Unregister end, pid = %{public}d, callbackId = %{public}d",
+        pid, callbackId);
     return SUCCESS;
 }
 
@@ -1579,8 +1590,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
     }
-    if (IsNormalIpcStream(config) ||
-        (isFastControlled_ && IsFastBlocked(config.appInfo.appUid, config.rendererInfo.playerType))) {
+    if (IsNormalIpcStream(config)) {
         AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);

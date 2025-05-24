@@ -148,7 +148,7 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
 {
     HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
     uint32_t sessionId = preNodeInfo.sessionId;
-    AUDIO_INFO_LOG("HpaeProcessCluster sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d"
+    AUDIO_INFO_LOG("HpaeProcessCluster sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d, "
         "HpaeProcessCluster rate is %{public}u, ch is %{public}u, "
         "HpaeProcessCluster preNodeId %{public}u, preNodeName is %{public}s",
         preNodeInfo.sessionId, preNodeInfo.streamType, preNodeInfo.sceneType ,preNodeInfo.samplingRate,
