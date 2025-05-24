@@ -461,15 +461,16 @@ std::vector<uint32_t> AudioPipeManager::GetSessionIdsByUid(uint32_t uid)
     std::vector<uint32_t> sessionIds = {};
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &pipes : curPipeList_) {
-        CHECK_AND_CONTINUE(pipes != nullptr, "pipe is nullptr");
+        CHECK_AND_CONTINUE_LOG(pipes != nullptr, "pipe is nullptr");
         for (auto &streamDesc : pipes->streamDescriptors_) {
-            CHECK_AND_CONTINUE(streamDesc != nullptr, "streamDesc is nullptr");
+            CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "streamDesc is nullptr");
             if (streamDesc->callerUid_ == uid) {
                 sessionIds.push_back(streamDesc->sessionId_);
             }
         }
     }
     AUDIO_INFO_LOG("Session number of uid %{public}u: %{public}zu", uid, sessionIds.size());
+    return sessionIds;
 }
 } // namespace AudioStandard
 } // namespace OHOS
