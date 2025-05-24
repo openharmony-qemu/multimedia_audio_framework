@@ -79,7 +79,6 @@ static constexpr uint64_t MASK_LFE = LOW_FREQUENCY
 
 static uint32_t BitCounts(uint64_t bits);
 static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts);
-static bool CheckIsHOA(AudioChannelLayout layout);
 
 // 改成默认构造
 DownMixer::DownMixer()
@@ -161,7 +160,7 @@ int32_t DownMixer::SetupDownMixTable()
             inChannels_, inLayout_, outChannels_, outLayout_);
         return DMIX_ERR_INVALID_ARG;
     }
-    CheckIsHOA();
+    CheckIsHOA(inLayout_);
     switch (outLayout_) {
         case CH_LAYOUT_STEREO: {
             SetupStereoDmixTable();
@@ -1070,8 +1069,6 @@ static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
     return true;
 }
 
-int32_t 
-
 AudioChannelLayout DownMixer::SetDefaultChannelLayout(AudioChannel channels)
 {
     if (channels < MONO || channels > CHANNEL_16) {
@@ -1109,7 +1106,7 @@ AudioChannelLayout DownMixer::SetDefaultChannelLayout(AudioChannel channels)
     }
 }
 
-static bool CheckIsHOA(AudioChannelLayout layout)
+bool DownMixer::CheckIsHOA(AudioChannelLayout layout)
 {
     if ((layout == CH_LAYOUT_HOA_ORDER1_ACN_N3D) || (layout == CH_LAYOUT_HOA_ORDER1_ACN_SN3D) ||
         (layout == CH_LAYOUT_HOA_ORDER1_FUMA) || (layout == CH_LAYOUT_HOA_ORDER2_ACN_N3D) ||

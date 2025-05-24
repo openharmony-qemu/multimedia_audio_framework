@@ -46,6 +46,7 @@ public:
         uint32_t formatSize, bool mixLfe);
     void Reset();
     static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels);
+    bool CheckIsHOA(AudioChannelLayout layout);
 private:
     AudioChannelLayout inLayout_ = CH_LAYOUT_UNKNOWN;
     uint32_t inChannels_ = 0;
