@@ -52,6 +52,7 @@ private:
     AudioChannelLayout outLayout_ = CH_LAYOUT_UNKNOWN;
     uint32_t outChannels_ = 0;
     uint32_t formatSize_ = INVALID_WIDTH; // work format, for now only supports float
+    bool isInLayoutHOA_ = false;
     std::vector<std::vector<float>> downMixTable_;
     bool mixLfe_ = true;
     bool isInitialized_ = false;
