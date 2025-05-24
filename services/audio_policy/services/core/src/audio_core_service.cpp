@@ -792,6 +792,10 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
+    std::vector<uint32_t> sessions = pipeManager_->GetSessionIdsByUid(uid);
+    for (auto sessionId : sessionIds) {
+        ReleaseClient(sessionId);
+    }
     FetchOutputDeviceAndRoute();
 
     audioDeviceCommon_.ClientDiedDisconnectScoNormal();
