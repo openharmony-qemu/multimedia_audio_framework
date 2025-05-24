@@ -273,7 +273,7 @@ int32_t HpaeOffloadRendererManager::Release(uint32_t sessionId)
 }
 
 void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
-    const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType)
+    const std::vector<uint32_t>& moveIds, MoveSessionType moveType)
 {
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
@@ -293,7 +293,7 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
 }
 
 int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
-    MOVE_SESSION_TYPE moveType)
+    MoveSessionType moveType)
 {
     if (!IsInit()) {
         AUDIO_INFO_LOG("sink is not init ,use sync mode move to:%{public}s.", sinkName.c_str());

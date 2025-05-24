@@ -869,7 +869,7 @@ void HpaeManager::HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::stri
 }
 
 void HpaeManager::HandleMoveAllSinkInputs(
-    std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, MOVE_SESSION_TYPE moveType)
+    std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, MoveSessionType moveType)
 {
     AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", sinkInputs.size(), sinkName.c_str());
     if (moveType == MOVE_PREFER) {
