@@ -1667,6 +1667,61 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSiz
 }
 
 /**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_004
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_004, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    size_t adapterMapSize = configData.adapterInfoMap.size();
+    std::unordered_map<AudioAdapterType, std::pair<size_t, size_t>> adapterSizeMap {};
+
+    for (auto &item : configData.adapterInfoMap) {
+        std::pair<size_t, size_t> sizePair = std::make_pair(item.second->deviceInfos.size(),
+            item.second->pipeInfos.size());
+        adapterSizeMap.insert({item.first, sizePair});
+    }
+
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+    configData.Reorganize();
+
+    AudioStreamInfo streamInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+
+    bool ret = audioConfigManager_.IsFastStreamSupported(streamInfo, desc);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_005
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_005, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    size_t adapterMapSize = configData.adapterInfoMap.size();
+    std::unordered_map<AudioAdapterType, std::pair<size_t, size_t>> adapterSizeMap {};
+
+    for (auto &item : configData.adapterInfoMap) {
+        std::pair<size_t, size_t> sizePair = std::make_pair(item.second->deviceInfos.size(),
+            item.second->pipeInfos.size());
+        adapterSizeMap.insert({item.first, sizePair});
+    }
+
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+    configData.Reorganize();
+
+    AudioStreamInfo streamInfo;
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo;
+    bool ret = audioConfigManager_.GetFastStreamSupport(streamInfo, deviceInfo);
+    EXPECT_EQ(ret, false);
+}
+
+/**
 * @tc.name  : Test DFX_MSG_MANAGER
 * @tc.number: DfxMsgManagerActionTest_001
 * @tc.desc  : Test DFX_MSG_MANAGER interfaces.

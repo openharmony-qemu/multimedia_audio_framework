@@ -108,6 +108,34 @@ OH_AudioCommon_Result OH_AudioStreamManager_IsAcousticEchoCancelerSupported(
     OH_AudioStream_SourceType sourceType,
     bool *supported);
 
+/**
+ * @brief Return if fast playback is supported for the specific audio stream info and usage type
+ *     in current device situation.
+ *
+ * @param streamManager {@link OH_AudioStreamManager} handle
+ *     provided by {@link OH_AudioManager_GetAudioStreamManager}.
+ * @param streamInfo reference of stream info structure to describe basic audio format.
+ * @param usage stream usage type used to decide the audio device and pipe type selection result.
+ * @return {@code true} if fast playback is supported in this situation.
+ * @since 20
+ */
+bool OH_AudioStreamManager_IsFastPlaybackSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage);
+
+/**
+ * @brief Return if fast recording is supported for the specific audio stream info and source type
+ *     in current device situation.
+ *
+ * @param streamManager {@link OH_AudioStreamManager} handle
+ *     provided by {@link OH_AudioManager_GetAudioStreamManager}.
+ * @param streamInfo reference of stream info structure to describe basic audio format.
+ * @param source stream source type used to decide the audio device and pipe type selection result.
+ * @return {@code true} if fast recording is supported in this situation.
+ * @since 20
+ */
+bool OH_AudioStreamManager_IsFastRecordingSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_SourceType source);
+
 #ifdef __cplusplus
 }
 #endif

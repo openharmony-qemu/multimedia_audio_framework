@@ -318,6 +318,34 @@ typedef void (*OH_AudioCapturer_OnInterruptCallback)(OH_AudioCapturer* capturer,
 typedef void (*OH_AudioCapturer_OnErrorCallback)(OH_AudioCapturer* renderer, void* userData,
     OH_AudioStream_Result error);
 
+/**
+ * @brief Gets audio capturer running status, check if it works in fast status.
+ *
+ * @param capturer Reference created by OH_AudioStreamBuilder_GenerateCapturer.
+ * @param status Pointer to a variable to receive the status.
+ * @return
+ *     {@link AUDIOSTREAM_SUCCESS} if the execution is successful.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} the param of capturer is nullptr.
+ *     {@link AUDIOSTREAM_ERROR_ILLEGAL_STATE} function called in invalid state, only available before release state.
+ * @since 20
+ */
+OH_AudioStream_Result OH_AudioCapturer_GetFastStatus(OH_AudioCapturer* capturer,
+    OH_AudioStream_FastStatus* status);
+
+/**
+ * @brief Callback function of fast status change event for audio capturer.
+ *
+ * @param capturer Pointer to an audio capturer instance for which this callback occurs.
+ * @param userData Userdata which is passed by register.
+ * @param status Current fast status.
+ * @since 20
+ */
+typedef void (*OH_AudioCapturer_OnFastStatusChange)(
+    OH_AudioCapturer* capturer,
+    void* userData,
+    OH_AudioStream_FastStatus status
+);
+
 #ifdef __cplusplus
 }
 #endif

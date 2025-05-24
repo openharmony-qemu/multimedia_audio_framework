@@ -46,6 +46,7 @@ private:
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply);
+    void IsFastStreamSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void IsDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);

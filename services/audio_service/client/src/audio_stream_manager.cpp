@@ -192,6 +192,12 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
     return AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
 }
 
+bool AudioStreamManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    return AudioPolicyManager::GetInstance().IsFastStreamSupported(streamInfo, desc);
+}
+
 int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     int32_t result = 0;

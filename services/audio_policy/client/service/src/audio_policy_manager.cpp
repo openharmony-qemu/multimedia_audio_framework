@@ -493,6 +493,14 @@ bool AudioPolicyManager::IsStreamActive(AudioVolumeType volumeType)
     return gsp->IsStreamActive(volumeType);
 }
 
+bool AudioPolicyManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsFastStreamSupported(streamInfo, desc);
+}
+
 int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
     const int32_t zoneID)
 {

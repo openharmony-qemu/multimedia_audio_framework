@@ -257,6 +257,33 @@ bool AudioPolicyProxy::IsStreamActive(AudioVolumeType volumeType)
     return reply.ReadBool();
 }
 
+bool AudioPolicyProxy::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    bool tmp = streamInfo.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(tmp, false, "AudioStreamInfo Marshalling() failed");
+
+    uint32_t size = desc.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_DEVICE_INFO_SIZE_LIMIT,
+        false, "IsFastStreamSupported get invalid device size.");
+    data.WriteInt32(size);
+    for (auto &audioDeviceDescriptor : desc) {
+        bool audioDeviceTmp = audioDeviceDescriptor->Marshalling(data);
+        CHECK_AND_RETURN_RET_LOG(audioDeviceTmp, false, "AudioDeviceDescriptor Marshalling() failed");
+    }
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_FAST_STREAM_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsFastStreamSupported failed, error: %{public}d", error);
+
+    return reply.ReadBool();
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag deviceFlag)
 {
     MessageParcel data;

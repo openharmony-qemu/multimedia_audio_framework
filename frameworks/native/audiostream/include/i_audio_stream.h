@@ -284,6 +284,8 @@ public:
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
+    virtual bool GetFastStatus() { return false; };
+
     virtual DeviceType GetDefaultOutputDevice() = 0;
 
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;

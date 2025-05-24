@@ -468,6 +468,12 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
     return audioSceneManager_.IsStreamActive(streamType);
 }
 
+bool AudioPolicyService::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    return audioConfigManager_.IsFastStreamSupported(streamInfo, desc);
+}
+
 void AudioPolicyService::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {

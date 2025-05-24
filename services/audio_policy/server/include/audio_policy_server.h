@@ -127,6 +127,9 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) override;
 
+    bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
+
     bool IsVolumeUnadjustable() override;
 
     int32_t AdjustVolumeByStep(VolumeAdjustType adjustType) override;

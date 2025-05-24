@@ -84,6 +84,7 @@ public:
     void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override;
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
+    void SetFastStatusChangeCallback(const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool GetTimeStampInfo(Timestamp &timestampNs, Timestamp::Timestampbase base) const override;
@@ -96,6 +97,7 @@ public:
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
     int32_t SetInputDevice(DeviceType deviceType) const override;
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
+    bool GetFastStatus() override;
 
     uint32_t GetOverflowCount() const override;
 
@@ -147,6 +149,7 @@ private:
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
     int32_t InitAudioConcurrencyCallback();
+    void FastStatusChangeCallback(bool flag);
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
     void ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass);
     void WriteOverflowEvent() const;
@@ -193,6 +196,8 @@ private:
     std::mutex policyServiceDiedCallbackMutex_;
     std::mutex audioInterruptMutex_;
     int32_t callbackLoopTid_ = -1;
+    std::shared_ptr<AudioCapturerFastStatusChangeCallback> fastStatusChangeCallback_ = nullptr;
+    std::mutex fastStatusChangeCallbackMutex_;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

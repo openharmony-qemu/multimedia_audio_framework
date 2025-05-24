@@ -387,6 +387,16 @@ OH_AudioStream_Result OH_AudioRenderer_SetDefaultOutputDevice(
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioRenderer_GetFastStatus(OH_AudioRenderer *renderer,
+    OH_AudioStream_FastStatus *status)
+{
+    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "renderer is nullptr");
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(status != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "status is nullptr");
+    *status = (audioRenderer->GetFastStatus()) ? AUDIOSTREAM_FASTSTATUS_FAST : AUDIOSTREAM_FASTSTATUS_NORMAL;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -732,6 +742,15 @@ void OHAudioRenderer::SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_Out
     audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(audioRendererDeviceChangeCallbackWithInfo_);
 }
 
+void OHAudioRenderer::SetRendererFastStatusChangeCallback(OH_AudioRenderer_OnFastStatusChange callback, void *userData)
+{
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    audioRendererFastStatusChangeCallback_ = std::make_shared<OHAudioRendererFastStatusChangeCallback> (callback,
+        reinterpret_cast<OH_AudioRenderer*>(this), userData);
+    audioRenderer_->SetFastStatusChangeCallback(audioRendererFastStatusChangeCallback_);
+}
+
 void OHAudioRenderer::SetPreferredFrameSize(int32_t frameSize)
 {
     audioRenderer_->SetPreferredFrameSize(frameSize);
@@ -872,6 +891,14 @@ void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const Aud
     callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_DeviceChangeReason>(reason));
 }
 
+void OHAudioRendererFastStatusChangeCallback::OnFastStatusChange(AudioStreamFastStatus status)
+{
+    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the function is nullptr");
+
+    callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_FastStatus>(status));
+}
+
 void OHAudioRenderer::SetInterruptMode(InterruptMode mode)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
@@ -894,6 +921,12 @@ int32_t OHAudioRenderer::SetDefaultOutputDevice(DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->SetDefaultOutputDevice(deviceType);
+}
+
+bool OHAudioRenderer::GetFastStatus()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
+    return audioRenderer_->GetFastStatus();
 }
 
 void OHAudioRenderer::SetRendererWriteDataCallbackType(WriteDataCallbackType writeDataCallbackType)

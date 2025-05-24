@@ -85,6 +85,21 @@ private:
     void *userData_;
 };
 
+class OHAudioRendererFastStatusChangeCallback : public AudioRendererFastStatusChangeCallback {
+public:
+    OHAudioRendererFastStatusChangeCallback(OH_AudioRenderer_OnFastStatusChange callback,
+        OH_AudioRenderer *audioRenderer, void *userData)
+        : callback_(callback), ohAudioRenderer_(audioRenderer), userData_(userData)
+    {
+    }
+
+    void OnFastStatusChange(AudioStreamFastStatus status) override;
+private:
+    OH_AudioRenderer_OnFastStatusChange callback_;
+    OH_AudioRenderer *ohAudioRenderer_;
+    void *userData_;
+};
+
 class OHAudioRendererCallback : public AudioRendererCallback {
 public:
     OHAudioRendererCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer *audioRenderer,
@@ -214,6 +229,8 @@ class OHAudioRenderer {
             void *userData);
         bool IsFastRenderer();
 
+        void SetRendererFastStatusChangeCallback(OH_AudioRenderer_OnFastStatusChange callback, void *userData);
+
         int32_t SetVolume(float volume) const;
         int32_t SetVolumeWithRamp(float volume, int32_t duration);
         float GetVolume() const;
@@ -225,6 +242,7 @@ class OHAudioRenderer {
         void SetSilentModeAndMixWithOthers(bool on);
         bool GetSilentModeAndMixWithOthers();
         int32_t SetDefaultOutputDevice(DeviceType deviceType);
+        bool GetFastStatus();
 
         void SetRendererWriteDataCallbackType(WriteDataCallbackType writeDataCallbackType);
         WriteDataCallbackType GetRendererWriteDataCallbackType();
@@ -241,6 +259,7 @@ class OHAudioRenderer {
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
         std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
         std::shared_ptr<OHRendererPositionCallback> rendererPositionCallback_;
+        std::shared_ptr<OHAudioRendererFastStatusChangeCallback> audioRendererFastStatusChangeCallback_;
         WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
         InterruptEventCallbackType interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
         ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;

@@ -1535,5 +1535,23 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_059, TestSize.Level1
     auto ret = ptrRendererInClientInner->SetPitch(pitch);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_060
+ * @tc.desc  : Test RendererInClientInner::GetFastStatus
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_060, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    auto ret = ptrRendererInClientInner->GetFastStatus();
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

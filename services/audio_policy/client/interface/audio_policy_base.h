@@ -79,6 +79,9 @@ public:
 
     virtual bool IsStreamActive(AudioVolumeType volumeType) = 0;
 
+    virtual bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
+            std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
+
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
 
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) = 0;

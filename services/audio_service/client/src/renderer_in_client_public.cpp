@@ -1703,6 +1703,11 @@ int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
     return ret;
 }
 
+bool RendererInClientInner::GetFastStatus()
+{
+    return false;
+}
+
 DeviceType RendererInClientInner::GetDefaultOutputDevice()
 {
     return defaultOutputDevice_;

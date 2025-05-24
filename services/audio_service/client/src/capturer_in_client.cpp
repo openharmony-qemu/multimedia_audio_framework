@@ -216,6 +216,7 @@ public:
     bool GetHighResolutionEnabled() override;
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
+    bool GetFastStatus() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     void SetSwitchingStatus(bool isSwitching) override;
     void GetRestoreInfo(RestoreInfo &restoreInfo) override;
@@ -2031,6 +2032,11 @@ int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
     (void)defaultOutputDevice;
     AUDIO_WARNING_LOG("not supported in capturer");
     return ERROR;
+}
+
+bool CapturerInClientInner::GetFastStatus()
+{
+    return false;
 }
 
 DeviceType CapturerInClientInner::GetDefaultOutputDevice()

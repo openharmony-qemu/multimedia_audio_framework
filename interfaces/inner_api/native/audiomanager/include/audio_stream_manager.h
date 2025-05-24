@@ -288,6 +288,17 @@ public:
     bool IsStreamActive(AudioVolumeType volumeType) const;
 
     /**
+     * @brief Is fast stream supported.
+     *
+     * @param streamInfo audio stream info.
+     * @param desc  audio device descriptor list.
+     * @return Returns <b>true</b> if the stream is support fast stream; returns <b>false</b> otherwise.
+     * @since 20
+     */
+    bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
+            std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+
+    /**
      * @brief Gets sampling rate for hardware output.
      *
      * @param AudioDeviceDescriptor Target output device.

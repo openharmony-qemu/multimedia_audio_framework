@@ -127,6 +127,21 @@ private:
     void* userData_ = nullptr;
 };
 
+class OHAudioCapturerFastStatusChangeCallback : public AudioCapturerFastStatusChangeCallback {
+public:
+    OHAudioCapturerFastStatusChangeCallback(OH_AudioCapturer_OnFastStatusChange callback,
+        OH_AudioCapturer *audioCapturer, void *userData)
+        : callback_(callback), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+
+    void OnFastStatusChange(AudioStreamFastStatus status) override;
+private:
+    OH_AudioCapturer_OnFastStatusChange callback_;
+    OH_AudioCapturer *ohAudioCapturer_;
+    void *userData_;
+};
+
 struct CapturerCallback {
     OH_AudioCapturer_Callbacks callbacks = {};
 
@@ -163,6 +178,7 @@ class OHAudioCapturer {
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
         int32_t SetInputDevice(DeviceType deviceType);
+        bool GetFastStatus();
         uint32_t GetOverflowCount() const;
 
         void SetInterruptCallback(CapturerCallback capturerCallbacks, void *userData);
@@ -173,6 +189,7 @@ class OHAudioCapturer {
         void SetCapturerErrorCallbackType(ErrorCallbackType errorCallbackType);
         InterruptEventCallbackType GetCapturerInterruptEventCallbackType();
         ErrorCallbackType GetCapturerErrorCallbackType();
+        void SetCapturerFastStatusChangeCallback(OH_AudioCapturer_OnFastStatusChange callback, void *userData);
 
         void SetCapturerCallback(CapturerCallback capturerCallbacks, void* userData);
         void SetReadDataCallback(CapturerCallback capturerCallbacks, void* userData);
@@ -190,6 +207,7 @@ class OHAudioCapturer {
         StreamEventCallbackType streamEventCallbackType_ = STREAM_EVENT_CALLBACK_WITHOUT_RESULT;
         ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
         InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
+        std::shared_ptr<OHAudioCapturerFastStatusChangeCallback> audioCapturerFastStatusChangeCallback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
