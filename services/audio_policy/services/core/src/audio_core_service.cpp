@@ -366,6 +366,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionId);
         std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
         for (auto &desc : outputDescs) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
             desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
                 GetRealUid(desc));
         }
