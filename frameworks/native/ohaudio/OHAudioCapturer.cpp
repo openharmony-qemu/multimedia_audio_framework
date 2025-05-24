@@ -95,6 +95,16 @@ OH_AudioStream_Result OH_AudioCapturer_SetInputDevice(
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioCapturer_GetFastStatus(OH_AudioCapturer *capturer,
+    OH_AudioStream_FastStatus *status)
+{
+    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "capturer is nullptr");
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_RETURN_RET_LOG(status != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "status is nullptr");
+    *status = (audioCapturer->GetFastStatus()) ? AUDIOSTREAM_FASTSTATUS_FAST : AUDIOSTREAM_FASTSTATUS_NORMAL;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OH_AudioCapturer_Flush(OH_AudioCapturer* capturer)
 {
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
@@ -385,6 +395,12 @@ int32_t OHAudioCapturer::SetInputDevice(DeviceType deviceType)
     return audioCapturer_->SetInputDevice(deviceType);
 }
 
+bool OHAudioCapturer::GetFastStatus()
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "capturer client is nullptr");
+    return audioCapturer_->GetFastStatus();
+}
+
 int32_t OHAudioCapturer::GetBufferDesc(BufferDesc &bufDesc) const
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
@@ -529,6 +545,14 @@ void OHAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
     }
 }
 
+void OHAudioCapturerFastStatusChangeCallback::OnFastStatusChange(AudioStreamFastStatus status)
+{
+    CHECK_AND_RETURN_LOG(ohAudioCapturer_ != nullptr, "capturer client is nullptr");
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the function is nullptr");
+
+    callback_(ohAudioCapturer_, userData_, static_cast<OH_AudioStream_FastStatus>(status));
+}
+
 void OHAudioCapturer::SetReadDataCallback(CapturerCallback capturerCallbacks, void* userData)
 {
     if (readDataCallbackType_ == READ_DATA_CALLBACK_WITH_RESULT &&
@@ -655,6 +679,15 @@ void OHAudioCapturer::SetCapturerErrorCallbackType(ErrorCallbackType errorCallba
 ErrorCallbackType OHAudioCapturer::GetCapturerErrorCallbackType()
 {
     return errorCallbackType_;
+}
+
+void OHAudioCapturer::SetCapturerFastStatusChangeCallback(OH_AudioCapturer_OnFastStatusChange callback, void *userData)
+{
+    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "capturer client is nullptr");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    audioCapturerFastStatusChangeCallback_ = std::make_shared<OHAudioCapturerFastStatusChangeCallback> (callback,
+        reinterpret_cast<OH_AudioCapturer*>(this), userData);
+    audioCapturer_->SetFastStatusChangeCallback(audioCapturerFastStatusChangeCallback_);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

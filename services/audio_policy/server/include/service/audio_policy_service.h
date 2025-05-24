@@ -138,6 +138,9 @@ public:
 
     bool IsStreamActive(AudioStreamType streamType) const;
 
+    bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
 
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);

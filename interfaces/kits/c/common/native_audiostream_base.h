@@ -622,6 +622,22 @@ typedef enum {
 } OH_AudioStream_AudioEffectMode;
 
 /**
+ * @brief Defines the fast status.
+ *
+ * @since 20
+ */
+typedef enum {
+    /**
+     * normal status
+     */
+    AUDIOSTREAM_FASTSTATUS_NORMAL = 0,
+    /**
+     * fast status
+     */
+    AUDIOSTREAM_FASTSTATUS_FAST = 1
+} OH_AudioStream_FastStatus;
+
+/**
  * @brief Declaring the audio stream builder.
  * The instance of builder is used for creating audio stream.
  *

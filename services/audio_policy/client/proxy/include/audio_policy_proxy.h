@@ -72,6 +72,9 @@ public:
 
     bool IsStreamActive(AudioVolumeType volumeType) override;
 
+    bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
+            std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) override;

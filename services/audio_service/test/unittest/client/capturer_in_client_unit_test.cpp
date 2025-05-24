@@ -1235,6 +1235,22 @@ HWTEST(CapturerInClientUnitTest, SetBufferSizeInMsec_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetFastStatus API
+ * @tc.type  : FUNC
+ * @tc.number: GetFastStatus_001
+ * @tc.desc  : Test GetFastStatus interface.
+ */
+HWTEST(CapturerInClientUnitTest, GetFastStatus_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner_, nullptr);
+
+    bool ret = capturerInClientInner_->GetFastStatus();
+    EXPECT_EQ(ret, false);
+}
+
+/**
  * @tc.name  : Test RestoreAudioStream API
  * @tc.type  : FUNC
  * @tc.number: RestoreAudioStream_001

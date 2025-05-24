@@ -263,6 +263,23 @@ HWTEST(FastSystemStreamUnitTest, GetAudioPipeType_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetFastStatus API
+ * @tc.type  : FUNC
+ * @tc.number: GetFastStatus_001
+ * @tc.desc  : Test GetFastStatus and SetAudioStreamType interface.
+ */
+HWTEST(FastSystemStreamUnitTest, GetFastStatus_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    bool ret = fastAudioStream->GetFastStatus();
+    EXPECT_EQ(ret, true);
+}
+
+/**
  * @tc.name  : Test SetMute API
  * @tc.type  : FUNC
  * @tc.number: SetMute_001

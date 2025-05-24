@@ -1685,6 +1685,12 @@ bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
     return audioPolicyService_.IsStreamActive(streamType);
 }
 
+bool AudioPolicyServer::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    return audioPolicyService_.IsFastStreamSupported(streamInfo, desc);
+}
+
 int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
     return eventEntry_->SetDeviceActive(deviceType, active, uid);

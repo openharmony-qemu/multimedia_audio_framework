@@ -221,6 +221,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
     "ACTIVATE_PREEMPT_MODE",
     "DEACTIVATE_PREEMPT_MODE",
+    "IS_FAST_STREAM_SUPPORTED",
     "GET_DM_DEVICE_TYPE",
     "GET_DIRECT_PLAYBACK_SUPPORT",
     "NOFITY_SESSION_STATE_CHANGE",
@@ -495,6 +496,26 @@ void AudioPolicyManagerStub::IsStreamActiveInternal(MessageParcel &data, Message
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool isActive = IsStreamActive(volumeType);
     reply.WriteBool(isActive);
+}
+
+void AudioPolicyManagerStub::IsFastStreamSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamInfo audioStreamInfo;
+    audioStreamInfo.Unmarshalling(data);
+
+    int32_t validSize = 20; // Use 20 as limit.
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "IsFastStreamSupportedInternal get invalid device size.");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetDevice;
+    for (int32_t i = 0; i < size; ++i) {
+        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+        MapExternalToInternalDeviceType(*audioDeviceDescriptor);
+        targetDevice.push_back(audioDeviceDescriptor);
+    }
+
+    bool ret = IsFastStreamSupported(audioStreamInfo, targetDevice);
+    reply.WriteBool(ret);
 }
 
 void AudioPolicyManagerStub::AdjustVolumeByStepInternal(MessageParcel &data, MessageParcel &reply)
@@ -1905,6 +1926,9 @@ void AudioPolicyManagerStub::OnMidRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
             IsStreamActiveInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_FAST_STREAM_SUPPORTED):
+            IsFastStreamSupportedInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE):
             SetDeviceActiveInternal(data, reply);
