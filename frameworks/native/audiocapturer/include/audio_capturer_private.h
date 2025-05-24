@@ -254,6 +254,7 @@ private:
     std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist_;
     std::mutex capturerMutex_;
     std::weak_ptr<AudioCapturerPrivate> capturer_;
+    std::mutex deviceChangeCallbackMutex_;
 };
 
 class InputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {

@@ -1696,6 +1696,7 @@ int32_t AudioCapturerStateChangeCallbackImpl::GetCapturerInfoChangeCallbackArray
 void AudioCapturerStateChangeCallbackImpl::SaveDeviceChangeCallback(
     const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
 {
+    std::lock_guard<std::mutex> lock(deviceChangeCallbackMutex_);
     auto iter = find(deviceChangeCallbacklist_.begin(), deviceChangeCallbacklist_.end(), callback);
     if (iter == deviceChangeCallbacklist_.end()) {
         deviceChangeCallbacklist_.emplace_back(callback);
@@ -1705,6 +1706,7 @@ void AudioCapturerStateChangeCallbackImpl::SaveDeviceChangeCallback(
 void AudioCapturerStateChangeCallbackImpl::RemoveDeviceChangeCallback(
     const std::shared_ptr<AudioCapturerDeviceChangeCallback> &callback)
 {
+    std::lock_guard<std::mutex> lock(deviceChangeCallbackMutex_);
     if (callback == nullptr) {
         deviceChangeCallbacklist_.clear();
         return;
@@ -1718,6 +1720,7 @@ void AudioCapturerStateChangeCallbackImpl::RemoveDeviceChangeCallback(
 
 int32_t AudioCapturerStateChangeCallbackImpl::DeviceChangeCallbackArraySize()
 {
+    std::lock_guard<std::mutex> lock(deviceChangeCallbackMutex_);
     return deviceChangeCallbacklist_.size();
 }
 
@@ -1768,6 +1771,7 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
+    std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> deviceChangeCallbacklist;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     {
         std::unique_lock lock(capturerMutex_);
@@ -1777,7 +1781,11 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
         CHECK_AND_RETURN_LOG(sharedCapturer->IsDeviceChanged(deviceInfo), "Device not change, no need callback.");
     }
 
-    for (auto it = deviceChangeCallbacklist_.begin(); it != deviceChangeCallbacklist_.end(); ++it) {
+    {
+        std::lock_guard<std::mutex> lock(deviceChangeCallbackMutex_);
+        deviceChangeCallbacklist = deviceChangeCallbacklist_;
+    }
+    for (auto it = deviceChangeCallbacklist.begin(); it != deviceChangeCallbacklist.end(); ++it) {
         if (*it != nullptr) {
             (*it)->OnStateChange(deviceInfo);
         }
