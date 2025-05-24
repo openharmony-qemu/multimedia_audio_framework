@@ -110,6 +110,9 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
         AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
             "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
             appState.hasBackTask, appState.isFreeze);
+        if (!isBack) {
+            return streamCollector_.HandleForegroundUnmute(uid);
+        }
         bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         bool notifyMute = false;
         streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);

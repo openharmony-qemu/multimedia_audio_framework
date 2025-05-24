@@ -1101,6 +1101,29 @@ void AudioStreamCollector::HandleAppStateChange(int32_t uid, bool mute, bool &no
     }
 }
 
+void AudioStreamCollector::HandleForegroundUnmute(int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->clientUID == uid) {
+            AUDIO_INFO_LOG(" uid=%{public}d is foreground, Don't need mute", uid);
+            std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
+            if (callback == nullptr) {
+                AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);
+                continue;
+            }
+            StreamSetStateEventInternal setStateEvent = {};
+            setStateEvent.streamSetState = StreamSetState::STREAM_PAUSE;
+            setStateEvent.streamUsage = changeInfo->rendererInfo.streamUsage;
+            if (changeInfo->backMute) {
+                setStateEvent.streamSetState = StreamSetState::STREAM_UNMUTE;
+                callback->UnmuteStreamImpl(setStateEvent);
+                changeInfo->backMute = false;
+            }
+        }
+    }
+}
+
 void AudioStreamCollector::HandleFreezeStateChange(int32_t pid, bool mute, bool hasSession)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
