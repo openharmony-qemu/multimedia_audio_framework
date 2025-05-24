@@ -70,6 +70,11 @@ void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
+void FastAudioStream::GetRendererInfo(AudioRendererInfo &rendererInfo)
+{
+    rendererInfo = rendererInfo_;
+}
+
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
