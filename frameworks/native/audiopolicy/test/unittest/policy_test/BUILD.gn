@@ -25,7 +25,7 @@ ohos_unittest("audio_policy_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../interfaces/inner_api/native/audiorenderer/include",
-    "../../../../../../services/audio_policy/client/include",
+    "../../../../../../services/audio_policy/client/stub/include",
     "../../../../../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
   ]
 
