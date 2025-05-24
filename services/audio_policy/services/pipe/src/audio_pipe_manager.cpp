@@ -486,6 +486,5 @@ void AudioPipeManager::UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
     }
     AUDIO_WARNING_LOG("Cannot find ioHandle: %{public}u", id);
 }
-}
 } // namespace AudioStandard
 } // namespace OHOS
