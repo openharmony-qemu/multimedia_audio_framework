@@ -123,6 +123,16 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     return SUCCESS;
 }
 
+void HpaeOffloadRendererManager::DeleteInputSession()
+{
+    DisConnectInputSession();
+    sinkOutputNode_->StopStream();
+    sinkInputNode_ = nullptr;
+    formatConverterNode_ = nullptr;
+    // when sinkInput removed, need unable process
+    enableProcess_ = false;
+}
+
 int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
 {
     if (!IsInit()) {
@@ -133,9 +143,7 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
             "DestroyStream not find sessionId %{public}u",
             sessionId);
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
-        DisConnectInputSession();
-        sinkInputNode_ = nullptr;
-        formatConverterNode_ = nullptr;
+        DeleteInputSession();
     };
     SendRequest(request);
     return SUCCESS;
@@ -281,7 +289,7 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
         uint32_t sessionId = sinkInputNode_->GetSessionId();
         if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), sessionId) != moveIds.end()) {
             sinkInputs.emplace_back(sinkInputNode_);
-            DisConnectInputSession();
+            DeleteInputSession();
             AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [offload] --> [%{public}s]",
                 sessionId, sinkName.c_str());
         }
@@ -326,10 +334,7 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
 
         std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNode_;
         AUDIO_INFO_LOG("move session:%{public}d,sink [offload] --> [%{public}s]", sessionId, sinkName.c_str());
-        DisConnectInputSession();
-        sinkOutputNode_->StopStream();
-        sinkInputNode_ = nullptr;
-        formatConverterNode_ = nullptr;
+        DeleteInputSession();
         std::string name = sinkName;
         TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
     };
@@ -463,7 +468,8 @@ bool HpaeOffloadRendererManager::IsInit()
 bool HpaeOffloadRendererManager::IsRunning(void)
 {
     if (sinkOutputNode_ != nullptr && hpaeSignalProcessThread_ != nullptr) {
-        return sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING && hpaeSignalProcessThread_->IsRunning();
+        return sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING && hpaeSignalProcessThread_->IsRunning() &&
+            enableProcess_;
     }
     return false;
 }
@@ -524,7 +530,7 @@ int32_t HpaeOffloadRendererManager::RegisterReadCallback(
 
 void HpaeOffloadRendererManager::Process()
 {
-    if (sinkOutputNode_ != nullptr && IsRunning()) {
+    if (IsRunning()) {
         sinkOutputNode_->DoProcess();
     }
 }
@@ -535,6 +541,7 @@ int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t
         CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
             "SetOffloadPolicy not find sessionId %{public}u",
             sessionId);
+        enableProcess_ = true;
         if (sinkOutputNode_) {
             sinkOutputNode_->SetPolicyState(state);
         }
