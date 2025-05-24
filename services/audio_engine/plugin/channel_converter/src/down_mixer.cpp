@@ -77,11 +77,6 @@ static constexpr uint64_t MASK_BOTTOM = BOTTOM_FRONT_CENTER
 static constexpr uint64_t MASK_LFE = LOW_FREQUENCY
 | LOW_FREQUENCY_2;
 
-static const uint64_t MASK_HOA =
-    CH_LAYOUT_HOA_ORDER1_ACN_N3D | CH_LAYOUT_HOA_ORDER1_ACN_SN3D | CH_LAYOUT_HOA_ORDER1_FUMA |
-    CH_LAYOUT_HOA_ORDER2_ACN_N3D | CH_LAYOUT_HOA_ORDER2_ACN_SN3D | CH_LAYOUT_HOA_ORDER2_FUMA |
-    CH_LAYOUT_HOA_ORDER3_ACN_N3D | CH_LAYOUT_HOA_ORDER3_ACN_SN3D | CH_LAYOUT_HOA_ORDER3_FUMA; 
-
 static uint32_t BitCounts(uint64_t bits);
 static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts);
 static bool CheckIsHOA(AudioChannelLayout layout);
