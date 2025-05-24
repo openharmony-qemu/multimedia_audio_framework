@@ -46,7 +46,6 @@ public:
         uint32_t formatSize, bool mixLfe);
     void Reset();
     static AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels);
-    bool CheckIsHOA(AudioChannelLayout layout);
 private:
     AudioChannelLayout inLayout_ = CH_LAYOUT_UNKNOWN;
     uint32_t inChannels_ = 0;
@@ -57,6 +56,7 @@ private:
     std::vector<std::vector<float>> downMixTable_;
     bool mixLfe_ = true;
     bool isInitialized_ = false;
+    bool CheckIsHOA(AudioChannelLayout layout);
     void SetupStereoDmixTable();
     void Setup5Point1DmixTable();
     void Setup5Point1Point2DmixTable();
