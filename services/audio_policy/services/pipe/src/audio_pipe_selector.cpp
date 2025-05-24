@@ -366,9 +366,9 @@ AudioStreamAction AudioPipeSelector::JudgeStreamAction(
     if (newPipe->adapterName_ == oldPipe->adapterName_ && newPipe->routeFlag_ == oldPipe->routeFlag_) {
         return AUDIO_STREAM_ACTION_DEFAULT;
     }
-    if (oldPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST || newPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST ||
-        oldPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT || newPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) {
-            return AUDIO_STREAM_ACTION_RECREATE;
+    if ((oldPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (newPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) ||
+        (oldPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) || (newPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT)) {
+        return AUDIO_STREAM_ACTION_RECREATE;
     } else {
         return AUDIO_STREAM_ACTION_MOVE;
     }
