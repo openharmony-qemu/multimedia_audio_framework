@@ -71,7 +71,7 @@ enum StreamManagerState {
     STREAM_MANAGER_RELEASED
 };
 
-enum MOVE_SESSION_TYPE {
+enum MoveSessionType {
     MOVE_SINGLE,
     MOVE_ALL,
     MOVE_PREFER,

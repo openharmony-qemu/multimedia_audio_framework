@@ -17,7 +17,6 @@
 #include <functional>
 #include "gtest/gtest.h"
 #include "pro_audio_service_adapter_impl.h"
-#include "audio_service_adapter.h"
 namespace OHOS {
 namespace AudioStandard {
 class ProAudioServiceCallbackTest : public AudioServiceAdapterCallback {
@@ -52,4 +51,4 @@ protected:
 }  // namespace AudioStandard
 }  // namespace OHOS
 
-#endif
+#endif
