@@ -1919,5 +1919,18 @@ int32_t AudioManagerProxy::StopGroup(int32_t pid, int32_t workgroupId)
     return AUDIO_OK;
 }
 
+void AudioManagerProxy::SetBtHdiInvalidState()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_BT_HDI_INVALID_STATE), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetBtHdiInvalidState failed, error: %{public}d", error);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -71,6 +71,8 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
+    void SetInvalidState(void) override;
+
     void DumpInfo(std::string &dumpString) override;
 
     void SetDmDeviceType(uint16_t dmDeviceType) override;
@@ -86,6 +88,7 @@ private:
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
     void CheckUpdateState(char *frame, size_t replyBytes);
     int32_t DoStop(void);
+    bool IsValidState(void);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -106,6 +109,7 @@ private:
     bool sourceInited_ = false;
     bool started_ = false;
     bool paused_ = false;
+    bool validState_ = true;
     float leftVolume_ = 0.0;
     float rightVolume_ = 0.0;
     std::mutex statusMutex_;

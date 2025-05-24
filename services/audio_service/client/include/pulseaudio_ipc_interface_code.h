@@ -117,7 +117,8 @@ namespace AudioStandard {
         REMOVE_THREAD_FROM_AUDIOWORKGROUP,
         START_AUDIOWORKGROUP,
         STOP_AUDIOWORKGROUP,
-        AUDIO_SERVER_CODE_MAX = STOP_AUDIOWORKGROUP,
+        SET_BT_HDI_INVALID_STATE,
+        AUDIO_SERVER_CODE_MAX = SET_BT_HDI_INVALID_STATE,
     };
 } // namespace AudioStandard
 } // namespace OHOS

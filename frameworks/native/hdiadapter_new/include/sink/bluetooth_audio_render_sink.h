@@ -78,6 +78,8 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
+    void SetInvalidState(void) override;
+
     void DumpInfo(std::string &dumpString) override;
 
 private:
@@ -99,6 +101,7 @@ private:
     void CheckUpdateState(char *data, uint64_t len);
     int32_t DoRenderFrame(char &data, uint64_t len, uint64_t &writeLen);
     void UpdateSinkState(bool started);
+    bool IsValidState(void);
 
     // low latency
     int32_t PrepareMmapBuffer(void);
@@ -134,6 +137,7 @@ private:
     bool started_ = false;
     bool paused_ = false;
     std::atomic<bool> suspend_ = false;
+    bool validState_ = true;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = 0;

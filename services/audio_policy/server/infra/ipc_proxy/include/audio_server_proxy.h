@@ -114,6 +114,7 @@ public:
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
+    void SetBtHdiInvalidState();
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

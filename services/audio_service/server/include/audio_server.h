@@ -240,6 +240,7 @@ public:
     int32_t UnregisterDataTransferMonitorParam(const int32_t &callbackId) override;
     void OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) override;
+    void SetBtHdiInvalidState() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

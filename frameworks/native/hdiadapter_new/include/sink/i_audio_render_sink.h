@@ -88,6 +88,7 @@ public:
 
     virtual int32_t SetRenderEmpty(int32_t durationUs) SUCCESS_RET
     virtual void SetAddress(const std::string &address) {}
+    virtual void SetInvalidState(void) {}
 
     virtual void DumpInfo(std::string &dumpString) = 0;
 
