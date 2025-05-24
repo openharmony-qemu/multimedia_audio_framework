@@ -825,7 +825,6 @@
                 <focus_type value="SOURCE_TYPE_MIC"/>
                 <focus_type value="SOURCE_TYPE_CAMCORDER"/>
                 <focus_type value="SOURCE_TYPE_WAKEUP"/>
-                <focus_type value="SOURCE_TYPE_VOICE_MESSAGE"/>
                 <focus_type value="SOURCE_TYPE_UNPROCESSED"/>
                 <focus_type value="SOURCE_TYPE_LIVE"/>
             </deny>
