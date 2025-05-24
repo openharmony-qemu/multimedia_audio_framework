@@ -122,6 +122,12 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
     }
 }
 
+void AudioStreamDescriptor::SetBunduleName(std::string &bundleName)
+{
+    AUDIO_INFO_LOG("Bundle name: %{public}s", bundleName.c_str());
+    bundleName_ = bundleName;
+}
+
 void AudioStreamDescriptor::Dump(std::string &dumpString)
 {
     AppendFormat(dumpString, "  Stream %d:\n", sessionId_);
