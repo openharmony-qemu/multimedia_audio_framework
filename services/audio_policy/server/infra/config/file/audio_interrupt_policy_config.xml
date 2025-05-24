@@ -825,7 +825,6 @@
                 <focus_type value="SOURCE_TYPE_MIC"/>
                 <focus_type value="SOURCE_TYPE_CAMCORDER"/>
                 <focus_type value="SOURCE_TYPE_WAKEUP"/>
-                <focus_type value="SOURCE_TYPE_VOICE_MESSAGE"/>
                 <focus_type value="SOURCE_TYPE_UNPROCESSED"/>
                 <focus_type value="SOURCE_TYPE_LIVE"/>
             </deny>
@@ -849,6 +848,7 @@
                 <focus_type value="SOURCE_TYPE_REMOTE_CAST" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_TRANSCRIPTION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_VOICE_MESSAGE" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
             <private>
                 <focus_type value="STREAM_VOICE_CALL_ASSISTANT" is_forced="true" action_type="STOP" action_on="existing"/>
