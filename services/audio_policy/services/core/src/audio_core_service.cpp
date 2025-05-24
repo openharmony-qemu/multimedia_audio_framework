@@ -364,6 +364,16 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Cannot find session %{public}u", sessionId);
     pipeManager_->StartClient(sessionId);
 
+    if (audioDeviceManager_.IsSessionSetDefaultDevice(sessionId)) {
+        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionId);
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
+        for (auto &desc : outputDescs) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+            desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
+                GetRealUid(desc));
+        }
+    }
+
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
             streamDesc->sessionId_);
