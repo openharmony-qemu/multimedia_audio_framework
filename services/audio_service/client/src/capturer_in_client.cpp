@@ -82,6 +82,7 @@ public:
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
+    void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
@@ -459,6 +460,11 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 {
     AUDIO_WARNING_LOG("SetRendererInfo is not supported");
     return;
+}
+
+void CapturerInClientInner::GetRendererInfo(AudioRendererInfo &rendererInfo)
+{
+    AUDIO_WARNING_LOG("GetRendererInfo is not supported");
 }
 
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)

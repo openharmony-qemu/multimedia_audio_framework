@@ -216,6 +216,11 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
     UpdateTracker("UPDATE");
 }
 
+void RendererInClientInner::GetRendererInfo(AudioRendererInfo &rendererInfo)
+{
+    rendererInfo = rendererInfo_;
+}
+
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     AUDIO_WARNING_LOG("SetCapturerInfo is not supported");
