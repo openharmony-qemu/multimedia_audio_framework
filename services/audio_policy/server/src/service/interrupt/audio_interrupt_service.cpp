@@ -634,7 +634,8 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     audioFocusInfoList = itZone->second->audioFocusInfoList;
     auto isPresent = [incomingStreamId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
-        return pair.first.streamId == incomingStreamId && pair.second == ACTIVE;
+        // If the stream id has been active or ducked, no need to activate audio interrupt again.
+        return pair.first.streamId == incomingStreamId && (pair.second == ACTIVE || pair.second == DUCK);
     };
     auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
     if (iter != audioFocusInfoList.end()) {
