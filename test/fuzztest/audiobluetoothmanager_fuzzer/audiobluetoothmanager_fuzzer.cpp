@@ -39,7 +39,7 @@ const size_t THRESHOLD = 10;
 
 sptr<AudioPolicyServer> GetServerPtr()
 {
-    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (server != nullptr && !g_hasServerInit) {
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
@@ -128,9 +128,8 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
 
     AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
-        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioPolicyServerPtr->audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo,
+    AudioPolicyServer AudioPolicyServerPtr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioPolicyServerPtr.audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo,
         AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
 }
 } // namespace AudioStandard
