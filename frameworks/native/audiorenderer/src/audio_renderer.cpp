@@ -859,6 +859,18 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    } else if (switchStreamInNewThreadTaskCount_.fetch_add(1) == 0) {
+        auto weakRenderer = weak_from_this();
+        std::thread([weakRenderer, callingFunc] () {
+            auto sharedRenderer = weakRenderer.lock();
+            CHECK_AND_RETURN_LOG(sharedRenderer, "render is null");
+            uint32_t taskCount;
+            do {
+                taskCount = sharedRenderer->switchStreamInNewThreadTaskCount_.load();
+                sharedRenderer->CheckAndRestoreAudioRenderer(callingFunc + "withNewThread");
+            } while (sharedRenderer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
+        }).detach();
+        return SUCCESS;
     }
     // Return in advance if there's no need for restore.
     CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
