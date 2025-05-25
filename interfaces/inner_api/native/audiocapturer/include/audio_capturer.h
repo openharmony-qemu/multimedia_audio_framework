@@ -248,6 +248,8 @@ public:
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath,
         const AppInfo &appInfo);
 
+    virtual ~AudioCapturer();
+
     /**
      * @brief Sets audio capture parameters.
      *
@@ -745,7 +747,11 @@ public:
 
     virtual int32_t SetInterruptStrategy(InterruptStrategy strategy) = 0;
 
-    virtual ~AudioCapturer();
+    virtual void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
+    {
+        (void)callbackType;
+        return;
+    }
 
 protected:
     static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);

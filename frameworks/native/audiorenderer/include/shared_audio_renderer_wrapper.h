@@ -456,6 +456,11 @@ public:
         return sharedAudioRenderer_->StopDataCallback();
     }
 
+    void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
+    {
+        return sharedAudioRenderer_->SetInterruptEventCallbackType(callbackType);
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }

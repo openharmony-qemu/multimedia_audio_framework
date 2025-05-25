@@ -1046,6 +1046,12 @@ public:
      */
     virtual int32_t StopDataCallback() { return -1; };
 
+    virtual void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
+    {
+        (void)callbackType;
+        return;
+    }
+
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);

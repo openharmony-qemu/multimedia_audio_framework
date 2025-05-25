@@ -2646,5 +2646,11 @@ int32_t AudioRendererPrivate::StopDataCallback()
         "StopDataCallback failed. Illegal state:%{public}u", state);
     return audioStream_->SetOffloadDataCallbackState(3); // 3 hdi state full
 }
+
+void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
+{
+    audioInterrupt_.callbackType = callbackType;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -150,6 +150,8 @@ public:
     int32_t StartDataCallback() override;
     int32_t StopDataCallback() override;
 
+    void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
+
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;

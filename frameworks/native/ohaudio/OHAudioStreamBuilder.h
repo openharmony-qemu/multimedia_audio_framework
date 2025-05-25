@@ -93,9 +93,9 @@ private:
 
     WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
     ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
-    StreamEventCallbackType streamEventCallbackType_ = STREAM_EVENT_CALLBACK_WITHOUT_RESULT;
-    InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
-    ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    StreamEventCallbackType streamEventCallbackType_ = STREAM_EVENT_CALLBACK_COMBINED;
+    InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
+    ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     RendererCallback rendererCallbacks_ = {
         {nullptr},
 

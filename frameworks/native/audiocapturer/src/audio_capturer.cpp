@@ -2001,5 +2001,10 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GetStreamDescBySwit
     }
     return streamDesc;
 }
+
+void AudioCapturerPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
+{
+    audioInterrupt_.callbackType = callbackType;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

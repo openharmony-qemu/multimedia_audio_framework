@@ -133,13 +133,6 @@ void AddSetAudioManagerInterruptCallbackFuzzTest()
     GetServerPtr()->interruptService_->SetAudioInterruptCallback(zoneId, sessionId, object, uid);
 }
 
-void ResetNonInterruptControlFuzzTest() //build.gn 未添加宏定义defines
-{
-    uint32_t sessionId = GetData<uint32_t>();
-    GetServerPtr()->interruptService_->GetClientTypeByStreamId(sessionId);
-    GetServerPtr()->interruptService_->ResetNonInterruptControl(sessionId);
-}
-
 void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
 {
     int id = GetData<int>();
@@ -152,7 +145,6 @@ TestFuncs g_testFuncs = {
     MoreFuzzTest,
     AddAudioSessionFuzzTest,
     AddSetAudioManagerInterruptCallbackFuzzTest,
-    ResetNonInterruptControlFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
 };
 
