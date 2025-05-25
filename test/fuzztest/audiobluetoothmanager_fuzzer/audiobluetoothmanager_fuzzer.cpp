@@ -40,7 +40,7 @@ const size_t THRESHOLD = 10;
 sptr<AudioPolicyServer> GetServerPtr()
 {
     static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    if (server != nullptr && !g_hasServerInit) {
+    if (!g_hasServerInit) {
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
