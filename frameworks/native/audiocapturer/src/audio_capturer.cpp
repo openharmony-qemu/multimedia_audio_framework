@@ -671,6 +671,21 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    } else {
+        if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
+            return SUCCESS;
+        }
+        auto weakCapturer = weak_from_this();
+        std::thread([weakCapturer, callingFunc] () {
+            auto sharedCapturer = weakCapturer.lock();
+            CHECK_AND_RETURN_LOG(sharedCapturer, "capturer is null");
+            uint32_t taskCount;
+            do {
+                taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
+                sharedCapturer->CheckAndRestoreAudioCapturer(callingFunc + "withNewThread");
+            } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
+        }).detach();
+        return SUCCESS;
     }
     // Return in advance if there's no need for restore.
     CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");

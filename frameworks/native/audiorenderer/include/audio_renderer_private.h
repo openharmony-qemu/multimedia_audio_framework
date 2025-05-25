@@ -268,6 +268,7 @@ private:
     std::mutex rendererPolicyServiceDiedCbMutex_;
     int64_t framesAlreadyWritten_ = 0;
     int64_t sourceDuration_ = -1;
+    std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
