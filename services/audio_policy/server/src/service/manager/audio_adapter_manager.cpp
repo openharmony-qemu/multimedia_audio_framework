@@ -385,7 +385,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 {
     Trace trace("KeyAction AudioAdapterManager::SetSystemVolumeLevel streamType:"
         + std::to_string(streamType) + ", volumeLevel:" + std::to_string(volumeLevel));
-    AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
+    AUDIO_INFO_LOG("streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_.deviceType_, volumeLevel);
     if (GetSystemVolumeLevel(streamType) == volumeLevel &&
         currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
@@ -393,14 +393,14 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         AUDIO_INFO_LOG("The volume is the same as before.");
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
+    AUDIO_INFO_LOG("streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_.deviceType_, volumeLevel);
     if (volumeLevel == 0 && !VolumeUtils::IsPCVolumeEnable() &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
         streamType == STREAM_VOICE_COMMUNICATION)) {
         // these types can not set to mute, but don't return error
-        AUDIO_ERR_LOG("SetSystemVolumeLevel this type can not set mute");
+        AUDIO_ERR_LOG("this type can not set mute");
         return SUCCESS;
     }
     int32_t mimRet = GetMinVolumeLevel(streamType);
@@ -949,7 +949,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     }
 
     bool isSwitchToRemoteDevice = CheckAndUpdateRemoteDeviceVolume(deviceDescriptor);
-    AUDIO_INFO_LOG("SetVolumeForSwitchDevice: Load volume and mute status for new device %{public}d,"
+    AUDIO_INFO_LOG("Load volume and mute status for new device %{public}d,"
         "same volume group %{public}d", deviceDescriptor.deviceType_, isSameVolumeGroup);
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceDescriptor;
@@ -973,7 +973,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     while (iter != defaultVolumeTypeList_.end()) {
         // update volume level and mute status for each stream type
         SetVolumeDb(*iter);
-        AUDIO_INFO_LOG("SetVolumeForSwitchDevice: volume: %{public}d, mute: %{public}d for stream type %{public}d",
+        AUDIO_INFO_LOG("volume: %{public}d, mute: %{public}d for stream type %{public}d",
             volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
         iter++;
     }
@@ -2476,7 +2476,7 @@ bool AudioAdapterManager::IsVolumeUnadjustable()
 
 float AudioAdapterManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
 {
-    AUDIO_DEBUG_LOG("GetSystemVolumeInDb for volumeType: %{public}d deviceType:%{public}d volumeLevel:%{public}d",
+    AUDIO_DEBUG_LOG("for volumeType: %{public}d deviceType:%{public}d volumeLevel:%{public}d",
         volumeType, deviceType, volumeLevel);
     if (useNonlinearAlgo_) {
         getSystemVolumeInDb_ = CalculateVolumeDbNonlinear(volumeType, deviceType, volumeLevel);
