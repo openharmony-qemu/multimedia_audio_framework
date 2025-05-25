@@ -635,6 +635,12 @@ public:
         const DataTransferMonitorParam &param) = 0;
     virtual int32_t UnregisterDataTransferMonitorParam(const int32_t &callbackId) = 0;
 
+    /**
+     * Set bluetooth hdi invalid state
+     *
+     * @return none.
+     */
+     virtual void SetBtHdiInvalidState() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -746,6 +752,7 @@ private:
     int HandleRegisterDataTransferCallback(MessageParcel &data, MessageParcel &reply);
     int HandleRegisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply);
     int HandleUnregisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply);
+    int HandleSetBtHdiInvalidState(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

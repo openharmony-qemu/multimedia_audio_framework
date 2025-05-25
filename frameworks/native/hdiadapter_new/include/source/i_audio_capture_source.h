@@ -77,6 +77,7 @@ public:
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
 
     virtual void SetAddress(const std::string &address) {}
+    virtual void SetInvalidState(void) {}
 
     virtual void DumpInfo(std::string &dumpString) {}
 

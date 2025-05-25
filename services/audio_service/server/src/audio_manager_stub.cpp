@@ -138,6 +138,7 @@ const char *g_audioServerCodeStrs[] = {
     "REMOVE_THREAD_FROM_AUDIOWORKGROUP",
     "START_AUDIOWORKGROUP",
     "STOP_AUDIOWORKGROUP",
+    "SET_BT_HDI_INVALID_STATE",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -898,6 +899,8 @@ int AudioManagerStub::HandleSixthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleUnregisterDataTransferMonitorParam(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISTER_DATATRANSFER_CALLBACK):
             return HandleRegisterDataTransferCallback(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_BT_HDI_INVALID_STATE):
+            return HandleSetBtHdiInvalidState(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -1485,6 +1488,12 @@ int AudioManagerStub::HandleStopAudioWorkgroup(MessageParcel &data, MessageParce
     int32_t workgroupId = data.ReadInt32();
     int32_t ret = StopGroup(pid, workgroupId);
     reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetBtHdiInvalidState(MessageParcel &data, MessageParcel &reply)
+{
+    SetBtHdiInvalidState();
     return AUDIO_OK;
 }
 } // namespace AudioStandard
