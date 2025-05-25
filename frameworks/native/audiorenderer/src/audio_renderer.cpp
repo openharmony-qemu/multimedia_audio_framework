@@ -859,7 +859,10 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
-    } else if (switchStreamInNewThreadTaskCount_.fetch_add(1) == 0) {
+    } else {
+        if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
+            return SUCCESS;
+        }
         auto weakRenderer = weak_from_this();
         std::thread([weakRenderer, callingFunc] () {
             auto sharedRenderer = weakRenderer.lock();

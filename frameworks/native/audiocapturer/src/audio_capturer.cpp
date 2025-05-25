@@ -671,7 +671,10 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
-    } else if (switchStreamInNewThreadTaskCount_.fetch_add(1) == 0) {
+    } else {
+        if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
+            return SUCCESS;
+        }
         auto weakCapturer = weak_from_this();
         std::thread([weakCapturer, callingFunc] () {
             auto sharedCapturer = weakCapturer.lock();
