@@ -23,6 +23,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr int32_t MAX_SIZE = 1024;
+
 void AudioPolicyManagerStub::OnAudioZoneRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -144,7 +146,7 @@ void AudioPolicyManagerStub::HandleBindAudioZoneDevice(MessageParcel &data, Mess
     int32_t zoneId = data.ReadInt32();
     CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
     int32_t size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0, "no device to bind audio zone");
+    CHECK_AND_RETURN_LOG(size > 0 && size < MAX_SIZE, "invalid device size: %{public}d", size);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (int32_t i = 0; i < size; i++) {
@@ -159,7 +161,7 @@ void AudioPolicyManagerStub::HandleUnBindAudioZoneDevice(MessageParcel &data, Me
     int32_t zoneId = data.ReadInt32();
     CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
     int32_t size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0, "no device to unbind audio zone");
+    CHECK_AND_RETURN_LOG(size > 0 && size < MAX_SIZE, "invalid device size: %{public}d", size);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (int32_t i = 0; i < size; i++) {
@@ -247,6 +249,7 @@ void AudioPolicyManagerStub::HandleInjectInterruptToAudioZone(MessageParcel &dat
     int32_t zoneId = data.ReadInt32();
     CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0 && size < MAX_SIZE, "invalid interrupt size: %{public}d", size);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
     for (int32_t i = 0; i < size; i++) {
         AudioInterrupt temp;
@@ -263,6 +266,7 @@ void AudioPolicyManagerStub::HandleInjectInterruptToAudioZoneDevice(MessageParce
     CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
     std::string deviceTag = data.ReadString();
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0 && size < MAX_SIZE, "invalid interrupt size: %{public}d", size);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
     for (int32_t i = 0; i < size; i++) {
         AudioInterrupt temp;

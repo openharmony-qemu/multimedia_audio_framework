@@ -23,6 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr int32_t MAX_SIZE = 1024;
 AudioZoneClientStub::AudioZoneClientStub()
 {}
 
@@ -85,8 +86,9 @@ void AudioZoneClientStub::HandleAudioZoneInterrupt(MessageParcel &data, MessageP
 {
     int32_t zoneId = data.ReadInt32();
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0 && size < MAX_SIZE, "invalid interrupt size: %{public}d", size);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
-    for (int i = 0; i < size; i++) {
+    for (int32_t i = 0; i < size; i++) {
         AudioInterrupt temp;
         AudioInterrupt::Unmarshalling(data, temp);
         AudioFocuState state = static_cast<AudioFocuState>(data.ReadInt32());
@@ -101,8 +103,9 @@ void AudioZoneClientStub::HandleAudioZoneDeviceInterrupt(MessageParcel &data, Me
     int32_t zoneId = data.ReadInt32();
     std::string deviceTag = data.ReadString();
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size > 0 && size < MAX_SIZE, "invalid interrupt size: %{public}d", size);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
-    for (int i = 0; i < size; i++) {
+    for (int32_t i = 0; i < size; i++) {
         AudioInterrupt temp;
         AudioInterrupt::Unmarshalling(data, temp);
         AudioFocuState state = static_cast<AudioFocuState>(data.ReadInt32());
