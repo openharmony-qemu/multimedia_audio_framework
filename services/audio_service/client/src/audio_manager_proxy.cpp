@@ -1694,7 +1694,7 @@ void AudioManagerProxy::SetDeviceConnectedFlag(bool flag)
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed,error:%d", error);
 }
 
-int32_t AudioManagerProxy::RegisterDataTransferCallback(const sptr<IRemoteObject> &object) 
+int32_t AudioManagerProxy::RegisterDataTransferCallback(const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;

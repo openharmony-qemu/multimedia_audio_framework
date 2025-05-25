@@ -134,7 +134,7 @@ int32_t AudioManagerListenerStub::AddDataTransferStateChangeCallback(const DataT
     std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb)
 {
     std::lock_guard<std::mutex> lock(stateChangeMutex_);
-    if (stateChangeCallbackMap_.size() > MAX_REGISTER_COUNT) {
+    if (stateChangeCallbackMap_.size() >= MAX_REGISTER_COUNT) {
         return -1;
     }
 
