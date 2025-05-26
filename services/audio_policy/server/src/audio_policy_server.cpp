@@ -1721,7 +1721,7 @@ uint16_t AudioPolicyServer::GetDmDeviceType()
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
         AUDIO_ERR_LOG("No permission");
-        return static_cast<uint16_t>(ERROR & 0XFFFF);
+        return static_cast<uint16_t>(ERROR);
     }
     return audioPolicyService_.GetDmDeviceType();
 }
