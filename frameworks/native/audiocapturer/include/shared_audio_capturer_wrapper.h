@@ -295,6 +295,11 @@ public:
         return sharedAudioCapturer_->GetTimeStampInfo(timestamp, base);
     }
 
+    void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
+    {
+        return sharedAudioCapturer_->SetInterruptEventCallbackType(callbackType);
+    }
+
     ~SharedCapturerWrapper() override = default;
 
     SharedCapturerWrapper(const SharedCapturerWrapper&) = delete;

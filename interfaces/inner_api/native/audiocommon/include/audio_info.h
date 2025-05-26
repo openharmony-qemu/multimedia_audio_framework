@@ -1267,12 +1267,10 @@ enum RenderMode {
 enum WriteDataCallbackType {
     /**
      * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnWriteData
-     * @since 12
      */
     WRITE_DATA_CALLBACK_WITHOUT_RESULT = 0,
     /**
-     * Use OH_AudioRenderer_OnWriteDataCallback.
-     * @since 12
+     * Use OH_AudioRenderer_OnWriteDataCallback
      */
     WRITE_DATA_CALLBACK_WITH_RESULT = 1
 };
@@ -1280,12 +1278,10 @@ enum WriteDataCallbackType {
 enum ReadDataCallbackType {
     /**
      * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnReadData
-     * @since 12
      */
     READ_DATA_CALLBACK_WITHOUT_RESULT = 0,
     /**
-     * Use OH_AudioCapturer_OnReadDataCallback.
-     * @since 12
+     * Use OH_AudioCapturer_OnReadDataCallback
      */
     READ_DATA_CALLBACK_WITH_RESULT = 1
 };
@@ -1293,41 +1289,23 @@ enum ReadDataCallbackType {
 enum StreamEventCallbackType {
     /**
      * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnStreamEvent
-     * @since 12
      */
-    STREAM_EVENT_CALLBACK_WITHOUT_RESULT = 0,
+    STREAM_EVENT_CALLBACK_COMBINED = 0,
     /**
-     * Use OH_AudioCapturer_OnStreamEventCallback.
-     * @since 12
+     * Use OH_AudioCapturer_OnStreamEventCallback
      */
-    STREAM_EVENT_CALLBACK_WITH_RESULT = 1
-};
-
-enum InterruptEventCallbackType {
-    /**
-     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnInterruptEvent
-     * @since 12
-     */
-    INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT = 0,
-    /**
-     * Use OH_AudioRenderer_OnInterruptEventCallback.
-     * @since 12
-     */
-    INTERRUPT_EVENT_CALLBACK_WITH_RESULT = 1
+    STREAM_EVENT_CALLBACK_SEPERATED = 1
 };
 
 enum ErrorCallbackType {
     /**
      * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnError
-     *
-     * @since 12
      */
-    ERROR_CALLBACK_WITHOUT_RESULT = 0,
+    ERROR_CALLBACK_COMBINED = 0,
     /**
-     * Use OH_AudioRenderer_OnErrorCallback.
-     * @since 12
+     * Use OH_AudioRenderer_OnErrorCallback
      */
-    ERROR_CALLBACK_WITH_RESULT = 1
+    ERROR_CALLBACK_SEPERATED = 1
 };
 
 enum PolicyType {

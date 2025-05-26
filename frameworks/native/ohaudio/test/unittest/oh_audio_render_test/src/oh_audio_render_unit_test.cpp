@@ -2331,7 +2331,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_001, TestSize.Level0)
     RendererCallback rendererCallbacks;
     void* userData = nullptr;
 
-    oHAudioRenderer->interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITH_RESULT;
+    oHAudioRenderer->interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_SEPERATED;
     rendererCallbacks.onInterruptEventCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioInterrupt_ForceType type,
         OH_AudioInterrupt_Hint hint) -> void { return; };
@@ -2363,7 +2363,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_002, TestSize.Level0)
     RendererCallback rendererCallbacks;
     void* userData = nullptr;
 
-    oHAudioRenderer->interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer->interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
     rendererCallbacks.onInterruptEventCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioInterrupt_ForceType type,
         OH_AudioInterrupt_Hint hint) -> void { return; };
@@ -2395,7 +2395,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_003, TestSize.Level0)
     RendererCallback rendererCallbacks;
     void* userData = nullptr;
 
-    oHAudioRenderer->interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer->interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
     rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioInterrupt_ForceType type,
         OH_AudioInterrupt_Hint hint) -> int32_t { return 0; };
@@ -2427,7 +2427,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_004, TestSize.Level0)
     RendererCallback rendererCallbacks;
     void* userData = nullptr;
 
-    oHAudioRenderer->interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITH_RESULT;
+    oHAudioRenderer->interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_SEPERATED;
     rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioInterrupt_ForceType type,
         OH_AudioInterrupt_Hint hint) -> int32_t { return 0; };
@@ -2532,7 +2532,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_008, TestSize.Level0)
     RendererCallback rendererCallbacks;
     void* userData = nullptr;
 
-    oHAudioRenderer->errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer->errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
 
     rendererCallbacks.onErrorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
@@ -2565,7 +2565,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_009, TestSize.Level0)
     RendererCallback rendererCallbacks;
     void* userData = nullptr;
 
-    oHAudioRenderer->errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer->errorCallbackType_ = ERROR_CALLBACK_COMBINED;
 
     rendererCallbacks.onErrorCallback =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
@@ -2598,7 +2598,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_010, TestSize.Level0)
     RendererCallback rendererCallbacks;
     void* userData = nullptr;
 
-    oHAudioRenderer->errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer->errorCallbackType_ = ERROR_CALLBACK_COMBINED;
 
     rendererCallbacks.callbacks.OH_AudioRenderer_OnError =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
@@ -2631,7 +2631,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_011, TestSize.Level0)
     RendererCallback rendererCallbacks;
     void* userData = nullptr;
 
-    oHAudioRenderer->errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer->errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
 
     rendererCallbacks.callbacks.OH_AudioRenderer_OnError =
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) ->
@@ -2824,7 +2824,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_018, TestSize.Level0)
         OH_AudioInterrupt_Hint hint) -> int32_t { return 0; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer.interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -2850,7 +2850,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_019, TestSize.Level0)
         OH_AudioInterrupt_Hint hint) -> int32_t { return 0; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -2876,7 +2876,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_020, TestSize.Level0)
         OH_AudioInterrupt_Hint hint) -> void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -2904,7 +2904,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_021, TestSize.Level0)
         OH_AudioInterrupt_Hint hint) -> void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer.interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -2930,7 +2930,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_022, TestSize.Level0)
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) -> int32_t { return 0; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -2954,7 +2954,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_023, TestSize.Level0)
         [](OH_AudioRenderer* renderer, void* userData, OH_AudioStream_Result error) -> int32_t { return 0; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -2979,7 +2979,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_024, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3005,7 +3005,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_025, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3031,7 +3031,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_026, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3058,7 +3058,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_027, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3085,7 +3085,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_028, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3112,7 +3112,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_029, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3139,7 +3139,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_030, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3166,7 +3166,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_031, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3194,7 +3194,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_032, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3221,7 +3221,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_033, TestSize.Level0)
         int32_t { return 0; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3247,7 +3247,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_034, TestSize.Level0)
         int32_t { return 0; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
@@ -3273,7 +3273,7 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_035, TestSize.Level0)
         void { return; };
 
     OHAudioRenderer oHAudioRenderer;
-    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    oHAudioRenderer.errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
     EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
     void* userData = nullptr;
