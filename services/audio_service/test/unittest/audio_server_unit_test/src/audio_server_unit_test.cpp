@@ -296,6 +296,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_003, TestSize.Level1
             }
         }
     };
+    audioServer->isAudioParameterParsed_.store(true);
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
     auto it = AudioServer::audioParameterKeys.find(mainKey);
@@ -324,6 +325,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_004, TestSize.Level1
             }
         }
     };
+    audioServer->isAudioParameterParsed_.store(true);
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
     EXPECT_EQ(SUCCESS, ret);
     auto it = AudioServer::audioParameterKeys.find(mainKey);
@@ -352,6 +354,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_005, TestSize.Level1
             }
         }
     };
+    audioServer->isAudioParameterParsed_.store(true);
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
     EXPECT_EQ(SUCCESS, ret);
     auto it = AudioServer::audioParameterKeys.find(mainKey);
@@ -380,6 +383,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_006, TestSize.Level1
             }
         }
     };
+    audioServer->isAudioParameterParsed_.store(true);
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
     auto it = AudioServer::audioParameterKeys.find(mainKey);
