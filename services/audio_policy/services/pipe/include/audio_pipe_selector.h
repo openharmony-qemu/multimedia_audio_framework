@@ -39,6 +39,8 @@ private:
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
         std::shared_ptr<AudioStreamDescriptor> cmpStream);
+    void IncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
+            std::shared_ptr<AudioStreamDescriptor> cmpStream);
     uint32_t GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     std::string GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,

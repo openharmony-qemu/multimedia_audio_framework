@@ -246,6 +246,16 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
     }
 }
 
+void AudioPipeSelector::IncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
+    std::shared_ptr<AudioStreamDescriptor> cmpStream)
+{
+    // normal, mmap or voipmmap can't concurrency, if concede existing must concede incoming
+    if (cmpStream->audioMode_ == AUDIO_MODE_RECORD && stream->audioMode_ == AUDIO_MODE_RECORD) {
+        cmpStream->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        AUDIO_INFO_LOG("capture in: %{public}u  old: %{public}u", cmpStream->sessionId_, stream->sessionId_);
+    }
+}
+
 bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
     std::shared_ptr<AudioStreamDescriptor> cmpStream)
 {
@@ -266,6 +276,8 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
                 AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
             break;
         case CONCEDE_EXISTING:
+            // if concede existing, maybe need concede incomming
+            IncomingConcurrency(stream, cmpStream);
             isUpdate = true;
             newFlag = stream->audioMode_ == AUDIO_MODE_PLAYBACK ?
                 AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
