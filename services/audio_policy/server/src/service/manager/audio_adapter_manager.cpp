@@ -908,12 +908,18 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
     return SUCCESS;
 }
 
-void AudioAdapterManager::MaximizeVoiceAssistantVolume(InternalDeviceType deviceType)
+void AudioAdapterManager::AdjustBluetoothVoiceAssistantVolume(InternalDeviceType deviceType)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
         volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
         SetVolumeDb(STREAM_VOICE_ASSISTANT);
-        AUDIO_INFO_LOG("MaximizeVoiceAssistantVolume ok");
+        AUDIO_INFO_LOG("a2dp ok");
+    }
+
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        volumeDataMaintainer_.GetVolume(deviceType, STREAM_VOICE_ASSISTANT);
+        setVolumeDb(STREAM_VOICE_ASSISTANT);
+        AUDIO_INFO_LOG("sco ok");
     }
 }
 
@@ -936,7 +942,6 @@ bool AudioAdapterManager::CheckAndUpdateRemoteDeviceVolume(AudioDeviceDescriptor
 void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor)
 {
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
-    MaximizeVoiceAssistantVolume(deviceDescriptor.deviceType_);
     // The same device does not set the volume
     bool isSameVolumeGroup = ((GetVolumeGroupForDevice(currentActiveDevice_.deviceType_) ==
         GetVolumeGroupForDevice(deviceDescriptor.deviceType_)) &&
@@ -968,6 +973,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
             AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
         }
     }
+    AdjustBluetoothVoiceAssistantVolume(deviceDescriptor.deviceType_);
 
     auto iter = defaultVolumeTypeList_.begin();
     while (iter != defaultVolumeTypeList_.end()) {
