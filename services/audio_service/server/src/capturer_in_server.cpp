@@ -282,14 +282,16 @@ static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
     return byteSize;
 }
 
-void CapturerInServer::UpdateBufferTimeStamp(const BufferDesc &dstBuffer)
+void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
 {
     CHECK_AND_RETURN_LOG(capturerClock_ != nullptr, "capturerClock_ is nullptr");
     uint64_t timestamp = 0;
     uint32_t sizePerPos = static_cast<uint32_t>(GetByteSizeByFormat(processConfig_.streamInfo.format)) *
         processConfig_.streamInfo.channels;
 
-    curProcessPos_ += dstBuffer.bufLength / sizePerPos;
+    curProcessPos_ += lastPosInc_;
+    CHECK_AND_RETURN_LOG(readLen >= 0, "readLen is illegal!");
+    lastPosInc_ += static_cast<uint64_t>(readLen) / sizePerPos;
 
     if (!capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp)) {
         AUDIO_ERR_LOG("GetTimeStampByPosition fail!");
@@ -310,6 +312,7 @@ void CapturerInServer::ReadData(size_t length)
 
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
+        UpdateBufferTimeStamp(length);
         return;
     }
     Trace trace(traceTag_ + "::ReadData:" + std::to_string(currentWriteFrame));
@@ -349,7 +352,7 @@ void CapturerInServer::ReadData(size_t length)
     audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
-    UpdateBufferTimeStamp(dstBuffer);
+    UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stream_->EnqueueBuffer(srcBuffer);
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
@@ -370,6 +373,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
+        UpdateBufferTimeStamp(requestDataLen);
         return ERR_WRITE_FAILED;
     }
     Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
@@ -408,7 +412,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
-    UpdateBufferTimeStamp(dstBuffer);
+    UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
     return SUCCESS;
