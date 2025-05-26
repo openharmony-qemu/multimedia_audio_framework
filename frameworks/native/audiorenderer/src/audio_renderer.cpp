@@ -30,6 +30,7 @@
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
 #include "audio_scope_exit.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -205,6 +206,38 @@ size_t GetAudioFormatSize(AudioSampleFormat format)
 size_t GetFormatSize(const AudioStreamParams& info)
 {
     return GetAudioFormatSize(static_cast<AudioSampleFormat>(info.format));
+}
+
+int32_t AudioRenderer::FadeInAudioBuffer(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel)
+{
+    CHECK_AND_RETURN_RET_LOG(buffer.buffer != nullptr && buffer.bufLength != 0 && buffer.dataLength != 0,
+        ERR_INVALID_PARAM, "Invalid buffer or length");
+    BufferDesc tempBuffer = buffer;
+    if (tempBuffer.bufLength > tempBuffer.dataLength) {
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+            tempBuffer.dataLength);
+        tempBuffer.bufLength = tempBuffer.dataLength;
+    }
+    ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, 0.0f, 1.0f);
+    int32_t volRet = VolumeTools::Process(tempBuffer, format, mapVols);
+    CHECK_AND_RETURN_RET_LOG(volRet == SUCCESS, volRet, "Process Volume failed: %{public}d", volRet);
+    return volRet;
+}
+
+int32_t AudioRenderer::FadeOutAudioBuffer(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel)
+{
+    CHECK_AND_RETURN_RET_LOG(buffer.buffer != nullptr && buffer.bufLength != 0 && buffer.dataLength != 0,
+        ERR_INVALID_PARAM, "Invalid buffer or length");
+    BufferDesc tempBuffer = buffer;
+    if (tempBuffer.bufLength > tempBuffer.dataLength) {
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+            tempBuffer.dataLength);
+        tempBuffer.bufLength = tempBuffer.dataLength;
+    }
+    ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, 1.0f, 0.0f);
+    int32_t volRet = VolumeTools::Process(tempBuffer, format, mapVols);
+    CHECK_AND_RETURN_RET_LOG(volRet == SUCCESS, volRet, "Process Volume failed: %{public}d", volRet);
+    return volRet;
 }
  
 int32_t AudioRenderer::MuteAudioBuffer(uint8_t *addr, size_t offset, size_t length, AudioSampleFormat format)
