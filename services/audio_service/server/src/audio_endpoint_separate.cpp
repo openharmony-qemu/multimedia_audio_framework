@@ -248,7 +248,8 @@ int32_t AudioEndpointSeparate::GetAdapterBufferInfo(const AudioDeviceDescriptor 
 
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "%{public}s fast sink is null.", __func__);
-    ret = sink->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
+    ret = sink->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
+        syncInfoSize_);
     if (ret != SUCCESS || dstBufferFd_ == -1 || dstTotalSizeInframe_ == 0 || dstSpanSizeInframe_ == 0 ||
         dstByteSizePerFrame_ == 0) {
         AUDIO_ERR_LOG("%{public}s get mmap buffer info fail, ret %{public}d, dstBufferFd %{public}d, \

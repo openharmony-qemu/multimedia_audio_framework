@@ -72,6 +72,7 @@ public:
     void ClearSilenceMonitor(uint32_t sessionId);
     void DeleteSilenceMonitor(uint32_t sessionId);
 
+    void ReportWriteSlow(AdapterType adapterType, int32_t overtimeMs);
     // overTime Monitor records the interval between two writes to HAL
     void RecordTimeStamp(AdapterType adapterType, int64_t curTimeStamp);
     void DeleteOvertimeMonitor(AdapterType adapterType);

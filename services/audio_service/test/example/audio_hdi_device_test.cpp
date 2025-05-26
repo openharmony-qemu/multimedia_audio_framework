@@ -43,8 +43,9 @@ public:
         uint32_t totalSizeInframe = 0;
         uint32_t spanSizeInframe = 0;
         uint32_t byteSizePerFrame = 0;
+        uint32_t syncInfoSize = 0;
 
-        sink_->GetMmapBufferInfo(fd, totalSizeInframe, spanSizeInframe, byteSizePerFrame);
+        sink_->GetMmapBufferInfo(fd, totalSizeInframe, spanSizeInframe, byteSizePerFrame, syncInfoSize);
         if (byteSizePerFrame == 0) {
             AUDIO_ERR_LOG("RenderFrameFromFile():byteSizePerFrame is zero");
             return;

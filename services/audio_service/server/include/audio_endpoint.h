@@ -206,6 +206,7 @@ private:
     uint32_t dstTotalSizeInframe_ = 0;
     uint32_t dstSpanSizeInframe_ = 0;
     uint32_t dstByteSizePerFrame_ = 0;
+    uint32_t syncInfoSize_ = 0;
     std::shared_ptr<OHAudioBuffer> dstAudioBuffer_ = nullptr;
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
 
