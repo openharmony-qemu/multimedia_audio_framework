@@ -3444,11 +3444,13 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
 
 int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().CreateAudioZone(name, context);
 }
 
 void AudioPolicyServer::ReleaseAudioZone(int32_t zoneId)
 {
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifySystemPermission(), "no system permission");
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 
@@ -3465,39 +3467,46 @@ const std::shared_ptr<AudioZoneDescriptor> AudioPolicyServer::GetAudioZone(int32
 int32_t AudioPolicyServer::BindDeviceToAudioZone(int32_t zoneId,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
 }
 
 int32_t AudioPolicyServer::UnBindDeviceToAudioZone(int32_t zoneId,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().UnBindDeviceToAudioZone(zoneId, devices);
 }
 
 int32_t AudioPolicyServer::EnableAudioZoneReport(bool enable)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     return AudioZoneService::GetInstance().EnableAudioZoneReport(clientPid, enable);
 }
 
 int32_t AudioPolicyServer::EnableAudioZoneChangeReport(int32_t zoneId, bool enable)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     return AudioZoneService::GetInstance().EnableAudioZoneChangeReport(clientPid, zoneId, enable);
 }
 
 int32_t AudioPolicyServer::AddUidToAudioZone(int32_t zoneId, int32_t uid)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, uid);
 }
 
 int32_t AudioPolicyServer::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, uid);
 }
 
 int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     return AudioZoneService::GetInstance().EnableSystemVolumeProxy(clientPid, zoneId, enable);
 }
@@ -3515,6 +3524,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudio
 
 int32_t AudioPolicyServer::EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     return AudioZoneService::GetInstance().EnableAudioZoneInterruptReport(clientPid, zoneId, deviceTag, enable);
 }
@@ -3522,12 +3532,14 @@ int32_t AudioPolicyServer::EnableAudioZoneInterruptReport(int32_t zoneId, const 
 int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, interrupts);
 }
 
 int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
 }
 
