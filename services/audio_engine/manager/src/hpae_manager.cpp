@@ -496,6 +496,8 @@ int32_t HpaeManager::CloseAudioPort(int32_t audioHandleIndex)
 
 int32_t HpaeManager::SetDefaultSink(std::string name)
 {
+    CHECK_AND_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM, "invalid sink name");
+    AUDIO_INFO_LOG("HpaeManager::SetDefaultSink name: %{public}s", name.c_str());
     auto request = [this, name]() {
         AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", name.c_str());
         if (name == defaultSink_) {
@@ -528,7 +530,7 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
 
 int32_t HpaeManager::SetDefaultSource(std::string name)
 {
-    AUDIO_INFO_LOG("HpaeManager::SetDefaultSource name: %{public}s", name.c_str());
+    CHECK_AND_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM, "invalid source name");
     auto request = [this, name]() {
         if (name == defaultSource_) {
             AUDIO_INFO_LOG("source is same as default source");
