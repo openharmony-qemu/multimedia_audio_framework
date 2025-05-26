@@ -504,14 +504,14 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             AUDIO_INFO_LOG("sink is same as default sink");
             return;
         }
+        if (!SafeGetMap(rendererManagerMap_, name)) {
+            AUDIO_WARNING_LOG("sink: %{public}s not exist, do not change default sink", name.c_str());
+            return;
+        }
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(defaultSink_);
         if (rendererManager == nullptr) {
             AUDIO_INFO_LOG("default sink not exist, set default sink direct");
             defaultSink_ = name;
-            return;
-        }
-        if (!SafeGetMap(rendererManagerMap_, name)) {
-            AUDIO_WARNING_LOG("sink: %{public}s not exist, do not change default sink", name.c_str());
             return;
         }
         std::vector<uint32_t> sessionIds;
@@ -519,9 +519,9 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
         std::string oldDefaultSink = defaultSink_;
         defaultSink_ = name;
         if (!rendererManager->IsInit()) {
-            rendererManagerMap_.erase(defaultSink_);
-            sinkIdSinkNameMap_.erase(sinkNameSinkIdMap_[defaultSink_]);
-            sinkNameSinkIdMap_.erase(defaultSink_);
+            rendererManagerMap_.erase(oldDefaultSink);
+            sinkIdSinkNameMap_.erase(sinkNameSinkIdMap_[oldDefaultSink]);
+            sinkNameSinkIdMap_.erase(oldDefaultSink);
         }
     };
     SendRequest(request, __func__);
@@ -531,20 +531,19 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
 int32_t HpaeManager::SetDefaultSource(std::string name)
 {
     CHECK_AND_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM, "invalid source name");
-    AUDIO_INFO_LOG("HpaeManager::SetDefaultSource name: %{public}s", name.c_str());
     auto request = [this, name]() {
         if (name == defaultSource_) {
             AUDIO_INFO_LOG("source is same as default source");
+            return;
+        }
+        if (!SafeGetMap(capturerManagerMap_, name)) {
+            AUDIO_WARNING_LOG("source: %{public}s not exist, do not change default source", name.c_str());
             return;
         }
         std::shared_ptr<IHpaeCapturerManager> capturerManager = GetCapturerManagerByName(defaultSource_);
         if (capturerManager == nullptr) {
             AUDIO_INFO_LOG("default source not exist, set default source direct");
             defaultSource_ = name;
-            return;
-        }
-        if (!SafeGetMap(capturerManagerMap_, name)) {
-            AUDIO_WARNING_LOG("source: %{public}s not exist, do not change default source", name.c_str());
             return;
         }
         std::vector<uint32_t> sessionIds;
@@ -1087,11 +1086,11 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, deviceName),
                 "can not find sink[%{public}s] in rendererManagerMap_",
                 deviceName.c_str());
-            rendererIdSinkNameMap_[streamInfo.sessionId] = defaultSink_;
-            rendererManagerMap_[defaultSink_]->CreateStream(streamInfo);
+            rendererIdSinkNameMap_[streamInfo.sessionId] = deviceName;
+            rendererManagerMap_[deviceName]->CreateStream(streamInfo);
             rendererIdStreamInfoMap_[streamInfo.sessionId].streamInfo = streamInfo;
             rendererIdStreamInfoMap_[streamInfo.sessionId].state = HPAE_SESSION_NEW;
-            AddStreamToCollection(streamInfo);
+            AddStreamToCollection(streamInfo, deviceName);
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
             std::string deviceName = streamInfo.deviceName == "" ? defaultSource_ : streamInfo.deviceName;
             AUDIO_INFO_LOG("source:%{public}s, sessionId:%{public}u", deviceName.c_str(), streamInfo.sessionId);
@@ -1102,7 +1101,7 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
             capturerManagerMap_[deviceName]->CreateStream(streamInfo);
             capturerIdStreamInfoMap_[streamInfo.sessionId].streamInfo = streamInfo;
             capturerIdStreamInfoMap_[streamInfo.sessionId].state = HPAE_SESSION_NEW;
-            AddStreamToCollection(streamInfo);
+            AddStreamToCollection(streamInfo, deviceName);
         } else {
             AUDIO_WARNING_LOG(
                 "can not find default sink or source streamClassType %{public}d", streamInfo.streamClassType);
@@ -1114,7 +1113,7 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
     return SUCCESS;
 }
 
-void HpaeManager::AddStreamToCollection(const HpaeStreamInfo &streamInfo)
+void HpaeManager::AddStreamToCollection(const HpaeStreamInfo &streamInfo, const std::string &name)
 {
     auto now = std::chrono::system_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
@@ -1123,8 +1122,8 @@ void HpaeManager::AddStreamToCollection(const HpaeStreamInfo &streamInfo)
         sinkInput.streamId = streamInfo.sessionId;
         sinkInput.paStreamId = streamInfo.sessionId;
         sinkInput.streamType = streamInfo.streamType;
-        sinkInput.sinkName = defaultSink_;
-        sinkInput.deviceSinkId = sinkNameSinkIdMap_[defaultSink_];
+        sinkInput.sinkName = name;
+        sinkInput.deviceSinkId = sinkNameSinkIdMap_[name];
         sinkInput.pid = streamInfo.pid;
         sinkInput.uid = streamInfo.uid;
         sinkInput.startTime = ms.count();
@@ -1134,7 +1133,7 @@ void HpaeManager::AddStreamToCollection(const HpaeStreamInfo &streamInfo)
         sourceOutputInfo.streamId = streamInfo.sessionId;
         sourceOutputInfo.paStreamId = streamInfo.sessionId;
         sourceOutputInfo.streamType = streamInfo.streamType;
-        sourceOutputInfo.deviceSourceId = sourceNameSourceIdMap_[defaultSource_];
+        sourceOutputInfo.deviceSourceId = sourceNameSourceIdMap_[name];
         sourceOutputInfo.pid = streamInfo.pid;
         sourceOutputInfo.uid = streamInfo.uid;
         sourceOutputInfo.startTime = ms.count();
@@ -1918,7 +1917,7 @@ void HpaeManager::CreateStreamForCapInner(const HpaeStreamInfo &streamInfo)
     }
     std::string deviceName = streamInfo.deviceName;
     HandleRendererManager(deviceName, streamInfo);
-    AddStreamToCollection(streamInfo);
+    AddStreamToCollection(streamInfo, deviceName);
     return;
 }
 

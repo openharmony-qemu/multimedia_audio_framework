@@ -202,7 +202,7 @@ private:
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerById(uint32_t sessionId);
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerByName(const std::string &sinkName);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
-    void AddStreamToCollection(const HpaeStreamInfo &streamInfo);
+    void AddStreamToCollection(const HpaeStreamInfo &streamInfo, const std::string &name);
 
     void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> serviceCallback);
     int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo);
