@@ -243,9 +243,6 @@ int32_t OHAudioBuffer::SizeCheck()
 
 int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
 {
-    AUDIO_DEBUG_LOG("Init with dataFd %{public}d, infoFd %{public}d, bufferSize %{public}d, spanSize %{public}d,"
-        " byteSizePerFrame %{public}d", dataFd, infoFd, totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
-
     int32_t ret = SizeCheck();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "failed: invalid size.");
 
@@ -263,30 +260,28 @@ int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
         dataMem_ = AudioSharedMemory::CreateFormLocal(totalSizeInByte_, "server_client_buffer");
     } else {
         std::string memoryDesc = (bufferHolder_ == AUDIO_SERVER_ONLY ? "server_hdi_buffer" : "server_client_buffer");
-        dataMem_ = AudioSharedMemory::CreateFromRemote(dataFd, totalSizeInByte_, memoryDesc);
+        if (bufferHolder_ == AUDIO_SERVER_ONLY_WITH_SYNC) {
+            AUDIO_INFO_LOG("Init sever_hdi_buffer with sync info");
+            dataMem_ = AudioSharedMemory::CreateFromRemote(dataFd, totalSizeInByte_ + BASIC_SYNC_INFO_SIZE, memoryDesc);
+        } else { // AUDIO_SERVER_ONLY
+            dataMem_ = AudioSharedMemory::CreateFromRemote(dataFd, totalSizeInByte_, memoryDesc);
+        }
     }
     CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, ERR_OPERATION_FAILED, "dataMem_ mmap failed.");
+    if (bufferHolder_ == AUDIO_SERVER_ONLY_WITH_SYNC) {
+        syncReadFrame_ = reinterpret_cast<uint32_t *>(dataMem_->GetBase() + totalSizeInByte_);
+        syncWriteFrame_ = syncReadFrame_ + sizeof(uint32_t);
+    }
 
     dataBase_ = dataMem_->GetBase();
 
     basicBufferInfo_ = reinterpret_cast<BasicBufferInfo *>(statusInfoMem_->GetBase());
     spanInfoList_ = reinterpret_cast<SpanInfo *>(statusInfoMem_->GetBase() + sizeof(BasicBufferInfo));
 
-    // As basicBufferInfo_ is created from memory, we need to set the value with 0.
-    basicBufferInfo_->basePosInFrame.store(0);
-    basicBufferInfo_->curReadFrame.store(0);
-    basicBufferInfo_->curWriteFrame.store(0);
+    InitBasicBufferInfo();
 
-    basicBufferInfo_->underrunCount.store(0);
-
-    basicBufferInfo_->position.store(0);
-    basicBufferInfo_->timeStamp.store(0);
-
-    basicBufferInfo_->streamVolume.store(MAX_FLOAT_VOLUME);
-    basicBufferInfo_->duckFactor.store(MAX_FLOAT_VOLUME);
-    basicBufferInfo_->muteFactor.store(MAX_FLOAT_VOLUME);
-
-    if (bufferHolder_ == AUDIO_SERVER_SHARED || bufferHolder_ == AUDIO_SERVER_ONLY) {
+    if (bufferHolder_ == AUDIO_SERVER_SHARED || bufferHolder_ == AUDIO_SERVER_ONLY || bufferHolder_ ==
+            AUDIO_SERVER_ONLY_WITH_SYNC) {
         basicBufferInfo_->handlePos.store(0);
         basicBufferInfo_->handleTime.store(0);
         basicBufferInfo_->totalSizeInFrame = totalSizeInFrame_;
@@ -301,6 +296,23 @@ int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
 
     AUDIO_DEBUG_LOG("Init done.");
     return SUCCESS;
+}
+
+void OHAudioBuffer::InitBasicBufferInfo()
+{
+    // As basicBufferInfo_ is created from memory, we need to set the value with 0.
+    basicBufferInfo_->basePosInFrame.store(0);
+    basicBufferInfo_->curReadFrame.store(0);
+    basicBufferInfo_->curWriteFrame.store(0);
+
+    basicBufferInfo_->underrunCount.store(0);
+
+    basicBufferInfo_->position.store(0);
+    basicBufferInfo_->timeStamp.store(0);
+
+    basicBufferInfo_->streamVolume.store(MAX_FLOAT_VOLUME);
+    basicBufferInfo_->duckFactor.store(MAX_FLOAT_VOLUME);
+    basicBufferInfo_->muteFactor.store(MAX_FLOAT_VOLUME);
 }
 
 std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromLocal(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
@@ -724,6 +736,44 @@ int64_t OHAudioBuffer::GetLastWrittenTime()
 void OHAudioBuffer::SetLastWrittenTime(int64_t time)
 {
     lastWrittenTime_ = time;
+}
+
+uint32_t OHAudioBuffer::GetSyncWriteFrame()
+{
+    if (bufferHolder_ != AUDIO_SERVER_ONLY_WITH_SYNC || syncWriteFrame_ == nullptr) {
+        AUDIO_WARNING_LOG("sync info not support with holder: %{public}d", bufferHolder_);
+        return 0;
+    }
+    return *syncWriteFrame_;
+}
+
+bool OHAudioBuffer::SetSyncWriteFrame(uint32_t writeFrame)
+{
+    if (bufferHolder_ != AUDIO_SERVER_ONLY_WITH_SYNC || syncWriteFrame_ == nullptr) {
+        AUDIO_WARNING_LOG("sync info not support with holder: %{public}d", bufferHolder_);
+        return false;
+    }
+    *syncWriteFrame_ = writeFrame;
+    return true;
+}
+
+uint32_t OHAudioBuffer::GetSyncReadFrame()
+{
+    if (bufferHolder_ != AUDIO_SERVER_ONLY_WITH_SYNC || syncReadFrame_ == nullptr) {
+        AUDIO_WARNING_LOG("sync info not support with holder: %{public}d", bufferHolder_);
+        return 0;
+    }
+    return *syncReadFrame_;
+}
+
+bool OHAudioBuffer::SetSyncReadFrame(uint32_t readFrame)
+{
+    if (bufferHolder_ != AUDIO_SERVER_ONLY_WITH_SYNC || syncReadFrame_ == nullptr) {
+        AUDIO_WARNING_LOG("sync info not support with holder: %{public}d", bufferHolder_);
+        return false;
+    }
+    *syncReadFrame_ = readFrame;
+    return true;
 }
 
 std::atomic<uint32_t> *OHAudioBuffer::GetFutex()

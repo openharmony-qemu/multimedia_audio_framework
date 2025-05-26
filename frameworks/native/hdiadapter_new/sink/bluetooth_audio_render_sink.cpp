@@ -525,13 +525,14 @@ void BluetoothAudioRenderSink::DumpInfo(std::string &dumpString)
 }
 
 int32_t BluetoothAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-    uint32_t &byteSizePerFrame)
+    uint32_t &byteSizePerFrame, uint32_t &syncInfoSize)
 {
     CHECK_AND_RETURN_RET_LOG(bufferFd_ != INVALID_FD, ERR_INVALID_HANDLE, "buffer fd has been released");
     fd = bufferFd_;
     totalSizeInframe = bufferTotalFrameSize_;
     spanSizeInframe = eachReadFrameSize_;
     byteSizePerFrame = PcmFormatToBit(attr_.format) * attr_.channel / PCM_8_BIT;
+    syncInfoSize = syncInfoSize_;
     return SUCCESS;
 }
 

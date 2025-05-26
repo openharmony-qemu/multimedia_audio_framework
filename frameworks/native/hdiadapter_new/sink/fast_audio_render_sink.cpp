@@ -422,13 +422,14 @@ void FastAudioRenderSink::DumpInfo(std::string &dumpString)
 }
 
 int32_t FastAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-    uint32_t &byteSizePerFrame)
+    uint32_t &byteSizePerFrame, uint32_t &syncInfoSize)
 {
     CHECK_AND_RETURN_RET_LOG(bufferFd_ != INVALID_FD, ERR_INVALID_HANDLE, "buffer fd has been released");
     fd = bufferFd_;
     totalSizeInframe = bufferTotalFrameSize_;
     spanSizeInframe = eachReadFrameSize_;
     byteSizePerFrame = PcmFormatToBit(attr_.format) * attr_.channel / PCM_8_BIT;
+    syncInfoSize = syncInfoSize_;
     return SUCCESS;
 }
 
@@ -603,7 +604,12 @@ int32_t FastAudioRenderSink::PrepareMmapBuffer(void)
     eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize); // 240
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
         "buffer size will overflow");
-
+    if (desc.syncInfoSize != 0) {
+        AUDIO_INFO_LOG("syncInfo for fast is enabled: %{public}d", desc.syncInfoSize);
+        syncInfoSize_ = desc.syncInfoSize;
+    } else {
+        AUDIO_WARNING_LOG("syncInfo for fast is not enabled");
+    }
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte_;
 #ifdef DEBUG_DIRECT_USE_HDI
     privBufferFd_ = dup(bufferFd_);
