@@ -908,7 +908,8 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
     return SUCCESS;
 }
 
-void AudioAdapterManager::AdjustBluetoothVoiceAssistantVolume(InternalDeviceType deviceType)
+void AudioAdapterManager::AdjustBluetoothVoiceAssistantVolume(InternalDeviceType deviceType,
+    bool isSameVolumeGroup)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
         volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
@@ -916,7 +917,7 @@ void AudioAdapterManager::AdjustBluetoothVoiceAssistantVolume(InternalDeviceType
         AUDIO_INFO_LOG("a2dp ok");
     }
 
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO && isSameVolumeGroup) {
         volumeDataMaintainer_.GetVolume(deviceType, STREAM_VOICE_ASSISTANT);
         setVolumeDb(STREAM_VOICE_ASSISTANT);
         AUDIO_INFO_LOG("sco ok");
@@ -973,7 +974,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
             AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
         }
     }
-    AdjustBluetoothVoiceAssistantVolume(deviceDescriptor.deviceType_);
+    AdjustBluetoothVoiceAssistantVolume(deviceDescriptor.deviceType_, isSameVolumeGroup);
 
     auto iter = defaultVolumeTypeList_.begin();
     while (iter != defaultVolumeTypeList_.end()) {
