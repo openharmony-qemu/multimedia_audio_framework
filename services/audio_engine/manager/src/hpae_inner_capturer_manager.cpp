@@ -56,6 +56,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     nodeInfo.statusCallback = weak_from_this();
     sinkInputNodeMap_[sessionId]->SetNodeInfo(nodeInfo);
     SetSessionStateForRenderer(sessionId, node->GetState());
