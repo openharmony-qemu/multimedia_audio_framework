@@ -207,6 +207,21 @@ enum InterruptStrategy {
     MUTE = 1,
 };
 
+enum InterruptEventCallbackType {
+    /**
+     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnInterruptEvent
+     */
+    INTERRUPT_EVENT_CALLBACK_COMBINED = 0,
+    /**
+     * Use OH_AudioRenderer_OnInterruptEventCallback
+     */
+    INTERRUPT_EVENT_CALLBACK_SEPERATED = 1,
+    /**
+     * Not use any OH_AudioRenderer InterruptEvent
+     */
+    INTERRUPT_EVENT_CALLBACK_DEFAULT = 2
+};
+
 class AudioInterrupt {
 public:
     static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;
@@ -225,6 +240,7 @@ public:
     int32_t api = 0;
     int32_t state {-1};
     InterruptStrategy strategy { InterruptStrategy::DEFAULT };
+    InterruptEventCallbackType callbackType {INTERRUPT_EVENT_CALLBACK_DEFAULT};
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -254,6 +270,7 @@ public:
         res = res && parcel.WriteInt32(interrupt.api);
         res = res && parcel.WriteInt32(interrupt.state);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.strategy));
+        res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.callbackType));
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -283,6 +300,7 @@ public:
         interrupt.api = parcel.ReadInt32();
         interrupt.state = parcel.ReadInt32();
         interrupt.strategy = static_cast<InterruptStrategy>(parcel.ReadInt32());
+        interrupt.callbackType = static_cast<InterruptEventCallbackType>(parcel.ReadInt32());
     }
 };
 } // namespace AudioStandard

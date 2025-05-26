@@ -473,18 +473,19 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_022, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
 
     interruptServiceTest->Init(GetPolicyServerTest());
+    AudioInterrupt interrupt;
     EXPECT_NO_THROW(
-        interruptServiceTest->ResetNonInterruptControl(sessionId);
+        interruptServiceTest->ResetNonInterruptControl(interrupt);
     );
 
-    sessionId = CLIENT_TYPE_GAME;
+    interrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
     EXPECT_NO_THROW(
-        interruptServiceTest->ResetNonInterruptControl(sessionId);
+        interruptServiceTest->ResetNonInterruptControl(interrupt);
     );
 
-    sessionId = 2;
+    interrupt.streamId = 2;
     EXPECT_NO_THROW(
-        interruptServiceTest->ResetNonInterruptControl(sessionId);
+        interruptServiceTest->ResetNonInterruptControl(interrupt);
     );
 }
 
