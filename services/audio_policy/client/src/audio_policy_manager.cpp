@@ -617,7 +617,7 @@ int32_t AudioPolicyManager::UnsetSelfAppVolumeCallback(
 int32_t AudioPolicyManager::UnsetAppVolumeCallbackForUid(
     const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetAppVolumeCallbackForUid enter");
+    AUDIO_DEBUG_LOG("enter");
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetAppVolumeChangeCallbackForUid: No system permission");
         return ERR_PERMISSION_DENIED;

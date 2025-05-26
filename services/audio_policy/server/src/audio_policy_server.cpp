@@ -509,7 +509,7 @@ void AudioPolicyServer::SendMonitrtEvent(const int32_t keyType, int32_t resultOf
 
 void AudioPolicyServer::SubscribeSafeVolumeEvent()
 {
-    AUDIO_INFO_LOG("SubscribeSafeVolumeEvent enter");
+    AUDIO_INFO_LOG("enter");
     audioPolicyService_.SubscribeSafeVolumeEvent();
 }
 
@@ -879,7 +879,7 @@ int32_t AudioPolicyServer::GetAppVolumeLevel(int32_t appUid)
 
 int32_t AudioPolicyServer::GetSelfAppVolumeLevel()
 {
-    AUDIO_INFO_LOG("GetSelfAppVolumeLevel enter");
+    AUDIO_INFO_LOG("enter");
     int32_t appUid = IPCSkeleton::GetCallingUid();
     return GetAppVolumeLevelInternal(appUid);
 }
