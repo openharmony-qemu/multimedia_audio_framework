@@ -2444,9 +2444,8 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     if (lock.owns_lock()) {
         lock.unlock();
     }
-    if (speed < NORMAL_STREAM_SPEED_LEVEL) {
-        SetPitch(speed);
-    }
+
+    SetPitch(std::min(speed, NORMAL_STREAM_SPEED_LEVEL));
     return SUCCESS;
 }
 
