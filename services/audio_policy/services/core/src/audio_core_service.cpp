@@ -180,12 +180,14 @@ int32_t AudioCoreService::CreateRendererClient(
 int32_t AudioCoreService::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
 {
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
     // Select device
     int32_t ret = SUCCESS;
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
         audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
             sessionId);
+    CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
     streamDesc->newDeviceDescs_.clear();
     streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
     AUDIO_INFO_LOG("New stream device type %{public}d", inputDeviceDesc->deviceType_);
@@ -523,6 +525,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
 
     if (networkId == LOCAL_NETWORK_ID) {
         std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr");
         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
             desc->deviceType_ = DEVICE_TYPE_INVALID;
@@ -1057,6 +1060,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
             audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
                 streamDesc->sessionId_);
+        CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
         streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
         SetRecordStreamFlag(streamDesc);
 
