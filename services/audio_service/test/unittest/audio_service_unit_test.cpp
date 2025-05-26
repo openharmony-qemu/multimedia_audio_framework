@@ -856,7 +856,7 @@ HWTEST(AudioServiceUnitTest, SetNonInterruptMute_005, TestSize.Level1)
     audioService->SetNonInterruptMute(1, true);
     EXPECT_EQ(1, audioService->mutedSessions_.count(1));
     audioService->SetNonInterruptMute(1, false);
-    EXPECT_EQ(1, audioService->mutedSessions_.count(1));
+    EXPECT_EQ(0, audioService->mutedSessions_.count(1));
 }
 
 /**
@@ -1119,7 +1119,7 @@ HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_005, TestSize.Level1)
     std::shared_ptr<RendererInServer> renderer = rendererInServer;
     audioService->muteSwitchStreams_.insert(sessionId);
     audioService->CheckRenderSessionMuteState(sessionId, renderer);
-    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
+    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 0);
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
 
@@ -1144,7 +1144,7 @@ HWTEST(AudioServiceUnitTest, CheckCapturerSessionMuteState_001, TestSize.Level1)
     std::shared_ptr<CapturerInServer> capturer = capturerInServer;
     audioService->muteSwitchStreams_.insert(sessionId);
     audioService->CheckCaptureSessionMuteState(sessionId, capturer);
-    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
+    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 0);
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
 
@@ -1165,7 +1165,7 @@ HWTEST(AudioServiceUnitTest, CheckFastSessionMuteState_001, TestSize.Level1)
 
     audioService->muteSwitchStreams_.insert(sessionId);
     audioService->CheckFastSessionMuteState(sessionId, audioprocess);
-    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
+    EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 0);
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
 

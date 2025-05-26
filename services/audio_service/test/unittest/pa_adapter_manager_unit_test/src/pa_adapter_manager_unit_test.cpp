@@ -409,6 +409,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_016, TestSize.Level1)
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    ASSERT_TRUE(stream != nullptr);
     std::shared_ptr<ICapturerStream> capturerStream = adapterManager->CreateCapturerStream(processConfig, stream);
     ASSERT_TRUE(capturerStream != nullptr);
 
@@ -432,6 +433,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_017, TestSize.Level1)
     config.originalSessionId = MORE_SESSIONID;
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
+    ASSERT_TRUE(stream != nullptr);
     std::shared_ptr<ICapturerStream> capturerStream = adapterManager->CreateCapturerStream(config, stream);
     ASSERT_TRUE(capturerStream != nullptr);
 
@@ -455,6 +457,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_018, TestSize.Level1)
     config.originalSessionId = MIDDLE_SESSIONID;
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(config, sessionId, false);
+    ASSERT_TRUE(stream != nullptr);
     std::shared_ptr<ICapturerStream> capturerStream = adapterManager->CreateCapturerStream(config, stream);
     ASSERT_TRUE(capturerStream != nullptr);
 
@@ -940,6 +943,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_047, TestSize.Level1)
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    ASSERT_TRUE(stream != nullptr);
     adapterManager->CreateCapturerStream(processConfig, stream);
     EXPECT_NE(nullptr, adapterManager);
 }
@@ -1054,6 +1058,7 @@ HWTEST(PaAdapterManagerUnitTest, PaAdapterManager_055, TestSize.Level1)
     AudioProcessConfig processConfig = GetInnerCapConfig();
     uint32_t sessionId = SESSIONID;
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+    ASSERT_TRUE(stream != nullptr);
     std::shared_ptr<ICapturerStream> capturerStream = adapterManager->CreateCapturerStream(processConfig, stream);
     ASSERT_TRUE(capturerStream != nullptr);
     adapterManager->capturerStreamMap_.insert({streamIndex0, capturerStream});
