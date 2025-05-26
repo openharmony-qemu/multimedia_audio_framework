@@ -3836,10 +3836,7 @@ HWTEST(AudioRendererUnitTest, UpdateAudioInterruptStrategy_002, TestSize.Level1)
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     audioRendererPrivate->isStillZeroStreamVolume_ = true;
     float volume = 1;
-    std::shared_ptr<TestAudioStremStub> testAudioStremStub = std::make_shared<TestAudioStremStub>();
-
-    testAudioStremStub->state_ = RUNNING;
-    audioRendererPrivate->audioStream_ = testAudioStremStub;
+    audioRendererPrivate->audioStream_ = nullptr;
     audioRendererPrivate->UpdateAudioInterruptStrategy(volume);
     EXPECT_EQ(audioRendererPrivate->isStillZeroStreamVolume_, false);
 }

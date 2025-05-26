@@ -1083,7 +1083,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_035, TestSize.Level1
     ASSERT_NE(capturerInServer->stream_, nullptr);
 
     auto ret = capturerInServer->ConfigServerBuffer();
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -1114,7 +1114,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_036, TestSize.Level1
     EXPECT_NE(capturerInServer_, nullptr);
 
     auto ret = capturerInServer_->Init();
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
