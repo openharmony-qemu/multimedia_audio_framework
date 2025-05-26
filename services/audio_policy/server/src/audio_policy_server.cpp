@@ -95,10 +95,12 @@ static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_MCU = 7500;
 constexpr int32_t UID_CAAS = 5527;
+constexpr int32_t UID_TELEPHONY = 1001;
 const std::set<int32_t> INTERRUPT_CALLBACK_TRUST_LIST = {
     UID_MEDIA,
     UID_MCU,
-    UID_CAAS
+    UID_CAAS,
+    UID_TELEPHONY
 };
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
