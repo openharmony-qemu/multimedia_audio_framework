@@ -32,7 +32,7 @@ HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo)
       pcmBufferInfo_(STEREO, 960, SAMPLE_RATE_48000), coBufferOut_(pcmBufferInfo_)
 {
     AUDIO_INFO_LOG("HpaeCoBufferNode created");
-    size_t size = nodeInfo.samplingRate * static_cast<int32_t>(nodeInfo.channels) *
+    size_t size = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
         sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
     AUDIO_INFO_LOG("Create ring cache, size: %{public}zu", size);
     ringCache_ = AudioRingCache::Create(size);
@@ -63,6 +63,14 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 void HpaeCoBufferNode::DoProcess()
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (processFlag_ == FIRST_FRAME) {
+        processFlag_ = SECOND_FRAME;
+        startTime_ = std::chrono::high_resolution_clock::now();
+    } else if (processFlag_ == SECOND_FRAME) {
+        processFlag_ = OTHER_FRAME;
+        endTime_ = std::chrono::high_resolution_clock::now();
+        std::this_thread::sleep_for(std::chrono::milliseconds(latency_) - endTime_ + startTime_);
+    }
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
     OptResult result = ringCache_->GetReadableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get readable size failed");
@@ -129,6 +137,7 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
     nodeInfo.nodeName = "HpaeCoBufferNode";
     SetNodeInfo(nodeInfo);
     inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
+    processFlag_ = FIRST_FRAME;
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeCoBufferNodeInput_id_" + std::to_string(GetNodeId()) + ".pcm");
@@ -161,22 +170,25 @@ void HpaeCoBufferNode::SetLatency(uint32_t latency)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("latency is %{public}d", latency);
-    CHECK_AND_RETURN(ringCache_ != nullptr, "ring cache is null");
-    ringCache_->ResetBuffer();
-    uint32_t offset = 0;
-    while (offset < latency - DEFAULT_SINK_LATENCY) {
-        OptResult result = ringCache_->GetWritableSize();
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-        size_t writeLen = coBufferOut_.GetFrameLen() * coBufferOut_.GetChannelCount() * sizeof(float);
-        memset_s(coBufferOut_.GetPcmDataBuffer(), writeLen, 0, writeLen);
-        CHECK_AND_RETURN_LOG(result.size >= writeLen,
-            "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
-            result.size, writeLen);
-        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), writeLen};
-        result = ringCache_->Enqueue(bufferWrap);
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
-        offset += DEFAULT_FRAME_LEN_MS;
-    }
+    // CHECK_AND_RETURN(ringCache_ != nullptr, "ring cache is null");
+    // ringCache_->ResetBuffer();
+    // uint32_t offset = 0;
+    // while (offset < latency - DEFAULT_SINK_LATENCY) {
+    //     OptResult result = ringCache_->GetWritableSize();
+    //     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
+    //     size_t writeLen = coBufferOut_.GetFrameLen() * coBufferOut_.GetChannelCount() * sizeof(float);
+    //     memset_s(coBufferOut_.GetPcmDataBuffer(), writeLen, 0, writeLen);
+    //     CHECK_AND_RETURN_LOG(result.size >= writeLen,
+    //         "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
+    //         result.size, writeLen);
+    //     BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), writeLen};
+    //     result = ringCache_->Enqueue(bufferWrap);
+    //     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
+    //     offset += DEFAULT_FRAME_LEN_MS;
+    // }
+
+    firstProcessFlag_ = true;
+    latency_ = latency - DEFAULT_SINK_LATENCY;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -29,6 +29,11 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
+enum class ProcessFalg {
+    FIRST_FRAME,
+    SECOND_FRAME,
+    OTHER_FRAME,
+};
 class HpaeCoBufferNode : public OutputNode<HpaePcmBuffer *>, public InputNode<HpaePcmBuffer *> {
 public:
     HpaeCoBufferNode(HpaeNodeInfo& nodeInfo);
@@ -53,6 +58,10 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer coBufferOut_;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
+    ProcessFalg processFlag_ = FIRST_FRAME;
+    uint32_t latency_ = 0;  // in ms
+    std::chrono::milliseconds startTime_ = std::chrono::milliseconds(0);
+    std::chrono::milliseconds endTime_ = std::chrono::milliseconds(0);
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
