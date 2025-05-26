@@ -1653,6 +1653,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamicInner(const std::
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
     sceneTypeToSpecialEffectSet_.erase(sceneType);
     int32_t ret = CheckAndReleaseCommonEffectChain(sceneType);
+    sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->InitEffectChain();
     std::thread([this, sceneType, sceneTypeAndDeviceKey, defaultSceneTypeAndDeviceKey, ret]() {
         WaitAndReleaseEffectChain(sceneType, sceneTypeAndDeviceKey, defaultSceneTypeAndDeviceKey, ret);
     }).detach();

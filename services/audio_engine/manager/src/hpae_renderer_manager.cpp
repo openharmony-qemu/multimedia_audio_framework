@@ -809,25 +809,27 @@ int32_t HpaeRendererManager::SetRate(uint32_t sessionId, int32_t rate)
 
 int32_t HpaeRendererManager::SetAudioEffectMode(uint32_t sessionId, int32_t effectMode)
 {
-    if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
-        return ERR_INVALID_OPERATION;
-    }
     if (effectMode < EFFECT_NONE || effectMode > EFFECT_DEFAULT) {
         return ERR_INVALID_OPERATION;
     }
-
-    HpaeNodeInfo &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
-    if (nodeInfo.effectInfo.effectMode != static_cast<AudioEffectMode>(effectMode)) {
-        nodeInfo.effectInfo.effectMode = static_cast<AudioEffectMode>(effectMode);
-        size_t sinkInputNodeConnectNum = sinkInputNodeMap_[sessionId]->GetOutputPort()->GetInputNum();
-        if (sinkInputNodeConnectNum != 0) {
-            AUDIO_INFO_LOG("UpdateProcessClusterConnection because effectMode to be %{public}d", effectMode);
-            UpdateProcessClusterConnection(sessionId, effectMode);
-        } else {
-            AUDIO_INFO_LOG("no need to ProcessClusterConnection, sinkInputNodeConnectNum is %{public}zu",
-                sinkInputNodeConnectNum);
+    auto request = [this, sessionId, effectMode]() {
+        if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            return ;
         }
-    }
+        HpaeNodeInfo &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
+        if (nodeInfo.effectInfo.effectMode != static_cast<AudioEffectMode>(effectMode)) {
+            nodeInfo.effectInfo.effectMode = static_cast<AudioEffectMode>(effectMode);
+            size_t sinkInputNodeConnectNum = sinkInputNodeMap_[sessionId]->GetOutputPort()->GetInputNum();
+            if (sinkInputNodeConnectNum != 0) {
+                AUDIO_INFO_LOG("UpdateProcessClusterConnection because effectMode to be %{public}d", effectMode);
+                UpdateProcessClusterConnection(sessionId, effectMode);
+            } else {
+                AUDIO_INFO_LOG("no need to ProcessClusterConnection, sinkInputNodeConnectNum is %{public}zu",
+                    sinkInputNodeConnectNum);
+            }
+        }
+    };
+    SendRequest(request);
     return SUCCESS;
 }
 
