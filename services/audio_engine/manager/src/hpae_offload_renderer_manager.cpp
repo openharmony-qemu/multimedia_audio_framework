@@ -129,8 +129,6 @@ void HpaeOffloadRendererManager::DeleteInputSession()
     sinkOutputNode_->StopStream();
     sinkInputNode_ = nullptr;
     formatConverterNode_ = nullptr;
-    // when sinkInput removed, need unable process
-    enableProcess_ = false;
 }
 
 int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
@@ -171,6 +169,8 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
         OnNotifyDfxNodeInfo(true, sinkOutputNode_->GetNodeId(), formatConverterNode_->GetNodeInfo());
         OnNotifyDfxNodeInfo(true, formatConverterNode_->GetNodeId(), sinkInputNode_->GetNodeInfo());
     }
+    // when sinkInput moved, need unable process
+    enableProcess_ = false;
     // single stream manager
     HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
     nodeInfo.sessionId = sinkInputNode_->GetSessionId();

@@ -1057,23 +1057,12 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> 
     AUDIO_INFO_LOG("Adapter load-module %{public}s, route flag: %{public}u", moduleArgs.c_str(), pipeInfo->routeFlag_);
     curActiveCount_++;
     AudioIOHandle ioHandle = HDI_INVALID_ID;
-
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
-        CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ioHandle, "audioServiceAdapter_ null");
-        int32_t ret = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, pipeInfo->moduleInfo_);
-        ioHandle = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
-        paIndex = ioHandle;
-        return ioHandle;
-    } else {
-        if (IsPaRoute(pipeInfo->routeFlag_)) {
-            AUDIO_INFO_LOG("Is pa route");
-            return OpenPaAudioPort(pipeInfo, paIndex, moduleArgs);
-        }
-
-        AUDIO_INFO_LOG("Not pa route");
-        return OpenNotPaAudioPort(pipeInfo, paIndex);
+    if (IsPaRoute(pipeInfo->routeFlag_)) {
+        AUDIO_INFO_LOG("Is pa route");
+        return OpenPaAudioPort(pipeInfo, paIndex, moduleArgs);
     }
+    AUDIO_INFO_LOG("Not pa route");
+    return OpenNotPaAudioPort(pipeInfo, paIndex);
 }
 
 AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex,
@@ -1094,7 +1083,13 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
         AUDIO_ERR_LOG("Invalid pipe role: %{public}u", pipeInfo->pipeRole_);
     }
     IPCSkeleton::SetCallingIdentity(identity);
-    paIndex = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, moduleArgs.c_str());
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        int32_t ret = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, pipeInfo->moduleInfo_);
+        paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
+    } else {
+        paIndex = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, moduleArgs.c_str());
+    }
     AUDIO_INFO_LOG("Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
     return ioHandle;
 }
@@ -1196,31 +1191,30 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     AudioIOHandle ioHandle = HDI_INVALID_ID;
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ioHandle, "audioServerProxy_ null");
 
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    if (audioModuleInfo.lib == "libmodule-inner-capturer-sink.z.so") {
+        std::string idInfo = audioModuleInfo.name;
+        IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
+        ioHandle = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, idInfo, attr);
+    } else {
+        if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
+            std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
+            IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
+            ioHandle = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr);
+        } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
+            std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
+            IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
+            ioHandle = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr);
+        }
+    }
+    IPCSkeleton::SetCallingIdentity(identity);
+
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ioHandle, "audioServiceAdapter_ null");
         int32_t ret = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, audioModuleInfo);
-        ioHandle = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
-        paIndex = ioHandle;
+        paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
     } else {
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        if (audioModuleInfo.lib == "libmodule-inner-capturer-sink.z.so") {
-            std::string idInfo = audioModuleInfo.name;
-            IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-            ioHandle = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, idInfo, attr);
-        } else {
-            if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
-                std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
-                IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
-                ioHandle = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr);
-            } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
-                std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
-                IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
-                ioHandle = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr);
-            }
-        }
-        IPCSkeleton::SetCallingIdentity(identity);
-
         paIndex = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
     }
 
