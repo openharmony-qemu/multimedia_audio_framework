@@ -892,21 +892,6 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
-    } else {
-        if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
-            return SUCCESS;
-        }
-        auto weakRenderer = weak_from_this();
-        std::thread([weakRenderer, callingFunc] () {
-            auto sharedRenderer = weakRenderer.lock();
-            CHECK_AND_RETURN_LOG(sharedRenderer, "render is null");
-            uint32_t taskCount;
-            do {
-                taskCount = sharedRenderer->switchStreamInNewThreadTaskCount_.load();
-                sharedRenderer->CheckAndRestoreAudioRenderer(callingFunc + "withNewThread");
-            } while (sharedRenderer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
-        }).detach();
-        return SUCCESS;
     }
     // Return in advance if there's no need for restore.
     CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
@@ -963,10 +948,28 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     return SUCCESS;
 }
 
+int32_t AudioRendererPrivate::AsyncCheckAndRestoreAudioRenderer(std::string callingFunc)
+{
+    if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
+        return SUCCESS;
+    }
+    auto weakRenderer = weak_from_this();
+    taskLoop_.PostTask([weakRenderer, callingFunc] () {
+        auto sharedRenderer = weakRenderer.lock();
+        CHECK_AND_RETURN_LOG(sharedRenderer, "render is null");
+        uint32_t taskCount;
+        do {
+            taskCount = sharedRenderer->switchStreamInNewThreadTaskCount_.load();
+            sharedRenderer->CheckAndRestoreAudioRenderer(callingFunc + "withNewThread");
+        } while (sharedRenderer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
+    });
+    return SUCCESS;
+}
+
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("KeyAction AudioRenderer::Start");
-    CheckAndRestoreAudioRenderer("Start");
+    AsyncCheckAndRestoreAudioRenderer("Start");
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) { AUDIO_ERR_LOG("Start timeout"); }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
@@ -1025,7 +1028,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("AudioRenderer::Write");
-    CheckAndRestoreAudioRenderer("Write");
+    AsyncCheckAndRestoreAudioRenderer("Write");
     MockPcmData(buffer, bufferSize);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
@@ -1039,7 +1042,7 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize)
 {
     Trace trace("Write");
-    CheckAndRestoreAudioRenderer("Write");
+    AsyncCheckAndRestoreAudioRenderer("Write");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t size = currentStream->Write(pcmBuffer, pcmSize, metaBuffer, metaSize);
@@ -1068,7 +1071,7 @@ bool AudioRendererPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    CheckAndRestoreAudioRenderer("GetAudioPosition");
+    AsyncCheckAndRestoreAudioRenderer("GetAudioPosition");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetAudioPosition(timestamp, base);
@@ -1613,8 +1616,8 @@ AudioRenderMode AudioRendererPrivate::GetRenderMode() const
 
 int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc)
 {
-    CheckAndRestoreAudioRenderer("GetBufferDesc");
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    AsyncCheckAndRestoreAudioRenderer("GetBufferDesc");
+    std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->GetBufferDesc(bufDesc);
     return ret;
@@ -1623,10 +1626,10 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc)
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc)
 {
     Trace trace("AudioRenderer::Enqueue");
-    CheckAndRestoreAudioRenderer("Enqueue");
+    AsyncCheckAndRestoreAudioRenderer("Enqueue");
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->Enqueue(bufDesc);
     return ret;

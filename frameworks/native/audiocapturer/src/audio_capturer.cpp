@@ -671,21 +671,6 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
-    } else {
-        if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
-            return SUCCESS;
-        }
-        auto weakCapturer = weak_from_this();
-        std::thread([weakCapturer, callingFunc] () {
-            auto sharedCapturer = weakCapturer.lock();
-            CHECK_AND_RETURN_LOG(sharedCapturer, "capturer is null");
-            uint32_t taskCount;
-            do {
-                taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
-                sharedCapturer->CheckAndRestoreAudioCapturer(callingFunc + "withNewThread");
-            } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
-        }).detach();
-        return SUCCESS;
     }
     // Return in advance if there's no need for restore.
     CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
@@ -732,9 +717,27 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     return SUCCESS;
 }
 
+int32_t AudioCapturerPrivate::AsyncCheckAndRestoreAudioCapturer(std::string callingFunc)
+{
+    if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
+        return SUCCESS;
+    }
+    auto weakCapturer = weak_from_this();
+    std::thread([weakCapturer, callingFunc] () {
+        auto sharedCapturer = weakCapturer.lock();
+        CHECK_AND_RETURN_LOG(sharedCapturer, "capturer is null");
+        uint32_t taskCount;
+        do {
+            taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
+            sharedCapturer->CheckAndRestoreAudioCapturer(callingFunc + "withNewThread");
+        } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
+    }).detach();
+    return SUCCESS;
+}
+
 bool AudioCapturerPrivate::Start()
 {
-    CheckAndRestoreAudioCapturer("Start");
+    AsyncCheckAndRestoreAudioCapturer("Start");
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
@@ -776,7 +779,7 @@ int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBloc
 {
     Trace trace("AudioCapturer::Read");
     CheckSignalData(&buffer, userSize);
-    CheckAndRestoreAudioCapturer("Read");
+    AsyncCheckAndRestoreAudioCapturer("Read");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int size = currentStream->Read(buffer, userSize, isBlockingRead);
@@ -1179,8 +1182,8 @@ int32_t AudioCapturerPrivate::SetCapturerReadCallback(const std::shared_ptr<Audi
 
 int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
 {
-    CheckAndRestoreAudioCapturer("GetBufferDesc");
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    AsyncCheckAndRestoreAudioCapturer("GetBufferDesc");
+    std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->GetBufferDesc(bufDesc);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
@@ -1189,8 +1192,8 @@ int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
 
 int32_t AudioCapturerPrivate::Enqueue(const BufferDesc &bufDesc)
 {
-    CheckAndRestoreAudioCapturer("Enqueue");
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    AsyncCheckAndRestoreAudioCapturer("Enqueue");
+    std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     CheckSignalData(bufDesc.buffer, bufDesc.bufLength);
     return currentStream->Enqueue(bufDesc);
