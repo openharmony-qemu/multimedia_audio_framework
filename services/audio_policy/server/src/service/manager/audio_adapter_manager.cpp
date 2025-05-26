@@ -917,8 +917,12 @@ void AudioAdapterManager::AdjustBluetoothVoiceAssistantVolume(InternalDeviceType
     }
 
     if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO && isSameVolumeGroup) {
-        volumeDataMaintainer_.GetVolume(deviceType, STREAM_VOICE_ASSISTANT);
-        AUDIO_INFO_LOG("sco ok");
+        if (!volumeDataMaintainer_.GetVolume(deviceType, STREAM_VOICE_ASSISTANT)) {
+            AUDIO_INFO_LOG("sco voice assistant volume does not exist, use default");
+            volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, DEFAULT_VOLUME_LEVEL);
+        } else {
+            AUDIO_INFO_LOG("sco ok");
+        }
     }
 }
 
