@@ -672,6 +672,30 @@ public:
     static std::vector<AudioEncodingType> GetSupportedEncodingTypes();
 
     /**
+     * @brief Do fade in for buffer.
+     * 
+     * @param buffer Indicates the buffer.
+     * @param format Indicates the format.
+     * @param channel Indicates the channel.
+     * 
+     * @return Returns {@link SUCCESS} or an error code defined in {@link audio_errors.h}.
+     * @since 8
+     */
+    static int32_t FadeInAudioBuffer(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel);
+
+    /**
+     * @brief Do fade out for buffer.
+     * 
+     * @param buffer Indicates the buffer.
+     * @param format Indicates the format.
+     * @param channel Indicates the channel.
+     * 
+     * @return Returns {@link SUCCESS} or an error code defined in {@link audio_errors.h}.
+     * @since 8
+     */
+    static int32_t FadeOutAudioBuffer(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel);
+
+    /**
      * @brief Mute the buffer form (addr + offset) to (addr + offset + length). Make sure the buffer is valid!
      *
      * @param addr Indicates the buffer.
