@@ -107,6 +107,7 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
         CHECK_AND_RETURN(appState.isBack != isBack);
         appState.isBack = isBack;
         appState.isFreeze = isBack ? appState.isFreeze : false;
+        appState.isbinder = isBack ? appState.isbinder : false;
         AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
             "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
             appState.hasBackTask, appState.isFreeze);
