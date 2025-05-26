@@ -867,7 +867,8 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = streamDesc->newDeviceDescs_.front();
     std::string oldSinkName = "";
     if (streamDesc->oldDeviceDescs_.size() == 0) {
-        AUDIO_INFO_LOG("Move session, [][]->[%{public}d][%{public}s], reason %{public}d", newDeviceDesc->deviceType_,
+        AUDIO_INFO_LOG("Move session %{public}u, [][]->[%{public}d][%{public}s], reason %{public}d",
+            streamDesc->sessionId_, newDeviceDesc->deviceType_,
             GetEncryptAddr(newDeviceDesc->macAddress_).c_str(), static_cast<int32_t>(reason));
     } else {
         PrepareMoveAttrs(streamDesc, oldDeviceType, isNeedTriggerCallback, oldSinkName, reason);
@@ -876,7 +877,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     std::vector<SinkInput> sinkInputs;
     audioPolicyManager_.GetAllSinkInputs(sinkInputs);
     std::vector<SinkInput> targetSinkInputs = audioOffloadStream_.FilterSinkInputs(streamDesc->sessionId_, sinkInputs);
-    
+
     if (isNeedTriggerCallback && audioPolicyServerHandler_) {
         std::shared_ptr<AudioDeviceDescriptor> callbackDesc = std::make_shared<AudioDeviceDescriptor>(*newDeviceDesc);
         callbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
@@ -1108,7 +1109,7 @@ int32_t AudioCoreService::OpenRemoteAudioDevice(std::string networkId, DeviceRol
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
     AudioModuleInfo remoteDeviceInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
         deviceRole, deviceType);
-    
+
     auto ret = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_REMOTE, networkId);
     if (ret) {
         AUDIO_ERR_LOG("load adapter fail");
@@ -1615,7 +1616,7 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         AUDIO_INFO_LOG("normal stream beacuse streamUsage.");
         return false;
     }
-    
+
     AudioSpatializationState spatialState =
         AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState();
     bool effectOffloadFlag = AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
@@ -1853,7 +1854,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         }
         FetchOutputDeviceAndRoute();
     }
-    
+
     const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
         audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
