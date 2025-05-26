@@ -28,6 +28,7 @@
 #include "audio_utils.h"
 #include "i_audio_stream.h"
 #include "audio_stream_descriptor.h"
+#include "audio_task_loop.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -185,6 +186,7 @@ protected:
 
 private:
     int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
+    int32_t AsyncCheckAndRestoreAudioRenderer(std::string callingFunc);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
@@ -271,6 +273,8 @@ private:
     int64_t framesAlreadyWritten_ = 0;
     int64_t sourceDuration_ = -1;
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
+
+    AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
