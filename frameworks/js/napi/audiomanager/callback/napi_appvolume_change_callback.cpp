@@ -153,7 +153,7 @@ void NapiAudioManagerAppVolumeChangeCallback::OnAppVolumeChangedForUid(int32_t a
 void NapiAudioManagerAppVolumeChangeCallback::OnSelfAppVolumeChanged(const VolumeEvent &event)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("OnSelfAppVolumeChanged enter");
+    AUDIO_DEBUG_LOG("enter");
     for (auto iter : selfAppVolumeChangeList_) {
         std::unique_ptr<AudioManagerAppVolumeChangeJsCallback> cb =
             std::make_unique<AudioManagerAppVolumeChangeJsCallback>();

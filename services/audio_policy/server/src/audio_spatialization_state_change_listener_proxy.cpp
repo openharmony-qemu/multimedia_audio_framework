@@ -42,7 +42,7 @@ void AudioSpatializationStateChangeListenerProxy::OnSpatializationStateChange(
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
 
-    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerProxy OnSpatializationStateChange entered");
+    AUDIO_DEBUG_LOG("enter");
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioSpatializationStateChangeListener: WriteInterfaceToken failed");
@@ -75,7 +75,7 @@ AudioSpatializationStateChangeListenerCallback::~AudioSpatializationStateChangeL
 void AudioSpatializationStateChangeListenerCallback::OnSpatializationStateChange(
     const AudioSpatializationState &spatializationState)
 {
-    AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerCallback OnSpatializationStateChange entered");
+    AUDIO_DEBUG_LOG("enter");
     if (listener_ != nullptr) {
         listener_->OnSpatializationStateChange(spatializationState);
     }
