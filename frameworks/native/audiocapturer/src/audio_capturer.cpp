@@ -723,7 +723,7 @@ int32_t AudioCapturerPrivate::AsyncCheckAndRestoreAudioCapturer(std::string call
         return SUCCESS;
     }
     auto weakCapturer = weak_from_this();
-    std::thread([weakCapturer, callingFunc] () {
+    taskLoop_.PostTask([weakCapturer, callingFunc] () {
         auto sharedCapturer = weakCapturer.lock();
         CHECK_AND_RETURN_LOG(sharedCapturer, "capturer is null");
         uint32_t taskCount;
@@ -731,7 +731,7 @@ int32_t AudioCapturerPrivate::AsyncCheckAndRestoreAudioCapturer(std::string call
             taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
             sharedCapturer->CheckAndRestoreAudioCapturer(callingFunc + "withNewThread");
         } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
-    }).detach();
+    });
     return SUCCESS;
 }
 
