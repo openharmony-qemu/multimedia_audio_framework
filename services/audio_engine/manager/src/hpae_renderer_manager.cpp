@@ -886,7 +886,7 @@ size_t HpaeRendererManager::GetWritableSize(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::UpdateSpatializationState(                                                                                  
+int32_t HpaeRendererManager::UpdateSpatializationState(                                                  
     uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled)
 {
     return SUCCESS;

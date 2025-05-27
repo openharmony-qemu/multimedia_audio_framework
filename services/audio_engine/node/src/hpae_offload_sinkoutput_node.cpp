@@ -557,6 +557,13 @@ void HpaeOffloadSinkOutputNode::RegOffloadCallback()
     CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     audioRendererSink_->RegistOffloadHdiCallback([this](const RenderCallbackType type) { OffloadCallback(type); });
 }
+
+int32_t HpaeOffloadSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
+    return audioRendererSink_->UpdateAppsUid(appsUid);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
