@@ -42,6 +42,7 @@ static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_SLEEP_MS = 150000; // 150ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
+static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_SLEEP_US = 350000; // 350ms
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t DISTRIBUTED_DEVICE = 1003;
@@ -645,7 +646,6 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             continue;
         }
         MuteSinkForSwitchBluetoothDevice(rendererChangeInfo, descs, reason);
-        MuteSinkForSwitchDistributedDevice(rendererChangeInfo, descs, reason);
         std::string encryptMacAddr = GetEncryptAddr(descs.front()->macAddress_);
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (IsFastFromA2dpToA2dp(descs.front(), rendererChangeInfo, reason)) { continue; }
@@ -776,15 +776,6 @@ void AudioDeviceCommon::MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioRe
 {
     if (outputDevices.front() != nullptr && (outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         outputDevices.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
-        MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
-    }
-}
-
-void AudioDeviceCommon::MuteSinkForSwitchDistributedDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices, const AudioStreamDeviceChangeReasonExt reason)
-{
-    if (outputDevices.front() != nullptr &&
-        outputDevices.front()->deviceType_ == DEVICE_TYPE_SPEAKER && reason == DISTRIBUTED_DEVICE) {
         MuteSinkPortForSwitchDevice(rendererChangeInfo, outputDevices, reason);
     }
 }
@@ -1014,10 +1005,8 @@ void AudioDeviceCommon::MuteSinkPortLogic(const std::string &oldSinkName, const 
     auto ringermode = audioPolicyManager_.GetRingerMode();
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     if (reason == DISTRIBUTED_DEVICE) {
-        AUDIO_INFO_LOG("distribute device mute, reason: %{public}d", static_cast<int>(reason));
-        int64_t muteTime = DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS;
         audioIOHandleMap_.MuteSinkPort(newSinkName, DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS, true);
-        audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true);
+        usleep(DISTRIBUTED_DEVICE_UNAVALIABLE_SLEEP_US);
     } else if (reason.IsOldDeviceUnavaliable() && ((scene == AUDIO_SCENE_DEFAULT) ||
         ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) &&
         ringermode != RINGER_MODE_NORMAL) || (scene == AUDIO_SCENE_PHONE_CHAT))) {

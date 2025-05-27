@@ -253,11 +253,13 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_008, TestSize.Level1)
     statusInfo.deviceName = "test";
     statusInfo.macAddress = "00:11:22:33:44:55";
     statusInfo.isConnected = true;
-    ret = audioDeviceStatus.HandleDistributedDeviceUpdate(statusInfo, descForCb);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    ret = audioDeviceStatus.HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
     EXPECT_EQ(ret, SUCCESS);
 
     statusInfo.isConnected = false;
-    ret = audioDeviceStatus.HandleDistributedDeviceUpdate(statusInfo, descForCb);
+    reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    ret = audioDeviceStatus.HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
     EXPECT_EQ(ret, SUCCESS);
 }
 
