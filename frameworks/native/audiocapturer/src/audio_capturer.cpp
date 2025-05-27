@@ -876,7 +876,7 @@ bool AudioCapturerPrivate::Stop() const
 
 bool AudioCapturerPrivate::Flush() const
 {
-    Trace trace("KeyAction AudioCapturer::Flush");
+    Trace trace("KeyAction AudioCapturer::Flush " + std::to_string(sessionID_));
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     AUDIO_INFO_LOG("StreamClientState for Capturer::Flush. id %{public}u", sessionID_);

@@ -968,7 +968,7 @@ int32_t AudioRendererPrivate::AsyncCheckAndRestoreAudioRenderer(std::string call
 
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
-    Trace trace("KeyAction AudioRenderer::Start");
+    Trace trace("KeyAction AudioRenderer::Start " + std::to_string(sessionID_));
     AsyncCheckAndRestoreAudioRenderer("Start");
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) { AUDIO_ERR_LOG("Start timeout"); }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
@@ -1087,7 +1087,7 @@ bool AudioRendererPrivate::Drain() const
 
 bool AudioRendererPrivate::Flush() const
 {
-    Trace trace("KeyAction AudioRenderer::Flush");
+    Trace trace("KeyAction AudioRenderer::Flush " + std::to_string(sessionID_));
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->FlushAudioStream();
@@ -1095,7 +1095,7 @@ bool AudioRendererPrivate::Flush() const
 
 bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
 {
-    Trace trace("KeyAction AudioRenderer::PauseTransitent");
+    Trace trace("KeyAction AudioRenderer::PauseTransitent " + std::to_string(sessionID_));
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
@@ -1153,7 +1153,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
 
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 {
-    Trace trace("KeyAction AudioRenderer::Pause");
+    Trace trace("KeyAction AudioRenderer::Pause " + std::to_string(sessionID_));
     AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS,
         [](void *) {
             AUDIO_ERR_LOG("Pause timeout");
@@ -1195,7 +1195,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 
 bool AudioRendererPrivate::Stop()
 {
-    Trace trace("KeyAction AudioRenderer::Stop");
+    Trace trace("KeyAction AudioRenderer::Stop " + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
@@ -1228,7 +1228,7 @@ bool AudioRendererPrivate::Stop()
 
 bool AudioRendererPrivate::Release()
 {
-    Trace trace("KeyAction AudioRenderer::Release");
+    Trace trace("KeyAction AudioRenderer::Release " + std::to_string(sessionID_));
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
