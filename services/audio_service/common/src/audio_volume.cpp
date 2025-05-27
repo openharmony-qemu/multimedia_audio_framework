@@ -116,7 +116,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         AUDIO_ERR_LOG("system volume not exist, volumeType:%{public}d, deviceClass%{public}s",
             volumeType, deviceClass.c_str());
     }
-    int32_t doNotDisturbStatusVolume = GetDoNotDisturbStatusVolume(streamType, appUid, sessionId);
+    int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolume(streamType, appUid, sessionId));
     volumes->volume = volumes->volumeSystem * volumes->volumeStream * doNotDisturbStatusVolume;
     if (it != streamVolume_.end() && it->second.monitorVolume_ != volumes->volume) {
         it->second.monitorVolume_ = volumes->volume;
@@ -129,7 +129,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     return volumes->volume;
 }
 
-uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, uint32_t appUid, uint32_t sessionId)
+uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId)
 {
     if (!isDoNotDisturbStatus_) {
         return DISTURB_STATE_VOLUME_UNMUTE;
