@@ -602,6 +602,10 @@ public:
     void CheckConnectedDevice();
     void SetDeviceConnectedFlagFalseAfterDuration();
 
+    int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command) override;
+    int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     void RegisterParamCallback();

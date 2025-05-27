@@ -48,7 +48,7 @@ public:
         const std::string &condition) = 0;
     virtual int32_t SetVoiceVolume(const std::string &adapterName, float volume) = 0;
     virtual int32_t SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-        int32_t streamId) = 0;
+        int32_t streamId, AudioScene scene = AUDIO_SCENE_DEFAULT) = 0;
     virtual int32_t SetInputRoute(const std::string &adapterName, DeviceType device, int32_t streamId,
         int32_t inputType) = 0;
     virtual void SetMicMute(const std::string &adapterName, bool isMute) = 0;

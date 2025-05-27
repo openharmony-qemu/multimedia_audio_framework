@@ -80,6 +80,7 @@ constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_CAR_DISTRIBUTED_ENGINE_SA = 65872;
 constexpr uid_t UID_TV_PROCESS_SA = 7501;
 constexpr uid_t UID_DP_PROCESS_SA = 7062;
+constexpr uid_t UID_NEARLINK_SA = 7030;
 constexpr uid_t UID_PENCIL_PROCESS_SA = 7555;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
 constexpr uid_t UID_AVSESSION_SERVICE = 6700;
@@ -1498,6 +1499,8 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
         }
     } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    } else if (desc.deviceType_ == DEVICE_TYPE_NEARLINK && desc.deviceRole_ == INPUT_DEVICE) {
+        desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     }
 }
 
@@ -4024,12 +4027,17 @@ int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<Audio
 {
     AUDIO_INFO_LOG("deviceType: %{public}d, deviceRole: %{public}d, isConnected: %{public}d",
         desc->deviceType_, desc->deviceRole_, isConnected);
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(callerUid == UID_TV_PROCESS_SA || callerUid == UID_DP_PROCESS_SA ||
-        callerUid == UID_PENCIL_PROCESS_SA, ERR_PERMISSION_DENIED, "uid permission denied");
+
+    std::vector<uid_t> allowedUids = {
+        UID_TV_PROCESS_SA, UID_DP_PROCESS_SA, UID_PENCIL_PROCESS_SA, UID_NEARLINK_SA,
+    };
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::CheckCallingUidPermission(allowedUids), ERR_PERMISSION_DENIED,
+        "uid permission denied");
+
     bool ret = VerifyPermission(MANAGE_AUDIO_CONFIG);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MANAGE_AUDIO_CONFIG permission denied");
-    audioPolicyService_.OnDeviceStatusUpdated(*desc, isConnected);
+
+    eventEntry_->OnDeviceStatusUpdated(*desc, isConnected);
     return SUCCESS;
 }
 
@@ -4104,6 +4112,29 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
 bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     return audioPolicyService_.IsAcousticEchoCancelerSupported(sourceType);
+}
+
+int32_t AudioPolicyServer::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    const DeviceInfoUpdateCommand command)
+{
+    std::vector<uid_t> allowedUids = { UID_NEARLINK_SA };
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::CheckCallingUidPermission(allowedUids), ERR_PERMISSION_DENIED,
+        "uid permission denied");
+
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "deviceDesc is nullptr");
+
+    eventEntry_->OnDeviceInfoUpdated(*deviceDesc, command);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetSleAudioOperationCallback(const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
+
+    bool ret = PermissionUtil::VerifyIsAudio();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
+
+    return audioPolicyService_.SetSleAudioOperationCallback(object);
 }
 } // namespace AudioStandard
 } // namespace OHOS

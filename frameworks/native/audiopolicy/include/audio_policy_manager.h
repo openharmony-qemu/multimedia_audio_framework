@@ -39,6 +39,7 @@
 #include "i_standard_spatialization_state_change_listener.h"
 #include "audio_combine_denoising_manager.h"
 #include "audio_stream_descriptor.h"
+#include "sle_audio_operation_callback_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -610,6 +611,9 @@ public:
         const std::shared_ptr<StreamVolumeChangeCallback> &callback);
     int32_t UnsetStreamVolumeChangeCallback(const std::shared_ptr<StreamVolumeChangeCallback> &callback);
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
+    int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command);
+    int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

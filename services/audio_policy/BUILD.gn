@@ -210,6 +210,7 @@ audio_ohos_library("audio_policy_service") {
     "server/proxy/src/audio_routing_manager_listener_proxy.cpp",
     "server/proxy/src/audio_spatialization_state_change_listener_proxy.cpp",
     "server/proxy/src/audio_zone_client_proxy.cpp",
+    "server/proxy/src/sle_audio_operation_callback_proxy.cpp",
     "server/src/audio_group_handle.cpp",
     "server/src/audio_policy_server.cpp",
     "server/src/audio_policy_server_handler.cpp",
@@ -263,6 +264,7 @@ audio_ohos_library("audio_policy_service") {
     "server/src/service/service/audio_scene_manager.cpp",
     "server/src/service/service/audio_tone_manager.cpp",
     "server/src/service/service/audio_volume_manager.cpp",
+    "server/src/service/service/sle_audio_device_manager.cpp",
     "server/src/service/session/audio_session.cpp",
     "server/src/service/session/audio_session_service.cpp",
     "server/src/service/session/audio_session_state_monitor.cpp",
@@ -577,6 +579,7 @@ audio_ohos_library("audio_policy_client") {
     "client/stub/src/audio_routing_manager_listener_stub.cpp",
     "client/stub/src/audio_spatialization_state_change_listener_stub.cpp",
     "client/stub/src/audio_zone_client.cpp",
+    "client/stub/src/sle_audio_operation_callback_stub.cpp",
   ]
 
   deps = [

@@ -480,6 +480,10 @@ public:
     virtual bool GetStreamMuteByUsage(StreamUsage streamUsage) = 0;
 
     virtual int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) = 0;
+
+    virtual int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command) = 0;
+    virtual int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

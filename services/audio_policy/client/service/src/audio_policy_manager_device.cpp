@@ -532,5 +532,35 @@ int32_t AudioPolicyManager::SetDeviceConnectionStatus(const std::shared_ptr<Audi
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->SetDeviceConnectionStatus(desc, isConnected);
 }
+
+int32_t AudioPolicyManager::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    const DeviceInfoUpdateCommand command)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->UpdateDeviceInfo(deviceDesc, command);
+}
+
+int32_t AudioPolicyManager::SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    std::unique_lock<std::mutex> lock(listenerStubMutex_);
+    auto audioSleCb = new (std::nothrow) SleAudioOperationCallbackStub();
+    CHECK_AND_RETURN_RET_LOG(audioSleCb != nullptr, ERROR, "object is nullptr");
+
+    audioSleCb->SetSleAudioOperationCallback(callback);
+    sptr<IRemoteObject> object = audioSleCb->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("listenerStub is nullptr");
+        delete audioSleCb;
+        return ERROR;
+    }
+
+    return gsp->SetSleAudioOperationCallback(object);
+}
 } // namespace AudioStandard
 } // namespace OHOS

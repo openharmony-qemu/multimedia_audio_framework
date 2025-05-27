@@ -463,6 +463,9 @@ public:
     bool GetStreamMuteByUsage(StreamUsage streamUsage) override;
 
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
+    int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command) override;
+    int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

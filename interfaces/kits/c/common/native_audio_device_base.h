@@ -174,6 +174,13 @@ typedef enum {
     AUDIO_DEVICE_TYPE_REMOTE_DAUDIO = 29,
 
     /**
+     * @brief Nearlink audio device.
+     *
+     * @since 19
+     */
+    AUDIO_DEVICE_TYPE_NEARLINK = 31,
+
+    /**
      * @brief Default device type.
      */
     AUDIO_DEVICE_TYPE_DEFAULT = 1000,

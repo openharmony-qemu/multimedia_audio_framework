@@ -408,5 +408,41 @@ int32_t AudioGeneralManager::GetCurrentCapturerChangeInfos(
     return AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
+int32_t AudioGeneralManager::SetDeviceConnectionStatus(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    bool isConnected)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "deviceDesc is nullptr");
+    return AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(deviceDesc, isConnected);
+}
+
+int32_t AudioGeneralManager::UpdateDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    const DeviceInfoUpdateCommand command)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "deviceDesc is nullptr");
+    return AudioPolicyManager::GetInstance().UpdateDeviceInfo(deviceDesc, command);
+}
+
+int32_t AudioGeneralManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_INVALID_PARAM, "audioRendererFilter is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() == 1 && audioDeviceDescriptors[0] != nullptr,
+        ERR_INVALID_PARAM, "invalid parameter");
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
+        ERR_INVALID_OPERATION, "not an output device.");
+    size_t validSize = 64; // Size of remote network ID
+    if (audioDeviceDescriptors[0]->networkId_ != LOCAL_NETWORK_ID &&
+        audioDeviceDescriptors[0]->networkId_.size() != validSize) {
+        AUDIO_ERR_LOG("SelectOutputDevice: invalid networkId.");
+        return ERR_INVALID_PARAM;
+    }
+    return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+}
+
+int32_t AudioGeneralManager::SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetSleAudioOperationCallback(callback);
+}
 } // namespace AudioStandard
 } // namespace OHOS

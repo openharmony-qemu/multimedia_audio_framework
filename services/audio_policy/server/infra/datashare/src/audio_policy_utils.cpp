@@ -250,6 +250,7 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
         case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_NEARLINK:
             if (pipeType == PIPE_TYPE_OFFLOAD) {
                 portName = OFFLOAD_PRIMARY_SPEAKER;
             } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
@@ -313,6 +314,7 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
     std::string portName = PORT_NONE;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_MIC:
+        case InternalDeviceType::DEVICE_TYPE_NEARLINK_IN:
             portName = PRIMARY_MIC;
             break;
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:

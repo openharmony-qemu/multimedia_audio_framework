@@ -113,6 +113,13 @@ void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string
         }
         BluetoothAudioManager::GetInstance().SendDeviceSelection(device, eventType,
             HFP_DEFAULT_SELECTION, USER_SELECTION);
+    } else if (devType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+        if (A2dpInBluetoothDeviceManager::IsA2dpInBluetoothDeviceExist(macAddress) != SUCCESS) {
+            AUDIO_ERR_LOG("failed for the device is not connected.");
+            return;
+        }
+        BluetoothAudioManager::GetInstance().SendDeviceSelection(device, eventType,
+            HFP_DEFAULT_SELECTION, USER_SELECTION);
     } else if (devType == DEVICE_TYPE_BLUETOOTH_SCO) {
         if (HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
             AUDIO_ERR_LOG("failed for the device is not connected.");

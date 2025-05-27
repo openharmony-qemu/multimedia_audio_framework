@@ -320,5 +320,30 @@ void AudioPolicyManagerStub::SetInputDeviceInternal(MessageParcel &data, Message
     int32_t result = SetInputDevice(deviceType, sessionID, sourceType, isRunning);
     reply.WriteInt32(result);
 }
+
+void AudioPolicyManagerStub::SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    bool isConnected = data.ReadBool();
+    int32_t result = SetDeviceConnectionStatus(desc, isConnected);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+    DeviceInfoUpdateCommand command = static_cast<DeviceInfoUpdateCommand>(data.ReadInt32());
+    int32_t result = UpdateDeviceInfo(audioDeviceDescriptor, command);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "SetSleAudioOperationCallback is null");
+    int32_t result = SetSleAudioOperationCallback(object);
+    reply.WriteInt32(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS

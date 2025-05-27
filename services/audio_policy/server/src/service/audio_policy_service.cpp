@@ -2112,6 +2112,17 @@ void AudioPolicyService::SetDefaultAdapterEnable(bool isEnable)
     return AudioServerProxy::GetInstance().SetDefaultAdapterEnableProxy(isEnable);
 }
 
+int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObject> &object)
+{
+    sptr<IStandardSleAudioOperationCallback> sleAudioOperationCallback =
+        iface_cast<IStandardSleAudioOperationCallback>(object);
+    CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR,
+        "sleAudioOperationCallback_ is nullptr");
+
+    sleAudioDeviceManager_.SetSleAudioOperationCallback(sleAudioOperationCallback);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
 {
     return audioOffloadStream_.ActivateConcurrencyFromServer(incomingPipe);
