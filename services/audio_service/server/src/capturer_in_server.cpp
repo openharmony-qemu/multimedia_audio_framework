@@ -291,7 +291,7 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
 
     curProcessPos_ += lastPosInc_;
     CHECK_AND_RETURN_LOG(readLen >= 0, "readLen is illegal!");
-    lastPosInc_ += static_cast<uint64_t>(readLen) / sizePerPos;
+    lastPosInc_ = static_cast<uint64_t>(readLen) / sizePerPos;
 
     if (!capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp)) {
         AUDIO_ERR_LOG("GetTimeStampByPosition fail!");
