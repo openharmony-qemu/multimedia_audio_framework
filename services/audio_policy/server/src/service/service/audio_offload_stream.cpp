@@ -35,6 +35,7 @@ namespace AudioStandard {
 const int32_t UID_AUDIO = 1041;
 const int32_t dAudioClientUid = 3055;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 10; // 10s
+static const int32_t SELECT_PIPE_TYPE_OFFLOAD_MUTE_US = 200000; // 200ms
 
 inline std::string PrintSinkInput(SinkInput sinkInput)
 {
@@ -284,6 +285,7 @@ int32_t AudioOffloadStream::SwitchToNewPipe(const uint32_t sessionId, const Audi
                 return ERROR;
             }
             portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
+            audioIOHandleMap_.MuteSinkPort(portName, SELECT_PIPE_TYPE_OFFLOAD_MUTE_US, true, false);
             ret = MoveToOutputDevice(sessionId, portName);
             break;
         }
