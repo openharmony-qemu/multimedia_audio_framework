@@ -87,6 +87,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     if (inputs.size() != 1) {
         AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
     }
+    CHECK_AND_RETURN_RET_LOG(resampler_, &silenceData_, "NodeId %{public}d resampler_ is nullptr", GetNodeId());
     // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
     CheckAndUpdateInfo(inputs[0]);
     // pass valid tag to next node
@@ -323,6 +324,10 @@ void HpaeAudioFormatConverterNode::DisConnectWithInfo(const std::shared_ptr<Outp
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
 }
 
+HpaeAudioFormatConverterNode::~HpaeAudioFormatConverterNode()
+{
+    AUDIO_INFO_LOG("NodeId %{public}d destructed.", GetNodeId());
+}
 } // Hpae
 } // AudioStandard
 } // OHOS
