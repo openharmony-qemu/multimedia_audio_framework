@@ -873,7 +873,7 @@ void HpaeRendererManager::Process()
 void HpaeRendererManager::UpdateAppsUid()
 {
     appsUid_.clear();
-    for(const auto &sinkInputNodePair : sinkInputNodeMap_) {
+    for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
         if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
             appsUid_.emplace_back(sinkInputNodePair.second->GetAppUid());
         }
