@@ -409,8 +409,11 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     std::lock_guard lock(peekMutex);
     GetStreamVolume();
     if (processConfig_.streamInfo.encoding == ENCODING_EAC3) {
-        memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
+        auto error = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
             bufferDesc.bufLength);
+        if (error != EOK) {
+            AUDIO_ERR_LOG("copy failed");
+        }
     } else {
         if (isNeedMcr_ && !isNeedResample_) {
             ConvertSrcToFloat(bufferDesc);
