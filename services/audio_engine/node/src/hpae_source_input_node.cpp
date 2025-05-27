@@ -382,6 +382,7 @@ HpaeNodeInfo &HpaeSourceInputNode::GetNodeInfoWithInfo(HpaeSourceBufferType &typ
 void HpaeSourceInputNode::UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId)
 {
     CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr, "audioCapturerSource_ is nullptr");
+    CHECK_AND_RETURN_LOG(audioCapturerSource_->IsInited(), "audioCapturerSource_ not init");
     audioCapturerSource_->UpdateAppsUid(appsUid);
     std::shared_ptr<AudioSourceClock> clock =
         CapturerClockManager::GetInstance().GetAudioSourceClock(captureId_);

@@ -268,6 +268,11 @@ HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, cons
     };
     return getSceneType(splitNums);
 }
+
+int32_t HpaeRemoteOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

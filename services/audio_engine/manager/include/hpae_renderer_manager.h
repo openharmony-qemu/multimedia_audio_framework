@@ -115,6 +115,7 @@ private:
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
     void InitManager();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
+    void UpdateAppsUid();
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
@@ -128,6 +129,7 @@ private:
     std::atomic<bool> isMute_ = false;
     HpaeSinkInfo sinkInfo_;
     std::unordered_map<HpaeProcessorType, int32_t> sceneTypeToProcessClusterCountMap_;
+    std::vector<int32_t> appsUid_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

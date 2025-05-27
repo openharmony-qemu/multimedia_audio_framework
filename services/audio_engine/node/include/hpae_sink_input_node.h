@@ -50,6 +50,9 @@ public:
     int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp);
     int32_t RewindHistoryBuffer(uint64_t rewindTime);
 
+    void SetAppUid(int32_t appUid);
+    int32_t GetAppUid();
+
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
@@ -65,6 +68,7 @@ private:
     std::unique_ptr<LinearPosTimeModel> handleTimeModel_;
     bool isDrain_ = false;
     HpaeSessionState state_ = HPAE_SESSION_NEW;
+    int32_t appUid_ = -1;
 
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
 #ifdef ENABLE_HOOK_PCM

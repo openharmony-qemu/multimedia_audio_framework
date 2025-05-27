@@ -438,6 +438,10 @@ int32_t OffloadAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHAN
 
 int32_t OffloadAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+#ifdef FEATURE_POWER_MANAGER
+    CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
+    runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+#endif
     return SUCCESS;
 }
 

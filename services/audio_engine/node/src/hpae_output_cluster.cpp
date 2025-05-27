@@ -242,6 +242,11 @@ bool HpaeOutputCluster::IsProcessClusterConnected(HpaeProcessorType sceneType)
 {
     return connectedProcessCluster_.find(sceneType) != connectedProcessCluster_.end();
 }
+
+bool HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
