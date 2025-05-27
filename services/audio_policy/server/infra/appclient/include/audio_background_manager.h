@@ -36,7 +36,7 @@ struct AppState
     bool isBack = false;
     bool hasSession = false;
     bool hasBackTask = false;
-    bool isbinder = false;
+    bool isBinder = false;
 };
 
 class AudioBackgroundManager {

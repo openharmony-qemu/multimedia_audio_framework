@@ -165,7 +165,7 @@ void AudioPolicyManagerListenerProxy::OnBackgroundMute(const int32_t uid)
 
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
 
     CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()),
         "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
