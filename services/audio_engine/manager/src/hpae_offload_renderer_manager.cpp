@@ -540,7 +540,7 @@ void HpaeOffloadRendererManager::Process()
 void HpaeOffloadRendererManager::UpdateAppsUid()
 {
     appsUid_.clear();
-    if (sinkInputNode_->GetState() == HPAE_SESSION_RUNNING) {
+    if (sinkInputNode_ != nullptr && sinkInputNode_->GetState() == HPAE_SESSION_RUNNING) {
         appsUid_.emplace_back(sinkInputNode_->GetAppUid());
     }
     sinkOutputNode_->UpdateAppsUid(appsUid_);
