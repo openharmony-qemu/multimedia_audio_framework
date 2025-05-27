@@ -24,6 +24,7 @@
 #include "i_audio_stream.h"
 #include "audio_stream_descriptor.h"
 #include "audio_capturer_proxy_obj.h"
+#include "audio_task_loop.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -202,6 +203,8 @@ private:
     std::shared_ptr<AudioCapturerFastStatusChangeCallback> fastStatusChangeCallback_ = nullptr;
     std::mutex fastStatusChangeCallbackMutex_;
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
+
+    AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
