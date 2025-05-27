@@ -243,7 +243,7 @@ bool HpaeOutputCluster::IsProcessClusterConnected(HpaeProcessorType sceneType)
     return connectedProcessCluster_.find(sceneType) != connectedProcessCluster_.end();
 }
 
-bool HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+int32_t HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
 }

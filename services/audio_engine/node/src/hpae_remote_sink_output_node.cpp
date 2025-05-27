@@ -356,7 +356,7 @@ size_t HpaeRemoteSinkOutputNode::GetPreOutNum()
     return inputStream_.GetPreOutputNum();
 }
 
-bool HpaeRemoteSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+int32_t HpaeRemoteSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
