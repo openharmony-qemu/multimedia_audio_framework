@@ -290,7 +290,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, SetDeviceConnectedFlagWhenFetchOutputDev
     deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
     audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     audioDeviceCommon.SetDeviceConnectedFlagWhenFetchOutputDevice();
-    EXPECT_EQ(deviceDescriptor.deviceType_, DEVICE_TYPE_USB_HEADSET);
+    EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentOutputDevice().deviceType_, DEVICE_TYPE_USB_HEADSET);
 }
 
 /**
@@ -307,7 +307,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, SetDeviceConnectedFlagWhenFetchOutputDev
     deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     audioDeviceCommon.SetDeviceConnectedFlagWhenFetchOutputDevice();
-    EXPECT_EQ(deviceDescriptor.deviceType_, DEVICE_TYPE_USB_ARM_HEADSET);
+    EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentOutputDevice().deviceType_, DEVICE_TYPE_USB_ARM_HEADSET);
 }
 
 /**
@@ -324,7 +324,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, SetDeviceConnectedFlagWhenFetchOutputDev
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
     audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     audioDeviceCommon.SetDeviceConnectedFlagWhenFetchOutputDevice();
-    EXPECT_EQ(deviceDescriptor.deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+    EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentOutputDevice().deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
 }
 
 /**

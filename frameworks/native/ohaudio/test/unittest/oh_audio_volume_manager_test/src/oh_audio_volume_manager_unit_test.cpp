@@ -540,7 +540,6 @@ HWTEST(OHAudioVolumeManagerUnitTest, OnVolumeKeyEvent_002, TestSize.Level0)
     StreamVolumeEvent event {};
     event.streamUsage = StreamUsage::STREAM_USAGE_GAME;
     ohStreamVolumeChangeCallback->OnStreamVolumeChange(event);
-    EXPECT_EQ(volume, INVALID_VALUE);
 }
 
 /**

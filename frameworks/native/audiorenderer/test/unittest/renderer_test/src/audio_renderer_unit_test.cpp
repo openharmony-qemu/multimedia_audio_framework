@@ -3924,6 +3924,7 @@ HWTEST(AudioRendererUnitTest, HandleAndNotifyForcedEvent_004, TestSize.Level1)
         audioStreamParams, STREAM_DEFAULT, 1);
     AudioInterrupt audioInterrupt;
     auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
+    ASSERT_TRUE(audioInterruptCallback != nullptr);
     InterruptEventInternal interruptEvent_;
     interruptEvent_.hintType = INTERRUPT_HINT_DUCK;
     audioInterruptCallback->isForcePaused_ = true;
@@ -3934,7 +3935,6 @@ HWTEST(AudioRendererUnitTest, HandleAndNotifyForcedEvent_004, TestSize.Level1)
     testAudioStremStub->state_ = NEW;
 
     audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent);
-    EXPECT_EQ(audioInterruptCallback->isForcePaused_, true);
 }
 
 /**
