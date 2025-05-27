@@ -469,7 +469,11 @@ void OHAudioCapturerModeCallback::OnReadData(size_t length)
     CHECK_AND_RETURN_LOG((callbacks_.OH_AudioCapturer_OnReadData != nullptr) || onReadDataCallback_ != nullptr,
         "pointer to the fuction is nullptr");
     BufferDesc bufDesc;
-    audioCapturer->GetBufferDesc(bufDesc);
+    int32_t ret = audioCapturer->GetBufferDesc(bufDesc);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("get bufDesc failed, bufLength=%{public}u, dataLength=%{public}u",
+            bufDesc.bufLength, bufDesc.dataLength);
+    }
 
     if (audioCapturer->GetCapturerReadDataCallbackType() == READ_DATA_CALLBACK_WITHOUT_RESULT &&
         callbacks_.OH_AudioCapturer_OnReadData != nullptr) {
