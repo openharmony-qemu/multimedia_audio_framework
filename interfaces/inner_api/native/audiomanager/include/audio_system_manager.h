@@ -1620,7 +1620,7 @@ public:
     void SetVolumeEvent(AudioStreamType type, VolumeEvent event);
     std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
         GetAudioRendererChangeInfo();
-    void SetAudioRendererChangeInfo(AudioStreamType type, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>);
+    void SetAudioRendererChangeInfo(AudioStreamType type, std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info);
 
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
@@ -1684,35 +1684,35 @@ private:
     bool IsValidStreamType(AudioStreamType type);
     bool IsValidToStartGroup();
     void InitWorkgroupState();
-    class VolumeKeyEventCallbackTmpl : public VolumeKeyEventCallback {
+    class VolumeKeyEventCallbackImpl : public VolumeKeyEventCallback {
     public:
         VolumeKeyEventCallbackImpl() {};
         ~VolumeKeyEventCallbackImpl() {};
     private:
         void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     };
-
+ 
     std::unordered_map<AudioStreamType, VolumeEvent> volumeEventMap_;
     std::mutex volumeEventMutexMap_;
     void AttachVolumeKeyEventListener();
     void DetachVolumeKeyEventListener();
-    std::shared_ptr<VolumeKeyEventCallbackImpl> VolumeKeyEventCallback_ = nullptr;
-
+    std::shared_ptr<VolumeKeyEventCallbackImpl> volumeKeyEventCallback_ = nullptr;
+ 
     class AudioRendererStateChangeCallbackImpl : public AudioRendererStateChangeCallback {
     public:
         AudioRendererStateChangeCallbackImpl() {};
         ~AudioRendererStateChangeCallbackImpl() {};
     private:
-        void OnRendererStateChang (
-            const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override
+        void OnRendererStateChange(
+            const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     };
-
+    
     std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
-        AudioRendererChangeInfoMap_;
-    std::mutex AudioRendererChangeInfoMapMutex_;
+        audioRendererChangeInfoMap_;
+    std::mutex audioRendererChangeInfoMapMutex_;
     void AttachAudioRendererEventListener();
     void DetachAudioRendererEventListener();
-    std::shared_ptr<AudioRendererStateChangeCallbackImpl> AudioRendererStateChangeCallback_ = nullptr;
+    std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioRendererStateChangeCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
