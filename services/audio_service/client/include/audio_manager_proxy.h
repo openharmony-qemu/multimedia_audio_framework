@@ -64,6 +64,7 @@ public:
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
+    void SetActiveOutputDevice(DeviceType deviceType) override;
     bool CreatePlaybackCapturerManager() override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
     int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) override;

@@ -63,6 +63,7 @@ const char *g_audioServerCodeStrs[] = {
     "LOAD_AUDIO_EFFECT_LIBRARIES",
     "CREATE_AUDIO_EFFECT_CHAIN_MANAGER",
     "SET_OUTPUT_DEVICE_SINK",
+    "SET_ACTIVE_OUTPUT_DEVICE",
     "CREATE_PLAYBACK_CAPTURER_MANAGER",
     "REGISET_POLICY_PROVIDER",
     "REGISET_CORE_SERVICE_PROVIDER",
@@ -604,6 +605,15 @@ int AudioManagerStub::HandleSetOutputDeviceSink(MessageParcel &data, MessageParc
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetActiveOutputDevice(MessageParcel &data, MessageParcel &reply)
+{
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    CHECK_AND_RETURN_RET_LOG(deviceType >= DEVICE_TYPE_NONE && deviceType <= DEVICE_TYPE_MAX, AUDIO_ERR,
+        "Set active output device failed, please check log");
+    SetActiveOutputDevice(deviceType);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply)
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -972,6 +982,8 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleCreateAudioEffectChainManager(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK):
             return HandleSetOutputDeviceSink(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE):
+            return HandleSetActiveOutputDevice(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER):
             return HandleCreatePlaybackCapturerManager(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER):
