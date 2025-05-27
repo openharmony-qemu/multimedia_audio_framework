@@ -62,6 +62,7 @@ public:
     void SetReleaseFlag(bool flag);
 private:
     bool releaseFlag_ = true; // Determines whether to release pipe info in policy
+    uint32_t sessionId_ = 0;
 };
 
 class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback,
