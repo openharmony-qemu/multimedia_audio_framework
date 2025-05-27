@@ -51,6 +51,11 @@ mutex g_audioListenerMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
 sptr<AudioManagerListenerStub> g_audioListener = nullptr;
 
+const std::vector<AudioStreamType> workgroupValidStreamType = {
+    AudioStreamType::STREAM_MUSIC,
+    AudioStreamType::STREAM_VOICE_COMMUNICATION
+};
+
 AudioSystemManager::AudioSystemManager()
 {
     AUDIO_DEBUG_LOG("AudioSystemManager start");

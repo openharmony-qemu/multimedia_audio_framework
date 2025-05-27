@@ -21,6 +21,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    
+}
 
 std::unordered_map<int32_t, std::unordered_map<int32_t,
     std::shared_ptr<AudioWorkgroup>>> AudioResourceService::audioWorkgroupMap;

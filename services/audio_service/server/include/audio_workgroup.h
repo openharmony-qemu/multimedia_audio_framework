@@ -30,6 +30,7 @@ public:
     ~AudioWorkgroup() {};
 
     int32_t GetWorkgroupId();
+    uint32_t GetThreadsNums();
     int32_t AddThread(int32_t tid);
     int32_t RemoveThread(int32_t tid);
     int32_t Start(uint64_t startTime, uint64_t deadlineTime);
