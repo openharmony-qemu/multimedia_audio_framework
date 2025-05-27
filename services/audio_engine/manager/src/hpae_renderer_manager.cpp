@@ -814,6 +814,7 @@ int32_t HpaeRendererManager::SetAudioEffectMode(uint32_t sessionId, int32_t effe
     }
     auto request = [this, sessionId, effectMode]() {
         if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            AUDIO_WARNING_LOG("miss corresponding sinkInputNode for sessionId %{public}d", sessionId);
             return ;
         }
         HpaeNodeInfo &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
