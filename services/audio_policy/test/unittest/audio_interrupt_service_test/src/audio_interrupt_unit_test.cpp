@@ -3438,10 +3438,10 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_118, TestSize.Level1)
  * @tc.number: AudioInterruptService_119
  * @tc.desc  : Test AudioInterruptService
  */
-HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_119, TestSize.Level1)
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
-    ASSERT_NE(audioInterruptService, nullptr);
+    ASSERT_NE(interruptServiceTest, nullptr);
 
     interruptServiceTest->zonesMap_.clear();
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
