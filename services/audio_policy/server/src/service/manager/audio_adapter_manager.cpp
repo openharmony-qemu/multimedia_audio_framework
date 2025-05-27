@@ -908,12 +908,20 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
     return SUCCESS;
 }
 
-void AudioAdapterManager::MaximizeVoiceAssistantVolume(InternalDeviceType deviceType)
+void AudioAdapterManager::AdjustBluetoothVoiceAssistantVolume(InternalDeviceType deviceType, bool isA2dpSwitchToSco)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
         volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
-        SetVolumeDb(STREAM_VOICE_ASSISTANT);
-        AUDIO_INFO_LOG("MaximizeVoiceAssistantVolume ok");
+        AUDIO_INFO_LOG("a2dp ok");
+    }
+
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO && isA2dpSwitchToSco) {
+        if (!volumeDataMaintainer_.GetVolume(deviceType, STREAM_VOICE_ASSISTANT)) {
+            AUDIO_ERR_LOG("sco voice assistant volume does not exist, use default.");
+            volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, DEFAULT_VOLUME_LEVEL);
+        } else {
+            AUDIO_INFO_LOG("sco ok");
+        }
     }
 }
 
@@ -936,7 +944,6 @@ bool AudioAdapterManager::CheckAndUpdateRemoteDeviceVolume(AudioDeviceDescriptor
 void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor)
 {
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
-    MaximizeVoiceAssistantVolume(deviceDescriptor.deviceType_);
     // The same device does not set the volume
     bool isSameVolumeGroup = ((GetVolumeGroupForDevice(currentActiveDevice_.deviceType_) ==
         GetVolumeGroupForDevice(deviceDescriptor.deviceType_)) &&
@@ -968,6 +975,8 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
             AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
         }
     }
+    
+    AdjustBluetoothVoiceAssistantVolume(deviceDescriptor.deviceType_, isSameVolumeGroup);
 
     auto iter = defaultVolumeTypeList_.begin();
     while (iter != defaultVolumeTypeList_.end()) {

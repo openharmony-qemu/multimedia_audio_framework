@@ -346,7 +346,7 @@ private:
     void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot(bool isFirst);
-    void MaximizeVoiceAssistantVolume(InternalDeviceType deviceType);
+    void AdjustBluetoothVoiceAssistantVolume(InternalDeviceType deviceType, bool isA2dpSwitchToSco);
     bool IsPaRoute(uint32_t routeFlag);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
