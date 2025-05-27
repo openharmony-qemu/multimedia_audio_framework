@@ -51,7 +51,7 @@ mutex g_audioListenerMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
 sptr<AudioManagerListenerStub> g_audioListener = nullptr;
 
-const std::vector<AudioStreamType> wgpValidStreamType = {
+const std::vector<AudioStreamType> workgroupValidStreamType = {
     AudioStreamType::STREAM_MUSIC,
     AudioStreamType::STREAM_VOICE_COMMUNICATION
 };
@@ -2068,7 +2068,7 @@ void AudioSystemManager::SetAudioRendererChangeInfo(
  
 bool AudioSystemManager::IsValidStreamType(AudioStreamType type)
 {
-    for (const auto &t : wgpValidStreamType) {
+    for (const auto &t : workgroupValidStreamType) {
         if (t == type) {
             return true;
         }
@@ -2078,7 +2078,7 @@ bool AudioSystemManager::IsValidStreamType(AudioStreamType type)
 
 void AudioSystemManager::InitWorkgroupState()
 {
-    for (const auto &t : wgpValidStreamType) {
+    for (const auto &t : workgroupValidStreamType) {
         std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info =
             std::make_shared<AudioStandard::AudioRendererChangeInfo>();
         info->rendererState = RendererState::RENDERER_INVALID;
