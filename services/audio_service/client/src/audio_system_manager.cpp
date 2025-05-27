@@ -51,7 +51,7 @@ mutex g_audioListenerMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
 sptr<AudioManagerListenerStub> g_audioListener = nullptr;
 
-const std::vector<AudioStreamType> workgroupValidStreamType = {
+const std::vector<AudioStreamType> wgpValidStreamType = {
     AudioStreamType::STREAM_MUSIC,
     AudioStreamType::STREAM_VOICE_COMMUNICATION
 };
@@ -1981,6 +1981,10 @@ int32_t AudioSystemManager::UnregisterStreamVolumeChangeCallback(const int32_t c
 
 int32_t AudioSystemManager::CreateAudioWorkgroup()
 {
+    InitWorkgroupState();
+    AttachAudioRendererEventListener();
+    AttachVolumeKeyEventListener();
+
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
     return gasp->CreateAudioWorkgroup(getpid());
@@ -1988,6 +1992,9 @@ int32_t AudioSystemManager::CreateAudioWorkgroup()
 
 int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)
 {
+    DetachAudioRendererEventListener();
+    DetachVolumeKeyEventListener();
+
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
     return gasp->ReleaseAudioWorkgroup(getpid(), workgroupId);
@@ -2009,6 +2016,11 @@ int32_t AudioSystemManager::RemoveThreadFromGroup(int32_t workgroupId, int32_t t
 
 int32_t AudioSystemManager::StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
 {
+    if (!IsValidToStartGroup()) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] check music player is running and voiced");
+        return ERR_OPERATION_FAILED;
+    }
+
     CHECK_AND_RETURN_RET_LOG(deadlineTime > startTime, ERR_INVALID_PARAM, "Invalid Audio Deadline params");
     SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
     SetThreadQosLevel();
@@ -2026,6 +2038,189 @@ int32_t AudioSystemManager::StopGroup(int32_t workgroupId)
         return AUDIO_ERR;
     }
     return AUDIO_OK;
+}
+
+std::unordered_map<AudioStreamType, VolumeEvent> AudioSystemManager::GetVolumeEvent()
+{
+    std::lock_guard<std::mutex> lock(volumeEventMutexMap_);
+    return volumeEventMap_;
+}
+ 
+void AudioSystemManager::SetVolumeEvent(AudioStreamType type, VolumeEvent event)
+{
+    std::lock_guard<std::mutex> lock(volumeEventMutexMap_);
+    volumeEventMap_[type] = event;
+}
+ 
+std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
+    AudioSystemManager::GetAudioRendererChangeInfo()
+{
+    std::lock_guard<std::mutex> lock(audioRendererChangeInfoMapMutex_);
+    return audioRendererChangeInfoMap_;
+}
+
+void AudioSystemManager::SetAudioRendererChangeInfo(
+    AudioStreamType type, std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info)
+{
+    std::lock_guard<std::mutex> lock(audioRendererChangeInfoMapMutex_);
+    audioRendererChangeInfoMap_[type] = info;
+}
+ 
+bool AudioSystemManager::IsValidStreamType(AudioStreamType type)
+{
+    for (const auto &t : wgpValidStreamType) {
+        if (t == type) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void AudioSystemManager::InitWorkgroupState()
+{
+    for (const auto &t : wgpValidStreamType) {
+        std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info =
+            std::make_shared<AudioStandard::AudioRendererChangeInfo>();
+        info->rendererState = RendererState::RENDERER_INVALID;
+        SetAudioRendererChangeInfo(t, info);
+ 
+        VolumeEvent e = {
+            .volumeType = t,
+            .volume = GetVolume(t),
+        };
+        SetVolumeEvent(t, e);
+    }
+}
+ 
+bool AudioSystemManager::IsValidToStartGroup()
+{
+    for (const auto& pair : GetAudioRendererChangeInfo()) {
+        AudioStreamType type = pair.first;
+        std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info = pair.second;
+        if (info->rendererState == RendererState::RENDERER_RUNNING && GetVolumeEvent()[type].volume != 0) {
+
+            return true;
+        }
+    }
+    return false;
+}
+
+void AudioSystemManager::VolumeKeyEventCallbackImpl::OnVolumeKeyEvent(VolumeEvent volumeEvent)
+{
+    AUDIO_INFO_LOG("[WorkgroupInClient]"
+        "volumeEvent.volumeType=%{public}d,"
+        "volumeEvent.volume=%{public}d",
+        volumeEvent.volumeType, volumeEvent.volume);
+ 
+    if (AudioSystemManager::GetInstance()->IsValidStreamType(volumeEvent.volumeType)) {
+        AudioSystemManager::GetInstance()->SetVolumeEvent(volumeEvent.volumeType, volumeEvent);
+    }
+}
+ 
+void AudioSystemManager::AttachVolumeKeyEventListener()
+{
+    if (volumeKeyEventCallback_ != nullptr) {
+        return;
+    }
+ 
+    volumeKeyEventCallback_ = std::make_shared<VolumeKeyEventCallbackImpl>();
+    if (volumeKeyEventCallback_ == nullptr) {
+        AUDIO_ERR_LOG("[WorkgroupInClient]volumeKeyEventCallback_ Allocation Failed");
+        return;
+    }
+ 
+    int32_t ret = RegisterVolumeKeyEventCallback(getpid(), volumeKeyEventCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInClient]RegisterVolumeKeyEventCallback Failed");
+        return;
+    }
+ 
+    AUDIO_INFO_LOG("[WorkgroupInClient]RegisterVolumeKeyEventCallback success");
+}
+
+void AudioSystemManager::DetachVolumeKeyEventListener()
+{
+    if (volumeKeyEventCallback_ == nullptr) {
+        return;
+    }
+ 
+    int32_t ret = UnregisterVolumeKeyEventCallback(getpid(), volumeKeyEventCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInClient]UnregisterVolumeKeyEventCallback Failed");
+        return;
+    }
+    AUDIO_INFO_LOG("[WorkgroupInClient]UnregisterVolumeKeyEventCallback success");
+}
+
+void AudioSystemManager::AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
+    const std::vector<std::shared_ptr<AudioStandard::AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    std::unordered_map<AudioStreamType, bool> typeMap;
+ 
+    for (const auto &info : audioRendererChangeInfos) {
+        if (info == nullptr) {
+            continue;
+        }
+        if (info->clientUID != (int32_t)getuid()) {
+            continue;
+        }
+ 
+        AUDIO_INFO_LOG("[WorkgroupInClient]renderer state change:"
+            "clientUID=%{public}d,"
+            "callerPid=%{public}d,"
+            "clientPid=%{public}d,"
+            "rendererState=%{public}d",
+            info->clientUID, info->callerPid, info->clientPid, info->rendererState);
+ 
+        AudioStreamType streamType = GetStreamType(info->rendererInfo.contentType, info->rendererInfo.streamUsage);
+        if (AudioSystemManager::GetInstance()->IsValidStreamType(streamType)) {
+            if (info->rendererState == RendererState::RENDERER_RUNNING) {
+                AudioSystemManager::GetInstance()->SetAudioRendererChangeInfo(streamType, info);
+                typeMap[streamType] = true;
+                continue;
+            }
+            if (typeMap[streamType] != true) {
+
+                AudioSystemManager::GetInstance()->SetAudioRendererChangeInfo(streamType, info);
+            }
+        }
+    }
+}
+
+void AudioSystemManager::AttachAudioRendererEventListener()
+{
+    if (audioRendererStateChangeCallback_ != nullptr) {
+        return;
+    }
+ 
+    audioRendererStateChangeCallback_ = std::make_shared<AudioRendererStateChangeCallbackImpl>();
+    if (audioRendererStateChangeCallback_ == nullptr) {
+        AUDIO_ERR_LOG("[WorkgroupInClient]audioRendererStateChangeCallback_ Allocation Failed");
+        return;
+    }
+ 
+    int32_t ret =
+        AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(audioRendererStateChangeCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInClient]RegisterAudioRendererEventListener Failed");
+        return;
+    }
+    AUDIO_INFO_LOG("[WorkgroupInClient]RegisterAudioRendererEventListener success");
+}
+ 
+void AudioSystemManager::DetachAudioRendererEventListener()
+{
+    if (audioRendererStateChangeCallback_ == nullptr) {
+        return;
+    }
+ 
+    int32_t ret =
+        AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(audioRendererStateChangeCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInClient]UnregisterAudioRendererEventListener Failed");
+        return;
+    }
+    AUDIO_INFO_LOG("[WorkgroupInClient]UnregisterAudioRendererEventListener success");
 }
 } // namespace AudioStandard
 } // namespace OHOS
