@@ -76,17 +76,17 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
         "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
         appState.hasBackTask, appState.isFreeze);
     if (appState.isBack) {
+        bool mute = appState.hasBackTask ? false : (appState.isBinder ? true : false);
         if (!appState.hasSession) {
+            // for media
             HandleSessionStateChange(uid, pid);
-        } else if (appState.hasBackTask) {
-            streamCollector_.HandleStartStreamMuteState(uid, false);
-        } else if (appState.isbinder) {
-            streamCollector_.HandleStartStreamMuteState(uid, true);
+            // for others
+            streamCollector_.HandleStartStreamMuteState(uid, mute, true);
         } else {
-            streamCollector_.HandleStartStreamMuteState(uid, false);
+            streamCollector_.HandleStartStreamMuteState(uid, mute, false);
         }
     } else {
-        streamCollector_.HandleStartStreamMuteState(uid, false);
+        streamCollector_.HandleStartStreamMuteState(uid, false, false);
     }
     return true;
 }
@@ -102,21 +102,23 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
         appState.isBack = isBack;
         InsertIntoAppStatesMap(pid, appState);
     } else {
-        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
-        AppState &appState = appStatesMap_[pid];
-        CHECK_AND_RETURN(appState.isBack != isBack);
-        appState.isBack = isBack;
-        appState.isFreeze = isBack ? appState.isFreeze : false;
-        appState.isbinder = isBack ? appState.isbinder : false;
-        AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-            "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-            appState.hasBackTask, appState.isFreeze);
-        if (!isBack) {
-            return streamCollector_.HandleForegroundUnmute(uid);
-        }
-        bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         bool notifyMute = false;
-        streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
+        {
+            std::lock_guard<std::mutex> lock(appStatesMapMutex_);
+            AppState &appState = appStatesMap_[pid];
+            CHECK_AND_RETURN(appState.isBack != isBack);
+            appState.isBack = isBack;
+            appState.isFreeze = isBack ? appState.isFreeze : false;
+            appState.isBinder = isBack ? appState.isBinder : false;
+            AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
+                "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
+                appState.hasBackTask, appState.isFreeze);
+            if (!isBack) {
+                return streamCollector_.HandleForegroundUnmute(uid);
+            }
+            bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+            streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
+        }
         if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
             lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
             CHECK_AND_RETURN_LOG(backgroundMuteListener_ != nullptr, "backgroundMuteListener_ is nulptr");
@@ -192,7 +194,7 @@ int32_t AudioBackgroundManager::NotifyFreezeStateChange(const std::set<int32_t> 
         AppState &appState = appStatesMap_[pid];
             CHECK_AND_RETURN_RET(appState.isFreeze != isFreeze, SUCCESS);
             appState.isFreeze = isFreeze;
-            appState.isbinder = !isFreeze;
+            appState.isBinder = !isFreeze;
             AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
                 "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
                 appState.hasBackTask, appState.isFreeze);
@@ -208,7 +210,7 @@ int32_t AudioBackgroundManager::ResetAllProxy()
     std::lock_guard<std::mutex> lock(appStatesMapMutex_);
     for (auto& it : appStatesMap_) {
         it.second.isFreeze = false;
-        it.second.isbinder = false;
+        it.second.isBinder = false;
     }
     return SUCCESS;
 }
