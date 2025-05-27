@@ -1605,6 +1605,7 @@ int32_t AudioServer::CheckMaxRendererInstances()
 sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
     std::shared_ptr<PipeInfoGuard> &pipeInfoGuard)
 {
+    CHECK_AND_RETURN_RET_LOG(pipeInfoGuard != nullptr, nullptr, "PipeInfoGuard is nullptr");
     int32_t appUid = config.appInfo.appUid;
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
