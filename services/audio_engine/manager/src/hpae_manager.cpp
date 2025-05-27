@@ -1170,7 +1170,7 @@ bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t 
     AUDIO_INFO_LOG("sessionId:%{public}u is moving", sessionId);
     if (operation != OPERATION_FLUSHED && operation != OPERATION_DRAINED) {
         movingIds_[sessionId] = status;
-        if(streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
+        if (streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
             rendererIdStreamInfoMap_[sessionId].state = state;
         } else {
             capturerIdStreamInfoMap_[sessionId].state = state;

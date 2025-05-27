@@ -874,7 +874,7 @@ void HpaeRendererManager::UpdateAppsUid()
 {
     appsUid_.clear();
     for(const auto &sinkInputNodePair : sinkInputNodeMap_) {
-        if(sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
+        if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
             appsUid_.emplace_back(sinkInputNodePair.second->GetAppUid());
         }
     }
@@ -886,7 +886,7 @@ size_t HpaeRendererManager::GetWritableSize(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::UpdateSpatializationState(                                                  
+int32_t HpaeRendererManager::UpdateSpatializationState(
     uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled)
 {
     return SUCCESS;
