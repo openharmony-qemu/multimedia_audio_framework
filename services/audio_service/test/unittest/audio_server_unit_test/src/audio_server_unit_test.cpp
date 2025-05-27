@@ -929,11 +929,12 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
     sptr<IRemoteObject> remoteObject = nullptr;
-    remoteObject = audioServer->CreateAudioStream(config, AudioServer::VASSISTANT_UID);
-    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID);
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(0);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::VASSISTANT_UID, pipeinfoGuard);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
     EXPECT_EQ(nullptr, remoteObject);
     config.audioMode = AUDIO_MODE_RECORD;
-    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
     EXPECT_EQ(nullptr, remoteObject);
     bool ret = audioServer->IsFastBlocked(1, PLAYER_TYPE_DEFAULT);
     EXPECT_EQ(false, ret);

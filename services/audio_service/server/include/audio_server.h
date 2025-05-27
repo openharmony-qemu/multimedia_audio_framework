@@ -55,6 +55,16 @@ private:
     AudioServer *audioServer_ = nullptr;
 };
 
+class PipeInfoGuard {
+public:
+    PipeInfoGuard(uint32_t sessionId);
+    ~PipeInfoGuard(); // Checks the flag and calls ReleaseClient if needed
+    void SetReleaseFlag(bool flag);
+private:
+    bool releaseFlag_ = true; // Determines whether to release pipe info in policy
+    uint32_t sessionId_ = 0;
+};
+
 class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback,
     public IAudioServerInnerCall, public DataTransferStateChangeCallbackForMonitor {
     DECLARE_SYSTEM_ABILITY(AudioServer);
@@ -306,7 +316,8 @@ private:
     bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
-    sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
+    sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
+        std::shared_ptr<PipeInfoGuard> &pipeInfoGuard);
     int32_t SetAsrVoiceSuppressionControlMode(const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode,
         bool on, int32_t modifyVolume);
     int32_t CheckAndWaitAudioPolicyReady();

@@ -247,6 +247,24 @@ void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
     audioServer_->RemoveRendererDataTransferCallback(pid_);
 }
 
+PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("SessionId: %{public}u", sessionId);
+    sessionId_ = sessionId;
+}
+
+PipeInfoGuard::~PipeInfoGuard() {
+    if (releaseFlag_) {
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+    }
+}
+
+void PipeInfoGuard::SetReleaseFlag(bool flag)
+{
+    AUDIO_INFO_LOG("Flag: %{public}d", flag);
+    releaseFlag_ = flag;
+}
+
 class CapturerStateOb final : public IAudioSourceCallback {
 public:
     explicit CapturerStateOb(uint32_t captureId, std::function<void(bool, size_t, size_t)> callback)
@@ -1584,8 +1602,10 @@ int32_t AudioServer::CheckMaxRendererInstances()
     return SUCCESS;
 }
 
-sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid)
+sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
+    std::shared_ptr<PipeInfoGuard> &pipeInfoGuard)
 {
+    CHECK_AND_RETURN_RET_LOG(pipeInfoGuard != nullptr, nullptr, "PipeInfoGuard is nullptr");
     int32_t appUid = config.appInfo.appUid;
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
@@ -1603,6 +1623,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         }
         AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
         sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
+        pipeInfoGuard->SetReleaseFlag(false);
         return remoteObject;
     }
 
@@ -1617,6 +1638,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     }
     AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
     sptr<IRemoteObject> remoteObject= process->AsObject();
+    pipeInfoGuard->SetReleaseFlag(false);
     return remoteObject;
 #else
     AUDIO_ERR_LOG("GetAudioProcess failed.");
@@ -1671,6 +1693,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     const AudioPlaybackCaptureConfig &filterConfig)
 {
     Trace trace("AudioServer::CreateAudioProcess");
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(config.originalSessionId);
 
     errorCode = CheckAndWaitAudioPolicyReady();
     if (errorCode != SUCCESS) {
@@ -1719,7 +1742,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         return nullptr;
     }
 #endif
-    return CreateAudioStream(resetConfig, callingUid);
+    return CreateAudioStream(resetConfig, callingUid, pipeinfoGuard);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
