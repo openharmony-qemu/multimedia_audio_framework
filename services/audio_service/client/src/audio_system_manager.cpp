@@ -2045,13 +2045,13 @@ std::unordered_map<AudioStreamType, VolumeEvent> AudioSystemManager::GetVolumeEv
     std::lock_guard<std::mutex> lock(volumeEventMutexMap_);
     return volumeEventMap_;
 }
- 
+
 void AudioSystemManager::SetVolumeEvent(AudioStreamType type, VolumeEvent event)
 {
     std::lock_guard<std::mutex> lock(volumeEventMutexMap_);
     volumeEventMap_[type] = event;
 }
- 
+
 std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
     AudioSystemManager::GetAudioRendererChangeInfo()
 {
@@ -2065,7 +2065,7 @@ void AudioSystemManager::SetAudioRendererChangeInfo(
     std::lock_guard<std::mutex> lock(audioRendererChangeInfoMapMutex_);
     audioRendererChangeInfoMap_[type] = info;
 }
- 
+
 bool AudioSystemManager::IsValidStreamType(AudioStreamType type)
 {
     for (const auto &t : workgroupValidStreamType) {
@@ -2091,14 +2091,13 @@ void AudioSystemManager::InitWorkgroupState()
         SetVolumeEvent(t, e);
     }
 }
- 
+
 bool AudioSystemManager::IsValidToStartGroup()
 {
     for (const auto& pair : GetAudioRendererChangeInfo()) {
         AudioStreamType type = pair.first;
         std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info = pair.second;
         if (info->rendererState == RendererState::RENDERER_RUNNING && GetVolumeEvent()[type].volume != 0) {
-
             return true;
         }
     }
@@ -2107,16 +2106,11 @@ bool AudioSystemManager::IsValidToStartGroup()
 
 void AudioSystemManager::VolumeKeyEventCallbackImpl::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
-    AUDIO_INFO_LOG("[WorkgroupInClient]"
-        "volumeEvent.volumeType=%{public}d,"
-        "volumeEvent.volume=%{public}d",
-        volumeEvent.volumeType, volumeEvent.volume);
- 
     if (AudioSystemManager::GetInstance()->IsValidStreamType(volumeEvent.volumeType)) {
         AudioSystemManager::GetInstance()->SetVolumeEvent(volumeEvent.volumeType, volumeEvent);
     }
 }
- 
+
 void AudioSystemManager::AttachVolumeKeyEventListener()
 {
     if (volumeKeyEventCallback_ != nullptr) {
@@ -2134,8 +2128,6 @@ void AudioSystemManager::AttachVolumeKeyEventListener()
         AUDIO_ERR_LOG("[WorkgroupInClient]RegisterVolumeKeyEventCallback Failed");
         return;
     }
- 
-    AUDIO_INFO_LOG("[WorkgroupInClient]RegisterVolumeKeyEventCallback success");
 }
 
 void AudioSystemManager::DetachVolumeKeyEventListener()
@@ -2149,7 +2141,6 @@ void AudioSystemManager::DetachVolumeKeyEventListener()
         AUDIO_ERR_LOG("[WorkgroupInClient]UnregisterVolumeKeyEventCallback Failed");
         return;
     }
-    AUDIO_INFO_LOG("[WorkgroupInClient]UnregisterVolumeKeyEventCallback success");
 }
 
 void AudioSystemManager::AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
@@ -2165,13 +2156,6 @@ void AudioSystemManager::AudioRendererStateChangeCallbackImpl::OnRendererStateCh
             continue;
         }
  
-        AUDIO_INFO_LOG("[WorkgroupInClient]renderer state change:"
-            "clientUID=%{public}d,"
-            "callerPid=%{public}d,"
-            "clientPid=%{public}d,"
-            "rendererState=%{public}d",
-            info->clientUID, info->callerPid, info->clientPid, info->rendererState);
- 
         AudioStreamType streamType = GetStreamType(info->rendererInfo.contentType, info->rendererInfo.streamUsage);
         if (AudioSystemManager::GetInstance()->IsValidStreamType(streamType)) {
             if (info->rendererState == RendererState::RENDERER_RUNNING) {
@@ -2180,7 +2164,6 @@ void AudioSystemManager::AudioRendererStateChangeCallbackImpl::OnRendererStateCh
                 continue;
             }
             if (typeMap[streamType] != true) {
-
                 AudioSystemManager::GetInstance()->SetAudioRendererChangeInfo(streamType, info);
             }
         }
@@ -2205,9 +2188,8 @@ void AudioSystemManager::AttachAudioRendererEventListener()
         AUDIO_ERR_LOG("[WorkgroupInClient]RegisterAudioRendererEventListener Failed");
         return;
     }
-    AUDIO_INFO_LOG("[WorkgroupInClient]RegisterAudioRendererEventListener success");
 }
- 
+
 void AudioSystemManager::DetachAudioRendererEventListener()
 {
     if (audioRendererStateChangeCallback_ == nullptr) {
@@ -2220,7 +2202,6 @@ void AudioSystemManager::DetachAudioRendererEventListener()
         AUDIO_ERR_LOG("[WorkgroupInClient]UnregisterAudioRendererEventListener Failed");
         return;
     }
-    AUDIO_INFO_LOG("[WorkgroupInClient]UnregisterAudioRendererEventListener success");
 }
 } // namespace AudioStandard
 } // namespace OHOS
