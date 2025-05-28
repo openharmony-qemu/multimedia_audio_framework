@@ -37,8 +37,10 @@ public:
     int32_t StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime);
     int32_t StopGroup(int32_t pid, int32_t workgroupId);
     AudioWorkgroup *GetAudioWorkgroupPtr(int32_t pid, int32_t workgroupId);
+    int32_t CreateAudioWorkgroupCheck(int32_t pid);
 private:
-    static std::unordered_map<int32_t, std::unordered_map<int32_t, std::shared_ptr<AudioWorkgroup>>> audioWorkgroupMap;
+    std::unordered_map<int32_t, std::unordered_map<int32_t, std::shared_ptr<AudioWorkgroup>>> audioWorkgroupMap;
+    std::mutex workgroupLock_;
 };
 
 } // namespace AudioStandard
