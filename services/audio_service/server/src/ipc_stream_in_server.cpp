@@ -501,5 +501,14 @@ int32_t IpcStreamInServer::SetSourceDuration(int64_t duration)
     }
     return rendererInServer_->SetSourceDuration(duration);
 }
+
+int32_t IpcStreamInServer::SetOffloadDataCallbackState(int32_t state)
+{
+    if ((mode_ != AUDIO_MODE_PLAYBACK) || (rendererInServer_ == nullptr)) {
+        AUDIO_ERR_LOG("mode is not playback or renderer is null");
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->SetOffloadDataCallbackState(state);
+}
 } // namespace AudioStandard
 } // namespace OHOS

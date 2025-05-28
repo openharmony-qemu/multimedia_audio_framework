@@ -170,6 +170,7 @@ private:
     bool IsAnyProcessRunningInner();
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     void WaitAllProcessReady(uint64_t curWritePos);
+    void CheckSyncInfo(uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos);
     void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData,
         int32_t innerCapId);
@@ -290,6 +291,8 @@ private:
     uint32_t dstTotalSizeInframe_ = 0;
     uint32_t dstSpanSizeInframe_ = 0;
     uint32_t dstByteSizePerFrame_ = 0;
+    uint32_t syncInfoSize_ = 0;
+    int64_t lastWriteTime_ = 0; // ns
     std::shared_ptr<OHAudioBuffer> dstAudioBuffer_ = nullptr;
 
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;

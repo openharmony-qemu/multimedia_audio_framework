@@ -59,6 +59,7 @@ public:
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
+    void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj,
@@ -196,6 +197,7 @@ public:
     bool RestoreAudioStream(bool needStoreState = true) override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    bool GetFastStatus() override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 
@@ -209,6 +211,7 @@ public:
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
+    int32_t SetOffloadDataCallbackState(int32_t cbState) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);

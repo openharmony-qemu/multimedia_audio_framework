@@ -634,7 +634,8 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     audioFocusInfoList = itZone->second->audioFocusInfoList;
     auto isPresent = [incomingStreamId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
-        return pair.first.streamId == incomingStreamId && pair.second == ACTIVE;
+        // If the stream id has been active or ducked, no need to activate audio interrupt again.
+        return pair.first.streamId == incomingStreamId && (pair.second == ACTIVE || pair.second == DUCK);
     };
     auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
     if (iter != audioFocusInfoList.end()) {
@@ -645,6 +646,8 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
 
 void AudioInterruptService::HandleAppStreamType(AudioInterrupt &audioInterrupt)
 {
+    // Force game app use game interrupt strategy, not affected by InterruptEventCallbackType.
+    // DO NOT use IsGameAvoidCallbackCase to replace it.
     if (GetClientTypeByStreamId(audioInterrupt.streamId) != CLIENT_TYPE_GAME) {
         return;
     }
@@ -703,7 +706,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
         return SUCCESS;
     }
-    ResetNonInterruptControl(incomingStreamId);
+    ResetNonInterruptControl(currAudioInterrupt);
     bool shouldReturnSuccess = false;
     ProcessAudioScene(currAudioInterrupt, incomingStreamId, zoneId, shouldReturnSuccess);
     if (shouldReturnSuccess) {
@@ -774,16 +777,16 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
     return;
 }
 
-void AudioInterruptService::ResetNonInterruptControl(uint32_t streamId)
+void AudioInterruptService::ResetNonInterruptControl(AudioInterrupt audioInterrupt)
 {
-    if (GetClientTypeByStreamId(streamId) != CLIENT_TYPE_GAME) {
+    if (!IsGameAvoidCallbackCase(audioInterrupt)) {
         return;
     }
-    AUDIO_INFO_LOG("Reset non-interrupt control for %{public}u", streamId);
+    AUDIO_INFO_LOG("Reset non-interrupt control for %{public}u", audioInterrupt.streamId);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "error for audio server proxy null");
-    gsp->SetNonInterruptMute(streamId, false);
+    gsp->SetNonInterruptMute(audioInterrupt.streamId, false);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
@@ -1156,7 +1159,7 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
                 break;
             }
             interruptEvent.hintType = focusEntry.hintType;
-            if (GetClientTypeByStreamId((iterActive->first).streamId) == CLIENT_TYPE_GAME) {
+            if (IsGameAvoidCallbackCase(iterActive->first)) {
                 interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
                 iterActive->second = PAUSE;
                 AUDIO_INFO_LOG("incomingInterrupt.hintType: %{public}d", interruptEvent.hintType);
@@ -1197,7 +1200,7 @@ void AudioInterruptService::SwitchHintType(std::list<std::pair<AudioInterrupt, A
 {
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_STOP:
-            if (GetClientTypeByStreamId((iterActive->first).streamId) == CLIENT_TYPE_GAME) {
+            if (IsGameAvoidCallbackCase(iterActive->first)) {
                 iterActive->second = PAUSEDBYREMOTE;
                 break;
             }
@@ -1545,7 +1548,7 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
         if (FocusEntryContinue(iterActive, focusEntry, incomingInterrupt)) { continue; }
         if (focusEntry.isReject) {
-            if (GetClientTypeByStreamId((iterActive->first).streamId) == CLIENT_TYPE_GAME) {
+            if (IsGameAvoidCallbackCase(iterActive->first)) {
                 incomingState = PAUSE;
                 AUDIO_INFO_LOG("incomingState: %{public}d", incomingState);
                 continue;
@@ -1725,7 +1728,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
                 audioInterrupt.streamId, audioInterrupt.pid);
             return;
         }
-        ResetNonInterruptControl(audioInterrupt.streamId);
+        ResetNonInterruptControl(audioInterrupt);
         audioFocusInfoList.erase(iter);
         itZone->second->zoneId = zoneId;
         itZone->second->audioFocusInfoList = audioFocusInfoList;
@@ -1788,7 +1791,7 @@ bool AudioInterruptService::EvaluateWhetherContinue(const AudioInterrupt &incomi
         return true;
     }
     UpdateHintTypeForExistingSession(incoming, focusEntry);
-    if (GetClientTypeByStreamId(incoming.streamId) == CLIENT_TYPE_GAME &&
+    if (IsGameAvoidCallbackCase(incoming) &&
         focusEntry.hintType == INTERRUPT_HINT_STOP) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("focusEntry.hintType: %{public}d", focusEntry.hintType);
@@ -1829,7 +1832,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::Simu
                 existConcurrentSources, incomingConcurrentSources);
             if (EvaluateWhetherContinue(incoming, inprocessing, focusEntry, bConcurrency)) { continue; }
             if (focusEntry.hintType == INTERRUPT_HINT_STOP &&
-                GetClientTypeByStreamId(inprocessing.streamId) == CLIENT_TYPE_GAME) {
+                IsGameAvoidCallbackCase(inprocessing)) {
                 focusEntry.hintType = INTERRUPT_HINT_PAUSE;
             }
             auto pos = HINT_STATE_MAP.find(focusEntry.hintType);
@@ -1964,7 +1967,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
             SendInterruptEvent(oldState, newState, iterActive, removeFocusInfo);
         }
 
-        if (removeFocusInfo && GetClientTypeByStreamId((iterActive->first).streamId) != CLIENT_TYPE_GAME) {
+        if (removeFocusInfo && !IsGameAvoidCallbackCase(iterActive->first)) {
             AudioInterrupt interruptToRemove = iterActive->first;
             iterActive = audioFocusInfoList.erase(iterActive);
             iterNew = newAudioFocuInfoList.erase(iterNew);
@@ -2076,6 +2079,12 @@ void AudioInterruptService::DispatchInterruptEventWithStreamId(uint32_t streamId
         interruptClients_[streamId]->OnInterrupt(interruptEvent);
 #endif
     }
+}
+
+bool AudioInterruptService::IsGameAvoidCallbackCase(const AudioInterrupt &audioInterrupt)
+{
+    return GetClientTypeByStreamId(audioInterrupt.streamId) == CLIENT_TYPE_GAME &&
+        audioInterrupt.callbackType != INTERRUPT_EVENT_CALLBACK_SEPERATED;
 }
 
 ClientType AudioInterruptService::GetClientTypeByStreamId(int32_t streamId)

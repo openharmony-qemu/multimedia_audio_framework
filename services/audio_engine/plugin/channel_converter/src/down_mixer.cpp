@@ -77,11 +77,6 @@ static constexpr uint64_t MASK_BOTTOM = BOTTOM_FRONT_CENTER
 static constexpr uint64_t MASK_LFE = LOW_FREQUENCY
 | LOW_FREQUENCY_2;
 
-static const uint64_t MASK_HOA =
-    CH_LAYOUT_HOA_ORDER1_ACN_N3D | CH_LAYOUT_HOA_ORDER1_ACN_SN3D | CH_LAYOUT_HOA_ORDER1_FUMA |
-    CH_LAYOUT_HOA_ORDER2_ACN_N3D | CH_LAYOUT_HOA_ORDER2_ACN_SN3D | CH_LAYOUT_HOA_ORDER2_FUMA |
-    CH_LAYOUT_HOA_ORDER3_ACN_N3D | CH_LAYOUT_HOA_ORDER3_ACN_SN3D | CH_LAYOUT_HOA_ORDER3_FUMA; 
-
 static uint32_t BitCounts(uint64_t bits);
 static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts);
 
@@ -134,7 +129,7 @@ int32_t DownMixer::Process(uint32_t frameLen, float* in, uint32_t inLen, float* 
         return DMIX_ERR_ALLOC_FAILED;
     }
     // For HOA, copy the first channel into all output channels
-    if (inLayout_ & MASK_HOA) {
+    if (isInLayoutHOA_) {
         for (uint32_t i = 0; i < frameLen; i++) {
             for (uint32_t c = 0; c < outChannels_; c++) {
                 out[outChannels_ * i + c] = in[inChannels_ * i];
@@ -165,6 +160,7 @@ int32_t DownMixer::SetupDownMixTable()
             inChannels_, inLayout_, outChannels_, outLayout_);
         return DMIX_ERR_INVALID_ARG;
     }
+    CheckIsHOA(inLayout_);
     switch (outLayout_) {
         case CH_LAYOUT_STEREO: {
             SetupStereoDmixTable();
@@ -676,6 +672,8 @@ void DownMixer::Setup5Point1Point4DmixTablePart1(uint64_t bit, uint32_t i)
                 downMixTable_[SW][i] = COEF_0DB_F;
             }
             break;
+        default:
+            break;
     }
 }
 
@@ -994,6 +992,8 @@ void DownMixer::DownMixMidRear(uint64_t inBit, uint64_t outBit, uint32_t i, uint
                 DownMixMidFront(WIDE_RIGHT, outBit, i, j);
             }
             break;
+        default:
+            break;
     }
 }
 
@@ -1108,6 +1108,21 @@ AudioChannelLayout DownMixer::SetDefaultChannelLayout(AudioChannel channels)
         default:
             return CH_LAYOUT_UNKNOWN;
     }
+}
+
+bool DownMixer::CheckIsHOA(AudioChannelLayout layout)
+{
+    if ((layout == CH_LAYOUT_HOA_ORDER1_ACN_N3D) || (layout == CH_LAYOUT_HOA_ORDER1_ACN_SN3D) ||
+        (layout == CH_LAYOUT_HOA_ORDER1_FUMA) || (layout == CH_LAYOUT_HOA_ORDER2_ACN_N3D) ||
+        (layout == CH_LAYOUT_HOA_ORDER2_ACN_SN3D) || (layout == CH_LAYOUT_HOA_ORDER2_FUMA) ||
+        (layout == CH_LAYOUT_HOA_ORDER3_ACN_N3D) || (layout == CH_LAYOUT_HOA_ORDER3_ACN_SN3D) ||
+        (layout == CH_LAYOUT_HOA_ORDER3_FUMA))
+    {
+        isInLayoutHOA_ = true;
+        return true;
+    }
+    isInLayoutHOA_ = false;
+    return false;
 }
 
 } // HPAE

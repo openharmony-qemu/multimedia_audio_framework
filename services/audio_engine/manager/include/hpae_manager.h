@@ -52,7 +52,7 @@ public:
 private:
     std::atomic<bool> running_;
     std::atomic<bool> recvSignal_;
-    HpaeManager *m_hpaeManager;
+    HpaeManager *m_hpaeManager = nullptr;
     std::condition_variable condition_;
     std::mutex mutex_;
     std::thread thread_;
@@ -122,6 +122,7 @@ public:
     int32_t UpdateSpatializationState(
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
+    int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) override;
     // only interface for unit test
     int32_t GetSessionInfo(HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionInfo &sessionInfo);
 
@@ -169,9 +170,9 @@ public:
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
 private:
-    int32_t CloseOutAudioPort(std::string &sinkName);
+    int32_t CloseOutAudioPort(std::string sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
-    int32_t CloseInAudioPort(std::string &sourceName);
+    int32_t CloseInAudioPort(std::string sourceName);
     template <typename... Args>
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
     void HandleUpdateStatus(
@@ -179,17 +180,17 @@ private:
     void HandleInitDeviceResult(std::string deviceName, int32_t result);
     void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
-    void HandleMoveAllSinkInputs(const std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
-        MOVE_SESSION_TYPE moveType);
-    void HandleMoveSourceOutput(const HpaeCaptureMoveInfo moveInfo, std::string sourceName);
+    void HandleMoveAllSinkInputs(std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
+        MoveSessionType moveType);
+    void HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::string sourceName);
     void HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
-    void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MOVE_SESSION_TYPE moveType,
+    void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MoveSessionType moveType,
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
     void HandleGetCaptureId(uint32_t captureId, int32_t deviceType);
 
-    void SendRequest(Request &&request);
+    void SendRequest(Request &&request, std::string funcName);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex);
     int32_t OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex);
@@ -201,12 +202,16 @@ private:
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerById(uint32_t sessionId);
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerByName(const std::string &sinkName);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
-    void AddStreamToCollection(const HpaeStreamInfo &streamInfo);
+    void AddStreamToCollection(const HpaeStreamInfo &streamInfo, const std::string &name);
 
     void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> serviceCallback);
     int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo);
     void DestroyCapture(uint32_t sessionId);
     void LoadEffectLive();
+
+    bool MovingSinkStateChange(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode>& sinkInput);
+    bool SetMovingStreamState(HpaeStreamClassType streamType, uint32_t sessionId,
+        HpaeSessionState status, HpaeSessionState state, IOperation operation);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -222,6 +227,7 @@ private:
     std::unordered_map<uint32_t, SourceOutput> sourceOutputs_;
     std::unordered_map<std::string, uint32_t> sinkNameSinkIdMap_;  // todo
     std::unordered_map<uint32_t, std::string> sinkIdSinkNameMap_;
+    std::unordered_map<uint32_t, HpaeSessionState> movingIds_;
     std::string defaultSink_ = "";
     std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;

@@ -95,6 +95,8 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
     int32_t SetSourceDuration(int64_t duration) override;
+
+    int32_t SetOffloadDataCallbackState(int32_t state) override;
 private:
     static inline BrokerDelegator<IpcStreamProxy> delegator_;
 };

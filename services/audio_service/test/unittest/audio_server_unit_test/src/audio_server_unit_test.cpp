@@ -57,6 +57,12 @@ void AudioServerUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+class DataTransferStateChangeCallbackInnerTest : public DataTransferStateChangeCallbackInner {
+public:
+    void OnDataTransferStateChange(const int32_t &callbackId,
+            const AudioRendererDataTransferStateChangeInfo &info) override {}
+};
+
 /**
  * @tc.name  : Test OnAddSystemAbility API
  * @tc.type  : FUNC
@@ -290,6 +296,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_003, TestSize.Level1
             }
         }
     };
+    audioServer->isAudioParameterParsed_.store(true);
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
     auto it = AudioServer::audioParameterKeys.find(mainKey);
@@ -318,6 +325,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_004, TestSize.Level1
             }
         }
     };
+    audioServer->isAudioParameterParsed_.store(true);
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
     EXPECT_EQ(SUCCESS, ret);
     auto it = AudioServer::audioParameterKeys.find(mainKey);
@@ -346,6 +354,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_005, TestSize.Level1
             }
         }
     };
+    audioServer->isAudioParameterParsed_.store(true);
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
     EXPECT_EQ(SUCCESS, ret);
     auto it = AudioServer::audioParameterKeys.find(mainKey);
@@ -374,6 +383,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_006, TestSize.Level1
             }
         }
     };
+    audioServer->isAudioParameterParsed_.store(true);
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
     auto it = AudioServer::audioParameterKeys.find(mainKey);
@@ -919,11 +929,12 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
     sptr<IRemoteObject> remoteObject = nullptr;
-    remoteObject = audioServer->CreateAudioStream(config, AudioServer::VASSISTANT_UID);
-    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID);
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(0);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::VASSISTANT_UID, pipeinfoGuard);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
     EXPECT_EQ(nullptr, remoteObject);
     config.audioMode = AUDIO_MODE_RECORD;
-    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
     EXPECT_EQ(nullptr, remoteObject);
     bool ret = audioServer->IsFastBlocked(1, PLAYER_TYPE_DEFAULT);
     EXPECT_EQ(false, ret);
@@ -1327,6 +1338,27 @@ HWTEST_F(AudioServerUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
     bool isEnable = false;
     audioServer->SetDefaultAdapterEnable(isEnable);
     EXPECT_NE(nullptr, audioServer);
+}
+
+/**
+ * @tc.name  : Test RendererDataTransferCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendererDataTransferCallback_001
+ * @tc.desc  : Test RendererDataTransferCallback interface.
+ */
+HWTEST_F(AudioServerUnitTest, RendererDataTransferCallback_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->RemoveRendererDataTransferCallback(0);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerTest>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    AudioRendererDataTransferStateChangeInfo info;
+    audioServer->OnDataTransferStateChange(pid, 0, info);
+    audioServer->RemoveRendererDataTransferCallback(pid);
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

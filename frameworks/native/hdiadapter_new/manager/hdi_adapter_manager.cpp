@@ -145,6 +145,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSink(uint32_t rend
         return nullptr;
     }
     DoRegistSinkCallback(renderId, renderSink);
+    DoSetSinkPrestoreInfo(renderSink);
     renderSinks_[renderId].sink_ = renderSink;
     return renderSinks_[renderId].sink_;
 }
@@ -400,6 +401,25 @@ void HdiAdapterManager::DoRegistSourceCallback(uint32_t id, std::shared_ptr<IAud
         } else {
             AUDIO_ERR_LOG("callback is nullptr, callback type: %{public}u", type);
         }
+    }
+}
+
+void HdiAdapterManager::DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> sink)
+{
+    float audioBalance = 0.0;
+    int32_t ret = sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BALANCE, audioBalance);
+    if (ret == SUCCESS) {
+        sink->SetAudioBalanceValue(audioBalance);
+    } else {
+        AUDIO_WARNING_LOG("get %s fail", PRESTORE_INFO_AUDIO_BALANCE);
+    }
+
+    bool audioMono = false;
+    ret = sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_MONO, audioMono);
+    if (ret == SUCCESS) {
+        sink->SetAudioMonoState(audioMono);
+    } else {
+        AUDIO_WARNING_LOG("get %s fail", PRESTORE_INFO_AUDIO_MONO);
     }
 }
 

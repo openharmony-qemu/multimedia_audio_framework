@@ -259,7 +259,7 @@ void AudioVolumeManager::SetVoiceCallVolume(int32_t volumeLevel)
         static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(STREAM_VOICE_CALL));
     volumeDb = isVoiceRingtoneMute_ ? 0 : volumeDb;
     AudioServerProxy::GetInstance().SetVoiceVolumeProxy(volumeDb);
-    AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
+    AUDIO_INFO_LOG("%{public}f", volumeDb);
 }
 
 void AudioVolumeManager::UpdateVolumeForLowLatency()
@@ -360,6 +360,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
     curOutputDeviceType_ = curOutputDeviceType;
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC && streamType !=STREAM_VOICE_CALL &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        AUDIO_INFO_LOG("SetA2dpDeviceVolume");
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
         result = SetA2dpDeviceVolume(btDevice, volumeLevel, true);
         Volume vol = {false, 1.0f, 0};

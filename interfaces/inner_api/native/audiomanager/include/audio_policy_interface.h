@@ -185,6 +185,86 @@ public:
      */
     virtual void OnAudioSceneChange(const AudioScene audioScene) = 0;
 };
+
+/**
+ * @brief NearLink audio stream operation callback interface.
+ */
+class SleAudioOperationCallback {
+public:
+    /**
+     * @brief Retrieve the list of active NearLink physical audio devices.
+     * @param devices Output vector for storing device descriptors.
+     */
+    virtual void GetSleAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) = 0;
+
+    /**
+     * @brief Retrieve the list of virtual NearLink audio devices.
+     * @param devices Output vector for storing virtual device descriptors.
+     */
+    virtual void GetSleVirtualAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) = 0;
+
+    /**
+     * @brief Check if in-band ringtone is enabled for a NearLink device.
+     * @param[in] device MAC address of the peer NearLink device.
+     * @return true if in-band ringtone is active, false otherwise.
+     */
+    virtual bool IsInBandRingOpen(const std::string &device) const = 0;
+
+    /**
+     * @brief Query supported audio stream types for a device.
+     * @param device Address of the peer NearLink device.
+     * @return Bitmask of supported stream types
+     */
+    virtual uint32_t GetSupportStreamType(const std::string &device) const = 0;
+
+    /**
+     * @brief Set a device as the active sink for a specific stream type.
+     * @param device Address of the peer NearLink device.
+     * @param streamType Target stream type to activate.
+     * @return Returns the status code for this function called.
+     */
+    virtual int32_t SetActiveSinkDevice(const std::string &device, uint32_t streamType) = 0;
+
+    /**
+     * @brief Start audio streaming to a device.
+     * @param device Address of the peer NearLink device.
+     * @param streamType Stream type to start.
+     * @return Returns the status code for this function called.
+     */
+    virtual int32_t StartPlaying(const std::string &device, uint32_t streamType) = 0;
+
+    /**
+     * @brief Stop audio streaming to a device.
+     * @param device Address of the peer NearLink device.
+     * @param streamType Stream type to stop.
+     * @return Returns the status code for this function called.
+     */
+    virtual int32_t StopPlaying(const std::string &device, uint32_t streamType) = 0;
+
+    /**
+     * @brief Establish connection with allowed profiles for a device.
+     * @param remoteAddr Address of the peer NearLink device.
+     * @return Returns the status code for this function called.
+     */
+    virtual int32_t ConnectAllowedProfiles(const std::string &remoteAddr) const = 0;
+
+    /**
+     * @brief Set absolute volume level for a device.
+     * @param remoteAddr Address of the peer NearLink device.
+     * @param volume Target volume level.
+     * @param streamType Stream type to configure.
+     * @return int32_t
+     */
+    virtual int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) = 0;
+
+    /**
+     * @brief Send user selection to the device server.
+     * @param device Address of the peer NearLink device.
+     * @param streamType Stream type associated with the selection.
+     * @return int32_t
+     */
+    virtual int32_t SendUserSelection(const std::string &device, uint32_t streamType) = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_INTERFACE_H

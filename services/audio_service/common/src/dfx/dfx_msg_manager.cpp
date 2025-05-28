@@ -431,7 +431,8 @@ void DfxMsgManager::WriteRenderMsg(DfxMessage &msg, const std::unique_ptr<DfxRep
         rendererActions.push_back(static_cast<uint32_t>(rendererAction));
         timestamps.push_back(item.rendererAction.timestamp);
 
-        if (static_cast<RendererStage>(item.rendererAction.fourthByte) == RendererStage::RENDERER_STAGE_STOP_OK) {
+        if (static_cast<RendererStage>(item.rendererAction.fourthByte) == RendererStage::RENDERER_STAGE_STOP_OK ||
+            static_cast<RendererStage>(item.rendererAction.fourthByte) == RENDERER_STAGE_STOP_BY_RELEASE) {
             auto rendererStat = DfxUtils::SerializeToJSONString(item.rendererStat);
             rendererStatVec.push_back(rendererStat);
         }
@@ -600,7 +601,8 @@ void DfxMsgManager::WriteCapturerMsg(DfxMessage &msg, const std::unique_ptr<DfxR
         capturerActions.push_back(static_cast<uint32_t>(capturerAction));
         timestamps.push_back(item.capturerAction.timestamp);
         if (static_cast<CapturerStage>(item.capturerAction.fourthByte) == CapturerStage::CAPTURER_STAGE_STOP_OK ||
-            static_cast<CapturerStage>(item.capturerAction.fourthByte) == CapturerStage::CAPTURER_STAGE_PAUSE_OK) {
+            static_cast<CapturerStage>(item.capturerAction.fourthByte) == CapturerStage::CAPTURER_STAGE_PAUSE_OK ||
+            static_cast<CapturerStage>(item.capturerAction.fourthByte) == CAPTURER_STAGE_STOP_BY_RELEASE) {
             auto capturerStat = DfxUtils::SerializeToJSONString(item.capturerStat);
             capturerStatVec.push_back(capturerStat);
         }

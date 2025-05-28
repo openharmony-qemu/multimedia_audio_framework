@@ -24,10 +24,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
+static CapturerClockManager g_captureClockMgrSingleton;
+
 CapturerClockManager &CapturerClockManager::GetInstance(void)
 {
-    static CapturerClockManager mgr_;
-    return mgr_;
+    return g_captureClockMgrSingleton;
 }
 
 std::shared_ptr<CapturerClock> CapturerClockManager::CreateCapturerClock(

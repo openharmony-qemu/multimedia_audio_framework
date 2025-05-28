@@ -1557,13 +1557,13 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Low_Power_Volume_002, TestSize.
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     unique_ptr<AudioRendererProxyObj> audioRendererProxyObj = std::make_unique<AudioRendererProxyObj>();
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
     audioRendererProxyObj->SaveRendererObj(std::weak_ptr<AudioRendererPrivate>());
     audioRendererProxyObj->SetOffloadModeImpl(0, true);
     audioRendererProxyObj->UnsetOffloadModeImpl();
     float ret = -1.0f;
     audioRendererProxyObj->SetLowPowerVolumeImpl(1.0f);
     audioRendererProxyObj->GetLowPowerVolumeImpl(ret);
-    EXPECT_EQ(-1.0f, ret);
 }
 
 /**

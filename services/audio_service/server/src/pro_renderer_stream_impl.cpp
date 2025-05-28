@@ -409,8 +409,11 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     std::lock_guard lock(peekMutex);
     GetStreamVolume();
     if (processConfig_.streamInfo.encoding == ENCODING_EAC3) {
-        memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
+        auto error = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
             bufferDesc.bufLength);
+        if (error != EOK) {
+            AUDIO_ERR_LOG("copy failed");
+        }
     } else {
         if (isNeedMcr_ && !isNeedResample_) {
             ConvertSrcToFloat(bufferDesc);
@@ -498,6 +501,12 @@ int32_t ProRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timest
 int32_t ProRendererStreamImpl::OffloadSetVolume(float volume)
 {
     return SUCCESS;
+}
+
+int32_t ProRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)
+{
+    AUDIO_WARNING_LOG("SetOffloadDataCallbackState not support");
+    return ERR_NOT_SUPPORTED;
 }
 
 size_t ProRendererStreamImpl::GetWritableSize()

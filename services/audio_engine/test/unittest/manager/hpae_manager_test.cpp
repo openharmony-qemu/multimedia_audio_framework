@@ -67,13 +67,13 @@ void WaitForMsgProcessing(std::shared_ptr<HpaeManager> &hpaeManager)
     EXPECT_EQ(waitCount < waitCountThd, true);
 }
 
-AudioModuleInfo GetSinkAudioModeInfo()
+AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
 {
     AudioModuleInfo audioModuleInfo;
     audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
     audioModuleInfo.channels = "2";
     audioModuleInfo.rate = "48000";
-    audioModuleInfo.name = "Speaker_File";
+    audioModuleInfo.name = name;
     audioModuleInfo.adapterName = "file_io";
     audioModuleInfo.className = "file_io";
     audioModuleInfo.bufferSize = "7680";
@@ -89,13 +89,13 @@ AudioModuleInfo GetSinkAudioModeInfo()
     return audioModuleInfo;
 }
 
-AudioModuleInfo GetSourceAudioModeInfo()
+AudioModuleInfo GetSourceAudioModeInfo(std::string name = "mic")
 {
     AudioModuleInfo audioModuleInfo;
     audioModuleInfo.lib = "libmodule-hdi-source.z.so";
     audioModuleInfo.channels = "2";
     audioModuleInfo.rate = "48000";
-    audioModuleInfo.name = "mic";
+    audioModuleInfo.name = name;
     audioModuleInfo.adapterName = "file_io";
     audioModuleInfo.className = "file_io";
     audioModuleInfo.bufferSize = "3840";
@@ -304,26 +304,147 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002)
     EXPECT_EQ(sessionInfo.streamInfo.samplingRate, streamInfo.samplingRate);
     EXPECT_EQ(sessionInfo.streamInfo.channels, streamInfo.channels);
     EXPECT_EQ(sessionInfo.streamInfo.streamClassType, streamInfo.streamClassType);
-    EXPECT_EQ(sessionInfo.state, I_STATUS_IDLE);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
 
     hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    EXPECT_EQ(sessionInfo.state, I_STATUS_STARTING);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
 
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, I_STATUS_PAUSING);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
 
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, I_STATUS_STOPPING);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
 
+    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
+}
+
+TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest001)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
+    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo("Speaker_File1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    hpaeManager_->CreateStream(streamInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t fixedNum = 100;
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb = std::make_shared<WriteFixedValueCb>(SAMPLE_S16LE, fixedNum);
+    hpaeManager_->RegisterWriteCallback(streamInfo.sessionId, writeFixedValueCb);
+    std::shared_ptr<StatusChangeCb> statusChangeCb = std::make_shared<StatusChangeCb>();
+    hpaeManager_->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId, statusChangeCb);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeSessionInfo sessionInfo;
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.streamInfo.sessionId, streamInfo.sessionId);
+    EXPECT_EQ(sessionInfo.streamInfo.streamType, streamInfo.streamType);
+    EXPECT_EQ(sessionInfo.streamInfo.frameLen, streamInfo.frameLen);
+    EXPECT_EQ(sessionInfo.streamInfo.format, streamInfo.format);
+    EXPECT_EQ(sessionInfo.streamInfo.samplingRate, streamInfo.samplingRate);
+    EXPECT_EQ(sessionInfo.streamInfo.channels, streamInfo.channels);
+    EXPECT_EQ(sessionInfo.streamInfo.streamClassType, streamInfo.streamClassType);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1");
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 0, "Speaker_File");
+    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1");
+    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 0, "Speaker_File");
+    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
+}
+
+TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest002)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
+    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo("Speaker_File1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    hpaeManager_->CreateStream(streamInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t fixedNum = 100;
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb = std::make_shared<WriteFixedValueCb>(SAMPLE_S16LE, fixedNum);
+    hpaeManager_->RegisterWriteCallback(streamInfo.sessionId, writeFixedValueCb);
+    std::shared_ptr<StatusChangeCb> statusChangeCb = std::make_shared<StatusChangeCb>();
+    hpaeManager_->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId, statusChangeCb);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeSessionInfo sessionInfo;
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.streamInfo.sessionId, streamInfo.sessionId);
+    EXPECT_EQ(sessionInfo.streamInfo.streamType, streamInfo.streamType);
+    EXPECT_EQ(sessionInfo.streamInfo.frameLen, streamInfo.frameLen);
+    EXPECT_EQ(sessionInfo.streamInfo.format, streamInfo.format);
+    EXPECT_EQ(sessionInfo.streamInfo.samplingRate, streamInfo.samplingRate);
+    EXPECT_EQ(sessionInfo.streamInfo.channels, streamInfo.channels);
+    EXPECT_EQ(sessionInfo.streamInfo.streamClassType, streamInfo.streamClassType);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1");
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 0, "Speaker_File");
+    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1");
+    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
+    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 0, "Speaker_File");
+    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
@@ -354,22 +475,136 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002)
     EXPECT_EQ(sessionInfo.streamInfo.streamType, streamInfo.streamType);
     EXPECT_EQ(sessionInfo.streamInfo.frameLen, streamInfo.frameLen);
     EXPECT_EQ(sessionInfo.streamInfo.streamClassType, streamInfo.streamClassType);
-    EXPECT_EQ(sessionInfo.state, I_STATUS_IDLE);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
     hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    EXPECT_EQ(sessionInfo.state, I_STATUS_STARTING);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, I_STATUS_PAUSING);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, I_STATUS_STOPPING);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
+    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
+}
+
+TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->SetDefaultSource(audioModuleInfo.name);
+    HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
+    hpaeManager_->CreateStream(streamInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t fixedNum = 100;
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb = std::make_shared<WriteFixedValueCb>(SAMPLE_S16LE, fixedNum);
+    hpaeManager_->RegisterWriteCallback(streamInfo.sessionId, writeFixedValueCb);
+    std::shared_ptr<StatusChangeCb> statusChangeCb = std::make_shared<StatusChangeCb>();
+    hpaeManager_->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, streamInfo.sessionId, statusChangeCb);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeSessionInfo sessionInfo;
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.streamInfo.sessionId, streamInfo.sessionId);
+    EXPECT_EQ(sessionInfo.streamInfo.streamType, streamInfo.streamType);
+    EXPECT_EQ(sessionInfo.streamInfo.frameLen, streamInfo.frameLen);
+    EXPECT_EQ(sessionInfo.streamInfo.streamClassType, streamInfo.streamClassType);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
+    
+    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 1, "mic1");
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+    
+    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 0, "mic");
+    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
+    
+    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 1, "mic1");
+    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
+    
+    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 0, "mic");
+    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
+}
+
+TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->SetDefaultSource(audioModuleInfo.name);
+    HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
+    hpaeManager_->CreateStream(streamInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t fixedNum = 100;
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb = std::make_shared<WriteFixedValueCb>(SAMPLE_S16LE, fixedNum);
+    hpaeManager_->RegisterWriteCallback(streamInfo.sessionId, writeFixedValueCb);
+    std::shared_ptr<StatusChangeCb> statusChangeCb = std::make_shared<StatusChangeCb>();
+    hpaeManager_->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, streamInfo.sessionId, statusChangeCb);
+    WaitForMsgProcessing(hpaeManager_);
+    HpaeSessionInfo sessionInfo;
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.streamInfo.sessionId, streamInfo.sessionId);
+    EXPECT_EQ(sessionInfo.streamInfo.streamType, streamInfo.streamType);
+    EXPECT_EQ(sessionInfo.streamInfo.frameLen, streamInfo.frameLen);
+    EXPECT_EQ(sessionInfo.streamInfo.streamClassType, streamInfo.streamClassType);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
+    
+    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 1, "mic1");
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+    
+    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 0, "mic");
+    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+    
+    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 1, "mic1");
+    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
+    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
+    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+    
+    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 0, "mic");
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);

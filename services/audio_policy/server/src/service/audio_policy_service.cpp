@@ -468,6 +468,12 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
     return audioSceneManager_.IsStreamActive(streamType);
 }
 
+bool AudioPolicyService::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    return audioConfigManager_.IsFastStreamSupported(streamInfo, desc);
+}
+
 void AudioPolicyService::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
@@ -865,6 +871,14 @@ void AudioPolicyService::RegisterAccessiblilityBalance()
         AUDIO_ERR_LOG("RegisterObserver balance failed");
     }
     AUDIO_INFO_LOG("Register accessibility balance successfully");
+    float balance = 0;
+    auto gret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
+    CHECK_AND_RETURN_LOG(gret == SUCCESS, "get balance value failed");
+    if (balance < -1.0f || balance > 1.0f) {
+        AUDIO_WARNING_LOG("audioBalance value is out of range [-1.0, 1.0]");
+    } else {
+        OnAudioBalanceChanged(balance);
+    }
 }
 
 void AudioPolicyService::RegisterAccessiblilityMono()
@@ -883,6 +897,10 @@ void AudioPolicyService::RegisterAccessiblilityMono()
         AUDIO_ERR_LOG("RegisterObserver mono failed");
     }
     AUDIO_INFO_LOG("Register accessibility mono successfully");
+    int32_t value = 0;
+    auto gret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
+    CHECK_AND_RETURN_LOG(gret == SUCCESS, "get mono value failed");
+    OnMonoAudioConfigChanged(value != 0);
 }
 
 void AudioPolicyService::RegisterDoNotDisturbStatus()
@@ -2011,6 +2029,10 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, OUTPUT_DEVICE);
     std::string currentActivePort = REMOTE_CLASS;
     audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+    AudioIOHandle oldModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, oldModuleId);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors =
+        AudioPipeManager::GetPipeManager()->GetStreamDescsByIoHandle(oldModuleId);
     audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
 
     AudioModuleInfo moudleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
@@ -2022,6 +2044,9 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     if (openRet != 0) {
         AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
     }
+    AudioIOHandle newModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, newModuleId);
+    AudioPipeManager::GetPipeManager()->UpdateOutputStreamDescsByIoHandle(newModuleId, streamDescriptors);
     AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
     AUDIO_INFO_LOG("fetch device after split stream and open port.");
@@ -2085,6 +2110,17 @@ BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
 void AudioPolicyService::SetDefaultAdapterEnable(bool isEnable)
 {
     return AudioServerProxy::GetInstance().SetDefaultAdapterEnableProxy(isEnable);
+}
+
+int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObject> &object)
+{
+    sptr<IStandardSleAudioOperationCallback> sleAudioOperationCallback =
+        iface_cast<IStandardSleAudioOperationCallback>(object);
+    CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR,
+        "sleAudioOperationCallback_ is nullptr");
+
+    sleAudioDeviceManager_.SetSleAudioOperationCallback(sleAudioOperationCallback);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)

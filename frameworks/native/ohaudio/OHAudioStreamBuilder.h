@@ -54,6 +54,8 @@ public:
     OH_AudioStream_Result SetRendererInterruptEventCallback(OH_AudioRenderer_OnInterruptCallback callback,
         void* userData);
     OH_AudioStream_Result SetRendererErrorCallback(OH_AudioRenderer_OnErrorCallback callback, void* userData);
+    OH_AudioStream_Result SetRendererFastStatusChangeCallback(
+        OH_AudioRenderer_OnFastStatusChange callback, void* userData);
 
     OH_AudioStream_Result SetSourceType(SourceType type);
     OH_AudioStream_Result SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void *userData);
@@ -67,6 +69,8 @@ public:
     OH_AudioStream_Result SetCapturerErrorCallback(OH_AudioCapturer_OnErrorCallback callback,
         void *userData);
     OH_AudioStream_Result SetMuteWhenInterrupted(bool muteWhenInterrupted);
+    OH_AudioStream_Result SetCapturerFastStatusChangeCallback(
+        OH_AudioCapturer_OnFastStatusChange callback, void *userData);
 
 private:
     int32_t streamType_;
@@ -89,9 +93,9 @@ private:
 
     WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
     ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
-    StreamEventCallbackType streamEventCallbackType_ = STREAM_EVENT_CALLBACK_WITHOUT_RESULT;
-    InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
-    ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    StreamEventCallbackType streamEventCallbackType_ = STREAM_EVENT_CALLBACK_COMBINED;
+    InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
+    ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     RendererCallback rendererCallbacks_ = {
         {nullptr},
 
@@ -117,6 +121,10 @@ private:
     OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
     void *outputDeviceChangeuserData_ = nullptr;
     void *metadataUserData_ = nullptr;
+    OH_AudioRenderer_OnFastStatusChange rendererFastStatusChangeCallback_ = nullptr;
+    void *rendererFastStatusChangeUserData_ = nullptr;
+    OH_AudioCapturer_OnFastStatusChange capturerFastStatusChangeCallback_ = nullptr;
+    void *capturerFastStatusChangeUserData_ = nullptr;
     InterruptMode interruptMode_ = SHARE_MODE;
     InterruptStrategy strategy_ = InterruptStrategy::DEFAULT;
 };

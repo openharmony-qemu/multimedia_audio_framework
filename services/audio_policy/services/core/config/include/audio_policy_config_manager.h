@@ -79,6 +79,9 @@ public:
     bool GetAdapterInfoFlag();
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
+    bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+    bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);
 
     uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);

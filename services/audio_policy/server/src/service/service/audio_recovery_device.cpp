@@ -192,16 +192,14 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     }
 
-    bool isVirtualDevice = false;
-    if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        selectedDesc[0]->isEnable_ = true;
-        audioDeviceManager_.UpdateDevicesListInfo(selectedDesc[0], ENABLE_UPDATE);
-        isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
-        if (isVirtualDevice == true) {
-            selectedDesc[0]->connectState_ = VIRTUAL_CONNECTED;
-        }
+    bool isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
+    if (isVirtualDevice == true) {
+        selectedDesc[0]->connectState_ = VIRTUAL_CONNECTED;
     }
+
+    selectedDesc[0]->isEnable_ = true;
+    audioDeviceManager_.UpdateDevicesListInfo(selectedDesc[0], ENABLE_UPDATE);
+
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
     }
@@ -216,7 +214,7 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         return SUCCESS;
     }
 
-    audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0]);
+    audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0], strUsage);
     HandleFetchDeviceChange(AudioStreamDeviceChangeReason::OVERRODE, "SelectOutputDevice");
     audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
     WriteSelectOutputSysEvents(selectedDesc, strUsage);
@@ -400,7 +398,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectedDesc[0]);
     }
-    audioActiveDevice_.DisconnectScoWhenUserSelectInput(selectedDesc[0]);
+    audioActiveDevice_.NotifyUserSelectionEventForInput(selectedDesc[0], srcType);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
     audioDeviceCommon_.OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(),

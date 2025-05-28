@@ -68,6 +68,7 @@ ohos_unittest("audio_endpoint_unit_test") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 
   defines = []
@@ -140,6 +141,7 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 
   defines = []

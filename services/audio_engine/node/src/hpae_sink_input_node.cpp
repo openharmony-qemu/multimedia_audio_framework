@@ -212,6 +212,16 @@ HpaeSessionState HpaeSinkInputNode::GetState()
     return state_;
 }
 
+void HpaeSinkInputNode::SetAppUid(int32_t uid)
+{
+    appUid_ = uid;
+}
+
+int32_t HpaeSinkInputNode::GetAppUid()
+{
+    return appUid_;
+}
+
 uint64_t HpaeSinkInputNode::GetFramesWritten()
 {
     return framesWritten_.load();
@@ -223,8 +233,9 @@ bool HpaeSinkInputNode::GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &
     int64_t time = handleTimeModel_->GetTimeOfPos(framePos);
     int64_t deltaTime = DEFAULT_BUFFER_MICROSECOND;  // note: 20ms
     time += deltaTime;
-    sec = time / AUDIO_NS_PER_S;
-    nanoSec = time % AUDIO_NS_PER_S;
+    CHECK_AND_RETURN_RET_LOG(time >= 0, false, "get time error");
+    sec = static_cast<uint64_t>(time) / AUDIO_NS_PER_S;
+    nanoSec = static_cast<uint64_t>(time) % AUDIO_NS_PER_S;
     return true;
 }
 

@@ -90,6 +90,24 @@ void AudioManagerListenerProxy::OnWakeupClose()
     }
 }
 
+void AudioManagerListenerProxy::OnDataTransferStateChange(const int32_t &callbackId,
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
+    data.WriteInt32(callbackId);
+    info.Marshalling(data);
+
+    int error = Remote()->SendRequest(ON_DATATRANSFER_STATE_CHANGE, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("ON_DATATRANSFER_STATE_CHANGE failed, error: %{public}d", error);
+    }
+}
+
 AudioManagerListenerCallback::AudioManagerListenerCallback(const sptr<IStandardAudioServerManagerListener>& listener)
     : listener_(listener)
 {
@@ -126,6 +144,14 @@ void AudioManagerListenerCallback::TrigerFirstOnCapturerStateCallback(bool isAct
 {
     if (!isFirstOnCapturerStateCallbackSent_.exchange(true)) {
         OnCapturerState(isActive);
+    }
+}
+
+void AudioManagerListenerCallback::OnDataTransferStateChange(const int32_t &callbackId,
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    if (listener_ != nullptr) {
+        listener_->OnDataTransferStateChange(callbackId, info);
     }
 }
 } // namespace AudioStandard

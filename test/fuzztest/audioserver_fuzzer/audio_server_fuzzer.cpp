@@ -534,6 +534,131 @@ void AudioServerNotifyMuteStateChangeTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
+void AudioServerAudioWorkgroupCreateTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
+    data.WriteInt32(static_cast<int32_t>(testPid));
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOWORKGROUP),
+        data, reply, option);
+}
+
+void AudioServerAudioWorkgroupReleaseTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    data.WriteInt32(static_cast<int32_t>(testPid));
+    data.WriteInt32(static_cast<int32_t>(workgroupId));
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_AUDIOWORKGROUP),
+        data, reply, option);
+}
+
+void AudioServerAudioWorkgroupAddThreadTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t tokenId = *reinterpret_cast<const int32_t*>(rawData);
+    data.WriteInt32(static_cast<int32_t>(testPid));
+    data.WriteInt32(static_cast<int32_t>(workgroupId));
+    data.WriteInt32(static_cast<int32_t>(tokenId));
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::ADD_THREAD_TO_AUDIOWORKGROUP),
+        data, reply, option);
+}
+
+void AudioServerAudioWorkgroupRemoveThreadTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t tokenId = *reinterpret_cast<const int32_t*>(rawData);
+    data.WriteInt32(static_cast<int32_t>(testPid));
+    data.WriteInt32(static_cast<int32_t>(workgroupId));
+    data.WriteInt32(static_cast<int32_t>(tokenId));
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::REMOVE_THREAD_FROM_AUDIOWORKGROUP),
+        data, reply, option);
+}
+
+void AudioServerAudioWorkgroupStartGroupTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    uint64_t startTime = *reinterpret_cast<const int32_t*>(rawData);
+    uint64_t deadlineTime = *reinterpret_cast<const int32_t*>(rawData);
+    data.WriteInt32(static_cast<int32_t>(testPid));
+    data.WriteInt32(static_cast<int32_t>(workgroupId));
+    data.WriteUint64(static_cast<int32_t>(startTime));
+    data.WriteUint64(static_cast<int32_t>(deadlineTime));
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::START_AUDIOWORKGROUP),
+        data, reply, option);
+}
+
+void AudioServerAudioWorkgroupStopGroupTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    data.WriteInt32(static_cast<int32_t>(testPid));
+    data.WriteInt32(static_cast<int32_t>(workgroupId));
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::STOP_AUDIOWORKGROUP),
+        data, reply, option);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -562,6 +687,12 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerCheckHibernateStateTest,
     OHOS::AudioStandard::AudioServerSetSessionMuteStateTest,
     OHOS::AudioStandard::AudioServerNotifyMuteStateChangeTest,
+    OHOS::AudioStandard::AudioServerAudioWorkgroupCreateTest,
+    OHOS::AudioStandard::AudioServerAudioWorkgroupReleaseTest,
+    OHOS::AudioStandard::AudioServerAudioWorkgroupAddThreadTest,
+    OHOS::AudioStandard::AudioServerAudioWorkgroupRemoveThreadTest,
+    OHOS::AudioStandard::AudioServerAudioWorkgroupStartGroupTest,
+    OHOS::AudioStandard::AudioServerAudioWorkgroupStopGroupTest,
 };
 
 /* Fuzzer entry point */

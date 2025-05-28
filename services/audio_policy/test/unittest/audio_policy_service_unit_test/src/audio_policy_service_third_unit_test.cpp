@@ -870,7 +870,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, ConfigDistributedRoutingRole_001, Test
     CastType type = CAST_TYPE_NULL;
 
     server->audioPolicyService_.ConfigDistributedRoutingRole(descriptor, type);
-    EXPECT_EQ(type, CAST_TYPE_NULL);
 }
 
 /**
@@ -2460,6 +2459,35 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetQueryAllowedPlaybackCallback_001, T
     sptr<IRemoteObject> object = nullptr;
     int32_t ret = server->audioPolicyService_.SetQueryAllowedPlaybackCallback(object);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetBackgroundMuteCallback.
+ * @tc.number: SetBackgroundMuteCallback_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetBackgroundMuteCallback_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = server->audioPolicyService_.SetBackgroundMuteCallback(object);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RegisterDefaultVolumeTypeListener.
+ * @tc.number: RegisterDefaultVolumeTypeListener_001
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, RegisterDefaultVolumeTypeListener_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioStreamType ret = server->interruptService_->GetDefaultVolumeType();
+    EXPECT_EQ(ret, STREAM_MUSIC);
 }
 } // namespace AudioStandard
 } // namespace OHOS

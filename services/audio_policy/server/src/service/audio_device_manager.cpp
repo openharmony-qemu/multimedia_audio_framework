@@ -947,16 +947,16 @@ bool AudioDeviceManager::GetScoState()
     return false;
 }
 
-void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &d,
+void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &devDesc,
     const DeviceInfoUpdateCommand updateCommand)
 {
-    CHECK_AND_RETURN_LOG(d != nullptr, "desc is nullptr");
-    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(d);
+    CHECK_AND_RETURN_LOG(devDesc != nullptr, "desc is nullptr");
+
     bool ret = false;
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     switch (updateCommand) {
         case CATEGORY_UPDATE:
-            ret = UpdateDeviceCategory(d);
+            ret = UpdateDeviceCategory(devDesc);
             break;
         case CONNECTSTATE_UPDATE:
             ret = UpdateConnectState(devDesc);
@@ -971,27 +971,25 @@ void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDevice
             break;
     }
     if (!ret) {
-        int32_t audioId = d->deviceId_;
+        int32_t audioId = devDesc->deviceId_;
         AUDIO_ERR_LOG("cant find type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
-            d->deviceType_, audioId, GetEncryptStr(d->macAddress_).c_str(), GetEncryptStr(d->networkId_).c_str());
+            devDesc->deviceType_, audioId, GetEncryptStr(devDesc->macAddress_).c_str(),
+            GetEncryptStr(devDesc->networkId_).c_str());
     }
 }
 
-bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
+bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     bool updateFlag = false;
-    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
 
     for (auto &desc : connectedDevices_) {
-        if ((devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) &&
-            desc->deviceType_ == devDesc->deviceType_ &&
+        if (desc->deviceType_ == devDesc->deviceType_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->macAddress_ == devDesc->macAddress_ &&
             desc->deviceCategory_ != devDesc->deviceCategory_) {
             desc->deviceCategory_ = devDesc->deviceCategory_;
             if (devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE) {
-                RemoveBtFromOtherList(deviceDescriptor);
+                RemoveBtFromOtherList(devDesc);
             } else {
                 // Update connectTimeStamp_ when wearing headphones that support wear detection
                 desc->connectTimeStamp_ = GetCurrentTimeMS();
@@ -1044,18 +1042,12 @@ bool AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescripto
 {
     bool updateFlag = false;
     for (const auto &desc : connectedDevices_) {
-        if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            if (desc->deviceType_ == devDesc->deviceType_ &&
-                desc->macAddress_ == devDesc->macAddress_) {
-                desc->isEnable_ = devDesc->isEnable_;
-                updateFlag = true;
-            }
-        } else if (desc->deviceType_ == devDesc->deviceType_ &&
+        if (desc->deviceType_ == devDesc->deviceType_ &&
+            desc->macAddress_ == devDesc->macAddress_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->isEnable_ != devDesc->isEnable_) {
-                desc->isEnable_ = devDesc->isEnable_;
-                updateFlag = true;
+            desc->isEnable_ = devDesc->isEnable_;
+            updateFlag = true;
         }
     }
     return updateFlag;
@@ -1065,18 +1057,12 @@ bool AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescrip
 {
     bool updateFlag = false;
     for (const auto &desc : connectedDevices_) {
-        if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            if (desc->deviceType_ == deviceDescriptor->deviceType_ &&
-                desc->macAddress_ == deviceDescriptor->macAddress_) {
-                desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
-                updateFlag = true;
-            }
-        } else if (desc->deviceType_ == deviceDescriptor->deviceType_ &&
+        if (desc->deviceType_ == deviceDescriptor->deviceType_ &&
+            desc->macAddress_ == deviceDescriptor->macAddress_ &&
             desc->networkId_ == deviceDescriptor->networkId_ &&
             desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
-                desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
-                updateFlag = true;
+            desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
+            updateFlag = true;
         }
     }
     return updateFlag;
@@ -1493,6 +1479,12 @@ void AudioDeviceManager::GetAllConnectedDeviceByType(std::string networkId, Devi
         it = find_if(std::next(it), connectedDevices_.end(), isPresent);
     }
     return;
+}
+
+bool AudioDeviceManager::IsSessionSetDefaultDevice(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
+    return selectedDefaultOutputDeviceInfo_.find(sessionId) != selectedDefaultOutputDeviceInfo_.end();
 }
 // LCOV_EXCL_STOP
 }

@@ -196,6 +196,11 @@ JANK_PLAYBACK:
   POSITION: {type: UINT8, desc: jank position}
   APP_NAME: {type: STRING, desc: application name}
 
+STREAM_FREEZEN:
+  __BASE: {type: FAULT, level: CRITICAL, desc: audio stream freezen event}
+  APP_NAME: {type: STRING, desc: application name}
+  TIME_INTERVAL: {type: INT64, desc: check time interval}
+
 EXCLUDE_OUTPUT_DEVICE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: Exclude/Unexclude an audio output device}
   APP_NAME: {type: STRING, desc: application name who has excluded/unexcluded an audio output device}

@@ -77,7 +77,7 @@ public:
 
     int32_t Resume() override;
 
-    int32_t Stop() override;
+    int32_t Stop(AudioProcessStage stage = AUDIO_PROC_STAGE_STOP) override;
 
     int32_t Release(bool isSwitchStream = false) override;
 
@@ -1176,7 +1176,7 @@ int32_t AudioProcessInClientInner::Resume()
     return SUCCESS;
 }
 
-int32_t AudioProcessInClientInner::Stop()
+int32_t AudioProcessInClientInner::Stop(AudioProcessStage stage)
 {
     Trace traceStop("AudioProcessInClient::Stop");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
@@ -1197,7 +1197,7 @@ int32_t AudioProcessInClientInner::Stop()
     ClockTime::RelativeSleep(MAX_STOP_FADING_DURATION_NANO);
 
     processProxy_->SetUnderrunCount(underflowCount_);
-    if (processProxy_->Stop() != SUCCESS) {
+    if (processProxy_->Stop(stage) != SUCCESS) {
         streamStatus_->store(oldStatus);
         AUDIO_ERR_LOG("Stop failed in server, reset status to %{public}s", GetStatusInfo(oldStatus).c_str());
         startFadeout_.store(false);
@@ -1221,7 +1221,7 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
         AUDIO_INFO_LOG("Stream status is already released");
         return SUCCESS;
     }
-    Stop();
+    Stop(AudioProcessStage::AUDIO_PROC_STAGE_STOP_BY_RELEASE);
     isCallbackLoopEnd_ = true;
     threadStatusCV_.notify_all();
     std::lock_guard<std::mutex> lock(statusSwitchLock_);

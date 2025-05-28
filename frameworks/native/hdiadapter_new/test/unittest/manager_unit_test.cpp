@@ -67,6 +67,8 @@ HWTEST_F(ManagerUnitTest, ManagerUnitTest_001, TestSize.Level1)
     ret = manager.ProcessSource(sourceProcessFunc);
     EXPECT_EQ(ret, SUCCESS);
 
+    manager.UpdateSinkPrestoreInfo<bool>("test", true);
+
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     EXPECT_NE(deviceManager, nullptr);
 

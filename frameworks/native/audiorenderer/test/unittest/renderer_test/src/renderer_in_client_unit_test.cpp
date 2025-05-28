@@ -109,6 +109,8 @@ public:
 
     virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
 
+    virtual int32_t SetOffloadDataCallbackState(int32_t state) { return 0; }
+
     virtual sptr<IRemoteObject> AsObject() { return nullptr; }
 };
 
@@ -1532,6 +1534,24 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_059, TestSize.Level1
     float pitch = 2.0f;
     auto ret = ptrRendererInClientInner->SetPitch(pitch);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_060
+ * @tc.desc  : Test RendererInClientInner::GetFastStatus
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_060, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    auto ret = ptrRendererInClientInner->GetFastStatus();
+    EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

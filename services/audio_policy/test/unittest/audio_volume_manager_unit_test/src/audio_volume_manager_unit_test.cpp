@@ -268,6 +268,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_011, TestSize.Level1)
 {
     AudioStreamType streamType = STREAM_MUSIC;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    audioVolumeManager.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_TRUE(audioVolumeManager.audioPolicyServerHandler_ != nullptr);
 
     audioVolumeManager.SetSafeVolumeCallback(streamType);
 }

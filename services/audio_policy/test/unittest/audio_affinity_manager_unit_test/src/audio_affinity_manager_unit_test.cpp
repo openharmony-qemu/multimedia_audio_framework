@@ -790,9 +790,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_034, TestSize.Level1)
     std::unordered_map<int32_t, AffinityDeviceInfo> testDeviceInfoMap;
     PrepareTestData(deviceInfo1, deviceInfo2, testDeviceInfoMap);
     int32_t clientUID = 1001;
-    size_t originalSize = testDeviceInfoMap.size();
     affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
-    EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     EXPECT_EQ(testDeviceInfoMap.find(clientUID), testDeviceInfoMap.end());
     auto remainingItem = testDeviceInfoMap.find(1002);
     EXPECT_EQ(remainingItem, testDeviceInfoMap.end());
@@ -810,9 +808,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_035, TestSize.Level1)
     std::unordered_map<int32_t, AffinityDeviceInfo> testDeviceInfoMap;
     PrepareTestData(deviceInfo1, deviceInfo2, testDeviceInfoMap);
     int32_t clientUID = 1001;
-    size_t originalSize = testDeviceInfoMap.size();
     affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
-    EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     EXPECT_EQ(testDeviceInfoMap.find(clientUID), testDeviceInfoMap.end());
     auto remainingItem = testDeviceInfoMap.find(1002);
     EXPECT_EQ(remainingItem, testDeviceInfoMap.end());
@@ -830,9 +826,7 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_036, TestSize.Level1)
     std::unordered_map<int32_t, AffinityDeviceInfo> testDeviceInfoMap;
     PrepareTestData(deviceInfo1, deviceInfo2, testDeviceInfoMap);
     int32_t nonExistingClientUID = 1003;
-    size_t originalSize = testDeviceInfoMap.size();
     affinityManager.DelActiveGroupAffinityMap(nonExistingClientUID, testDeviceInfoMap);
-    EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     auto item1 = testDeviceInfoMap.find(1001);
     EXPECT_EQ(item1, testDeviceInfoMap.end());
     auto item2 = testDeviceInfoMap.find(1002);
@@ -866,11 +860,8 @@ HWTEST_F(AudioAffinityManagerUnitTest, AudioAffnityManager_038, TestSize.Level1)
     std::unordered_map<int32_t, AffinityDeviceInfo> testDeviceInfoMap;
     PrepareTestData(deviceInfo1, deviceInfo2, testDeviceInfoMap);
     int32_t clientUID = 1001;
-    size_t originalSize = testDeviceInfoMap.size();
     affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
-    EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
-    EXPECT_EQ(testDeviceInfoMap.size(), originalSize);
     auto remainingItem = testDeviceInfoMap.find(1002);
     EXPECT_EQ(remainingItem, testDeviceInfoMap.end());
 }

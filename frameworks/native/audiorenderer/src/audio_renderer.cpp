@@ -30,6 +30,7 @@
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
 #include "audio_scope_exit.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,7 +51,7 @@ const std::vector<StreamUsage> BACKGROUND_NOSTART_STREAM_USAGE {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
 static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
-static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
+static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 60;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
@@ -205,6 +206,38 @@ size_t GetAudioFormatSize(AudioSampleFormat format)
 size_t GetFormatSize(const AudioStreamParams& info)
 {
     return GetAudioFormatSize(static_cast<AudioSampleFormat>(info.format));
+}
+
+int32_t AudioRenderer::FadeInAudioBuffer(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel)
+{
+    CHECK_AND_RETURN_RET_LOG(buffer.buffer != nullptr && buffer.bufLength != 0 && buffer.dataLength != 0,
+        ERR_INVALID_PARAM, "Invalid buffer or length");
+    BufferDesc tempBuffer = buffer;
+    if (tempBuffer.bufLength > tempBuffer.dataLength) {
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+            tempBuffer.dataLength);
+        tempBuffer.bufLength = tempBuffer.dataLength;
+    }
+    ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, 0.0f, 1.0f);
+    int32_t volRet = VolumeTools::Process(tempBuffer, format, mapVols);
+    CHECK_AND_RETURN_RET_LOG(volRet == SUCCESS, volRet, "Process Volume failed: %{public}d", volRet);
+    return volRet;
+}
+
+int32_t AudioRenderer::FadeOutAudioBuffer(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel)
+{
+    CHECK_AND_RETURN_RET_LOG(buffer.buffer != nullptr && buffer.bufLength != 0 && buffer.dataLength != 0,
+        ERR_INVALID_PARAM, "Invalid buffer or length");
+    BufferDesc tempBuffer = buffer;
+    if (tempBuffer.bufLength > tempBuffer.dataLength) {
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+            tempBuffer.dataLength);
+        tempBuffer.bufLength = tempBuffer.dataLength;
+    }
+    ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, 1.0f, 0.0f);
+    int32_t volRet = VolumeTools::Process(tempBuffer, format, mapVols);
+    CHECK_AND_RETURN_RET_LOG(volRet == SUCCESS, volRet, "Process Volume failed: %{public}d", volRet);
+    return volRet;
 }
  
 int32_t AudioRenderer::MuteAudioBuffer(uint8_t *addr, size_t offset, size_t length, AudioSampleFormat format)
@@ -564,7 +597,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 #ifdef SUPPORT_LOW_LATENCY
     IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
 #else
-    rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    if (rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD) {
+        rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    }
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
@@ -885,6 +920,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         interruptCbImpl->StartSwitch();
     }
 
+    bool bFlag = GetFastStatus();
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
     AUDIO_INFO_LOG("Before %{public}s, restore audiorenderer %{public}u", callingFunc.c_str(), sessionID_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
@@ -901,6 +937,8 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
             AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
             return ERR_OPERATION_FAILED;
         }
+    } else {
+        FastStatusChangeCallback(bFlag);
     }
 
     // Unblock interrupt callback.
@@ -910,10 +948,28 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     return SUCCESS;
 }
 
+int32_t AudioRendererPrivate::AsyncCheckAndRestoreAudioRenderer(std::string callingFunc)
+{
+    if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
+        return SUCCESS;
+    }
+    auto weakRenderer = weak_from_this();
+    taskLoop_.PostTask([weakRenderer, callingFunc] () {
+        auto sharedRenderer = weakRenderer.lock();
+        CHECK_AND_RETURN_LOG(sharedRenderer, "render is null");
+        uint32_t taskCount;
+        do {
+            taskCount = sharedRenderer->switchStreamInNewThreadTaskCount_.load();
+            sharedRenderer->CheckAndRestoreAudioRenderer(callingFunc + "withNewThread");
+        } while (sharedRenderer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
+    });
+    return SUCCESS;
+}
+
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
-    Trace trace("KeyAction AudioRenderer::Start");
-    CheckAndRestoreAudioRenderer("Start");
+    Trace trace("KeyAction AudioRenderer::Start " + std::to_string(sessionID_));
+    AsyncCheckAndRestoreAudioRenderer("Start");
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) { AUDIO_ERR_LOG("Start timeout"); }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
@@ -972,7 +1028,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("AudioRenderer::Write");
-    CheckAndRestoreAudioRenderer("Write");
+    AsyncCheckAndRestoreAudioRenderer("Write");
     MockPcmData(buffer, bufferSize);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
@@ -986,7 +1042,7 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize)
 {
     Trace trace("Write");
-    CheckAndRestoreAudioRenderer("Write");
+    AsyncCheckAndRestoreAudioRenderer("Write");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t size = currentStream->Write(pcmBuffer, pcmSize, metaBuffer, metaSize);
@@ -1015,7 +1071,7 @@ bool AudioRendererPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    CheckAndRestoreAudioRenderer("GetAudioPosition");
+    AsyncCheckAndRestoreAudioRenderer("GetAudioPosition");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetAudioPosition(timestamp, base);
@@ -1031,7 +1087,7 @@ bool AudioRendererPrivate::Drain() const
 
 bool AudioRendererPrivate::Flush() const
 {
-    Trace trace("KeyAction AudioRenderer::Flush");
+    Trace trace("KeyAction AudioRenderer::Flush " + std::to_string(sessionID_));
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->FlushAudioStream();
@@ -1039,7 +1095,7 @@ bool AudioRendererPrivate::Flush() const
 
 bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
 {
-    Trace trace("KeyAction AudioRenderer::PauseTransitent");
+    Trace trace("KeyAction AudioRenderer::PauseTransitent " + std::to_string(sessionID_));
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
@@ -1097,7 +1153,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
 
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 {
-    Trace trace("KeyAction AudioRenderer::Pause");
+    Trace trace("KeyAction AudioRenderer::Pause " + std::to_string(sessionID_));
     AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS,
         [](void *) {
             AUDIO_ERR_LOG("Pause timeout");
@@ -1139,7 +1195,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
 
 bool AudioRendererPrivate::Stop()
 {
-    Trace trace("KeyAction AudioRenderer::Stop");
+    Trace trace("KeyAction AudioRenderer::Stop " + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
@@ -1172,7 +1228,7 @@ bool AudioRendererPrivate::Stop()
 
 bool AudioRendererPrivate::Release()
 {
-    Trace trace("KeyAction AudioRenderer::Release");
+    Trace trace("KeyAction AudioRenderer::Release " + std::to_string(sessionID_));
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
@@ -1251,10 +1307,9 @@ int32_t AudioRendererPrivate::SetVolume(float volume) const
 
 void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
 {
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
-    State currentState = currentStream->GetState();
-    bool isMute = currentStream->GetMute();
+    CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "audioStream_ is nullptr");
+    State currentState = audioStream_->GetState();
+    bool isMute = audioStream_->GetMute();
     if (currentState == NEW || currentState == PREPARED) {
         AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
         isStillZeroStreamVolume_ = (volume == 0);
@@ -1310,7 +1365,7 @@ uint32_t AudioRendererPrivate::GetRendererSamplingRate() const
 int32_t AudioRendererPrivate::SetBufferDuration(uint64_t bufferDuration) const
 {
     CHECK_AND_RETURN_RET_LOG(bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC,
-        ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 20ms");
+        ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 60ms");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetBufferSizeInMsec(bufferDuration);
@@ -1561,8 +1616,8 @@ AudioRenderMode AudioRendererPrivate::GetRenderMode() const
 
 int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc)
 {
-    CheckAndRestoreAudioRenderer("GetBufferDesc");
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    AsyncCheckAndRestoreAudioRenderer("GetBufferDesc");
+    std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->GetBufferDesc(bufDesc);
     return ret;
@@ -1571,10 +1626,10 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc)
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc)
 {
     Trace trace("AudioRenderer::Enqueue");
-    CheckAndRestoreAudioRenderer("Enqueue");
+    AsyncCheckAndRestoreAudioRenderer("Enqueue");
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->Enqueue(bufDesc);
     return ret;
@@ -1806,6 +1861,13 @@ int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback(
     return SUCCESS;
 }
 
+void AudioRendererPrivate::SetFastStatusChangeCallback(
+    const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback)
+{
+    std::lock_guard lock(fastStatusChangeCallbackMutex_);
+    fastStatusChangeCallback_ = callback;
+}
+
 bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
 {
     CHECK_AND_RETURN_RET_LOG(audioStream, false, "stream is nullptr");
@@ -1870,6 +1932,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
 void AudioRendererPrivate::UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &newAudioStream)
 {
     audioStream_ = newAudioStream;
+    audioStream_->GetRendererInfo(rendererInfo_);
     if (audioInterruptCallback_ != nullptr) {
         std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl =
             std::static_pointer_cast<AudioRendererInterruptCallbackImpl>(audioInterruptCallback_);
@@ -2417,9 +2480,8 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     if (lock.owns_lock()) {
         lock.unlock();
     }
-    if (speed < NORMAL_STREAM_SPEED_LEVEL) {
-        SetPitch(speed);
-    }
+
+    SetPitch(std::min(speed, NORMAL_STREAM_SPEED_LEVEL));
     return SUCCESS;
 }
 
@@ -2570,6 +2632,13 @@ int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
     return currentStream->SetDefaultOutputDevice(deviceType);
 }
 
+bool AudioRendererPrivate::GetFastStatus()
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
+    return currentStream->GetFastStatus();
+}
+
 // diffrence from GetAudioPosition only when set speed
 int32_t AudioRendererPrivate::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const
 {
@@ -2590,11 +2659,49 @@ int32_t AudioRendererPrivate::InitFormatUnsupportedErrorCallback()
     return SUCCESS;
 }
 
+void AudioRendererPrivate::FastStatusChangeCallback(bool flag)
+{
+    bool bRet = GetFastStatus();
+
+    if (bRet != flag) {
+        AudioStreamFastStatus fastStatus = (bRet)
+            ? AudioStreamFastStatus::FASTSTATUS_FAST : AudioStreamFastStatus::FASTSTATUS_NORMAL;
+
+        if (fastStatusChangeCallback_ != nullptr) {
+            fastStatusChangeCallback_->OnFastStatusChange(fastStatus);
+        }
+    }
+}
+
 void FormatUnsupportedErrorCallbackImpl::OnFormatUnsupportedError(const AudioErrors &errorCode)
 {
     std::shared_ptr<AudioRendererErrorCallback> cb = callback_.lock();
     CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->OnError(errorCode);
 }
+
+int32_t AudioRendererPrivate::StartDataCallback()
+{
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+        "StartDataCallback failed. Illegal state:%{public}u", state);
+    return audioStream_->SetOffloadDataCallbackState(0); // 0 hdi state need data
+}
+
+int32_t AudioRendererPrivate::StopDataCallback()
+{
+    std::lock_guard<std::shared_mutex> lock(rendererMutex_);
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+        "StopDataCallback failed. Illegal state:%{public}u", state);
+    return audioStream_->SetOffloadDataCallbackState(3); // 3 hdi state full
+}
+
+void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
+{
+    audioInterrupt_.callbackType = callbackType;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

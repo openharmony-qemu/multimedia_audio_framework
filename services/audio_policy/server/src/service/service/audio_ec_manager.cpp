@@ -212,6 +212,7 @@ void AudioEcManager::UpdateEnhanceEffectState(SourceType source)
 {
     AudioEnhancePropertyArray enhancePropertyArray = {};
     std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
+    CHECK_AND_RETURN_LOG(inputDesc != nullptr, "inputDesc is nullptr");
     int32_t ret = AudioServerProxy::GetInstance().GetAudioEnhancePropertyProxy(enhancePropertyArray,
         inputDesc->deviceType_);
     if (ret != SUCCESS) {
@@ -249,7 +250,8 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
         moduleInfo.sourceType = std::to_string(sourceType);
     } else {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
-        if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        CHECK_AND_RETURN_LOG(inputDesc != nullptr, "inputDesc is nullptr");
+        if (inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
             moduleInfo = usbSourceModuleInfo_;
             moduleInfo.sourceType = std::to_string(sourceType);
         } else {
@@ -281,6 +283,7 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
     std::shared_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
 
+    CHECK_AND_RETURN_LOG(inputDesc && !outputDesc.empty() && outputDesc.front(), "Device is nullptr");
     UpdateAudioEcInfo(*inputDesc, *outputDesc.front());
     UpdateModuleInfoForEc(moduleInfo);
 }
@@ -474,6 +477,7 @@ std::string AudioEcManager::ShouldOpenMicRef(SourceType source)
     }
 
     std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(source, -1);
+    CHECK_AND_RETURN_RET_LOG(inputDesc != nullptr, shouldOpen, "inputDesc is nullptr");
     auto iter = std::find(MIC_REF_DEVICES.begin(), MIC_REF_DEVICES.end(), inputDesc->deviceType_);
     if ((source == SOURCE_TYPE_VOICE_COMMUNICATION && isMicRefVoipUpOn_ && iter != MIC_REF_DEVICES.end()) ||
         (source == SOURCE_TYPE_MIC && isMicRefRecordOn_ && iter != MIC_REF_DEVICES.end())) {

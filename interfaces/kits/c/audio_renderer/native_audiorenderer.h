@@ -471,6 +471,34 @@ typedef void (*OH_AudioRenderer_OnInterruptCallback)(OH_AudioRenderer* renderer,
 typedef void (*OH_AudioRenderer_OnErrorCallback)(OH_AudioRenderer* renderer, void* userData,
     OH_AudioStream_Result error);
 
+/**
+ * @brief Gets audio renderer running status, check if it works in fast status.
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer.
+ * @param status Pointer to a variable to receive the status.
+ * @return
+ *     {@link AUDIOSTREAM_SUCCESS} if the execution is successful.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} the param of renderer is nullptr.
+ *     {@link AUDIOSTREAM_ERROR_ILLEGAL_STATE} function called in invalid state, only available before release state.
+ * @since 20
+ */
+OH_AudioStream_Result OH_AudioRenderer_GetFastStatus(OH_AudioRenderer* renderer,
+    OH_AudioStream_FastStatus* status);
+
+/**
+ * @brief Callback function of fast status change event for audio renderer.
+ *
+ * @param renderer Pointer to an audio renderer instance for which this callback occurs.
+ * @param userData Userdata which is passed by register.
+ * @param status Current fast status.
+ * @since 20
+ */
+typedef void (*OH_AudioRenderer_OnFastStatusChange)(
+    OH_AudioRenderer* renderer,
+    void* userData,
+    OH_AudioStream_FastStatus status
+);
+
 #ifdef __cplusplus
 }
 #endif

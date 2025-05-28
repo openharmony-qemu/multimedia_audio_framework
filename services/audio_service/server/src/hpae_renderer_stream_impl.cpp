@@ -40,6 +40,7 @@ namespace AudioStandard {
 const int32_t MIN_BUFFER_SIZE = 2;
 const int32_t FRAME_LEN_10MS = 2;
 const int32_t TENMS_PER_SEC = 100;
+static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isCallbackMode)
 {
@@ -107,6 +108,9 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
 int32_t HpaeRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Start");
+    timespec tm {};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    timestamp_ = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_SECOND + static_cast<uint64_t>(tm.tv_nsec);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Start is error");
@@ -196,6 +200,14 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     framePosition = framePosition_;
     timestamp = timestamp_;
     latency = latency_;
+    if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
+        uint32_t SinkLatency = 0;
+        std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
+        if (audioRendererSink) {
+            audioRendererSink->GetLatency(SinkLatency);
+        }
+        latency = SinkLatency + latency_;
+    }
     return SUCCESS;
 }
 
@@ -203,7 +215,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
 int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
-    if (deviceClass_ != "offload") {
+    if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
         uint32_t SinkLatency = 0;
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
@@ -367,12 +379,21 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
 
 int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
 {
-    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance("offload", "");
+    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(DEVICE_CLASS_OFFLOAD, "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
     return audioRendererSinkInstance->SetVolume(volume, volume);
+}
+
+int32_t HpaeRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)
+{
+    AUDIO_INFO_LOG("SetOffloadDataCallbackState state: %{public}d", state);
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
+    return IHpaeManager::GetHpaeManager().SetOffloadRenderCallbackType(processConfig_.originalSessionId, state);
 }
 
 int32_t HpaeRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)

@@ -40,6 +40,11 @@ public:
     void OnSelfAppVolumeChanged(const VolumeEvent &event) override {}
 };
 
+class DataTransferStateChangeCallbackTest: public AudioRendererDataTransferStateChangeCallback {
+public:
+    void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) override {}
+};
+
 /**
  * @tc.name  : Test GetMaxVolume API
  * @tc.type  : FUNC
@@ -686,6 +691,31 @@ HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_005, TestSize.Leve
     result = AudioSystemManager::GetInstance()->UnsetAppVolumeCallbackForUid(nullptr);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetAppVolumeCallbackForUid end result:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+* @tc.name   : Test RegisterRendererDataTransfer API
+* @tc.number : RegisterRendererDataTransfer_001
+* @tc.desc   : Test RegisterRendererDataTransfer interface
+*/
+HWTEST(AudioSystemManagerUnitTest, RegisterRendererDataTransfer_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterRendererDataTransfer_001 start");
+    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> callback =
+        std::make_shared<DataTransferStateChangeCallbackTest>();
+    DataTransferMonitorParam param1;
+    int32_t result = AudioSystemManager::GetInstance()->RegisterRendererDataTransferCallback(param1, callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterRendererDataTransfer_001 end result:%{public}d", result);
+    EXPECT_EQ(result, SUCCESS);
+
+    DataTransferMonitorParam param2;
+    result = AudioSystemManager::GetInstance()->RegisterRendererDataTransferCallback(param2, callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterRendererDataTransfer_001 end result:%{public}d", result);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = AudioSystemManager::GetInstance()->UnregisterRendererDataTransferCallback(callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterRendererDataTransfer_001 end result:%{public}d", result);
+    EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

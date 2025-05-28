@@ -55,7 +55,8 @@ void RecorderDfxWriter::WriteDfxStopMsg(uint32_t index, CapturerStage stage,
 {
     CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "nullptr");
     if (stage != CAPTURER_STAGE_STOP_OK &&
-        stage != CAPTURER_STAGE_PAUSE_OK) {
+        stage != CAPTURER_STAGE_PAUSE_OK &&
+        stage != CAPTURER_STAGE_STOP_BY_RELEASE) {
         return;
     }
 

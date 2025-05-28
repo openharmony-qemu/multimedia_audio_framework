@@ -689,15 +689,12 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(
 
     std::string dupSinkName = AppendDeviceName(innerCapId, AppendType::APPEND_RENDER);
     const char *sinkName = nullptr;
-    std::string sinkNameStr = "";
     if (managerType_ == DUP_PLAYBACK) {
         sinkName = dupSinkName.c_str();
     } else if (managerType_ == DUAL_PLAYBACK) {
         sinkName = "Speaker";
     } else {
-        sinkNameStr = adapterName;
-        sinkName = strdup(sinkNameStr.c_str());
-        CHECK_AND_RETURN_RET_LOG(sinkName != nullptr, ERR_MEMORY_ALLOC_FAILED, "dup string failed");
+        sinkName = adapterName.c_str();
     }
     if (strcmp(sinkName, "") == 0) {
         AUDIO_INFO_LOG("Sink name is null");
@@ -733,13 +730,10 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
         bufferAttr.maxlength, bufferAttr.fragsize);
 
     const char *cDeviceName = "Built_in_mic";
-    std::string sourceNameStr = "";
     if (source == SOURCE_TYPE_PLAYBACK_CAPTURE || source == SOURCE_TYPE_REMOTE_CAST) {
         cDeviceName = deviceName.c_str();
     } else {
-        sourceNameStr = adapterName;
-        cDeviceName = strdup(sourceNameStr.c_str());
-        CHECK_AND_RETURN_RET_LOG(cDeviceName != nullptr, ERR_MEMORY_ALLOC_FAILED, "dup string failed");
+        cDeviceName = adapterName.c_str();
     }
     AUDIO_INFO_LOG("Source name: %{public}s", cDeviceName);
 

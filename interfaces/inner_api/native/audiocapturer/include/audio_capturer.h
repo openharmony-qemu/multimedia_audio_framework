@@ -146,6 +146,19 @@ public:
     virtual void OnError(AudioErrors errorCode) = 0;
 };
 
+class AudioCapturerFastStatusChangeCallback {
+public:
+    virtual ~AudioCapturerFastStatusChangeCallback() = default;
+
+    /**
+     * Called when the audio stream of an autio capturer changed.
+     *
+     *@param Audio device descriptors after change.
+     * since 20
+     */
+    virtual void OnFastStatusChange(AudioStreamFastStatus status) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio capturing.
  */
@@ -235,6 +248,8 @@ public:
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath,
         const AppInfo &appInfo);
 
+    virtual ~AudioCapturer();
+
     /**
      * @brief Sets audio capture parameters.
      *
@@ -278,6 +293,14 @@ public:
      * @since 10
      */
     virtual void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) = 0;
+
+    /**
+     * @brief Set the audio capturer fast status change callback listener
+     *
+     * @since 20
+     */
+    virtual void SetFastStatusChangeCallback(
+        const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) = 0;
 
     /**
      * @brief Obtains audio capturer parameters.
@@ -718,11 +741,17 @@ public:
 
     virtual int32_t SetInputDevice(DeviceType deviceType) const = 0;
 
+    virtual bool GetFastStatus() { return false; };
+
     virtual int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) = 0;
 
     virtual int32_t SetInterruptStrategy(InterruptStrategy strategy) = 0;
 
-    virtual ~AudioCapturer();
+    virtual void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
+    {
+        (void)callbackType;
+        return;
+    }
 
 protected:
     static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);

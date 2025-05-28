@@ -3306,5 +3306,18 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_169, TestSize.Level1)
     int32_t result = server->DeactivatePreemptMode();
     EXPECT_EQ(result, ERROR);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_170
+* @tc.desc  : Test SubscribeBackgroundTask.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_170, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    server->SubscribeBackgroundTask();
+}
 } // AudioStandard
 } // OHOS

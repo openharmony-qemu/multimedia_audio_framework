@@ -85,6 +85,21 @@ private:
     void *userData_;
 };
 
+class OHAudioRendererFastStatusChangeCallback : public AudioRendererFastStatusChangeCallback {
+public:
+    OHAudioRendererFastStatusChangeCallback(OH_AudioRenderer_OnFastStatusChange callback,
+        OH_AudioRenderer *audioRenderer, void *userData)
+        : callback_(callback), ohAudioRenderer_(audioRenderer), userData_(userData)
+    {
+    }
+
+    void OnFastStatusChange(AudioStreamFastStatus status) override;
+private:
+    OH_AudioRenderer_OnFastStatusChange callback_;
+    OH_AudioRenderer *ohAudioRenderer_;
+    void *userData_;
+};
+
 class OHAudioRendererCallback : public AudioRendererCallback {
 public:
     OHAudioRendererCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer *audioRenderer,
@@ -179,76 +194,80 @@ struct RendererCallback {
 };
 
 class OHAudioRenderer {
-    public:
-        OHAudioRenderer();
-        ~OHAudioRenderer();
-        bool Initialize(AudioRendererOptions &rendererOptions);
-        bool Start();
-        bool Pause();
-        bool Stop();
-        bool Flush();
-        bool Release();
-        RendererState GetCurrentState();
-        void GetStreamId(uint32_t& streamId);
-        AudioChannel GetChannelCount();
-        int32_t GetSamplingRate();
-        AudioSampleFormat GetSampleFormat();
-        AudioEncodingType GetEncodingType();
-        AudioPrivacyType GetRendererPrivacy();
-        int64_t GetFramesWritten();
-        void GetRendererInfo(AudioRendererInfo& rendererInfo);
-        bool GetTimestamp(Timestamp &timestamp, Timestamp::Timestampbase base);
-        int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base);
-        int32_t GetFrameSizeInCallback();
-        int32_t GetBufferDesc(BufferDesc &bufDesc) const;
-        int32_t Enqueue(const BufferDesc &bufDesc) const;
-        int32_t SetSpeed(float speed);
-        float GetSpeed();
-        AudioChannelLayout GetChannelLayout();
-        AudioEffectMode GetEffectMode();
-        int32_t SetEffectMode(AudioEffectMode effectMode);
+public:
+    OHAudioRenderer();
+    ~OHAudioRenderer();
+    bool Initialize(AudioRendererOptions &rendererOptions);
+    bool Start();
+    bool Pause();
+    bool Stop();
+    bool Flush();
+    bool Release();
+    RendererState GetCurrentState();
+    void GetStreamId(uint32_t& streamId);
+    AudioChannel GetChannelCount();
+    int32_t GetSamplingRate();
+    AudioSampleFormat GetSampleFormat();
+    AudioEncodingType GetEncodingType();
+    AudioPrivacyType GetRendererPrivacy();
+    int64_t GetFramesWritten();
+    void GetRendererInfo(AudioRendererInfo& rendererInfo);
+    bool GetTimestamp(Timestamp &timestamp, Timestamp::Timestampbase base);
+    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base);
+    int32_t GetFrameSizeInCallback();
+    int32_t GetBufferDesc(BufferDesc &bufDesc) const;
+    int32_t Enqueue(const BufferDesc &bufDesc) const;
+    int32_t SetSpeed(float speed);
+    float GetSpeed();
+    AudioChannelLayout GetChannelLayout();
+    AudioEffectMode GetEffectMode();
+    int32_t SetEffectMode(AudioEffectMode effectMode);
 
-        void SetPreferredFrameSize(int32_t frameSize);
+    void SetPreferredFrameSize(int32_t frameSize);
 
-        void SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
-            void *userData);
-        bool IsFastRenderer();
+    void SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
+        void *userData);
+    bool IsFastRenderer();
 
-        int32_t SetVolume(float volume) const;
-        int32_t SetVolumeWithRamp(float volume, int32_t duration);
-        float GetVolume() const;
-        int32_t SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
-            uint32_t markPosition, void *userData);
-        void UnsetRendererPositionCallback();
-        uint32_t GetUnderflowCount();
-        void SetInterruptMode(InterruptMode mode);
-        void SetSilentModeAndMixWithOthers(bool on);
-        bool GetSilentModeAndMixWithOthers();
-        int32_t SetDefaultOutputDevice(DeviceType deviceType);
+    void SetRendererFastStatusChangeCallback(OH_AudioRenderer_OnFastStatusChange callback, void *userData);
 
-        void SetRendererWriteDataCallbackType(WriteDataCallbackType writeDataCallbackType);
-        WriteDataCallbackType GetRendererWriteDataCallbackType();
+    int32_t SetVolume(float volume) const;
+    int32_t SetVolumeWithRamp(float volume, int32_t duration);
+    float GetVolume() const;
+    int32_t SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
+        uint32_t markPosition, void *userData);
+    void UnsetRendererPositionCallback();
+    uint32_t GetUnderflowCount();
+    void SetInterruptMode(InterruptMode mode);
+    void SetSilentModeAndMixWithOthers(bool on);
+    bool GetSilentModeAndMixWithOthers();
+    int32_t SetDefaultOutputDevice(DeviceType deviceType);
+    bool GetFastStatus();
 
-        void SetRendererInterruptEventCallbackType(InterruptEventCallbackType InterruptEventCallbackType);
-        InterruptEventCallbackType GetRendererInterruptEventCallbackType();
+    void SetRendererWriteDataCallbackType(WriteDataCallbackType writeDataCallbackType);
+    WriteDataCallbackType GetRendererWriteDataCallbackType();
 
-        void SetRendererErrorCallbackType(ErrorCallbackType errorCallbackType);
-        ErrorCallbackType GetRendererErrorCallbackType();
+    void SetRendererInterruptEventCallbackType(InterruptEventCallbackType callbackType);
+    InterruptEventCallbackType GetRendererInterruptEventCallbackType();
 
-        void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
-    private:
-        std::shared_ptr<AudioRenderer> audioRenderer_;
-        std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
-        std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
-        std::shared_ptr<OHRendererPositionCallback> rendererPositionCallback_;
-        WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
-        InterruptEventCallbackType interruptEventCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
-        ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    void SetRendererErrorCallbackType(ErrorCallbackType errorCallbackType);
+    ErrorCallbackType GetRendererErrorCallbackType();
 
-        void SetWriteDataCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData,
-            AudioEncodingType encodingType);
-        void SetInterruptCallback(RendererCallback rendererCallbacks, void *userData);
-        void SetErrorCallback(RendererCallback rendererCallbacks, void *userData);
+    void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
+private:
+    std::shared_ptr<AudioRenderer> audioRenderer_;
+    std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
+    std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
+    std::shared_ptr<OHRendererPositionCallback> rendererPositionCallback_;
+    std::shared_ptr<OHAudioRendererFastStatusChangeCallback> audioRendererFastStatusChangeCallback_;
+    WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
+    InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
+    ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_COMBINED;
+
+    void SetWriteDataCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData,
+        AudioEncodingType encodingType);
+    void SetInterruptCallback(RendererCallback rendererCallbacks, void *userData);
+    void SetErrorCallback(RendererCallback rendererCallbacks, void *userData);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

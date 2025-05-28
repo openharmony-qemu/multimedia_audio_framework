@@ -38,11 +38,35 @@
 #include "audio_effect_server.h"
 #include "audio_asr.h"
 #include "policy_handler.h"
+#include "audio_resource_service.h"
+#include "audio_stream_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioServer;
+class ProxyDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    ProxyDeathRecipient(int32_t pid, AudioServer *audioServer) : pid_(pid), audioServer_(audioServer) {};
+    virtual ~ProxyDeathRecipient() = default;
+    // overridde for DeathRecipient
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override;
+private:
+    int32_t pid_ = 0;
+    AudioServer *audioServer_ = nullptr;
+};
+
+class PipeInfoGuard {
+public:
+    PipeInfoGuard(uint32_t sessionId);
+    ~PipeInfoGuard(); // Checks the flag and calls ReleaseClient if needed
+    void SetReleaseFlag(bool flag);
+private:
+    bool releaseFlag_ = true; // Determines whether to release pipe info in policy
+    uint32_t sessionId_ = 0;
+};
+
 class AudioServer : public SystemAbility, public AudioManagerStub, public IAudioSinkCallback, IAudioSourceCallback,
-    public IAudioServerInnerCall {
+    public IAudioServerInnerCall, public DataTransferStateChangeCallbackForMonitor {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
@@ -219,6 +243,14 @@ public:
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
+    void RemoveRendererDataTransferCallback(const int32_t &pid);
+    int32_t RegisterDataTransferCallback(const sptr<IRemoteObject> &object) override;
+    int32_t RegisterDataTransferMonitorParam(const int32_t &callbackId,
+        const DataTransferMonitorParam &param) override;
+    int32_t UnregisterDataTransferMonitorParam(const int32_t &callbackId) override;
+    void OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override;
+    void SetBtHdiInvalidState() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -284,7 +316,8 @@ private:
     bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
-    sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid);
+    sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
+        std::shared_ptr<PipeInfoGuard> &pipeInfoGuard);
     int32_t SetAsrVoiceSuppressionControlMode(const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode,
         bool on, int32_t modifyVolume);
     int32_t CheckAndWaitAudioPolicyReady();
@@ -294,6 +327,12 @@ private:
     bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
+    int32_t CreateAudioWorkgroup(int32_t pid) override;
+    int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) override;
+    int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
+    int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
+    int32_t StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) override;
+    int32_t StopGroup(int32_t pid, int32_t workgroupId) override;
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -320,6 +359,7 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
+    std::unique_ptr<AudioResourceService> audioResourceService_;
 
     std::atomic<bool> isAudioParameterParsed_ = false;
     std::mutex audioParameterCacheMutex_;
@@ -338,6 +378,9 @@ private:
 
     int32_t waitCreateStreamInServerCount_ = 0;
     std::shared_ptr<IAudioServerHpaeDump> hpaeDumpObj_ = nullptr;
+
+    std::mutex audioDataTransferMutex_;
+    std::map<int32_t, std::shared_ptr<DataTransferStateChangeCallbackInner>> audioDataTransferCbMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

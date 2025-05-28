@@ -216,6 +216,11 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
     UpdateTracker("UPDATE");
 }
 
+void RendererInClientInner::GetRendererInfo(AudioRendererInfo &rendererInfo)
+{
+    rendererInfo = rendererInfo_;
+}
+
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     AUDIO_WARNING_LOG("SetCapturerInfo is not supported");
@@ -1703,6 +1708,11 @@ int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
     return ret;
 }
 
+bool RendererInClientInner::GetFastStatus()
+{
+    return false;
+}
+
 DeviceType RendererInClientInner::GetDefaultOutputDevice()
 {
     return defaultOutputDevice_;
@@ -1831,6 +1841,13 @@ int32_t RendererInClientInner::GetCallbackLoopTid()
         callbackLoopTid_ = 0; // set tid to prevent get operation from getting stuck
     }
     return callbackLoopTid_;
+}
+
+int32_t RendererInClientInner::SetOffloadDataCallbackState(int cbState)
+{
+    Trace trace("RendererInClientInner::SetOffloadDataCallbackState: " + std::to_string(cbState));
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    return ipcStream_->SetOffloadDataCallbackState(cbState);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -56,6 +56,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     nodeInfo.statusCallback = weak_from_this();
     sinkInputNodeMap_[sessionId]->SetNodeInfo(nodeInfo);
     SetSessionStateForRenderer(sessionId, node->GetState());
@@ -94,7 +95,7 @@ int32_t HpaeInnerCapturerManager::AddAllNodesToSink(
 }
 
 void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &sinkName,
-    const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType)
+    const std::vector<uint32_t>& moveIds, MoveSessionType moveType)
 {
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
@@ -118,7 +119,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
 }
 
 int32_t HpaeInnerCapturerManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
-    MOVE_SESSION_TYPE moveType)
+    MoveSessionType moveType)
 {
     if (!IsInit()) {
         AUDIO_INFO_LOG("sink is not init ,use sync mode move to:%{public}s.", sinkName.c_str());

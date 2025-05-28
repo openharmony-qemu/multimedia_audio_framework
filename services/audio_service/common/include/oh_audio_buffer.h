@@ -26,7 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
+const size_t BASIC_SYNC_INFO_SIZE = 8; // sizeof(uint32_t) * 2
 // client or server.
 enum AudioBufferHolder : uint32_t {
     // normal stream, Client buffer created when readFromParcel
@@ -35,6 +35,8 @@ enum AudioBufferHolder : uint32_t {
     AUDIO_SERVER_SHARED,
     // normal stream, Server buffer shared with hdi
     AUDIO_SERVER_ONLY,
+    // Server buffer shared with hdi and has sync info
+    AUDIO_SERVER_ONLY_WITH_SYNC,
     // Independent stream
     AUDIO_SERVER_INDEPENDENT
 };
@@ -182,6 +184,12 @@ public:
     int64_t GetLastWrittenTime();
     void SetLastWrittenTime(int64_t time);
 
+    // hdi use one span as one frame
+    uint32_t GetSyncWriteFrame();
+    bool SetSyncWriteFrame(uint32_t writeFrame);
+    uint32_t GetSyncReadFrame();
+    bool SetSyncReadFrame(uint32_t readFrame);
+
     std::atomic<uint32_t> *GetFutex();
     uint8_t *GetDataBase();
     size_t GetDataSize();
@@ -196,6 +204,7 @@ public:
 private:
     int32_t Init(int dataFd, int infoFd);
     int32_t SizeCheck();
+    void InitBasicBufferInfo();
 
     uint32_t sessionId_ = 0;
     AudioBufferHolder bufferHolder_;
@@ -222,6 +231,8 @@ private:
     // for audio data buffer
     std::shared_ptr<AudioSharedMemory> dataMem_ = nullptr;
     uint8_t *dataBase_ = nullptr;
+    volatile uint32_t *syncReadFrame_ = nullptr;
+    volatile uint32_t *syncWriteFrame_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

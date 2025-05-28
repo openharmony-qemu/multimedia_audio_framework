@@ -24,6 +24,7 @@
 #include "i_audio_stream.h"
 #include "audio_stream_descriptor.h"
 #include "audio_capturer_proxy_obj.h"
+#include "audio_task_loop.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -84,6 +85,7 @@ public:
     void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override;
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
+    void SetFastStatusChangeCallback(const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool GetTimeStampInfo(Timestamp &timestampNs, Timestamp::Timestampbase base) const override;
@@ -96,11 +98,14 @@ public:
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
     int32_t SetInputDevice(DeviceType deviceType) const override;
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
+    bool GetFastStatus() override;
 
     uint32_t GetOverflowCount() const override;
 
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
     int32_t SetInterruptStrategy(InterruptStrategy strategy) override;
+
+    void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
     void ConcedeStream();
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
@@ -130,6 +135,7 @@ public:
 
 private:
     int32_t CheckAndRestoreAudioCapturer(std::string callingFunc);
+    int32_t AsyncCheckAndRestoreAudioCapturer(std::string callingFunc);
     int32_t InitAudioInterruptCallback();
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
     void SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass);
@@ -147,6 +153,7 @@ private:
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
     int32_t InitAudioConcurrencyCallback();
+    void FastStatusChangeCallback(bool flag);
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
     void ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass);
     void WriteOverflowEvent() const;
@@ -193,6 +200,11 @@ private:
     std::mutex policyServiceDiedCallbackMutex_;
     std::mutex audioInterruptMutex_;
     int32_t callbackLoopTid_ = -1;
+    std::shared_ptr<AudioCapturerFastStatusChangeCallback> fastStatusChangeCallback_ = nullptr;
+    std::mutex fastStatusChangeCallbackMutex_;
+    std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
+
+    AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
@@ -254,6 +266,7 @@ private:
     std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist_;
     std::mutex capturerMutex_;
     std::weak_ptr<AudioCapturerPrivate> capturer_;
+    std::mutex deviceChangeCallbackMutex_;
 };
 
 class InputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {

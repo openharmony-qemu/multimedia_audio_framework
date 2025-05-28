@@ -668,7 +668,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_002, Te
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
-    bufferDesc.buffer[0] = 0;
+    uint8_t bufferTest = 0;
+    bufferDesc.buffer = &bufferTest;
     rendererInServer->startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);

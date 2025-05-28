@@ -60,6 +60,8 @@ ohos_shared_library("audio_common") {
     "common/src/audio_process_config.cpp",
     "common/src/audio_resample.cpp",
     "common/src/audio_ring_cache.cpp",
+    "common/src/audio_stream_checker.cpp",
+    "common/src/audio_stream_monitor.cpp",
     "common/src/audio_thread_task.cpp",
     "common/src/audio_volume.cpp",
     "common/src/callback_handler.cpp",
@@ -130,10 +132,11 @@ config("audio_client_public_config") {
   include_dirs = [
     "client/include",
     "common/include",
-    "../audio_policy/client/include",
     "../audio_policy/common/include",
-    "../audio_policy/util/include",
-    "../audio_policy/server/include",
+    "../audio_policy/client/interface",
+    "../audio_policy/client/proxy/include",
+    "../audio_policy/client/stub/include",
+    "../audio_policy/client/service/include",
     "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiopolicy/include",
     "../../frameworks/native/audiostream/include",
@@ -144,6 +147,7 @@ config("audio_client_public_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../interfaces/inner_api/native/audiorenderer/include",
+    "../../frameworks/native/audioqosmanager/include",
   ]
 
   cflags = [
@@ -223,6 +227,7 @@ ohos_shared_library("audio_client") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
     "../audio_policy:audio_policy_common",
+    "../../frameworks/native/audioqosmanager:audio_qosmanager",
   ]
 
   include_dirs = [ "server/include" ]
@@ -245,6 +250,7 @@ ohos_shared_library("audio_client") {
     "resource_management:global_resmgr",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "frame_aware_sched:rtg_interface",
   ]
 
   public_external_deps = [
@@ -489,6 +495,8 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server_effect.cpp",
     "server/src/audio_server_hpae_dump.cpp",
     "server/src/config/audio_param_parser.cpp",
+    "server/src/audio_workgroup.cpp",
+    "server/src/audio_resource_service.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
@@ -523,6 +531,8 @@ audio_ohos_library("audio_service") {
     "pulseaudio:pulseaudio",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "frame_aware_sched:rtg_interface",
+    "qos_manager:concurrent_task_client",
   ]
 
   public_external_deps = [ "libxml2:libxml2" ]

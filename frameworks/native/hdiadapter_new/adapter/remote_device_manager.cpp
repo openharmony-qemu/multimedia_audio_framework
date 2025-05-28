@@ -165,7 +165,7 @@ int32_t RemoteDeviceManager::SetVoiceVolume(const std::string &adapterName, floa
 }
 
 int32_t RemoteDeviceManager::SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-    int32_t streamId)
+    int32_t streamId, AudioScene scene)
 {
     CHECK_AND_RETURN_RET_LOG(!devices.empty(), ERR_INVALID_PARAM, "invalid audio devices");
     DeviceType device = devices[0];

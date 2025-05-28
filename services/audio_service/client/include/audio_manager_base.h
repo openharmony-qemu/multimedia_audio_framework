@@ -25,6 +25,7 @@
 #include "audio_asr.h"
 #include "hdi_adapter_type.h"
 #include "hdi_adapter_info.h"
+#include "audio_stutter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -613,8 +614,43 @@ public:
     virtual void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) = 0;
 
     virtual void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) = 0;
+    /**
+     * Create AudioWorkgroup.
+     *
+     * @return Returns workgroup id for current process.
+     */
+    virtual int32_t CreateAudioWorkgroup(int32_t pid) = 0;
+    virtual int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) = 0;
+    virtual int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) = 0;
+    virtual int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) = 0;
+    virtual int32_t StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) = 0;
+    virtual int32_t StopGroup(int32_t pid, int32_t workgroupId) = 0;
+    /**
+     * Register data transfer callback.
+     *
+     * @return result code.
+     */
+    virtual int32_t RegisterDataTransferCallback(const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterDataTransferMonitorParam(const int32_t &callbackId,
+        const DataTransferMonitorParam &param) = 0;
+    virtual int32_t UnregisterDataTransferMonitorParam(const int32_t &callbackId) = 0;
+
+    /**
+     * Set bluetooth hdi invalid state
+     *
+     * @return none.
+     */
+     virtual void SetBtHdiInvalidState() = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
+};
+
+class DataTransferStateChangeCallbackInner {
+public:
+    virtual ~DataTransferStateChangeCallbackInner() = default;
+    
+    virtual void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) = 0;
 };
 
 class AudioManagerStub : public IRemoteStub<IStandardAudioService> {
@@ -713,12 +749,22 @@ private:
     int HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply);
     int HandleSetSessionMuteState(MessageParcel &data, MessageParcel &reply);
     int HandleOnMuteStateChange(MessageParcel &data, MessageParcel &reply);
+    int HandleRegisterDataTransferCallback(MessageParcel &data, MessageParcel &reply);
+    int HandleRegisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply);
+    int HandleUnregisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply);
+    int HandleSetBtHdiInvalidState(MessageParcel &data, MessageParcel &reply);
 
     int HandleSecondPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleThirdPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFourthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleFifthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     int HandleSixthPartCode(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    int HandleCreateAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleReleaseAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleAddThreadToAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleRemoveThreadFromAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleStartAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
+    int HandleStopAudioWorkgroup(MessageParcel &data, MessageParcel &reply);
 };
 } // namespace AudioStandard
 } // namespace OHOS

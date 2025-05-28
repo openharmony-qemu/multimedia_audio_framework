@@ -127,6 +127,21 @@ private:
     void* userData_ = nullptr;
 };
 
+class OHAudioCapturerFastStatusChangeCallback : public AudioCapturerFastStatusChangeCallback {
+public:
+    OHAudioCapturerFastStatusChangeCallback(OH_AudioCapturer_OnFastStatusChange callback,
+        OH_AudioCapturer *audioCapturer, void *userData)
+        : callback_(callback), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+
+    void OnFastStatusChange(AudioStreamFastStatus status) override;
+private:
+    OH_AudioCapturer_OnFastStatusChange callback_;
+    OH_AudioCapturer *ohAudioCapturer_;
+    void *userData_;
+};
+
 struct CapturerCallback {
     OH_AudioCapturer_Callbacks callbacks = {};
 
@@ -140,56 +155,59 @@ struct CapturerCallback {
 };
 
 class OHAudioCapturer {
-    public:
-        OHAudioCapturer();
-        ~OHAudioCapturer();
+public:
+    OHAudioCapturer();
+    ~OHAudioCapturer();
 
-        bool Initialize(const AudioCapturerOptions& capturerOptions);
-        bool Start();
-        bool Pause();
-        bool Stop();
-        bool Flush();
-        bool Release();
-        CapturerState GetCurrentState();
-        void GetStreamId(uint32_t& streamId);
-        AudioChannel GetChannelCount();
-        int32_t GetSamplingRate();
-        AudioEncodingType GetEncodingType();
-        AudioSampleFormat GetSampleFormat();
-        void GetCapturerInfo(AudioCapturerInfo& capturerInfo);
-        int64_t GetFramesRead();
-        bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
-        int32_t GetFrameSizeInCallback();
-        int32_t GetBufferDesc(BufferDesc &bufDesc) const;
-        int32_t Enqueue(const BufferDesc &bufDesc) const;
-        int32_t SetInputDevice(DeviceType deviceType);
-        uint32_t GetOverflowCount() const;
+    bool Initialize(const AudioCapturerOptions& capturerOptions);
+    bool Start();
+    bool Pause();
+    bool Stop();
+    bool Flush();
+    bool Release();
+    CapturerState GetCurrentState();
+    void GetStreamId(uint32_t& streamId);
+    AudioChannel GetChannelCount();
+    int32_t GetSamplingRate();
+    AudioEncodingType GetEncodingType();
+    AudioSampleFormat GetSampleFormat();
+    void GetCapturerInfo(AudioCapturerInfo& capturerInfo);
+    int64_t GetFramesRead();
+    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+    int32_t GetFrameSizeInCallback();
+    int32_t GetBufferDesc(BufferDesc &bufDesc) const;
+    int32_t Enqueue(const BufferDesc &bufDesc) const;
+    int32_t SetInputDevice(DeviceType deviceType);
+    bool GetFastStatus();
+    uint32_t GetOverflowCount() const;
 
-        void SetInterruptCallback(CapturerCallback capturerCallbacks, void *userData);
-        void SetErrorCallback(CapturerCallback capturerCallbacks, void *userData);
-        void RegisterErrorCallback(CapturerCallback capturerCallbacks, void *userData, void *metadataUserData,
-            AudioEncodingType encodingType);
-        void SetCapturerInterruptEventCallbackType(InterruptEventCallbackType interruptCallbackType);
-        void SetCapturerErrorCallbackType(ErrorCallbackType errorCallbackType);
-        InterruptEventCallbackType GetCapturerInterruptEventCallbackType();
-        ErrorCallbackType GetCapturerErrorCallbackType();
+    void SetInterruptCallback(CapturerCallback capturerCallbacks, void *userData);
+    void SetErrorCallback(CapturerCallback capturerCallbacks, void *userData);
+    void RegisterErrorCallback(CapturerCallback capturerCallbacks, void *userData, void *metadataUserData,
+        AudioEncodingType encodingType);
+    void SetCapturerInterruptEventCallbackType(InterruptEventCallbackType callbackType);
+    void SetCapturerErrorCallbackType(ErrorCallbackType errorCallbackType);
+    InterruptEventCallbackType GetCapturerInterruptEventCallbackType();
+    ErrorCallbackType GetCapturerErrorCallbackType();
+    void SetCapturerFastStatusChangeCallback(OH_AudioCapturer_OnFastStatusChange callback, void *userData);
 
-        void SetCapturerCallback(CapturerCallback capturerCallbacks, void* userData);
-        void SetReadDataCallback(CapturerCallback capturerCallbacks, void* userData);
-        void SetStreamEventCallback(CapturerCallback capturerCallbacks, void* userData);
-        void SetCapturerReadDataCallbackType(ReadDataCallbackType readDataCallbackType);
-        void SetCapturerStreamEventCallbackType(StreamEventCallbackType streamEventCallbackType);
-        void SetCapturerWillMuteWhenInterrupted(InterruptStrategy strategy);
-        ReadDataCallbackType GetCapturerReadDataCallbackType();
-        StreamEventCallbackType GetCapturerStreamEventCallbackType();
+    void SetCapturerCallback(CapturerCallback capturerCallbacks, void* userData);
+    void SetReadDataCallback(CapturerCallback capturerCallbacks, void* userData);
+    void SetStreamEventCallback(CapturerCallback capturerCallbacks, void* userData);
+    void SetCapturerReadDataCallbackType(ReadDataCallbackType readDataCallbackType);
+    void SetCapturerStreamEventCallbackType(StreamEventCallbackType streamEventCallbackType);
+    void SetCapturerWillMuteWhenInterrupted(InterruptStrategy strategy);
+    ReadDataCallbackType GetCapturerReadDataCallbackType();
+    StreamEventCallbackType GetCapturerStreamEventCallbackType();
 
-    private:
-        std::shared_ptr<AudioCapturer> audioCapturer_;
-        std::shared_ptr<AudioCapturerCallback> audioCapturerCallback_;
-        ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
-        StreamEventCallbackType streamEventCallbackType_ = STREAM_EVENT_CALLBACK_WITHOUT_RESULT;
-        ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
-        InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
+private:
+    std::shared_ptr<AudioCapturer> audioCapturer_;
+    std::shared_ptr<AudioCapturerCallback> audioCapturerCallback_;
+    ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
+    StreamEventCallbackType streamEventCallbackType_ = STREAM_EVENT_CALLBACK_COMBINED;
+    ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_COMBINED;
+    InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
+    std::shared_ptr<OHAudioCapturerFastStatusChangeCallback> audioCapturerFastStatusChangeCallback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

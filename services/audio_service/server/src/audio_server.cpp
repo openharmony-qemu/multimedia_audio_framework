@@ -241,6 +241,30 @@ static void UpdatePrimaryInstance(std::shared_ptr<IAudioRenderSink> &sink,
     }
 }
 
+void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
+{
+    CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is null");
+    audioServer_->RemoveRendererDataTransferCallback(pid_);
+}
+
+PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("SessionId: %{public}u", sessionId);
+    sessionId_ = sessionId;
+}
+
+PipeInfoGuard::~PipeInfoGuard() {
+    if (releaseFlag_) {
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+    }
+}
+
+void PipeInfoGuard::SetReleaseFlag(bool flag)
+{
+    AUDIO_INFO_LOG("Flag: %{public}d", flag);
+    releaseFlag_ = flag;
+}
+
 class CapturerStateOb final : public IAudioSourceCallback {
 public:
     explicit CapturerStateOb(uint32_t captureId, std::function<void(bool, size_t, size_t)> callback)
@@ -300,7 +324,11 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-    audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
+    audioEffectServer_(std::make_unique<AudioEffectServer>()),
+    audioResourceService_(std::make_unique<AudioResourceService>())
+{
+    AudioStreamMonitor::GetInstance().SetAudioServerPtr(this);
+}
 
 void AudioServer::OnDump() {}
 
@@ -337,6 +365,79 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         dumpObj.AudioDataDump(dumpString, argQue);
     }
     return write(fd, dumpString.c_str(), dumpString.size());
+}
+
+void AudioServer::RemoveRendererDataTransferCallback(const int32_t &pid)
+{
+    std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+    if (audioDataTransferCbMap_.count(pid) > 0) {
+        audioDataTransferCbMap_.erase(pid);
+    }
+}
+
+int32_t AudioServer::RegisterDataTransferCallback(const sptr<IRemoteObject> &object)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
+ 
+    std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+
+    sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);
+
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioServer: listener obj cast failed");
+
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
+    std::make_shared<AudioManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    sptr<ProxyDeathRecipient> recipient = new ProxyDeathRecipient(pid, this);
+    object->AddDeathRecipient(recipient);
+    audioDataTransferCbMap_[pid] = callback;
+    AUDIO_INFO_LOG("Pid: %{public}d registerDataTransferCallback done", pid);
+    return SUCCESS;
+}
+
+int32_t AudioServer::RegisterDataTransferMonitorParam(const int32_t &callbackId,
+    const DataTransferMonitorParam &param)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(
+        param, pid, callbackId);
+    AUDIO_INFO_LOG("Register end, pid = %{public}d, callbackId = %{public}d",
+        pid, callbackId);
+    return SUCCESS;
+}
+
+int32_t AudioServer::UnregisterDataTransferMonitorParam(const int32_t &callbackId)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    AudioStreamMonitor::GetInstance().UnregisterAudioRendererDataTransferStateListener(
+        pid, callbackId);
+    AUDIO_INFO_LOG("Unregister end, pid = %{public}d, callbackId = %{public}d",
+        pid, callbackId);
+    return SUCCESS;
+}
+
+void AudioServer::OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+        if (audioDataTransferCbMap_.count(pid) > 0) {
+            callback = audioDataTransferCbMap_[pid];
+        } else {
+            AUDIO_ERR_LOG("callback is null");
+            return;
+        }
+    }
+    callback->OnDataTransferStateChange(callbackId, info);
 }
 
 void AudioServer::InitMaxRendererStreamCntPerUid()
@@ -1145,6 +1246,7 @@ void AudioServer::SetAudioMonoState(bool audioMono)
         return SUCCESS;
     };
     (void)HdiAdapterManager::GetInstance().ProcessSink(processFunc);
+    HdiAdapterManager::GetInstance().UpdateSinkPrestoreInfo<bool>(PRESTORE_INFO_AUDIO_MONO, audioMono);
 }
 
 void AudioServer::SetAudioBalanceValue(float audioBalance)
@@ -1177,6 +1279,7 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
         return SUCCESS;
     };
     (void)HdiAdapterManager::GetInstance().ProcessSink(processFunc);
+    HdiAdapterManager::GetInstance().UpdateSinkPrestoreInfo<float>(PRESTORE_INFO_AUDIO_BALANCE, audioBalance);
 }
 
 void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
@@ -1501,14 +1604,15 @@ int32_t AudioServer::CheckMaxRendererInstances()
     return SUCCESS;
 }
 
-sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid)
+sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
+    std::shared_ptr<PipeInfoGuard> &pipeInfoGuard)
 {
+    CHECK_AND_RETURN_RET_LOG(pipeInfoGuard != nullptr, nullptr, "PipeInfoGuard is nullptr");
     int32_t appUid = config.appInfo.appUid;
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
     }
-    if (IsNormalIpcStream(config) ||
-        (isFastControlled_ && IsFastBlocked(config.appInfo.appUid, config.rendererInfo.playerType))) {
+    if (IsNormalIpcStream(config)) {
         AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
@@ -1521,6 +1625,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         }
         AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
         sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
+        pipeInfoGuard->SetReleaseFlag(false);
         return remoteObject;
     }
 
@@ -1535,6 +1640,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     }
     AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
     sptr<IRemoteObject> remoteObject= process->AsObject();
+    pipeInfoGuard->SetReleaseFlag(false);
     return remoteObject;
 #else
     AUDIO_ERR_LOG("GetAudioProcess failed.");
@@ -1589,6 +1695,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     const AudioPlaybackCaptureConfig &filterConfig)
 {
     Trace trace("AudioServer::CreateAudioProcess");
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(config.originalSessionId);
 
     errorCode = CheckAndWaitAudioPolicyReady();
     if (errorCode != SUCCESS) {
@@ -1637,7 +1744,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         return nullptr;
     }
 #endif
-    return CreateAudioStream(resetConfig, callingUid);
+    return CreateAudioStream(resetConfig, callingUid, pipeinfoGuard);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -2566,6 +2673,65 @@ void AudioServer::SetDeviceConnectedFlag(bool flag)
     std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
     CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
     primarySink->SetDeviceConnectedFlag(flag);
+}
+
+int32_t AudioServer::CreateAudioWorkgroup(int32_t pid)
+{
+    return audioResourceService_->CreateAudioWorkgroup(pid);
+}
+
+int32_t AudioServer::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)
+{
+    return audioResourceService_->ReleaseAudioWorkgroup(pid, workgroupId);
+}
+
+int32_t AudioServer::AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+{
+    return audioResourceService_->AddThreadToGroup(pid, workgroupId, tokenId);
+}
+
+int32_t AudioServer::RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+{
+    return audioResourceService_->RemoveThreadFromGroup(pid, workgroupId, tokenId);
+}
+
+int32_t AudioServer::StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
+{
+    return audioResourceService_->StartGroup(pid, workgroupId, startTime, deadlineTime);
+}
+
+int32_t AudioServer::StopGroup(int32_t pid, int32_t workgroupId)
+{
+    return audioResourceService_->StopGroup(pid, workgroupId);
+}
+
+void AudioServer::SetBtHdiInvalidState()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+    auto limitFunc = [](uint32_t id) -> bool {
+        std::string info = IdHandler::GetInstance().ParseInfo(id);
+        if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_BLUETOOTH) {
+            return true;
+        }
+        return false;
+    };
+    auto sinkProcessFunc = [limitFunc](uint32_t renderId, std::shared_ptr<IAudioRenderSink> sink) -> int32_t {
+        CHECK_AND_RETURN_RET(limitFunc(renderId), SUCCESS);
+        CHECK_AND_RETURN_RET(sink != nullptr, SUCCESS);
+
+        sink->SetInvalidState();
+        return SUCCESS;
+    };
+    (void)HdiAdapterManager::GetInstance().ProcessSink(sinkProcessFunc);
+    auto sourceProcessFunc = [limitFunc](uint32_t captureId, std::shared_ptr<IAudioCaptureSource> source) -> int32_t {
+        CHECK_AND_RETURN_RET(limitFunc(captureId), SUCCESS);
+        CHECK_AND_RETURN_RET(source != nullptr, SUCCESS);
+
+        source->SetInvalidState();
+        return SUCCESS;
+    };
+    (void)HdiAdapterManager::GetInstance().ProcessSource(sourceProcessFunc);
 }
 
 } // namespace AudioStandard

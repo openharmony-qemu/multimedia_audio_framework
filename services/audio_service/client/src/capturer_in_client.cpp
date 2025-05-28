@@ -82,6 +82,7 @@ public:
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
+    void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
@@ -216,6 +217,7 @@ public:
     bool GetHighResolutionEnabled() override;
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
+    bool GetFastStatus() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     void SetSwitchingStatus(bool isSwitching) override;
     void GetRestoreInfo(RestoreInfo &restoreInfo) override;
@@ -458,6 +460,11 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 {
     AUDIO_WARNING_LOG("SetRendererInfo is not supported");
     return;
+}
+
+void CapturerInClientInner::GetRendererInfo(AudioRendererInfo &rendererInfo)
+{
+    AUDIO_WARNING_LOG("GetRendererInfo is not supported");
 }
 
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -2031,6 +2038,11 @@ int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
     (void)defaultOutputDevice;
     AUDIO_WARNING_LOG("not supported in capturer");
     return ERROR;
+}
+
+bool CapturerInClientInner::GetFastStatus()
+{
+    return false;
 }
 
 DeviceType CapturerInClientInner::GetDefaultOutputDevice()

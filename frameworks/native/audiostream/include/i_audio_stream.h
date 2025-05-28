@@ -129,6 +129,7 @@ public:
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) = 0;
     virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) = 0;
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
+    virtual void GetRendererInfo(AudioRendererInfo &rendererInfo) = 0;
     virtual void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;
     virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj,
@@ -284,6 +285,8 @@ public:
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
+    virtual bool GetFastStatus() { return false; };
+
     virtual DeviceType GetDefaultOutputDevice() = 0;
 
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
@@ -311,6 +314,8 @@ public:
     virtual void SetCallbackLoopTid(int32_t tid) = 0;
 
     virtual int32_t GetCallbackLoopTid() = 0;
+
+    virtual int32_t SetOffloadDataCallbackState(int32_t cbState) { return 0; };
 };
 } // namespace AudioStandard
 } // namespace OHOS

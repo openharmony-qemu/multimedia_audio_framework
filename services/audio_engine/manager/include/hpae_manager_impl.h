@@ -80,6 +80,7 @@ public:
     int32_t UpdateSpatializationState(
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
+    int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) override;
 
     // interfaces for render effect
     void InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,

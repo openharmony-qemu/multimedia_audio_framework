@@ -292,6 +292,24 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptMode(OH_AudioStr
     return audioStreamBuilder->SetInterruptMode(interruptMode);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererFastStatusChangeCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_OnFastStatusChange callback, void* userData)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "callback is nullptr");
+    return audioStreamBuilder->SetRendererFastStatusChangeCallback(callback, userData);
+}
+
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerFastStatusChangeCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioCapturer_OnFastStatusChange callback, void* userData)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "callback is nullptr");
+    return audioStreamBuilder->SetCapturerFastStatusChangeCallback(callback, userData);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -460,6 +478,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
         audioRenderer->SetRendererCallback(rendererCallbacks_, userData_, metadataUserData_);
         audioRenderer->SetRendererOutputDeviceChangeCallback(outputDeviceChangecallback_, outputDeviceChangeuserData_);
         audioRenderer->SetInterruptMode(interruptMode_);
+        audioRenderer->SetRendererFastStatusChangeCallback(
+            rendererFastStatusChangeCallback_, rendererFastStatusChangeUserData_);
         if (nullptr == renderer) {
             AUDIO_ERR_LOG("render is nullptr");
             delete audioRenderer;
@@ -510,6 +530,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         audioCapturer->SetCapturerErrorCallbackType(errorCallbackType_);
         audioCapturer->SetCapturerCallback(capturerCallbacks_, userData_);
         audioCapturer->SetCapturerWillMuteWhenInterrupted(strategy_);
+        audioCapturer->SetCapturerFastStatusChangeCallback(
+            capturerFastStatusChangeCallback_, capturerFastStatusChangeUserData_);
         if (nullptr == capturer) {
             AUDIO_ERR_LOG("capturer is nullptr");
             delete audioCapturer;
@@ -530,8 +552,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererCallback(OH_AudioRenderer
     CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "SetRendererCallback Error, invalid type input");
     writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
-    interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
-    errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
+    errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     rendererCallbacks_.callbacks = callbacks;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;
@@ -542,9 +564,9 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerCallback(OH_AudioCapturer
     CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "SetCapturerCallback Error, invalid type input");
     readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
-    streamEventCallbackType_ = STREAM_EVENT_CALLBACK_WITHOUT_RESULT;
-    interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT;
-    errorCallbackType_ = ERROR_CALLBACK_WITHOUT_RESULT;
+    streamEventCallbackType_ = STREAM_EVENT_CALLBACK_COMBINED;
+    interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
+    errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     capturerCallbacks_.callbacks = callbacks;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;
@@ -602,7 +624,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInterruptEventCallback(
 {
     CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Set renderer callback error, invalid type input.");
-    interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITH_RESULT;
+    interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_SEPERATED;
     rendererCallbacks_.onInterruptEventCallback = callback;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;
@@ -613,11 +635,21 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererErrorCallback(OH_AudioRen
 {
     CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Set renderer callback error, invalid type input.");
-    errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     rendererCallbacks_.onErrorCallback = callback;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;
     return OH_AudioStream_Result();
+}
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetRendererFastStatusChangeCallback(
+    OH_AudioRenderer_OnFastStatusChange callback, void* userData)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetRendererFastStatusChangeCallback Error, invalid type input");
+    rendererFastStatusChangeCallback_ = callback;
+    rendererFastStatusChangeUserData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
 }
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerInterruptCallback(
@@ -625,7 +657,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerInterruptCallback(
 {
     CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "SetCapturerInterrupt error, invalid type input.");
-    interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_WITH_RESULT;
+    interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_SEPERATED;
     capturerCallbacks_.onInterruptEventCallback = callback;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;
@@ -636,7 +668,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerErrorCallback(
 {
     CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "SetCapturerInterrupt error, invalid type input.");
-    errorCallbackType_ = ERROR_CALLBACK_WITH_RESULT;
+    errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
     capturerCallbacks_.onErrorCallback = callback;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;
@@ -658,9 +690,19 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerStreamEventCallback(
 {
     CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "SetCapturerStreamEventCallback error, invalid type input.");
-    streamEventCallbackType_ = STREAM_EVENT_CALLBACK_WITH_RESULT;
+    streamEventCallbackType_ = STREAM_EVENT_CALLBACK_SEPERATED;
     capturerCallbacks_.onDeviceChangeCallback = callback;
     userData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerFastStatusChangeCallback(
+    OH_AudioCapturer_OnFastStatusChange callback, void *userData)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetCapturerFastStatusChangeCallback Error, invalid type input");
+    capturerFastStatusChangeCallback_ = callback;
+    capturerFastStatusChangeUserData_ = userData;
     return AUDIOSTREAM_SUCCESS;
 }
 }  // namespace AudioStandard

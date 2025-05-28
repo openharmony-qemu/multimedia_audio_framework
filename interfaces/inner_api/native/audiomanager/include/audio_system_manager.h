@@ -24,6 +24,7 @@
 #include <unordered_map>
 
 #include "parcel.h"
+#include "audio_stutter.h"
 #include "audio_device_descriptor.h"
 #include "audio_stream_change_info.h"
 #include "audio_interrupt_callback.h"
@@ -305,6 +306,15 @@ public:
 
     virtual int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) = 0;
 };
+
+
+class AudioRendererDataTransferStateChangeCallback {
+public:
+    virtual ~AudioRendererDataTransferStateChangeCallback() = default;
+
+    virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
+};
+
 
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
@@ -978,6 +988,28 @@ public:
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
+     * @brief registers the renderer data transfer callback listener
+     *
+     * @param param {@link DataTransferMonitorParam}
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t RegisterRendererDataTransferCallback(const DataTransferMonitorParam &param,
+        const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the renderer data transfer callback listener
+     *
+     * @param param {@link DataTransferMonitorParam}
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t UnregisterRendererDataTransferCallback(
+        const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback);
+
+    /**
      * @brief Set mono audio state
      *
      * @param monoState mono state
@@ -1469,7 +1501,6 @@ public:
     int32_t OnVoiceWakeupState(bool state);
 
     uint16_t GetDmDeviceType() const;
-
     /**
      * @brief Get the maximum volume level for the specified stream usage.
      *
@@ -1527,6 +1558,63 @@ public:
      */
     int32_t UnregisterStreamVolumeChangeCallback(const int32_t clientPid,
         const std::shared_ptr<StreamVolumeChangeCallback> &callback = nullptr);
+
+    /**
+    * @brief create audio workgroup
+    *
+    * @return Returns id of workgroup. id < 0 if failed.
+    * @test
+    */
+    int32_t CreateAudioWorkgroup();
+ 
+    /**
+    * @brief release audio workgroup.
+    *
+    * @param workgroupId audio workgroup id.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t ReleaseAudioWorkgroup(int32_t workgroupId);
+ 
+    /**
+    * @brief add thread to audio workgroup.
+    *
+    * @param workgroupId workgroupId audio workgroup id.
+    * @param tokenId the thread id of add workgroupId.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t AddThreadToGroup(int32_t workgroupId, int32_t tokenId);
+ 
+    /**
+    * @brief remove thread to audio workgroup.y
+    *
+    * @param workgroupId workgroupId audio workgroup id.
+    * @param tokenId the thread id of remove workgroupId.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId);
+ 
+    /**
+    * @brief the deadline workgroup starts to take effect.
+    *
+    * @param workgroupId workgroupId audio workgroup id.
+    * @param startTime timestamp when the deadline task starts to be executed.
+    * @param deadlineTime complete a periodic task within the time specified by deadlineTime.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime);
+ 
+    /**
+    * @brief stop the deadline workgroup.
+    *
+    * @param workgroupId workgroupId audio workgroup id.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t StopGroup(int32_t workgroupId);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

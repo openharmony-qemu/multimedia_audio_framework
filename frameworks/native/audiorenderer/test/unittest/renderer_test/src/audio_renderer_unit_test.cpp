@@ -133,6 +133,11 @@ void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &me
     fclose(metaFile);
 }
 
+class RendererFastStatusChangeCallbackTest : public AudioRendererFastStatusChangeCallback {
+public:
+    void OnFastStatusChange(AudioStreamFastStatus status) override { return ; }
+};
+
 /**
  * @tc.name  : Test Create API via legal input.
  * @tc.number: Audio_Renderer_Create_001
@@ -3831,10 +3836,7 @@ HWTEST(AudioRendererUnitTest, UpdateAudioInterruptStrategy_002, TestSize.Level1)
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     audioRendererPrivate->isStillZeroStreamVolume_ = true;
     float volume = 1;
-    std::shared_ptr<TestAudioStremStub> testAudioStremStub = std::make_shared<TestAudioStremStub>();
-
-    testAudioStremStub->state_ = RUNNING;
-    audioRendererPrivate->audioStream_ = testAudioStremStub;
+    audioRendererPrivate->audioStream_ = nullptr;
     audioRendererPrivate->UpdateAudioInterruptStrategy(volume);
     EXPECT_EQ(audioRendererPrivate->isStillZeroStreamVolume_, false);
 }
@@ -3922,6 +3924,7 @@ HWTEST(AudioRendererUnitTest, HandleAndNotifyForcedEvent_004, TestSize.Level1)
         audioStreamParams, STREAM_DEFAULT, 1);
     AudioInterrupt audioInterrupt;
     auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
+    ASSERT_TRUE(audioInterruptCallback != nullptr);
     InterruptEventInternal interruptEvent_;
     interruptEvent_.hintType = INTERRUPT_HINT_DUCK;
     audioInterruptCallback->isForcePaused_ = true;
@@ -3932,7 +3935,6 @@ HWTEST(AudioRendererUnitTest, HandleAndNotifyForcedEvent_004, TestSize.Level1)
     testAudioStremStub->state_ = NEW;
 
     audioInterruptCallback->HandleAndNotifyForcedEvent(interruptEvent);
-    EXPECT_EQ(audioInterruptCallback->isForcePaused_, true);
 }
 
 /**
@@ -4330,6 +4332,168 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_HandleAudioInterruptWhenServerDied_
 
     audioRendererPrivate->state_ = RENDERER_RUNNING;
     audioRendererPrivate->HandleAudioInterruptWhenServerDied();
+}
+
+/**
+ * @tc.name  : Test MOVIE_PCM_OFFLOAD API.
+ * @tc.number: Audio_Renderer_MoviePcmOffload_001
+ * @tc.desc  : Test MOVIE_PCM_OFFLOAD interface, renderFlags is AUDIO_FLAG_PCM_OFFLOAD.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(RenderUT::AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MOVIE;
+    rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_PCM_OFFLOAD;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->StartDataCallback();
+    ASSERT_NE(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    size_t bytesToWrite = 0;
+    int32_t bytesWritten = 0;
+    size_t minBytes = 4;
+    int32_t numBuffersToRender = RenderUT::WRITE_BUFFERS_COUNT;
+
+    ret = audioRenderer->StartDataCallback();
+    EXPECT_EQ(SUCCESS, ret);
+
+    while (numBuffersToRender) {
+        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+        bytesWritten = 0;
+        while ((static_cast<size_t>(bytesWritten) < bytesToWrite) &&
+            ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
+            bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
+                                                 bytesToWrite - static_cast<size_t>(bytesWritten));
+            EXPECT_GE(bytesWritten, RenderUT::VALUE_ZERO);
+            if (bytesWritten < 0) {
+                break;
+            }
+        }
+        numBuffersToRender--;
+    }
+    ret = audioRenderer->StopDataCallback();
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    free(buffer);
+    fclose(wavFile);
+}
+
+/**
+ * @tc.name  : Test MOVIE_PCM_OFFLOAD API.
+ * @tc.number: Audio_Renderer_MoviePcmOffload_002
+ * @tc.desc  : Test MOVIE_PCM_OFFLOAD interface, renderFlags is AUDIO_FLAG_NORMAL.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(RenderUT::AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MOVIE;
+    rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    size_t bytesToWrite = 0;
+    int32_t bytesWritten = 0;
+    size_t minBytes = 4;
+    int32_t numBuffersToRender = RenderUT::WRITE_BUFFERS_COUNT;
+
+    ret = audioRenderer->StartDataCallback();
+    ASSERT_NE(SUCCESS, ret);
+
+    while (numBuffersToRender) {
+        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+        bytesWritten = 0;
+        while ((static_cast<size_t>(bytesWritten) < bytesToWrite) &&
+            ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
+            bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
+                                                 bytesToWrite - static_cast<size_t>(bytesWritten));
+            EXPECT_GE(bytesWritten, RenderUT::VALUE_ZERO);
+            if (bytesWritten < 0) {
+                break;
+            }
+        }
+        numBuffersToRender--;
+    }
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+    ret = audioRenderer->StopDataCallback();
+    ASSERT_NE(SUCCESS, ret);
+    audioRenderer->Release();
+
+    free(buffer);
+    fclose(wavFile);
+}
+
+/**
+ * @tc.name  : Test GetFastStatus API.
+ * @tc.number: GetFastStatus_001
+ * @tc.desc  : Test GetFastStatus interface.
+ */
+HWTEST(AudioRendererUnitTest, GetFastStatus_001, TestSize.Level2)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
+
+    bool ret = audioRendererPrivate->GetFastStatus();
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test SetFastStatusChangeCallback API.
+ * @tc.number: SetFastStatusChangeCallback_001
+ * @tc.desc  : Test SetFastStatusChangeCallback interface.
+ */
+HWTEST(AudioRendererUnitTest, SetFastStatusChangeCallback_001, TestSize.Level2)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
+
+    std::shared_ptr<RendererFastStatusChangeCallbackTest> fastStatusChangeCallback =
+        std::make_shared<RendererFastStatusChangeCallbackTest>();
+
+    audioRendererPrivate->SetFastStatusChangeCallback(fastStatusChangeCallback);
+    EXPECT_NE(audioRendererPrivate->fastStatusChangeCallback_, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

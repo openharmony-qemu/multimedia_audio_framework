@@ -549,6 +549,11 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
 };
 
+enum class AudioStreamFastStatus {
+    FASTSTATUS_NORMAL = 0,
+    FASTSTATUS_FAST = 1
+};
+
 struct BufferDesc {
     uint8_t *buffer;
     size_t bufLength;
@@ -577,7 +582,8 @@ public:
         return parcel.WriteInt32(static_cast<int32_t>(samplingRate))
             && parcel.WriteInt32(static_cast<int32_t>(encoding))
             && parcel.WriteInt32(static_cast<int32_t>(format))
-            && parcel.WriteInt32(static_cast<int32_t>(channels));
+            && parcel.WriteInt32(static_cast<int32_t>(channels))
+            && parcel.WriteInt64(static_cast<int64_t>(channelLayout));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -585,6 +591,7 @@ public:
         encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         channels = static_cast<AudioChannel>(parcel.ReadInt32());
+        channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
     }
 };
 

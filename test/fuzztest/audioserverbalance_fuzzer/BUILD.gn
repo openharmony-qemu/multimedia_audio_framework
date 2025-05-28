@@ -46,6 +46,7 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
     "ipc:ipc_single",
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
+    "qos_manager:concurrent_task_client",
   ]
 
   defines = []
