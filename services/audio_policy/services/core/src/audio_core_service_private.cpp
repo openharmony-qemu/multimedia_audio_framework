@@ -338,12 +338,13 @@ int32_t AudioCoreService::SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDesc
 
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
         audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
-        AUDIO_WARNING_LOG("A2dp device [%{public}s] is already active",
-            GetEncryptAddr(deviceDescriptor->macAddress_).c_str());
+        AUDIO_WARNING_LOG("A2dp device [%{public}s] [%{public}s] is already active",
+            GetEncryptAddr(deviceDescriptor->macAddress_).c_str(), deviceDescriptor->deviceName_.c_str());
         return SUCCESS;
     }
 
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
+    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_,
+        deviceDescriptor->deviceName_);
     if (result != SUCCESS) {
         audioActiveDevice_.SetActiveBtDeviceMac(lastActiveA2dpDevice);
         audioPolicyManager_.SetActiveDeviceDescriptor(lastDevice);

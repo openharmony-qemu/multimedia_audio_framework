@@ -57,7 +57,7 @@ public:
     static void UnregisterBluetoothA2dpListener();
     static void DisconnectBluetoothA2dpSink();
     static void DisconnectBluetoothA2dpSource();
-    static int32_t SetActiveA2dpDevice(const std::string& macAddress);
+    static int32_t SetActiveA2dpDevice(const std::string& macAddress, const std::string deviceName = "");
     static std::string GetActiveA2dpDevice();
     static int32_t SetDeviceAbsVolume(const std::string& macAddress, int32_t volume);
     static int32_t GetA2dpDeviceStreamInfo(const std::string& macAddress,
