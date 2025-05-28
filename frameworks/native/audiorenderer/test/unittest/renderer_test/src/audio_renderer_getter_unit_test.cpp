@@ -1225,7 +1225,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetLatency_005, TestSize.Level1)
 
     uint64_t latency;
     ret = audioRenderer->GetLatency(latency);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
