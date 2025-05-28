@@ -30,6 +30,7 @@ namespace OHOS {
 namespace AudioStandard {
 typedef struct LocalAdapterWrapper {
     struct IAudioAdapter *adapter_ = nullptr;
+    std::mutex adapterMtx_;
     struct AudioAdapterDescriptor adapterDesc_ = {};
     std::unordered_set<uint32_t> hdiRenderIds_;
     std::unordered_set<uint32_t> hdiCaptureIds_;
