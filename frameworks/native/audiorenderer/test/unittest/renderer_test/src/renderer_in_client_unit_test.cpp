@@ -1551,7 +1551,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_060, TestSize.Level1
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
 
     auto ret = ptrRendererInClientInner->GetFastStatus();
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, FASTSTATUS_NORMAL);
 }
 } // namespace AudioStandard
 } // namespace OHOS

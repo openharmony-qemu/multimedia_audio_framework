@@ -95,8 +95,8 @@ public:
 
     bool IsStreamActive(AudioVolumeType volumeType);
 
-    bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+    bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+    bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);

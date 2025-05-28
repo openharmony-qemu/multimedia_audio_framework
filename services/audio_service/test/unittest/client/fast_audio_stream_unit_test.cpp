@@ -275,8 +275,8 @@ HWTEST(FastSystemStreamUnitTest, GetFastStatus_001, TestSize.Level1)
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     ASSERT_NE(fastAudioStream, nullptr);
 
-    bool ret = fastAudioStream->GetFastStatus();
-    EXPECT_EQ(ret, true);
+    auto ret = fastAudioStream->GetFastStatus();
+    EXPECT_EQ(ret, FASTSTATUS_FAST);
 }
 
 /**

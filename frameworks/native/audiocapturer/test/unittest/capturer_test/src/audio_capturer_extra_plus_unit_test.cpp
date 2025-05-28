@@ -157,7 +157,7 @@ public:
 
 class CapturerFastStatusChangeCallbackTest : public AudioCapturerFastStatusChangeCallback {
 public:
-    void OnFastStatusChange(AudioStreamFastStatus status) override { return ; }
+    void OnFastStatusChange(FastStatus status) override { return; }
 };
 
 /**
@@ -815,8 +815,8 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_028, TestSize.Level1)
         std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     ASSERT_NE(audioCapturer, nullptr);
 
-    bool ret = audioCapturer->GetFastStatus();
-    EXPECT_EQ(ret, false);
+    auto ret = audioCapturer->GetFastStatus();
+    EXPECT_EQ(ret, FASTSTATUS_NORMAL);
 
     AudioPlaybackCaptureConfig playbackCaptureConfig;
     audioCapturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
@@ -831,7 +831,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_028, TestSize.Level1)
 
     audioCapturer->SetParams(capturerParams);
     ret = audioCapturer->GetFastStatus();
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, FASTSTATUS_NORMAL);
 }
 
 /**

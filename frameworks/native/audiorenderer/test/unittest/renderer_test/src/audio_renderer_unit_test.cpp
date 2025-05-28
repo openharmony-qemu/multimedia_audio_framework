@@ -135,7 +135,7 @@ void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &me
 
 class RendererFastStatusChangeCallbackTest : public AudioRendererFastStatusChangeCallback {
 public:
-    void OnFastStatusChange(AudioStreamFastStatus status) override { return ; }
+    void OnFastStatusChange(FastStatus status) override { return; }
 };
 
 /**
@@ -4473,8 +4473,8 @@ HWTEST(AudioRendererUnitTest, GetFastStatus_001, TestSize.Level2)
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     ASSERT_TRUE(audioRendererPrivate != nullptr);
 
-    bool ret = audioRendererPrivate->GetFastStatus();
-    EXPECT_FALSE(ret);
+    auto ret = audioRendererPrivate->GetFastStatus();
+    EXPECT_EQ(ret, FASTSTATUS_NORMAL);
 }
 
 /**

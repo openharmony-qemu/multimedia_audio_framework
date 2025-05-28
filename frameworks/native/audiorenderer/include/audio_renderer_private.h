@@ -145,7 +145,7 @@ public:
     void SetSourceDuration(int64_t duration) override;
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
-    bool GetFastStatus() override;
+    FastStatus GetFastStatus() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
 
     int32_t StartDataCallback() override;
@@ -229,7 +229,7 @@ private:
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
     int32_t SetPitch(float pitch);
-    void FastStatusChangeCallback(bool flag);
+    void FastStatusChangeCallback(FastStatus status);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

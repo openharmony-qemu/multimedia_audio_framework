@@ -221,7 +221,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_QUERY_ALLOWED_PLAYBACK_CALLBACK",
     "ACTIVATE_PREEMPT_MODE",
     "DEACTIVATE_PREEMPT_MODE",
-    "IS_FAST_STREAM_SUPPORTED",
+    "IS_FAST_PLAYBACK_SUPPORTED",
+    "IS_FAST_RECORDING_SUPPORTED",
     "GET_DM_DEVICE_TYPE",
     "GET_DIRECT_PLAYBACK_SUPPORT",
     "NOFITY_SESSION_STATE_CHANGE",
@@ -500,23 +501,23 @@ void AudioPolicyManagerStub::IsStreamActiveInternal(MessageParcel &data, Message
     reply.WriteBool(isActive);
 }
 
-void AudioPolicyManagerStub::IsFastStreamSupportedInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::IsFastPlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamInfo audioStreamInfo;
     audioStreamInfo.Unmarshalling(data);
 
-    int32_t validSize = 20; // Use 20 as limit.
-    int32_t size = data.ReadInt32();
-    CHECK_AND_RETURN_LOG(size > 0 && size <= validSize, "IsFastStreamSupportedInternal get invalid device size.");
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetDevice;
-    for (int32_t i = 0; i < size; ++i) {
-        std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
-        CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-        MapExternalToInternalDeviceType(*audioDeviceDescriptor);
-        targetDevice.push_back(audioDeviceDescriptor);
-    }
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    bool ret = IsFastPlaybackSupported(audioStreamInfo, streamUsage);
+    reply.WriteBool(ret);
+}
 
-    bool ret = IsFastStreamSupported(audioStreamInfo, targetDevice);
+void AudioPolicyManagerStub::IsFastRecordingSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamInfo audioStreamInfo;
+    audioStreamInfo.Unmarshalling(data);
+
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    bool ret = IsFastRecordingSupported(audioStreamInfo, sourceType);
     reply.WriteBool(ret);
 }
 
@@ -1935,8 +1936,11 @@ void AudioPolicyManagerStub::OnMidRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE):
             IsStreamActiveInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_FAST_STREAM_SUPPORTED):
-            IsFastStreamSupportedInternal(data, reply);
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_FAST_PLAYBACK_SUPPORTED):
+            IsFastPlaybackSupportedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_FAST_RECORDING_SUPPORTED):
+            IsFastRecordingSupportedInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DEVICE_ACTIVE):
             SetDeviceActiveInternal(data, reply);

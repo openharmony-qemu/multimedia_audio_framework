@@ -156,7 +156,7 @@ public:
      *@param Audio device descriptors after change.
      * since 20
      */
-    virtual void OnFastStatusChange(AudioStreamFastStatus status) = 0;
+    virtual void OnFastStatusChange(FastStatus status) = 0;
 };
 
 /**
@@ -741,7 +741,7 @@ public:
 
     virtual int32_t SetInputDevice(DeviceType deviceType) const = 0;
 
-    virtual bool GetFastStatus() { return false; };
+    virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
 
     virtual int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) = 0;
 

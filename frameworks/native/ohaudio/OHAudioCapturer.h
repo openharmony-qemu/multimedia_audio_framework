@@ -135,7 +135,7 @@ public:
     {
     }
 
-    void OnFastStatusChange(AudioStreamFastStatus status) override;
+    void OnFastStatusChange(FastStatus status) override;
 private:
     OH_AudioCapturer_OnFastStatusChange callback_;
     OH_AudioCapturer *ohAudioCapturer_;
@@ -178,7 +178,7 @@ public:
     int32_t GetBufferDesc(BufferDesc &bufDesc) const;
     int32_t Enqueue(const BufferDesc &bufDesc) const;
     int32_t SetInputDevice(DeviceType deviceType);
-    bool GetFastStatus();
+    FastStatus GetFastStatus();
     uint32_t GetOverflowCount() const;
 
     void SetInterruptCallback(CapturerCallback capturerCallbacks, void *userData);
