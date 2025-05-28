@@ -433,7 +433,7 @@ void HpaeManager::DumpSourceInfo(std::string deviceName)
     SendRequest(request, __func__);
 }
 
-int32_t HpaeManager::CloseOutAudioPort(std::string &sinkName)
+int32_t HpaeManager::CloseOutAudioPort(std::string sinkName)
 {
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
         AUDIO_WARNING_LOG("can not find sinkName: %{public}s in rendererManagerMap_", sinkName.c_str());
@@ -456,7 +456,7 @@ int32_t HpaeManager::CloseOutAudioPort(std::string &sinkName)
     return SUCCESS;
 }
 
-int32_t HpaeManager::CloseInAudioPort(std::string &sourceName)
+int32_t HpaeManager::CloseInAudioPort(std::string sourceName)
 {
     if (!SafeGetMap(capturerManagerMap_, sourceName)) {
         AUDIO_WARNING_LOG("can not find sourceName: %{public}s in capturerManagerMap_", sourceName.c_str());
