@@ -346,6 +346,11 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_017, TestSize.
     auto ret = volumeDataMaintainerRet.GetVolumeKeyForDataShare(deviceTypeRet, streamTypeRet);
     std::string typeRet = "";
     EXPECT_EQ(ret, typeRet);
+
+    streamTypeRet = STREAM_VOICE_ASSISTANT;
+    ret = volumeDataMaintainerRet.GetVolumeKeyForDataShare(deviceTypeRet, streamTypeRet);
+    typeRet = "voice_assistant_volume_wireless_sco";
+    EXPECT_EQ(ret, typeRet);
 }
 
 /**
