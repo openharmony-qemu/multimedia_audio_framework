@@ -2604,6 +2604,12 @@ uint32_t AudioServer::CreateSinkPort(HdiIdBase idBase, HdiIdType idType, const s
         AUDIO_INFO_LOG("Inner-cap stream return");
         return id;
     }
+
+    // if stream is fast, create when endpoint config to reduce power
+    if (idBase == HDI_ID_BASE_RENDER && (HDI_ID_TYPE_FAST == idType || HDI_ID_INFO_MMAP == idInfo)) {
+        AUDIO_INFO_LOG("Fast stream delay create");
+        return id;
+    }
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id, true);
     if (sink == nullptr) {
         AUDIO_WARNING_LOG("Sink is nullptr");
@@ -2624,6 +2630,12 @@ uint32_t AudioServer::CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const
     AUDIO_INFO_LOG("In, idBase: %{public}u, idType: %{public}u, info: %{public}s", idBase, idType, idInfo.c_str());
     uint32_t id = HdiAdapterManager::GetInstance().GetId(idBase, idType, idInfo, true);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+
+    // if stream is fast, create when endpoint config to reduce power
+    if (idBase == HDI_ID_BASE_CAPTURE && HDI_ID_TYPE_FAST == idType) {
+        AUDIO_INFO_LOG("Fast stream delay create");
+        return id;
+    }
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(id, true);
     if (source == nullptr) {
         AUDIO_WARNING_LOG("Source is nullptr");
