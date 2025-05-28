@@ -170,9 +170,9 @@ public:
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
 private:
-    int32_t CloseOutAudioPort(std::string &sinkName);
+    int32_t CloseOutAudioPort(std::string sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
-    int32_t CloseInAudioPort(std::string &sourceName);
+    int32_t CloseInAudioPort(std::string sourceName);
     template <typename... Args>
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
     void HandleUpdateStatus(
