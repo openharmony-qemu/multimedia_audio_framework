@@ -184,11 +184,7 @@ int32_t HpaeAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processCo
             deviceName = PRIMARY_WAKEUP;
         }
         if (processConfig.isInnerCapturer) {
-            if (processConfig.innerCapMode == MODERN_INNER_CAP) {
-                deviceName = std::string(INNER_CAPTURER_SINK) + std::to_string(processConfig.innerCapId);
-            } else {
-                deviceName = PRO_INNER_CAPTURER_SOURCE;
-            }
+            deviceName = std::string(INNER_CAPTURER_SINK) + std::to_string(processConfig.innerCapId);
         } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
             deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
         }
