@@ -212,6 +212,16 @@ HpaeSessionState HpaeSinkInputNode::GetState()
     return state_;
 }
 
+void HpaeSinkInputNode::SetAppUid(int32_t uid)
+{
+    appUid_ = uid;
+}
+
+int32_t HpaeSinkInputNode::GetAppUid()
+{
+    return appUid_;
+}
+
 uint64_t HpaeSinkInputNode::GetFramesWritten()
 {
     return framesWritten_.load();

@@ -101,6 +101,7 @@ private:
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
     void InitSinkInner();
+    void UpdateAppsUid();
 
     HpaeRenderSessionInfo sessionInfo_;
     std::shared_ptr<HpaeSinkInputNode> sinkInputNode_ = nullptr;
@@ -109,6 +110,7 @@ private:
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
+    std::vector<int32_t> appsUid_;
     HpaeSinkInfo sinkInfo_;
     bool isMute_ = false;
     // only set offload mode enableProcessing

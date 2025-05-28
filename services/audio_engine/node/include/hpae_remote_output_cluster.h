@@ -48,6 +48,7 @@ public:
     const char *GetFrameData(void) override;
     StreamManagerState GetState(void) override;
     bool IsProcessClusterConnected(HpaeProcessorType sceneType) override;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) override;
 private:
     std::shared_ptr<HpaeRemoteSinkOutputNode> hpaeSinkOutputNode_ = nullptr;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeAudioFormatConverterNode>> sceneConverterMap_;

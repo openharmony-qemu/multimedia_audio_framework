@@ -48,6 +48,7 @@ public:
     virtual const char *GetFrameData(void);
     virtual StreamManagerState GetState(void);
     virtual bool IsProcessClusterConnected(HpaeProcessorType sceneType);
+    virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
 private:
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;
     std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode_ = nullptr;

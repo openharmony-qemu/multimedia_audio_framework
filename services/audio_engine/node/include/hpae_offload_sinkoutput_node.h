@@ -60,6 +60,8 @@ public:
     int32_t SetTimeoutStopThd(uint32_t timeoutThdMs);
     // set offload render callback type in hdi
     int32_t SetOffloadRenderCallbackType(int32_t type);
+
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
 private:
     // lock/unlock running lock
     void RunningLock(bool isLock);

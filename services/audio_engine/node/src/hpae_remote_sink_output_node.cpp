@@ -356,6 +356,12 @@ size_t HpaeRemoteSinkOutputNode::GetPreOutNum()
     return inputStream_.GetPreOutputNum();
 }
 
+int32_t HpaeRemoteSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
+    return audioRendererSink_->UpdateAppsUid(appsUid);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -459,6 +459,11 @@ int32_t MultichannelAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX
 
 int32_t MultichannelAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+#ifdef FEATURE_POWER_MANAGER
+    CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
+    runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    runningLock_->UpdateAppsUidToPowerMgr();
+#endif
     return SUCCESS;
 }
 

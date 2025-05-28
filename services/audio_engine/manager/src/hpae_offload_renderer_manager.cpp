@@ -59,6 +59,7 @@ int32_t HpaeOffloadRendererManager::CreateInputSession(const HpaeStreamInfo &str
     nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.nodeName = "HpaeSinkInputNode";
     sinkInputNode_ = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    sinkInputNode_->SetAppUid(streamInfo.uid);
     return SUCCESS;
 }
 
@@ -530,9 +531,19 @@ int32_t HpaeOffloadRendererManager::RegisterReadCallback(
 
 void HpaeOffloadRendererManager::Process()
 {
+    UpdateAppsUid();
     if (IsRunning()) {
         sinkOutputNode_->DoProcess();
     }
+}
+
+void HpaeOffloadRendererManager::UpdateAppsUid()
+{
+    appsUid_.clear();
+    if (sinkInputNode_ != nullptr && sinkInputNode_->GetState() == HPAE_SESSION_RUNNING) {
+        appsUid_.emplace_back(sinkInputNode_->GetAppUid());
+    }
+    sinkOutputNode_->UpdateAppsUid(appsUid_);
 }
 
 int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
