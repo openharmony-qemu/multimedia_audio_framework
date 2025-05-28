@@ -184,7 +184,7 @@ HWTEST_F(UtilUnitTest, KvPairUnitTest_001, TestSize.Level1)
     EXPECT_EQ(value, 1);
     kv.Erase("test");
     ret = kv.Get<uint32_t>("test_1", value);
-    EXPECT_FALSE(ret);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 } // namespace AudioStandard
