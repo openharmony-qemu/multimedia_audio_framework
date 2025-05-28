@@ -150,7 +150,7 @@ void AudioSceneManager::DealAudioSceneOutputDevices(const AudioScene &audioScene
             DeviceType currentOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
             if (!VolumeUtils::IsPCVolumeEnable() &&
                 streamCollector_.IsStreamActive(AudioVolumeType::STREAM_ALARM) &&
-                currentOutputDeviceType != DEVICE_TYPE_SPEAKER) {
+                currentOutputDeviceType == DEVICE_TYPE_USB_HEADSET) {
                 activeOutputDevices.push_back(DEVICE_TYPE_SPEAKER);
             }
             activeOutputDevices.push_back(audioActiveDevice_.GetCurrentOutputDeviceType());
