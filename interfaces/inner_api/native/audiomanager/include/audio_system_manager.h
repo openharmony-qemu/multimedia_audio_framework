@@ -1616,10 +1616,39 @@ public:
     */
     int32_t StopGroup(int32_t workgroupId);
 
+    /**
+    * @brief get volume event from register callback.
+    *
+    * @return Returns std::unordered_map<AudioStreamType, VolumeEvent>.
+    * @test
+    */
     std::unordered_map<AudioStreamType, VolumeEvent> GetVolumeEvent();
+ 
+    /**
+    * @brief set latest volume event when callback.
+    *
+    * @param type audio stream type.
+    * @param event volume event.
+    * @test
+    */
     void SetVolumeEvent(AudioStreamType type, VolumeEvent event);
+ 
+    /**
+    * @brief get renderer change info from register callback.
+    *
+    * @return Returns std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>.
+    * @test
+    */
     std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
         GetAudioRendererChangeInfo();
+ 
+    /**
+    * @brief set latest renderer change info when callback.
+    *
+    * @param type audio stream type.
+    * @param info renderer change info.
+    * @test
+    */
     void SetAudioRendererChangeInfo(AudioStreamType type, std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info);
 
 private:
