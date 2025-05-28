@@ -28,6 +28,9 @@
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
+static constexpr int64_t WAIT_CLOSE_EFFECT_TIME = 4; // 4s
+static constexpr int64_t MONITOR_CLOSE_EFFECT_TIME = 5 * 60; // 5m
+static constexpr int64_t TIME_IN_US = 1000000;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -68,6 +71,9 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
         return inputs[0];
     }
+    if (IsByPassEffectZeroVolume(inputs[0])) {
+        return inputs[0];
+    }
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_) {
@@ -97,6 +103,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     }
 #endif
 
+    effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &effectOutput_;
 }
 
@@ -284,6 +291,38 @@ int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(uint32_t &channels, ui
     return AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType_, channels, channelLayout);
 }
 
+bool HpaeRenderEffectNode::IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer)
+{
+    if (!pcmBuffer->IsValid()) {
+        return false;
+    }
+    if (pcmBuffer->IsSilence()) {
+        if (!isDisplayEffectZeroVolume_) {
+            AUDIO_INFO_LOG("Timing begins, will close [%{public}s] effect after [%{public}" PRId64 "]s",
+                sceneType_.c_str(), WAIT_CLOSE_EFFECT_TIME);
+            isDisplayEffectZeroVolume_ = true;
+        }
+        silenceDataUs_ += pcmBuffer->GetFrameLen() * TIME_IN_US / pcmBuffer->GetSampleRate();
+        if (!isByPassEffect_ && silenceDataUs_ >= WAIT_CLOSE_EFFECT_TIME * TIME_IN_US) {
+            AUDIO_INFO_LOG("Volume change to zero over %{public}" PRId64 "s, close effect:%{public}s success.",
+                WAIT_CLOSE_EFFECT_TIME, sceneType_.c_str());
+            isByPassEffect_ = true;
+            silenceDataUs_ = 0;
+        } else if (isByPassEffect_ && silenceDataUs_ >= MONITOR_CLOSE_EFFECT_TIME * TIME_IN_US) {
+            silenceDataUs_ = 0;
+            AUDIO_INFO_LOG("Effect [%{public}s] have closed [%{public}" PRId64 "]s.",
+                sceneType_.c_str(), MONITOR_CLOSE_EFFECT_TIME);
+        }
+    } else {
+        if (isDisplayEffectZeroVolume_) {
+            AUDIO_INFO_LOG("Volume change to non zero, open effect:%{public}s success.", sceneType_.c_str());
+            isDisplayEffectZeroVolume_ = false;
+        }
+        silenceDataUs_ = 0;
+        isByPassEffect_ = false;
+    }
+    return isByPassEffect_;
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

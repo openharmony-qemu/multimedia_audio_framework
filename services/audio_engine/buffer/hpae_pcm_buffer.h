@@ -39,6 +39,11 @@ enum HpaeSplitStreamType {
     STREAM_TYPE_NAVIGATION = 13
 };
 
+enum PcmBufferState : uint32_t {
+    PCM_BUFFER_STATE_INVALID = 1, // bit 0
+    PCM_BUFFER_STATE_SILENCE = 2, // bit 1
+};
+
 // redefine allocator to ensure memory alignment
 template <typename T, size_t Alignment>
 class AlignedAllocator : public std::allocator<T> {
@@ -77,7 +82,7 @@ struct PcmBufferInfo {
     uint64_t channelLayout = 0;
     uint32_t frames = 1;
     bool isMultiFrames = false;
-    bool isValid = true;
+    uint32_t state = 0;
 };
 
 // todo: multithread access?
@@ -120,7 +125,17 @@ public:
 
     bool IsValid() const
     {
-        return pcmBufferInfo_.isValid;
+        return (pcmBufferInfo_.state & PCM_BUFFER_STATE_INVALID) != PCM_BUFFER_STATE_INVALID;
+    }
+
+    bool IsSilence() const
+    {
+        return (pcmBufferInfo_.state & PCM_BUFFER_STATE_SILENCE) == PCM_BUFFER_STATE_SILENCE;
+    }
+
+    uint32_t GetBufferState() const
+    {
+        return pcmBufferInfo_.state;
     }
 
     uint64_t GetChannelLayout() const
@@ -181,6 +196,8 @@ public:
     bool UpdateReadPos(size_t readPos);
     bool UpdateWritePos(size_t writePos);
     void SetBufferValid(bool valid);
+    void SetBufferSilence(bool silence);
+    void SetBufferState(uint32_t state);
     size_t GetCurFrames() const;
 
     HpaePcmBuffer &operator=(const std::vector<std::vector<float>> &other);

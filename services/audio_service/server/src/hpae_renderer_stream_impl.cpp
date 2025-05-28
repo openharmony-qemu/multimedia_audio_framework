@@ -56,6 +56,9 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
     AUDIO_DEBUG_LOG("~HpaeRendererStreamImpl");
+    if (dumpEnqueueIn_ != nullptr) {
+        DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
+    }
 }
 
 int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
@@ -335,6 +338,7 @@ int32_t HpaeRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         AUDIO_ERR_LOG("Enqueue buffer failed, ret:%{public}d size:%{public}zu", result.ret, result.size);
         return ERROR;
     }
+    DumpFileUtil::WriteDumpFile(dumpEnqueueIn_, bufferDesc.buffer, writeSize);
     return writeSize; // success return written in length
 }
 
@@ -504,14 +508,21 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 
 void HpaeRendererStreamImpl::InitRingBuffer()
 {
-    size_t bufferSize = MIN_BUFFER_SIZE * spanSizeInFrame_ * byteSizePerFrame_;
+    uint32_t maxLength = 20; // 20 for dup and dual play, only for enqueue buffer
+    size_t bufferSize = maxLength * spanSizeInFrame_ * byteSizePerFrame_;
     AUDIO_INFO_LOG("bufferSize: %{public}zu, spanSizeInFrame: %{public}zu, byteSizePerFrame: %{public}zu,"
-        "maxLength:%{public}u", bufferSize, spanSizeInFrame_, byteSizePerFrame_, MIN_BUFFER_SIZE);
+        "maxLength:%{public}u", bufferSize, spanSizeInFrame_, byteSizePerFrame_, maxLength);
     // create ring buffer
     ringBuffer_ = AudioRingCache::Create(bufferSize);
     if (ringBuffer_ == nullptr) {
         AUDIO_ERR_LOG("Create ring buffer failed!");
     }
+
+    std::string dumpEnqueueInFileName = std::to_string(processConfig_.originalSessionId) + "_dual_in_" +
+        std::to_string(processConfig_.streamInfo.samplingRate) + "_" +
+        std::to_string(processConfig_.streamInfo.channels) + "_" +
+        std::to_string(processConfig_.streamInfo.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpEnqueueInFileName, &dumpEnqueueIn_);
 }
 
 int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen)

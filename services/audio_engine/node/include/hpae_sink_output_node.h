@@ -48,6 +48,7 @@ public:
     int32_t RenderSinkResume(void);
     int32_t RenderSinkStart(void);
     int32_t RenderSinkStop(void);
+    int32_t RenderSinkSetPriPaPower(void);
     size_t GetPreOutNum();
     // for ut test
     const char *GetRenderFrameData(void);
@@ -57,6 +58,7 @@ public:
 
 private:
     void HandleRemoteTiming();
+    void HandlePaPower(HpaePcmBuffer *pcmBuffer);
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char> renderFrameData_;
     std::vector<float> interleveData_;
@@ -67,6 +69,9 @@ private:
     HighResolutionTimer remoteTimer_;
     TimePoint remoteTimePoint_;
     std::chrono::milliseconds remoteSleepTime_ = std::chrono::milliseconds(0);
+    int64_t silenceDataUs_ = 0;
+    bool isOpenPaPower_ = true;
+    bool isDisplayPaPowerState_ = false;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;

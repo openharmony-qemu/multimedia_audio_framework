@@ -49,7 +49,7 @@ private:
     uint32_t pushFrameNum_ = 0;
     void DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t channelCount);
     void DoFading(HpaePcmBuffer *input);
-    void SlienceData(HpaePcmBuffer *pcmBuffer);
+    void SilenceData(HpaePcmBuffer *pcmBuffer);
     bool IsSilentData(HpaePcmBuffer *pcmBuffer);
     void GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input);
 #ifdef ENABLE_HOOK_PCM

@@ -236,6 +236,7 @@ ohos_shared_library("audio_engine_manager") {
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
+    "../audio_service:audio_common",
   ]
 
   external_deps = [

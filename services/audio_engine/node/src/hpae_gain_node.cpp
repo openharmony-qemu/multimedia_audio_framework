@@ -76,8 +76,8 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
     auto len = "len[" + std::to_string(inputs[0]->GetFrameLen()) + "]";
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeGainNode::SignalProcess " + rate + ch + len);
     if (fadeOutState_ == FadeOutState::DONE_FADEOUT) {
-        AUDIO_INFO_LOG("HpaeGainNode: fadeout done, set session %{public}d slience", GetSessionId());
-        SlienceData(inputs[0]);
+        AUDIO_INFO_LOG("HpaeGainNode: fadeout done, set session %{public}d silence", GetSessionId());
+        SilenceData(inputs[0]);
     }
     float *inputData = (float *)inputs[0]->GetPcmDataBuffer();
     uint32_t frameLen = inputs[0]->GetFrameLen();
@@ -183,11 +183,11 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     }
 }
 
-void HpaeGainNode::SlienceData(HpaePcmBuffer *pcmBuffer)
+void HpaeGainNode::SilenceData(HpaePcmBuffer *pcmBuffer)
 {
     void *data = pcmBuffer->GetPcmDataBuffer();
     if (GetNodeInfo().format == INVALID_WIDTH) {
-        AUDIO_WARNING_LOG("HpaePcmBuffer.SetDataSlience: invalid format");
+        AUDIO_WARNING_LOG("HpaePcmBuffer.SetDataSilence: invalid format");
     } else if (GetNodeInfo().format == SAMPLE_U8) {
         // set silence data for all the frames
         memset_s(data, pcmBuffer->Size(), 0x80, pcmBuffer->Size());
@@ -218,10 +218,17 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
         preSystemGain,
         systemStepGain,
         GetDeviceClass().c_str());
-    for (uint32_t i = 0; i < frameLen; i++) {
-        for (uint32_t j = 0; j < channelCount; j++) {
-            inputData[channelCount * i + j] = inputData[channelCount * i + j] * (preSystemGain + systemStepGain * i);
+    if (audioVolume->IsSameVolume(0.0f, curSystemGain) && audioVolume->IsSameVolume(0.0f, preSystemGain)) {
+        SilenceData(input);
+        input->SetBufferSilence(true);
+    } else {
+        for (uint32_t i = 0; i < frameLen; i++) {
+            for (uint32_t j = 0; j < channelCount; j++) {
+                inputData[channelCount * i + j] =
+                    inputData[channelCount * i + j] * (preSystemGain + systemStepGain * i);
+            }
         }
+        input->SetBufferSilence(false);
     }
     if (curSystemGain != preSystemGain) {
         audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
