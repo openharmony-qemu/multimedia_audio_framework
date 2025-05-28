@@ -2094,7 +2094,7 @@ void AudioSystemManager::InitWorkgroupState()
 
 bool AudioSystemManager::IsValidToStartGroup()
 {
-    for (const auto& pair : GetAudioRendererChangeInfo()) {
+    for (const auto &pair : GetAudioRendererChangeInfo()) {
         AudioStreamType type = pair.first;
         std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info = pair.second;
         if (info->rendererState == RendererState::RENDERER_RUNNING && GetVolumeEvent()[type].volume != 0) {
