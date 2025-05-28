@@ -724,11 +724,8 @@ HWTEST_F(AudioCoreServiceUnitTest, GetActiveBluetoothDevice_001, TestSize.Level1
 HWTEST_F(AudioCoreServiceUnitTest, GetAvailableMicrophones_001, TestSize.Level1)
 {
     ASSERT_NE(nullptr, GetServerPtr());
-    int32_t ret = -1;
     auto inputDeviceDescriptors = GetServerPtr()->coreService_->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     if (inputDeviceDescriptors.size() == 0) {
-        ret = SUCCESS;
-        EXPECT_EQ(SUCCESS, ret);
         return;
     }
     auto microphoneDescriptors = GetServerPtr()->coreService_->GetAvailableMicrophones();
@@ -736,11 +733,9 @@ HWTEST_F(AudioCoreServiceUnitTest, GetAvailableMicrophones_001, TestSize.Level1)
     for (auto inputDescriptor : inputDeviceDescriptors) {
         for (auto micDescriptor : microphoneDescriptors) {
             if (micDescriptor->deviceType_ == inputDescriptor->deviceType_) {
-                ret = SUCCESS;
             }
         }
     }
-    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

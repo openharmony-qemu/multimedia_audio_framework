@@ -160,7 +160,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadVolume_001, TestSize.Level1)
     audioAdapterManager_->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
     EXPECT_NE(audioAdapterManager_->audioServerProxy_, nullptr);
     audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
-    EXPECT_EQ(streamType, STREAM_SYSTEM);
 }
 
 /**

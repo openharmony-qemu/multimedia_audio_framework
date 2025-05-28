@@ -1020,7 +1020,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceRemovePlaceholderInterruptFo
     int32_t pid = CALLER_PID;
     bool timeOut = IS_SESSION_TIMEOUT;
     interruptService->RemovePlaceholderInterruptForSession(pid, timeOut);
-    EXPECT_EQ(nullptr, interruptService->sessionService_);
 
     auto server = GetPolicyServerTest();
     interruptService->Init(server);
@@ -1044,7 +1043,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceRemovePlaceholderInterruptFo
     bool timeOut = IS_SESSION_TIMEOUT;
     interruptService->zonesMap_.find(DEFAULT_ZONE_ID)->second = nullptr;
     interruptService->RemovePlaceholderInterruptForSession(pid, timeOut);
-    EXPECT_EQ(nullptr, interruptService->zonesMap_.find(DEFAULT_ZONE_ID)->second);
 
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = 2;
@@ -1113,7 +1111,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSession_
     interruptService->sessionService_ = nullptr;
     int32_t pid = CALLER_PID;
     interruptService->AddActiveInterruptToSession(pid);
-    EXPECT_EQ(nullptr, interruptService->sessionService_);
 
     auto server = GetPolicyServerTest();
     interruptService->Init(server);
@@ -1136,7 +1133,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSession_
     EXPECT_EQ(SUCCESS, ret);
     interruptService->zonesMap_.find(DEFAULT_ZONE_ID)->second = nullptr;
     interruptService->AddActiveInterruptToSession(pid);
-    EXPECT_EQ(nullptr, interruptService->zonesMap_.find(DEFAULT_ZONE_ID)->second);
 
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = 2;
@@ -1716,13 +1712,12 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_DeactivateAudioInterruptInt
 HWTEST(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInterrupt_002, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
+    ASSERT_TRUE(interruptServiceTest != nullptr);
     interruptServiceTest->zonesMap_.clear();
 
     interruptServiceTest->Init(GetPolicyServerTest());
     AudioInterruptChangeType changeType = DEACTIVATE_AUDIO_INTERRUPT;
     interruptServiceTest->UpdateAudioSceneFromInterrupt(AUDIO_SCENE_INVALID, changeType);
-    EXPECT_EQ(DEACTIVATE_AUDIO_INTERRUPT, changeType);
-
     interruptServiceTest->zonesMap_.clear();
 }
 

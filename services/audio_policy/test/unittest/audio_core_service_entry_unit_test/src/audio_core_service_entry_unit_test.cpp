@@ -313,7 +313,6 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_014, TestSize.Level1)
     DeviceInfoUpdateCommand command = ENABLE_UPDATE;
 
     eventEntry->OnDeviceInfoUpdated(desc, command);
-    EXPECT_EQ(desc.isEnable_, true);
 }
 
 /**

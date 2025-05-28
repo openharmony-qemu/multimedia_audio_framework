@@ -870,7 +870,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, ConfigDistributedRoutingRole_001, Test
     CastType type = CAST_TYPE_NULL;
 
     server->audioPolicyService_.ConfigDistributedRoutingRole(descriptor, type);
-    EXPECT_EQ(type, CAST_TYPE_NULL);
 }
 
 /**

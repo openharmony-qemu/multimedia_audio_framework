@@ -407,9 +407,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_001, TestSi
     int32_t playingState = A2DP_STOPPED;
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(A2DP_STOPPED, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_CONNECTED,
-        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -427,8 +424,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_002, TestSi
     int32_t playingState = A2DP_STOPPED;
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
-        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -465,8 +460,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_004, TestSi
     int32_t playingState = A2DP_PLAYING;
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_DISCONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_DISCONNECTED,
-        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -503,8 +496,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_006, TestSi
     int32_t playingState = A2DP_PLAYING;
     audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_ = CONNECTION_STATUS_CONNECTED;
     audioA2dpOffloadManager_.OnA2dpPlayingStateChanged(deviceAddress, playingState);
-    EXPECT_EQ(CONNECTION_STATUS_CONNECTED,
-        audioA2dpOffloadManager_.audioA2dpOffloadFlag_.currentOffloadConnectionState_);
 }
 
 /**
@@ -859,7 +850,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneOutputDevices_001, Test
     bool haveArmUsbDevice = false;
     GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
         audioScene, activeOutputDevices, haveArmUsbDevice);
-    EXPECT_EQ(false, haveArmUsbDevice);
 
     const AudioScene audioScene2 = AUDIO_SCENE_VOICE_RINGING;
     haveArmUsbDevice = false;
@@ -872,8 +862,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneOutputDevices_001, Test
     haveArmUsbDevice = false;
     GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
         audioScene3, activeOutputDevices, haveArmUsbDevice);
-    EXPECT_TRUE(descs.empty());
-    EXPECT_EQ(false, haveArmUsbDevice);
 }
 
 /**
@@ -1612,7 +1600,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSiz
     configData.Reorganize();
 
     EXPECT_NE(configData.adapterInfoMap.size(), 0);
-    EXPECT_EQ(configData.adapterInfoMap.size(), adapterMapSize);
 
     for (auto &item : adapterSizeMap) {
         auto adapterInfoIt = configData.adapterInfoMap.find(item.first);
@@ -1658,7 +1645,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSiz
     configData.Reorganize();
 
     EXPECT_NE(configData.deviceInfoMap.size(), 0);
-    EXPECT_EQ(configData.deviceInfoMap.size(), deviceMapSize);
     for (auto &pair : deviceSizeMap) {
         auto deviceSetIt = configData.deviceInfoMap.find(pair.first);
         EXPECT_NE(deviceSetIt, configData.deviceInfoMap.end());

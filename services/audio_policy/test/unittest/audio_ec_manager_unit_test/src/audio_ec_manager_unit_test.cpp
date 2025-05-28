@@ -355,9 +355,10 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_012, TestSize.Level1)
     std::string address = "00:11:22:33:44";
     DeviceRole role = INPUT_DEVICE;
     AudioModuleInfo moduleInfo;
-    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    auto ecManager = std::make_shared<AudioEcManager>();
+    ASSERT_TRUE(ecManager != nullptr);
 
-    ecManager.UpdateArmModuleInfo(address, role, moduleInfo);
+    ecManager->UpdateArmModuleInfo(address, role, moduleInfo);
 }
 
 /**
@@ -368,10 +369,11 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_012, TestSize.Level1)
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_013, TestSize.Level1)
 {
     SessionInfo sessionInfo;
-    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    auto ecManager = std::make_shared<AudioEcManager>();
+    ASSERT_TRUE(ecManager != nullptr);
 
     sessionInfo.sourceType = SOURCE_TYPE_INVALID;
-    ecManager.ReloadSourceForSession(sessionInfo);
+    ecManager->ReloadSourceForSession(sessionInfo);
 }
 
 /**
@@ -398,9 +400,10 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_015, TestSize.Level1)
 {
     AudioModuleInfo moduleInfo;
     SourceType sourceType = SOURCE_TYPE_INVALID;
-    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    auto ecManager = std::make_shared<AudioEcManager>();
+    ASSERT_TRUE(ecManager != nullptr);
 
-    ecManager.UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
+    ecManager->UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
 }
 
 /**
@@ -499,11 +502,10 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_020, TestSize.Level1)
     moduleInfo.role = "sink";
     string deviceInfo = "sink_rate:1;sink_format:AUDIO_FORMAT_PCM_16_BIT";
     GetUsbModuleInfo(deviceInfo, moduleInfo);
-    EXPECT_EQ(moduleInfo.role, "sink");
+    EXPECT_EQ(moduleInfo.rate, "1");
 
     moduleInfo.channels = "2";
     GetUsbModuleInfo(deviceInfo, moduleInfo);
-    EXPECT_EQ(moduleInfo.role, "sink");
 }
 
 /**
