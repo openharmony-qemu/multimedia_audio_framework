@@ -187,7 +187,7 @@ ohos_shared_library("audio_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
   sources = [
-    "../audio_policy/util/src/audio_manager_util.cpp",
+    "client/src/audio_manager_util.cpp",
     "client/src/audio_combine_denoising_manager.cpp",
     "client/src/audio_effect_manager.cpp",
     "client/src/audio_group_manager.cpp",
@@ -318,6 +318,7 @@ config("audio_service_config") {
     "../audio_engine/manager/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/common/definitions/include",
+    "../audio_policy/common/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/server/include/service/effect",
     "../audio_policy/services/pipe/include",

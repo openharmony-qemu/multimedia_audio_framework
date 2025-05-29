@@ -101,8 +101,7 @@ ohos_unittest("audio_zone_service_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_zone_service_unit_test",
-    "../../audio_policy/server/src/service/zone",
-    "../../audio_policy/server/include/service/zone",
+    "../../audio_policy/server/domain/zone/include",
   ]
 
   use_exceptions = true
@@ -258,12 +257,12 @@ ohos_unittest("audio_zone_unit_test") {
   include_dirs = [
     "./unittest/audio_zone_unit_test",
     "../../audio_policy/server/include",
-    "../../audio_policy/server/include/service/zone",
+    "../../audio_policy/server/domain/zone/include",
     "../../audio_policy/server/src",
     "../../audio_policy/server/src/interface",
-    "../../audio_policy/server/src/service/interrupt",
+    "../../audio_policy/server/infra/async_action_handler/include",
+    "../../audio_policy/server/domain/interrupt/include",
     "../../audio_policy/server/src/service/service",
-    "../../audio_policy/server/src/service/zone",
     "../../audio_policy/client/include",
     "../../audio_policy/client/src",
     "../../audio_policy/client/proxy",
@@ -332,7 +331,7 @@ ohos_unittest("audio_zone_unit_test") {
 
   sources = [
     "../../audio_policy/client/stub/src/audio_zone_client.cpp",
-    "../../audio_policy/server/src/service/zone/audio_zone_service.cpp",
+    "../../audio_policy/server/domain/zone/src/audio_zone_service.cpp",
     "./unittest/audio_zone_unit_test/src/audio_policy_manager_zone_stub_unit_test.cpp",
     "./unittest/audio_zone_unit_test/src/audio_zone_class_unit_test.cpp",
     "./unittest/audio_zone_unit_test/src/audio_zone_client_manager_unit_test.cpp",
@@ -428,7 +427,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_interrupt_service_test/include",
-    "../../audio_policy/server/src/service/interrupt",
+    "../../audio_policy/server/domain/interrupt/include",
     "../../audio_policy/server/include/service/listener",
     "../../audio_service/common/include/dfx",
   ]
@@ -578,6 +577,8 @@ ohos_unittest("audio_policy_service_first_unit_test") {
     "./unittest/audio_policy_service_unit_test/include",
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
+    "../../audio_policy/server/domain/device/src/a2dp",
     "../../audio_policy/server/include",
     "../../audio_policy/server/include/service/listener",
   ]
@@ -765,6 +766,8 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
+    "../../audio_policy/server/domain/device/src/a2dp",
     "../../audio_policy/server/include",
     "../../audio_policy/client/include",
   ]
@@ -955,6 +958,8 @@ ohos_unittest("audio_policy_service_third_unit_test") {
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
+    "../../audio_policy/server/domain/device/src/a2dp",
     "../../audio_policy/server/include",
   ]
 
@@ -1144,6 +1149,8 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "../../audio_policy/server/include/service",
     "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
+    "../../audio_policy/server/domain/device/src/a2dp",
     "../../audio_policy/server/include",
   ]
 
@@ -1327,7 +1334,7 @@ ohos_unittest("audio_effect_config_parser_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_effect_config_parser_test/include",
-    "../../audio_policy/server/include/service/effect",
+    "../../audio_policy/server/domain/effect/include",
     "../../audio_policy/server/infra/config/parser/include",
   ]
 
@@ -1358,7 +1365,7 @@ ohos_unittest("audio_pnp_server_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_pnp_server_unit_test/include",
-    "../../audio_policy/server/include/service/effect",
+    "../../audio_policy/server/domain/effect/include",
     "../../audio_policy/server/infra/config/parser/include",
   ]
 
@@ -1494,6 +1501,8 @@ ohos_unittest("audio_offload_stream_unit_test") {
     "./unittest/audio_offload_stream_unit_test/include",
     "../../audio_policy/server/src/service/service",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
+    "../../audio_policy/server/domain/device/src/a2dp",
   ]
 
   use_exceptions = true
@@ -1562,7 +1571,7 @@ ohos_unittest("audio_policy_server_unit_test") {
   module_out_path = module_output_path1
   include_dirs = [
     "./unittest/audio_interrupt_service_test/include",
-    "../../audio_policy/server/src/service/interrupt",
+    "../../audio_policy/server/domain/interrupt/include",
     "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include",
     "../../audio_policy/test/unittest/audio_interrupt_service_test/include",
@@ -1871,7 +1880,7 @@ ohos_unittest("stream_filter_router_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/stream_filter_router_unit_test/include",
-    "../../audio_policy/server/include/service/routers",
+    "../../audio_policy/server/domain/router",
   ]
 
   use_exceptions = true
@@ -1974,7 +1983,7 @@ ohos_unittest("audio_router_center_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_router_center_unit_test/include",
-    "../../audio_policy/server/include/service/routers",
+    "../../audio_policy/server/domain/router",
   ]
 
   use_exceptions = true
@@ -2067,7 +2076,7 @@ ohos_unittest("privacy_priority_router_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/privacy_priority_router_unit_test/include",
-    "../../audio_policy/server/include/service/routers",
+    "../../audio_policy/server/domain/router",
   ]
 
   use_exceptions = true
@@ -2652,7 +2661,7 @@ ohos_unittest("audio_policy_async_action_handler_test") {
   ]
 
   sources = [
-    "../../../services/audio_policy/server/infra/async_action_handler/audio_policy_async_action_handler.cpp",
+    "../../../services/audio_policy/server/infra/async_action_handler/src/audio_policy_async_action_handler.cpp",
     "../../../services/audio_service/server/src/audio_manager_listener_proxy.cpp",
     "./unittest/audio_policy_async_action_handler_test/audio_policy_async_action_handler_test.cpp",
   ]
@@ -2715,7 +2724,7 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_interrupt_service_test/include",
-    "../../audio_policy/server/src/service/interrupt",
+    "../../audio_policy/server/domain/interrupt/include",
     "../../audio_policy/server/include/service/listener",
     "../../audio_service/common/include/dfx",
     "../../../services/audio_engine/manager/include",
@@ -2982,6 +2991,7 @@ ohos_unittest("audio_affinity_manager_unit_test") {
   include_dirs = [
     "./unittest/audio_affinity_manager_unit_test/include",
     "../../audio_policy/server/include/service/",
+    "../../audio_policy/server/domain/device/include/",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../audio_service/client/src",
     "../../audio_policy/server/src/service/device",
@@ -3192,7 +3202,7 @@ ohos_unittest("audio_effect_config_parser_unit_test") {
 
   include_dirs = [
     "./unittest/audio_effect_config_parser_unit_test/include",
-    "../../audio_policy/server/include/service/effect",
+    "../../audio_policy/server/domain/effect/include",
     "../../audio_policy/server/infra/config/parser/include",
   ]
 
@@ -3328,6 +3338,7 @@ ohos_unittest("device_status_listener_unit_test") {
     "../client/include",
     "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include/service",
+    "../../audio_policy/server/domain/device/include/",
     "./unittest/device_status_listener_unit_test/include",
   ]
 
@@ -3402,8 +3413,10 @@ ohos_unittest("audio_ec_manager_unit_test") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
     "./unittest/audio_ec_manager_unit_test/include",
     "../../audio_policy/server/src/service/service",
+    "../../audio_policy/server/domain/pipe/src",
   ]
 
   use_exceptions = true
@@ -3441,7 +3454,7 @@ ohos_unittest("audio_general_manager_unit_test") {
     "../../../services/audio_policy/util/include",
     "../../../services/audio_policy/client/service/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../services/audio_policy/server/include/service/effect",
+    "../../../services/audio_policy/server/domain/effect/include",
     "../../../services/audio_policy/server/infra/config/parser/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../services/audio_service/client/include",
@@ -3734,6 +3747,7 @@ ohos_unittest("audio_volume_manager_unit_test") {
 
   include_dirs = [
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
     "./unittest/audio_volume_manager_unit_test/include",
   ]
 
@@ -3779,7 +3793,7 @@ ohos_unittest("audio_adapter_manager_unit_test") {
     "./unittest/audio_adapter_manager_unit_test/include",
     "../../../services/audio_policy/server/include/service/manager",
     "../../../frameworks/native/audiodefinitions/include",
-    "../../../services/audio_policy/server/src/service/interrupt",
+    "../../../services/audio_policy/server/domain/interrupt/include",
   ]
 
   use_exceptions = true
@@ -4021,6 +4035,7 @@ ohos_unittest("audio_recovery_device_unit_test") {
   include_dirs = [
     "./unittest/audio_recovery_device_unit_test/include",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
   ]
 
   use_exceptions = true
@@ -4164,6 +4179,7 @@ ohos_unittest("audio_device_status_unit_test") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
     "./unittest/audio_device_status_unit_test/include",
     "../../audio_policy/server/src/service/service",
   ]
@@ -4202,6 +4218,7 @@ ohos_unittest("audio_state_manager_unit_test") {
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
     "./unittest/audio_state_manager_unit_test/include",
     "../../audio_policy/server/src/service/service",
   ]
@@ -4326,6 +4343,7 @@ ohos_unittest("audio_device_lock_unit_test") {
     "../../audio_policy/server/include",
     "../../audio_policy/client/include",
     "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
   ]
 
   use_exceptions = true
@@ -5038,7 +5056,7 @@ ohos_unittest("audio_interrupt_dfx_collector_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_interrupt_service_test/include",
-    "../../audio_policy/server/src/service/interrupt",
+    "../../audio_policy/server/domain/interrupt/include",
     "../../audio_policy/server/include/service/listener",
     "../../audio_service/common/include/dfx",
   ]
@@ -5106,7 +5124,7 @@ ohos_unittest("dfx_msg_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_interrupt_service_test/include",
-    "../../audio_policy/server/src/service/interrupt",
+    "../../audio_policy/server/domain/interrupt/include",
     "../../audio_policy/server/include/service/listener",
     "../../audio_service/common/include/dfx",
   ]
@@ -5176,6 +5194,7 @@ ohos_unittest("client_type_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "../../audio_policy/server/include/service/manager",
+    "../../audio_policy/server/domain/volume/include",
     "./unittest/client_type_manager_unit_test/include",
   ]
 
