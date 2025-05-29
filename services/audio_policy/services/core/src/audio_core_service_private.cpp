@@ -1411,6 +1411,8 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
 {
     AUDIO_INFO_LOG("Flag: %{public}u, role: %{public}s", pipeInfo->routeFlag_, pipeInfo->moduleInfo_.role.c_str());
     uint32_t id = OPEN_PORT_FAILURE;
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr && pipeInfo->streamDescriptors_.size() > 0 &&
+        pipeInfo->streamDescriptors_.front() != nullptr, OPEN_PORT_FAILURE, "pipeInfo is invalid");
     if (pipeInfo->streamDescriptors_.front()->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
         // DEVICE_TYPE_REMOTE_CAST no need to open audioport
         id = pipeInfo->streamDescriptors_.front()->sessionId_;

@@ -1133,6 +1133,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
         desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     std::string portNeedClose = "";
+    uint32_t oldPaIndex = OPEN_PORT_FAILURE;
     DeviceUpdateClearRecongnitionStatus(desc);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -1156,6 +1157,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
             AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
         portNeedClose = BLUETOOTH_SPEAKER;
+        oldPaIndex = GetPaIndexByPortName(portNeedClose);
     }
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
@@ -1165,7 +1167,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     OnPreferredStateUpdated(desc, command, reason);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
-    if (portNeedClose != "") {
+    if (portNeedClose != "" && oldPaIndex == GetPaIndexByPortName(portNeedClose)) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(portNeedClose);
     }
     if (audioA2dpOffloadManager_) {
@@ -1369,6 +1371,17 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
     AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
     return SUCCESS;
+}
+
+uint32_t AudioDeviceStatus::GetPaIndexByPortName(std::string &portName)
+{
+    AudioIOHandle ioHandle;
+    CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), OPEN_PORT_FAILURE,
+        "can not find %{public}s in io map", moduleName.c_str());
+    std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t paIndex = pipeManager->GetPaIndexByIoHandle(ioHandle);
+    AUDIO_INFO_LOG("Port %{public}s, paIndex: %{public}u", portName, paIndex);
+    return paIndex;
 }
 }
 }

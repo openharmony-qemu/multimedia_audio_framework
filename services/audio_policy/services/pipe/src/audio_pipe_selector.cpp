@@ -196,6 +196,7 @@ bool AudioPipeSelector::IsPipeExist(std::vector<std::shared_ptr<AudioPipeInfo>> 
 void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
     std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
     AUDIO_INFO_LOG("Route flag: %{public}u", streamDesc->routeFlag_);
 
