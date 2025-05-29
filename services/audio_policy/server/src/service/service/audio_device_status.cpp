@@ -1376,7 +1376,7 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
 uint32_t AudioDeviceStatus::GetPaIndexByPortName(std::string &portName)
 {
     AudioIOHandle ioHandle;
-    CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(portName, ioHandle), OPEN_PORT_FAILURE,
+    CHECK_AND_RETURN_RET_LOG(audioIOHandleMap_.GetModuleIdByKey(portName, ioHandle), OPEN_PORT_FAILURE,
         "can not find %{public}s in io map", portName.c_str());
     std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
     uint32_t paIndex = pipeManager->GetPaIndexByIoHandle(ioHandle);
