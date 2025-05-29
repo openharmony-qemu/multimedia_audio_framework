@@ -462,6 +462,10 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
             sink.ext.device.type = PIN_OUT_BLUETOOTH_A2DP;
             sink.ext.device.desc = (char *)"pin_out_bluetooth_a2dp";
             break;
+        case DEVICE_TYPE_HDMI:
+             sink.ext.device.type = PIN_OUT_HDMI;
+             sink.ext.device.desc = (char *)"pin_out_hdmi";
+             break;
         case DEVICE_TYPE_NEARLINK:
             HandleNearlinkScene(sink, scene);
             break;
