@@ -36,6 +36,7 @@ struct HpaeRenderSessionInfo {
     uint32_t sinkInputNodeId;
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
+    bool isMoveAble = true;
 };
 
 struct HpaeSinkInputInfo {
@@ -71,6 +72,7 @@ struct HpaeSinkInfo {
 struct HpaeCapturerSessionInfo {
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
+    bool isMoveAble = true;
 };
 
 struct HpaeSourceOutputInfo {

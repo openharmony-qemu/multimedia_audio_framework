@@ -233,6 +233,7 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
             sinkInfo_.deviceName.c_str());
         CreateInputSession(streamInfo);
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
+        sessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
     };
     SendRequest(request);

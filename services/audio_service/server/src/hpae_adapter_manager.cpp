@@ -69,6 +69,11 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     rendererStreamMap_[sessionId] = rendererStream;
     stream = rendererStream;
 
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
+        AUDIO_INFO_LOG("renderer:%{public}u is DUP or DUAL, not need add to sink vecotr", sessionId);
+        return SUCCESS
+    }
+
     std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
     SinkInput sinkInput;
     sinkInput.streamId = sessionId;
@@ -106,6 +111,11 @@ int32_t HpaeAdapterManager::ReleaseRender(uint32_t streamIndex)
 
     if (isHighResolutionExist_ && highResolutionIndex_ == streamIndex) {
         isHighResolutionExist_ = false;
+    }
+
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
+        AUDIO_INFO_LOG("renderer:%{public}u is DUP or DUAL, not need remove", sessionId);
+        return SUCCESS
     }
 
     std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
@@ -267,15 +277,18 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
 {
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     bool isCallbackMode = true;
+    bool isMoveAble = true;
     if (managerType_ == DUP_PLAYBACK) {
         // todo check
         processConfig.isInnerCapturer = true;
+        isMoveAble = false;
         AUDIO_INFO_LOG("Create dup playback renderer stream");
     } else if (managerType_ == DUAL_PLAYBACK) {
         isCallbackMode = false;
+        isMoveAble = false;
     }
     std::shared_ptr<HpaeRendererStreamImpl> rendererStream =
-        std::make_shared<HpaeRendererStreamImpl>(processConfig, isCallbackMode);
+        std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, isCallbackMode);
     if (rendererStream->InitParams(deviceName) != SUCCESS) {
         AUDIO_ERR_LOG("Create rendererStream Failed");
         return nullptr;

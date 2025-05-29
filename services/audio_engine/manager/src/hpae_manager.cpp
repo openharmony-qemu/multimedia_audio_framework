@@ -662,6 +662,20 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
             }
             return;
         }
+        if (capturerIdStreamInfoMap_.find(sourceOutputId) == capturerIdStreamInfoMap_.end()) {
+            AUDIO_ERR_LOG("move session:%{public}u failed,can not find session.", sourceOutputId);
+            if (auto serviceCallback = serviceCallback_.lock()) {
+                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
+            }
+            return;
+        }
+        if (!capturerIdStreamInfoMap_.[sourceOutputId].streamInfo.isMoveAble) {
+            AUDIO_ERR_LOG("move session:%{public}u failed,session is not moveable.", sourceOutputId);
+            if (auto serviceCallback = serviceCallback_.lock()) {
+                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
+            }
+            return;
+        }
         AUDIO_INFO_LOG("start move session:%{public}u, [%{public}s] --> [%{public}s], state:%{public}d",
             sourceOutputId, name.c_str(), sourceName.c_str(), capturerIdStreamInfoMap_[sourceOutputId].state);
         movingIds_.emplace(sourceOutputId, capturerIdStreamInfoMap_[sourceOutputId].state);
@@ -713,6 +727,14 @@ int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t s
 
         if (rendererIdStreamInfoMap_.find(sinkInputId) == rendererIdStreamInfoMap_.end()) {
             AUDIO_ERR_LOG("move session:%{public}u failed,can not find session", sinkInputId);
+            if (auto serviceCallback = serviceCallback_.lock()) {
+                serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
+            }
+            return;
+        }
+
+        if (!rendererIdStreamInfoMap_.[sinkInputId].streamInfo.isMoveAble) {
+            AUDIO_ERR_LOG("move session:%{public}u failed,session is not moveable.", sourceOutputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
@@ -794,7 +816,9 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
             movingIds_.erase(sessionId);
             return true;
         }
-        sinkInput->SetState(movingIds_[sessionId]); //todo state change log
+        if (movingIds_[sessionId] != rendererIdStreamInfoMap_[sessionId].state) {
+            sinkInput->SetState(movingIds_[sessionId]);
+        }
         movingIds_.erase(sessionId);
     }
     return false;
@@ -846,7 +870,9 @@ void HpaeManager::HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::stri
             movingIds_.erase(sessionId);
             return;
         }
-        moveInfo.sessionInfo.state = movingIds_[sessionId];
+        if (movingIds_[sessionId] != capturerIdStreamInfoMap_[sessionId].state) {
+            moveInfo.sessionInfo.state = movingIds_[sessionId];
+        }
         movingIds_.erase(sessionId);
     }
 

@@ -67,6 +67,7 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
     streamInfo.deviceName = deviceName;
+    streamInfo.isMoveAble = true;
     int32_t ret = IHpaeManager::GetHpaeManager().CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR_INVALID_PARAM, "CreateStream is error");
     return SUCCESS;
