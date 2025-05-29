@@ -135,6 +135,38 @@ HWTEST_F(AudioAdapterManagerUnitTest, HandleStreamMuteStatus_002, TestSize.Level
 }
 
 /**
+ * @tc.name: IsHandleStreamMute_001
+ * @tc.desc: Test IsHandleStreamMute when streamType is STREAM_VOICE_CALL.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_001, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+    bool mute = true;
+    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    int32_t SUCCESS = 0;
+    AudioAdapterManager::GetInstance().IsHandleStreamMute(streamType, mute, streamUsage);
+    EXPECT_TRUE(SUCCESS);
+}
+
+/**
+ * @tc.name: IsHandleStreamMute_002
+ * @tc.desc: Test IsHandleStreamMute when streamType is STREAM_VOICE_CALL.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_002, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+    bool mute = false;
+    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    int32_t ERROR = -1;
+    AudioAdapterManager::GetInstance().IsHandleStreamMute(streamType, mute, streamUsage);
+    EXPECT_TRUE(ERROR);
+}
+
+/**
  * @tc.name: SetOffloadVolume_001
  * @tc.desc: Test SetOffloadVolume.
  * @tc.type: FUNC

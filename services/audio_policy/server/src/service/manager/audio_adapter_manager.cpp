@@ -707,9 +707,7 @@ int32_t AudioAdapterManager::SetInnerStreamMute(AudioStreamType streamType, bool
 {
     AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
     int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
-    if (isSetStreamMute == SUCCESS) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(isSetStreamMute != SUCCESS, SUCCESS, "this stream can't set mute!");
     // set stream mute status to mem.
     volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
 
@@ -740,9 +738,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
 {
     AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
     int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
-    if (isSetStreamMute == SUCCESS) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(isSetStreamMute != SUCCESS, SUCCESS, "this stream can't set mute!");
 
     // set stream mute status to mem.
     volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);

@@ -262,7 +262,7 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
             AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer died");
             isRingDualToneOnPrimarySpeaker_ = false;
             for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-                audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+                audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
             }
             streamsWhenRingDualOnPrimarySpeaker_.clear();
         }
@@ -1194,7 +1194,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
         if (ringerMode != RINGER_MODE_NORMAL &&
             IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->getType()) &&
             streamDesc->newDeviceDescs_.front()->getType() != DEVICE_TYPE_SPEAKER) {
-            audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
+            audioPolicyManager_.SetInnerStreamMute(STREAM_RING, false, streamUsage);
             audioVolumeManager_.SetRingerModeMute(false);
             if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
                 audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
