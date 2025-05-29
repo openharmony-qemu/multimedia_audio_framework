@@ -29,9 +29,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-static constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
-static constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
-
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
@@ -42,9 +39,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     AUDIO_INFO_LOG("sinkinput sessionId %{public}d, channelcount %{public}d, channelLayout %{public}" PRIu64 ", "
         "frameLen %{public}d", nodeInfo.sessionId, inputAudioBuffer_.GetChannelCount(),
         inputAudioBuffer_.GetChannelLayout(), inputAudioBuffer_.GetFrameLen());
-    
-    handleTimeModel_ = std::make_unique<LinearPosTimeModel>();
-    handleTimeModel_->ConfigSampleRate(nodeInfo.samplingRate);
+
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeSinkInputNode_id_" + std::to_string(GetSessionId()) + "_ch_" + std::to_string(GetChannelCount()) +
@@ -229,17 +224,13 @@ uint64_t HpaeSinkInputNode::GetFramesWritten()
 
 int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
 {
-    int64_t timeSec = 0;
-    int64_t timeNsec = 0;
     framePosition = GetFramesWritten();
     if (historyBuffer_) {
         framePosition = framePosition > historyBuffer_->GetCurFrames() * GetNodeInfo().frameLen
                             ? framePosition - historyBuffer_->GetCurFrames() * GetNodeInfo().frameLen
                             : 0;
     }
-    timespec tm{};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
     return SUCCESS;
 }
 
