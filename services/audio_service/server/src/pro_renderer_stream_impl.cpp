@@ -402,10 +402,7 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
     Trace trace("ProRendererStreamImpl::EnqueueBuffer::" + std::to_string(streamIndex_));
     int32_t writeIndex = PopWriteBufferIndex();
-    if (writeIndex < 0) {
-        AUDIO_ERR_LOG("write index is empty.");
-        return ERR_WRITE_BUFFER;
-    }
+    CHECK_AND_RETURN_RET_LOG(writeIndex >= 0, ERR_WRITE_BUFFER, "write index is empty.");
     std::lock_guard lock(peekMutex);
     GetStreamVolume();
     if (processConfig_.streamInfo.encoding == ENCODING_EAC3) {
