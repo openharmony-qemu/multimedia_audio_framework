@@ -453,6 +453,7 @@ int32_t HpaeRendererStreamImpl::UnsetOffloadMode()
 {
     offloadEnable_ = false;
     SyncOffloadMode();
+    IHpaeManager::GetHpaeManager().SetOffloadPolicy(processConfig_.originalSessionId, OFFLOAD_DEFAULT);
     return SUCCESS;
 }
 

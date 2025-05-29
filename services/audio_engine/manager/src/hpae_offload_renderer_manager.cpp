@@ -171,7 +171,7 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
         OnNotifyDfxNodeInfo(true, formatConverterNode_->GetNodeId(), sinkInputNode_->GetNodeInfo());
     }
     // when sinkInput moved, need unable process
-    enableProcess_ = false;
+    enableProcess_ = sinkInputNode_->GetOffloadEnabled();
     // single stream manager
     HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
     nodeInfo.sessionId = sinkInputNode_->GetSessionId();
@@ -552,8 +552,10 @@ int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t
         CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
             "SetOffloadPolicy not find sessionId %{public}u",
             sessionId);
-        enableProcess_ = true;
-        if (sinkOutputNode_) {
+        enableProcess_ = state != OFFLOAD_DEFAULT;
+        sinkInputNode_->SetOffloadEnabled(enableProcess_);
+        // OFFLOAD_DEFAULT do not need set buffersize
+        if (enableProcess_ && sinkOutputNode_) {
             sinkOutputNode_->SetPolicyState(state);
         }
     };

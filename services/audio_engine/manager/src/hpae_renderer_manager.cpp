@@ -1056,6 +1056,22 @@ void HpaeRendererManager::DumpSinkInfo()
     SendRequest(request);
 }
 
+int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
+{
+    auto request = [this, sessionId, state]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::SetOffloadPolicy");
+        AUDIO_INFO_LOG("SetOffloadPolicy sessionId %{public}u, deviceName %{public}s, state %{public}d", sessionId,
+            sinkInfo_.deviceName.c_str(), state);
+        if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            sinkInputNodeMap_[sessionId]->SetOffloadPolicy(state);
+        } else {
+            AUDIO_ERR_LOG("not find sessionId %{public}u", sessionId);
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
