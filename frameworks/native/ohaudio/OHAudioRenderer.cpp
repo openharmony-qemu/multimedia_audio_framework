@@ -393,7 +393,12 @@ OH_AudioStream_Result OH_AudioRenderer_GetFastStatus(OH_AudioRenderer *renderer,
     CHECK_AND_RETURN_RET_LOG(renderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "renderer is nullptr");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(status != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "status is nullptr");
-    *status = (audioRenderer->GetFastStatus()) ? AUDIOSTREAM_FASTSTATUS_FAST : AUDIOSTREAM_FASTSTATUS_NORMAL;
+    OHOS::AudioStandard::FastStatus fastStatus = audioRenderer->GetFastStatus();
+    if (fastStatus == OHOS::AudioStandard::FastStatus::FASTSTATUS_INVALID) {
+        AUDIO_ERR_LOG("This audiorenderer can not get the fast status");
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    }
+    *status = (OH_AudioStream_FastStatus)fastStatus;
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -891,11 +896,10 @@ void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const Aud
     callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_DeviceChangeReason>(reason));
 }
 
-void OHAudioRendererFastStatusChangeCallback::OnFastStatusChange(AudioStreamFastStatus status)
+void OHAudioRendererFastStatusChangeCallback::OnFastStatusChange(FastStatus status)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the function is nullptr");
-
     callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_FastStatus>(status));
 }
 
@@ -923,9 +927,9 @@ int32_t OHAudioRenderer::SetDefaultOutputDevice(DeviceType deviceType)
     return audioRenderer_->SetDefaultOutputDevice(deviceType);
 }
 
-bool OHAudioRenderer::GetFastStatus()
+FastStatus OHAudioRenderer::GetFastStatus()
 {
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, FASTSTATUS_INVALID, "renderer client is nullptr");
     return audioRenderer_->GetFastStatus();
 }
 

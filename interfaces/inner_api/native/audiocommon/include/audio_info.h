@@ -861,6 +861,18 @@ enum State {
     STOPPING
 };
 
+/**
+ * @brief Defines the fast status.
+ */
+enum FastStatus {
+    /** Invalid status */
+    FASTSTATUS_INVALID = -1,
+    /** Normal status */
+    FASTSTATUS_NORMAL,
+    /** Fast status */
+    FASTSTATUS_FAST
+};
+
 struct StreamSwitchingInfo {
     bool isSwitching_ = false;
     State state_ = INVALID;

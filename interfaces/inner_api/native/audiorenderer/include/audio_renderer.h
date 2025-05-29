@@ -155,7 +155,7 @@ public:
      *@param Audio device descriptors after change.
      * since 20
      */
-    virtual void OnFastStatusChange(AudioStreamFastStatus status) = 0;
+    virtual void OnFastStatusChange(FastStatus status) = 0;
 };
 
 class AudioRendererErrorCallback {
@@ -1023,7 +1023,7 @@ public:
      */
     virtual int32_t SetDefaultOutputDevice(DeviceType deviceType) { return 0; };
 
-    virtual bool GetFastStatus() { return false; };
+    virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
 
     /**
      * @brief Mute audio rendering.

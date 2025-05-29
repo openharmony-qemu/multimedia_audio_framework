@@ -1690,9 +1690,19 @@ bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
     return audioPolicyService_.IsStreamActive(streamType);
 }
 
-bool AudioPolicyServer::IsFastStreamSupported(AudioStreamInfo &streamInfo,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+bool AudioPolicyServer::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
 {
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.streamUsage = usage;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = GetPreferredOutputDeviceDescriptors(rendererInfo, false);
+    return audioPolicyService_.IsFastStreamSupported(streamInfo, desc);
+}
+
+bool AudioPolicyServer::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
+{
+    AudioCapturerInfo capturerInfo = {};
+    capturerInfo.sourceType = source;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = GetPreferredInputDeviceDescriptors(capturerInfo);
     return audioPolicyService_.IsFastStreamSupported(streamInfo, desc);
 }
 

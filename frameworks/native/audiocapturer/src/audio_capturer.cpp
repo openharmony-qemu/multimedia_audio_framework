@@ -423,10 +423,10 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
     return SUCCESS;
 }
 
-bool AudioCapturerPrivate::GetFastStatus()
+FastStatus AudioCapturerPrivate::GetFastStatus()
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "currentStream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, FASTSTATUS_INVALID, "currentStream is nullptr");
     return currentStream->GetFastStatus();
 }
 
@@ -699,7 +699,7 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
         interruptCbImpl->StartSwitch();
     }
 
-    bool bFlag = GetFastStatus();
+    FastStatus fastStatus = GetFastStatus();
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
     AUDIO_INFO_LOG("Before %{public}s, restore audio capturer %{public}u", callingFunc.c_str(), sessionID_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
@@ -707,7 +707,7 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
         int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "DeactivateAudioInterrupt Failed");
     } else {
-        FastStatusChangeCallback(bFlag);
+        FastStatusChangeCallback(fastStatus);
     }
 
     // Unblock interrupt callback.
@@ -1656,16 +1656,12 @@ int32_t AudioCapturerPrivate::InitAudioConcurrencyCallback()
     return AudioPolicyManager::GetInstance().SetAudioConcurrencyCallback(sessionID_, audioConcurrencyCallback_);
 }
 
-void AudioCapturerPrivate::FastStatusChangeCallback(bool flag)
+void AudioCapturerPrivate::FastStatusChangeCallback(FastStatus status)
 {
-    bool bRet = GetFastStatus();
-
-    if (bRet != flag) {
-        AudioStreamFastStatus fastStatus = (bRet)
-            ? AudioStreamFastStatus::FASTSTATUS_FAST : AudioStreamFastStatus::FASTSTATUS_NORMAL;
-
+    FastStatus newStatus = GetFastStatus();
+    if (newStatus != status) {
         if (fastStatusChangeCallback_ != nullptr) {
-            fastStatusChangeCallback_->OnFastStatusChange(fastStatus);
+            fastStatusChangeCallback_->OnFastStatusChange(newStatus);
         }
     }
 }
