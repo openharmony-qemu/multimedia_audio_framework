@@ -262,6 +262,16 @@ int32_t HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime)
     AUDIO_INFO_LOG("HpaeSinkInputNode::rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     return historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
 }
+
+void HpaeSinkInputNode::SetOffloadEnabled(bool offloadEnable)
+{
+    offloadEnable_ = offloadEnable;
+}
+
+bool HpaeSinkInputNode::GetOffloadEnabled()
+{
+    return offloadEnable_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

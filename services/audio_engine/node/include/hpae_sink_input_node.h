@@ -53,6 +53,9 @@ public:
     void SetAppUid(int32_t appUid);
     int32_t GetAppUid();
 
+    void SetOffloadEnabled(bool offloadEnable);
+    bool GetOffloadEnabled();
+
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
@@ -71,6 +74,7 @@ private:
     int32_t appUid_ = -1;
 
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
+    bool offloadEnable_ = false;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
 #endif
