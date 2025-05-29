@@ -1065,7 +1065,7 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
         AUDIO_INFO_LOG("SetOffloadPolicy sessionId %{public}u, deviceName %{public}s, state %{public}d", sessionId,
             sinkInfo_.deviceName.c_str(), state);
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
-            sinkInputNodeMap_[sessionId]->SetOffloadPolicy(state);
+            sinkInputNodeMap_[sessionId]->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
         } else {
             AUDIO_ERR_LOG("not find sessionId %{public}u", sessionId);
         }
