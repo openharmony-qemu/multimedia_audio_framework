@@ -88,29 +88,31 @@ int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const Au
     return AudioPortIndex_;
 }
 
-int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, bool isSync)
+int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
 {
     if (audioHandleIndex <= 0) {
         AUDIO_ERR_LOG("Core modules, not allowed to close!");
         return ERROR;
     }
-    AUDIO_INFO_LOG("CloseAudioPort:audioHandleIndex:%{public}d isSync [%{public}d]", audioHandleIndex, isSync);
+    AUDIO_INFO_LOG("CloseAudioPort:audioHandleIndex:%{public}d", audioHandleIndex);
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::CloseAudioPort", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("CloseAudioPort timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace("CloseAudioPort");
     lock_guard<mutex> lock(lock_);
-    if (isSync) {
-        isFinishCloseAudioPort_ = false;
-        IHpaeManager::GetHpaeManager().CloseAudioPort(audioHandleIndex);
-        std::unique_lock<std::mutex> waitLock(callbackMutex_);
-        bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-            return isFinishCloseAudioPort_;  // will be true when got notified.
-        });
-        if (!stopWaiting) {
-            AUDIO_ERR_LOG("CloseAudioPort timeout");
-            return ERROR;
-        }
-    } else {
-        IHpaeManager::GetHpaeManager().CloseAudioPort(audioHandleIndex);
+
+    isFinishCloseAudioPort_ = false;
+    IHpaeManager::GetHpaeManager().CloseAudioPort(audioHandleIndex);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishCloseAudioPort_;  // will be true when got notified.
+    });
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("CloseAudioPort timeout");
+        return ERROR;
     }
+
     AUDIO_INFO_LOG("CloseAudioPort leave");
     return SUCCESS;
 }

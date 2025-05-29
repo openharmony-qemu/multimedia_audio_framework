@@ -541,7 +541,7 @@ void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole r
         if (!(isEcFeatureEnable_ && role == INPUT_DEVICE) && audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
             audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
                 AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
-            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name, true);
+            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name);
         }
         UpdateArmModuleInfo(address, role, moduleInfo);
         if (isEcFeatureEnable_) {
