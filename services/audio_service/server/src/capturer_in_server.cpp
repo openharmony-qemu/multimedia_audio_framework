@@ -441,10 +441,29 @@ int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
-bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
+bool CapturerInServer::CheckBGCapture()
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
+
+    if (PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
+        return true;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Check failed");
+
+    AudioService::GetInstance()->UpdateForegroundState(tokenId, true);
+    bool res = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
+    AUDIO_INFO_LOG("Retry result:%{public}s", (res ? "success" : "fail"));
+    AudioService::GetInstance()->UpdateForegroundState(tokenId, false);
+
+    return res;
+}
+
+bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
     SwitchStreamInfo info = {
         streamIndex_,
         processConfig_.callerUid,
@@ -454,8 +473,7 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
         capturerState,
     };
     if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
-            false, "VerifyBackgroundCapture failed!");
+        CHECK_AND_RETURN_RET_LOG(CheckBGCapture(), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 

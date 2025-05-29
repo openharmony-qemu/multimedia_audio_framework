@@ -68,6 +68,14 @@ public:
         int32_t innerCapId) override;
     int32_t OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId) override;
 
+    void SaveForegroundList(std::vector<std::string> list);
+    // if match, keep uid for speed up, used in create process.
+    bool MatchForegroundList(const std::string &bundleName, uint32_t uid);
+    // used in start process.
+    bool InForegroundList(uint32_t uid);
+    bool UpdateForegroundState(uint32_t appTokenId, bool isActive);
+    void DumpForegroundList(std::string &dumpString);
+
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
@@ -163,6 +171,9 @@ private:
     bool IsMuteSwitchStream(uint32_t sessionId);
 
 private:
+    std::mutex foregroundSetMutex_;
+    std::set<std::string> foregroundSet_;
+    std::set<uint32_t> foregroundUidSet_;
     std::mutex processListMutex_;
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;

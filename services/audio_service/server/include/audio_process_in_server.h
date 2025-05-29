@@ -140,6 +140,7 @@ private:
     int64_t GetLastAudioDuration();
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
+    bool CheckBGCapturer();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
 

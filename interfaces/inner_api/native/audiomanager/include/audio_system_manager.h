@@ -1430,6 +1430,16 @@ public:
     int32_t SetVoiceRingtoneMute(bool isMute);
 
     /**
+     * @brief Set foreground list.
+     *
+     * @param list The foreground list.
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
+     * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
+     */
+    int32_t SetForegroundList(std::vector<std::string> list);
+
+    /**
     * @brief Get standby state.
     *
     * @param sessionId Specifies which stream to be check.

@@ -113,6 +113,7 @@ public:
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) override;
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
+    int32_t SetForegroundList(std::vector<std::string> list) override;
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
