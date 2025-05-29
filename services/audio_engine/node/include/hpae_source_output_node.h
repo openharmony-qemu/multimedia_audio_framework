@@ -39,6 +39,8 @@ public:
     void DisConnectWithInfo(
         const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode, HpaeNodeInfo &nodeInfo) override;
     bool RegisterReadCallback(const std::weak_ptr<ICapturerStreamCallback> &callback);
+    void SetAppUid(int32_t appUid);
+    int32_t GetAppUid();
 private:
     uint64_t GetTimestamp();
 private:
@@ -49,6 +51,7 @@ private:
     std::vector<float> interleveData_;
     std::atomic<uint64_t> framesRead_;
     uint64_t totalFrames_;
+    int32_t appUid_ = -1;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

@@ -212,9 +212,9 @@ HpaeSessionState HpaeSinkInputNode::GetState()
     return state_;
 }
 
-void HpaeSinkInputNode::SetAppUid(int32_t uid)
+void HpaeSinkInputNode::SetAppUid(int32_t appUid)
 {
-    appUid_ = uid;
+    appUid_ = appUid;
 }
 
 int32_t HpaeSinkInputNode::GetAppUid()

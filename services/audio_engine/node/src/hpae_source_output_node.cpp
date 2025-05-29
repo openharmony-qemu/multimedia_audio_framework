@@ -157,7 +157,15 @@ void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<H
 #endif
 }
 
+void HpaeSourceOutputNode::SetAppUid(int32_t appUid)
+{
+    appUid_ = appUid;
+}
 
+int32_t HpaeSourceOutputNode::GetAppUid()
+{
+    return appUid_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
