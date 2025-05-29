@@ -464,7 +464,7 @@ std::vector<uint32_t> AudioPipeManager::GetSessionIdsByUid(uint32_t uid)
         CHECK_AND_CONTINUE_LOG(pipes != nullptr, "pipe is nullptr");
         for (auto &streamDesc : pipes->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-            if (streamDesc->callerUid_ == uid) {
+            if (streamDesc->callerUid_ == static_cast<int32_t>(uid)) {
                 sessionIds.push_back(streamDesc->sessionId_);
             }
         }

@@ -214,9 +214,10 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
     AUDIO_INFO_LOG("Update route %{public}d", descs.front()->deviceType_);
 
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        auto modemMap = pipeManager_->GetModemCommunicationMap().begin();
-        if (modemMap != pipeManager_->GetModemCommunicationMap().end()) {
-            int32_t ret = HandleScoOutputDeviceFetched(pipeManager_->GetModemCommunicationMap().begin()->second, reason);
+        auto modemCommunicationMap = pipeManager_->GetModemCommunicationMap();
+        auto modemMap = modemCommunicationMap.begin();
+        if (modemMap != modemCommunicationMap.end()) {
+            int32_t ret = HandleScoOutputDeviceFetched(modemCommunicationMap.begin()->second, reason);
             AUDIO_INFO_LOG("HandleScoOutputDeviceFetched %{public}d", ret);
         }
     }
