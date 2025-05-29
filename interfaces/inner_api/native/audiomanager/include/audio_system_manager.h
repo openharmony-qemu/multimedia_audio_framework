@@ -1615,6 +1615,42 @@ public:
     * @test
     */
     int32_t StopGroup(int32_t workgroupId);
+
+    /**
+    * @brief get volume event from register callback.
+    *
+    * @return Returns std::unordered_map<AudioStreamType, VolumeEvent>.
+    * @test
+    */
+    std::unordered_map<AudioStreamType, VolumeEvent> GetVolumeEvent();
+ 
+    /**
+    * @brief set latest volume event when callback.
+    *
+    * @param type audio stream type.
+    * @param event volume event.
+    * @test
+    */
+    void SetVolumeEvent(AudioStreamType type, VolumeEvent event);
+ 
+    /**
+    * @brief get renderer change info from register callback.
+    *
+    * @return Returns std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>.
+    * @test
+    */
+    std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
+        GetAudioRendererChangeInfo();
+ 
+    /**
+    * @brief set latest renderer change info when callback.
+    *
+    * @param type audio stream type.
+    * @param info renderer change info.
+    * @test
+    */
+    void SetAudioRendererChangeInfo(AudioStreamType type, std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info);
+
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:
@@ -1673,6 +1709,39 @@ private:
     std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;
 
     std::shared_ptr<WakeUpCallbackImpl> remoteWakeUpCallback_;
+
+    bool IsValidStreamType(AudioStreamType type);
+    bool IsValidToStartGroup();
+    void InitWorkgroupState();
+    class VolumeKeyEventCallbackImpl : public VolumeKeyEventCallback {
+    public:
+        VolumeKeyEventCallbackImpl() {};
+        ~VolumeKeyEventCallbackImpl() {};
+    private:
+        void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+    };
+ 
+    std::unordered_map<AudioStreamType, VolumeEvent> volumeEventMap_;
+    std::mutex volumeEventMutexMap_;
+    void AttachVolumeKeyEventListener();
+    void DetachVolumeKeyEventListener();
+    std::shared_ptr<VolumeKeyEventCallbackImpl> volumeKeyEventCallback_ = nullptr;
+ 
+    class AudioRendererStateChangeCallbackImpl : public AudioRendererStateChangeCallback {
+    public:
+        AudioRendererStateChangeCallbackImpl() {};
+        ~AudioRendererStateChangeCallbackImpl() {};
+    private:
+        void OnRendererStateChange(
+            const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+    };
+    
+    std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
+        audioRendererChangeInfoMap_;
+    std::mutex audioRendererChangeInfoMapMutex_;
+    void AttachAudioRendererEventListener();
+    void DetachAudioRendererEventListener();
+    std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioRendererStateChangeCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

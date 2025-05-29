@@ -36,6 +36,11 @@ int32_t AudioWorkgroup::GetWorkgroupId()
     return workgroupId;
 }
 
+uint32_t AudioWorkgroup::GetThreadsNums()
+{
+    return threads.size();
+}
+
 int32_t AudioWorkgroup::AddThread(int32_t tid)
 {
     ConcurrentTask::IntervalReply reply;

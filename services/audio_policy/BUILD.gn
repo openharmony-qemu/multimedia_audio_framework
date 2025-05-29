@@ -838,6 +838,12 @@ ohos_shared_library("audio_policy_common") {
   part_name = "audio_framework"
 }
 
+config("audio_policy_ipc_config") {
+  include_dirs = [
+    "common/include",
+  ]
+}
+
 ohos_shared_library("audio_policy_ipc") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -852,7 +858,7 @@ ohos_shared_library("audio_policy_ipc") {
   install_enable = true
   sources = []
 
-  public_configs = []
+  public_configs = [ ":audio_policy_ipc_config" ]
 
   external_deps = []
 

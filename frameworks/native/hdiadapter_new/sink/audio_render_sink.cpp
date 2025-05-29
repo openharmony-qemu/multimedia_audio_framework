@@ -742,6 +742,8 @@ AudioPortPin AudioRenderSink::GetAudioPortPin(void) const noexcept
             return PIN_OUT_BLUETOOTH_SCO;
         case DEVICE_TYPE_USB_HEADSET:
             return PIN_OUT_USB_EXT;
+        case DEVICE_TYPE_HDMI:
+             return PIN_OUT_HDMI;
         case DEVICE_TYPE_NONE:
             return PIN_NONE;
         default:

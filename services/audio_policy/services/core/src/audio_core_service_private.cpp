@@ -214,9 +214,10 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
     AUDIO_INFO_LOG("Update route %{public}d", descs.front()->deviceType_);
 
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        auto modemMap = pipeManager_->GetModemCommunicationMap().begin();
-        if (modemMap != pipeManager_->GetModemCommunicationMap().end()) {
-            int32_t ret = HandleScoOutputDeviceFetched(pipeManager_->GetModemCommunicationMap().begin()->second, reason);
+        auto modemCommunicationMap = pipeManager_->GetModemCommunicationMap();
+        auto modemMap = modemCommunicationMap.begin();
+        if (modemMap != modemCommunicationMap.end()) {
+            int32_t ret = HandleScoOutputDeviceFetched(modemCommunicationMap.begin()->second, reason);
             AUDIO_INFO_LOG("HandleScoOutputDeviceFetched %{public}d", ret);
         }
     }
@@ -338,12 +339,13 @@ int32_t AudioCoreService::SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDesc
 
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
         audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
-        AUDIO_WARNING_LOG("A2dp device [%{public}s] is already active",
-            GetEncryptAddr(deviceDescriptor->macAddress_).c_str());
+        AUDIO_WARNING_LOG("A2dp device [%{public}s] [%{public}s] is already active",
+            GetEncryptAddr(deviceDescriptor->macAddress_).c_str(), deviceDescriptor->deviceName_.c_str());
         return SUCCESS;
     }
 
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
+    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_,
+        deviceDescriptor->deviceName_);
     if (result != SUCCESS) {
         audioActiveDevice_.SetActiveBtDeviceMac(lastActiveA2dpDevice);
         audioPolicyManager_.SetActiveDeviceDescriptor(lastDevice);

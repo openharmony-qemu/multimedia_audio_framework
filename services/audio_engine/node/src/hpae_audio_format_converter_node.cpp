@@ -123,6 +123,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
             converterOutput_.GetFrameLen() * sizeof(float) * channelConverter_.GetOutChannelInfo().numChannels);
     }
 #endif
+    converterOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &converterOutput_;
 }
 
@@ -304,6 +305,7 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
         silenceData_.ReConfig(outPcmBufferInfo);
         // reconfig need reset valid
         silenceData_.SetBufferValid(false);
+        silenceData_.SetBufferSilence(true);
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = GetNodeStatusCallback().lock()) {
             callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), GetNodeInfo());

@@ -25,6 +25,7 @@ HpaePluginNode::HpaePluginNode(HpaeNodeInfo& nodeInfo)
 {
     silenceData_.Reset();
     silenceData_.SetBufferValid(false);
+    silenceData_.SetBufferSilence(true);
 }
 
 void HpaePluginNode::DoProcess()

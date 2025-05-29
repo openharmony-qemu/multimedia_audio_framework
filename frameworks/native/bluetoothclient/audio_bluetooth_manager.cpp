@@ -161,11 +161,12 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSource()
     A2dpInBluetoothDeviceManager::ClearAllA2dpInStreamInfo();
 }
 
-int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
+int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress, const std::string deviceName)
 {
     std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    AUDIO_WARNING_LOG("incoming device:%{public}s, current device:%{public}s",
-        GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeA2dpDevice_.GetDeviceAddr()).c_str());
+    AUDIO_WARNING_LOG("incoming device:%{public}s name:%{public}s, current device:%{public}s",
+        GetEncryptAddr(macAddress).c_str(), deviceName.c_str(),
+        GetEncryptAddr(activeA2dpDevice_.GetDeviceAddr()).c_str());
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
     BluetoothRemoteDevice device;
     if (macAddress != "") {

@@ -46,9 +46,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     sessionId = processConfig.originalSessionId;
     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK ||
         processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
-        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
-        AUDIO_ERR_LOG("Create [%{public}d] type renderer:[%{public}u] error",
-            managerType_, processConfig.originalSessionId);
+        sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     }
     processConfig.originalSessionId = sessionId;
     AUDIO_INFO_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
@@ -184,11 +182,7 @@ int32_t HpaeAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processCo
             deviceName = PRIMARY_WAKEUP;
         }
         if (processConfig.isInnerCapturer) {
-            if (processConfig.innerCapMode == MODERN_INNER_CAP) {
-                deviceName = std::string(INNER_CAPTURER_SINK) + std::to_string(processConfig.innerCapId);
-            } else {
-                deviceName = PRO_INNER_CAPTURER_SOURCE;
-            }
+            deviceName = std::string(INNER_CAPTURER_SINK) + std::to_string(processConfig.innerCapId);
         } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
             deviceName = std::string(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
         }
@@ -208,7 +202,7 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
     CHECK_AND_RETURN_RET_LOG(managerType_ == RECORDER, ERROR, "Invalid managerType:%{public}d", managerType_);
     uint32_t sessionId = processConfig.originalSessionId;
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
-        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+        sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
         AUDIO_ERR_LOG("Create capturer originalSessionId is error %{public}d, get new sessionId:%{public}u",
             processConfig.originalSessionId, sessionId);
     }

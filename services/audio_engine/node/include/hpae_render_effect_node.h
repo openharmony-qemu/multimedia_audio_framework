@@ -45,10 +45,14 @@ private:
     int32_t ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo);
     void ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo, ModifyAudioEffectChainInfoReason reason);
     void UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo);
+    bool IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer);
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer effectOutput_;
     HpaeNodeInfo nodeInfo_;
     std::string sceneType_ = "EFFECT_NONE";
+    int64_t silenceDataUs_ = 0;
+    bool isByPassEffect_ = false;
+    bool isDisplayEffectZeroVolume_ = false;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;

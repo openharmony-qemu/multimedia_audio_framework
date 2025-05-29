@@ -23,6 +23,7 @@
 #include "hpae_node_common.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_utils.h"
+#include "audio_volume.h"
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
@@ -491,6 +492,7 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         }
+        HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
         SetSessionFade(sessionId, OPERATION_STARTED);
@@ -1072,6 +1074,23 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
     return SUCCESS;
 }
 
+int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
+{
+    if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
+        return ERR_INVALID_OPERATION;
+    }
+    auto &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
+    struct VolumeValues volumes;
+    auto audioVolume = AudioVolume::GetInstance();
+    float curVolume = audioVolume->GetVolume(sessionId, nodeInfo.streamType, sinkInfo_.deviceClass, &volumes);
+    auto isZeroVolume = audioVolume->IsSameVolume(0.0f, curVolume);
+    AUDIO_INFO_LOG("session %{public}u, stream %{public}d, is zero volume %{public}d",
+        sessionId, nodeInfo.streamType, isZeroVolume);
+    if (!isZeroVolume) {
+        return outputCluster_->SetPriPaPower();
+    }
+    return SUCCESS;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
