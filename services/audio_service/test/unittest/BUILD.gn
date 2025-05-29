@@ -371,6 +371,7 @@ ohos_unittest("audio_service_unit_test") {
     "googletest:gtest",
     "hilog:libhilog",
     "pulseaudio:pulse",
+    "samgr:samgr_proxy",
     "safwk:system_ability_fwk",
     "qos_manager:concurrent_task_client",
   ]
