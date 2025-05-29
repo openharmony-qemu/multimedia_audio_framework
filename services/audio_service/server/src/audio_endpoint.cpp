@@ -62,33 +62,6 @@ namespace {
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 }
 
-AudioSampleFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
-{
-    AudioSampleFormat adapterFormat;
-    switch (format) {
-        case AudioSampleFormat::SAMPLE_U8:
-            adapterFormat = AudioSampleFormat::SAMPLE_U8;
-            break;
-        case AudioSampleFormat::SAMPLE_S16LE:
-            adapterFormat = AudioSampleFormat::SAMPLE_S16LE;
-            break;
-        case AudioSampleFormat::SAMPLE_S24LE:
-            adapterFormat = AudioSampleFormat::SAMPLE_S24LE;
-            break;
-        case AudioSampleFormat::SAMPLE_S32LE:
-            adapterFormat = AudioSampleFormat::SAMPLE_S32LE;
-            break;
-        case AudioSampleFormat::SAMPLE_F32LE:
-            adapterFormat = AudioSampleFormat::SAMPLE_F32LE;
-            break;
-        default:
-            adapterFormat = AudioSampleFormat::INVALID_WIDTH;
-            break;
-    }
-
-    return adapterFormat;
-}
-
 std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag)
 {
     // All primary sinks share one endpoint
@@ -457,7 +430,7 @@ bool AudioEndpointInner::ConfigInputPoint(const AudioDeviceDescriptor &deviceInf
     IAudioSourceAttr attr = {};
     attr.sampleRate = dstStreamInfo_.samplingRate;
     attr.channel = dstStreamInfo_.channels;
-    attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format);
+    attr.format = dstStreamInfo_.format;
     attr.deviceNetworkId = deviceInfo.networkId_.c_str();
     attr.deviceType = deviceInfo.deviceType_;
     attr.audioStreamFlag = endpointType_ == TYPE_VOIP_MMAP ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
@@ -665,7 +638,7 @@ void AudioEndpointInner::InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDes
     }
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
-    attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
+    attr.format = dstStreamInfo_.format; // SAMPLE_S16LE = 1
     attr.deviceNetworkId = deviceInfo.networkId_.c_str();
     attr.deviceType = static_cast<int32_t>(deviceInfo.deviceType_);
     attr.audioStreamFlag = endpointType_ == TYPE_VOIP_MMAP ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;

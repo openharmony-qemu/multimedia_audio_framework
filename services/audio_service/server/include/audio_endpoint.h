@@ -32,7 +32,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioSampleFormat ConvertToHdiAdapterFormat(AudioSampleFormat format);
 // When AudioEndpoint is offline, notify the owner.
 class IAudioEndpointStatusListener {
 public:
