@@ -56,6 +56,7 @@ typedef struct RemoteAdapterWrapper {
 
     sptr<RemoteIAudioAdapter> adapter_ = nullptr;
     std::string adapterName_ = "";
+    std::mutex adapterMtx_;
     RemoteAudioAdapterDescriptor adapterDesc_ = {};
     std::unordered_set<uint32_t> hdiRenderIds_;
     std::unordered_set<uint32_t> hdiCaptureIds_;

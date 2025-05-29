@@ -35,6 +35,7 @@ typedef struct OHOS::HDI::Audio_Bluetooth::AudioProxyManager BtAudioProxyManager
 
 typedef struct BluetoothAdapterWrapper {
     BtAudioAdapter *adapter_ = nullptr;
+    std::mutex adapterMtx_;
     BtAudioAdapterDescriptor adapterDesc_ = {};
     std::unordered_map<uint32_t, BtAudioRender *> renders_;
     std::unordered_map<uint32_t, BtAudioCapture *> captures_;
