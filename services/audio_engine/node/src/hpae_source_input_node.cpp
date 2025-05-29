@@ -84,7 +84,8 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
         inputAudioBufferMap_.at(sourceBufferType).SetSourceBufferType(sourceBufferType);
         frameByteSizeMap_.emplace(
             sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
-        nodeInfoMap_[sourceBufferType].frameLen = FRAME_DURATION_DEFAULT * nodeInfo.samplingRate / MILLISECOND_PER_SECOND;
+        nodeInfoMap_[sourceBufferType].frameLen =
+            FRAME_DURATION_DEFAULT * nodeInfo.samplingRate / MILLISECOND_PER_SECOND;
         capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
         fdescMap_.emplace(sourceBufferType,
             FrameDesc{capturerFrameDataMap_.at(sourceBufferType).data(), frameByteSizeMap_.at(sourceBufferType)});
