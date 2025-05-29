@@ -433,8 +433,6 @@ void HpaeCapturerManager::Process()
     }
 }
 
-
-
 void HpaeCapturerManager::UpdateAppsUidAndSessionId()
 {
     appsUid_.clear();
