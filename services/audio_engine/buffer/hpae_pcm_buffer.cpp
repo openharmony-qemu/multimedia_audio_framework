@@ -276,7 +276,25 @@ bool HpaePcmBuffer::UpdateWritePos(size_t writePos)
 
 void HpaePcmBuffer::SetBufferValid(bool valid)
 {
-    pcmBufferInfo_.isValid = valid;
+    if (valid) {
+        pcmBufferInfo_.state &= ~PCM_BUFFER_STATE_INVALID;
+    } else {
+        pcmBufferInfo_.state |= PCM_BUFFER_STATE_INVALID;
+    }
+}
+
+void HpaePcmBuffer::SetBufferSilence(bool silence)
+{
+    if (silence) {
+        pcmBufferInfo_.state |= PCM_BUFFER_STATE_SILENCE;
+    } else {
+        pcmBufferInfo_.state &= ~PCM_BUFFER_STATE_SILENCE;
+    }
+}
+
+void HpaePcmBuffer::SetBufferState(uint32_t state)
+{
+    pcmBufferInfo_.state = state;
 }
 
 size_t HpaePcmBuffer::GetCurFrames() const

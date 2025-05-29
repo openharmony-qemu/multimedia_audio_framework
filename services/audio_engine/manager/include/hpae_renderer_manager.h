@@ -116,6 +116,7 @@ private:
     void InitManager();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();
+    int32_t HandlePriPaPower(uint32_t sessionId);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;

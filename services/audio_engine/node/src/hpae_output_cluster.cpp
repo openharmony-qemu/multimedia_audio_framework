@@ -247,6 +247,11 @@ int32_t HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
 }
+
+int32_t HpaeOutputCluster::SetPriPaPower(void)
+{
+    return hpaeSinkOutputNode_->RenderSinkSetPriPaPower();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

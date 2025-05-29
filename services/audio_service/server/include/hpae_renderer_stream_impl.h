@@ -117,6 +117,7 @@ private:
     // buffer mode, write or callback
     bool isCallbackMode_ = true; // true is callback buffer mode, false is write buffer mode
     std::unique_ptr<AudioRingCache> ringBuffer_ = nullptr; // used by write buffer mode
+    FILE *dumpEnqueueIn_ = nullptr;
     // buffer mode, write or callback end
 };
 } // namespace AudioStandard
