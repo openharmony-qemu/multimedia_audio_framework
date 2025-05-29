@@ -59,6 +59,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
     inputAudioBufferMap_.at(sourceBufferType).SetSourceBufferType(sourceBufferType);
     frameByteSizeMap_.emplace(
         sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
+    nodeInfoMap_[sourceBufferType].frameLen = FRAME_DURATION_DEFAULT * nodeInfo.samplingRate / MILLISECOND_PER_SECOND;
     capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
     outputStreamMap_.emplace(sourceBufferType, this);
 
@@ -83,6 +84,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
         inputAudioBufferMap_.at(sourceBufferType).SetSourceBufferType(sourceBufferType);
         frameByteSizeMap_.emplace(
             sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
+        nodeInfoMap_[sourceBufferType].frameLen = FRAME_DURATION_DEFAULT * nodeInfo.samplingRate / MILLISECOND_PER_SECOND;
         capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
         fdescMap_.emplace(sourceBufferType,
             FrameDesc{capturerFrameDataMap_.at(sourceBufferType).data(), frameByteSizeMap_.at(sourceBufferType)});
@@ -102,9 +104,11 @@ void HpaeSourceInputNode::SetBufferValid(const HpaeSourceBufferType &bufferType,
     CHECK_AND_RETURN_LOG(inputAudioBufferMap_.find(bufferType) != inputAudioBufferMap_.end(),
         "set buffer valid with error type");
     inputAudioBufferMap_.at(bufferType).SetBufferValid(true);
-    if (frameByteSizeMap_.at(bufferType) != replyBytes) {
-        AUDIO_WARNING_LOG("DoProcess(), request size[%{public}zu], reply size[%{public}" PRIu64 "]",
-            frameByteSizeMap_.at(bufferType), replyBytes);
+    uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
+        (uint32_t)GetSizeFromFormat(nodeInfoMap_.at(bufferType).format);
+    if (replyBytes != byteSize) {
+        AUDIO_WARNING_LOG("DoProcess(), request size[%{public}zu][%{public}u], reply size[%{public}" PRIu64 "]",
+            frameByteSizeMap_.at(bufferType), byteSize, replyBytes);
         AUDIO_WARNING_LOG("DoProcess(), if reply != request, just drop now");
         inputAudioBufferMap_.at(bufferType).SetBufferValid(false);
     }
