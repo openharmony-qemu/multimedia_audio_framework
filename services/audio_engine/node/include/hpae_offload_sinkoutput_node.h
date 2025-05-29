@@ -99,8 +99,8 @@ private:
     AudioOffloadType hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
     struct OffloadPolicyTask {
         bool flag = false; // indicate if task exsit
-        AudioOffloadType state;
-        TimePoint time;
+        AudioOffloadType state = OFFLOAD_DEFAULT;
+        TimePoint time = ClockTime::GetCurNano();
     } setPolicyStateTask_;
 
     bool firstWriteHdi_ = true;

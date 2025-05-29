@@ -436,8 +436,8 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     HighResolutionTimer timer;
     timer.Start();
     intervalTimer_.Stop();
-    uint64_t interval = intervalTimer_.Elapsed();
-    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderFrame interval: %{public}" PRIu64 " ms",
+    int64_t interval = intervalTimer_.Elapsed();
+    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderFrame interval: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     auto now = std::chrono::high_resolution_clock::now();
@@ -472,8 +472,8 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
     }
     timer.Stop();
-    uint64_t elapsed = timer.Elapsed();
-    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode :name %{public}s, RenderFrame elapsed time: %{public}" PRIu64 " ms",
+    int64_t elapsed = timer.Elapsed();
+    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode :name %{public}s, RenderFrame elapsed time: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), elapsed);
     intervalTimer_.Start();
 #endif
@@ -499,7 +499,7 @@ uint64_t HpaeOffloadSinkOutputNode::CalcOffloadCacheLenInHdi()
 {
     auto now = std::chrono::high_resolution_clock::now();
     uint64_t time = now > hdiPos_.second ?
-        std::chrono::duration_cast<std::chrono::microseconds>(now - hdiPos_.second).count() : 0;
+        static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(now - hdiPos_.second).count()) : 0;
     uint64_t hdiPos = hdiPos_.first + time;
     uint64_t cacheLenInHdi = writePos_ > hdiPos ? (writePos_ - hdiPos) : 0;
     AUDIO_DEBUG_LOG("offload latency: %{public}" PRIu64 " write pos: %{public}" PRIu64
