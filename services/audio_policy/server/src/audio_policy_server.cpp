@@ -464,7 +464,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
-        AudioStreamType streamInFocusBeforeTran = streamInFocus;
+        streamInFocusBeforeTran = streamInFocus;
         ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
