@@ -51,7 +51,7 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
 void HpaeSinkOutputNode::HandleRemoteTiming()
 {
     remoteTimer_.Stop();
-    uint64_t remoteElapsed = remoteTimer_.Elapsed();
+    int64_t remoteElapsed = remoteTimer_.Elapsed();
     auto now = std::chrono::high_resolution_clock::now();
     remoteTimePoint_ += std::chrono::milliseconds(20);  // 20ms frameLen, need optimize
     std::this_thread::sleep_for(remoteSleepTime_);

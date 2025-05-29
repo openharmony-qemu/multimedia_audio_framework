@@ -59,16 +59,14 @@ public:
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
-    bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer inputAudioBuffer_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     std::vector<int8_t> interleveData_;
-    std::atomic<uint64_t> framesWritten_;
+    uint64_t framesWritten_;
     uint64_t totalFrames_;
-    std::unique_ptr<LinearPosTimeModel> handleTimeModel_;
     bool isDrain_ = false;
     HpaeSessionState state_ = HPAE_SESSION_NEW;
     int32_t appUid_ = -1;

@@ -195,8 +195,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
         "audioRendererSink_ init failed, errCode is %{public}d", ret);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return ret;
@@ -216,8 +216,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkDeInit(void)
     HdiAdapterManager::GetInstance().ReleaseId(renderId_);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return SUCCESS;
@@ -237,8 +237,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkFlush(void)
         "audioRendererSink_ flush failed, errCode is %{public}d", ret);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkFlush Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkFlush Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return ret;
@@ -263,8 +263,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStart(void)
     OffloadSetHdiVolume();
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     SetSinkState(STREAM_MANAGER_RUNNING);
@@ -287,8 +287,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
         "audioRendererSink_ stop failed, errCode is %{public}d", ret);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     SetSinkState(STREAM_MANAGER_SUSPENDED);
