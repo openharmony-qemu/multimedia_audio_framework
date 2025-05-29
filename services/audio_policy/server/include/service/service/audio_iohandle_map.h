@@ -49,9 +49,8 @@ public:
     bool CheckIOHandleExist(std::string moduleName);
 
     int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
-    int32_t ClosePortAndEraseIOHandle(const std::string &moduleName, bool isSync = false);
-    int32_t ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo,
-        bool isSync = false);
+    int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
+    int32_t ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
 
     void NotifyUnmutePort();
     void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync, bool isSleepEnabled = true);

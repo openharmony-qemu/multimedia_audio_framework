@@ -1231,14 +1231,14 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     return ioHandle;
 }
 
-int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex, bool isSync)
+int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex)
 {
     AUDIO_INFO_LOG("IoHandle: %{public}u, paIndex: %{public}u, curCount: %{public}d",
         ioHandle, paIndex, curActiveCount_);
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ERROR, "audioServerProxy_ null");
     curActiveCount_--;
-    int32_t ret = audioServiceAdapter_->CloseAudioPort(paIndex, isSync);
+    int32_t ret = audioServiceAdapter_->CloseAudioPort(paIndex);
     AudioIOHandle tempHandle = ioHandle;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     audioServerProxy_->DestroyHdiPort(ioHandle);

@@ -206,7 +206,7 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     return SUCCESS;
 }
 
-int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleName, bool isSync)
+int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleName)
 {
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), ERROR,
@@ -219,7 +219,7 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
 
     AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
         moduleName.c_str(), ioHandle, paIndex);
-    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, paIndex, isSync);
+    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, paIndex);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     return SUCCESS;
 }
@@ -301,7 +301,7 @@ void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &por
 }
 
 int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo,
-    const AudioModuleInfo &moduleInfo, bool isSync)
+    const AudioModuleInfo &moduleInfo)
 {
     std::string oldModuleName = pipeInfo->moduleInfo_.name;
     AudioIOHandle ioHandle;
@@ -312,7 +312,7 @@ int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeI
     AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
         oldModuleName.c_str(), ioHandle, pipeInfo->paIndex_);
     int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle,
-        pipeInfo->paIndex_, isSync);
+        pipeInfo->paIndex_);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
 
     uint32_t paIndex = 0;

@@ -81,8 +81,7 @@ HWTEST(PulseAudioServiceAdapterImplUnitTest, PulseAudioServiceAdapterImplUnitTes
     pulseAudioServiceAdapterImpl->mContext = nullptr;
 
     int32_t audioHandleIndex = 0;
-    bool isSync = true;
-    auto ret = pulseAudioServiceAdapterImpl->CloseAudioPort(audioHandleIndex, isSync);
+    auto ret = pulseAudioServiceAdapterImpl->CloseAudioPort(audioHandleIndex);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -108,8 +107,7 @@ HWTEST(PulseAudioServiceAdapterImplUnitTest, PulseAudioServiceAdapterImplUnitTes
     ASSERT_NE(pulseAudioServiceAdapterImpl->mContext, nullptr);
 
     int32_t audioHandleIndex = 5;
-    bool isSync = true;
-    auto ret = pulseAudioServiceAdapterImpl->CloseAudioPort(audioHandleIndex, isSync);
+    auto ret = pulseAudioServiceAdapterImpl->CloseAudioPort(audioHandleIndex);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -135,8 +133,7 @@ HWTEST(PulseAudioServiceAdapterImplUnitTest, PulseAudioServiceAdapterImplUnitTes
     ASSERT_NE(pulseAudioServiceAdapterImpl->mContext, nullptr);
 
     int32_t audioHandleIndex = 5;
-    bool isSync = false;
-    auto ret = pulseAudioServiceAdapterImpl->CloseAudioPort(audioHandleIndex, isSync);
+    auto ret = pulseAudioServiceAdapterImpl->CloseAudioPort(audioHandleIndex);
     EXPECT_EQ(ret, ERROR);
 }
 

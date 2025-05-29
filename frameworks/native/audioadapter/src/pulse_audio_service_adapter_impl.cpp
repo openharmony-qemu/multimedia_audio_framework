@@ -209,9 +209,13 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
     return userData->idx;
 }
 
-int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, bool isSync)
+int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
 {
     AUDIO_INFO_LOG("try to close module:%{public}d", audioHandleIndex);
+    AudioXCollie audioXCollie("PulseAudioServiceAdapterImpl::CloseAudioPort", PA_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("CloseAudioPort timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
 
     PaLockGuard palock(mMainLoop);
@@ -224,18 +228,13 @@ int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex, b
         AUDIO_ERR_LOG("Core modules, not allowed to close!");
         return ERROR;
     }
-    pa_operation *operation;
-    if (isSync) {
-        operation = pa_context_unload_module(mContext, audioHandleIndex, PaUnloadModuleCb,
-            reinterpret_cast<void*>(this));
-        CHECK_AND_RETURN_RET_LOG(operation, ERROR, "pa_context_unload_module sync returned nullptr!");
-        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-            pa_threaded_mainloop_wait(mMainLoop);
-            if (pa_operation_get_state(operation) != PA_OPERATION_RUNNING) {break;}
-        }
-    } else {
-        operation = pa_context_unload_module(mContext, audioHandleIndex, nullptr, nullptr);
-        CHECK_AND_RETURN_RET_LOG(operation, ERROR, "pa_context_unload_module returned nullptr!");
+    pa_operation *operation = nullptr;
+    operation = pa_context_unload_module(mContext, audioHandleIndex, PaUnloadModuleCb,
+        reinterpret_cast<void*>(this));
+    CHECK_AND_RETURN_RET_LOG(operation, ERROR, "pa_context_unload_module sync returned nullptr!");
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(mMainLoop);
+        if (pa_operation_get_state(operation) != PA_OPERATION_RUNNING) {break;}
     }
 
     pa_operation_unref(operation);

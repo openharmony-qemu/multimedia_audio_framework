@@ -80,7 +80,7 @@ public:
 
     virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
 
-    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID, bool isSync = false) = 0;
+    virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID) = 0;
 
     virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name) = 0;
 

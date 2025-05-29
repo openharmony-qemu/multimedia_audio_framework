@@ -34,7 +34,7 @@ public:
     bool Connect() override;
     uint32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) override;
     int32_t OpenAudioPort(std::string audioPortName,  const AudioModuleInfo& audioModuleInfo) override;
-    int32_t CloseAudioPort(int32_t audioHandleIndex, bool isSync = false) override;
+    int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     int32_t SetDefaultSink(std::string name) override;
     int32_t SetDefaultSource(std::string name) override;
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
