@@ -1747,8 +1747,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string 
             sceneTypeToEffectChainMap_[pairSceneTypeAndDeviceKey] != nullptr &&
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
             sceneTypeToEffectChainMap_[pairSceneTypeAndDeviceKey]) {
-            std::set<std::string> sessions = scenePair.second;
-            FindMaxEffectChannels(scenePair.first, sessions, channels, channelLayout);
+            FindMaxEffectChannels(scenePair.first, scenePair.second, channels, channelLayout);
         }
     }
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
