@@ -256,6 +256,14 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeForSwitchDevice_001, TestSize.Lev
     deviceDescriptor.deviceType_ = DEVICE_TYPE_DP;
     audioAdapterManager->SetVolumeForSwitchDevice(deviceDescriptor);
     EXPECT_EQ(audioAdapterManager->currentActiveDevice_.deviceType_, DEVICE_TYPE_DP);
+
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioAdapterManager->SetVolumeForSwitchDevice(deviceDescriptor);
+    EXPECT_EQ(audioAdapterManager->currentActiveDevice_.deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioAdapterManager->SetVolumeForSwitchDevice(deviceDescriptor);
+    EXPECT_EQ(audioAdapterManager->currentActiveDevice_.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
 }
 
 /**
