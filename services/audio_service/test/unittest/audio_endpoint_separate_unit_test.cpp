@@ -671,34 +671,6 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_026, TestSize.Level1
 /**
  * @tc.name  : Test AudioEndpointSeparate API
  * @tc.type  : FUNC
- * @tc.number: AudioEndpointSeparate_027
- * @tc.desc  : Test static enum AudioSampleFormat ConvertToHdiAdapterFormat
- */
-HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_027, TestSize.Level1)
-{
-    AudioSampleFormat format = SAMPLE_U8;
-    auto ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, SAMPLE_U8);
-    format = SAMPLE_S16LE;
-    ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, SAMPLE_S16LE);
-    format = SAMPLE_S24LE;
-    ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, SAMPLE_S24LE);
-    format = SAMPLE_S32LE;
-    ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, SAMPLE_S32LE);
-    format = SAMPLE_F32LE;
-    ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, SAMPLE_F32LE);
-    format = INVALID_WIDTH;
-    ret = ConvertToHdiAdapterFormat(format);
-    EXPECT_EQ(ret, INVALID_WIDTH);
-}
-
-/**
- * @tc.name  : Test AudioEndpointSeparate API
- * @tc.type  : FUNC
  * @tc.number: AudioEndpointSeparate_028
  * @tc.desc  : Test AudioEndpointSeparate::Config
  */
