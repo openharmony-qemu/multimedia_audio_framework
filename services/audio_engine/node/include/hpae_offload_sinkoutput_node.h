@@ -100,7 +100,7 @@ private:
     struct OffloadPolicyTask {
         bool flag = false; // indicate if task exsit
         AudioOffloadType state = OFFLOAD_DEFAULT;
-        TimePoint time = ClockTime::GetCurNano();
+        TimePoint time;
     } setPolicyStateTask_;
 
     bool firstWriteHdi_ = true;
