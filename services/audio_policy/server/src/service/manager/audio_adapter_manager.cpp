@@ -732,7 +732,7 @@ int32_t AudioAdapterManager::IsHandleStreamMute(AudioStreamType streamType, bool
             streamType, mute);
         return SUCCESS;
     }
-    return ERROR; 
+    return ERROR;
 }
 
 int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute,
