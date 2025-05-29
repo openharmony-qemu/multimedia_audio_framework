@@ -146,8 +146,8 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_001, TestSize.Level1)
     bool mute = true;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t SUCCESS = 0;
-    AudioAdapterManager::GetInstance().IsHandleStreamMute(streamType, mute, streamUsage);
-    EXPECT_TRUE(SUCCESS);
+    int32_t result = audioAdapterManager_->IsHandleStreamMute(streamType, mute, streamUsage);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -162,8 +162,8 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_002, TestSize.Level1)
     bool mute = false;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t ERROR = -1;
-    AudioAdapterManager::GetInstance().IsHandleStreamMute(streamType, mute, streamUsage);
-    EXPECT_TRUE(ERROR);
+    int32_t result = audioAdapterManager_->IsHandleStreamMute(streamType, mute, streamUsage);
+    EXPECT_EQ(result, ERROR);
 }
 
 /**
