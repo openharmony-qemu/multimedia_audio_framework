@@ -14,8 +14,9 @@
  */
 
 #include "multimedia_audio_volume_group_manager_impl.h"
-#include "cj_lambda.h"
+
 #include "audio_policy_log.h"
+#include "cj_lambda.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 
@@ -66,8 +67,8 @@ float MMAAudioVolumeGroupManagerImpl::GetSystemVolumeInDb(int32_t volumeType, in
         AUDIO_ERR_LOG("invalid audio group manager instance");
         return CJ_ERR_INVALID_RETURN_FLOAT_VALUE;
     }
-    auto ret = audioGroupMngr_->GetSystemVolumeInDb(GetNativeAudioVolumeType(volumeType), volumeLevel,
-        static_cast<DeviceType>(deviceType));
+    auto ret = audioGroupMngr_->GetSystemVolumeInDb(
+        GetNativeAudioVolumeType(volumeType), volumeLevel, static_cast<DeviceType>(deviceType));
     return ret;
 }
 
@@ -93,7 +94,7 @@ bool MMAAudioVolumeGroupManagerImpl::IsMicrophoneMute()
 
 bool MMAAudioVolumeGroupManagerImpl::IsMute(int32_t volumeType)
 {
-    bool isMute{ false };
+    bool isMute { false };
     if (audioGroupMngr_ == nullptr) {
         AUDIO_ERR_LOG("invalid audio group manager instance");
         return isMute;
@@ -141,7 +142,7 @@ float MMAAudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDevice(const int32_
     return ret;
 }
 
-void MMAAudioVolumeGroupManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void MMAAudioVolumeGroupManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     if (errorCode == nullptr) {
         AUDIO_ERR_LOG("invalid pointer");

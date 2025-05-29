@@ -31,7 +31,7 @@ public:
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
 
 private:
-    std::function<void(CVolumeEvent)> func_{};
+    std::function<void(CVolumeEvent)> func_ {};
     std::mutex cbMutex_;
 };
 } // namespace AudioStandard

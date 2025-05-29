@@ -15,13 +15,13 @@
 
 #ifndef MULTIMEDIA_AUDIO_STREAM_MANAGER_IMPL_H
 #define MULTIMEDIA_AUDIO_STREAM_MANAGER_IMPL_H
-#include "cj_common_ffi.h"
-#include "native/ffi_remote_data.h"
 #include "audio_policy_interface.h"
 #include "audio_stream_manager.h"
 #include "audio_system_manager.h"
+#include "cj_common_ffi.h"
 #include "multimedia_audio_ffi.h"
 #include "multimedia_audio_stream_manager_callback.h"
+#include "native/ffi_remote_data.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,19 +33,19 @@ public:
 
     bool IsActive(int32_t volumeType);
 
-    CArrI32 GetAudioEffectInfoArray(int32_t usage, int32_t *errorCode);
+    CArrI32 GetAudioEffectInfoArray(int32_t usage, int32_t* errorCode);
 
-    CArrAudioRendererChangeInfo GetCurrentRendererChangeInfos(int32_t *errorCode);
-    
-    CArrAudioCapturerChangeInfo GetAudioCapturerInfoArray(int32_t *errorCode);
+    CArrAudioRendererChangeInfo GetCurrentRendererChangeInfos(int32_t* errorCode);
 
-    void RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode);
+    CArrAudioCapturerChangeInfo GetAudioCapturerInfoArray(int32_t* errorCode);
+
+    void RegisterCallback(int32_t callbackType, void (*callback)(), int32_t* errorCode);
 
 private:
-    int32_t cachedClientId_{};
-    AudioStreamManager *streamMgr_{};
-    std::shared_ptr<CjAudioCapturerStateChangeCallback> callback_{};
-    std::shared_ptr<CjAudioRendererStateChangeCallback> callbackRenderer_{};
+    int32_t cachedClientId_ {};
+    AudioStreamManager* streamMgr_ {};
+    std::shared_ptr<CjAudioCapturerStateChangeCallback> callback_ {};
+    std::shared_ptr<CjAudioRendererStateChangeCallback> callbackRenderer_ {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

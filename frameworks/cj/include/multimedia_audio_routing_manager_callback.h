@@ -28,7 +28,7 @@ public:
 
     void RegisterFunc(const uint32_t usage, std::function<void(CDeviceChangeAction)> cjCallback);
 
-    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
+    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction& deviceChangeAction) override;
 
 private:
     std::vector<std::pair<uint32_t, std::function<void(CDeviceChangeAction)>>> callbackList_;
@@ -42,10 +42,10 @@ public:
 
     void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
 
-    void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc) override;
 
 private:
-    std::function<void(CArrDeviceDescriptor)> func_{};
+    std::function<void(CArrDeviceDescriptor)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -56,10 +56,10 @@ public:
 
     void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
 
-    void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
+    void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc) override;
 
 private:
-    std::function<void(CArrDeviceDescriptor)> func_{};
+    std::function<void(CArrDeviceDescriptor)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -70,10 +70,10 @@ public:
 
     void RegisterFunc(std::function<void(CDeviceChangeAction)> cjCallback);
 
-    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+    void OnDeviceChange(const DeviceChangeAction& deviceChangeAction) override;
 
 private:
-    std::function<void(CDeviceChangeAction)> func_{};
+    std::function<void(CDeviceChangeAction)> func_ {};
     std::mutex cbMutex_;
 };
 } // namespace AudioStandard

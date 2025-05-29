@@ -14,15 +14,18 @@
  */
 
 #include "multimedia_audio_ffi.h"
+
 #include "audio_capturer_log.h"
 #include "multimedia_audio_capturer_callback.h"
 #include "multimedia_audio_capturer_impl.h"
+#include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 #include "multimedia_audio_manager_impl.h"
 #include "multimedia_audio_renderer_callback.h"
 #include "multimedia_audio_renderer_impl.h"
 #include "multimedia_audio_routing_manager_callback.h"
 #include "multimedia_audio_routing_manager_impl.h"
+#include "multimedia_audio_session_manager_impl.h"
 #include "multimedia_audio_stream_manager_callback.h"
 #include "multimedia_audio_stream_manager_impl.h"
 #include "multimedia_audio_volume_group_manager_impl.h"
@@ -34,7 +37,7 @@ namespace OHOS {
 namespace AudioStandard {
 extern "C" {
 // Audio Capturer
-int64_t FfiMMACreateAudioCapturer(CAudioCapturerOptions options, int32_t *errorCode)
+int64_t FfiMMACreateAudioCapturer(CAudioCapturerOptions options, int32_t* errorCode)
 {
     auto capturer = FFIData::Create<MMAAudioCapturerImpl>();
     if (!capturer) {
@@ -52,7 +55,7 @@ int64_t FfiMMACreateAudioCapturer(CAudioCapturerOptions options, int32_t *errorC
     return capturer->GetID();
 }
 
-int32_t FfiMMAAudioCapturerGetState(int64_t id, int32_t *errorCode)
+int32_t FfiMMAAudioCapturerGetState(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -63,7 +66,7 @@ int32_t FfiMMAAudioCapturerGetState(int64_t id, int32_t *errorCode)
     return capturer->GetState();
 }
 
-uint32_t FfiMMAAudioCapturerGetStreamId(int64_t id, int32_t *errorCode)
+uint32_t FfiMMAAudioCapturerGetStreamId(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -74,7 +77,7 @@ uint32_t FfiMMAAudioCapturerGetStreamId(int64_t id, int32_t *errorCode)
     return capturer->GetStreamId(errorCode);
 }
 
-int64_t FfiMMAAudioCapturerGetAudioTime(int64_t id, int32_t *errorCode)
+int64_t FfiMMAAudioCapturerGetAudioTime(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -85,7 +88,7 @@ int64_t FfiMMAAudioCapturerGetAudioTime(int64_t id, int32_t *errorCode)
     return capturer->GetAudioTime(errorCode);
 }
 
-uint32_t FfiMMAAudioCapturerGetBufferSize(int64_t id, int32_t *errorCode)
+uint32_t FfiMMAAudioCapturerGetBufferSize(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -96,7 +99,7 @@ uint32_t FfiMMAAudioCapturerGetBufferSize(int64_t id, int32_t *errorCode)
     return capturer->GetBufferSize(errorCode);
 }
 
-uint32_t FfiMMAAudioCapturerGetOverflowCount(int64_t id, int32_t *errorCode)
+uint32_t FfiMMAAudioCapturerGetOverflowCount(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -107,7 +110,7 @@ uint32_t FfiMMAAudioCapturerGetOverflowCount(int64_t id, int32_t *errorCode)
     return capturer->GetOverflowCount();
 }
 
-void FfiMMAAudioCapturerStart(int64_t id, int32_t *errorCode)
+void FfiMMAAudioCapturerStart(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -121,7 +124,7 @@ void FfiMMAAudioCapturerStart(int64_t id, int32_t *errorCode)
     }
 }
 
-void FfiMMAAudioCapturerStop(int64_t id, int32_t *errorCode)
+void FfiMMAAudioCapturerStop(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -135,7 +138,7 @@ void FfiMMAAudioCapturerStop(int64_t id, int32_t *errorCode)
     }
 }
 
-void FfiMMAAudioCapturerRelease(int64_t id, int32_t *errorCode)
+void FfiMMAAudioCapturerRelease(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -149,7 +152,7 @@ void FfiMMAAudioCapturerRelease(int64_t id, int32_t *errorCode)
     }
 }
 
-CAudioCapturerChangeInfo FfiMMAAudioCapturerGetAudioCapturerChangeInfo(int64_t id, int32_t *errorCode)
+CAudioCapturerChangeInfo FfiMMAAudioCapturerGetAudioCapturerChangeInfo(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -161,7 +164,7 @@ CAudioCapturerChangeInfo FfiMMAAudioCapturerGetAudioCapturerChangeInfo(int64_t i
     return info;
 }
 
-CArrDeviceDescriptor FfiMMAAudioCapturerGetInputDevices(int64_t id, int32_t *errorCode)
+CArrDeviceDescriptor FfiMMAAudioCapturerGetInputDevices(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -173,7 +176,7 @@ CArrDeviceDescriptor FfiMMAAudioCapturerGetInputDevices(int64_t id, int32_t *err
     return devices;
 }
 
-CAudioCapturerInfo FfiMMAAudioCapturerGetCapturerInfo(int64_t id, int32_t *errorCode)
+CAudioCapturerInfo FfiMMAAudioCapturerGetCapturerInfo(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -185,7 +188,7 @@ CAudioCapturerInfo FfiMMAAudioCapturerGetCapturerInfo(int64_t id, int32_t *error
     return info;
 }
 
-CAudioStreamInfo FfiMMAAudioCapturerGetStreamInfo(int64_t id, int32_t *errorCode)
+CAudioStreamInfo FfiMMAAudioCapturerGetStreamInfo(int64_t id, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -197,7 +200,7 @@ CAudioStreamInfo FfiMMAAudioCapturerGetStreamInfo(int64_t id, int32_t *errorCode
     return info;
 }
 
-void FfiMMAAudioCapturerOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void FfiMMAAudioCapturerOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -208,8 +211,8 @@ void FfiMMAAudioCapturerOn(int64_t id, int32_t callbackType, void (*callback)(),
     capturer->RegisterCallback(callbackType, callback, errorCode);
 }
 
-void FfiMMAAudioCapturerOnWithFrame(int64_t id, int32_t callbackType, void (*callback)(), int64_t frame,
-    int32_t *errorCode)
+void FfiMMAAudioCapturerOnWithFrame(
+    int64_t id, int32_t callbackType, void (*callback)(), int64_t frame, int32_t* errorCode)
 {
     auto capturer = FFIData::GetData<MMAAudioCapturerImpl>(id);
     if (!capturer) {
@@ -221,7 +224,7 @@ void FfiMMAAudioCapturerOnWithFrame(int64_t id, int32_t callbackType, void (*cal
 }
 
 // Audio Manager
-int64_t FfiMMACreateAudioManager(int32_t *errorCode)
+int64_t FfiMMACreateAudioManager(int32_t* errorCode)
 {
     auto mgr = FFIData::Create<MMAAudioManagerImpl>();
     if (!mgr) {
@@ -233,7 +236,7 @@ int64_t FfiMMACreateAudioManager(int32_t *errorCode)
     return mgr->GetID();
 }
 
-int64_t FfiMMAAudioManagerGetRoutingManager(int64_t id, int32_t *errorCode)
+int64_t FfiMMAAudioManagerGetRoutingManager(int64_t id, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioManagerImpl>(id);
     if (!mgr) {
@@ -244,7 +247,7 @@ int64_t FfiMMAAudioManagerGetRoutingManager(int64_t id, int32_t *errorCode)
     return mgr->GetRoutingManager(errorCode);
 }
 
-int64_t FfiMMAAudioManagerGetStreamManager(int64_t id, int32_t *errorCode)
+int64_t FfiMMAAudioManagerGetStreamManager(int64_t id, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioManagerImpl>(id);
     if (!mgr) {
@@ -255,7 +258,18 @@ int64_t FfiMMAAudioManagerGetStreamManager(int64_t id, int32_t *errorCode)
     return mgr->GetStreamManger(errorCode);
 }
 
-int32_t FfiMMAAudioManagerGetAudioScene(int64_t id, int32_t *errorCode)
+int64_t FfiMMAAudioManagerGetSessionManager(int64_t id, int32_t* errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("Get SessionManager failed, invalid id of AudioManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CJ_ERR_INVALID_RETURN_VALUE;
+    }
+    return mgr->GetSessionManager(errorCode);
+}
+
+int32_t FfiMMAAudioManagerGetAudioScene(int64_t id, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioManagerImpl>(id);
     if (!mgr) {
@@ -266,7 +280,7 @@ int32_t FfiMMAAudioManagerGetAudioScene(int64_t id, int32_t *errorCode)
     return mgr->GetAudioScene();
 }
 
-int64_t FfiMMAAudioManagerGetVolumeManager(int64_t id, int32_t *errorCode)
+int64_t FfiMMAAudioManagerGetVolumeManager(int64_t id, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioManagerImpl>(id);
     if (mgr == nullptr) {
@@ -279,7 +293,7 @@ int64_t FfiMMAAudioManagerGetVolumeManager(int64_t id, int32_t *errorCode)
 }
 
 // Audio Stream Manager
-bool FfiMMAASMIsActive(int64_t id, int32_t volumeType, int32_t *errorCode)
+bool FfiMMAASMIsActive(int64_t id, int32_t volumeType, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioStreamManagerImpl>(id);
     if (!mgr) {
@@ -290,7 +304,7 @@ bool FfiMMAASMIsActive(int64_t id, int32_t volumeType, int32_t *errorCode)
     return mgr->IsActive(volumeType);
 }
 
-CArrAudioRendererChangeInfo FfiMMAASMGetCurrentAudioRendererInfoArray(int64_t id, int32_t *errorCode)
+CArrAudioRendererChangeInfo FfiMMAASMGetCurrentAudioRendererInfoArray(int64_t id, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioStreamManagerImpl>(id);
     if (!mgr) {
@@ -301,7 +315,7 @@ CArrAudioRendererChangeInfo FfiMMAASMGetCurrentAudioRendererInfoArray(int64_t id
     return mgr->GetCurrentRendererChangeInfos(errorCode);
 }
 
-CArrAudioCapturerChangeInfo FfiMMAASMGetCurrentAudioCapturerInfoArray(int64_t id, int32_t *errorCode)
+CArrAudioCapturerChangeInfo FfiMMAASMGetCurrentAudioCapturerInfoArray(int64_t id, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioStreamManagerImpl>(id);
     if (!mgr) {
@@ -312,7 +326,7 @@ CArrAudioCapturerChangeInfo FfiMMAASMGetCurrentAudioCapturerInfoArray(int64_t id
     return mgr->GetAudioCapturerInfoArray(errorCode);
 }
 
-CArrI32 FfiMMAASMGetAudioEffectInfoArray(int64_t id, int32_t usage, int32_t *errorCode)
+CArrI32 FfiMMAASMGetAudioEffectInfoArray(int64_t id, int32_t usage, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioStreamManagerImpl>(id);
     if (!mgr) {
@@ -323,7 +337,7 @@ CArrI32 FfiMMAASMGetAudioEffectInfoArray(int64_t id, int32_t usage, int32_t *err
     return mgr->GetAudioEffectInfoArray(usage, errorCode);
 }
 
-void FfiMMAASMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void FfiMMAASMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioStreamManagerImpl>(id);
     if (!mgr) {
@@ -335,7 +349,7 @@ void FfiMMAASMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *
 }
 
 // Audio Routing Manager
-void FfiMMAARMSetCommunicationDevice(int64_t id, int32_t deviceType, bool active, int32_t *errorCode)
+void FfiMMAARMSetCommunicationDevice(int64_t id, int32_t deviceType, bool active, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
@@ -346,7 +360,7 @@ void FfiMMAARMSetCommunicationDevice(int64_t id, int32_t deviceType, bool active
     *errorCode = mgr->SetCommunicationDevice(deviceType, active);
 }
 
-bool FfiMMAARMIsCommunicationDeviceActive(int64_t id, int32_t deviceType, int32_t *errorCode)
+bool FfiMMAARMIsCommunicationDeviceActive(int64_t id, int32_t deviceType, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
@@ -357,7 +371,7 @@ bool FfiMMAARMIsCommunicationDeviceActive(int64_t id, int32_t deviceType, int32_
     return mgr->IsCommunicationDeviceActive(deviceType);
 }
 
-CArrDeviceDescriptor FfiMMAARMGetDevices(int64_t id, int32_t deviceFlag, int32_t *errorCode)
+CArrDeviceDescriptor FfiMMAARMGetDevices(int64_t id, int32_t deviceFlag, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
@@ -368,8 +382,24 @@ CArrDeviceDescriptor FfiMMAARMGetDevices(int64_t id, int32_t deviceFlag, int32_t
     return mgr->GetDevices(deviceFlag, errorCode);
 }
 
-CArrDeviceDescriptor FfiMMAARMGetPreferredInputDeviceForCapturerInfo(int64_t id, CAudioCapturerInfo capturerInfo,
-    int32_t *errorCode)
+CArrDeviceDescriptor FfiMMAARMGetAvailableDevices(int64_t id, uint32_t deviceUsage, int32_t* errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("GetDevices failed, invalid id of AudioRoutingManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return CArrDeviceDescriptor();
+    }
+    return mgr->GetAvailableDevices(deviceUsage, errorCode);
+}
+
+void FfiMMAARMFreeCArrDeviceDescriptor(CArrDeviceDescriptor deviceDescriptors)
+{
+    FreeCArrDeviceDescriptor(deviceDescriptors);
+}
+
+CArrDeviceDescriptor FfiMMAARMGetPreferredInputDeviceForCapturerInfo(
+    int64_t id, CAudioCapturerInfo capturerInfo, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
@@ -380,8 +410,8 @@ CArrDeviceDescriptor FfiMMAARMGetPreferredInputDeviceForCapturerInfo(int64_t id,
     return mgr->GetPreferredInputDeviceForCapturerInfo(capturerInfo, errorCode);
 }
 
-CArrDeviceDescriptor FfiMMAARMGetPreferredOutputDeviceForRendererInfo(int64_t id,
-    CAudioRendererInfo rendererInfo, int32_t *errorCode)
+CArrDeviceDescriptor FfiMMAARMGetPreferredOutputDeviceForRendererInfo(
+    int64_t id, CAudioRendererInfo rendererInfo, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
@@ -392,7 +422,7 @@ CArrDeviceDescriptor FfiMMAARMGetPreferredOutputDeviceForRendererInfo(int64_t id
     return mgr->GetPreferredOutputDeviceForRendererInfo(rendererInfo, errorCode);
 }
 
-void FfiMMAARMOn(int64_t id, int32_t callbackType, uint32_t deviceUsage, void (*callback)(), int32_t *errorCode)
+void FfiMMAARMOn(int64_t id, int32_t callbackType, uint32_t deviceUsage, void (*callback)(), int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
@@ -403,7 +433,7 @@ void FfiMMAARMOn(int64_t id, int32_t callbackType, uint32_t deviceUsage, void (*
     mgr->RegisterCallback(callbackType, deviceUsage, callback, errorCode);
 }
 
-void FfiMMAARMOnWithFlags(int64_t id, int32_t callbackType, void (*callback)(), int32_t flags, int32_t *errorCode)
+void FfiMMAARMOnWithFlags(int64_t id, int32_t callbackType, void (*callback)(), int32_t flags, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
@@ -414,8 +444,8 @@ void FfiMMAARMOnWithFlags(int64_t id, int32_t callbackType, void (*callback)(), 
     mgr->RegisterDeviceChangeCallback(callbackType, callback, flags, errorCode);
 }
 
-void FfiMMAARMOnWithCapturerInfo(int64_t id, int32_t callbackType, void (*callback)(), CAudioCapturerInfo capturerInfo,
-    int32_t *errorCode)
+void FfiMMAARMOnWithCapturerInfo(
+    int64_t id, int32_t callbackType, void (*callback)(), CAudioCapturerInfo capturerInfo, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
@@ -426,8 +456,8 @@ void FfiMMAARMOnWithCapturerInfo(int64_t id, int32_t callbackType, void (*callba
     mgr->RegisterPreferredInputDeviceChangeCallback(callbackType, callback, capturerInfo, errorCode);
 }
 
-void FfiMMAARMOnWithRendererInfo(int64_t id, int32_t callbackType, void (*callback)(), CAudioRendererInfo rendererInfo,
-    int32_t *errorCode)
+void FfiMMAARMOnWithRendererInfo(
+    int64_t id, int32_t callbackType, void (*callback)(), CAudioRendererInfo rendererInfo, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioRoutingManagerImpl>(id);
     if (!mgr) {
@@ -438,8 +468,53 @@ void FfiMMAARMOnWithRendererInfo(int64_t id, int32_t callbackType, void (*callba
     mgr->RegisterPreferredOutputDeviceChangeCallback(callbackType, callback, rendererInfo, errorCode);
 }
 
+/* Audio Session Manager */
+void FfiMMAASeMActivateAudioSession(int64_t id, CAudioSessionStrategy strategy, int32_t* errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioSessionManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioSessionManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    mgr->ActivateAudioSession(strategy, errorCode);
+}
+
+void FfiMMAASeMDeactivateAudioSession(int64_t id, int32_t* errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioSessionManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioSessionManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    mgr->DeactivateAudioSession(errorCode);
+}
+
+bool FfiMMAASeMIsAudioSessionActivated(int64_t id, int32_t* errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioSessionManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioSessionManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return false;
+    }
+    return mgr->IsAudioSessionActivated();
+}
+
+void FfiMMAASeMOn(int64_t id, const char* type, int64_t callback, int32_t* errorCode)
+{
+    auto mgr = FFIData::GetData<MMAAudioSessionManagerImpl>(id);
+    if (!mgr) {
+        AUDIO_ERR_LOG("register failed, invalid id of AudioSessionManager");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    mgr->On(type, callback, errorCode);
+}
+
 /* Audio Volume Manager */
-int64_t FfiMMAAVMGetVolumeGroupManager(int64_t id, int32_t groupId, int32_t *errorCode)
+int64_t FfiMMAAVMGetVolumeGroupManager(int64_t id, int32_t groupId, int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioVolumeManagerImpl>(id);
     if (mgr == nullptr) {
@@ -451,7 +526,7 @@ int64_t FfiMMAAVMGetVolumeGroupManager(int64_t id, int32_t groupId, int32_t *err
     return mgr->GetVolumeGroupManager(groupId, errorCode);
 }
 
-void FfiMMAAVMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void FfiMMAAVMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     auto mgr = FFIData::GetData<MMAAudioVolumeManagerImpl>(id);
     if (mgr == nullptr) {
@@ -463,7 +538,7 @@ void FfiMMAAVMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *
 }
 
 /* Audio Volumne Group Manager */
-int32_t FfiMMAAVGMGetMaxVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
+int32_t FfiMMAAVGMGetMaxVolume(int64_t id, int32_t volumeType, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -475,7 +550,7 @@ int32_t FfiMMAAVGMGetMaxVolume(int64_t id, int32_t volumeType, int32_t *errorCod
     return inst->GetMaxVolume(volumeType);
 }
 
-int32_t FfiMMAAVGMGetMinVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
+int32_t FfiMMAAVGMGetMinVolume(int64_t id, int32_t volumeType, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -487,7 +562,7 @@ int32_t FfiMMAAVGMGetMinVolume(int64_t id, int32_t volumeType, int32_t *errorCod
     return inst->GetMinVolume(volumeType);
 }
 
-int32_t FfiMMAAVGMGetRingerMode(int64_t id, int32_t *errorCode)
+int32_t FfiMMAAVGMGetRingerMode(int64_t id, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -499,8 +574,8 @@ int32_t FfiMMAAVGMGetRingerMode(int64_t id, int32_t *errorCode)
     return inst->GetRingerMode();
 }
 
-float FfiMMAAVGMGetSystemVolumeInDb(int64_t id, int32_t volumeType, int32_t volumeLevel, int32_t device,
-    int32_t *errorCode)
+float FfiMMAAVGMGetSystemVolumeInDb(
+    int64_t id, int32_t volumeType, int32_t volumeLevel, int32_t device, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -512,7 +587,7 @@ float FfiMMAAVGMGetSystemVolumeInDb(int64_t id, int32_t volumeType, int32_t volu
     return inst->GetSystemVolumeInDb(volumeType, volumeLevel, device);
 }
 
-int32_t FfiMMAAVGMGetVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
+int32_t FfiMMAAVGMGetVolume(int64_t id, int32_t volumeType, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -524,7 +599,7 @@ int32_t FfiMMAAVGMGetVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
     return inst->GetVolume(volumeType);
 }
 
-bool FfiMMAAVGMIsMicrophoneMute(int64_t id, int32_t *errorCode)
+bool FfiMMAAVGMIsMicrophoneMute(int64_t id, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -536,7 +611,7 @@ bool FfiMMAAVGMIsMicrophoneMute(int64_t id, int32_t *errorCode)
     return inst->IsMicrophoneMute();
 }
 
-bool FfiMMAAVGMIsMute(int64_t id, int32_t volumeType, int32_t *errorCode)
+bool FfiMMAAVGMIsMute(int64_t id, int32_t volumeType, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -548,7 +623,7 @@ bool FfiMMAAVGMIsMute(int64_t id, int32_t volumeType, int32_t *errorCode)
     return inst->IsMute(volumeType);
 }
 
-bool FfiMMAAVGMIsVolumeUnadjustable(int64_t id, int32_t *errorCode)
+bool FfiMMAAVGMIsVolumeUnadjustable(int64_t id, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -562,7 +637,7 @@ bool FfiMMAAVGMIsVolumeUnadjustable(int64_t id, int32_t *errorCode)
 
 /* CAPABILITY FOR LAST CANGJIE VERSION AND WILL BE REMOVED */
 /* Audio Manager */
-int64_t FfiMMAGetVolumeManager(int64_t id, int32_t *errorCode)
+int64_t FfiMMAGetVolumeManager(int64_t id, int32_t* errorCode)
 {
     auto mgr = FFIData::Create<MMAAudioVolumeManagerImpl>();
     if (mgr == nullptr) {
@@ -575,7 +650,7 @@ int64_t FfiMMAGetVolumeManager(int64_t id, int32_t *errorCode)
 }
 
 /* Audio Volume Manager */
-int64_t FfiMMAGetVolumeGroupManager(int64_t id, int32_t *errorCode)
+int64_t FfiMMAGetVolumeGroupManager(int64_t id, int32_t* errorCode)
 {
     auto mgr = FFIData::Create<MMAAudioVolumeManagerImpl>();
     if (mgr == nullptr) {
@@ -588,7 +663,7 @@ int64_t FfiMMAGetVolumeGroupManager(int64_t id, int32_t *errorCode)
 }
 
 /* Audio Volumne Group Manager */
-int32_t FfiMMAGetMaxVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
+int32_t FfiMMAGetMaxVolume(int64_t id, int32_t volumeType, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -600,7 +675,7 @@ int32_t FfiMMAGetMaxVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
     return inst->GetMaxVolume(volumeType);
 }
 
-int32_t FfiMMAGetMinVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
+int32_t FfiMMAGetMinVolume(int64_t id, int32_t volumeType, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -612,7 +687,7 @@ int32_t FfiMMAGetMinVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
     return inst->GetMinVolume(volumeType);
 }
 
-int32_t FfiMMAGetRingerMode(int64_t id, int32_t *errorCode)
+int32_t FfiMMAGetRingerMode(int64_t id, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -624,7 +699,7 @@ int32_t FfiMMAGetRingerMode(int64_t id, int32_t *errorCode)
     return inst->GetRingerMode();
 }
 
-float FfiMMAGetSystemVolumeInDb(int64_t id, int32_t volumeType, int32_t volumeLevel, int32_t device, int32_t *errorCode)
+float FfiMMAGetSystemVolumeInDb(int64_t id, int32_t volumeType, int32_t volumeLevel, int32_t device, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -636,7 +711,7 @@ float FfiMMAGetSystemVolumeInDb(int64_t id, int32_t volumeType, int32_t volumeLe
     return inst->GetSystemVolumeInDb(volumeType, volumeLevel, device);
 }
 
-int32_t FfiMMAGetVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
+int32_t FfiMMAGetVolume(int64_t id, int32_t volumeType, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -648,7 +723,7 @@ int32_t FfiMMAGetVolume(int64_t id, int32_t volumeType, int32_t *errorCode)
     return inst->GetVolume(volumeType);
 }
 
-bool FfiMMAIsMicrophoneMute(int64_t id, int32_t *errorCode)
+bool FfiMMAIsMicrophoneMute(int64_t id, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -660,7 +735,7 @@ bool FfiMMAIsMicrophoneMute(int64_t id, int32_t *errorCode)
     return inst->IsMicrophoneMute();
 }
 
-bool FfiMMAIsMute(int64_t id, int32_t volumeType, int32_t *errorCode)
+bool FfiMMAIsMute(int64_t id, int32_t volumeType, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -672,7 +747,7 @@ bool FfiMMAIsMute(int64_t id, int32_t volumeType, int32_t *errorCode)
     return inst->IsMute(volumeType);
 }
 
-bool FfiMMAIsVolumeUnadjustable(int64_t id, int32_t *errorCode)
+bool FfiMMAIsVolumeUnadjustable(int64_t id, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -684,7 +759,7 @@ bool FfiMMAIsVolumeUnadjustable(int64_t id, int32_t *errorCode)
     return inst->IsVolumeUnadjustable();
 }
 
-float FfiMMAAVGMGetMaxAmplitudeForOutputDevice(int64_t id, CDeviceDescriptor desc, int32_t *errorCode)
+float FfiMMAAVGMGetMaxAmplitudeForOutputDevice(int64_t id, CDeviceDescriptor desc, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -696,7 +771,7 @@ float FfiMMAAVGMGetMaxAmplitudeForOutputDevice(int64_t id, CDeviceDescriptor des
     return inst->GetMaxAmplitudeForOutputDevice(desc.id);
 }
 
-float FfiMMAAVGMGetMaxAmplitudeForInputDevice(int64_t id, CDeviceDescriptor desc, int32_t *errorCode)
+float FfiMMAAVGMGetMaxAmplitudeForInputDevice(int64_t id, CDeviceDescriptor desc, int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -708,7 +783,7 @@ float FfiMMAAVGMGetMaxAmplitudeForInputDevice(int64_t id, CDeviceDescriptor desc
     return inst->GetMaxAmplitudeForInputDevice(desc.id);
 }
 
-void FfiMMAAVGMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void FfiMMAAVGMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     auto inst = FFIData::GetData<MMAAudioVolumeGroupManagerImpl>(id);
     if (inst == nullptr) {
@@ -721,7 +796,7 @@ void FfiMMAAVGMOn(int64_t id, int32_t callbackType, void (*callback)(), int32_t 
 }
 
 /* Audio Renderer */
-int64_t FfiMMACreateAudioRenderer(CAudioRendererOptions options, int32_t *errorCode)
+int64_t FfiMMACreateAudioRenderer(CAudioRendererOptions options, int32_t* errorCode)
 {
     auto renderer = FFIData::Create<MMAAudioRendererImpl>();
     if (renderer == nullptr) {
@@ -739,7 +814,7 @@ int64_t FfiMMACreateAudioRenderer(CAudioRendererOptions options, int32_t *errorC
     return renderer->GetID();
 }
 
-int32_t FfiMMAARGetState(int64_t id, int32_t *errorCode)
+int32_t FfiMMAARGetState(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -750,7 +825,7 @@ int32_t FfiMMAARGetState(int64_t id, int32_t *errorCode)
     return renderer->GetState();
 }
 
-int64_t FfiMMAARGetAudioTime(int64_t id, int32_t *errorCode)
+int64_t FfiMMAARGetAudioTime(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -761,7 +836,7 @@ int64_t FfiMMAARGetAudioTime(int64_t id, int32_t *errorCode)
     return renderer->GetAudioTime(errorCode);
 }
 
-uint32_t FfiMMAARGetBufferSize(int64_t id, int32_t *errorCode)
+uint32_t FfiMMAARGetBufferSize(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -772,7 +847,7 @@ uint32_t FfiMMAARGetBufferSize(int64_t id, int32_t *errorCode)
     return renderer->GetBufferSize(errorCode);
 }
 
-void FfiMMAARFlush(int64_t id, int32_t *errorCode)
+void FfiMMAARFlush(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -786,7 +861,7 @@ void FfiMMAARFlush(int64_t id, int32_t *errorCode)
     }
 }
 
-void FfiMMAARPause(int64_t id, int32_t *errorCode)
+void FfiMMAARPause(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -800,7 +875,7 @@ void FfiMMAARPause(int64_t id, int32_t *errorCode)
     }
 }
 
-void FfiMMAARDrain(int64_t id, int32_t *errorCode)
+void FfiMMAARDrain(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -814,7 +889,7 @@ void FfiMMAARDrain(int64_t id, int32_t *errorCode)
     }
 }
 
-CArrDeviceDescriptor FfiMMAARGetCurrentOutputDevices(int64_t id, int32_t *errorCode)
+CArrDeviceDescriptor FfiMMAARGetCurrentOutputDevices(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -825,7 +900,7 @@ CArrDeviceDescriptor FfiMMAARGetCurrentOutputDevices(int64_t id, int32_t *errorC
     return renderer->GetCurrentOutputDevices(errorCode);
 }
 
-double FfiMMAARGetSpeed(int64_t id, int32_t *errorCode)
+double FfiMMAARGetSpeed(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -836,7 +911,7 @@ double FfiMMAARGetSpeed(int64_t id, int32_t *errorCode)
     return renderer->GetSpeed(errorCode);
 }
 
-bool FfiMMAARGetSilentModeAndMixWithOthers(int64_t id, int32_t *errorCode)
+bool FfiMMAARGetSilentModeAndMixWithOthers(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -847,7 +922,7 @@ bool FfiMMAARGetSilentModeAndMixWithOthers(int64_t id, int32_t *errorCode)
     return renderer->GetSilentModeAndMixWithOthers(errorCode);
 }
 
-double FfiMMAARGetVolume(int64_t id, int32_t *errorCode)
+double FfiMMAARGetVolume(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -858,7 +933,7 @@ double FfiMMAARGetVolume(int64_t id, int32_t *errorCode)
     return renderer->GetVolume(errorCode);
 }
 
-uint32_t FfiMMAARGetUnderflowCount(int64_t id, int32_t *errorCode)
+uint32_t FfiMMAARGetUnderflowCount(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -869,7 +944,7 @@ uint32_t FfiMMAARGetUnderflowCount(int64_t id, int32_t *errorCode)
     return renderer->GetUnderflowCount(errorCode);
 }
 
-void FfiMMAARSetVolumeWithRamp(int64_t id, double volume, int32_t duration, int32_t *errorCode)
+void FfiMMAARSetVolumeWithRamp(int64_t id, double volume, int32_t duration, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -880,7 +955,7 @@ void FfiMMAARSetVolumeWithRamp(int64_t id, double volume, int32_t duration, int3
     renderer->SetVolumeWithRamp(volume, duration, errorCode);
 }
 
-void FfiMMAARSetSpeed(int64_t id, double speed, int32_t *errorCode)
+void FfiMMAARSetSpeed(int64_t id, double speed, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -891,7 +966,7 @@ void FfiMMAARSetSpeed(int64_t id, double speed, int32_t *errorCode)
     renderer->SetSpeed(speed, errorCode);
 }
 
-void FfiMMAARSetVolume(int64_t id, double volume, int32_t *errorCode)
+void FfiMMAARSetVolume(int64_t id, double volume, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -902,7 +977,7 @@ void FfiMMAARSetVolume(int64_t id, double volume, int32_t *errorCode)
     renderer->SetVolume(volume, errorCode);
 }
 
-void FfiMMAARSetSilentModeAndMixWithOthers(int64_t id, bool on, int32_t *errorCode)
+void FfiMMAARSetSilentModeAndMixWithOthers(int64_t id, bool on, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -913,7 +988,7 @@ void FfiMMAARSetSilentModeAndMixWithOthers(int64_t id, bool on, int32_t *errorCo
     renderer->SetSilentModeAndMixWithOthers(on, errorCode);
 }
 
-void FfiMMAARSetInterruptMode(int64_t id, int32_t mode, int32_t *errorCode)
+void FfiMMAARSetInterruptMode(int64_t id, int32_t mode, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -924,18 +999,29 @@ void FfiMMAARSetInterruptMode(int64_t id, int32_t mode, int32_t *errorCode)
     renderer->SetInterruptMode(mode, errorCode);
 }
 
-void FfiMMAARSetChannelBlendMode(int64_t id, int32_t mode, int32_t *errorCode)
+void FfiMMAARSetChannelBlendMode(int64_t id, int32_t mode, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
-        AUDIO_ERR_LOG("SetInterruptMode failed, invalid id of AudioRenderer");
+        AUDIO_ERR_LOG("SetChannelBlendMode failed, invalid id of AudioRenderer");
         *errorCode = CJ_ERR_SYSTEM;
         return;
     }
     renderer->SetChannelBlendMode(mode, errorCode);
 }
 
-void FfiMMAAROnWithFrame(int64_t id, int32_t callbackType, void (*callback)(), int64_t frame, int32_t *errorCode)
+void FfiMMAARSetDefaultOutputDevice(int64_t id, int32_t deviceType, int32_t* errorCode)
+{
+    auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
+    if (renderer == nullptr) {
+        AUDIO_ERR_LOG("SetDefaultOutputDevice failed, invalid id of AudioRenderer");
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    renderer->SetDefaultOutputDevice(deviceType, errorCode);
+}
+
+void FfiMMAAROnWithFrame(int64_t id, int32_t callbackType, void (*callback)(), int64_t frame, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
@@ -946,7 +1032,7 @@ void FfiMMAAROnWithFrame(int64_t id, int32_t callbackType, void (*callback)(), i
     renderer->RegisterCallbackWithFrame(callbackType, callback, frame, errorCode);
 }
 
-int32_t FfiMMAARGetAudioEffectMode(int64_t id, int32_t *errorCode)
+int32_t FfiMMAARGetAudioEffectMode(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -957,7 +1043,7 @@ int32_t FfiMMAARGetAudioEffectMode(int64_t id, int32_t *errorCode)
     return renderer->GetAudioEffectMode(errorCode);
 }
 
-void FfiMMAARSetAudioEffectMode(int64_t id, int32_t mode, int32_t *errorCode)
+void FfiMMAARSetAudioEffectMode(int64_t id, int32_t mode, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -968,7 +1054,7 @@ void FfiMMAARSetAudioEffectMode(int64_t id, int32_t mode, int32_t *errorCode)
     return renderer->SetAudioEffectMode(mode, errorCode);
 }
 
-double FfiMMAARGetMinStreamVolume(int64_t id, int32_t *errorCode)
+double FfiMMAARGetMinStreamVolume(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -979,7 +1065,7 @@ double FfiMMAARGetMinStreamVolume(int64_t id, int32_t *errorCode)
     return renderer->GetMinStreamVolume(errorCode);
 }
 
-double FfiMMAARGetMaxStreamVolume(int64_t id, int32_t *errorCode)
+double FfiMMAARGetMaxStreamVolume(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -990,7 +1076,7 @@ double FfiMMAARGetMaxStreamVolume(int64_t id, int32_t *errorCode)
     return renderer->GetMaxStreamVolume(errorCode);
 }
 
-void FfiMMAARRelease(int64_t id, int32_t *errorCode)
+void FfiMMAARRelease(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -1001,7 +1087,7 @@ void FfiMMAARRelease(int64_t id, int32_t *errorCode)
     return renderer->Release(errorCode);
 }
 
-uint32_t FfiMMAARGetStreamId(int64_t id, int32_t *errorCode)
+uint32_t FfiMMAARGetStreamId(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -1012,7 +1098,7 @@ uint32_t FfiMMAARGetStreamId(int64_t id, int32_t *errorCode)
     return renderer->GetStreamId(errorCode);
 }
 
-void FfiMMAARStop(int64_t id, int32_t *errorCode)
+void FfiMMAARStop(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -1023,7 +1109,7 @@ void FfiMMAARStop(int64_t id, int32_t *errorCode)
     return renderer->Stop(errorCode);
 }
 
-void FfiMMAARStart(int64_t id, int32_t *errorCode)
+void FfiMMAARStart(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -1034,7 +1120,7 @@ void FfiMMAARStart(int64_t id, int32_t *errorCode)
     return renderer->Start(errorCode);
 }
 
-CAudioStreamInfo FfiMMAARGetStreamInfo(int64_t id, int32_t *errorCode)
+CAudioStreamInfo FfiMMAARGetStreamInfo(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -1045,7 +1131,7 @@ CAudioStreamInfo FfiMMAARGetStreamInfo(int64_t id, int32_t *errorCode)
     return renderer->GetStreamInfo(errorCode);
 }
 
-CAudioRendererInfo FfiMMAARGetRendererInfo(int64_t id, int32_t *errorCode)
+CAudioRendererInfo FfiMMAARGetRendererInfo(int64_t id, int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (!renderer) {
@@ -1056,7 +1142,7 @@ CAudioRendererInfo FfiMMAARGetRendererInfo(int64_t id, int32_t *errorCode)
     return renderer->GetRendererInfo(errorCode);
 }
 
-void FfiMMAAROn(int64_t id, int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void FfiMMAAROn(int64_t id, int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     auto renderer = FFIData::GetData<MMAAudioRendererImpl>(id);
     if (renderer == nullptr) {
