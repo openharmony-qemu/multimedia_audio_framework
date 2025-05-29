@@ -92,8 +92,8 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(sceneType);
     nodeInfo.effectInfo.enhanceScene = enhanceScene;
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
+    sourceOutputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
     sessionNodeMap_[streamInfo.sessionId].sceneType = sceneType;
-    streamInfoMap_[streamInfo.sessionId] = streamInfo;
     
     if (sceneType != HPAE_SCENE_EFFECT_NONE && !SafeGetMap(sceneClusterMap_, sceneType)) {
         // todo: algorithm instance count control
@@ -180,7 +180,6 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
     }
     sourceOutputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
-    streamInfoMap_.erase(sessionId);
     return SUCCESS;
 }
 
@@ -434,15 +433,17 @@ void HpaeCapturerManager::Process()
     }
 }
 
+
+
 void HpaeCapturerManager::UpdateAppsUidAndSessionId()
 {
     appsUid_.clear();
     sessionsId_.clear();
-    for (auto &sessionPair : sessionNodeMap_) {
-        if (streamInfoMap_.find(sessionPair.first) != streamInfoMap_.end() &&
-            sessionPair.second.state == HPAE_SESSION_RUNNING) {
-            appsUid_.emplace_back(streamInfoMap_[sessionPair.first].uid);
-            sessionsId_.emplace_back(sessionPair.first);
+    for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
+        if (sessionNodeMap_.find(sourceOutputNodePair.first) != sessionNodeMap_.end() &&
+            sessionNodeMap_[sourceOutputNodePair.first].state == HPAE_SESSION_RUNNING) {
+            appsUid_.emplace_back(sourceOutputNodePair.second->GetAppUid());
+            sessionsId_.emplace_back(sourceOutputNodePair.first);
         }
     }
     if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {

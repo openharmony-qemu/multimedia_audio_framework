@@ -102,7 +102,6 @@ private:
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> sessionNodeMap_;
-    std::unordered_map<uint32_t, HpaeStreamInfo> streamInfoMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeSourceProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSourceOutputNode>> sourceOutputNodeMap_;
     std::unordered_map<HpaeSourceInputNodeType, std::shared_ptr<HpaeSourceInputCluster>> sourceInputClusterMap_;
