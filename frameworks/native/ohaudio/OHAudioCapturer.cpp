@@ -471,7 +471,7 @@ void OHAudioCapturerModeCallback::OnReadData(size_t length)
     BufferDesc bufDesc;
     int32_t ret = audioCapturer->GetBufferDesc(bufDesc);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("get bufDesc failed, bufLength=%{public}u, dataLength=%{public}u",
+        AUDIO_ERR_LOG("get bufDesc failed, bufLength=%{public}zu, dataLength=%{public}zu",
             bufDesc.bufLength, bufDesc.dataLength);
     }
 
