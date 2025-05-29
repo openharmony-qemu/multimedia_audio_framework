@@ -226,8 +226,8 @@ int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, uint64_t 
 {
     framePosition = GetFramesWritten();
     if (historyBuffer_) {
-        framePosition = framePosition > historyBuffer_->GetCurFrames() * GetNodeInfo().frameLen
-                            ? framePosition - historyBuffer_->GetCurFrames() * GetNodeInfo().frameLen
+        framePosition = framePosition > historyBuffer_->GetCurFrames() * GetFrameLen()
+                            ? framePosition - historyBuffer_->GetCurFrames() * GetFrameLen()
                             : 0;
     }
     timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
