@@ -1217,7 +1217,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
             AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
             if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType)) {
                 streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
-                audioPolicyManager_.SetStreamMute(streamType, true, streamUsage);
+                audioPolicyManager_.SetInnerStreamMute(streamType, true, streamUsage);
             }
             shouldUpdateDeviceDueToDualTone_ = true;
         } else {
@@ -1891,7 +1891,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         isRingDualToneOnPrimarySpeaker_ = false;
         FetchOutputDeviceAndRoute();
         for (std::pair<AudioStreamType, StreamUsage> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
-            audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+            audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
         }
         streamsWhenRingDualOnPrimarySpeaker_.clear();
     }
