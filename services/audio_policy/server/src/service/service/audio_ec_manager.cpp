@@ -528,7 +528,7 @@ void AudioEcManager::PresetArmIdleInput(const string& address)
 
 void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole role)
 {
-    AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d", GetEncryptAddr(address).c_str(), role);
+    AUDIO_INFO_LOG("address=%{public}s, role=%{public}d", GetEncryptAddr(address).c_str(), role);
     string &activeArmAddr = role == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
     CHECK_AND_RETURN_RET(address != activeArmAddr,);
     std::list<AudioModuleInfo> moduleInfoList;
@@ -565,7 +565,7 @@ void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole r
 
 void AudioEcManager::CloseUsbArmDevice(const AudioDeviceDescriptor &device)
 {
-    AUDIO_INFO_LOG("Entry. address=%{public}s, role=%{public}d",
+    AUDIO_INFO_LOG("address=%{public}s, role=%{public}d",
         GetEncryptAddr(device.macAddress_).c_str(), device.deviceRole_);
     string &activeArmAddr = device.deviceRole_ == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
     CHECK_AND_RETURN_RET(device.macAddress_ == activeArmAddr,);

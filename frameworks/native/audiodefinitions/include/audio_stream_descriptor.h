@@ -58,9 +58,12 @@ public:
     bool WriteDeviceDescVectorToParcel(
         Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;
     void UnmarshallingDeviceDescVector(Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+
     void SetBunduleName(std::string &bundleName);
 
+    // log and dump
     void Dump(std::string &dumpString);
+    std::string GetNewDevicesTypeString();
 
 private:
     bool IsRenderer()
