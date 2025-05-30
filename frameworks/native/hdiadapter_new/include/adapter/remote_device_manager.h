@@ -132,6 +132,7 @@ private:
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
 
     sptr<RemoteIAudioManager> audioManager_ = nullptr;
+    std::mutex managerMtx_;
     std::unordered_map<std::string, std::shared_ptr<RemoteAdapterWrapper> > adapters_;
     std::mutex adapterMtx_;
 };
