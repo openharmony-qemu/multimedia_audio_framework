@@ -179,30 +179,31 @@ AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
 int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleName,
     const AudioModuleInfo &moduleInfo)
 {
-    AUDIO_INFO_LOG("In, name: %{public}s", moduleName.c_str());
     uint32_t paIndex = 0;
     AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
     CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
         "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
     CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed paId[%{public}u]", paIndex);
-    std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
-    pipeInfo_->id_ = ioHandle;
-    pipeInfo_->paIndex_ = paIndex;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->id_ = ioHandle;
+    pipeInfo->paIndex_ = paIndex;
+    pipeInfo->name_ = moduleName;
     if (moduleInfo.role == "sink") {
-        pipeInfo_->pipeRole_ = PIPE_ROLE_OUTPUT;
-        pipeInfo_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+        pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     } else {
-        pipeInfo_->pipeRole_ = PIPE_ROLE_INPUT;
-        pipeInfo_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     }
-    pipeInfo_->adapterName_ = moduleInfo.adapterName;
-    pipeInfo_->moduleInfo_ = moduleInfo;
-    pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
-    
-    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo_);
+    pipeInfo->adapterName_ = moduleInfo.adapterName;
+    pipeInfo->moduleInfo_ = moduleInfo;
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
 
     AddIOHandleInfo(moduleName, ioHandle);
+
     return SUCCESS;
 }
 
@@ -217,8 +218,6 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     uint32_t paIndex = pipeManager->GetPaIndexByIoHandle(ioHandle);
     pipeManager->RemoveAudioPipeInfo(ioHandle);
 
-    AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
-        moduleName.c_str(), ioHandle, paIndex);
     int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle, paIndex);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     return SUCCESS;

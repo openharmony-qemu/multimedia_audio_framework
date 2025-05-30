@@ -1616,7 +1616,9 @@ void AudioEffectChainManager::WaitAndReleaseEffectChain(const std::string &scene
     if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
         sceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
-        if (ret == SUCCESS && defaultEffectChainCount_ == 0) {
+        if (ret == SUCCESS && defaultEffectChainCount_ == 0 &&
+            sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] ==
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
             sceneTypeToEffectChainMap_.erase(defaultSceneTypeAndDeviceKey);
             AUDIO_INFO_LOG("default effect chain is released");
         }
@@ -1868,7 +1870,6 @@ int32_t AudioEffectChainManager::QueryEffectChannelInfoInner(const std::string &
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     audioEffectChain->GetInputChannelInfo(channels, channelLayout);
-    AUDIO_INFO_LOG("get input channels is %{public}d, channelLayout is %{public}" PRIu64, channels, channelLayout);
     return SUCCESS;
 }
 } // namespace AudioStandard

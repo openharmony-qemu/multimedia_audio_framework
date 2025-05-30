@@ -286,6 +286,7 @@ int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo,
         return ret;
     }
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->RegisterSendMsgCallback(weak_from_this());
     rendererManagerMap_[audioModuleInfo.name] = rendererManager;
     sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
@@ -295,7 +296,6 @@ int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo,
         AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", defaultSink_.c_str());
     }
     rendererManager->Init();
-    rendererManager->RegisterSendMsgCallback(weak_from_this());
     AUDIO_INFO_LOG(
         "open sink name: %{public}s end sinkIndex is %{public}u", audioModuleInfo.name.c_str(), sinkSourceIndex);
     return SUCCESS;
@@ -330,11 +330,11 @@ int32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, 
     sinkSourceIndex_.fetch_add(1);
     sourceInfo.sourceId = sinkSourceIndex;
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    capturerManager->RegisterSendMsgCallback(weak_from_this());
     capturerManagerMap_[audioModuleInfo.name] = capturerManager;
     sourceNameSourceIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sourceIdSourceNameMap_[sinkSourceIndex] = audioModuleInfo.name;
     capturerManagerMap_[audioModuleInfo.name]->Init();
-    capturerManager->RegisterSendMsgCallback(weak_from_this());
     AUDIO_INFO_LOG(
         "open source name: %{public}s end sourceIndex is %{public}u", audioModuleInfo.name.c_str(), sinkSourceIndex);
     return SUCCESS;
@@ -364,11 +364,11 @@ int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo
         return ret;
     }
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->RegisterSendMsgCallback(weak_from_this());
     rendererManagerMap_[audioModuleInfo.name] = rendererManager;
     sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
     rendererManagerMap_[audioModuleInfo.name]->Init();
-    rendererManager->RegisterSendMsgCallback(weak_from_this());
     AUDIO_INFO_LOG("HpaeManager::OpenAudioPort name: %{public}s end sinkIndex is %{public}u",
         audioModuleInfo.name.c_str(),
         sinkSourceIndex);

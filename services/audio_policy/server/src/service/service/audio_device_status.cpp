@@ -825,9 +825,11 @@ int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType d
         pipeInfo_->id_ = ioHandle;
         pipeInfo_->paIndex_ = paIndex;
         if (moduleInfo.role == "sink") {
+            pipeInfo_->name_ = "distributed_output";
             pipeInfo_->pipeRole_ = PIPE_ROLE_OUTPUT;
             pipeInfo_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         } else {
+            pipeInfo_->name_ = "distributed_input";
             pipeInfo_->pipeRole_ = PIPE_ROLE_INPUT;
             pipeInfo_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
         }
@@ -1369,9 +1371,11 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     pipeInfo->id_ = ioHandle;
     pipeInfo->paIndex_ = paIndex;
     if (moduleInfo.role == "sink") {
+        pipeInfo->name_ = "a2dp_output";
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
         pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     } else {
+        pipeInfo->name_ = "a2dp_input";
         pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
         pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     }

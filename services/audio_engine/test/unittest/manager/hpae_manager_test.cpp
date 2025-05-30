@@ -648,11 +648,11 @@ TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter002)
     EXPECT_EQ(hpaeManager_->IsInit(), true);
     sleep(1);
     std::vector<std::pair<std::string, std::string>> params;
-    params.push_back({"invalidKey","invalidValue"});
+    params.push_back({"invalidKey", "invalidValue"});
     bool result = hpaeManager_->SetEffectLiveParameter(params);
     EXPECT_EQ(result, false);
     params.clear();
-    params.push_back({"live_effect","invalidValue"});
+    params.push_back({"live_effect", "invalidValue"});
     result = hpaeManager_->SetEffectLiveParameter(params);
     EXPECT_EQ(result, false);
 }
@@ -664,7 +664,7 @@ TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter003)
     EXPECT_EQ(hpaeManager_->IsInit(), true);
     sleep(1);
     std::vector<std::pair<std::string, std::string>> params;
-    params.push_back({"live_effect","NRON"});
+    params.push_back({"live_effect", "NRON"});
     hpaeManager_->effectLiveState_ = "NoSupport";
     bool result = hpaeManager_->SetEffectLiveParameter(params);
     EXPECT_EQ(result, false);
@@ -705,7 +705,7 @@ TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003)
     hpaeManager_->effectLiveState_ = "NoSupport";
     bool res = hpaeManager_->GetEffectLiveParameter(subKeys, result);
     EXPECT_EQ(res, true);
-    EXPECT_EQ(subKeys[0],result[0].first);
-    EXPECT_EQ("NoSupport",result[0].second);
+    EXPECT_EQ(subKeys[0], result[0].first);
+    EXPECT_EQ("NoSupport", result[0].second);
 }
 }  // namespace

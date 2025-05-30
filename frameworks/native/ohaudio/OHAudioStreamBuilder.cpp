@@ -403,6 +403,14 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage)
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetAudioVolumeMode(AudioVolumeMode volumeMode)
 {
+    switch (volumeMode) {
+        case AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL:
+        case AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL:
+            break;
+        default:
+            AUDIO_ERR_LOG("AudioVolumeMode input value is invalid");
+            return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
     volumeMode_ = volumeMode;
     return AUDIOSTREAM_SUCCESS;
 }

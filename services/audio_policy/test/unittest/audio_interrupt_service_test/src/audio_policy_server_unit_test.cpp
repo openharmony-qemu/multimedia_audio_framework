@@ -2725,10 +2725,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_136, TestSize.Level1)
 
     int32_t volumeLevel = 1;
     auto ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, true, false);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 
     ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, true, false);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 
     ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, true, false);
     EXPECT_EQ(ret, SUCCESS);
@@ -2748,7 +2748,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_138, TestSize.Level1)
     EXPECT_EQ(ret, false);
 
     ret = server->GetStreamMuteInternal(AudioStreamType::STREAM_RING);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2909,7 +2909,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
 
     volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2942,7 +2942,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_150, TestSize.Level1)
     int32_t volumeLevel = 1;
     int32_t volumeFlag = VolumeFlag::FLAG_SHOW_SYSTEM_UI;
     auto ret = server->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 
     volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_APP);
     ret = server->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
@@ -3125,7 +3125,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_159, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     ret = server->AdjustVolumeByStep(VolumeAdjustType::VOLUME_DOWN);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

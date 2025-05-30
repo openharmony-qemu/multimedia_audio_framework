@@ -26,6 +26,23 @@ namespace {
 static constexpr int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 200; // 200ms
 static constexpr int32_t RETRY_TIMES = 25;
 }
+
+static const char *SessionOperationToString(SessionOperation operation)
+{
+    switch (operation) {
+        case SESSION_OPERATION_START:
+            return "OPERATION_START";
+        case SESSION_OPERATION_PAUSE:
+            return "OPERATION_PAUSE";
+        case SESSION_OPERATION_STOP:
+            return "OPERATION_STOP";
+        case SESSION_OPERATION_RELEASE:
+            return "OPERATION_RELEASE";
+        default:
+            return "OPERATION_UNKNOWN";
+    }
+}
+
 AudioCoreService::EventEntry::EventEntry(std::shared_ptr<AudioCoreService> coreService) : coreService_(coreService)
 {
     AUDIO_INFO_LOG("Ctor");
@@ -48,6 +65,7 @@ int32_t AudioCoreService::EventEntry::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
     coreService_->CreateRendererClient(streamDesc, flag, sessionId);
     return SUCCESS;
 }
@@ -56,14 +74,16 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
     coreService_->CreateCapturerClient(streamDesc, flag, sessionId);
     return SUCCESS;
 }
 
 int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
 {
-    AUDIO_INFO_LOG("Session: %{public}u, operation: %{public}u", sessionId, operation);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock sessionId %{public}u, operation %{public}s",
+        sessionId, SessionOperationToString(operation));
     switch (operation) {
         case SESSION_OPERATION_START:
             return coreService_->StartClient(sessionId);
@@ -98,6 +118,8 @@ uint32_t AudioCoreService::EventEntry::GenerateSessionId()
 int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
+    AUDIO_INFO_LOG("nolock device %{public}d, sessionId %{public}u, streamUsage %{public}d, running %{public}d",
+        deviceType, sessionID, streamUsage, isRunning);
     int32_t ret = coreService_->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     return ret;
 }
@@ -108,18 +130,21 @@ void AudioCoreService::EventEntry::OnDeviceStatusUpdated(
     const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role, bool hasPair)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock legacy devicechange for common");
     coreService_->OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
 }
 
 void AudioCoreService::EventEntry::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, bool isConnected)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock legacy devicechange for bt");
     coreService_->OnDeviceStatusUpdated(updatedDesc, isConnected);
 }
 
 void AudioCoreService::EventEntry::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock legacy devicechange for remote");
     coreService_->OnDeviceStatusUpdated(statusInfo, isStop);
 }
 
@@ -127,12 +152,14 @@ void AudioCoreService::EventEntry::OnMicrophoneBlockedUpdate(DeviceType devType,
 {
     CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock device %{public}d, blockstatus %{public}d", devType, status);
     coreService_->OnMicrophoneBlockedUpdate(devType, status);
 }
 
 void AudioCoreService::EventEntry::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock pnp devicechange");
     coreService_->OnPnpDeviceStatusUpdated(desc, isConnected);
 }
 
@@ -140,19 +167,21 @@ void AudioCoreService::EventEntry::OnDeviceConfigurationChanged(DeviceType devic
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock configure change");
     coreService_->OnDeviceConfigurationChanged(deviceType, macAddress, deviceName, streamInfo);
 }
 
 void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
-    AUDIO_INFO_LOG("[module_load]::OnServiceConnected for [%{public}d]", serviceIndex);
     CHECK_AND_RETURN_LOG(serviceIndex >= HDI_SERVICE_INDEX && serviceIndex <= AUDIO_SERVICE_INDEX, "invalid index");
+
+    AUDIO_INFO_LOG("load serviceIndex [%{public}d]", serviceIndex);
 
     // If audio service or hdi service is not ready, donot load default modules
     std::lock_guard<std::mutex> lock(coreService_->serviceFlagMutex_);
     coreService_->serviceFlag_.set(serviceIndex, true);
     if (coreService_->serviceFlag_.count() != MIN_SERVICE_COUNT) {
-        AUDIO_INFO_LOG("[module_load]::hdi service or audio service not up. Cannot load default module now");
+        AUDIO_INFO_LOG("audiohost or audioserver not both boot, waiting for next time");
         return;
     }
 
@@ -173,18 +202,20 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
 
 void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex serviceIndex)
 {
-    AUDIO_WARNING_LOG("Service index [%{public}d]", serviceIndex);
+    AUDIO_WARNING_LOG("unload serviceIndex [%{public}d], should not be here", serviceIndex);
 }
 
 void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock");
     coreService_->OnForcedDeviceSelected(devType, macAddress);
 }
 
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock");
     coreService_->SetAudioScene(audioScene, uid, pid);
     return SUCCESS;
 }
@@ -204,6 +235,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
 int32_t AudioCoreService::EventEntry::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock");
     return coreService_->SetDeviceActive(deviceType, active, uid);
 }
 
@@ -231,7 +263,7 @@ void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
     AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_WARNING_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
+    AUDIO_WARNING_LOG("withlock mac[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
         "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
         desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     coreService_->OnDeviceInfoUpdated(desc, command);
@@ -241,6 +273,8 @@ int32_t AudioCoreService::EventEntry::SetCallDeviceActive(
     InternalDeviceType deviceType, bool active, std::string address, const int32_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock device %{public}d, active %{public}d, uid %{public}d",
+        deviceType, active, uid);
     coreService_->SetCallDeviceActive(deviceType, active, address, uid);
     return SUCCESS;
 }
@@ -255,23 +289,27 @@ int32_t AudioCoreService::EventEntry::RegisterTracker(AudioMode &mode, AudioStre
     const sptr<IRemoteObject> &object, const int32_t apiVersion)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock mode %{public}d", mode);
     return coreService_->RegisterTracker(mode, streamChangeInfo, object, apiVersion);
 }
 
 int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock mode %{public}d", mode);
     return coreService_->UpdateTracker(mode, streamChangeInfo);
 }
 
 void AudioCoreService::EventEntry::RegisteredTrackerClientDied(pid_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock uid %{public}d", uid);
     coreService_->RegisteredTrackerClientDied(uid);
 }
 
 bool AudioCoreService::EventEntry::ConnectServiceAdapter()
 {
+    AUDIO_INFO_LOG("nolock");
     bool ret = coreService_->ConnectServiceAdapter();
     CHECK_AND_RETURN_RET_LOG(ret, false, "Error in connecting to audio service adapter");
 

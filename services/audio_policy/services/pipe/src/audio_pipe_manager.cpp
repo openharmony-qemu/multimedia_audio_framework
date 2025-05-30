@@ -36,8 +36,8 @@ AudioPipeManager::~AudioPipeManager()
 void AudioPipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
-    AUDIO_INFO_LOG("Add pipe %{public}s, pipeRole: %{public}d", info->adapterName_.c_str(), info->pipeRole_);
-    // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+    AUDIO_INFO_LOG("Add id:%{public}u, name %{public}s", info->id_, info->name_.c_str());
+    // Action is only used in pipe execution, while pipeManager can only store default action
     info->pipeAction_ = PIPE_ACTION_DEFAULT;
     curPipeList_.push_back(info);
 }
@@ -45,9 +45,9 @@ void AudioPipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 void AudioPipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
-    AUDIO_INFO_LOG("Adapter name: %{public}s", info->adapterName_.c_str());
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
         if (IsSamePipe(info, *iter)) {
+            AUDIO_INFO_LOG("Remove id:%{public}u, name %{public}s", info->id_, info->name_.c_str());
             curPipeList_.erase(iter);
             break;
         }
@@ -59,7 +59,7 @@ void AudioPipeManager::RemoveAudioPipeInfo(AudioIOHandle id)
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
         if ((*iter)->id_ == id) {
-            AUDIO_INFO_LOG("Find id :%{public}d, adapterName: %{public}s", id, (*iter)->adapterName_.c_str());
+            AUDIO_INFO_LOG("Remove id:%{public}u, name: %{public}s", id, (*iter)->name_.c_str());
             curPipeList_.erase(iter);
             break;
         }
@@ -71,8 +71,9 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
         if (IsSamePipe(newPipe, *iter)) {
+            AUDIO_INFO_LOG("Update id:%{public}u, name %{public}s", (*iter)->id_, (*iter)->name_.c_str());
             Assign(*iter, newPipe);
-            // pipeAction_ should only be used when operating the pipe, while pipeManager only stores the default state
+            // Action is only used in pipe execution, while pipeManager can only store default action
             (*iter)->pipeAction_ = PIPE_ACTION_DEFAULT;
             break;
         }
@@ -81,8 +82,6 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
 
 bool AudioPipeManager::IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo)
 {
-    AUDIO_INFO_LOG("adapterName: %{public}s, cmp: %{public}s, routeFlag: %{public}d, cmp: %{public}d",
-        info->adapterName_.c_str(), cmpInfo->adapterName_.c_str(), info->routeFlag_, cmpInfo->routeFlag_);
     if ((info->adapterName_ == cmpInfo->adapterName_ && info->routeFlag_ == cmpInfo->routeFlag_) ||
         info->id_ == cmpInfo->id_) {
         return true;

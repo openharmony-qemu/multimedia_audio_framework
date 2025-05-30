@@ -443,6 +443,11 @@ void AudioDeviceDescriptor::Dump(std::string &dumpString)
         deviceType_, DeviceTypeToString(deviceType_), deviceName_.c_str());
 }
 
+std::string AudioDeviceDescriptor::GetDeviceTypeString()
+{
+    return std::string(DeviceTypeToString(deviceType_));
+}
+
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVersion) const
 {
     switch (deviceType_) {

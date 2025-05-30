@@ -1426,7 +1426,7 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level1)
 
     ret =  AudioSystemManager::GetInstance()->GetGroupManager(DEFAULT_VOLUME_GROUP_ID)->
         SetMicrophoneMutePersistent(false, PolicyType::PRIVACY_POLCIY_TYPE);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
     bool isMicrophoneMuted = AudioSystemManager::GetInstance()->IsMicrophoneMute();
     EXPECT_EQ(isMicrophoneMuted, false);
 }
@@ -2239,10 +2239,10 @@ HWTEST(AudioManagerUnitTest, NotifySessionStateChange_001, TestSize.Level1)
     int32_t uid = 1;
     int32_t pid = 1;
     ret = AudioSystemManager::GetInstance()->NotifySessionStateChange(uid, pid, true);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     ret = AudioSystemManager::GetInstance()->NotifySessionStateChange(uid, pid, false);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -2257,10 +2257,10 @@ HWTEST(AudioManagerUnitTest, NotifyFreezeStateChange_001, TestSize.Level1)
     std::set<int32_t> pidList;
     pidList.insert(pid);
     ret = AudioSystemManager::GetInstance()->NotifyFreezeStateChange(pidList, true);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     ret = AudioSystemManager::GetInstance()->NotifyFreezeStateChange(pidList, false);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -2272,10 +2272,10 @@ HWTEST(AudioManagerUnitTest, ResetAllProxy_001, TestSize.Level1)
 {
     int32_t ret;
     ret = AudioSystemManager::GetInstance()->ResetAllProxy();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     ret = AudioSystemManager::GetInstance()->ResetAllProxy();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

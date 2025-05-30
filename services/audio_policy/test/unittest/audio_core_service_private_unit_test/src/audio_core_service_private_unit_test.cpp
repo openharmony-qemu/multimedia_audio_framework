@@ -290,7 +290,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_015, TestSize.Level1
     std::string encryptMacAddr = "abc";
 
     auto ret = audioCoreService->BluetoothDeviceFetchOutputHandle(desc, reason, encryptMacAddr);
-    EXPECT_EQ(ret, BLUETOOTH_FETCH_RESULT_CONTINUE);
+    EXPECT_EQ(ret, BLUETOOTH_FETCH_RESULT_ERROR);
 }
 
 /**

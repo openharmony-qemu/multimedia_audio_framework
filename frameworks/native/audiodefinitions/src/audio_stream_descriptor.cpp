@@ -198,5 +198,16 @@ void AudioStreamDescriptor::DumpDeviceAttrs(std::string &dumpString)
     }
 }
 
+std::string AudioStreamDescriptor::GetNewDevicesTypeString()
+{
+    std::string out = "";
+    for (auto &desc : newDeviceDescs_) {
+        if (desc != nullptr) {
+            out += (desc->GetDeviceTypeString() + ":");
+        }
+    }
+    return out;
+}
+
 } // AudioStandard
 } // namespace OHOS

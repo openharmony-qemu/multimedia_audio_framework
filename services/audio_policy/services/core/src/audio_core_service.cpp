@@ -146,33 +146,37 @@ int32_t AudioCoreService::CreateRendererClient(
     if (sessionId == 0) {
         streamDesc->sessionId_ = GenerateSessionId();
         sessionId = streamDesc->sessionId_;
-        AUDIO_INFO_LOG("New session id: %{public}u", sessionId);
+        AUDIO_INFO_LOG("Generate session id %{public}u for stream", sessionId);
     }
+
+    // Modem stream need special process, because there are no real hdi output or input in fwk.
+    // Input also need to be handled because capturer won't be created, only has renderer.
     bool isModemStream = false;
     if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
-        AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
+        AUDIO_INFO_LOG("Modem communication renderer create, sessionId %{public}u", sessionId);
         isModemStream = true;
         audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
     }
+
+    AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
-    // Select device
-    int32_t ret = SUCCESS;
     streamDesc->newDeviceDescs_ =
         audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
-    for (auto device : streamDesc->newDeviceDescs_) {
-        AUDIO_INFO_LOG("Device type %{public}d", device->deviceType_);
-    }
+    AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d",
+        streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
+
     if (isModemStream) {
         return SUCCESS;
     }
 
     UpdatePlaybackStreamFlag(streamDesc, true);
-    AUDIO_INFO_LOG("Will use audio flag: %{public}u", streamDesc->audioFlag_);
+    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
+        streamDesc->audioFlag_, sessionId);
 
     // Fetch pipe
-    ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
+    int32_t ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
     return SUCCESS;
@@ -182,22 +186,24 @@ int32_t AudioCoreService::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
+    
+    AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
-    // Select device
-    int32_t ret = SUCCESS;
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
-        audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
-            sessionId);
+        audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType,
+        GetRealUid(streamDesc), sessionId);
     CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
     streamDesc->newDeviceDescs_.clear();
     streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
-    AUDIO_INFO_LOG("New stream device type %{public}d", inputDeviceDesc->deviceType_);
+    AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d",
+        streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
-    SetRecordStreamFlag(streamDesc);
-    AUDIO_INFO_LOG("Will use audio flag: %{public}u", streamDesc->audioFlag_);
+    UpdateRecordStreamFlag(streamDesc);
+    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
+        streamDesc->audioFlag_, sessionId);
 
     // Fetch pipe
-    ret = FetchCapturerPipeAndExecute(streamDesc, audioFlag, sessionId);
+    int32_t ret = FetchCapturerPipeAndExecute(streamDesc, audioFlag, sessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
     return SUCCESS;
@@ -206,7 +212,6 @@ int32_t AudioCoreService::CreateCapturerClient(
 bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     Trace trace("IsStreamSupportMultiChannel");
-    AUDIO_INFO_LOG("In");
 
     // MultiChannel: Speaker, A2dp offload
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
@@ -222,7 +227,9 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
         return false;
     }
     // The multi-channel algorithm needs to be supported in the dsp
-    return AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
+    bool isSupported = AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
+    AUDIO_INFO_LOG("effect offload enable is %{public}d", isSupported);
+    return isSupported;
 }
 
 bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc)
@@ -255,14 +262,14 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
         (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
          streamDesc->rendererInfo_.samplingRate != SAMPLE_RATE_48000)) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Forced normal");
+        AUDIO_INFO_LOG("Forced normal cases");
         return;
     }
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ == "REMOTE_NETWORK_ID") {
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL; // remote cast/remote device select normal
-        AUDIO_INFO_LOG("remote device/cast set normal");
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        AUDIO_INFO_LOG("Use normal for remote device or remotecast");
         return;
     }
 
@@ -270,10 +277,10 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
         streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
         std::string sinkPortName =
             AudioPolicyUtils::GetInstance().GetSinkPortName(streamDesc->newDeviceDescs_.front()->deviceType_);
-        AUDIO_INFO_LOG("sinkPortName %{public}s", sinkPortName.c_str());
         // in plan: if has two voip, return normal
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
-        AUDIO_INFO_LOG("sinkPortName: %{public}s, audioFlag_ %{public}d", sinkPortName.c_str(), streamDesc->audioFlag_);
+        AUDIO_INFO_LOG("sinkPortName %{public}s, audioFlag 0x%{public}x",
+            sinkPortName.c_str(), streamDesc->audioFlag_);
         return;
     }
     AUDIO_INFO_LOG("rendererFlag: %{public}d", streamDesc->rendererInfo_.rendererFlags);
@@ -316,11 +323,11 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
-void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Forced normal");
+        AUDIO_INFO_LOG("Forced normal cases");
         return;
     }
 
@@ -328,12 +335,12 @@ void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         // in plan: if has two voip, return normal
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP;
-        AUDIO_INFO_LOG("streamDesc->audioFlag_ %{public}d", streamDesc->audioFlag_);
+        AUDIO_INFO_LOG("Use voip");
         return;
     }
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_REMOTE_CAST) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-        AUDIO_WARNING_LOG("record normal stream due to remotecast");
+        AUDIO_WARNING_LOG("Use normal for remotecast");
         return;
     }
 
@@ -356,7 +363,6 @@ void AudioCoreService::SetRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor
 
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
-    AUDIO_INFO_LOG("In, session %{public}u", sessionId);
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication ring, directly return");
         return SUCCESS;
@@ -366,6 +372,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Cannot find session %{public}u", sessionId);
     pipeManager_->StartClient(sessionId);
 
+    // A stream set default device special case
     if (audioDeviceManager_.IsSessionSetDefaultDevice(sessionId)) {
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionId);
         std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
@@ -412,7 +419,6 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
 
 int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
 {
-    AUDIO_INFO_LOG("Release session %{public}u", sessionId);
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
         pipeManager_->RemoveModemCommunicationId(sessionId);
@@ -1007,8 +1013,9 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
 int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
-    AUDIO_INFO_LOG("Output stream size: %{public}zu, connected %{public}s",
+    AUDIO_INFO_LOG("[DeviceFetchStart] for %{public}zu output streams, in devices %{public}s",
         outputStreamDescs.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
+
     CheckModemScene(reason);
     if (outputStreamDescs.empty()) {
         return HandleFetchOutputWhenNoRunningStream();
@@ -1017,7 +1024,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     isVoiceCallMuted_ = false;
-    for (auto streamDesc : outputStreamDescs) {
+    for (auto &streamDesc : outputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
             audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
@@ -1036,7 +1043,8 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
         }
-        AUDIO_INFO_LOG("Will use audio flag: %{public}u", streamDesc->audioFlag_);
+        AUDIO_INFO_LOG("Target audioFlag %{public}u for stream %{public}u",
+            streamDesc->audioFlag_, streamDesc->sessionId_);
     }
 
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
@@ -1049,6 +1057,9 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 int32_t AudioCoreService::FetchInputDeviceAndRoute()
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
+    AUDIO_INFO_LOG("[DeviceFetchStart] for %{public}zu input streams, in devices %{public}s",
+        inputStreamDescs.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
+
     if (inputStreamDescs.empty()) {
         return HandleFetchInputWhenNoRunningStream();
     }
@@ -1063,9 +1074,10 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
                 streamDesc->sessionId_);
         CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
         streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
-        SetRecordStreamFlag(streamDesc);
+        AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
+            streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
 
-        AUDIO_INFO_LOG("device type: %{public}d", inputDeviceDesc->deviceType_);
+        UpdateRecordStreamFlag(streamDesc);
         if (!HandleInputStreamInRunning(streamDesc)) {
             continue;
         }

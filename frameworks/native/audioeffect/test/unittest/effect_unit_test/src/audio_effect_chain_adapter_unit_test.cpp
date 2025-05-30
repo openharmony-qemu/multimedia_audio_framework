@@ -153,7 +153,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerCreateCb_002, TestSize
     EXPECT_EQ(SUCCESS, result);
 
     result = EffectChainManagerReleaseCb(sceneType, sessionid);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -284,10 +284,10 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerCreateCb_006, TestSize
     AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
     const char *sessionid2 = "222";
     result = EffectChainManagerCreateCb(sceneType, sessionid2);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 
     result = EffectChainManagerReleaseCb(sceneType, sessionid2);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

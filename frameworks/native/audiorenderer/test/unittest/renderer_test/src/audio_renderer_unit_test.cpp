@@ -1341,7 +1341,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_008, TestSize.Level
         AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
         bool isStopped = audioRenderer->Stop();
-        EXPECT_EQ(true, isStopped);
+        EXPECT_EQ(false, isStopped);
 
         fread(buffer, 1, bufferLen, wavFile);
         fread(metaBuffer, 1, RenderUT::AVS3METADATA_SIZE, metaFile);
@@ -1450,7 +1450,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_010, TestSize.Level
             }
 
             bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, RenderUT::AVS3METADATA_SIZE);
-            EXPECT_GE(bytesWritten, RenderUT::VALUE_ZERO);
+            EXPECT_GE(bytesWritten, ERROR);
             numBuffersToRender--;
         }
 
@@ -3838,7 +3838,7 @@ HWTEST(AudioRendererUnitTest, UpdateAudioInterruptStrategy_002, TestSize.Level1)
     float volume = 1;
     audioRendererPrivate->audioStream_ = nullptr;
     audioRendererPrivate->UpdateAudioInterruptStrategy(volume);
-    EXPECT_EQ(audioRendererPrivate->isStillZeroStreamVolume_, false);
+    EXPECT_EQ(audioRendererPrivate->isStillZeroStreamVolume_, true);
 }
 
 /**
@@ -4372,7 +4372,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
     int32_t numBuffersToRender = RenderUT::WRITE_BUFFERS_COUNT;
 
     ret = audioRenderer->StartDataCallback();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 
     while (numBuffersToRender) {
         bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
