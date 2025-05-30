@@ -625,6 +625,18 @@ int32_t HpaeRendererManager::Release(uint32_t sessionId)
     return DestroyStream(sessionId);
 }
 
+bool HpaeRendererManager::CheckIsStreamRunning()
+{
+    bool isRunning = false;
+    for (const auto& it : sessionNodeMap_) {
+        if (it.second.state == HPAE_SESSION_RUNNING) {
+            isRunning = true;
+            break;
+        }
+    }
+    return IsRunning;
+}
+
 int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
 {
     Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
@@ -633,13 +645,9 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
             if (outputCluster_ != nullptr) {
                 outputCluster_->Stop();
             }
-        } else if (outputCluster_ != nullptr && outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
-            for (const auto& it : sessionNodeMap_) {
-                if (it.second.state == HPAE_SESSION_RUNNING) {
-                    outputCluster_->Start();
-                    break;
-                }
-            }
+        } else if (outputCluster_ != nullptr && outputCluster_->GetState() != STREAM_MANAGER_RUNNING &&
+            CheckIsStreamRunning()) {
+            outputCluster_->Start();
         }
     };
     SendRequest(request);

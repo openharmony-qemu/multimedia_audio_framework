@@ -349,7 +349,7 @@ int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
         if (isSuspend) {
             sinkOutputNode_->RenderSinkStop();
         } else if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && sinkInputNode_ &&
-                    sinkInputNode_->GetState() == HPAE_SESSION_RUNNING) {
+            sinkInputNode_->GetState() == HPAE_SESSION_RUNNING) {
             sinkOutputNode_->RenderSinkStart();
         }
     };
