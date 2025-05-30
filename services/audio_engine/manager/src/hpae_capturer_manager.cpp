@@ -425,8 +425,8 @@ int32_t HpaeCapturerManager::SetMute(bool isMute)
 void HpaeCapturerManager::Process()
 {
     Trace trace("HpaeCapturerManager::Process");
-    UpdateAppsUidAndSessionId();
-    if (!sourceOutputNodeMap_.empty() && IsRunning()) {
+    if (IsRunning()) {
+        UpdateAppsUidAndSessionId();
         for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
             sourceOutputNodePair.second->DoProcess();
         }

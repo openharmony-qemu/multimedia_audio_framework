@@ -531,8 +531,8 @@ int32_t HpaeOffloadRendererManager::RegisterReadCallback(
 
 void HpaeOffloadRendererManager::Process()
 {
-    UpdateAppsUid();
-    if (IsRunning()) {
+    if (sinkOutputNode_ != nullptr && IsRunning()) {
+        UpdateAppsUid();
         sinkOutputNode_->DoProcess();
     }
 }
