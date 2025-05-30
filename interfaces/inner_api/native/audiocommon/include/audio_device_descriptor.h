@@ -41,35 +41,6 @@ public:
         DEVICE_INFO,
     };
 
-    DeviceType deviceType_ = DEVICE_TYPE_NONE;
-    DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
-    int32_t deviceId_ = 0;
-    int32_t channelMasks_ = 0;
-    int32_t channelIndexMasks_ = 0;
-    std::string deviceName_;
-    std::string macAddress_;
-    int32_t interruptGroupId_ = 0;
-    int32_t volumeGroupId_ = 0;
-    std::string networkId_;
-    uint16_t dmDeviceType_{0};
-    std::string displayName_;
-    DeviceStreamInfo audioStreamInfo_ = {};
-    DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
-    ConnectState connectState_ = CONNECTED;
-    // AudioDeviceDescriptor
-    bool exceptionFlag_ = false;
-    int64_t connectTimeStamp_ = 0;
-    std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
-    bool isScoRealConnected_ = false;
-    bool isEnable_ = true;
-    // DeviceInfo
-    bool isLowLatencyDevice_ = false;
-    int32_t a2dpOffloadFlag_ = NO_A2DP_DEVICE;
-    // Other
-    int32_t descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
-    bool spatializationSupported_ = false;
-    bool hasPair_{false};
-
     AudioDeviceDescriptor(int32_t descriptorType = AUDIO_DEVICE_DESCRIPTOR);
 
     AudioDeviceDescriptor(DeviceType type, DeviceRole role);
@@ -131,6 +102,8 @@ public:
 
     void Dump(std::string &dumpString);
 
+    std::string GetDeviceTypeString();
+
     struct AudioDeviceDescriptorHash {
         size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
         {
@@ -157,6 +130,35 @@ public:
             return lhs->IsSameDeviceDesc(*rhs);
         }
     };
+
+    DeviceType deviceType_ = DEVICE_TYPE_NONE;
+    DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
+    int32_t deviceId_ = 0;
+    int32_t channelMasks_ = 0;
+    int32_t channelIndexMasks_ = 0;
+    std::string deviceName_;
+    std::string macAddress_;
+    int32_t interruptGroupId_ = 0;
+    int32_t volumeGroupId_ = 0;
+    std::string networkId_;
+    uint16_t dmDeviceType_{0};
+    std::string displayName_;
+    DeviceStreamInfo audioStreamInfo_ = {};
+    DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
+    ConnectState connectState_ = CONNECTED;
+    // AudioDeviceDescriptor
+    bool exceptionFlag_ = false;
+    int64_t connectTimeStamp_ = 0;
+    std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
+    bool isScoRealConnected_ = false;
+    bool isEnable_ = true;
+    // DeviceInfo
+    bool isLowLatencyDevice_ = false;
+    int32_t a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    // Other
+    int32_t descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
+    bool spatializationSupported_ = false;
+    bool hasPair_{false};
 
 private:
     bool IsOutput()

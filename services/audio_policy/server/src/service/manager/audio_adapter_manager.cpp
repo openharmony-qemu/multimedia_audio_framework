@@ -1085,14 +1085,13 @@ std::shared_ptr<AllDeviceVolumeInfo> AudioAdapterManager::GetAllDeviceVolumeInfo
 AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(pipeInfo->moduleInfo_);
-    AUDIO_INFO_LOG("Adapter load-module %{public}s, route flag: %{public}u", moduleArgs.c_str(), pipeInfo->routeFlag_);
+    AUDIO_INFO_LOG("[PipeExecInfo] pipe name %{public}s, moduleArgs %{public}s",
+        pipeInfo->name_.c_str(), moduleArgs.c_str());
     curActiveCount_++;
     AudioIOHandle ioHandle = HDI_INVALID_ID;
     if (IsPaRoute(pipeInfo->routeFlag_)) {
-        AUDIO_INFO_LOG("Is pa route");
         return OpenPaAudioPort(pipeInfo, paIndex, moduleArgs);
     }
-    AUDIO_INFO_LOG("Not pa route");
     return OpenNotPaAudioPort(pipeInfo, paIndex);
 }
 
@@ -1121,7 +1120,7 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
     } else {
         paIndex = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, moduleArgs.c_str());
     }
-    AUDIO_INFO_LOG("Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
+    AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
     return ioHandle;
 }
 
@@ -1172,7 +1171,7 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
     } else {
         AUDIO_ERR_LOG("Invalid pipe role: %{public}u", pipeInfo->pipeRole_);
     }
-    AUDIO_INFO_LOG("Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
+    AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
     return ioHandle;
 }
 
@@ -1215,7 +1214,7 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
-    AUDIO_INFO_LOG("Adapter load-module %{public}s", moduleArgs.c_str());
+    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_++;
@@ -1249,23 +1248,23 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
         paIndex = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
     }
 
-    AUDIO_INFO_LOG("Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
+    AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
     return ioHandle;
 }
 
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex)
 {
-    AUDIO_INFO_LOG("IoHandle: %{public}u, paIndex: %{public}u, curCount: %{public}d",
+    AUDIO_INFO_LOG("[PipeExecInfo] ioHandle: %{public}u, paIndex: %{public}u, curCount: %{public}d",
         ioHandle, paIndex, curActiveCount_);
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ERROR, "audioServerProxy_ null");
     curActiveCount_--;
     int32_t ret = audioServiceAdapter_->CloseAudioPort(paIndex);
-    AudioIOHandle tempHandle = ioHandle;
+    AudioIOHandle handleToClose = ioHandle;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     audioServerProxy_->DestroyHdiPort(ioHandle);
     IPCSkeleton::SetCallingIdentity(identity);
-    AUDIO_INFO_LOG("Close %{public}u port, paIndex: %{public}u end.", tempHandle, paIndex);
+    AUDIO_INFO_LOG("[PipeExecInfo] Close %{public}u port, paIndex: %{public}u end", handleToClose, paIndex);
     return ret;
 }
 

@@ -93,12 +93,15 @@ std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
 int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
+    AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu output streams", streamDescs.size());
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
+
+    AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
-        AUDIO_INFO_LOG("Pipe name: %{public}s, device class: %{public}s, action: %{public}d",
-            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->moduleInfo_.className.c_str(), pipeInfo->pipeAction_);
+        AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
+            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -112,20 +115,23 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     return SUCCESS;
 }
 
-int32_t AudioCoreService::FetchCapturerPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+int32_t AudioCoreService::FetchCapturerPipesAndExecute(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
-    uint32_t audioFlag;
+    AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu input streams", streamDescs.size());
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
+
+    AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
+    uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
-        AUDIO_INFO_LOG("Pipe name: %{public}s, class: %{public}s, route: %{public}u, action: %{public}d",
-            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->moduleInfo_.className.c_str(),
-            pipeInfo->routeFlag_, pipeInfo->pipeAction_);
+        AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
+            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessInputPipeUpdate(pipeInfo, audioFlag);
-        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
             ProcessInputPipeNew(pipeInfo, audioFlag);
-        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) { // DEFAULT
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) {
             // Do nothing
         }
     }
@@ -382,7 +388,7 @@ int32_t AudioCoreService::LoadA2dpModule(DeviceType deviceType, const AudioStrea
     for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "source" ? INPUT_DEVICE : OUTPUT_DEVICE;
         DeviceRole deviceRole = deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ? OUTPUT_DEVICE : INPUT_DEVICE;
-        AUDIO_INFO_LOG("Load a2dp module [%{public}s], load role[%{public}d], config role[%{public}d]",
+        AUDIO_INFO_LOG("Load a2dp module [%{public}s], role[%{public}d], config role[%{public}d]",
             moduleInfo.name.c_str(), deviceRole, configRole);
         if (configRole != deviceRole) {continue;}
         if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
@@ -401,9 +407,11 @@ int32_t AudioCoreService::LoadA2dpModule(DeviceType deviceType, const AudioStrea
             pipeInfo->id_ = ioHandle;
             pipeInfo->paIndex_ = paIndex;
             if (moduleInfo.role == "sink") {
+                pipeInfo->name_ = "a2dp_output";
                 pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
                 pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
             } else {
+                pipeInfo->name_ = "a2dp_input";
                 pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
                 pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
             }
@@ -411,7 +419,7 @@ int32_t AudioCoreService::LoadA2dpModule(DeviceType deviceType, const AudioStrea
             pipeInfo->moduleInfo_ = moduleInfo;
             pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
             pipeManager_->AddAudioPipeInfo(pipeInfo);
-            AUDIO_INFO_LOG("Add PipeInfo %{public}u in loada2dp.", pipeInfo->id_);
+            AUDIO_INFO_LOG("Add PipeInfo %{public}u in load a2dp.", pipeInfo->id_);
         } else {
             // At least one a2dp device is already connected. A new a2dp device is connecting.
             // Need to reload a2dp module when switching to a2dp device.
@@ -463,9 +471,11 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     pipeInfo->id_ = ioHandle;
     pipeInfo->paIndex_ = paIndex;
     if (moduleInfo.role == "sink") {
+        pipeInfo->name_ = "a2dp_output";
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
         pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     } else {
+        pipeInfo->name_ = "a2dp_input";
         pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
         pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     }
@@ -530,14 +540,15 @@ int32_t AudioCoreService::FetchDeviceAndRoute(const AudioStreamDeviceChangeReaso
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     uint32_t &sessionId, uint32_t &audioFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
+    AUDIO_INFO_LOG("[PipeFetchStart] for stream %{public}d", sessionId);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipeAndExecute(streamDesc);
 
+    AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     uint32_t sinkId = HDI_INVALID_ID;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
-        AUDIO_INFO_LOG("Pipe name: %{public}s, class: %{public}s, route: %{public}u, action: %{public}d",
-            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->moduleInfo_.className.c_str(),
-            pipeInfo->routeFlag_, pipeInfo->pipeAction_);
+        AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
+            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
@@ -562,7 +573,8 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
 
     for (auto &desc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-        AUDIO_INFO_LOG("Stream id: %{public}u, action: %{public}d", desc->sessionId_, desc->streamAction_);
+        AUDIO_INFO_LOG("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
+            desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 flag = desc->routeFlag_;
@@ -590,7 +602,8 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
 {
     for (auto &desc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-        AUDIO_INFO_LOG("Stream id: %{public}u, action: %{public}d", desc->sessionId_, desc->streamAction_);
+        AUDIO_INFO_LOG("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
+            desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 flag = desc->routeFlag_;
@@ -620,25 +633,27 @@ int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStrea
     if (sessionId == 0) {
         streamDesc->sessionId_ = GenerateSessionId();
         sessionId = streamDesc->sessionId_;
-        AUDIO_INFO_LOG("New sessionId: %{public}u", sessionId);
+        AUDIO_INFO_LOG("Generate sessionId: %{public}u for stream", sessionId);
     }
 
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        AUDIO_INFO_LOG("Playback capturer, return");
+        AUDIO_INFO_LOG("[PipeFetchInfo] playbackcapture, no need fetch pipe");
         audioFlag = AUDIO_INPUT_FLAG_NORMAL;
         return SUCCESS;
     }
+
+    AUDIO_INFO_LOG("[PipeFetchStart] for stream %{public}d", sessionId);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipeAndExecute(streamDesc);
-    uint32_t sinkId = HDI_INVALID_ID;
-    for (auto pipeInfo : pipeInfos) {
-        AUDIO_INFO_LOG("Pipe name: %{public}s, class: %{public}s, route: %{public}u, action: %{public}d",
-            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->moduleInfo_.className.c_str(),
-            pipeInfo->routeFlag_, pipeInfo->pipeAction_);
+
+    AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
+    for (auto &pipeInfo : pipeInfos) {
+        AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
+            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessInputPipeUpdate(pipeInfo, audioFlag);
-        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
             ProcessInputPipeNew(pipeInfo, audioFlag);
-        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) { // DEFAULT
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) {
             // Do nothing
         }
     }
@@ -655,10 +670,9 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
     pipeInfo->id_ = sourceId;
     pipeInfo->paIndex_ = paIndex;
 
-    for (auto desc : pipeInfo->streamDescriptors_) {
-        AUDIO_INFO_LOG("Pipe name: %{public}s, class: %{public}s, route: %{public}u, action: %{public}d",
-            pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->moduleInfo_.className.c_str(),
-            pipeInfo->routeFlag_, pipeInfo->pipeAction_);
+    for (auto &desc : pipeInfo->streamDescriptors_) {
+        AUDIO_INFO_LOG("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
+            desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 flag = desc->routeFlag_;
@@ -685,7 +699,8 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
 void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag)
 {
     for (auto desc : pipeInfo->streamDescriptors_) {
-        AUDIO_INFO_LOG("Stream id: %{public}u, action: %{public}d", desc->sessionId_, desc->streamAction_);
+        AUDIO_INFO_LOG("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
+            desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 flag = desc->routeFlag_;
@@ -712,8 +727,8 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
 void AudioCoreService::RemoveUnusedPipe()
 {
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe();
-    for (auto pipeInfo : pipeInfos) {
-        AUDIO_INFO_LOG("Close hid port id %{public}u", pipeInfo->id_);
+    for (auto &pipeInfo : pipeInfos) {
+        AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
     }
@@ -834,12 +849,13 @@ void AudioCoreService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop
 void AudioCoreService::MoveStreamSink(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::shared_ptr<AudioPipeInfo> pipeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("session %{public}u", streamDesc->sessionId_);
     Trace trace("AudioCoreService::MoveStreamSink");
+
     DeviceType oldDeviceType = DEVICE_TYPE_NONE;
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = streamDesc->newDeviceDescs_.front();
-    AUDIO_INFO_LOG("Move sink, [][]->[%{public}d][%{public}s], reason %{public}d", newDeviceDesc->deviceType_,
-        GetEncryptAddr(newDeviceDesc->macAddress_).c_str(), static_cast<int32_t>(reason));
+    AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u to [%{public}d][%{public}s], reason %{public}d",
+        streamDesc->sessionId_, newDeviceDesc->deviceType_, GetEncryptAddr(newDeviceDesc->macAddress_).c_str(),
+        static_cast<int32_t>(reason));
 
     std::vector<SinkInput> sinkInputs;
     audioPolicyManager_.GetAllSinkInputs(sinkInputs);
@@ -871,14 +887,14 @@ bool AudioCoreService::IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamD
 void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::shared_ptr<AudioPipeInfo> pipeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("session %{public}u", streamDesc->sessionId_);
     Trace trace("AudioCoreService::MoveToNewOutputDevice");
+
     DeviceType oldDeviceType = DEVICE_TYPE_NONE;
     bool isNeedTriggerCallback = true;
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = streamDesc->newDeviceDescs_.front();
     std::string oldSinkName = "";
     if (streamDesc->oldDeviceDescs_.size() == 0) {
-        AUDIO_INFO_LOG("Move session %{public}u, [][]->[%{public}d][%{public}s], reason %{public}d",
+        AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u to [%{public}d][%{public}s], reason %{public}d",
             streamDesc->sessionId_, newDeviceDesc->deviceType_,
             GetEncryptAddr(newDeviceDesc->macAddress_).c_str(), static_cast<int32_t>(reason));
     } else {
@@ -1004,7 +1020,7 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
     Trace trace("AudioCoreService::MoveStreamSource");
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_);
 
-    AUDIO_INFO_LOG("Move session %{public}u to [%{public}d][%{public}s]",
+    AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u to [%{public}d][%{public}s]",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_,
         GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_).c_str());
 
@@ -1023,11 +1039,11 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_);
 
     if (streamDesc->oldDeviceDescs_.size() == 0) {
-        AUDIO_INFO_LOG("Move session %{public}u to [%{public}d][%{public}s]",
+        AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u to [%{public}d][%{public}s]",
             streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_,
             GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_).c_str());
     } else {
-        AUDIO_INFO_LOG("Move session %{public}u, [%{public}d][%{public}s]-->[%{public}d][%{public}s]",
+        AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u [%{public}d][%{public}s] to [%{public}d][%{public}s]",
             streamDesc->sessionId_, streamDesc->oldDeviceDescs_.front()->deviceType_,
             GetEncryptAddr(streamDesc->oldDeviceDescs_.front()->macAddress_).c_str(),
             streamDesc->newDeviceDescs_.front()->deviceType_,
@@ -1054,11 +1070,9 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
 int32_t AudioCoreService::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
     std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor)
 {
-    AUDIO_DEBUG_LOG("Start");
-    // check
     CHECK_AND_RETURN_RET_LOG(LOCAL_NETWORK_ID == localDeviceDescriptor->networkId_, ERR_INVALID_OPERATION,
         "failed: not a local device.");
-    // start move.
+
     uint32_t sourceId = -1; // invalid source id, use source name instead.
     std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(localDeviceDescriptor->deviceType_);
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
@@ -1119,6 +1133,7 @@ int32_t AudioCoreService::MoveToRemoteInputDevice(std::vector<SourceOutput> sour
 int32_t AudioCoreService::OpenRemoteAudioDevice(std::string networkId, DeviceRole deviceRole, DeviceType deviceType,
     std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
+    AUDIO_INFO_LOG("[PipeExecInfo] open remote pipe device %{public}d", deviceType);
     // open the test device. We should open it when device is online.
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
     AudioModuleInfo remoteDeviceInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
@@ -1184,7 +1199,8 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     InternalDeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
-    AUDIO_INFO_LOG("update route, streamUsage:%{public}d, 1st devicetype:%{public}d", streamUsage, deviceType);
+    AUDIO_INFO_LOG("[PipeExecInfo] Update route streamUsage:%{public}d, devicetype:[%{public}s]",
+        streamUsage, streamDesc->GetNewDevicesTypeString().c_str());
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
         if (!SelectRingerOrAlarmDevices(streamDesc)) {
@@ -1213,7 +1229,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
             activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
             activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
-            AUDIO_INFO_LOG("update desc [%{public}d] with speaker on session [%{public}d]",
+            AUDIO_INFO_LOG("Update desc [%{public}d] with speaker on session [%{public}d]",
                 deviceType, streamDesc->sessionId_);
             AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
             if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType)) {
@@ -1330,7 +1346,7 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
 
 void AudioCoreService::UpdateDualToneState(const bool &enable, const int32_t &sessionId)
 {
-    AUDIO_INFO_LOG("update dual tone state, enable:%{public}d, sessionId:%{public}d", enable, sessionId);
+    AUDIO_INFO_LOG("Update dual tone state, enable:%{public}d, sessionId:%{public}d", enable, sessionId);
     enableDualHalToneState_ = enable;
     if (enableDualHalToneState_) {
         enableDualHalToneSessionId_ = sessionId;
@@ -1359,7 +1375,7 @@ int32_t AudioCoreService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInp
             std::string activePort = BLUETOOTH_SPEAKER;
             audioPolicyManager_.SuspendAudioDevice(activePort, false);
         }
-        AUDIO_INFO_LOG("move for session [%{public}d], portName %{public}s pipeType %{public}d",
+        AUDIO_INFO_LOG("move for sinkInput [%{public}d], portName %{public}s pipeType %{public}d",
             sinkInputIds[i].streamId, sinkName.c_str(), pipeType);
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
@@ -1424,12 +1440,11 @@ void AudioCoreService::TriggerRecreateCapturerStreamCallback(int32_t callerPid, 
 
 uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex)
 {
-    AUDIO_INFO_LOG("Flag: %{public}u, role: %{public}s", pipeInfo->routeFlag_, pipeInfo->moduleInfo_.role.c_str());
     uint32_t id = OPEN_PORT_FAILURE;
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr && pipeInfo->streamDescriptors_.size() > 0 &&
         pipeInfo->streamDescriptors_.front() != nullptr, OPEN_PORT_FAILURE, "pipeInfo is invalid");
     if (pipeInfo->streamDescriptors_.front()->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
-        // DEVICE_TYPE_REMOTE_CAST no need to open audioport
+        AUDIO_INFO_LOG("[PipeExecInfo] remote cast device do not need open pipe");
         id = pipeInfo->streamDescriptors_.front()->sessionId_;
     } else {
         HandleCommonSourceOpened(pipeInfo);
@@ -1445,7 +1460,7 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed paId[%{public}u]", paIndex);
     audioIOHandleMap_.AddIOHandleInfo(pipeInfo->moduleInfo_.name, id);
-    AUDIO_INFO_LOG("Get HDI id: %{public}u, paIndex %{public}u", id, paIndex);
+    AUDIO_INFO_LOG("[PipeExecInfo] Get HDI id: %{public}u, paIndex %{public}u", id, paIndex);
     return id;
 }
 
@@ -1672,7 +1687,7 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
 
 int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream()
 {
-    AUDIO_PRERELEASE_LOGI("when no stream in");
+    AUDIO_PRERELEASE_LOGI("No running stream need update several device state");
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
@@ -1693,7 +1708,7 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream()
 
 int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
 {
-    AUDIO_PRERELEASE_LOGI("when no stream in");
+    AUDIO_PRERELEASE_LOGI("No running stream need update several device state");
     std::shared_ptr<AudioDeviceDescriptor> desc;
     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
@@ -1956,7 +1971,8 @@ void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &
     oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->oldDeviceDescs_.front(),
         streamDesc->sessionId_);
 
-    AUDIO_INFO_LOG("Move session %{public}u, [%{public}d][%{public}s]->[%{public}d][%{public}s], reason %{public}d",
+    AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u, [%{public}d][%{public}s] to [%{public}d][%{public}s]" \
+        " reason %{public}d",
         streamDesc->sessionId_, streamDesc->oldDeviceDescs_.front()->deviceType_,
         GetEncryptAddr(streamDesc->oldDeviceDescs_.front()->macAddress_).c_str(), newDeviceDesc->deviceType_,
         GetEncryptAddr(newDeviceDesc->macAddress_).c_str(), static_cast<int32_t>(reason));
@@ -2125,7 +2141,7 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
 void AudioCoreService::OnAudioSceneChange(const AudioScene& audioScene)
 {
     Trace trace("AudioCoreService::OnAudioSceneChange:" + std::to_string(audioScene));
-    AUDIO_INFO_LOG("Start");
+    AUDIO_INFO_LOG("scene change to %{public}d", audioScene);
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audio policy server handler is null");
     audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
 }

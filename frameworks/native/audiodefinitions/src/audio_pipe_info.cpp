@@ -32,6 +32,7 @@ AudioPipeInfo::AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     id_ = pipeInfo->id_;
     paIndex_ = pipeInfo->paIndex_;
+    name_ = pipeInfo->name_;
     pipeRole_ = pipeInfo->pipeRole_;
     routeFlag_ = pipeInfo->routeFlag_;
     adapterName_ = pipeInfo->adapterName_;
@@ -44,7 +45,7 @@ AudioPipeInfo::AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo)
 void AudioPipeInfo::Dump(std::string &dumpString)
 {
     AppendFormat(dumpString, "Pipe %d, role %s, adapter %s, name %s:\n",
-        id_, IsOutput() ? "Output" : "Input", adapterName_.c_str(), moduleInfo_.name.c_str());
+        id_, IsOutput() ? "Output" : "Input", adapterName_.c_str(), name_.c_str());
 
     DumpCommonAttrs(dumpString);
 
@@ -80,6 +81,14 @@ void AudioPipeInfo::DumpOutputAttrs(std::string &dumpString)
 void AudioPipeInfo::DumpInputAttrs(std::string &dumpString)
 {
     AppendFormat(dumpString, "  - SourceType: %s\n", moduleInfo_.sourceType.c_str());
+}
+
+std::string AudioPipeInfo::ToString()
+{
+    std::string out = "";
+    AppendFormat(out, "id %d, adapter %s, name %s",
+        id_, adapterName_.c_str(), name_.c_str());
+    return out;
 }
 
 } // AudioStandard
