@@ -145,6 +145,7 @@ private:
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
     int32_t RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         AudioModuleInfo &moduleInfo, std::string &currentActivePort);
+    uint32_t GetPaIndexByPortName(std::string &portName);
 
     void DeactivateNearlinkDevice(AudioDeviceDescriptor &desc);
 
