@@ -16,9 +16,9 @@
 #include <gtest/gtest.h>
 #include "hpae_node_common.h"
 
-using namespace OHOS {
-using namespace AudioStandard {
-using namespace HPAE {
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
 
 std::string DEFAULT_NODE_STRING_KEY = "1_48000_2_1";
 std::string DEFAULT_SCENE_MUSIC = "SCENE_MUSIC";

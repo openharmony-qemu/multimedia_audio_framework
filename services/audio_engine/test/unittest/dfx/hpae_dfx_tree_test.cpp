@@ -23,9 +23,9 @@
 #include "hpae_dfx_tree.h"
 #include <locale>
 
-using namespace OHOS {
-using namespace AudioStandard {
-using namespace HPAE {
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
 
 class HpaeDfxTreeTest : public testing::Test {
 public:
