@@ -42,6 +42,7 @@ config("audio_engine_private_config") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../audio_service/server/include",
     "../../../audio_service/common/include",
+    "../../../audio_service/common/include/limiter",
     "../../../audio_policy/server/include/service/common",
     "../../../../frameworks/native/audioeffect/include",
     "../../../../frameworks/native/hdiadapter_new/include",
