@@ -42,6 +42,7 @@ HpaeNoLockQueue::~HpaeNoLockQueue()
 }
 void HpaeNoLockQueue::InitQueue(size_t maxRequestCount)
 {
+    CHECK_AND_RETURN_LOG(maxRequestCount > 0, "maxRequestCount = 0");
     requestQueue_.resize(maxRequestCount);
     tempRequestQueue_.reserve(maxRequestCount);
 

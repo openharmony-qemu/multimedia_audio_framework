@@ -220,14 +220,18 @@ std::vector<T>& InputPort<T>::ReadPreOutputData()
 template <class T>
 void InputPort<T>::Connect(const std::shared_ptr<HpaeNode> &node, OutputPort<T>* output)
 {
-    output->AddInput(this);
+    if (output) {
+        output->AddInput(this);
+    }
     AddPreOutput(node, output);
 }
 
 template <class T>
 void InputPort<T>::DisConnect(OutputPort<T>* output)
 {
-    output->RemoveInput(this);
+    if (output) {
+        output->RemoveInput(this);
+    }
     RemovePreOutput(output);
 }
 

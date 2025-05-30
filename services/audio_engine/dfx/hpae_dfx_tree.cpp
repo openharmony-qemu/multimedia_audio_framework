@@ -119,9 +119,9 @@ std::vector<std::vector<HpaeDfxNodeInfo>> HpaeDfxTree::LevelOrderTraversal()
     std::queue<DfxTreeNode *> q;
     q.push(root_);
     while (!q.empty()) {
-        int32_t levelSize = q.size();
+        size_t levelSize = q.size();
         std::vector<HpaeDfxNodeInfo> curLevelResult;
-        for (int32_t i = 0; i < levelSize; ++i) {
+        for (size_t i = 0; i < levelSize; ++i) {
             DfxTreeNode *node = q.front();
             q.pop();
             curLevelResult.push_back(node->nodeInfo_);

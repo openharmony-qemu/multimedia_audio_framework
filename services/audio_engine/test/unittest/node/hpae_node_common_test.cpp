@@ -16,9 +16,9 @@
 #include <gtest/gtest.h>
 #include "hpae_node_common.h"
 
-using namespace OHOS;
-using namespace AudioStandard;
-using namespace HPAE;
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
 
 std::string DEFAULT_NODE_STRING_KEY = "1_48000_2_1";
 std::string DEFAULT_SCENE_MUSIC = "SCENE_MUSIC";
@@ -92,3 +92,6 @@ TEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_004)
     EXPECT_EQ(ConvertDatalenToUs(DEFAULT_BUFFER_SIZE, nodeInfo), DEFAULT_CONVERTER_US_TIME);
     EXPECT_EQ(ConvertUsToFrameCount(DEFAULT_US_TIME, nodeInfo), DEFAULT_FRAME_COUNT);
 }
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS
