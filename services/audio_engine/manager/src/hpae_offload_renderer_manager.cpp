@@ -348,7 +348,8 @@ int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
     auto request = [this, isSuspend]() {
         if (isSuspend) {
             sinkOutputNode_->RenderSinkStop();
-        } else {
+        } else if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && sinkInputNode_ &&
+                    sinkInputNode_->GetState() == HPAE_SESSION_RUNNING) {
             sinkOutputNode_->RenderSinkStart();
         }
     };
@@ -448,6 +449,7 @@ int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
         hpaeSignalProcessThread_ = nullptr;
     }
     hpaeNoLockQueue_.HandleRequests();
+    sinkOutputNode_->RenderSinkStop();
     int32_t ret = sinkOutputNode_->RenderSinkDeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
     sinkOutputNode_->ResetAll();

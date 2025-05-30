@@ -626,53 +626,44 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
     uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName)
 {
     auto request = [this, sourceOutputId, sourceName]() {
+        bool isReturn = false;
+        int32_t errorCode = ERROR_INVALID_PARAM;
         AUDIO_INFO_LOG("move session:%{public}d, source name:%{public}s", sourceOutputId, sourceName.c_str());
         if (sourceName.empty()) {
             AUDIO_ERR_LOG("move session:%{public}u failed,source name is empty.", sourceOutputId);
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
+            isReturn = true;
         }
 
         if (!SafeGetMap(capturerManagerMap_, sourceName)) {
             AUDIO_ERR_LOG("move session:%{public}u failed,can not find source:%{public}s.",
                 sourceOutputId, sourceName.c_str());
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
+            isReturn = true;
         }
         
         std::shared_ptr<IHpaeCapturerManager> oldCaptureManager = GetCapturerManagerById(sourceOutputId);
         if (oldCaptureManager == nullptr) {
             AUDIO_ERR_LOG("move session:%{public}u failed,can not find source.", sourceOutputId);
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
+            isReturn = true;
         }
 
         std::string name = capturerIdSourceNameMap_[sourceOutputId];
         if (sourceName == name) {
             AUDIO_INFO_LOG("move session:%{public}u,source:%{public}s is the same, no need move",
                 sourceOutputId, sourceName.c_str());
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(SUCCESS);
-            }
-            return;
+            isReturn = true;
+            errorCode = SUCCESS;
         }
         if (capturerIdStreamInfoMap_.find(sourceOutputId) == capturerIdStreamInfoMap_.end()) {
             AUDIO_ERR_LOG("move session:%{public}u failed,can not find session.", sourceOutputId);
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
+            isReturn = true;
         }
         if (!capturerIdStreamInfoMap_[sourceOutputId].streamInfo.isMoveAble) {
             AUDIO_ERR_LOG("move session:%{public}u failed,session is not moveable.", sourceOutputId);
+            isReturn = true;
+        }
+        if (isReturn) {
             if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
+                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(errorCode);
             }
             return;
         }
@@ -688,55 +679,47 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
 int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
 {
     auto request = [this, sinkInputId, sinkName]() {
+        bool isReturn = false;
+        int32_t errorCode = ERROR_INVALID_PARAM;
         if (sinkName.empty()) {
             AUDIO_ERR_LOG("move session:%{public}u failed,sink name is empty.", sinkInputId);
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
+            isReturn = true;
         }
 
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
         if (rendererManager == nullptr || !rendererManager->IsInit()) {
             AUDIO_ERR_LOG("move session:%{public}u failed, can not find sink:%{public}s or sink is not open.",
                 sinkInputId, sinkName.c_str());
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
+            isReturn = true;
         }
 
         std::shared_ptr<IHpaeRendererManager> oldRendererManager = GetRendererManagerById(sinkInputId);
         if (oldRendererManager == nullptr) {
             AUDIO_ERR_LOG("move session:%{public}u failed,can not find sink", sinkInputId);
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
+            isReturn = true;
         }
 
         std::string name = rendererIdSinkNameMap_[sinkInputId];
         if (sinkName == name) {
             AUDIO_INFO_LOG("sink:%{public}s is the same, no need move session:%{public}u", sinkName.c_str(),
                 sinkInputId);
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSinkInputByIndexOrNameCb(SUCCESS);
-            }
-            return;
+            isReturn = true;
+            errorCode = SUCCESS;
         }
 
         if (rendererIdStreamInfoMap_.find(sinkInputId) == rendererIdStreamInfoMap_.end()) {
             AUDIO_ERR_LOG("move session:%{public}u failed,can not find session", sinkInputId);
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
-            }
-            return;
+            isReturn = true;
         }
 
         if (!rendererIdStreamInfoMap_[sinkInputId].streamInfo.isMoveAble) {
             AUDIO_ERR_LOG("move session:%{public}u failed,session is not moveable.", sinkInputId);
+            isReturn = true;
+        }
+
+        if (isReturn) {
             if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
+                serviceCallback->OnMoveSinkInputByIndexOrNameCb(errorCode);
             }
             return;
         }

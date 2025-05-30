@@ -631,13 +631,16 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
     auto request = [this, isSuspend]() {
         if (isSuspend) {
             if (outputCluster_ != nullptr) {
-                // todo fade out
                 outputCluster_->Stop();
             }
         } else {
-            if (outputCluster_ != nullptr) {
-                // todo fade in
-                outputCluster_->Start();
+            if (outputCluster_ != nullptr && outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+                for (const auto& it : sessionNodeMap_) {
+                    if(it.second.state == HPAE_SESSION_RUNNING) {
+                        outputCluster_->Start();
+                        break;
+                    }
+                }
             }
         }
     };
@@ -779,6 +782,7 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
         hpaeSignalProcessThread_ = nullptr;
     }
     hpaeNoLockQueue_.HandleRequests();
+    outputCluster_->Stop();
     int32_t ret = outputCluster_->DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
     for (const auto &item : sceneClusterMap_) {
