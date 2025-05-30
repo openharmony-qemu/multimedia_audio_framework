@@ -669,7 +669,7 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
             }
             return;
         }
-        if (!capturerIdStreamInfoMap_.[sourceOutputId].streamInfo.isMoveAble) {
+        if (!capturerIdStreamInfoMap_[sourceOutputId].streamInfo.isMoveAble) {
             AUDIO_ERR_LOG("move session:%{public}u failed,session is not moveable.", sourceOutputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
@@ -733,8 +733,8 @@ int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t s
             return;
         }
 
-        if (!rendererIdStreamInfoMap_.[sinkInputId].streamInfo.isMoveAble) {
-            AUDIO_ERR_LOG("move session:%{public}u failed,session is not moveable.", sourceOutputId);
+        if (!rendererIdStreamInfoMap_[sinkInputId].streamInfo.isMoveAble) {
+            AUDIO_ERR_LOG("move session:%{public}u failed,session is not moveable.", sinkInputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }

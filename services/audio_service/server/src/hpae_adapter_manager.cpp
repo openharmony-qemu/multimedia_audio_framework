@@ -71,7 +71,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
 
     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         AUDIO_INFO_LOG("renderer:%{public}u is DUP or DUAL, not need add to sink vecotr", sessionId);
-        return SUCCESS
+        return SUCCESS;
     }
 
     std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
@@ -114,8 +114,8 @@ int32_t HpaeAdapterManager::ReleaseRender(uint32_t streamIndex)
     }
 
     if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
-        AUDIO_INFO_LOG("renderer:%{public}u is DUP or DUAL, not need remove", sessionId);
-        return SUCCESS
+        AUDIO_INFO_LOG("renderer:%{public}u is DUP or DUAL, not need remove", streamIndex);
+        return SUCCESS;
     }
 
     std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
