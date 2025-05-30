@@ -18,9 +18,9 @@
 #include "hpae_source_input_cluster.h"
 #include "test_case_common.h"
 
-using namespace OHOS;
-using namespace AudioStandard;
-using namespace HPAE;
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
 
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_NODE_ID = 1243;
@@ -194,3 +194,6 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003)
     EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectCreate(0, attr), 0);
     EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectRelease(0), 0);
 }
+}  // namespace HPAE
+}  // namespace AudioStandard
+}  // namespace OHOS

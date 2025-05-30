@@ -106,7 +106,7 @@ void HpaeSourceInputNode::SetBufferValid(const HpaeSourceBufferType &bufferType,
         "set buffer valid with error type");
     inputAudioBufferMap_.at(bufferType).SetBufferValid(true);
     uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
-        (uint32_t)GetSizeFromFormat(nodeInfoMap_.at(bufferType).format);
+        static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
     if (replyBytes != byteSize) {
         AUDIO_WARNING_LOG("DoProcess(), request size[%{public}zu][%{public}u], reply size[%{public}" PRIu64 "]",
             frameByteSizeMap_.at(bufferType), byteSize, replyBytes);
