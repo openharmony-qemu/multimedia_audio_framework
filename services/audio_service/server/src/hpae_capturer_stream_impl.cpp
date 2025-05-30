@@ -37,7 +37,8 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
     spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / TENMS_PER_SEC);
-    byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
+    byteSizePerFrame_ = (processConfig.streamInfo.channels *
+        static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
 }
 

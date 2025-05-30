@@ -23,9 +23,9 @@
 #include "hpae_dfx_tree.h"
 #include <locale>
 
-using namespace OHOS;
-using namespace AudioStandard;
-using namespace HPAE;
+using namespace OHOS {
+using namespace AudioStandard {
+using namespace HPAE {
 
 class HpaeDfxTreeTest : public testing::Test {
 public:
@@ -112,3 +112,6 @@ TEST_F(HpaeDfxTreeTest, RemoveDfxTreeTest)
     result = hpaeDfxTree.LevelOrderTraversal();
     EXPECT_EQ(result.size(), removeNodeIndex);
 }
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS
