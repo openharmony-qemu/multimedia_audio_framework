@@ -440,6 +440,7 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
             AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType,
                 make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ExcludeOutputDevices");
         }
+        audioActiveDevice_.NotifyUserDisSelectionEventToBt(desc);
         WriteExcludeOutputSysEvents(audioDevUsage, desc);
     }
 

@@ -1022,8 +1022,8 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
         streamDesc->newDeviceDescs_ =
             audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
             
-        AUDIO_INFO_LOG("DeviceType %{public}d, state: %{public}u",
-            streamDesc->newDeviceDescs_[0]->deviceType_, streamDesc->streamStatus_);
+        AUDIO_INFO_LOG("SessionID: %{public}u, DeviceType %{public}d, state: %{public}u",
+            streamDesc->sessionId_, streamDesc->newDeviceDescs_[0]->deviceType_, streamDesc->streamStatus_);
         UpdatePlaybackStreamFlag(streamDesc, false);
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;
