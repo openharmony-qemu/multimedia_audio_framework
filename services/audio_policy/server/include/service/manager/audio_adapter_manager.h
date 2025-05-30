@@ -104,6 +104,8 @@ public:
     int32_t SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
+    int32_t SetInnerStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
+
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
 
     bool GetStreamMute(AudioStreamType streamType);
@@ -354,6 +356,7 @@ private:
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     bool CheckAndUpdateRemoteDeviceVolume(AudioDeviceDescriptor deviceDescriptor);
     bool IsCurDeviceNeedSaveVolumeToDatabase();
+    int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

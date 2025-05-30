@@ -92,6 +92,15 @@ void AudioServerProxy::SetOutputDeviceSinkProxy(DeviceType deviceType, std::stri
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+void AudioServerProxy::SetActiveOutputDeviceProxy(DeviceType deviceType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->SetActiveOutputDevice(deviceType);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 bool AudioServerProxy::GetEffectOffloadEnabledProxy()
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

@@ -703,10 +703,21 @@ int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute
     return SetStreamMuteInternal(streamType, mute, streamUsage, deviceType);
 }
 
-int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute,
-    StreamUsage streamUsage, const DeviceType &deviceType)
+int32_t AudioAdapterManager::SetInnerStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
 {
     AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
+    int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
+    if (isSetStreamMute == SUCCESS) {
+        return SUCCESS;
+    }
+    // set stream mute status to mem.
+    volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
+
+    return SetVolumeDb(streamType);
+}
+
+int32_t AudioAdapterManager::IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
+{
     if (mute && !VolumeUtils::IsPCVolumeEnable() &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
@@ -719,6 +730,17 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         GetRingerMode() != RINGER_MODE_NORMAL && mute && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("Dual tone stream type %{public}d, current active device:[%{public}d] is no speaker, dont mute",
             streamType, mute);
+        return SUCCESS;
+    }
+    return ERROR;
+}
+
+int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute,
+    StreamUsage streamUsage, const DeviceType &deviceType)
+{
+    AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
+    int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
+    if (isSetStreamMute == SUCCESS) {
         return SUCCESS;
     }
 

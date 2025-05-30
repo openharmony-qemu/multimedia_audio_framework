@@ -43,6 +43,7 @@ static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
+static const int64_t MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US = 100000; // 100ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 400000; // 400ms
 static const int64_t NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS = 1000000; // 1s
@@ -262,7 +263,7 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
             AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer died");
             isRingDualToneOnPrimarySpeaker_ = false;
             for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-                audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+                audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
             }
             streamsWhenRingDualOnPrimarySpeaker_.clear();
         }
@@ -1194,7 +1195,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
         if (ringerMode != RINGER_MODE_NORMAL &&
             IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->getType()) &&
             streamDesc->newDeviceDescs_.front()->getType() != DEVICE_TYPE_SPEAKER) {
-            audioPolicyManager_.SetStreamMute(STREAM_RING, false, streamUsage);
+            audioPolicyManager_.SetInnerStreamMute(STREAM_RING, false, streamUsage);
             audioVolumeManager_.SetRingerModeMute(false);
             if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
                 audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
@@ -1217,7 +1218,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
             AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
             if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType)) {
                 streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
-                audioPolicyManager_.SetStreamMute(streamType, true, streamUsage);
+                audioPolicyManager_.SetInnerStreamMute(streamType, true, streamUsage);
             }
             shouldUpdateDeviceDueToDualTone_ = true;
         } else {
@@ -1891,7 +1892,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         isRingDualToneOnPrimarySpeaker_ = false;
         FetchOutputDeviceAndRoute();
         for (std::pair<AudioStreamType, StreamUsage> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
-            audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+            audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
         }
         streamsWhenRingDualOnPrimarySpeaker_.clear();
     }
@@ -1984,6 +1985,15 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioCoreService::MuteSinkPortForSwitchDevice");
+    // After media playback is interrupted by the alarm,
+    // a delay is required before switching to dual output (e.g., speaker + headset).
+    // This ensures that the remaining audio buffer is drained,
+    // preventing any residual media sound from leaking through the speaker.
+    if (streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 1 && !IsDeviceSwitching(reason) &&
+        streamCollector_.IsMediaPlaying() && streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_ALARM) {
+        usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);
+        return;
+    }
     if (streamDesc->newDeviceDescs_.front()->IsSameDeviceDesc(streamDesc->oldDeviceDescs_.front())) {
         return;
     }

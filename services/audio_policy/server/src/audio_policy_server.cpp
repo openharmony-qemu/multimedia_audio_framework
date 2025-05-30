@@ -459,14 +459,16 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
 {
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
+    AudioStreamType streamInFocusBeforeTran = streamInFocus;
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamInFocus());
+        streamInFocusBeforeTran = streamInFocus;
         ChangeVolumeOnVoiceAssistant(streamInFocus);
     }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    if (isScreenOffOrLock_ && !IsStreamActive(streamInFocus) && !VolumeUtils::IsPCVolumeEnable()) {
+    if (isScreenOffOrLock_ && !IsStreamActive(streamInFocusBeforeTran) && !VolumeUtils::IsPCVolumeEnable()) {
         AUDIO_INFO_LOG("screen off or screen lock, this stream is not active, not change volume.");
         return AUDIO_OK;
     }

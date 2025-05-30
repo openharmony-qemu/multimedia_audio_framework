@@ -49,6 +49,7 @@ public:
     float GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType = SOURCE_TYPE_INVALID);
     void UpdateEffectBtOffloadSupportedProxy(const bool &isSupported);
     void SetOutputDeviceSinkProxy(DeviceType deviceType, std::string sinkName);
+    void SetActiveOutputDeviceProxy(DeviceType deviceType);
     bool GetEffectOffloadEnabledProxy();
     int32_t UpdateActiveDevicesRouteProxy(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState state, const std::string &deviceName = "");

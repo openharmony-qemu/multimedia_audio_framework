@@ -2746,5 +2746,17 @@ void AudioServer::SetBtHdiInvalidState()
     (void)HdiAdapterManager::GetInstance().ProcessSource(sourceProcessFunc);
 }
 
+void AudioServer::SetActiveOutputDevice(DeviceType deviceType)
+{
+    Trace trace("AudioServer::SetActiveOutputDevice:" + std::to_string(deviceType));
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return;
+    }
+
+    PolicyHandler::GetInstance().SetActiveOutputDevice(deviceType);
+    return;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

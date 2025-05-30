@@ -180,7 +180,7 @@ void AudioEndpointSeparate::InitSinkAttr(IAudioSinkAttr &attr, const AudioDevice
     attr.adapterName = isDefaultAdapterEnable ? "dp" : "primary";
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
-    attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
+    attr.format = dstStreamInfo_.format; // SAMPLE_S16LE = 1
     attr.deviceNetworkId = deviceInfo.networkId_.c_str();
     attr.deviceType = static_cast<int32_t>(deviceInfo.deviceType_);
 }

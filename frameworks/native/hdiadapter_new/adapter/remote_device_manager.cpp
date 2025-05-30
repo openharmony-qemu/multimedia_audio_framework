@@ -97,8 +97,9 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "audio manager is nullptr");
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    std::unique_lock<std::mutex> innerLock(wrapper->adapterMtx_);
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     CHECK_AND_RETURN_LOG(force || (wrapper->hdiRenderIds_.size() == 0 && wrapper->hdiCaptureIds_.size() == 0),
         "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu", adapterName.c_str(),
         wrapper->hdiRenderIds_.size(), wrapper->hdiCaptureIds_.size());
@@ -107,6 +108,8 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
         wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
     }
     audioManager_->UnloadAdapter(wrapper->adapterDesc_.adapterName);
+    wrapper->adapter_ = nullptr;
+    innerLock.unlock();
     std::lock_guard<std::mutex> lock(adapterMtx_);
     adapters_[adapterName].reset();
     adapters_.erase(adapterName);

@@ -66,6 +66,9 @@ public:
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
 
+    virtual int32_t SetInnerStreamMute(AudioStreamType streamType, bool mute,
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
+
     virtual int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) = 0;
 
     virtual bool GetStreamMute(AudioStreamType streamType) = 0;

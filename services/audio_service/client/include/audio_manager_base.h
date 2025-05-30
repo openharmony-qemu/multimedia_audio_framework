@@ -324,6 +324,13 @@ public:
     virtual void SetOutputDeviceSink(int32_t device, std::string &sinkName) = 0;
 
     /**
+     * Set active output device
+     *
+     * @return none.
+     */
+    virtual void SetActiveOutputDevice(DeviceType deviceType) = 0;
+
+    /**
      * Regiest policy provider.
      *
      * @return result code.
@@ -682,6 +689,7 @@ private:
     int HandleLoadAudioEffectLibraries(MessageParcel &data, MessageParcel &reply);
     int HandleCreateAudioEffectChainManager(MessageParcel &data, MessageParcel &reply);
     int HandleSetOutputDeviceSink(MessageParcel &data, MessageParcel &reply);
+    int HandleSetActiveOutputDevice(MessageParcel &data, MessageParcel &reply);
     int HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply);
     int HandleRegiestPolicyProvider(MessageParcel &data, MessageParcel &reply);
     int HandleRegistCoreServiceProvider(MessageParcel &data, MessageParcel &reply);
