@@ -104,7 +104,7 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsAcousticEchoCancele
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     EXPECT_NE(audioStreamManager, nullptr);
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_MIC;
-    result = OH_AudioStreamManager_IsAcousticEchoCancelerSupported(audioStreamManager, sourceType,nullptr);
+    result = OH_AudioStreamManager_IsAcousticEchoCancelerSupported(audioStreamManager, sourceType, nullptr);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
@@ -120,7 +120,7 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsAcousticEchoCancele
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     EXPECT_NE(audioStreamManager, nullptr);
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_INVALID;
-    result = OH_AudioStreamManager_IsAcousticEchoCancelerSupported(audioStreamManager, sourceType,nullptr);
+    result = OH_AudioStreamManager_IsAcousticEchoCancelerSupported(audioStreamManager, sourceType, nullptr);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
