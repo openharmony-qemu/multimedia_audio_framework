@@ -230,8 +230,7 @@ void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDev
     Bluetooth::SendUserSelectionEvent(
         audioDeviceDescriptor->deviceType_, audioDeviceDescriptor->macAddress_, USER_NOT_SELECT_BT);
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        audioDeviceDescriptor->IsSameDeviceDesc(GetCurrentOutputDevice()))
-    {
+        audioDeviceDescriptor->IsSameDeviceDesc(GetCurrentOutputDevice())) {
         Bluetooth::AudioHfpManager::DisconnectSco();
     }
 #endif
