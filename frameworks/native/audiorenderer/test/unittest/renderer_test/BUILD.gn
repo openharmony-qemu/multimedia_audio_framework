@@ -42,6 +42,7 @@ ohos_unittest("audio_renderer_unit_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_common",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioutils:audio_utils",
   ]
