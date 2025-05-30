@@ -633,13 +633,11 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
             if (outputCluster_ != nullptr) {
                 outputCluster_->Stop();
             }
-        } else {
-            if (outputCluster_ != nullptr && outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
-                for (const auto& it : sessionNodeMap_) {
-                    if(it.second.state == HPAE_SESSION_RUNNING) {
-                        outputCluster_->Start();
-                        break;
-                    }
+        } else if (outputCluster_ != nullptr && outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+            for (const auto& it : sessionNodeMap_) {
+                if (it.second.state == HPAE_SESSION_RUNNING) {
+                    outputCluster_->Start();
+                    break;
                 }
             }
         }
