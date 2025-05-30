@@ -1768,6 +1768,7 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
         STREAM_USAGE_MOVIE,
         STREAM_USAGE_AUDIOBOOK,
         STREAM_USAGE_GAME,
+        STREAM_USAGE_NAVIGATION,
         STREAM_USAGE_VOICE_MESSAGE}},
     {STREAM_VOICE_ASSISTANT, {
         STREAM_USAGE_VOICE_ASSISTANT}},
@@ -1776,9 +1777,7 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
     {STREAM_ACCESSIBILITY, {
         STREAM_USAGE_ACCESSIBILITY}},
     {STREAM_ULTRASONIC, {
-        STREAM_USAGE_ULTRASONIC}},
-    {STREAM_NAVIGATION, {
-        STREAM_USAGE_NAVIGATION}}
+        STREAM_USAGE_ULTRASONIC}}
 };
 
 std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::pcVolumeToStreamUsageMap_ = {
