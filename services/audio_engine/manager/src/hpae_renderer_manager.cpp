@@ -341,7 +341,7 @@ int32_t HpaeRendererManager::ConnectMchInputSession(uint32_t sessionId)
     mchIdGainNodeMap_[sessionId]->Connect(sinkInputNodeMap_[sessionId]);
     outputCluster_->Connect(mchIdGainNodeMap_[sessionId]);
     OnNotifyDfxNodeInfo(true, mchIdGainNodeMap_[sessionId]->GetNodeId(), sinkInputNodeMap_[sessionId]->GetNodeInfo());
-    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
         outputCluster_->Start();
     }
     return SUCCESS;
@@ -376,7 +376,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         ConnectProcessCluster(sessionId, sceneType);
     }
-    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
         outputCluster_->Start();
     }
     return SUCCESS;
@@ -641,7 +641,11 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
 {
     Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
     auto request = [this, isSuspend]() {
-        if (isSuspend) {
+        if (isSuspend_ == isSuspend) {
+            return;
+        }
+        isSuspend_ = isSuspend;
+        if (isSuspend_) {
             if (outputCluster_ != nullptr) {
                 outputCluster_->Stop();
             }
@@ -788,6 +792,12 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
         hpaeSignalProcessThread_ = nullptr;
     }
     hpaeNoLockQueue_.HandleRequests();
+    if (isMoveDefault) {
+        std::string sinkName = "";
+        std::vector<uint32_t> ids;
+        AUDIO_INFO_LOG("move all sink to default sink");
+        MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
+    }
     outputCluster_->Stop();
     int32_t ret = outputCluster_->DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
@@ -796,12 +806,6 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
     }
     outputCluster_->ResetAll();
     isInit_.store(false);
-    if (isMoveDefault) {
-        std::string sinkName = "";
-        std::vector<uint32_t> ids;
-        AUDIO_INFO_LOG("move all sink to default sink");
-        MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
-    }
     return SUCCESS;
 }
 
