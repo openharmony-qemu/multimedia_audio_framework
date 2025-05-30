@@ -634,7 +634,7 @@ bool HpaeRendererManager::CheckIsStreamRunning()
             break;
         }
     }
-    return IsRunning;
+    return isRunning;
 }
 
 int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
