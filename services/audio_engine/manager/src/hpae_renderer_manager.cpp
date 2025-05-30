@@ -233,6 +233,7 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
             sinkInfo_.deviceName.c_str());
         CreateInputSession(streamInfo);
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
+        sessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
     };
     SendRequest(request);
@@ -340,7 +341,7 @@ int32_t HpaeRendererManager::ConnectMchInputSession(uint32_t sessionId)
     mchIdGainNodeMap_[sessionId]->Connect(sinkInputNodeMap_[sessionId]);
     outputCluster_->Connect(mchIdGainNodeMap_[sessionId]);
     OnNotifyDfxNodeInfo(true, mchIdGainNodeMap_[sessionId]->GetNodeId(), sinkInputNodeMap_[sessionId]->GetNodeInfo());
-    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
         outputCluster_->Start();
     }
     return SUCCESS;
@@ -375,7 +376,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         ConnectProcessCluster(sessionId, sceneType);
     }
-    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
         outputCluster_->Start();
     }
     return SUCCESS;
@@ -624,20 +625,33 @@ int32_t HpaeRendererManager::Release(uint32_t sessionId)
     return DestroyStream(sessionId);
 }
 
+bool HpaeRendererManager::CheckIsStreamRunning()
+{
+    bool isRunning = false;
+    for (const auto& it : sessionNodeMap_) {
+        if (it.second.state == HPAE_SESSION_RUNNING) {
+            isRunning = true;
+            break;
+        }
+    }
+    return isRunning;
+}
+
 int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
 {
     Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
     auto request = [this, isSuspend]() {
-        if (isSuspend) {
+        if (isSuspend_ == isSuspend) {
+            return;
+        }
+        isSuspend_ = isSuspend;
+        if (isSuspend_) {
             if (outputCluster_ != nullptr) {
-                // todo fade out
                 outputCluster_->Stop();
             }
-        } else {
-            if (outputCluster_ != nullptr) {
-                // todo fade in
-                outputCluster_->Start();
-            }
+        } else if (outputCluster_ != nullptr && outputCluster_->GetState() != STREAM_MANAGER_RUNNING &&
+            CheckIsStreamRunning()) {
+            outputCluster_->Start();
         }
     };
     SendRequest(request);
@@ -778,6 +792,13 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
         hpaeSignalProcessThread_ = nullptr;
     }
     hpaeNoLockQueue_.HandleRequests();
+    if (isMoveDefault) {
+        std::string sinkName = "";
+        std::vector<uint32_t> ids;
+        AUDIO_INFO_LOG("move all sink to default sink");
+        MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
+    }
+    outputCluster_->Stop();
     int32_t ret = outputCluster_->DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
     for (const auto &item : sceneClusterMap_) {
@@ -785,12 +806,6 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
     }
     outputCluster_->ResetAll();
     isInit_.store(false);
-    if (isMoveDefault) {
-        std::string sinkName = "";
-        std::vector<uint32_t> ids;
-        AUDIO_INFO_LOG("move all sink to default sink");
-        MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
-    }
     return SUCCESS;
 }
 

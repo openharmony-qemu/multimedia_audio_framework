@@ -113,6 +113,7 @@ private:
     std::vector<int32_t> appsUid_;
     HpaeSinkInfo sinkInfo_;
     bool isMute_ = false;
+    std::atomic<bool> isSuspend_ = false;
     // only set offload mode enableProcessing
     bool enableProcess_ = false;
 };

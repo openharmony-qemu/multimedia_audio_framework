@@ -118,6 +118,7 @@ private:
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);
+    bool CheckIsStreamRunning();
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
@@ -129,6 +130,7 @@ private:
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
     std::atomic<bool> isMute_ = false;
+    std::atomic<bool> isSuspend_ = false;
     HpaeSinkInfo sinkInfo_;
     std::unordered_map<HpaeProcessorType, int32_t> sceneTypeToProcessClusterCountMap_;
     std::vector<int32_t> appsUid_;

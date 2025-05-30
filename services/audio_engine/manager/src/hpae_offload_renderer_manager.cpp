@@ -92,7 +92,7 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     if (node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:offload", sessionId);
         ConnectInputSession();
-        if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING) {
+        if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
             sinkOutputNode_->RenderSinkStart();
         }
     }
@@ -188,7 +188,7 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
         AUDIO_INFO_LOG("Start sessionId %{public}u", sessionId);
         sinkInputNode_->SetState(HPAE_SESSION_RUNNING);
         ConnectInputSession();
-        if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING) {
+        if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
             sinkOutputNode_->RenderSinkStart();
         }
         sessionInfo_.state = HPAE_SESSION_RUNNING;
@@ -346,9 +346,14 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
 int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
 {
     auto request = [this, isSuspend]() {
-        if (isSuspend) {
+        if (isSuspend_ == isSuspend) {
+            return;
+        }
+        isSuspend_ = isSuspend;
+        if (isSuspend_) {
             sinkOutputNode_->RenderSinkStop();
-        } else {
+        } else if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && sinkInputNode_ &&
+            sinkInputNode_->GetState() == HPAE_SESSION_RUNNING) {
             sinkOutputNode_->RenderSinkStart();
         }
     };
@@ -448,16 +453,17 @@ int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
         hpaeSignalProcessThread_ = nullptr;
     }
     hpaeNoLockQueue_.HandleRequests();
-    int32_t ret = sinkOutputNode_->RenderSinkDeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
-    sinkOutputNode_->ResetAll();
-    isInit_.store(false);
     if (isMoveDefault) {
         std::string sinkName = "";
         std::vector<uint32_t> ids;
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
+    sinkOutputNode_->RenderSinkStop();
+    int32_t ret = sinkOutputNode_->RenderSinkDeInit();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
+    sinkOutputNode_->ResetAll();
+    isInit_.store(false);
     return SUCCESS;
 }
 
