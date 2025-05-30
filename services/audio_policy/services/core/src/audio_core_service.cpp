@@ -1027,10 +1027,9 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
     for (auto &streamDesc : outputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
-            audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
+            audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));       
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
-
         UpdatePlaybackStreamFlag(streamDesc, false);
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;

@@ -410,7 +410,8 @@ uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescr
         flag = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
             AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
     }
-    AUDIO_INFO_LOG("flag:0x%{public}x, target flag:0x%{public}x", desc->audioFlag_, flag);
+    AUDIO_INFO_LOG("SessionID: %{public}d, flag:0x%{public}x, target flag:0x%{public}x", desc->sessionId_,
+        desc->audioFlag_, flag);
     return flag;
 }
 

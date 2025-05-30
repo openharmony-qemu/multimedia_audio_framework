@@ -200,15 +200,10 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
     Trace trace("AudioActiveDevice::NotifyUserSelectionEventToBt");
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
 #ifdef BLUETOOTH_ENABLE
+    NotifyUserDisSelectionEventToBt(
+        std::make_shared<AudioDeviceDescriptor>(GetCurrentOutputDevice()));
+
     DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
-    if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
-        curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        Bluetooth::SendUserSelectionEvent(curOutputDeviceType,
-            GetCurrentOutputDeviceMacAddr(), USER_NOT_SELECT_BT);
-        if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-            Bluetooth::AudioHfpManager::DisconnectSco();
-        }
-    }
     if (curOutputDeviceType == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
             STREAM_USAGE_INVALID);
@@ -221,6 +216,22 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor,
             streamUsage);
+    }
+#endif
+}
+
+void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+{
+    AUDIO_INFO_LOG("UserDisSelection start");
+    CHECK_AND_RETURN(audioDeviceDescriptor != nullptr);
+    CHECK_AND_RETURN(audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+                     audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
+#ifdef BLUETOOTH_ENABLE
+    Bluetooth::SendUserSelectionEvent(
+        audioDeviceDescriptor->deviceType_, audioDeviceDescriptor->macAddress_, USER_NOT_SELECT_BT);
+    if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        audioDeviceDescriptor->IsSameDeviceDesc(GetCurrentOutputDevice())) {
+        Bluetooth::AudioHfpManager::DisconnectSco();
     }
 #endif
 }
