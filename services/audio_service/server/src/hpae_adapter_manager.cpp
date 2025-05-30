@@ -71,7 +71,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
 
     std::lock_guard<std::mutex> mutex(sinkInputsMutex_);
     SinkInput sinkInput;
-    sinkInput.streamId = sessionId;
+    sinkInput.streamId = static_cast<int32_t>(sessionId);
     sinkInput.streamType = processConfig.streamType;
     sinkInput.uid = processConfig.appInfo.appUid;
     sinkInput.pid = processConfig.appInfo.appPid;

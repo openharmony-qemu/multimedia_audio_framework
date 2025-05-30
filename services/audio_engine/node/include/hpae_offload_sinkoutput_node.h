@@ -99,7 +99,7 @@ private:
     AudioOffloadType hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
     struct OffloadPolicyTask {
         bool flag = false; // indicate if task exsit
-        AudioOffloadType state;
+        AudioOffloadType state = OFFLOAD_DEFAULT;
         TimePoint time;
     } setPolicyStateTask_;
 
