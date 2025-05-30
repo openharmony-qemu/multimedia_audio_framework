@@ -83,6 +83,7 @@ ohos_unittest("audio_engine_unit_test") {
     "../../:audio_engine_manager",
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
   ]
 
   external_deps = [
