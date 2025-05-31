@@ -1486,6 +1486,20 @@ bool AudioDeviceManager::IsSessionSetDefaultDevice(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
     return selectedDefaultOutputDeviceInfo_.find(sessionId) != selectedDefaultOutputDeviceInfo_.end();
 }
-// LCOV_EXCL_STOP
+
+bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    std::vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    GetDefaultAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES, descs);
+    for (const auto &ds : descs) {
+        CHECK_AND_CONTINUE(ds->networkId_ != LOCAL_NETWORK_ID && !ds->macAddress_.empty());
+        if (ds->macAddress_ == desc->macAddress_) {
+            AUDIO_INFO_LOG("same mac remote hicar exist, skip a2dp");
+            return true;
+        }
+    }
+    return false;
+}
 }
 }
