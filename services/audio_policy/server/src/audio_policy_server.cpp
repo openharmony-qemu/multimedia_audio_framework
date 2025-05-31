@@ -435,7 +435,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     int32_t keySubId = im->SubscribeKeyEvent(keyOption, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
         AUDIO_PRERELEASE_LOGI("Receive volume key event: %{public}s.",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
-        int32_t ret = ProcessVolumeKeyMuteEvents(keyType);
+        int32_t ret = ProcessVolumeKeyEvents(keyType);
         if (ret != AUDIO_OK) {
             AUDIO_DEBUG_LOG("process volume key mute events need return[%{public}d]", ret);
             return;
@@ -456,7 +456,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     return keySubId;
 }
 
-int32_t AudioPolicyServer::ProcessVolumeKeyMuteEvents(const int32_t keyType)
+int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
 {
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
