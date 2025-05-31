@@ -1148,6 +1148,8 @@ int32_t AudioPolicyProxy::CreateRendererClient(
     ret = streamDesc->Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(ret, AUDIO_FLAG_INVALID, "Marshalling capturerInfo failed");
 
+    data.WriteUint32(sessionId);
+
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_RENDERER_CLIENT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_FLAG_INVALID, "Failed to send request, error: %{public}d", error);
@@ -1170,6 +1172,8 @@ int32_t AudioPolicyProxy::CreateCapturerClient(
 
     ret = streamDesc->Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(ret, AUDIO_FLAG_INVALID, "Marshalling capturerInfo failed");
+
+    data.WriteUint32(sessionId);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_CAPTURER_CLIENT), data, reply, option);
