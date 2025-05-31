@@ -425,9 +425,19 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
 
 FastStatus AudioCapturerPrivate::GetFastStatus()
 {
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, FASTSTATUS_INVALID, "currentStream is nullptr");
-    return currentStream->GetFastStatus();
+    std::unique_lock<std::shared_mutex> lock(capturerMutex_, std::defer_lock);
+    if (callbackLoopTid_ != gettid()) {
+        lock.lock();
+    }
+
+    return GetFastStatusInner();
+}
+
+FastStatus AudioCapturerPrivate::GetFastStatusInner()
+{
+    // inner function. Must be called with AudioCapturerPrivate::capturerMutex_ held.
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, FASTSTATUS_INVALID, "audioStream_ is nullptr");
+    return audioStream_->GetFastStatus();
 }
 
 int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStreamParams)
@@ -699,7 +709,7 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
         interruptCbImpl->StartSwitch();
     }
 
-    FastStatus fastStatus = GetFastStatus();
+    FastStatus fastStatus = GetFastStatusInner();
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
     AUDIO_INFO_LOG("Before %{public}s, restore audio capturer %{public}u", callingFunc.c_str(), sessionID_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
@@ -1658,7 +1668,7 @@ int32_t AudioCapturerPrivate::InitAudioConcurrencyCallback()
 
 void AudioCapturerPrivate::FastStatusChangeCallback(FastStatus status)
 {
-    FastStatus newStatus = GetFastStatus();
+    FastStatus newStatus = GetFastStatusInner();
     if (newStatus != status) {
         if (fastStatusChangeCallback_ != nullptr) {
             fastStatusChangeCallback_->OnFastStatusChange(newStatus);

@@ -229,6 +229,7 @@ private:
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
     int32_t SetPitch(float pitch);
+    FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
