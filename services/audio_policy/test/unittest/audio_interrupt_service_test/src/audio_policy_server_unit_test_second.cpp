@@ -30,7 +30,7 @@ namespace AudioStandard {
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_200
-* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyMuteEvents
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
 */
 HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_200, TestSize.Level1)
 {
@@ -42,14 +42,14 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_200, TestSize.Level1)
     audioPolicyServer->volumeApplyToAll_ = true;
     audioPolicyServer->isScreenOffOrLock_ = true;
     VolumeUtils::SetPCVolumeEnable(true);
-    auto ret = audioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_201
-* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyMuteEvents
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
 */
 HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_201, TestSize.Level1)
 {
@@ -61,14 +61,14 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_201, TestSize.Level1)
     audioPolicyServer->volumeApplyToAll_ = false;
     audioPolicyServer->isScreenOffOrLock_ = true;
     VolumeUtils::SetPCVolumeEnable(true);
-    auto ret = audioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_202
-* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyMuteEvents
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
 */
 HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_202, TestSize.Level1)
 {
@@ -80,14 +80,14 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_202, TestSize.Level1)
     audioPolicyServer->volumeApplyToAll_ = true;
     audioPolicyServer->isScreenOffOrLock_ = false;
     VolumeUtils::SetPCVolumeEnable(true);
-    auto ret = audioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_203
-* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyMuteEvents
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
 */
 HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_203, TestSize.Level1)
 {
@@ -99,14 +99,14 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_203, TestSize.Level1)
     audioPolicyServer->volumeApplyToAll_ = true;
     audioPolicyServer->isScreenOffOrLock_ = true;
     VolumeUtils::SetPCVolumeEnable(false);
-    auto ret = audioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_204
-* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyMuteEvents
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
 */
 HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_204, TestSize.Level1)
 {
@@ -118,14 +118,14 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_204, TestSize.Level1)
     audioPolicyServer->volumeApplyToAll_ = false;
     audioPolicyServer->isScreenOffOrLock_ = false;
     VolumeUtils::SetPCVolumeEnable(true);
-    auto ret = audioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_205
-* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyMuteEvents
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
 */
 HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_205, TestSize.Level1)
 {
@@ -137,14 +137,14 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_205, TestSize.Level1)
     audioPolicyServer->volumeApplyToAll_ = false;
     audioPolicyServer->isScreenOffOrLock_ = false;
     VolumeUtils::SetPCVolumeEnable(false);
-    auto ret = audioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_206
-* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyMuteEvents
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
 */
 HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_206, TestSize.Level1)
 {
@@ -156,7 +156,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_206, TestSize.Level1)
     audioPolicyServer->volumeApplyToAll_ = true;
     audioPolicyServer->isScreenOffOrLock_ = false;
     VolumeUtils::SetPCVolumeEnable(false);
-    auto ret = audioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, SUCCESS);
 }
 

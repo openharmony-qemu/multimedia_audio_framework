@@ -690,7 +690,7 @@ private:
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
-    int32_t ProcessVolumeKeyMuteEvents(const int32_t keyType);
+    int32_t ProcessVolumeKeyEvents(const int32_t keyType);
 #endif
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();

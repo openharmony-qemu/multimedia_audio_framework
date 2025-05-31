@@ -1481,7 +1481,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_046, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = true;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 /**
@@ -1499,7 +1499,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_047, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = false;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, ERROR_UNSUPPORTED);
 }
 /**
@@ -1517,7 +1517,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_048, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = true;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 /**
@@ -1535,7 +1535,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_049, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = false;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 /**
