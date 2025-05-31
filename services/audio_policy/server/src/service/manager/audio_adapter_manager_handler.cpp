@@ -53,9 +53,9 @@ bool AudioAdapterManagerHandler::SendKvDataUpdate(const bool &isFirstBoot)
 }
 
 bool AudioAdapterManagerHandler::SendSaveVolume(const DeviceType &deviceType,
-    const AudioStreamType &streamType, const int32_t &volumeLevel)
+    const AudioStreamType &streamType, const int32_t &volumeLevel, std::string networkId)
 {
-    auto eventContextObj = std::make_shared<VolumeDataEvent>(deviceType, streamType, volumeLevel);
+    auto eventContextObj = std::make_shared<VolumeDataEvent>(deviceType, streamType, volumeLevel, networkId);
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = true;
     ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAdapterManagerServerCmd::VOLUME_DATABASE_SAVE, eventContextObj));
@@ -100,7 +100,7 @@ void AudioAdapterManagerHandler::HandleVolumeDataBaseSave(const AppExecFwk::Inne
     std::shared_ptr<VolumeDataEvent> eventContextObj = event->GetSharedObject<VolumeDataEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     AudioPolicyManagerFactory::GetAudioPolicyManager().HandleSaveVolume(eventContextObj->deviceType_,
-        eventContextObj->streamType_, eventContextObj->volumeLevel_);
+        eventContextObj->streamType_, eventContextObj->volumeLevel_, eventContextObj->networkId_);
 }
 
 void AudioAdapterManagerHandler::HandleUpdateStreamMuteStatus(const AppExecFwk::InnerEvent::Pointer &event)

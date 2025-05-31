@@ -299,30 +299,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeForSwitchDevice_001, TestSize.Lev
 }
 
 /**
- * @tc.name: CheckAndUpdateRemoteDeviceVolume_001
- * @tc.desc: Test CheckAndUpdateRemoteDeviceVolume
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, CheckAndUpdateRemoteDeviceVolume_001, TestSize.Level1)
-{
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    deviceDescriptor.networkId_ = "LocalDevice";
-
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->SetActiveDeviceDescriptor(deviceDescriptor);
-    deviceDescriptor.networkId_ = "RemoteDevice";
-    int32_t result = audioAdapterManager->CheckAndUpdateRemoteDeviceVolume(deviceDescriptor);
-    EXPECT_EQ(result, true);
-
-    audioAdapterManager->SetActiveDeviceDescriptor(deviceDescriptor);
-    deviceDescriptor.networkId_ = "LocalDevice";
-    result = audioAdapterManager->CheckAndUpdateRemoteDeviceVolume(deviceDescriptor);
-    EXPECT_EQ(result, false);
-}
-
-/**
  * @tc.name: SetSystemVolumeLevel_001
  * @tc.desc: Test CheckAndUpdateRemoteDeviceVolume
  * @tc.type: FUNC

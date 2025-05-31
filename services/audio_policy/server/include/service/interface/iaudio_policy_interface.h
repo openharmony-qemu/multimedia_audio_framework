@@ -137,7 +137,7 @@ public:
 
     virtual void ResetRemoteCastDeviceVolume() = 0;
 
-    virtual void SetMaxVolumeForDeviceChange() = 0;
+    virtual void HandleDpConnection() = 0;
 
     virtual int32_t DoRestoreData() = 0;
 
@@ -175,7 +175,8 @@ public:
 
     virtual int32_t GetPersistMicMuteState(bool &isMute) const = 0;
 
-    virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel) = 0;
+    virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
+        std::string networkId) = 0;
 
     virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
