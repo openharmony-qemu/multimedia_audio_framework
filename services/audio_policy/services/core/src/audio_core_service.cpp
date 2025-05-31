@@ -613,8 +613,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetActiveBluetoothDevic
     std::vector<shared_ptr<AudioDeviceDescriptor>> activeDeviceDescriptors;
 
     for (const auto &desc : audioPrivacyDeviceDescriptors) {
-        if (desc->exceptionFlag_ || !desc->isEnable_ || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-            (desc->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded()))) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && !desc->exceptionFlag_ && desc->isEnable_ &&
+            desc->connectState_ != SUSPEND_CONNECTED && !AudioPolicyUtils::GetInstance().GetScoExcluded()) {
             activeDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
         }
     }
