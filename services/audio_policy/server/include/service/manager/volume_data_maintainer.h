@@ -58,8 +58,9 @@ public:
     ~VolumeDataMaintainer();
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
-    bool SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
-    bool GetVolume(DeviceType deviceType, AudioStreamType streamType);
+    bool SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel,
+        std::string networkId = "LocalDevice");
+    bool GetVolume(DeviceType deviceType, AudioStreamType streamType, std::string networkId = "LocalDevice");
     void SetStreamVolume(AudioStreamType streamType, int32_t volumeLevel);
     void SetAppVolume(int32_t appUid, int32_t volumeLevel);
     void GetAppMute(int32_t appUid, bool &isMute);
@@ -102,12 +103,13 @@ public:
 
 private:
     VolumeDataMaintainer();
-    static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
+    static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
+        std::string networkId = "LocalDevice");
     static std::string GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
     static std::string GetDeviceTypeName(DeviceType deviceType);
-    bool SaveVolumeInternal(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
+    bool SaveVolumeInternal(DeviceType type, AudioStreamType streamType, int32_t volumeLevel, std::string networkId);
     int32_t GetDeviceVolumeInternal(DeviceType deviceType, AudioStreamType streamType);
-    bool GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType);
+    bool GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType, std::string networkId);
     void SetStreamVolumeInternal(AudioStreamType streamType, int32_t volumeLevel);
     bool SaveMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType, bool muteStatus);
     bool GetMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType);

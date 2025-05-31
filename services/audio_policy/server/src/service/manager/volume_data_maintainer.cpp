@@ -100,32 +100,24 @@ bool VolumeDataMaintainer::CheckOsAccountReady()
     return AudioSettingProvider::CheckOsAccountReady();
 }
 
-void VolumeDataMaintainer::StoreRemoteVolumeLevelMap()
-{
-    remoteVolumeLevelMap_ = volumeLevelMap_;
-}
-
-void VolumeDataMaintainer::LoadRemoteVolumeLevelMap()
-{
-    volumeLevelMap_ = remoteVolumeLevelMap_;
-}
-
 void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     audioSettingProvider.SetDataShareReady(std::atomic_load(&isDataShareReady));
 }
 
-bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
+bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel,
+    std::string networkId)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    return SaveVolumeInternal(type, streamForVolumeMap, volumeLevel);
+    return SaveVolumeInternal(type, streamForVolumeMap, volumeLevel, networkId);
 }
 
-bool VolumeDataMaintainer::SaveVolumeInternal(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
+bool VolumeDataMaintainer::SaveVolumeInternal(DeviceType type, AudioStreamType streamType, int32_t volumeLevel,
+    std::string networkId)
 {
-    std::string volumeKey = GetVolumeKeyForDataShare(type, streamType);
+    std::string volumeKey = GetVolumeKeyForDataShare(type, streamType, networkId);
     if (!volumeKey.compare("")) {
         AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
             type, streamType);
@@ -141,20 +133,20 @@ bool VolumeDataMaintainer::SaveVolumeInternal(DeviceType type, AudioStreamType s
     return true;
 }
 
-bool VolumeDataMaintainer::GetVolume(DeviceType deviceType, AudioStreamType streamType)
+bool VolumeDataMaintainer::GetVolume(DeviceType deviceType, AudioStreamType streamType, std::string networkId)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    return GetVolumeInternal(deviceType, streamForVolumeMap);
+    return GetVolumeInternal(deviceType, streamForVolumeMap, networkId);
 }
 
-bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType)
+bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType, std::string networkId)
 {
     // Voice call assistant stream is full volume by default
     if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
         return true;
     }
-    std::string volumeKey = GetVolumeKeyForDataShare(deviceType, streamType);
+    std::string volumeKey = GetVolumeKeyForDataShare(deviceType, streamType, networkId);
     if (!volumeKey.compare("")) {
         AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
             deviceType, streamType);
@@ -727,7 +719,8 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
     }
 }
 
-std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType)
+std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
+    std::string networkId)
 {
     std::string type = "";
     if (!AUDIO_STREAMTYPE_VOLUME_MAP.count(streamType)) {
@@ -751,6 +744,14 @@ std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType
     if (streamType == AudioStreamType::STREAM_VOICE_ASSISTANT &&
         deviceType == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO) {
         deviceTypeName += "_sco";
+    }
+
+    if (networkId != "LocalDevice" && deviceType == DEVICE_TYPE_SPEAKER) {
+        deviceTypeName += "_distributed";
+    }
+
+    if (deviceType == DEVICE_TYPE_DP) {
+        deviceTypeName += "_dp";
     }
     return type + deviceTypeName;
 }

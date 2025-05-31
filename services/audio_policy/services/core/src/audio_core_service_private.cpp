@@ -933,9 +933,6 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
         UpdateOutputRoute(streamDesc);
     }
 
-    std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(newDeviceDesc, streamDesc->sessionId_);
-    audioVolumeManager_.SetVolumeForSwitchDevice(*(newDeviceDesc), newSinkName);
-
     streamCollector_.UpdateRendererDeviceInfo(newDeviceDesc);
     ReConfigOffloadStatus(streamDesc->sessionId_, pipeInfo, oldSinkName);
     audioIOHandleMap_.NotifyUnmutePort();

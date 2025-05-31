@@ -114,7 +114,6 @@ public:
     void NotifyVolumeGroup();
     bool GetLoadFlag();
     void UpdateSafeVolumeByS4();
-    void SetMaxVolumeForDeviceChange();
     void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, int32_t appUid,
         std::string invocationTime);
     void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,

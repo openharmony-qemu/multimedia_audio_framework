@@ -1048,6 +1048,9 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     if (isUpdateActiveDevice) {
+        AUDIO_INFO_LOG("active device updated, update volume");
+        AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
+        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
         OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
     }
     return ret;

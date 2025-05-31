@@ -348,11 +348,6 @@ int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
     return result;
 }
 
-void AudioVolumeManager::SetMaxVolumeForDeviceChange()
-{
-    audioPolicyManager_.SetMaxVolumeForDeviceChange();
-}
-
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     int32_t result;

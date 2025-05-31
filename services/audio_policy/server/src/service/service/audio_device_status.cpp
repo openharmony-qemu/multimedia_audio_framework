@@ -357,7 +357,7 @@ int32_t AudioDeviceStatus::HandleDpDevice(DeviceType deviceType, const std::stri
         }
         std::string activePort = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_DP);
         AUDIO_INFO_LOG("port %{public}s, active dp device", activePort.c_str());
-        audioPolicyManager_.SetMaxVolumeForDeviceChange();
+        audioPolicyManager_.HandleDpConnection();
     } else if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_DP) {
         std::string activePort = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_DP);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
@@ -867,9 +867,6 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
 
         if (statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
             AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
-            if (deviceDesc.IsDistributedSpeaker()) {
-                audioVolumeManager_.SetMaxVolumeForDeviceChange();
-            }
         }
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);

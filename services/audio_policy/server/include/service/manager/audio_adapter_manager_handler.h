@@ -44,12 +44,14 @@ public:
 
     struct VolumeDataEvent {
         VolumeDataEvent() = delete;
-        VolumeDataEvent(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel)
-            : deviceType_(deviceType), streamType_(streamType), volumeLevel_(volumeLevel)
+        VolumeDataEvent(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel,
+            const std::string &networkId)
+            : deviceType_(deviceType), streamType_(streamType), volumeLevel_(volumeLevel), networkId_(networkId)
         {}
         DeviceType deviceType_;
         AudioStreamType streamType_;
         int32_t volumeLevel_;
+        std::string networkId_;
     };
 
     struct StreamMuteStatusEvent {
@@ -73,7 +75,8 @@ public:
     };
 
     bool SendKvDataUpdate(const bool &isFirstBoot);
-    bool SendSaveVolume(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel);
+    bool SendSaveVolume(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel,
+        std::string networkId = "LocalDevice");
     bool SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
         const StreamUsage &streamUsage, const DeviceType &deviceType = DEVICE_TYPE_NONE);
     bool SendRingerModeUpdate(const AudioRingerMode &ringerMode);
