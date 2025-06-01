@@ -384,9 +384,9 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
+
         audioActiveDevice_.SetCurrentOutputDevice(*(streamDesc->newDeviceDescs_.front()));
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
             streamDesc->sessionId_);
