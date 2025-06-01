@@ -1519,7 +1519,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     bool switchResult = false;
     std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
-        switchInfo.eStreamType, appInfo_.appPid);
+        switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");
     AUDIO_INFO_LOG("Get new stream success!");
 
@@ -1528,7 +1528,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     if (initResult != SUCCESS && switchInfo.capturerInfo.originalFlag != AUDIO_FLAG_NORMAL) {
         AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
         newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, switchInfo.params,
-            switchInfo.eStreamType, appInfo_.appPid);
+            switchInfo.eStreamType, appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
         initResult = SetSwitchInfo(switchInfo, newAudioStream);
         CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
