@@ -880,9 +880,9 @@ int32_t HpaeRendererManager::RegisterWriteCallback(uint32_t sessionId, const std
 
 void HpaeRendererManager::Process()
 {
-    UpdateAppsUid();
     Trace trace("HpaeRendererManager::Process");
     if (outputCluster_ != nullptr && IsRunning()) {
+        UpdateAppsUid();
         outputCluster_->DoProcess();
     }
 }
