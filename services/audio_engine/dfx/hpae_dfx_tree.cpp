@@ -136,7 +136,8 @@ std::vector<std::vector<HpaeDfxNodeInfo>> HpaeDfxTree::LevelOrderTraversal()
 
 void HpaeDfxTree::PrintNodeInfo(std::string &outStr, HpaeDfxNodeInfo &nodeInfo)
 {
-    outStr = outStr + nodeInfo.nodeName + ": " + "id[" + std::to_string(nodeInfo.sessionId) + "],";
+    outStr = outStr + nodeInfo.nodeName + ": " + "sessionId[" + std::to_string(nodeInfo.sessionId) + "],";
+    outStr = outStr + "nodeId[" + std::to_string(nodeInfo.nodeId) + "],";
     outStr = outStr + "rate[" + std::to_string(nodeInfo.samplingRate) + "],";
     outStr = outStr + "ch[" + std::to_string(nodeInfo.channels) + "],";
     outStr = outStr + "bw[" + std::to_string(nodeInfo.format) + "],";

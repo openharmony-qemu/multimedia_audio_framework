@@ -77,6 +77,7 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // 7s history buffer to rewind
     nodeInfo.historyFrameCount = HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen;
+    nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;

@@ -104,6 +104,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // no need history buffer in not offload sink
     nodeInfo.historyFrameCount = 0;
+    nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.statusCallback = weak_from_this();
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         nodeInfo.sceneType = TransStreamUsageToSplitSceneType(nodeInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
