@@ -153,6 +153,7 @@ private:
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
     int32_t InitAudioConcurrencyCallback();
+    FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
     void ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass);
