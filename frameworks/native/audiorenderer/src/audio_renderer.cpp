@@ -2033,7 +2033,7 @@ bool AudioRendererPrivate::InitTargetStream(IAudioStream::SwitchInfo &info,
         AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
         isFastRenderer_ = false;
         newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, info.params,
-            info.eStreamType, appInfo_.appPid);
+            info.eStreamType, appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
         initResult = SetSwitchInfo(info, newAudioStream);
         CHECK_AND_RETURN_RET_LOG(initResult, false, "Init ipc strean failed");
@@ -2072,7 +2072,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     // create new IAudioStream
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
-        switchInfo.eStreamType, appInfo_.appPid);
+        switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
     AUDIO_INFO_LOG("Get new stream success!");
 
@@ -2082,7 +2082,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     if (!switchResult && switchInfo.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
         AUDIO_ERR_LOG("Re-create stream failed, create normal ipc stream");
         newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, switchInfo.params,
-            switchInfo.eStreamType, appInfo_.appPid);
+            switchInfo.eStreamType, appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
         switchResult = SetSwitchInfo(switchInfo, newAudioStream);
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "Init ipc stream failed");
