@@ -401,9 +401,10 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     if (handler_ != nullptr) {
         if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_.deviceType_ != DEVICE_TYPE_REMOTE_CAST) {
             AUDIO_INFO_LOG("DualToneStreamType. Save volume for speaker.");
-            handler_->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel);
+            handler_->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel, "LocalDevice");
         } else {
-            handler_->SendSaveVolume(currentActiveDevice_.deviceType_, streamType, volumeLevel);
+            handler_->SendSaveVolume(currentActiveDevice_.deviceType_, streamType, volumeLevel,
+                currentActiveDevice_.networkId_);
         }
     }
 

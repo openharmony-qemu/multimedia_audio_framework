@@ -2204,8 +2204,8 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::GetStreamDescBySwit
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->rendererInfo_ = switchInfo.rendererInfo;
     streamDesc->appInfo_ = AppInfo{switchInfo.appUid, 0, switchInfo.clientPid, 0};
-    streamDesc->callerUid_ = switchInfo.clientUid;
-    streamDesc->callerPid_ = switchInfo.clientPid;
+    streamDesc->callerUid_ = static_cast<int32_t>(getuid());
+    streamDesc->callerPid_ = static_cast<int32_t>(getpid());
     streamDesc->sessionId_ = switchInfo.sessionId;
     streamDesc->routeFlag_ = restoreInfo.routeFlag;
     if (restoreInfo.targetStreamFlag == AUDIO_FLAG_FORCED_NORMAL) {
