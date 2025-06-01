@@ -384,12 +384,13 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
-            streamDesc->sessionId_);
-        audioVolumeManager_.SetVolumeForSwitchDevice(*(streamDesc->newDeviceDescs_.front()), sinkName);
 
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
+        audioActiveDevice_.SetCurrentOutputDevice(*(streamDesc->newDeviceDescs_.front()));
+        std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
+            streamDesc->sessionId_);
+        audioVolumeManager_.SetVolumeForSwitchDevice(*(streamDesc->newDeviceDescs_.front()), sinkName);
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (policyConfigMananger_.GetUpdateRouteSupport()) {
             UpdateOutputRoute(streamDesc);
@@ -397,6 +398,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     } else {
         int32_t inputRet = ActivateInputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
+
+        audioActiveDevice_.SetCurrentInputDevice(*(streamDesc->newDeviceDescs_.front()));
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
         streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
@@ -1037,7 +1040,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
 
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
-        if (needUpdateActiveDevice) {
+        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED && needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
@@ -1050,6 +1053,9 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
         }
         AUDIO_INFO_LOG("Target audioFlag %{public}u for stream %{public}u",
             streamDesc->audioFlag_, streamDesc->sessionId_);
+    }
+    if (!isUpdateActiveDevice) {
+        HandleFetchOutputWhenNoRunningStream();
     }
 
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
