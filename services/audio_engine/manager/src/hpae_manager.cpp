@@ -261,7 +261,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo)
     return SUCCESS;
 }
 
-int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
+int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex)
 {
     if (SafeGetMap(rendererManagerMap_, audioModuleInfo.name)) {
         AUDIO_INFO_LOG("sink name: %{public}s already open", audioModuleInfo.name.c_str());
@@ -301,7 +301,7 @@ int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo,
     return SUCCESS;
 }
 
-int32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
+int32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex)
 {
     HpaeSourceInfo sourceInfo;
     int32_t ret = TransModuleInfoToHpaeSourceInfo(audioModuleInfo, sourceInfo);
@@ -340,7 +340,7 @@ int32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, 
     return SUCCESS;
 }
 
-int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex)
+int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex)
 {
     if (SafeGetMap(rendererManagerMap_, audioModuleInfo.name)) {
         AUDIO_INFO_LOG("inner capture name: %{public}s already open", audioModuleInfo.name.c_str());
@@ -377,7 +377,7 @@ int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo
 
 int32_t HpaeManager::OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo)
 {
-    int32_t sinkSourceIndex = sinkSourceIndex_.load();
+    uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
     if ((audioModuleInfo.lib != "libmodule-hdi-source.z.so") &&
         (audioModuleInfo.lib != "libmodule-inner-capturer-sink.z.so")) {
         OpenOutputAudioPort(audioModuleInfo, sinkSourceIndex);

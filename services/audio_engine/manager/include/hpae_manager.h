@@ -192,9 +192,9 @@ private:
 
     void SendRequest(Request &&request, std::string funcName);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
-    int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex);
-    int32_t OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex);
-    int32_t OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, int32_t sinkSourceIndex);
+    int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
+    int32_t OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
+    int32_t OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     void HandleRendererManager(const std::string& sinkName, const HpaeStreamInfo &streamInfo);
     void CreateStreamForCapInner(const HpaeStreamInfo &streamInfo);
 
