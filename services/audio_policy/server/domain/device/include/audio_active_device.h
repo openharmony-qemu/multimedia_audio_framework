@@ -69,13 +69,13 @@ public:
     bool GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
 
     void SetCurrentInputDevice(const AudioDeviceDescriptor &desc);
-    const AudioDeviceDescriptor& GetCurrentInputDevice();
+    const AudioDeviceDescriptor GetCurrentInputDevice();
     DeviceType GetCurrentInputDeviceType();
     void SetCurrentInputDeviceType(DeviceType deviceType);
     std::string GetCurrentInputDeviceMacAddr();
     void SetCurrentOutputDevice(const AudioDeviceDescriptor &desc);
     void SetCurrentOutputDeviceType(DeviceType deviceType);
-    const AudioDeviceDescriptor& GetCurrentOutputDevice();
+    const AudioDeviceDescriptor GetCurrentOutputDevice();
     DeviceType GetCurrentOutputDeviceType();
     DeviceCategory GetCurrentOutputDeviceCategory();
     std::string GetCurrentOutputDeviceNetworkId();
