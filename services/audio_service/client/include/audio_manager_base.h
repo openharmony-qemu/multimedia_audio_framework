@@ -489,6 +489,13 @@ public:
     virtual int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) = 0;
 
     /**
+     * set foregroun list.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t SetForegroundList(std::vector<std::string> list) = 0;
+
+    /**
      * check standby status.
      *
      * @return Returns result 0 if success, error number else.

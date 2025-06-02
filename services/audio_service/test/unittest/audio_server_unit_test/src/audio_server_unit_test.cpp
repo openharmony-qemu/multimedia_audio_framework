@@ -480,6 +480,22 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetForegroundList API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetForegroundList_001
+ * @tc.desc  : Test SetForegroundList interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetForegroundList_001, TestSize.Level2)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::string> list;
+    list.push_back("com.test");
+    int32_t ret = audioServer->SetForegroundList(list);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test SetIORoutes API
  * @tc.type  : FUNC
  * @tc.number: AudioServerSetIORoutes_001

@@ -563,6 +563,18 @@ HWTEST(AudioManagerUnitTest, UnsetAudioManagerCallback_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test SetForegroudList API
+ * @tc.number : SetForegroudList_001
+ * @tc.desc   : Test SetForegroudList_001 interface.
+ */
+HWTEST(AudioManagerUnitTest, SetForegroudList_001, TestSize.Level1)
+{
+    std::vector<std::string> list = {};
+    auto ret = AudioSystemManager::GetInstance()->SetForegroundList(list);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+}
+
+/**
 * @tc.name   : Test GetStandbyStatus API
 * @tc.number : GetStandbyStatus_001
 * @tc.desc   : Test GetStandbyStatus_001 interface.

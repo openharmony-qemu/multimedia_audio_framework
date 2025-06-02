@@ -31,6 +31,7 @@
 #include "source/i_audio_capture_source.h"
 #include "audio_volume.h"
 #include "audio_performance_monitor.h"
+#include "privacy_kit.h"
 #include "media_monitor_manager.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
@@ -60,6 +61,7 @@ static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_REMOTE_CAST
 };
+const size_t MAX_FG_LIST_SIZE = 10;
 }
 
 AudioService *AudioService::GetInstance()
@@ -269,6 +271,66 @@ void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererIn
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     AUDIO_INFO_LOG("Insert renderer:%{public}u into map", sessionId);
     allRendererMap_[sessionId] = renderer;
+}
+
+void AudioService::SaveForegroundList(std::vector<std::string> list)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    if (list.size() > MAX_FG_LIST_SIZE) {
+        AUDIO_ERR_LOG("invalid list size %{public}zu", list.size());
+        return;
+    }
+
+    foregroundSet_.clear();
+    foregroundUidSet_.clear();
+    for (auto &item : list) {
+        AUDIO_WARNING_LOG("Add for hap: %{public}s", item.c_str());
+        foregroundSet_.insert(item);
+    }
+}
+
+bool AudioService::MatchForegroundList(const std::string &bundleName, uint32_t uid)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    if (foregroundSet_.find(bundleName) != foregroundSet_.end()) {
+        AUDIO_WARNING_LOG("find hap %{public}s in list!", bundleName.c_str());
+        if (uid != 0) {
+            foregroundUidSet_.insert(uid);
+        }
+        return true;
+    }
+    return false;
+}
+
+bool AudioService::InForegroundList(uint32_t uid)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    if (foregroundUidSet_.find(uid) != foregroundUidSet_.end()) {
+        AUDIO_INFO_LOG("find hap %{public}d in list!", uid);
+        return true;
+    }
+    return false;
+}
+
+bool AudioService::UpdateForegroundState(uint32_t appTokenId, bool isActive)
+{
+    // UpdateForegroundState 200001000 to active
+    std::string str = "UpdateForegroundState " + std::to_string(appTokenId) + (isActive ? "to active" : "to deactive");
+    Trace trace(str);
+    WatchTimeout guard(str);
+    int32_t res = OHOS::Security::AccessToken::PrivacyKit::SetHapWithFGReminder(appTokenId, isActive);
+    AUDIO_INFO_LOG("res is %{public}d for %{public}s", res, str.c_str());
+    return res;
+}
+
+void AudioService::DumpForegroundList(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    dumpString += "DumpForegroundList:\n";
+    int32_t index = 0;
+    for (auto item : foregroundSet_) {
+        dumpString += "    " + std::to_string(index++) + item + "\n";
+    }
 }
 
 int32_t AudioService::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)

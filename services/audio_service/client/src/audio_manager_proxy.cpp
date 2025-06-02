@@ -1397,6 +1397,12 @@ void AudioManagerProxy::CheckHibernateState(bool onHibernate)
     return;
 }
 
+int32_t AudioManagerProxy::SetForegroundList(std::vector<std::string> list)
+{
+    AUDIO_WARNING_LOG("Called in %{public}d", getuid());
+    return ERR_INVALID_OPERATION;
+}
+
 int32_t AudioManagerProxy::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
 {
     MessageParcel data;

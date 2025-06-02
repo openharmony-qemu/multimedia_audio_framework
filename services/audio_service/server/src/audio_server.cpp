@@ -342,6 +342,12 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         return write(fd, dumpString.c_str(), dumpString.size());
     }
 
+    if (args.size() == 1 && args[0] == u"-dfl") {
+        std::string dumpString;
+        AudioService::GetInstance()->DumpForegroundList(dumpString);
+        return write(fd, dumpString.c_str(), dumpString.size());
+    }
+
     std::queue<std::u16string> argQue;
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
@@ -2082,6 +2088,17 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 
 bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config)
 {
+    if (!PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, config.capturerInfo.sourceType)) {
+        // no need to check
+        return true;
+    }
+
+    AppInfo appInfo = config.appInfo;
+    if (PermissionUtil::VerifyBackgroundCapture(appInfo.appTokenId, appInfo.appFullTokenId)) {
+        // check success
+        return true;
+    }
+
     SwitchStreamInfo info = {
         config.originalSessionId,
         config.callerUid,
@@ -2090,18 +2107,33 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         config.appInfo.appTokenId,
         CAPTURER_PREPARED,
     };
-    if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, config.capturerInfo.sourceType) &&
-        !PermissionUtil::VerifyBackgroundCapture(info.appTokenId, config.appInfo.appFullTokenId)) {
-        if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
-            AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
-                config.callerUid);
-            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
-            return true;
-        }
-
-        return false;
+    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
+        AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
+            config.callerUid);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
+        return true;
     }
-    return true;
+
+    std::string bundleName = GetBundleNameFromUid(config.appInfo.appUid);
+    if (AudioService::GetInstance()->MatchForegroundList(bundleName, config.appInfo.appUid) &&
+        config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AudioService::GetInstance()->UpdateForegroundState(config.appInfo.appTokenId, true);
+        bool res = PermissionUtil::VerifyBackgroundCapture(appInfo.appTokenId, appInfo.appFullTokenId);
+        AUDIO_INFO_LOG("Retry for %{public}s, result:%{public}s", bundleName.c_str(), (res ? "success" : "fail"));
+        AudioService::GetInstance()->UpdateForegroundState(config.appInfo.appTokenId, false);
+        return res;
+    }
+
+    AUDIO_WARNING_LOG("failed for %{public}s", bundleName.c_str());
+    return false;
+}
+
+int32_t AudioServer::SetForegroundList(std::vector<std::string> list)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
+        IPCSkeleton::GetCallingUid());
+    AudioService::GetInstance()->SaveForegroundList(list);
+    return SUCCESS;
 }
 
 bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
