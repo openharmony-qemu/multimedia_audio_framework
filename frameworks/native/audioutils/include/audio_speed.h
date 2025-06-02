@@ -24,6 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr float SPEED_NORMAL = 1.0f;
+static const int32_t MAX_SPEED_BUFFER_SIZE = 614400; // 192khz 100ms 8ch float
 }
 class AudioSpeed {
 public:
