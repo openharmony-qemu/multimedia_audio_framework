@@ -71,7 +71,6 @@ const uint64_t AUDIO_MS_PER_S = 1000;
 static constexpr int CB_QUEUE_CAPACITY = 3;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
-constexpr int32_t MAX_BUFFER_SIZE = 100000;
 const uint64_t MAX_CBBUF_IN_USEC = 100000;
 const uint64_t MIN_CBBUF_IN_USEC = 20000;
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
@@ -588,7 +587,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
             curStreamParams_.channels);
         GetBufferSize(bufferSize_);
-        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
+        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
     speed_ = speed;
@@ -603,7 +602,7 @@ int32_t RendererInClientInner::SetPitch(float pitch)
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
             curStreamParams_.channels);
         GetBufferSize(bufferSize_);
-        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
+        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetPitch(pitch);
     AUDIO_DEBUG_LOG("SetPitch %{public}f", pitch);
