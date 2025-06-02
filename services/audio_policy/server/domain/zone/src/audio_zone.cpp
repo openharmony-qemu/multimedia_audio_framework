@@ -121,7 +121,7 @@ bool AudioZoneBindKey::IsContain(const AudioZoneBindKey &other) const
     std::vector<AudioZoneBindKey> supportKeys = GetSupportKeys(other);
     int32_t index = -1;
     int32_t otherIndex = -1;
-    for (int32_t i = 0; i < supportKeys.size(); i++) {
+    for (int32_t i = 0; i < static_cast<int32_t>(supportKeys.size()); i++) {
         if (supportKeys[i] == *this) {
             index = i;
         }
