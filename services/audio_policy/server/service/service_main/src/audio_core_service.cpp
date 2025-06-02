@@ -616,9 +616,13 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetActiveBluetoothDevic
     std::vector<shared_ptr<AudioDeviceDescriptor>> activeDeviceDescriptors;
 
     for (const auto &desc : audioPrivacyDeviceDescriptors) {
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->isEnable_) {
-            activeDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+        if (desc->exceptionFlag_ || !desc->isEnable_ ||
+            (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            (desc->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded())) ||
+            audioStateManager_.IsExcludedDevice(AudioDeviceUsage::CALL_OUTPUT_DEVICES, desc)) {
+            continue;
         }
+        activeDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
     }
 
     uint32_t btDeviceSize = activeDeviceDescriptors.size();
