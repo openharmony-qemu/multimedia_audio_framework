@@ -39,8 +39,7 @@ namespace HPAE {
 HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     // DEFAUT effect out format
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
-    effectOutput_(pcmBufferInfo_),
-    nodeInfo_(nodeInfo)
+    effectOutput_(pcmBufferInfo_)
 {
     const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
     if (audioSupportedSceneTypes.find(nodeInfo.effectInfo.effectScene) !=
@@ -257,30 +256,30 @@ void HpaeRenderEffectNode::UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo)
 
 void HpaeRenderEffectNode::ReconfigOutputBuffer()
 {
-    uint32_t channels = static_cast<uint32_t>(nodeInfo_.channels);
-    uint64_t channelLayout = nodeInfo_.channelLayout;
+    HpaeNodeInfo &effectNodeInfo = GetNodeInfo();
+    uint32_t channels = static_cast<uint32_t>(effectNodeInfo.channels);
+    uint64_t channelLayout = effectNodeInfo.channelLayout;
     int32_t ret = AudioEffectChainManager::GetInstance()->GetOutputChannelInfo(sceneType_, channels, channelLayout);
     if (ret != SUCCESS || channels == 0 || channelLayout == 0) {
         AUDIO_WARNING_LOG("output channel info incorrect, scene type: %{public}s, "
             "channels: %{public}u, channelLayout: %{public}" PRIu64, sceneType_.c_str(), channels, channelLayout);
-    } else if (static_cast<uint32_t>(nodeInfo_.channels) != channels ||
-        static_cast<uint64_t>(nodeInfo_.channelLayout) != channelLayout) {
+    } else if (static_cast<uint32_t>(effectNodeInfo.channels) != channels ||
+        static_cast<uint64_t>(effectNodeInfo.channelLayout) != channelLayout) {
         AUDIO_INFO_LOG("output channel info changed, scene type: %{public}s, "
             "channels change from %{public}u to %{public}u, "
             "channelLayout change from %{public}" PRIu64 " to %{public}" PRIu64,
-            sceneType_.c_str(), nodeInfo_.channels, channels, nodeInfo_.channelLayout, channelLayout);
-        nodeInfo_.channels = static_cast<AudioChannel>(channels);
-        nodeInfo_.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
+            sceneType_.c_str(), effectNodeInfo.channels, channels, effectNodeInfo.channelLayout, channelLayout);
         PcmBufferInfo pcmBufferInfo = PcmBufferInfo(channels, DEFAULT_EFFECT_FRAMELEN,
             DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames(), effectOutput_.IsMultiFrames());
         effectOutput_.ReConfig(pcmBufferInfo);
-        nodeInfo_.channels = (AudioChannel)channels;
-        nodeInfo_.channelLayout = (AudioChannelLayout)channelLayout;
-        nodeInfo_.samplingRate = (AudioSamplingRate)DEFUALT_EFFECT_RATE;
-        nodeInfo_.frameLen = (uint32_t)DEFAULT_EFFECT_FRAMELEN;
+        effectNodeInfo.channels = static_cast<AudioChannel>(channels);
+        effectNodeInfo.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
+        effectNodeInfo.samplingRate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+        effectNodeInfo.frameLen = static_cast<uint32_t>(DEFAULT_EFFECT_FRAMELEN);
+        SetNodeInfo(effectNodeInfo);
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), nodeInfo_);
+            callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), GetNodeInfo());
         }
 #endif
     }

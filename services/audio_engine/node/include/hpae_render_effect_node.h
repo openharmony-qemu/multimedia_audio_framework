@@ -48,7 +48,6 @@ private:
     bool IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer);
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer effectOutput_;
-    HpaeNodeInfo nodeInfo_;
     std::string sceneType_ = "EFFECT_NONE";
     int64_t silenceDataUs_ = 0;
     bool isByPassEffect_ = false;

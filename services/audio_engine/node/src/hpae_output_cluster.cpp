@@ -36,11 +36,12 @@ HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo &nodeInfo)
         nodeInfo.nodeName = "hpaeSinkOutputNode";
         nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
         hpaeSinkOutputNode_->SetNodeInfo(nodeInfo);
-        nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(true, 0, nodeInfo);
+        nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(true, 0, hpaeSinkOutputNode_->GetNodeInfo());
         nodeInfo.nodeName = "HpaeMixerNode";
         nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
         mixerNode_->SetNodeInfo(nodeInfo);
-        nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(true, hpaeSinkOutputNode_->GetNodeId(), nodeInfo);
+        nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(
+            true, hpaeSinkOutputNode_->GetNodeId(), mixerNode_->GetNodeInfo());
     }
 #endif
     if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
@@ -82,6 +83,7 @@ bool HpaeOutputCluster::Reset()
     hpaeSinkOutputNode_->DisConnect(mixerNode_);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
+        callBack->OnNotifyDfxNodeInfo(false, mixerNode_->GetNodeId(), mixerNode_->GetNodeInfo());
         callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(), hpaeSinkOutputNode_->GetNodeInfo());
     }
 #endif
@@ -119,19 +121,21 @@ void HpaeOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *
     } else {
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, mixerNode_->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
+            callBack->OnNotifyDfxNodeInfo(
+                false, sceneConverterMap_[sceneType]->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
         }
 #endif
         sceneConverterMap_.erase(sceneType);
         sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
     }
+    sceneConverterMap_[sceneType]->SetNodeInfo(curNodeInfo);
     sceneConverterMap_[sceneType]->Connect(preNode);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
         AUDIO_INFO_LOG("HpaeOutputCluster connect curNodeInfo name %{public}s", curNodeInfo.nodeName.c_str());
         AUDIO_INFO_LOG("HpaeOutputCluster connect preNodeInfo name %{public}s", preNodeInfo.nodeName.c_str());
-        callBack->OnNotifyDfxNodeInfo(true, mixerNode_->GetNodeId(), curNodeInfo);
-        callBack->OnNotifyDfxNodeInfo(true, curNodeInfo.nodeId, preNodeInfo);
+        callBack->OnNotifyDfxNodeInfo(true, mixerNode_->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
+        callBack->OnNotifyDfxNodeInfo(true, sceneConverterMap_[sceneType]->GetNodeId(), preNodeInfo);
     }
 #endif
     mixerNode_->Connect(sceneConverterMap_[sceneType]);
@@ -148,7 +152,9 @@ void HpaeOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffe
         mixerNode_->DisConnect(sceneConverterMap_[sceneType]);
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, mixerNode_->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
+            callBack->OnNotifyDfxNodeInfo(false, preNodeInfo.nodeId, preNodeInfo);
+            callBack->OnNotifyDfxNodeInfo(
+                false, sceneConverterMap_[sceneType]->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
         }
 #endif
         sceneConverterMap_.erase(sceneType);
@@ -156,7 +162,7 @@ void HpaeOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffe
         mixerNode_->DisConnect(preNode);
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, mixerNode_->GetNodeId(), preNodeInfo);
+            callBack->OnNotifyDfxNodeInfo(false, preNodeInfo.nodeId, preNodeInfo);
         }
 #endif
     }
