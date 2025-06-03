@@ -115,9 +115,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
 int32_t HpaeRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Start");
-    timespec tm {};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp_ = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_SECOND + static_cast<uint64_t>(tm.tv_nsec);
+    ClockTime::GetAllTimestamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Start is error");
@@ -206,7 +204,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     framePosition = framePosition_;
-    timestamp = base >= 0 && base < Timestampbase::BASESIZE ?
+    timestamp = base >= 0 && base < Timestamp::Timestampbase::BASESIZE ?
         timestamp_[base] :
         timestamp_[Timestamp::Timestampbase::MONOTONIC];
     latency = latency_;

@@ -50,7 +50,6 @@ const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
-const uint64_t AUDIO_NS_PER_S = 1000000000;
 const uint64_t AUDIO_CYCLE_TIME_US = 20000;
 const uint64_t BUF_LENGTH_IN_MS = 20;
 const uint64_t CAST_BUF_LENGTH_IN_MS = 10;

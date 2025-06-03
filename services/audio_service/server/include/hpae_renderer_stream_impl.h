@@ -107,7 +107,7 @@ private:
     // latency position timeStamp
     std::shared_mutex latencyMutex_;
     uint64_t framePosition_ = 0;
-    uint64_t timestamp_ = 0;
+    std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
     std::string deviceClass_;

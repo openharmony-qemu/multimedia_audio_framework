@@ -660,7 +660,7 @@ void RendererInClientInner::ResetFramePosition()
         return;
     }
     // no need to reset timestamp, only reset frameposition
-    for (int32_t base = 0; base < Tikmestamp::Timestampbase::BASESIZE; base++) {
+    for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
         lastFramePosition_[base].first = 0;
     }
     lastReadIdx_ = 0;
