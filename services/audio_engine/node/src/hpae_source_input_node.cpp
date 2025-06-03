@@ -118,7 +118,7 @@ void HpaeSourceInputNode::SetBufferValid(const HpaeSourceBufferType &bufferType,
 
 void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
 {
-    AUDIO_DEBUG_INFO("DoProcessInner, replyBytes: %{public}" PRIu64, replyBytes);
+    AUDIO_DEBUG_LOG("DoProcessInner, replyBytes: %{public}" PRIu64, replyBytes);
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumperMap_.find(bufferType) != inputPcmDumperMap_.end() &&
         inputPcmDumperMap_.at(bufferType)) {
@@ -136,7 +136,7 @@ void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType,
 
 void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
 {
-    AUDIO_DEBUG_INFO("DoProcessInner, replyBytes: %{public}" PRIu64, replyBytes);
+    AUDIO_DEBUG_LOG("DoProcessInner, replyBytes: %{public}" PRIu64, replyBytes);
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumperMap_.find(bufferType) != inputPcmDumperMap_.end() &&
         inputPcmDumperMap_.at(bufferType)) {
@@ -150,7 +150,7 @@ void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferTy
     size_t remainCapacity = frameByteSizeMap_.at(bufferType) - historyData.size();
 
     size_t appendSize = std::min<size_t>(replyBytes, remainCapacity);
-    historyData.insert(historyData.end(), newData, newData + appendSize());
+    historyData.insert(historyData.end(), newData, newData + appendSize);
 
     if (historyData.size() < frameByteSizeMap_.at(bufferType)) {
         AUDIO_DEBUG_LOG("Partial frame accumulated: %{public}zu/%{public}zu",
