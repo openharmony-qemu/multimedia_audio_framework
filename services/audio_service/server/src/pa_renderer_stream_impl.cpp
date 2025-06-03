@@ -448,7 +448,8 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
+int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency,
+    int32_t base)
 {
     Trace trace("PaRendererStreamImpl::GetCurrentPosition");
     PaLockGuard lock(mainloop_);
@@ -487,9 +488,9 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     latency += a2dpOffloadLatency * sampleSpec->rate / AUDIO_MS_PER_S;
 
-    timespec tm {};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    int64_t stamp = 0;
+    stamp = base == Timestamp::BOOTTIME ? ClockTime::GetBootNano() : ClockTime::GetCurNano();
+    timestamp = stamp >= 0 ? stamp : 0;
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
         ",timestamp %{public}" PRIu64 ", effect latency: %{public}u ms, a2dp offload latency: %{public}u ms",

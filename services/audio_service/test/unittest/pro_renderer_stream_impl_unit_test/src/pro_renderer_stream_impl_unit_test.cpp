@@ -963,7 +963,8 @@ HWTEST(ProRendererStreamImplUnitTest, GetCurrentPosition_001, TestSize.Level1)
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
 
     uint64_t framePosition, timestamp, latency;
-    int32_t ret = rendererStreamImpl->GetCurrentPosition(framePosition, timestamp, latency);
+    int32_t ret = rendererStreamImpl->GetCurrentPosition(framePosition, timestamp, latency,
+        Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
 }
 

@@ -2299,6 +2299,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioPosition_001, TestSize.Leve
     EXPECT_EQ(true, getAudioPositionRet);
     EXPECT_GE(timestamp.time.tv_sec, (const long)RenderUT::VALUE_ZERO);
     EXPECT_GE(timestamp.time.tv_nsec, (const long)RenderUT::VALUE_ZERO);
+    getAudioPositionRet = audioRenderer->GetAudioPosition(timestamp, Timestamp::Timestampbase::BOOTTIME);
+    EXPECT_EQ(true, getAudioPositionRet);
+    EXPECT_GE(timestamp.time.tv_sec, (const long)RenderUT::VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_nsec, (const long)RenderUT::VALUE_ZERO);
 
     audioRenderer->Drain();
     audioRenderer->Stop();
@@ -2629,6 +2633,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_001, TestSize
     EXPECT_EQ(SUCCESS, getAudioTimestampInfoRet);
     EXPECT_GE(timestamp.time.tv_sec, (const long)RenderUT::VALUE_ZERO);
     EXPECT_GE(timestamp.time.tv_nsec, (const long)RenderUT::VALUE_ZERO);
+    getAudioTimestampInfoRet =
+        audioRenderer->GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::BOOTTIME);
+    EXPECT_EQ(SUCCESS, getAudioTimestampInfoRet);
+    EXPECT_GE(timestamp.time.tv_sec, (const long)RenderUT::VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_nsec, (const long)RenderUT::VALUE_ZERO);
 
     audioRenderer->Drain();
     audioRenderer->Stop();
@@ -2779,7 +2788,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_007, TestSize
         audioRenderer->Write(tempBuffer.get(), bufferSize);
     }
     Timestamp timestamp1;
+    Timestamp timeStampBoot1;
     audioRenderer->GetAudioTimestampInfo(timestamp1, Timestamp::Timestampbase::MONOTONIC);
+    audioRenderer->GetAudioTimestampInfo(timeStampBoot1, Timestamp::Timestampbase::BOOTTIME);
 
     bool isPaused = audioRenderer->Pause();
     EXPECT_EQ(true, isPaused);
@@ -2795,10 +2806,15 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_007, TestSize
         audioRenderer->Write(tempBuffer.get(), bufferSize);
     }
     Timestamp timestamp2;
+    Timestamp timeStampBoot2;
     audioRenderer->GetAudioTimestampInfo(timestamp2, Timestamp::Timestampbase::MONOTONIC);
+    audioRenderer->GetAudioTimestampInfo(timeStampBoot2, Timestamp::Timestampbase::BOOTTIME);
 
     int64_t duration = (timestamp2.time.tv_sec - timestamp1.time.tv_sec) * 1000000 + (timestamp2.time.tv_nsec -
         timestamp1.time.tv_nsec) / RenderUT::VALUE_THOUSAND; // ns -> us
+    EXPECT_GE(duration, sleepTime);
+    duration = (timeStampBoot2.time.tv_sec - timeStampBoot1.time.tv_sec) * 1000000 + (timeStampBoot2.time.tv_nsec -
+        timeStampBoot1.time.tv_nsec) / RenderUT::VALUE_THOUSAND; // ns -> us
     EXPECT_GE(duration, sleepTime);
 
     audioRenderer->Release();

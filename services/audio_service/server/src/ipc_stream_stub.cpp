@@ -260,7 +260,8 @@ int32_t IpcStreamStub::HandleGetAudioPosition(MessageParcel &data, MessageParcel
     uint64_t framePos = 0;
     uint64_t timestamp = 0;
     uint64_t latency = 0;
-    reply.WriteInt32(GetAudioPosition(framePos, timestamp, latency));
+    int32_t base = data.ReadInt32();
+    reply.WriteInt32(GetAudioPosition(framePos, timestamp, latency, base));
     reply.WriteUint64(framePos);
     reply.WriteUint64(timestamp);
     reply.WriteUint64(latency);

@@ -201,11 +201,12 @@ int32_t HpaeRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
+int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp,
+    uint64_t &latency, int32_t base)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     framePosition = framePosition_;
-    timestamp = timestamp_;
+    timestamp = base >= 0 && base < Timestampbase::BASESIZE ? timestamp_[base] : timestamp_[Timestampbase::MONOTONIC];
     latency = latency_;
     if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
         uint32_t SinkLatency = 0;

@@ -43,7 +43,11 @@ public:
      */
     enum Timestampbase {
         /** Monotonically increasing time, excluding the system sleep time */
-        MONOTONIC = 0
+        MONOTONIC = 0,
+        /** Boot time, including the system sleep time */
+        BOOTTIME = 1,
+        /** Timebase enum size */
+        BASESIZE = 2
     };
 };
 } // namespace AudioStandard

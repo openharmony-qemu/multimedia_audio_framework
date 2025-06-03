@@ -370,7 +370,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency);
+    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
 
     uint64_t framePosition = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
@@ -382,13 +382,13 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
     }
 
-    if (lastFramePosition_ < framePosition) {
-        lastFramePosition_ = framePosition;
-        lastFrameTimestamp_ = timestampVal;
+    if (lastFramePosition_[base] < framePosition) {
+        lastFramePosition_[base] = framePosition;
+        lastFrameTimestamp_[base] = timestampVal;
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
-        framePosition = lastFramePosition_;
-        timestampVal = lastFrameTimestamp_;
+        framePosition = lastFramePosition_[base];
+        timestampVal = lastFrameTimestamp_[base];
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u, Sinklatency %{public}" PRIu64, framePosition,
@@ -1724,7 +1724,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t readIdx = 0;
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
-    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency);
+    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     uint64_t framePosition = lastFramePosition_;
     if (readIdx >= latency + lastReadIdx_) { // happen when last speed latency consumed
@@ -1745,19 +1745,19 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         mcrLatency = converter_->GetLatency() * curStreamParams_.samplingRate / AUDIO_MS_PER_S;
         framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
     }
- 
-    if (lastFramePosition_ < framePosition) {
-        lastFramePosition_ = framePosition;
-        lastFrameTimestamp_ = timestampVal;
+
+    if (lastFramePosition_[base] < framePosition) {
+        lastFramePosition_[base] = framePosition;
+        lastFrameTimestamp_[base] = timestampVal;
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
-        framePosition = lastFramePosition_;
-        timestampVal = lastFrameTimestamp_;
+        framePosition = lastFramePosition_[base];
+        timestampVal = lastFrameTimestamp_[base];
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", lastLatencyPosition_ %{public}" PRIu64 ", totlatency %{public}" PRIu64,
         framePosition, lastFlushReadIndex_, timestampVal, lastLatencyPosition_, latency + mcrLatency);
- 
+
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);

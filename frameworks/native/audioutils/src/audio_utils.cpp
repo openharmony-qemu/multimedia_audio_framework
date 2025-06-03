@@ -251,6 +251,18 @@ int64_t ClockTime::GetRealNano()
     return result;
 }
 
+int64_t ClockTime::GetBootNano()
+{
+    int64_t result = -1; // -1 for bad result
+    struct timespec time;
+    clockid_t clockId = CLOCK_BOOTTIME;
+    int ret = clock_gettime(clockId, &time);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
+        "GetBootNanotime fail, result:%{public}d", ret);
+    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
+    return result;
+}
+
 int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
 {
     int32_t ret = -1; // -1 for bad result.
@@ -303,6 +315,19 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
     }
 
     return ret;
+}
+
+void ClockTime::GetAllTimeStamp(std::vector<uint64_t> &timestamp)
+{
+    timestamp.resize(Timestampbase::BASESIZE);
+    int64_t tmpTime = GetCurNano();
+    if (tmpTime > 0) {
+        timestamp[Timestampbase::MONOTONIC] = staic_cast<uint64_t>(tmpTime);
+    }
+    tmpTime = GetBootNano();
+    if (tmpTime > 0) {
+        timestamp[Timestampbase::BOOTTIME] = staic_cast<uint64_t>(tmpTime);
+    }}
 }
 
 void Trace::Count(const std::string &value, int64_t count)

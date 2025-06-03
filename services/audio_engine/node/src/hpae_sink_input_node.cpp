@@ -222,7 +222,7 @@ uint64_t HpaeSinkInputNode::GetFramesWritten()
     return framesWritten_;
 }
 
-int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
+int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp)
 {
     framePosition = GetFramesWritten();
     if (historyBuffer_) {
@@ -230,7 +230,7 @@ int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, uint64_t 
                             ? framePosition - historyBuffer_->GetCurFrames() * GetFrameLen()
                             : 0;
     }
-    timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
+    ClockTime::GetAllTimeStamp(timestamp);
     return SUCCESS;
 }
 
