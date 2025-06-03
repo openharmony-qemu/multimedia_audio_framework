@@ -384,7 +384,8 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
     }
 
-    if (lastFramePosition_[base].first < framePosition) {
+    // reset the timestamp
+    if (lastFramePosition_[base].first < framePosition || lastFramePosition_[base].second == 0) {
         lastFramePosition_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
@@ -1749,7 +1750,8 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
     }
 
-    if (lastFramePosition_[base].first < framePosition) {
+    // reset the timestamp
+    if (lastFramePosition_[base].first < framePosition || lastFramePosition_[base].second == 0) {
         lastFramePosition_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
