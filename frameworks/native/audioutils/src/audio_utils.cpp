@@ -319,15 +319,15 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
 
 void ClockTime::GetAllTimeStamp(std::vector<uint64_t> &timestamp)
 {
-    timestamp.resize(Timestampbase::BASESIZE);
+    timestamp.resize(Timestamp::Timestampbase::BASESIZE);
     int64_t tmpTime = GetCurNano();
     if (tmpTime > 0) {
-        timestamp[Timestampbase::MONOTONIC] = staic_cast<uint64_t>(tmpTime);
+        timestamp[Timestamp::Timestampbase::MONOTONIC] = static_cast<uint64_t>(tmpTime);
     }
     tmpTime = GetBootNano();
     if (tmpTime > 0) {
-        timestamp[Timestampbase::BOOTTIME] = staic_cast<uint64_t>(tmpTime);
-    }}
+        timestamp[Timestamp::Timestampbase::BOOTTIME] = static_cast<uint64_t>(tmpTime);
+    }
 }
 
 void Trace::Count(const std::string &value, int64_t count)
