@@ -602,7 +602,7 @@ struct AudioStreamData {
 struct AudioCallBackStreamInfo {
     uint64_t framePosition = 0;
     uint64_t framesWritten = 0;
-    vector<uint64_t> timestamp = {Timestamp::Timestampbase::BASESIZE, 0};
+    std::vector<uint64_t> timestamp = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency = 0;
     int8_t *inputData = nullptr;
     size_t requestDataLen = 0;

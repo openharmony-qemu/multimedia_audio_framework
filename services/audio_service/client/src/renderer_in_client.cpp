@@ -659,7 +659,10 @@ void RendererInClientInner::ResetFramePosition()
         AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
         return;
     }
-    memset_s(lastFramePosition_, Timestamp::Timestampbase::BASESIZE * sizeof(int32_t), 0, 0);
+    // no need to reset timestamp, only reset frameposition
+    for (int32_t base = 0; base < Tikmestamp::Timestampbase::BASESIZE; base++) {
+        lastFramePosition_[base].first = 0;
+    }
     lastReadIdx_ = 0;
     lastLatency_ = latency;
     lastLatencyPosition_ = latency * speed_;
