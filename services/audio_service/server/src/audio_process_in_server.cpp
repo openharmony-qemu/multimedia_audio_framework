@@ -357,6 +357,7 @@ int32_t AudioProcessInServer::Resume()
     }
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
