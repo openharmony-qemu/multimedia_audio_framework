@@ -421,12 +421,15 @@ bool RendererInClientInner::WriteCallbackFunc()
         return true;
     }
     // call client write
-    std::unique_lock<std::mutex> lockCb(writeCbMutex_);
-    if (writeCb_ != nullptr) {
-        Trace traceCb("RendererInClientInner::OnWriteData");
-        writeCb_->OnWriteData(cbBufferSize_);
+    std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
+    {
+        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
+        cb = writeCb_;
     }
-    lockCb.unlock();
+    if (cb != nullptr) {
+        Trace traceCb("RendererInClientInner::OnWriteData");
+        cb->OnWriteData(cbBufferSize_);
+    }
 
     Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
     std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
