@@ -483,7 +483,7 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
             "after NotifyPrivacyStart success!", streamIndex_);
         isMicIndicatorOn_ = true;
     }
