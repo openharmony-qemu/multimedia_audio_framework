@@ -17,6 +17,16 @@
 #include <cmath>
 #include "hpae_pcm_buffer.h"
 #include "test_case_common.h"
+#include <vector>
+
+namespace {
+constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
+constexpr uint32_t DEFAULT_FRAME_LEN = 480;
+constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
+constexpr uint32_t DEFAULT_FRAME_NUM = 2;
+constexpr uint32_t DEFAULT_FRAME_SIZE = DEFAULT_CHANNEL_COUNT * DEFAULT_FRAME_LEN;
+constexpr uint32_t NUM_TWO = 2;
+constexpr uint32_t NUM_THREE = 3;
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -26,6 +36,31 @@ class HpaePcmBufferTest : public testing::Test {
 public:
     void SetUp();
     void TearDown();
+
+    PcmBufferInfo CreateBufferInfo(uint32_t frames, bool multiFrames = false)
+    {
+        PcmBufferInfo info;
+        info.ch = DEFAULT_CHANNEL_COUNT;
+        info.frameLen = DEFAULT_FRAME_LEN;
+        info.rate = DEFAULT_SAMPLE_RATE;
+        info.frames = frames;
+        info.isMultiFrames = multiFrames;
+        return info;
+    }
+    
+    std::vector<float> CreateTestVector(float value = 1.0f)
+    {
+        return std::vector<float>(DEFAULT_FRAME_SIZE, value);
+    }
+    
+    std::vector<std::vector<float>> CreateTestMatrix(float value = 1.0f, size_t frames = 1)
+    {
+        std::vector<std::vector<float>> matrix;
+        for (size_t i = 0; i < frames; i++) {
+            matrix.push_back(CreateTestVector(value));
+        }
+        return matrix;
+    }
 };
 
 void HpaePcmBufferTest::SetUp()
@@ -33,14 +68,6 @@ void HpaePcmBufferTest::SetUp()
 
 void HpaePcmBufferTest::TearDown()
 {}
-
-namespace {
-
-constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
-constexpr uint32_t DEFAULT_FRAME_LEN = 480;
-constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
-constexpr uint32_t DEFAULT_FRAME_NUM = 2;
-
 
 TEST_F(HpaePcmBufferTest, constructHpaePcmBufferTest)
 {
@@ -133,7 +160,7 @@ TEST_F(HpaePcmBufferTest, calHpaePcmBufferTest)
 TEST_F(HpaePcmBufferTest, calHpaePcmBufferMultiFrameTest)
 {
     PcmBufferInfo pcmBufferInfo;
-    size_t inputFrames = 4;
+    size_t inputFrames = 4; // 4: input frame numbers
     pcmBufferInfo.ch = DEFAULT_CHANNEL_COUNT;
     pcmBufferInfo.frameLen = DEFAULT_FRAME_LEN;
     pcmBufferInfo.rate = DEFAULT_SAMPLE_RATE;
@@ -176,5 +203,135 @@ TEST_F(HpaePcmBufferTest, calHpaePcmBufferMultiFrameTest)
     EXPECT_EQ(hpaePcmBuffer.GetReadPos(), 0);
     EXPECT_EQ(hpaePcmBuffer.GetFrameData(testHpaePcmBuffer), false);
     EXPECT_EQ(hpaePcmBuffer.GetFrameData(testVec2), false);
+}
+
+TEST_F(HpaePcmBufferTest, ConstructorInitialization)
+{
+    PcmBufferInfo info = CreateBufferInfo(NUM_TWO, true);
+    HpaePcmBuffer buffer(info);
+
+    uintptr_t addr = reinterpret_cast<uintptr_t>(buffer.GetPcmDataBuffer());
+    EXPECT_EQ(addr % MEMORY_ALIGN_BYTE_NUM, 0);
+
+    EXPECT_EQ(buffer.GetChannelCount(), DEFAULT_CHANNEL_COUNT);
+    EXPECT_EQ(buffer.GetFrameLen(), DEFAULT_FRAME_LEN);
+    EXPECT_EQ(buffer.GetFrames(), NUM_TWO);
+    EXPECT_EQ(buffer.GetCurFrames(), 0);
+    EXPECT_EQ(buffer.GetReadPos(), 0);
+    EXPECT_EQ(buffer.GetWritePos(), 0);
+    EXPECT_TRUE(buffer.IsMultiFrames());
+}
+
+TEST_F(HpaePcmBufferTest, arithmeticOperations)
+{
+    PcmBufferInfo info = CreateBufferInfo(1);
+    HpaePcmBuffer bufferA(info);
+    HpaePcmBuffer bufferB(info);
+    bufferA = CreateTestVector(2.0f);
+    bufferB = CreateTestVector(3.0f);
+    bufferA += bufferB;
+    for (size_t i = 0; i < info.frameLen; ++i) {
+        EXPECT_FLOAT_EQ(bufferA[0][i], 2.0f + 3.0f);
+    }
+    bufferA -= bufferB;
+    for (size_t i = 0; i < info.frameLen; ++i) {
+        EXPECT_FLOAT_EQ(bufferA[0][i], 2.0f);
+    }
+    bufferA *= bufferB;
+    for (size_t i = 0; i < info.frameLen; ++i) {
+        EXPECT_FLOAT_EQ(bufferA[0][i], 2.0f * 3.0f);
+    }
+}
+
+TEST_F(HpaePcmBufferTest, bufferManagement)
+{
+    PcmBufferInfo info = CreateBufferInfo(NUM_THREE, true);
+    HpaePcmBuffer buffer(info);
+
+    buffer = CreateTestMatrix(1.0f, NUM_TWO);
+    ASSERT_EQ(buffer.GetCurFrames(), NUM_TWO);
+
+    size_t rewound = buffer.RewindBuffer(NUM_TWO);
+    EXPECT_EQ(rewound, 1);
+    EXPECT_EQ(buffer.GetCurFrames(), NUM_THREE);
+    EXPECT_EQ(buffer.GetReadPos(), NUM_TWO); // (0 - 1 + 3) % 3 = 2
+
+    buffer.UpdateReadPos(1);
+    buffer.UpdateWritePos(1);
+    EXPECT_EQ(buffer.GetReadPos(), 1);
+    EXPECT_EQ(buffer.GetWritePos(), 1);
+
+    buffer.Reset();
+    for (size_t i = 0; i < buffer.GetFrames(); i++) {
+        for (size_t j = 0; j < DEFAULT_FRAME_SIZE; j++) {
+            EXPECT_FLOAT_EQ(buffer[i][j], 0.0f);
+        }
+    }
+}
+
+TEST_F(HpaePcmBufferTest, edgeCases)
+{
+    PcmBufferInfo multiInfo = CreateBufferInfo(NUM_TWO, true);
+    HpaePcmBuffer multiBuffer(multiInfo);
+    multiBuffer = std::vector<std::vector<float>>();
+    EXPECT_EQ(multiBuffer.GetCurFrames(), 0);
+
+    std::vector<float> outputVector(DEFAULT_FRAME_SIZE, 1.0f);
+    EXPECT_FALSE(multiBuffer.GetFrameData(outputVector));
+    for (float sample : outputVector) {
+        EXPECT_FLOAT_EQ(sample, 1.0f);
+    }
+
+    std::vector<float> testFrame = CreateTestVector();
+    for (int i = 0; i < NUM_TWO; i++) {
+        EXPECT_TRUE(multiBuffer.PushFrameData(testFrame));
+    }
+    EXPECT_FALSE(multiBuffer.PushFrameData(testFrame));
+
+    size_t rewound = multiBuffer.RewindBuffer(NUM_THREE);
+    EXPECT_EQ(rewound, 0);
+}
+
+TEST_F(HpaePcmBufferTest, invalidArguments)
+{
+    PcmBufferInfo multiInfo = CreateBufferInfo(NUM_TWO, true);
+    HpaePcmBuffer multiBuffer(multiInfo);
+    
+    PcmBufferInfo singleInfo = CreateBufferInfo(1);
+    HpaePcmBuffer singleBuffer(singleInfo);
+
+    EXPECT_FALSE(multiBuffer.GetFrameData(multiBuffer));
+    EXPECT_FALSE(singleBuffer.GetFrameData(multiBuffer));
+
+    std::vector<float> testFrame = CreateTestVector();
+    EXPECT_FALSE(singleBuffer.PushFrameData(testFrame));
+
+    EXPECT_FALSE(multiBuffer.StoreFrameData(multiBuffer));
+    EXPECT_FALSE(singleBuffer.StoreFrameData(multiBuffer));
+
+    EXPECT_EQ(singleBuffer.RewindBuffer(1), 0);
+}
+
+TEST_F(HpaePcmBufferTest, positionWrapping)
+{
+    PcmBufferInfo info = CreateBufferInfo(NUM_TWO, true);
+    HpaePcmBuffer buffer(info);
+
+    buffer.UpdateWritePos(1);
+    buffer.UpdateReadPos(1);
+
+    std::vector<float> testFrame = CreateTestVector();
+    EXPECT_TRUE(buffer.PushFrameData(testFrame));
+
+    EXPECT_EQ(buffer.GetWritePos(), 0);
+    EXPECT_EQ(buffer.GetReadPos(), 1);
+    EXPECT_EQ(buffer.GetCurFrames(), 1);
+
+    PcmBufferInfo outputInfo = CreateBufferInfo(1);
+    HpaePcmBuffer outputBuffer(outputInfo);
+    EXPECT_TRUE(buffer.StoreFrameData(outputBuffer));
+
+    EXPECT_EQ(buffer.GetWritePos(), 1);
+    EXPECT_EQ(buffer.GetReadPos(), 0); // (1 + 1) % 2 = 0
 }
 }
