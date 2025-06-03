@@ -1338,7 +1338,21 @@ int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->SetRenderRate(renderRate);
+    float speed = 1.0f;
+    switch (renderRate) {
+        case RENDER_RATE_NORMAL:
+            speed = 1.0f;
+            break;
+        case RENDER_RATE_DOUBLE:
+            speed = 2.0f;
+            break;
+        case RENDER_RATE_HALF:
+            speed = 0.5f;
+            break;
+        default:
+            speed = 1.0f;
+    }
+    return currentStream->SetSpeed(speed);
 }
 
 AudioRendererRate AudioRendererPrivate::GetRenderRate() const
