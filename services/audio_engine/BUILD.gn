@@ -149,6 +149,12 @@ ohos_shared_library("audio_engine_node") {
   }
   install_enable = true
 
+  defines = []
+
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
+  }
+
   configs = [ ":audio_engine_node_config" ]
 
   sources = [

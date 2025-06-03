@@ -62,7 +62,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
     nodeInfoMap_[sourceBufferType].frameLen = FRAME_DURATION_DEFAULT * nodeInfo.samplingRate / MILLISECOND_PER_SECOND;
     capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
     outputStreamMap_.emplace(sourceBufferType, this);
-
+    historyDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumperMap_.emplace(sourceBufferType,
         std::make_unique<HpaePcmDumper>("HpaeSourceInputNode_id_"+ std::to_string(GetSessionId()) +
@@ -90,6 +90,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
         fdescMap_.emplace(sourceBufferType,
             FrameDesc{capturerFrameDataMap_.at(sourceBufferType).data(), frameByteSizeMap_.at(sourceBufferType)});
         outputStreamMap_.emplace(sourceBufferType, this);
+        historyDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
 #ifdef ENABLE_HOOK_PCM
         inputPcmDumperMap_.emplace(sourceBufferType,
             std::make_unique<HpaePcmDumper>("HpaeSourceInputNode_id_"+ std::to_string(GetSessionId()) +
@@ -117,6 +118,7 @@ void HpaeSourceInputNode::SetBufferValid(const HpaeSourceBufferType &bufferType,
 
 void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
 {
+    AUDIO_DEBUG_INFO("DoProcessInner, replyBytes: %{public}" PRIu64, replyBytes);
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumperMap_.find(bufferType) != inputPcmDumperMap_.end() &&
         inputPcmDumperMap_.at(bufferType)) {
@@ -130,6 +132,44 @@ void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType,
         capturerFrameDataMap_.at(bufferType).data(),
         inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
     outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
+}
+
+void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
+{
+    AUDIO_DEBUG_INFO("DoProcessInner, replyBytes: %{public}" PRIu64, replyBytes);
+#ifdef ENABLE_HOOK_PCM
+    if (inputPcmDumperMap_.find(bufferType) != inputPcmDumperMap_.end() &&
+        inputPcmDumperMap_.at(bufferType)) {
+        inputPcmDumperMap_.at(bufferType)->Dump(
+            (int8_t *) capturerFrameDataMap_.at(bufferType).data(), replyBytes);
+    }
+#endif
+
+    auto &historyData = historyDataMap_.at(bufferType);
+    const char *newData = capturerFrameDataMap_.at(bufferType).data();
+    size_t remainCapacity = frameByteSizeMap_.at(bufferType) - historyData.size();
+
+    size_t appendSize = std::min<size_t>(replyBytes, remainCapacity);
+    historyData.insert(historyData.end(), newData, newData + appendSize());
+
+    if (historyData.size() < frameByteSizeMap_.at(bufferType)) {
+        AUDIO_DEBUG_LOG("Partial frame accumulated: %{public}zu/%{public}zu",
+            historyData.size(), frameByteSizeMap_.at(bufferType));
+        return;
+    }
+
+    // todo: do not convert to float in SourceInputNode
+    ConvertToFloat(nodeInfoMap_.at(bufferType).format,
+        nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen,
+        historyData.data(),
+        inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
+    outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
+
+    if (appendSize < replyBytes) {
+        historyData.assign(newData + appendSize, newData + replyBytes);
+    } else {
+        historyData.clear();
+    }
 }
 
 void HpaeSourceInputNode::DoProcess()
@@ -149,8 +189,7 @@ void HpaeSourceInputNode::DoProcess()
         HpaeSourceBufferType sourceBufferType = nodeInfoMap_.begin()->second.sourceBufferType;
         audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(sourceBufferType).data(),
                                            (uint64_t)frameByteSizeMap_.at(sourceBufferType), replyBytes);
-        SetBufferValid(sourceBufferType, replyBytes);
-        DoProcessInner(sourceBufferType, replyBytes);
+        DoProcessMicInner(sourceBufferType, replyBytes);
     }
 }
 
@@ -262,6 +301,15 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
     audioSourceAttr_ = attr;
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Init(attr) == SUCCESS, ERROR, "Source init fail");
     SetSourceState(STREAM_MANAGER_IDLE);
+#ifdef IS_EMULATOR
+    // Due to the peculiar implementation of the emulator's HDI,
+    // an initial start and stop sequence is required to circumvent protential issues and ensure proper functionality.
+    AUDIO_INFO_LOG("do start and stop");
+    if (sourceInputNodeType_ == HPAE_SOURCE_MIC || sourceInputNodeType_ == HPAE_SOURCE_MIC_EC) {
+        audioCapturerSource_->Start();
+        audioCapturerSource_->Stop();
+    }
+#endif
     return SUCCESS;
 }
 
