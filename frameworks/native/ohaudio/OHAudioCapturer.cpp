@@ -604,15 +604,15 @@ void OHAudioCapturer::SetInterruptCallback(CapturerCallback capturerCallbacks, v
 {
     if (interruptCallbackType_ == INTERRUPT_EVENT_CALLBACK_SEPERATED &&
         capturerCallbacks.onInterruptEventCallback != nullptr) {
-        std::shared_ptr<AudioCapturerCallback> callback = std::make_shared<OHAudioCapturerCallback>(
+        audioCapturerCallback_ = std::make_shared<OHAudioCapturerCallback>(
             capturerCallbacks.onInterruptEventCallback, (OH_AudioCapturer*)this, userData);
-        audioCapturer_->SetCapturerCallback(callback);
+        audioCapturer_->SetCapturerCallback(audioCapturerCallback_);
         AUDIO_INFO_LOG("The Interrupt callback function is for PCM type with result");
     } else if (interruptCallbackType_ == INTERRUPT_EVENT_CALLBACK_COMBINED &&
         capturerCallbacks.callbacks.OH_AudioCapturer_OnInterruptEvent != nullptr) {
-        std::shared_ptr<AudioCapturerCallback> callback = std::make_shared<OHAudioCapturerCallback>(
+        audioCapturerCallback_ = std::make_shared<OHAudioCapturerCallback>(
             capturerCallbacks.callbacks, (OH_AudioCapturer*)this, userData);
-        audioCapturer_->SetCapturerCallback(callback);
+        audioCapturer_->SetCapturerCallback(audioCapturerCallback_);
         AUDIO_INFO_LOG("The Interrupt callback function is for PCM type without result");
     } else {
         AUDIO_WARNING_LOG("The Interrupt callback function is not set");
