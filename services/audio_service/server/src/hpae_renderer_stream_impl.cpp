@@ -115,7 +115,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
 int32_t HpaeRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Start");
-    ClockTime::GetAllTimestamp(timestamp_);
+    ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Start is error");
@@ -195,7 +195,7 @@ int32_t HpaeRendererStreamImpl::GetStreamFramesWritten(uint64_t &framesWritten)
 int32_t HpaeRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
-    timestamp = timestamp_;
+    timestamp = timestamp_[Timestamp::Timestampbase::MONOTONIC];
     return SUCCESS;
 }
 
@@ -232,10 +232,8 @@ int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
         latency = SinkLatency + latency_;
         return SUCCESS;
     }
-    timespec tm {};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    auto timestamp = static_cast<uint64_t>(tm.tv_sec) * 1000000000ll + static_cast<uint64_t>(tm.tv_nsec);
-    auto interval = (timestamp - timestamp_) / 1000;
+    auto timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
+    auto interval = (timestamp - timestamp_[Timestamp::Timestampbase::MONOTONIC]) / 1000;
     latency = latency_ > interval ? latency_ - interval : 0;
     AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}" PRIu64 ", \
         interval %{public}llu latency %{public}" PRIu64, latency_, interval, latency);
