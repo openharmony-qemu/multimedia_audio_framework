@@ -1264,19 +1264,23 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             AUDIO_INFO_LOG("renderer Start sessionId: %{public}u deviceName:%{public}s",
-                sessionId,
-                rendererIdSinkNameMap_[sessionId].c_str());
+                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
             rendererIdStreamInfoMap_[sessionId].statusCallback.lock()->OnStatusUpdate(OPERATION_STARTED);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Start sessionId: %{public}u deviceName:%{public}s",
-                sessionId,
-                capturerIdSourceNameMap_[sessionId].c_str());
+                sessionId, capturerIdSourceNameMap_[sessionId].c_str());
             if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
+                CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->Start(sessionId);
             } else {
+                CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Start(sessionId);
             }
             capturerIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
@@ -1287,8 +1291,7 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
             }               
         } else {
             AUDIO_WARNING_LOG("Start can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
-                streamClassType,
-                sessionId);
+                streamClassType, sessionId);
         }
     };
     SendRequest(request, __func__);
@@ -1311,25 +1314,28 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             AUDIO_INFO_LOG("renderer Pause sessionId: %{public}u deviceName:%{public}s",
-                sessionId,
-                rendererIdSinkNameMap_[sessionId].c_str());
+                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Pause(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_PAUSING;
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Pause sessionId: %{public}u deviceName:%{public}s",
-                sessionId,
-                capturerIdSourceNameMap_[sessionId].c_str());
+                sessionId, capturerIdSourceNameMap_[sessionId].c_str());
             if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
+                CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->Pause(sessionId);
             } else {
+                CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Pause(sessionId);
             }
             capturerIdStreamInfoMap_[sessionId].state = HPAE_SESSION_PAUSING;
         } else {
             AUDIO_WARNING_LOG("Pause can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
-                streamClassType,
-                sessionId);
+                streamClassType, sessionId);
         }
     };
     SendRequest(request, __func__);
@@ -1352,8 +1358,9 @@ int32_t HpaeManager::Flush(HpaeStreamClassType streamClassType, uint32_t session
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             AUDIO_INFO_LOG("renderer Flush sessionId: %{public}u deviceName:%{public}s",
-                sessionId,
-                rendererIdSinkNameMap_[sessionId].c_str());
+                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Flush(sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
@@ -1361,14 +1368,17 @@ int32_t HpaeManager::Flush(HpaeStreamClassType streamClassType, uint32_t session
                 sessionId,
                 capturerIdSourceNameMap_[sessionId].c_str());
             if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
+                CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->Flush(sessionId);
             } else {
+                CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Flush(sessionId);
             }
         } else {
             AUDIO_WARNING_LOG("Flush can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
-                streamClassType,
-                sessionId);
+                streamClassType, sessionId);
         }
     };
     SendRequest(request, __func__);
@@ -1391,8 +1401,9 @@ int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t session
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             AUDIO_INFO_LOG("renderer Drain sessionId: %{public}u deviceName:%{public}s",
-                sessionId,
-                rendererIdSinkNameMap_[sessionId].c_str());
+                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Drain(sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
@@ -1400,14 +1411,17 @@ int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t session
                 sessionId,
                 capturerIdSourceNameMap_[sessionId].c_str());
             if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
+                CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->Drain(sessionId);
             } else {
+                CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Drain(sessionId);
             }
         } else {
             AUDIO_WARNING_LOG("Drain can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
-                streamClassType,
-                sessionId);
+                streamClassType, sessionId);
         }
     };
     SendRequest(request, __func__);
@@ -1430,25 +1444,28 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             AUDIO_INFO_LOG("renderer Stop sessionId: %{public}u deviceName:%{public}s",
-                sessionId,
-                rendererIdSinkNameMap_[sessionId].c_str());
+                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Stop(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Stop sessionId: %{public}u deviceName:%{public}s",
-                sessionId,
-                capturerIdSourceNameMap_[sessionId].c_str());
+                sessionId, capturerIdSourceNameMap_[sessionId].c_str());
             if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
+                CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->Stop(sessionId);
             } else {
+                CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Stop(sessionId);
             }
             capturerIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
         } else {
             AUDIO_WARNING_LOG("Stop can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
-                streamClassType,
-                sessionId);
+                streamClassType, sessionId);
         }
     };
     SendRequest(request, __func__);
@@ -1500,8 +1517,12 @@ int32_t HpaeManager::RegisterReadCallback(uint32_t sessionId, const std::weak_pt
                 sessionId,
                 capturerIdSourceNameMap_[sessionId].c_str());
             if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
+                CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->RegisterReadCallback(sessionId, callback);
             } else {
+                CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->RegisterReadCallback(sessionId, callback);
             }
         } else {
@@ -1524,6 +1545,8 @@ int32_t HpaeManager::SetClientVolume(uint32_t sessionId, float volume)
     auto request = [this, sessionId, volume]() {
         AUDIO_INFO_LOG("SetClientVolume sessionId %{public}u %{public}f", sessionId, volume);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetClientVolume(sessionId, volume);
         } else {
             AUDIO_WARNING_LOG("SetClientVolume can not find sessionId, sessionId %{public}u", sessionId);
@@ -1538,6 +1561,8 @@ int32_t HpaeManager::SetRate(uint32_t sessionId, int32_t rate)
     auto request = [this, sessionId, rate]() {
         AUDIO_INFO_LOG("SetRate sessionId %{public}u %{public}d", sessionId, rate);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetRate(sessionId, rate);
         } else {
             AUDIO_WARNING_LOG("SetRate can not find sessionId, sessionId %{public}u", sessionId);
@@ -1552,6 +1577,8 @@ int32_t HpaeManager::SetAudioEffectMode(uint32_t sessionId, int32_t effectMode)
     auto request = [this, sessionId, effectMode]() {
         AUDIO_INFO_LOG("SetAudioEffectMode sessionId %{public}u %{public}d", sessionId, effectMode);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetAudioEffectMode(sessionId, effectMode);
         } else {
             AUDIO_WARNING_LOG("SetAudioEffectMode can not find sessionId, sessionId %{public}u", sessionId);
@@ -1570,6 +1597,8 @@ int32_t HpaeManager::SetPrivacyType(uint32_t sessionId, int32_t privacyType)
 {
     auto request = [this, sessionId, privacyType]() {
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetPrivacyType(sessionId, privacyType);
         } else {
             AUDIO_WARNING_LOG("SetPrivacyType can not find sessionId, sessionId %{public}u", sessionId);
@@ -1592,6 +1621,8 @@ int32_t HpaeManager::RegisterWriteCallback(uint32_t sessionId, const std::weak_p
             AUDIO_INFO_LOG("renderer RegisterWriteCallback sessionId: %{public}u deviceName:%{public}s",
                 sessionId,
                 rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->RegisterWriteCallback(sessionId, callback);
         } else {
             AUDIO_WARNING_LOG("RegisterWriteCallback can not find sessionId, sessionId %{public}u", sessionId);
@@ -1637,6 +1668,8 @@ int32_t HpaeManager::UpdateSpatializationState(uint32_t sessionId, bool spatiali
             spatializationEnabled,
             headTrackingEnabled);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->UpdateSpatializationState(
                 sessionId, spatializationEnabled, headTrackingEnabled);
         } else {
@@ -1651,6 +1684,8 @@ int32_t HpaeManager::UpdateMaxLength(uint32_t sessionId, uint32_t maxLength)
 {
     auto request = [this, sessionId, maxLength]() {
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->UpdateMaxLength(sessionId, maxLength);
         } else {
             AUDIO_WARNING_LOG("UpdateMaxLength can not find sessionId, sessionId %{public}u", sessionId);

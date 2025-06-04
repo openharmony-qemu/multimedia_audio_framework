@@ -325,6 +325,7 @@ const char *HpaeOffloadSinkOutputNode::GetRenderFrameData(void)
 
 void HpaeOffloadSinkOutputNode::StopStream()
 {
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     // flush hdi when disconnect
     RunningLock(true);
     auto ret = RenderSinkFlush();
