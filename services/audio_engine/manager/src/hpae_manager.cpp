@@ -1414,7 +1414,7 @@ int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t session
                 capturerIdSourceNameMap_[sessionId].c_str());
             if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
                 CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, capturerIdSourceNameMap_[sessionId]),
-                "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
+                    "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->Drain(sessionId);
             } else {
                 CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
