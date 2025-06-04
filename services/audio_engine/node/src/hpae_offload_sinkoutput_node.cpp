@@ -176,7 +176,6 @@ void HpaeOffloadSinkOutputNode::OffloadReset()
     isHdiFull_.store(false);
     renderFrameData_.clear();
     setPolicyStateTask_.flag = false; // unset the task when reset
-    RunningLock(true);
 }
 
 int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
