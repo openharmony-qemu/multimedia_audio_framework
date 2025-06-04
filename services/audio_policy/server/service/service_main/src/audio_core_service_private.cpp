@@ -534,7 +534,7 @@ bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, con
 
 int32_t AudioCoreService::FetchDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
-    return FetchOutputDeviceAndRoute(reason) && FetchInputDeviceAndRoute();
+    return (FetchOutputDeviceAndRoute(reason) == SUCCESS) && (FetchInputDeviceAndRoute() == SUCCESS);
 }
 
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
