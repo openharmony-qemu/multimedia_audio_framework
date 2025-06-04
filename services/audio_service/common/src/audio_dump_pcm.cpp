@@ -176,22 +176,28 @@ void AudioCacheMgrInner::CacheData(std::string &dumpFileName, void* srcDataPoint
         Trace trace("AudioCacheMgrInner::CacheData::NotInited");
         return;
     }
+
     Trace trace("AudioCacheMgrInner::CacheData");
     if (isDumpingData_.load()) {
         Trace trace("AudioCacheMgrInner::CacheData::ReturnWhenDumpingData");
         return;
     }
+
     if (!g_Mutex.try_lock()) {
-        // condition 1: cacheData thread and dumpData thread in Concurrency
-        // if dumpData thread gets mutex, discard cacheData and return directly
-        // if cacheData threads gets mutex, dumpData thread waits for cacheData finish,
-        // cause cacheData excutes very fast.
+        /*
+        * condition 1: cacheData thread and dumpData thread in Concurrency
+        * if dumpData thread gets mutex, discard cacheData and return directly
+        * if cacheData threads gets mutex, dumpData thread waits for cacheData finish,
+        * cause cacheData excutes very fast.
+        */
         if (isDumpingData_.load()) {
             Trace trace("AudioCacheMgrInner::CacheData::TryLockFailedWhenDumpingData");
             return;
         }
-        // condition 2: two cacheData threads in Concurrency, one gets mutex
-        // the other thread waits for mutex.
+        /*
+        * condition 2: two cacheData threads in Concurrency, one gets mutex
+        * the other thread waits for mutex.
+        */
         g_Mutex.lock();
     }
 
