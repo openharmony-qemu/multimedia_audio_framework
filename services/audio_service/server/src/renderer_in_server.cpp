@@ -1221,13 +1221,13 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency)
+int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
 {
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
-    stream_->GetCurrentPosition(framePos, timestamp, latency);
+    stream_->GetCurrentPosition(framePos, timestamp, latency, base);
     return SUCCESS;
 }
 

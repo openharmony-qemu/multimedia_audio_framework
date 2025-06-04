@@ -221,13 +221,14 @@ int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     return ret;
 }
 
-int32_t IpcStreamProxy::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency)
+int32_t IpcStreamProxy::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(base);
 
     int ret = Remote()->SendRequest(IpcStreamMsg::OH_GET_AUDIO_POSITION, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
