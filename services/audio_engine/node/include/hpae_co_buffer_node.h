@@ -15,6 +15,8 @@
 
 #ifndef HPAE_COBUFFER_NODE_H
 #define HPAE_COBUFFER_NODE_H
+#include <atomic>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include "audio_ring_cache.h"
@@ -54,6 +56,8 @@ public:
     void SetLatency(uint32_t latency);
 private:
     std::mutex mutex_;
+    std::atomic<bool> enqueueRunning_;
+    std::condition_variable enqueueRunningCond_;
     InputPort<HpaePcmBuffer*> inputStream_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     PcmBufferInfo pcmBufferInfo_;

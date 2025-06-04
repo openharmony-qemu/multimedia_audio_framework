@@ -58,27 +58,47 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
     BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(buffer->GetPcmDataBuffer()), writeLen};
     result = ringCache_->Enqueue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
+    if (enququeFlag_ == EnqueueFlag::FIRST_FRAME) {
+        enqueueRunning_.store(true);
+        enqueueRunningCond_.notify_all();
+        enqueueFlag_ = EnqueueFlag::SECOND_FRAME;
+    }
 }
 
 void HpaeCoBufferNode::DoProcess()
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    // if (processFlag_ == ProcessFalg::FIRST_FRAME) {
+    //     processFlag_ = ProcessFalg::SECOND_FRAME;
+    //     renderTimer_.Start();
+    // } else if (processFlag_ == ProcessFalg::SECOND_FRAME) {
+    //     processFlag_ = ProcessFalg::OTHER_FRAME;
+    //     renderTimer_.Stop();
+    //     std::chrono::milliseconds sleepTime = std::chrono::milliseconds(latency_) -
+    //         std::chrono::milliseconds(renderTimer_.Elapsed());
+    //     if (sleepTime.count() > 0) {
+    //         AUDIO_INFO_LOG("Sleep for %{public}lld ms", sleepTime.count());
+    //         std::this_thread::sleep_for(sleepTime);
+    //     } else {
+    //         AUDIO_WARNING_LOG("Sleep time is %{public}lld ms, latency is %{public}lu ms",
+    //             sleepTime.count(), latency_);
+    //     }
+    // }
+
     if (processFlag_ == ProcessFalg::FIRST_FRAME) {
         processFlag_ = ProcessFalg::SECOND_FRAME;
-        renderTimer_.Start();
     } else if (processFlag_ == ProcessFalg::SECOND_FRAME) {
+        enqueueRunningCond_.wait(lock, [this] {
+            // wait until data is enqueued
+            return enqueueRunning_.load();
+        });
+        enqueueRunning_.store(false);
         processFlag_ = ProcessFalg::OTHER_FRAME;
-        renderTimer_.Stop();
-        std::chrono::milliseconds sleepTime = std::chrono::duration_cast<std::chrono::milliseconds>(latency_) -
-            renderTimer_.Elapsed();
-        if (sleepTime.count() > 0) {
-            AUDIO_INFO_LOG("Sleep for %{public}d ms", sleepTime);
-            std::this_thread::sleep_for(sleepTime);
-        } else {
-            AUDIO_WARNING_LOG("Sleep time is %{public}lld ms, latency is %{public}llu ms",
-                sleepTime.count(), latency_);
-        }
+        std::chrono::milliseconds sleepTime = std::chrono::milliseconds(latency_);
+        AUDIO_INFO_LOG("Sleep for %{public}lld ms", sleepTime.count());
+        std::this_thread::sleep_for(sleepTime);
     }
+
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
     OptResult result = ringCache_->GetReadableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get readable size failed");
@@ -196,6 +216,8 @@ void HpaeCoBufferNode::SetLatency(uint32_t latency)
     // }
 
     processFlag_ = ProcessFalg::FIRST_FRAME;
+    enqueueFlag_ = ProcessFalg::FIRST_FRAME;
+    enqueueRunning_.store(false);
     latency_ = static_cast<uint64_t>(latency - DEFAULT_SINK_LATENCY);
 }
 }  // namespace HPAE
