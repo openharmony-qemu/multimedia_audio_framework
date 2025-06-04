@@ -135,6 +135,7 @@ private:
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     std::mutex createRenderMutex_;
+    std::mutex threadMutex_;
     std::unordered_map<RemoteAudioCategory, struct RenderWrapper> audioRenderWrapperMap_;
     // for get amplitude
     float maxAmplitude_ = 0;
