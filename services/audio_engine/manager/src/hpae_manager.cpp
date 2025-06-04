@@ -802,7 +802,7 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
         if (movingIds_[sessionId] != rendererIdStreamInfoMap_[sessionId].state) {
             sinkInput->SetState(movingIds_[sessionId]);
         }
-        sinkInput->SetOffloadEnabled(offloadEnableMap_[sessionId]);
+        sinkInput->SetOffloadEnabled(rendererIdStreamInfoMap_[sessionId].offloadEnable);
         movingIds_.erase(sessionId);
     }
     return false;
@@ -1193,7 +1193,6 @@ bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t 
         if (operation == OPERATION_RELEASED) {
             sinkInputs_.erase(sessionId);
             idPreferSinkNameMap_.erase(sessionId);
-            offloadEnableMap_.erase(sessionId);
         }
     } else {
         if (auto statusCallback = capturerIdStreamInfoMap_[sessionId].statusCallback.lock()) {
@@ -1232,7 +1231,6 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
             rendererIdStreamInfoMap_.erase(sessionId);
             sinkInputs_.erase(sessionId);
             idPreferSinkNameMap_.erase(sessionId);
-            offloadEnableMap_.erase(sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
             DestroyCapture(sessionId);
             capturerIdSourceNameMap_.erase(sessionId);
@@ -1607,7 +1605,12 @@ int32_t HpaeManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 {
     auto request = [this, sessionId, state]() {
         AUDIO_INFO_LOG("SetOffloadPolicy sessionId %{public}u %{public}d", sessionId, state);
-        offloadEnableMap_[sessionId] = state != OFFLOAD_DEFAULT;
+        if (rendererIdStreamInfoMap_.find(sessionId) != rendererIdStreamInfoMap_.end()) {
+            rendererIdStreamInfoMap_[sessionId].offloadType = state;
+            rendererIdStreamInfoMap_[sessionId].offloadEnable = state != OFFLOAD_DEFAULT;
+        } else {
+            AUDIO_WARNING_LOG("rendererIdStreamInfoMap_ can not find sessionId %{public}u", sessionId);
+        }
         if (movingIds_.find(sessionId) != movingIds_.end()) { return ; }
         auto rendererManager = GetRendererManagerById(sessionId);
         if (rendererManager != nullptr) {

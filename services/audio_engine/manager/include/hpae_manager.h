@@ -228,7 +228,6 @@ private:
     std::unordered_map<std::string, uint32_t> sinkNameSinkIdMap_;  // todo
     std::unordered_map<uint32_t, std::string> sinkIdSinkNameMap_;
     std::unordered_map<uint32_t, HpaeSessionState> movingIds_;
-    std::unordered_map<uint32_t, bool> offloadEnableMap_;
     std::string defaultSink_ = "";
     std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;

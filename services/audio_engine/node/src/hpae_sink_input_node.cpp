@@ -86,8 +86,9 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
         .deviceNetId = GetDeviceNetId(),
         .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
     GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
-    if (writeCallback_.lock() != nullptr) {
-        return writeCallback_.lock()->OnStreamData(streamInfo_);
+    auto writeCallback = writeCallback_.lock();
+    if (writeCallback != nullptr) {
+        return writeCallback->OnStreamData(streamInfo_);
     }
     AUDIO_ERR_LOG("sessionId: %{public}d, writeCallback is nullptr", GetSessionId());
     return SUCCESS;
@@ -95,30 +96,32 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
 
 void HpaeSinkInputNode::DoProcess()
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " +
-    GetTraceInfo());
-    CHECK_AND_RETURN_LOG(
-        writeCallback_.lock(), "HpaeSinkInputNode writeCallback_ is nullptr, SessionId:%{public}d", GetSessionId());
-
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " + GetTraceInfo());
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
 
-    int32_t ret = GetDataFromSharedBuffer();
-    // if historyBuffer has enough data, write to outputStream
-    if (!streamInfo_.needData && historyBuffer_) {
-        historyBuffer_->GetFrameData(inputAudioBuffer_);
-        outputStream_.WriteDataToOutput(&inputAudioBuffer_);
-        return;
-    }
-    CheckAndDestroyHistoryBuffer();
-    if (nodeCallback && ret) {
-        nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
-        if (isDrain_) {
-            AUDIO_INFO_LOG("OnNodeStatusUpdate Drain sessionId:%{public}u", GetSessionId());
-            nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_DRAINED);
-            isDrain_ = false;
+    int32_t ret = SUCCESS;
+    if (GetDeviceClass() == "offload" && !offloadEnable_) {
+        ret = ERR_OPERATION_FAILED;
+        AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
+    } else {
+        ret = GetDataFromSharedBuffer();
+        // if historyBuffer has enough data, write to outputStream
+        if (!streamInfo_.needData && historyBuffer_) {
+            historyBuffer_->GetFrameData(inputAudioBuffer_);
+            outputStream_.WriteDataToOutput(&inputAudioBuffer_);
+            return;
+        }
+        CheckAndDestroyHistoryBuffer();
+        if (nodeCallback && ret) {
+            nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
+            if (isDrain_) {
+                AUDIO_INFO_LOG("OnNodeStatusUpdate Drain sessionId:%{public}u", GetSessionId());
+                nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_DRAINED);
+                isDrain_ = false;
+            }
         }
     }
     inputAudioBuffer_.SetBufferValid(ret ? false : true);
