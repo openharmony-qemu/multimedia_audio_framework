@@ -203,6 +203,8 @@ void TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t &reply
         rewind(file);
     }
     replyBytes = fread(frame, 1, requestBytes, file);
+    fclose(file);
+    file = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS
