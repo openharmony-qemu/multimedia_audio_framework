@@ -18,6 +18,7 @@
 #include <memory>
 #include <mutex>
 #include "audio_ring_cache.h"
+#include "high_resolution_timer.h"
 #include "hpae_node.h"
 #include "hpae_pcm_buffer.h"
 
@@ -58,10 +59,10 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer coBufferOut_;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
-    ProcessFalg processFlag_ = FIRST_FRAME;
+    ProcessFalg processFlag_ = ProcessFalg::FIRST_FRAME;
     uint32_t latency_ = 0;  // in ms
-    std::chrono::milliseconds startTime_ = std::chrono::milliseconds(0);
-    std::chrono::milliseconds endTime_ = std::chrono::milliseconds(0);
+    TimePoint startTime_ = std::chrono::milliseconds(0);
+    TimePoint endTime_ = std::chrono::milliseconds(0);
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;

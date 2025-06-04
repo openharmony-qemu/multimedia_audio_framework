@@ -63,11 +63,11 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 void HpaeCoBufferNode::DoProcess()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (processFlag_ == FIRST_FRAME) {
-        processFlag_ = SECOND_FRAME;
+    if (processFlag_ == ProcessFalg::FIRST_FRAME) {
+        processFlag_ = ProcessFalg::SECOND_FRAME;
         startTime_ = std::chrono::high_resolution_clock::now();
-    } else if (processFlag_ == SECOND_FRAME) {
-        processFlag_ = OTHER_FRAME;
+    } else if (processFlag_ == ProcessFalg::SECOND_FRAME) {
+        processFlag_ = ProcessFalg::OTHER_FRAME;
         endTime_ = std::chrono::high_resolution_clock::now();
         std::this_thread::sleep_for(std::chrono::milliseconds(latency_) - endTime_ + startTime_);
     }
@@ -187,7 +187,7 @@ void HpaeCoBufferNode::SetLatency(uint32_t latency)
     //     offset += DEFAULT_FRAME_LEN_MS;
     // }
 
-    firstProcessFlag_ = true;
+    processFlag_ = ProcessFalg::FIRST_FRAME;
     latency_ = latency - DEFAULT_SINK_LATENCY;
 }
 }  // namespace HPAE
