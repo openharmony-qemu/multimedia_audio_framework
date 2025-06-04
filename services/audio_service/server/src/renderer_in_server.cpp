@@ -60,7 +60,7 @@ namespace {
     constexpr int32_t DEFAULT_SPAN_SIZE = 1;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
-    const int32_t DUP_COMMON_LEN = 400; // 400 -> 40ms
+    const int32_t DUP_COMMON_LEN = 400; // 400 -> 400ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 }
 
