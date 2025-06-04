@@ -1352,7 +1352,6 @@ int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
         default:
             speed = 1.0f;
     }
-    pitch_ = speed;
     int32_t ret = currentStream->SetPitch(speed);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("SetPitch Failed, error: %{public}d", ret);
