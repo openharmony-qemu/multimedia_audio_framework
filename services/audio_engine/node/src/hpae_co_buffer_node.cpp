@@ -65,11 +65,19 @@ void HpaeCoBufferNode::DoProcess()
     std::lock_guard<std::mutex> lock(mutex_);
     if (processFlag_ == ProcessFalg::FIRST_FRAME) {
         processFlag_ = ProcessFalg::SECOND_FRAME;
-        startTime_ = std::chrono::high_resolution_clock::now();
+        renderTimer_.start();
     } else if (processFlag_ == ProcessFalg::SECOND_FRAME) {
         processFlag_ = ProcessFalg::OTHER_FRAME;
-        endTime_ = std::chrono::high_resolution_clock::now();
-        std::this_thread::sleep_for(std::chrono::milliseconds(latency_) - endTime_ + startTime_);
+        renderTimer_.stop();
+        std::chrono::milliseconds sleepTime = std::chrono::duration_cast<std::chrono::milliseconds>
+            (latency_ - renderTimer_.Elapsed());
+        if (sleepTime > 0) {
+            AUDIO_INFO_LOG("Sleep for %{public}d ms", sleepTime);
+            std::this_thread::sleep_for(sleepTime);
+        } else {
+            AUDIO_WARNING_LOG("Sleep time is %{public}d ms, latency is %{public}d ms",
+                sleepTime.count(), latency_);
+        }
     }
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
     OptResult result = ringCache_->GetReadableSize();
@@ -137,7 +145,7 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
     nodeInfo.nodeName = "HpaeCoBufferNode";
     SetNodeInfo(nodeInfo);
     inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
-    processFlag_ = FIRST_FRAME;
+    processFlag_ = ProcessFalg::FIRST_FRAME;
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeCoBufferNodeInput_id_" + std::to_string(GetNodeId()) + ".pcm");
@@ -188,7 +196,7 @@ void HpaeCoBufferNode::SetLatency(uint32_t latency)
     // }
 
     processFlag_ = ProcessFalg::FIRST_FRAME;
-    latency_ = latency - DEFAULT_SINK_LATENCY;
+    latency_ = static_cast<uint64_t>(latency - DEFAULT_SINK_LATENCY);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

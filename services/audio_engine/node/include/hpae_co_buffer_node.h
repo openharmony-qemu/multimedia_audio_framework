@@ -60,9 +60,9 @@ private:
     HpaePcmBuffer coBufferOut_;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     ProcessFalg processFlag_ = ProcessFalg::FIRST_FRAME;
-    uint32_t latency_ = 0;  // in ms
-    TimePoint startTime_ = std::chrono::milliseconds(0);
-    TimePoint endTime_ = std::chrono::milliseconds(0);
+    uint64_t latency_ = 0;  // in ms
+    TimePoint startTime_;
+    TimePoint endTime_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
