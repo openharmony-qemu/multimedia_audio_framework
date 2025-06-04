@@ -65,17 +65,17 @@ void HpaeCoBufferNode::DoProcess()
     std::lock_guard<std::mutex> lock(mutex_);
     if (processFlag_ == ProcessFalg::FIRST_FRAME) {
         processFlag_ = ProcessFalg::SECOND_FRAME;
-        renderTimer_.start();
+        renderTimer_.Start();
     } else if (processFlag_ == ProcessFalg::SECOND_FRAME) {
         processFlag_ = ProcessFalg::OTHER_FRAME;
-        renderTimer_.stop();
-        std::chrono::milliseconds sleepTime = std::chrono::duration_cast<std::chrono::milliseconds>
-            (latency_ - renderTimer_.Elapsed());
-        if (sleepTime > 0) {
+        renderTimer_.Stop();
+        std::chrono::milliseconds sleepTime = std::chrono::duration_cast<std::chrono::milliseconds>(latency_) -
+            renderTimer_.Elapsed();
+        if (sleepTime.count() > 0) {
             AUDIO_INFO_LOG("Sleep for %{public}d ms", sleepTime);
             std::this_thread::sleep_for(sleepTime);
         } else {
-            AUDIO_WARNING_LOG("Sleep time is %{public}d ms, latency is %{public}d ms",
+            AUDIO_WARNING_LOG("Sleep time is %{public}lld ms, latency is %{public}llu ms",
                 sleepTime.count(), latency_);
         }
     }
@@ -92,7 +92,7 @@ void HpaeCoBufferNode::DoProcess()
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
     outputStream_.WriteDataToOutput(&coBufferOut_);
 #ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_ && coBufferOut_) {
+    if (outputPcmDumper_) {
         outputPcmDumper_->Dump((int8_t *)coBufferOut_.GetPcmDataBuffer(),
             coBufferOut_.GetFrameLen() * sizeof(float) * coBufferOut_.GetChannelCount());
     }

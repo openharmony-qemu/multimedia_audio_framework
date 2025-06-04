@@ -61,8 +61,7 @@ private:
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     ProcessFalg processFlag_ = ProcessFalg::FIRST_FRAME;
     uint64_t latency_ = 0;  // in ms
-    TimePoint startTime_;
-    TimePoint endTime_;
+    HighResolutionTimer renderTimer_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
