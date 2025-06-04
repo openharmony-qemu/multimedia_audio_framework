@@ -791,13 +791,20 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
 
 int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
-    HandleAudioCaptureState(mode, streamChangeInfo);
-
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
+    HandleAudioCaptureState(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
         return ret; // only update tracker in new and prepared
+    }
+
+    const auto &rendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    if ((rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
+        rendererState == RENDERER_PAUSED) && (mode == AUDIO_MODE_PLAYBACK) &&
+        (rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_RANGING ||
+        rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION)) {
+        Bluetooth::AudioHfpManager::RefreshVirtualCall(rendererChangeInfo.clientUID, false);
     }
 
     UpdateTracker(mode, streamChangeInfo, rendererState);
@@ -827,7 +834,7 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
     }
     FetchOutputDeviceAndRoute();
 
-    audioDeviceCommon_.ClientDiedDisconnectScoNormal();
+    audioDeviceCommon_.ClientDiedDisconnectScoNormal(uid);
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {

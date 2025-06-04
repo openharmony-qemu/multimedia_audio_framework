@@ -30,6 +30,7 @@ audio_ohos_library("audio_bluetooth_client") {
     "audio_bluetooth_manager.cpp",
     "bluetooth_device_manager.cpp",
     "bluetooth_sco_manager.cpp",
+    "bluetooth_hfp_interface.cpp",
   ]
 
   include_dirs = [

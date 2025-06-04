@@ -292,12 +292,11 @@ void AudioDeviceLock::HandleAudioCaptureState(AudioMode &mode, AudioStreamChange
         (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED ||
          streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_STOPPED)) {
         if (Util::IsScoSupportSource(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType)) {
-            audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
-            Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
-        } else if (audioDeviceManager_.GetScoState() &&
-            audioSceneManager_.GetAudioScene() == AUDIO_SCENE_DEFAULT) {
-            AUDIO_INFO_LOG("close capture app, disconnect sco");
-            Bluetooth::AudioHfpManager::DisconnectSco();
+            Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
+        } else {
+            AUDIO_INFO_LOG("close capture app, try to disconnect sco");
+            bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
+            Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isRecord);
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(
             streamChangeInfo.audioCapturerChangeInfo.sessionId);
@@ -308,9 +307,8 @@ int32_t AudioDeviceLock::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &s
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
-    HandleAudioCaptureState(mode, streamChangeInfo);
-
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
+    HandleAudioCaptureState(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
@@ -355,7 +353,7 @@ void AudioDeviceLock::RegisteredTrackerClientDied(pid_t uid)
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
 
-    audioDeviceCommon_.ClientDiedDisconnectScoNormal();
+    audioDeviceCommon_.ClientDiedDisconnectScoNormal(uid);
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {

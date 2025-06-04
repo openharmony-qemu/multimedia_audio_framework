@@ -18,8 +18,6 @@
     *UnregisterBluetoothScoListener*;
     *GetA2dpDeviceStreamInfo*;
     *GetRenderPosition*;
-    *ClearRecongnitionStatus*;
-    *GetScoCategory*;
     *HandleScoWithRecongnition*;
     *SetDeviceAbsVolume*;
     *SetActiveA2dpDevice*;
@@ -29,13 +27,11 @@
     *OffloadStartPlaying*;
     *GetActiveA2dpDevice*;
     *activeA2dpDevice_*;
-    *ConnectScoWithAudioScene*;
-    *GetRecognitionStatus*;
+    *IsRecognitionStatus*;
     *SendUserSelectionEvent*;
     *SetActiveHfpDevice*;
     *RegisterA2dpPlayingStateChangedListener*;
     *Connect*;
-    *SetAudioSceneFromPolicy*;
     *DisconnectBluetoothHfpSink*;
     *DisconnectBluetoothA2dpSink*;
     *RegisterDeviceObserver*;
@@ -46,7 +42,10 @@
     *HasA2dpDeviceConnected*;
     *GetA2dpInDeviceStreamInfo*;
     *DisconnectBluetoothA2dpSource*;
+    *UpdateAudioScene*;
     *SetVirtualCall*;
+    *RefreshVirtualCall*;
+    *DeleteVirtualCall*;
     *IsVirtualCall*;
   local:
     *;

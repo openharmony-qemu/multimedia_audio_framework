@@ -238,7 +238,7 @@ public:
 
     int32_t ResumeStreamState();
 
-    int32_t SetVirtualCall(const bool isVirtual);
+    int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 #ifdef FEATURE_DTMF_TONE

@@ -4031,7 +4031,7 @@ int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
     CHECK_AND_RETURN_RET_LOG(callerUid == meetServiceUid, ERROR,
         "SetVirtualCall callerUid is error: not meetservice");
     AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
-    return audioPolicyService_.SetVirtualCall(isVirtual);
+    return audioPolicyService_.SetVirtualCall(callerUid, isVirtual);
 }
 
 int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,

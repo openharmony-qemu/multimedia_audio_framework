@@ -48,7 +48,6 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
 {
     lastAudioScene_ = audioScene_;
     audioScene_ = audioScene;
-    Bluetooth::AudioHfpManager::SetAudioSceneFromPolicy(audioScene_);
     if (lastAudioScene_ != AUDIO_SCENE_DEFAULT && audioScene_ == AUDIO_SCENE_DEFAULT) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "SetAudioScenePre");

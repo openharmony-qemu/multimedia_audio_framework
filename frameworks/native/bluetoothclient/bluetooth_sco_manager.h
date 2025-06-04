@@ -27,17 +27,51 @@ namespace OHOS {
 namespace Bluetooth {
 class BluetoothScoManager {
 public:
-    static void UpdateScoState(HfpScoConnectState scoState, const BluetoothRemoteDevice *device = nullptr);
-    static int32_t HandleScoConnect(ScoCategory scoCategory, const BluetoothRemoteDevice *device = nullptr);
-    static int32_t HandleScoDisconnect(ScoCategory scoCategory, const BluetoothRemoteDevice *device = nullptr);
-    static AudioScoState GetAudioScoState();
-    static AudioScoMode GetScoModeFromCategery(ScoCategory scoCategory);
-    static ScoCategory GetScoCategeryFromMode(AudioScoMode scoMode);
+    static BluetoothScoManager &GetInstance();
+
+    void UpdateScoState(HfpScoConnectState scoState, const BluetoothRemoteDevice &device);
+    int32_t HandleScoConnect(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t HandleScoDisconnect(const BluetoothRemoteDevice &device);
+    AudioScoState GetAudioScoState();
+    bool IsInScoCategory(ScoCategory scoCategory);
+
 private:
-    static HandsFreeAudioGateway *hfpInstance_;
-    static AudioScoState currentScoState_;
-    static AudioScoMode  currentScoMode_;
-    static AudioScoMode  lastScoMode_;
+    struct ScoCacheRequest {
+        bool connectReq = false;
+        ScoCategory category = ScoCategory::SCO_DEFAULT;
+        BluetoothRemoteDevice device;
+    };
+
+    BluetoothScoManager();
+    ~BluetoothScoManager() = default;
+
+    BluetoothRemoteDevice activeHfpDevice_;
+    AudioScoState currentScoState_ = AudioScoState::INIT;
+    ScoCategory  currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    std::shared_ptr<ScoCacheRequest> cacheReq_;
+    std::mutex scoLock_;
+
+    void UpdateScoStateWhenDisconnected(HfpScoConnectState scoState, const BluetoothRemoteDevice &device);
+    void UpdateScoStateWhenConnected(HfpScoConnectState scoState, const BluetoothRemoteDevice &device);
+    void UpdateScoStateWhenConnecting(HfpScoConnectState scoState, const BluetoothRemoteDevice &device);
+    void UpdateScoStateWhenDisconnecting(HfpScoConnectState scoState, const BluetoothRemoteDevice &device);
+    int32_t HandleScoConnectNoLock(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t HandleScoDisconnectNoLock(const BluetoothRemoteDevice &device);
+    int32_t ProcConnectReqWhenDisconnected(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t ProcConnectReqWhenConnected(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t ProcConnectReqWhenConnecting(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t ProcConnectReqWhenDiconnecting(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t ProcDisconnectReqWhenConnected(const BluetoothRemoteDevice &device);
+    int32_t ProcDisconnectReqWhenConnecting(const BluetoothRemoteDevice &device);
+    bool IsNeedSwitchScoCategory(ScoCategory scoCategory);
+    int32_t SaveRequestToCache(bool isConnect, ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    bool IsSameHfpDevice(const BluetoothRemoteDevice &device1, const BluetoothRemoteDevice &device2);
+    int32_t ConnectSco(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t TryRestoreHfpDevice(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t DisconnectSco(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    int32_t DisconnectScoReliable(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
+    void ForceUpdateScoState();
+    void ProcCacheRequest();
 };
 }
 }

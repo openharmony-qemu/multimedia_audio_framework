@@ -822,9 +822,9 @@ void AudioPolicyService::SetFirstScreenOn()
     audioDeviceCommon_.SetFirstScreenOn();
 }
 
-int32_t AudioPolicyService::SetVirtualCall(const bool isVirtual)
+int32_t AudioPolicyService::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
-    return audioDeviceCommon_.SetVirtualCall(isVirtual);
+    return audioDeviceCommon_.SetVirtualCall(uid, isVirtual);
 }
 
 void AudioPolicyService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
