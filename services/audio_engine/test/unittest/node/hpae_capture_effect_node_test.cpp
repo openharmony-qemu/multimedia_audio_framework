@@ -17,6 +17,7 @@
 #include "hpae_capture_effect_node.h"
 #include "hpae_source_input_cluster.h"
 #include "test_case_common.h"
+#include "hpae_format_convert.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -25,6 +26,7 @@ namespace HPAE {
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_NODE_ID = 1243;
 const uint32_t DEFAULT_FORMAT = 16;
+static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 
 class HpaeCaptureEffectNodeTest : public testing::Test {
 public:
@@ -44,7 +46,7 @@ static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
-    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.format = SAMPLE_S16LE;
     nodeInfo.sceneType = HPAE_SCENE_RECORD;
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
 }
@@ -59,7 +61,7 @@ static void GetTestAudioSourceAttr(IAudioSourceAttr &attr)
     attr.volume = 0.0f;
     attr.bufferSize = 0;
     attr.isBigEndian = false;
-    attr.filePath = NULL;
+    attr.filePath = g_rootCapturerPath.c_str();
     attr.deviceNetworkId = NULL;
     attr.deviceType = 0;
     attr.sourceType = 0;
@@ -70,15 +72,6 @@ static void GetTestAudioSourceAttr(IAudioSourceAttr &attr)
 static AudioSampleFormat ConverFormat(uint32_t format)
 {
     return static_cast<AudioSampleFormat>(format / BITLENGTH - 1);
-}
-
-static int32_t TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t *replyBytes)
-{
-    for (int32_t i = 0; i < requestBytes / SAMPLE_F32LE; i++) {
-        *(float *)(frame + i * sizeof(float)) = i;
-    }
-    *replyBytes = requestBytes;
-    return 0;
 }
 
 TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_001)
@@ -157,21 +150,22 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002)
     uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
     uint64_t replyBytes = 0;
     std::vector<char> testData(requestBytes);
-
     TestCapturerSourceFrame(testData.data(), requestBytes, &replyBytes);
-    hpaeSourceInputCluster->sourceInputNode_->WriteCapturerData(testData.data(), requestBytes);
+    std::vector<float> testDataFloat(requestBytes / SAMPLE_F32LE);
+    ConvertToFloat(nodeInfo.format, nodeInfo.channels * nodeInfo.frameLen, testData.data(), testDataFloat.data());
+
     hpaeCaptureEffectNode->DoProcess();
     OutputPort<HpaePcmBuffer *> *outputPort = hpaeCaptureEffectNode->GetOutputPort();
     HpaePcmBuffer* outPcmBuffer = outputPort->PullOutputData();
     float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
-    for (int32_t j = 0; j < nodeInfo.frameLen; j++) {
-        for (int32_t k = 0; k < nodeInfo.channels; k++) {
-            float diff = outputPcmData[(j * nodeInfo.channels + k)] - (j * nodeInfo.channels + k);
-            EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
-        }
+
+    for (int32_t i = 0; i < requestBytes / SAMPLE_F32LE; i++) {
+        float diff = outputPcmData[i] - testDataFloat[i];
+        EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
     }
     hpaeCaptureEffectNode->DisConnectWithInfo(hpaeSourceInputCluster, nodeInfo);
     EXPECT_EQ(hpaeSourceInputCluster->GetSourceInputNodeUseCount(), 1);
+    hpaeSourceInputCluster->CapturerSourceStop();
 }
 
 TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003)

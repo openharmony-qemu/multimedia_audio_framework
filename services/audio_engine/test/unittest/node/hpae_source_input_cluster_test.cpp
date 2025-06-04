@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "hpae_source_input_node.h"
 #include "hpae_source_output_node.h"
+#include "hpae_format_convert.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,15 +75,6 @@ TEST_F(HpaeSourceInputClusterTest, constructHpaeSourceInputClusterNode)
     EXPECT_EQ(hpaeSourceInputCluster->GetConverterNodeCount(), 1); // no delete converter now
 }
 
-static int32_t TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t *replyBytes)
-{
-    for (int32_t i = 0; i < requestBytes / SAMPLE_F32LE; i++) {
-        *(float *)(frame + i * sizeof(float)) = i;
-    }
-    *replyBytes = requestBytes;
-    return 0;
-}
-
 TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
 {
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
@@ -90,7 +82,7 @@ TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
     nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
-    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.format = SAMPLE_S16LE;
     nodeInfo.statusCallback = testStatuscallback;
     std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
@@ -119,19 +111,18 @@ TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
     EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStart(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputCluster->GetSourceState() == STREAM_MANAGER_RUNNING, true);
-    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStop(), SUCCESS);
-    EXPECT_EQ(hpaeSourceInputCluster->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
     TestCapturerSourceFrame(testData.data(), requestBytes, &replyBytes);
-    hpaeSourceInputCluster->WriteCapturerData(testData.data(), requestBytes);
+    std::vector<float> testDataFloat(requestBytes / SAMPLE_F32LE);
+    ConvertToFloat(nodeInfo.format, nodeInfo.channels * nodeInfo.frameLen, testData.data(), testDataFloat.data());
     OutputPort<HpaePcmBuffer *> *outputPort = hpaeSourceInputCluster->GetSourceInputNodeOutputPort();
     HpaePcmBuffer* outPcmBuffer = outputPort->PullOutputData();
     float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
-    for (int32_t j = 0; j < nodeInfo.frameLen; j++) {
-        for (int32_t k = 0; k < nodeInfo.channels; k++) {
-            float diff = outputPcmData[(j * nodeInfo.channels + k)] - (j * nodeInfo.channels + k);
-            EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
-        }
+    for (int32_t i = 0; i < requestBytes / SAMPLE_F32LE; i++) {
+        float diff = outputPcmData[i] - testDataFloat[i];
+        EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
     }
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStop(), SUCCESS);
+    EXPECT_EQ(hpaeSourceInputCluster->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -99,6 +99,8 @@ class NodeStatusCallback : public HPAE::INodeCallback, public std::enable_shared
 public:
     virtual ~NodeStatusCallback() = default;
 };
+
+void TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif
