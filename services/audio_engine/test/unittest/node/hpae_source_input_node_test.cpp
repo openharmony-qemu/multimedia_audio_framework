@@ -139,7 +139,7 @@ TEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase)
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStart(), SUCCESS);
     EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == STREAM_MANAGER_RUNNING, true);
-    TestCapturerSourceFrame(testData.data(), requestBytes, &replyBytes);
+    TestCapturerSourceFrame(testData.data(), requestBytes, replyBytes);
     std::vector<float> testDataFloat(requestBytes / SAMPLE_F32LE);
     ConvertToFloat(nodeInfo.format, nodeInfo.channels * nodeInfo.frameLen, testData.data(), testDataFloat.data());
     OutputPort<HpaePcmBuffer *> *outputPort = hpaeSoruceInputNode->GetOutputPort();

@@ -191,14 +191,14 @@ void TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t &reply
     }
 
     char realPath[PATH_MAX + 1] = { 0x00 };
-    CHECK_AND_RETURN_RET_LOG((filePath.length() < PATH_MAX) && (realpath(dirPath.c_str(), realPath) != nullptr),
-        ERR_INVALID_HANDLE, "invalid path, errno: %{public}d", errno);
+    CHECK_AND_RETURN_LOG((filePath.length() < PATH_MAX) && (realpath(dirPath.c_str(), realPath) != nullptr),
+        "invalid path, errno: %{public}d", errno);
 
     std::string realPathStr(realPath);
     FILE *file = fopen(realPathStr.append(fileName).c_str(), "rb");
-    CHECK_AND_RETURN_RET_LOG(file != nullptr, ERROR, "open file fail, errno: %{public}d", errno);
+    CHECK_AND_RETURN_LOG(file != nullptr, "open file fail, errno: %{public}d", errno);
 
-    if (feof(file_)) {
+    if (feof(file)) {
         AUDIO_INFO_LOG("reach end of the file, start reading from beginning");
         rewind(file);
     }

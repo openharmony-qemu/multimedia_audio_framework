@@ -150,7 +150,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002)
     uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
     uint64_t replyBytes = 0;
     std::vector<char> testData(requestBytes);
-    TestCapturerSourceFrame(testData.data(), requestBytes, &replyBytes);
+    TestCapturerSourceFrame(testData.data(), requestBytes, replyBytes);
     std::vector<float> testDataFloat(requestBytes / SAMPLE_F32LE);
     ConvertToFloat(nodeInfo.format, nodeInfo.channels * nodeInfo.frameLen, testData.data(), testDataFloat.data());
 

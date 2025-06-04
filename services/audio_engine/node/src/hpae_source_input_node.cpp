@@ -136,7 +136,7 @@ void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType,
 
 void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
 {
-    AUDIO_DEBUG_LOG("DoProcessInner, replyBytes: %{public}" PRIu64, replyBytes);
+    AUDIO_DEBUG_LOG("DoProcessMicInner, replyBytes: %{public}" PRIu64, replyBytes);
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumperMap_.find(bufferType) != inputPcmDumperMap_.end() &&
         inputPcmDumperMap_.at(bufferType)) {
