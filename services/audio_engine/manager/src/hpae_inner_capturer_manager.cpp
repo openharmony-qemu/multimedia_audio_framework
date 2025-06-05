@@ -664,9 +664,12 @@ int32_t HpaeInnerCapturerManager::DeleteRendererInputSessionInner(uint32_t sessi
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
     if (SafeGetMap(rendererSceneClusterMap_, sceneType)) {
         rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
-        if (rendererSceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
+        if (sinkInputNodeMap_.size() == 1 && sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
             hpaeInnerCapSinkNode_->DisConnect(rendererSceneClusterMap_[sceneType]);
             rendererSceneClusterMap_.erase(sceneType);
+            AUDIO_INFO_LOG("disConnect rendererSceneCluster, last stream: %{public}u", sessionId);
+        } else {
+            AUDIO_INFO_LOG("%{public}u is not last stream, no need disConnect rendererSceneCluster", sessionId);
         }
     }
     sinkInputNodeMap_.erase(sessionId);
