@@ -107,6 +107,9 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         nodeInfo.sceneType = TransStreamUsageToSplitSceneType(nodeInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
     }
+    if (isCollaborationEnabled_) {
+        nodeInfo.sceneType = TransStreamTypeToSceneType(nodeInfo.streamType, isCollaborationEnabled_);
+    }
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
     
@@ -309,6 +312,13 @@ void HpaeRendererManager::DeleteProcessCluster(
         sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
 
     if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
+        // for collaboration
+        if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+            // todo hpaeCoBufferNode info更新
+            hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+            // triggerback
+            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+        }
         outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
         sceneClusterMap_[sceneType]->SetConnectedFlag(false);
     }
@@ -393,6 +403,12 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         sceneClusterMap_[sceneType]->SetConnectedFlag(true);
     }
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
+    if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+        uint32_t latency = outputCluster_->GetLatency();
+        hpaeCoBufferNode_->SetLatency(latency);
+        hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
+        TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+    }
 }
 
 void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
@@ -538,6 +554,12 @@ void HpaeRendererManager::DisConnectProcessCluster(uint32_t sessionId, HpaeProce
     }
     if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
         outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
+        // for collaboration
+        if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+            hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+            // triggerback
+            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+        }
         sceneClusterMap_[sceneType]->SetConnectedFlag(false);
     }
 }
@@ -1028,6 +1050,81 @@ void HpaeRendererManager::DumpSinkInfo()
     SendRequest(request);
 }
 
+int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnabled)
+{
+    auto request = [this, isCollaborationEnabled]() {
+        AUDIO_INFO_LOG("UpdateCollaborationState %{public}d", isCollaborationEnabled);
+        isCollaborationEnabled_ = isCollaborationEnabled;
+        if (isCollaborationEnabled_) {
+            if (hpaeCoBufferNode_ == nullptr) {
+                HpaeNodeInfo nodeInfo;
+                hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(nodeInfo);
+            }
+            for (auto it : sessionNodeMap_) {
+                HandleCollaborationStateChangedInner(it.second.sceneType, it.first);
+            }
+            TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+        } else if (!isCollaborationEnabled_ && hpaeCoBufferNode_ != nullptr) {
+            for (auto it : sessionNodeMap_) {
+                HandleCollaborationStateChangedInner(it.second.sceneType, it.first);
+            }
+            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+            hpaeCoBufferNode_.reset();
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
+std::shared_ptr<HpaeCoBufferNode> HpaeRendererManager::GetCoBufferNode()
+{
+    CHECK_AND_RETURN_RET_LOG(hpaeCoBufferNode_ != nullptr, nullptr,
+        "hpaeCoBufferNode_ is nullptr");
+    return hpaeCoBufferNode_;
+}
+
+int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
+{
+    auto request = [this, coBufferNode]() {
+        CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr),
+            "outputCluster or coBufferNode is nullptr");
+        outputCluster_->Connect(coBufferNode);
+        if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+            outputCluster_->Start();
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
+{
+    auto request = [this, coBufferNode]() {
+        CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr),
+            "outputCluster or coBufferNode is nullptr");
+        outputCluster_->DisConnect(coBufferNode);
+        if (outputCluster_->GetState() == STREAM_MANAGER_RUNNING) {
+            // todo check stop/pause
+            outputCluster_->Stop();
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
+void HpaeRendererManager::HandleCollaborationStateChangedInner(HpaeProcessorType sceneType, uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("sceneType:%{public}d sessionId %{public}u", sceneType, sessionID);
+    // delete the session
+    // todo fade out
+    DeleteInputSession(sessionID);
+    CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionID),
+        "sinkInputNodeMap_ not find sessionId %{public}u", sessionID);
+    if (SafeGetMap(sinkInputNodeMap_, sessionID)) {
+        AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionID);
+        AddSingleNodeToSink(sinkInputNodeMap_[sessionID], false);
+    }
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

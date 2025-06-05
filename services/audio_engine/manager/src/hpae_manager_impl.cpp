@@ -509,6 +509,12 @@ bool HpaeManagerImpl::GetEffectLiveParameter(const std::vector<std::string> &sub
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
     return manager_->GetEffectLiveParameter(subKeys, result);
 }
+
+int32_t HpaeManagerImpl::UpdateCollaborationState(bool isCollaborationEnabled)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->UpdateCollaborationState(isCollaborationEnabled);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
