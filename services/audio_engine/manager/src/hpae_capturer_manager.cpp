@@ -937,6 +937,12 @@ void HpaeCapturerManager::CheckIfAnyStreamRunning()
     }
 }
 
+std::string HpaeCapturerManager::GetDeviceHDFDumpInfo()
+{
+    std::string config;
+    TransDeviceInfoToString(sourceInfo_, config);
+    return config;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

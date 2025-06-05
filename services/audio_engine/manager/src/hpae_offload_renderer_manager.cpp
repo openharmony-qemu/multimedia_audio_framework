@@ -667,6 +667,13 @@ void HpaeOffloadRendererManager::DumpSinkInfo()
     };
     SendRequest(request);
 }
+
+std::string HpaeOffloadRendererManager::GetDeviceHDFDumpInfo()
+{
+    std::string config;
+    TransDeviceInfoToString(sinkInfo_, config);
+    return config;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

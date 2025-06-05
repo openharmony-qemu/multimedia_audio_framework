@@ -1107,6 +1107,13 @@ int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
     }
     return SUCCESS;
 }
+
+std::string HpaeRendererManager::GetDeviceHDFDumpInfo()
+{
+    std::string config;
+    TransDeviceInfoToString(sinkInfo_, config);
+    return config;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

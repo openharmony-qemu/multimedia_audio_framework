@@ -89,6 +89,7 @@ public:
     void DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
+    std::string GetDeviceHDFDumpInfo() override;
 
 private:
     void SendRequest(Request &&request, bool isInit = false);

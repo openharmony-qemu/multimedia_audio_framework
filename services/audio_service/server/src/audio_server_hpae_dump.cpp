@@ -19,6 +19,10 @@
 #include "audio_server_hpae_dump.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
+#include "audio_service.h"
+#include "audio_dump_pcm.h"
+#include "audio_performance_monitor.h"
+#include "manager/hdi_adapter_manager.h"
 #include "i_hpae_manager.h"
 
 using namespace std;
@@ -49,6 +53,13 @@ void AudioServerHpaeDump::InitDumpFuncMap()
 {
     dumpFuncMap[u"-h"] = &AudioServerHpaeDump::HelpInfoDump;
     dumpFuncMap[u"-p"] = &AudioServerHpaeDump::PlaybackSinkDump;
+    dumpFuncMap[u"-r"] = &AudioServerHpaeDump::RecordSourceDump;
+    dumpFuncMap[u"-m"] = &AudioServerHpaeDump::HDFModulesDump;
+    dumpFuncMap[u"-ep"] = &AudioServerHpaeDump::PolicyHandlerDump;
+    dumpFuncMap[u"-ct"] = &AudioServerHpaeDump::AudioCacheTimeDump;
+    dumpFuncMap[u"-cm"] = &AudioServerHpaeDump::AudioCacheMemoryDump;
+    dumpFuncMap[u"-pm"] = &AudioServerHpaeDump::AudioPerformMonitorDump;
+    dumpFuncMap[u"-ha"] = &AudioServerHpaeDump::HdiAdapterDump;
 }
 
 void AudioServerHpaeDump::AudioDataDump(std::string &dumpString, std::queue<std::u16string> &argQue)
@@ -60,6 +71,8 @@ void AudioServerHpaeDump::ServerDataDump(string &dumpString)
 {
     PlaybackSinkDump(dumpString);
     RecordSourceDump(dumpString);
+    HDFModulesDump(dumpString);
+    PolicyHandlerDump(dumpString);
 }
 
 void AudioServerHpaeDump::GetDeviceSinkInfo(std::string &dumpString, std::string deviceName)
@@ -94,6 +107,7 @@ void AudioServerHpaeDump::PlaybackSinkDump(std::string &dumpString)
     GetDeviceSinkInfo(dumpString, BT_SINK_NAME);
     dumpString += DP_SINK_NAME + ":\n";
     GetDeviceSinkInfo(dumpString, DP_SINK_NAME);
+    dumpString += "\n";
 }
 
 void AudioServerHpaeDump::OnDumpSinkInfoCb(std::string &dumpStr, int32_t result)
@@ -127,7 +141,7 @@ void AudioServerHpaeDump::GetDeviceSourceInfo(std::string &dumpString, std::stri
 
 void AudioServerHpaeDump::RecordSourceDump(std::string &dumpString)
 {
-    dumpString += "\nHpae AudioServer Record source Dump:\n\n";
+    dumpString += "Hpae AudioServer Record source Dump:\n\n";
     dumpString += PRIMARY_SOURCE_NAME + ":\n";
     GetDeviceSourceInfo(dumpString, PRIMARY_SOURCE_NAME);
     dumpString += BT_SOURCE_NAME + ":\n";
@@ -136,6 +150,7 @@ void AudioServerHpaeDump::RecordSourceDump(std::string &dumpString)
     GetDeviceSourceInfo(dumpString, USB_SOURCE_NAME);
     dumpString += PRIMARY_WAKEUP_SOURCE_NAME + ":\n";
     GetDeviceSourceInfo(dumpString, PRIMARY_WAKEUP_SOURCE_NAME);
+    dumpString += "\n";
 }
 
 void AudioServerHpaeDump::OnDumpSourceInfoCb(std::string &dumpStr, int32_t result)
@@ -190,6 +205,101 @@ int32_t AudioServerHpaeDump::Initialize()
     AUDIO_INFO_LOG("AudioServerHpaeDump Initialize");
     IHpaeManager::GetHpaeManager().RegisterHpaeDumpCallback(weak_from_this());
     return SUCCESS;
+}
+
+void AudioServerHpaeDump::HDFModulesDump(std::string &dumpString)
+{
+    IHpaeManager::GetHpaeManager().DumpAllAvailableDevice(devicesInfo_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishGetHdfModulesInfo_ = false;
+    dumpHdfModulesInfo_.clear();
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishGetHdfModulesInfo_;  // will be true when got notified.
+    });
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("DumpAllAvailableDevice timeout");
+        return;
+    }
+    
+    dumpHdfModulesInfo_ += "\nHDF Input Modules\n";
+    AppendFormat(dumpHdfModulesInfo_, "- %zu HDF Input Modules (s) available:\n", devicesInfo_.sourceInfos.size());
+
+    for (auto it = devicesInfo_.sourceInfos.begin(); it != devicesInfo_.sourceInfos.end(); it++) {
+        HpaeSinkSourceInfo &sourceInfo = *it;
+        AppendFormat(dumpHdfModulesInfo_, "  Module %d\n", it - devicesInfo_.sourceInfos.begin() + 1);
+        AppendFormat(dumpHdfModulesInfo_, "  - Module Name: %s\n", (sourceInfo.deviceName).c_str());
+        AppendFormat(dumpHdfModulesInfo_, "  - Module Configuration: %s\n\n", sourceInfo.config.c_str());
+    }
+
+    dumpHdfModulesInfo_ += "HDF Output Modules\n";
+    AppendFormat(dumpHdfModulesInfo_, "- %zu HDF Output Modules (s) available:\n", devicesInfo_.sinkInfos.size());
+
+    for (auto it = devicesInfo_.sinkInfos.begin(); it != devicesInfo_.sinkInfos.end(); it++) {
+        HpaeSinkSourceInfo &sinkInfo = *it;
+        AppendFormat(dumpHdfModulesInfo_, "  Module %d\n", it - devicesInfo_.sinkInfos.begin() + 1);
+        AppendFormat(dumpHdfModulesInfo_, "  - Module Name: %s\n", (sinkInfo.deviceName).c_str());
+        AppendFormat(dumpHdfModulesInfo_, "  - Module Configuration: %s\n\n", sinkInfo.config.c_str());
+    }
+
+    AUDIO_INFO_LOG("HDFModulesDump : \n%{public}s end", dumpHdfModulesInfo_.c_str());
+    dumpString += dumpHdfModulesInfo_;
+}
+
+void AudioServerHpaeDump::OnDumpAllAvailableDeviceCb(int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishGetHdfModulesInfo_ = true;
+    AUDIO_INFO_LOG(
+        "sink count %{public}zu, source count %{public}zu, result %{public}d",
+        devicesInfo_.sinkInfos.size(), devicesInfo_.sourceInfos.size(), result);
+    callbackCV_.notify_all();
+}
+
+void AudioServerHpaeDump::PolicyHandlerDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("PolicyHandlerDump");
+    AudioService::GetInstance()->Dump(dumpString);
+}
+
+void AudioServerHpaeDump::AudioCacheTimeDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("AudioCacheTimeDump");
+    dumpString += "\nAudioCached Time\n";
+
+    int64_t startTime = 0;
+    int64_t endTime = 0;
+    AudioCacheMgr::GetInstance().GetCachedDuration(startTime, endTime);
+    dumpString += "Call dump get time: [ " + ClockTime::NanoTimeToString(startTime) + " ~ " +
+        ClockTime::NanoTimeToString(endTime) + " ], cur: [ " +
+        ClockTime::NanoTimeToString(ClockTime::GetRealNano()) + " ] \n";
+}
+
+void AudioServerHpaeDump::AudioCacheMemoryDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("AudioCacheMemoryDump");
+    dumpString += "\nAudioCached Memory\n";
+
+    size_t dataLength = 0;
+    size_t bufferLength = 0;
+    size_t structLength = 0;
+    AudioCacheMgr::GetInstance().GetCurMemoryCondition(dataLength, bufferLength, structLength);
+    dumpString += "dataLength: " + std::to_string(dataLength / BYTE_TO_KB_SIZE) + " KB, " +
+                    "bufferLength: " + std::to_string(bufferLength / BYTE_TO_KB_SIZE) + " KB, " +
+                    "structLength: " + std::to_string(structLength / BYTE_TO_KB_SIZE) + " KB \n";
+}
+
+void AudioServerHpaeDump::AudioPerformMonitorDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("AudioPerformMonitorDump");
+    dumpString += "\n Dump Audio Performance Monitor Record Infos\n";
+    AudioPerformanceMonitor::GetInstance().DumpMonitorInfo(dumpString);
+}
+
+void AudioServerHpaeDump::HdiAdapterDump(std::string &dumpString)
+{
+    AUDIO_INFO_LOG("HdiAdapterDump");
+    dumpString += "\nHdiAdapter Info\n";
+    HdiAdapterManager::GetInstance().DumpInfo(dumpString);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
