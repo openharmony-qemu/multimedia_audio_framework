@@ -26,10 +26,10 @@ using namespace ANI::Audio;
 namespace ANI::Audio {
 AudioSpatializationManagerImpl::AudioSpatializationManagerImpl() : audioSpatializationMngr_(nullptr) {}
 
-AudioSpatializationManagerImpl::AudioSpatializationManagerImpl(std::unique_ptr<AudioSpatializationManagerImpl> obj)
+AudioSpatializationManagerImpl::AudioSpatializationManagerImpl(OHOS::AudioStandard::AudioSpatializationManager *obj)
 {
     if (obj != nullptr) {
-        audioSpatializationMngr_ = obj->audioSpatializationMngr_;
+        audioSpatializationMngr_ = obj;
     }
 }
 
@@ -37,13 +37,10 @@ AudioSpatializationManagerImpl::~AudioSpatializationManagerImpl() = default;
 
 AudioSpatializationManager AudioSpatializationManagerImpl::CreateSpatializationManagerWrapper()
 {
-    std::unique_ptr<AudioSpatializationManagerImpl> audioSpatializationManagerImpl =
-        std::make_unique<AudioSpatializationManagerImpl>();
+    OHOS::AudioStandard::AudioSpatializationManager *audioSpatializationManagerImpl =
+        OHOS::AudioStandard::AudioSpatializationManager::GetInstance();
     if (audioSpatializationManagerImpl != nullptr) {
-        audioSpatializationManagerImpl->audioSpatializationMngr_ =
-            OHOS::AudioStandard::AudioSpatializationManager::GetInstance();
-        return make_holder<AudioSpatializationManagerImpl, AudioSpatializationManager>(
-            std::move(audioSpatializationManagerImpl));
+        return make_holder<AudioSpatializationManagerImpl, AudioSpatializationManager>(audioSpatializationManagerImpl);
     }
     return make_holder<AudioSpatializationManagerImpl, AudioSpatializationManager>(nullptr);
 }

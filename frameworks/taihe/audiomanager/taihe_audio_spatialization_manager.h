@@ -26,7 +26,7 @@ using namespace ohos::multimedia::audio;
 class AudioSpatializationManagerImpl {
 public:
     AudioSpatializationManagerImpl();
-    explicit AudioSpatializationManagerImpl(std::unique_ptr<AudioSpatializationManagerImpl> obj);
+    explicit AudioSpatializationManagerImpl(OHOS::AudioStandard::AudioSpatializationManager *obj);
     ~AudioSpatializationManagerImpl();
 
     static AudioSpatializationManager CreateSpatializationManagerWrapper();
