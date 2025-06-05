@@ -59,7 +59,7 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
     result = ringCache_->Enqueue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
     if (enqueueFlag_ == FrameFlag::FIRST_FRAME) {
-        enqueueFlag_ == FrameFlag::SECOND_FRAME;
+        enqueueFlag_ = FrameFlag::SECOND_FRAME;
     } else if(enqueueFlag_ == FrameFlag::SECOND_FRAME) {
         enqueueRunning_.store(true);
         enqueueRunningCond_.notify_all();
@@ -69,11 +69,11 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 
 void HpaeCoBufferNode::DoProcess()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     if (processFlag_ == FrameFlag::FIRST_FRAME) {
         processFlag_ = FrameFlag::SECOND_FRAME;
     } else if (processFlag_ == FrameFlag::SECOND_FRAME) {
-        enqueueRunningCond_.wait(lock, [this] {
+        bool stopWaiting = enqueueRunningCond_.wait_for(lock, std::chrono::milliseconds(MS_PER_SECOND), [this] {
             // wait until data is enqueued
             return enqueueRunning_.load();
         });
