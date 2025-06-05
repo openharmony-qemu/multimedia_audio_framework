@@ -287,11 +287,19 @@ int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage,
 
 int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &selectedDesc)
 {
-    int32_t ret = Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
-    ret = Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Hfp connect failed");
+    CHECK_AND_RETURN_RET_LOG(selectedDesc != nullptr, ERROR_INVALID_PARAM, "selectedDesc is nullptr");
+
     AUDIO_INFO_LOG("Connect virtual device[%{public}s]", GetEncryptAddr(selectedDesc->macAddress_).c_str());
+    if (selectedDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        selectedDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        int32_t ret = Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
+        ret = Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Hfp connect failed");
+    } else {
+        int32_t result = SleAudioDeviceManager::GetInstance().ConnectAllowedProfiles(selectedDesc->macAddress_);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Nearlink connect failed");
+    }
     return SUCCESS;
 }
 

@@ -269,6 +269,9 @@ public:
 
     virtual int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool updateUi) = 0;
 
+    virtual int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+        const int32_t volume, bool updateUi) = 0;
+
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage) = 0;
 
     virtual int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,

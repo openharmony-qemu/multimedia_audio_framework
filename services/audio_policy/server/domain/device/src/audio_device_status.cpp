@@ -411,6 +411,9 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         int32_t result = HandleAccessoryDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load accessory failed.");
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        SleAudioDeviceManager::GetInstance().AddNearlinkDevice(updatedDesc);
+        audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_MUSIC, updatedDesc.mediaVolume_);
     }
     return SUCCESS;
 }
@@ -450,6 +453,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(ACCESSORY_SOURCE);
     }
+    SleAudioDeviceManager::GetInstance().RemoveNearlinkDevice(updatedDesc);
 
     AudioServerProxy::GetInstance().ResetRouteForDisconnectProxy(updatedDesc.deviceType_);
     if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {

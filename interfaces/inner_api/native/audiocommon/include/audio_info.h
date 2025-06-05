@@ -357,9 +357,14 @@ struct VolumeEvent {
     AudioVolumeType volumeType;
     int32_t volume;
     bool updateUi;
-    int32_t volumeGroupId;
-    std::string networkId;
+    int32_t volumeGroupId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+
+    VolumeEvent(AudioVolumeType volType, int32_t volLevel, bool isUiUpdated) : volumeType(volType),
+        volume(volLevel), updateUi(isUiUpdated) {}
+    VolumeEvent() = default;
+
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
@@ -1196,6 +1201,7 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
         {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
         {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
         {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
     };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
