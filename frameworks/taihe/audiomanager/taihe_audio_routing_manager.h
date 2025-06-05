@@ -32,7 +32,7 @@ using namespace ohos::multimedia::audio;
 class AudioRoutingManagerImpl {
 public:
     AudioRoutingManagerImpl();
-    explicit AudioRoutingManagerImpl(std::unique_ptr<AudioRoutingManagerImpl> obj);
+    explicit AudioRoutingManagerImpl(std::shared_ptr<AudioRoutingManagerImpl> obj);
     ~AudioRoutingManagerImpl();
 
     static AudioRoutingManager CreateRoutingManagerWrapper();

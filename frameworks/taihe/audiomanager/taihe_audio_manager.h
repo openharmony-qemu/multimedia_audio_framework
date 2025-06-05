@@ -31,7 +31,7 @@ const std::string VOLUME_CHANGE_CALLBACK_NAME = "volumeChange";
 class AudioManagerImpl {
 public:
     AudioManagerImpl();
-    explicit AudioManagerImpl(std::unique_ptr<AudioManagerImpl> obj);
+    explicit AudioManagerImpl(std::shared_ptr<AudioManagerImpl> obj);
     ~AudioManagerImpl();
 
     AudioVolumeManager GetVolumeManager();

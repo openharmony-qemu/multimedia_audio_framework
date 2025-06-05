@@ -27,7 +27,7 @@ using namespace ANI::Audio;
 namespace ANI::Audio {
 AudioVolumeManagerImpl::AudioVolumeManagerImpl() : audioSystemMngr_(nullptr) {}
 
-AudioVolumeManagerImpl::AudioVolumeManagerImpl(std::unique_ptr<AudioVolumeManagerImpl> obj)
+AudioVolumeManagerImpl::AudioVolumeManagerImpl(std::shared_ptr<AudioVolumeManagerImpl> obj)
 {
     if (obj != nullptr) {
         audioSystemMngr_ = obj->audioSystemMngr_;
@@ -42,11 +42,11 @@ AudioVolumeManagerImpl::~AudioVolumeManagerImpl()
 
 AudioVolumeManager AudioVolumeManagerImpl::CreateVolumeManagerWrapper()
 {
-    std::unique_ptr<AudioVolumeManagerImpl> audioVolMngrImpl = std::make_unique<AudioVolumeManagerImpl>();
+    std::shared_ptr<AudioVolumeManagerImpl> audioVolMngrImpl = std::make_shared<AudioVolumeManagerImpl>();
     if (audioVolMngrImpl != nullptr) {
         audioVolMngrImpl->audioSystemMngr_ = OHOS::AudioStandard::AudioSystemManager::GetInstance();
         audioVolMngrImpl->cachedClientId_ = getpid();
-        return make_holder<AudioVolumeManagerImpl, AudioVolumeManager>(std::move(audioVolMngrImpl));
+        return make_holder<AudioVolumeManagerImpl, AudioVolumeManager>(audioVolMngrImpl);
     }
     return make_holder<AudioVolumeManagerImpl, AudioVolumeManager>(nullptr);
 }
@@ -61,6 +61,7 @@ void AudioVolumeManagerImpl::RegisterCallback(std::shared_ptr<uintptr_t> &callba
     CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl != nullptr,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioVolMngrImpl is nullptr");
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (audioVolMngrImpl->volumeKeyEventCallbackTaihe_ == nullptr) {
         audioVolMngrImpl->volumeKeyEventCallbackTaihe_ = std::make_shared<TaiheAudioVolumeKeyEvent>(env);
         int32_t ret =
@@ -85,6 +86,7 @@ void AudioVolumeManagerImpl::RegisterAppVolumeChangeForUidCallback(double uid, s
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioVolMngrImpl is nullptr");
     int32_t appUid = static_cast<int32_t>(uid);
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (audioVolMngrImpl->appVolumeChangeCallbackForUidTaihe_ == nullptr) {
         audioVolMngrImpl->appVolumeChangeCallbackForUidTaihe_ =
             std::make_shared<TaiheAudioManagerAppVolumeChangeCallback>(env);
@@ -107,6 +109,7 @@ void AudioVolumeManagerImpl::RegisterSelfAppVolumeChangeCallback(std::shared_ptr
     CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl != nullptr,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioVolMngrImpl is nullptr");
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (audioVolMngrImpl->selfAppVolumeChangeCallbackTaihe_ == nullptr) {
         audioVolMngrImpl->selfAppVolumeChangeCallbackTaihe_ =
             std::make_shared<TaiheAudioManagerAppVolumeChangeCallback>(env);

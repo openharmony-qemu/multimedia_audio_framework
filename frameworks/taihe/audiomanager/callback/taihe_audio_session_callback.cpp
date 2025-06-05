@@ -26,11 +26,9 @@ using namespace ANI::Audio;
 namespace ANI::Audio {
 std::mutex TaiheAudioSessionCallback::sWorkerMutex_;
 TaiheAudioSessionCallback::TaiheAudioSessionCallback(ani_env *env)
+    : env_(env)
 {
     AUDIO_DEBUG_LOG("TaiheAudioSessionCallback::Constructor");
-    if (env != nullptr) {
-        env_ = env;
-    }
 }
 
 TaiheAudioSessionCallback::~TaiheAudioSessionCallback()
@@ -60,6 +58,7 @@ void TaiheAudioSessionCallback::SaveCallbackReference(std::shared_ptr<uintptr_t>
     CHECK_AND_RETURN_LOG(callback != nullptr,
         "TaiheAudioSessionCallback: creating reference for callback fail");
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
     audioSessionJsCallback_ = cb;
 }

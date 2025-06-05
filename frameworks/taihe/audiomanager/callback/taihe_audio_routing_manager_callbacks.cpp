@@ -47,6 +47,7 @@ void TaiheAudioPreferredInputDeviceChangeCallback::SaveCallbackReference(std::sh
     callback_ = std::make_shared<AutoRef>(env_, callback);
 
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -71,9 +72,9 @@ void TaiheAudioPreferredInputDeviceChangeCallback::OnJsCallbackActiveInputDevice
         AUDIO_ERR_LOG("OnJsCallbackActiveInputDeviceChange: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioActiveInputDeviceChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     auto sharePtr = shared_from_this();
     auto task = [event, sharePtr, this]() {
         if (sharePtr != nullptr) {
@@ -132,6 +133,7 @@ void TaiheAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(std::s
     callback_ = std::make_shared<AutoRef>(env_, callback);
 
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -156,9 +158,9 @@ void TaiheAudioPreferredOutputDeviceChangeCallback::OnJsCallbackActiveOutputDevi
         AUDIO_ERR_LOG("OnJsCallbackActiveOutputDeviceChange: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioActiveOutputDeviceChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     auto sharePtr = shared_from_this();
     auto task = [event, sharePtr, this]() {
         if (sharePtr != nullptr) {

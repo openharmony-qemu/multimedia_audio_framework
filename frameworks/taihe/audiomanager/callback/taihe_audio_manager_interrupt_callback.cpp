@@ -54,6 +54,7 @@ void TaiheAudioManagerInterruptCallback::SaveCallbackReference(const std::string
     audioManagerInterruptCallbackList_.push_back(cb);
     AUDIO_INFO_LOG("SaveCallbackReference success, list size [%{public}zu]", audioManagerInterruptCallbackList_.size());
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -138,9 +139,9 @@ void TaiheAudioManagerInterruptCallback::OnJsCallbackAudioManagerInterrupt(
         AUDIO_ERR_LOG("OnJsCallbackRendererState: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioManagerInterruptJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     auto sharePtr = shared_from_this();
     auto task = [event, sharePtr, this]() {
         if (sharePtr != nullptr) {

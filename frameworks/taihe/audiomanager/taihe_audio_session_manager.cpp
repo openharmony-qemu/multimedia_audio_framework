@@ -138,8 +138,8 @@ void AudioSessionManagerImpl::UnregisterCallbackCarryParam(std::shared_ptr<uintp
     AudioSessionManagerImpl *taiheSessionManager)
 {
     AUDIO_INFO_LOG("UnregisterCallback");
-    CHECK_AND_RETURN_LOG((taiheSessionManager->audioSessionCallbackTaihe_ != nullptr),
-        "Failed to retrieve session mgr  instance.");
+    CHECK_AND_RETURN_LOG((taiheSessionManager != nullptr) &&
+        (taiheSessionManager->audioSessionCallbackTaihe_ != nullptr), "Failed to retrieve session mgr instance.");
     if (!taiheSessionManager->audioSessionCallbackTaihe_) {
         taiheSessionManager->audioSessionCallbackTaihe_ = std::make_shared<TaiheAudioSessionCallback>(get_env());
         CHECK_AND_RETURN_LOG(taiheSessionManager->audioSessionCallbackTaihe_ != nullptr,

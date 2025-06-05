@@ -28,7 +28,7 @@ using namespace ANI::Audio;
 namespace ANI::Audio {
 AudioRoutingManagerImpl::AudioRoutingManagerImpl() : audioMngr_(nullptr) {}
 
-AudioRoutingManagerImpl::AudioRoutingManagerImpl(std::unique_ptr<AudioRoutingManagerImpl> obj)
+AudioRoutingManagerImpl::AudioRoutingManagerImpl(std::shared_ptr<AudioRoutingManagerImpl> obj)
 {
     if (obj != nullptr) {
         audioMngr_ = obj->audioMngr_;
@@ -43,11 +43,11 @@ AudioRoutingManagerImpl::~AudioRoutingManagerImpl()
 
 AudioRoutingManager AudioRoutingManagerImpl::CreateRoutingManagerWrapper()
 {
-    std::unique_ptr<AudioRoutingManagerImpl> audioRoutingMgrImpl = std::make_unique<AudioRoutingManagerImpl>();
+    std::shared_ptr<AudioRoutingManagerImpl> audioRoutingMgrImpl = std::make_shared<AudioRoutingManagerImpl>();
     if (audioRoutingMgrImpl != nullptr) {
         audioRoutingMgrImpl->audioMngr_ = OHOS::AudioStandard::AudioSystemManager::GetInstance();
         audioRoutingMgrImpl->audioRoutingMngr_ = OHOS::AudioStandard::AudioRoutingManager::GetInstance();
-        return make_holder<AudioRoutingManagerImpl, AudioRoutingManager>(std::move(audioRoutingMgrImpl));
+        return make_holder<AudioRoutingManagerImpl, AudioRoutingManager>(audioRoutingMgrImpl);
     }
     return make_holder<AudioRoutingManagerImpl, AudioRoutingManager>(nullptr);
 }
@@ -173,20 +173,21 @@ void AudioRoutingManagerImpl::SelectInputDeviceSync(array_view<AudioDeviceDescri
 
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesSync(DeviceFlag deviceFlag)
 {
+    std::vector<AudioDeviceDescriptor> emptyResult;
     if (!TaiheAudioEnum::IsLegalInputArgumentDeviceFlag(deviceFlag)) {
         AUDIO_ERR_LOG("deviceFlag invalid");
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
             "parameter verification failed: The param of deviceFlag must be enum DeviceFlag");
-        return array<AudioDeviceDescriptor>(nullptr, 0);
+        return array<AudioDeviceDescriptor>(emptyResult);
     }
 
     if (audioRoutingMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioRoutingMngr_ is nullptr");
-        return array<AudioDeviceDescriptor>(nullptr, 0);
+        return array<AudioDeviceDescriptor>(emptyResult);
     }
     if (audioMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
-        return array<AudioDeviceDescriptor>(nullptr, 0);
+        return array<AudioDeviceDescriptor>(emptyResult);
     }
 
     OHOS::AudioStandard::DeviceFlag nativeFlag = static_cast<OHOS::AudioStandard::DeviceFlag>(deviceFlag.get_value());
@@ -212,6 +213,7 @@ void AudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(AudioCa
     std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
 
     CHECK_AND_RETURN_LOG(GetTaihePrefInputDeviceChangeCb(callback, audioRoutingManagerImpl) == nullptr,
         "Do not allow duplicate registration of the same callback");
@@ -366,6 +368,7 @@ void AudioRoutingManagerImpl::RegisterMicrophoneBlockedCallback(std::shared_ptr<
     const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (!audioRoutingManagerImpl->microphoneBlockedCallbackTaihe_) {
         audioRoutingManagerImpl->microphoneBlockedCallbackTaihe_ = std::make_shared<TaiheAudioManagerCallback>(env);
     }
@@ -512,6 +515,7 @@ void AudioRoutingManagerImpl::RegisterDeviceChangeCallback(DeviceFlag deviceFlag
     }
     OHOS::AudioStandard::DeviceFlag audioDeviceFlag = OHOS::AudioStandard::DeviceFlag(flag);
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (!taiheRoutingMgr->deviceChangeCallbackTaihe_) {
         taiheRoutingMgr->deviceChangeCallbackTaihe_ = std::make_shared<TaiheAudioManagerCallback>(env);
     }
@@ -541,6 +545,7 @@ void AudioRoutingManagerImpl::RegisterAvaiableDeviceChangeCallback(DeviceUsage d
     }
     OHOS::AudioStandard::AudioDeviceUsage usage = static_cast<OHOS::AudioStandard::AudioDeviceUsage>(flag);
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (!taiheRoutingMgr->availableDeviceChangeCallbackTaihe_) {
         taiheRoutingMgr->availableDeviceChangeCallbackTaihe_ =
             std::make_shared<TaiheAudioRountingAvailableDeviceChangeCallback>(env);
@@ -576,6 +581,7 @@ void AudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(AudioR
     std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
 
     CHECK_AND_RETURN_LOG(GetTaihePrefOutputDeviceChangeCb(callback, audioRoutingManagerImpl) == nullptr,
         "Do not allow duplicate registration of the same callback");

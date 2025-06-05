@@ -61,6 +61,7 @@ void TaiheAudioManagerAppVolumeChangeCallback::SaveVolumeChangeCallbackForUidRef
             callbackName.c_str());
     }
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -84,6 +85,7 @@ void TaiheAudioManagerAppVolumeChangeCallback::SaveSelfVolumdChangeCallbackRefer
             callbackName.c_str());
     }
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -163,9 +165,9 @@ void TaiheAudioManagerAppVolumeChangeCallback::OnJsCallbackAppVolumeChange(
         AUDIO_ERR_LOG("OnJsCallbackAppVolumeChange: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioManagerAppVolumeChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     auto sharePtr = shared_from_this();
     auto task = [event, sharePtr, this]() {
         if (sharePtr != nullptr) {

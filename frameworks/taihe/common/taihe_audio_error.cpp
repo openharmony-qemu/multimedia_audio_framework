@@ -48,13 +48,13 @@ void TaiheAudioError::ThrowError(int32_t code, const std::string &errMessage)
 
 void TaiheAudioError::ThrowErrorAndReturn(int32_t errCode)
 {
-    AUDIO_ERR_LOG("errCode: %{pubilc}d", errCode);
+    AUDIO_ERR_LOG("errCode: %{public}d", errCode);
     ThrowError(errCode);
 }
 
 void TaiheAudioError::ThrowErrorAndReturn(int32_t errCode, const std::string &errMessage)
 {
-    AUDIO_ERR_LOG("errCode: %{pubilc}d, errMsg: %{pubilc}s", errCode, errMessage.c_str());
+    AUDIO_ERR_LOG("errCode: %{public}d, errMsg: %{public}s", errCode, errMessage.c_str());
     ThrowError(errCode, errMessage);
 }
 

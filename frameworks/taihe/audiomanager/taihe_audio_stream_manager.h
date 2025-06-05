@@ -30,7 +30,7 @@ const std::string CAPTURERCHANGE_CALLBACK_NAME = "audioCapturerChange";
 class AudioStreamManagerImpl {
 public:
     AudioStreamManagerImpl();
-    explicit AudioStreamManagerImpl(std::unique_ptr<AudioStreamManagerImpl> obj);
+    explicit AudioStreamManagerImpl(std::shared_ptr<AudioStreamManagerImpl> obj);
     ~AudioStreamManagerImpl();
 
     static AudioStreamManager CreateStreamManagerWrapper();

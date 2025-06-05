@@ -33,7 +33,7 @@ using namespace ANI::Audio;
 namespace ANI::Audio {
 AudioManagerImpl::AudioManagerImpl() : audioMngr_(nullptr) {}
 
-AudioManagerImpl::AudioManagerImpl(std::unique_ptr<AudioManagerImpl> obj)
+AudioManagerImpl::AudioManagerImpl(std::shared_ptr<AudioManagerImpl> obj)
 {
     if (obj != nullptr) {
         audioMngr_ = obj->audioMngr_;
@@ -93,6 +93,7 @@ void AudioManagerImpl::RegisterInterruptCallback(AudioInterrupt const &interrupt
     std::shared_ptr<uintptr_t> &callback, AudioManagerImpl *audioMngrImpl)
 {
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (audioMngrImpl->interruptCallbackTaihe_ == nullptr) {
         audioMngrImpl->interruptCallbackTaihe_ = std::make_shared<TaiheAudioManagerInterruptCallback>(env);
         int32_t ret = audioMngrImpl->audioMngr_->
@@ -115,6 +116,7 @@ void AudioManagerImpl::RegisterVolumeChangeCallback(std::shared_ptr<uintptr_t> &
     AudioManagerImpl *audioMngrImpl)
 {
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (audioMngrImpl->volumeKeyEventCallbackTaihe_ == nullptr) {
         audioMngrImpl->volumeKeyEventCallbackTaihe_ = std::make_shared<TaiheAudioVolumeKeyEvent>(env);
         int32_t ret = audioMngrImpl->audioMngr_->RegisterVolumeKeyEventCallback(audioMngrImpl->cachedClientId_,
@@ -194,11 +196,11 @@ void AudioManagerImpl::OnVolumeChange(callback_view<void(VolumeEvent const&)> ca
 
 AudioManager GetAudioManager()
 {
-    std::unique_ptr<AudioManagerImpl> audioMngrImpl = std::make_unique<AudioManagerImpl>();
+    std::shared_ptr<AudioManagerImpl> audioMngrImpl = std::make_shared<AudioManagerImpl>();
     if (audioMngrImpl != nullptr) {
         audioMngrImpl->audioMngr_ = OHOS::AudioStandard::AudioSystemManager::GetInstance();
         audioMngrImpl->cachedClientId_ = getpid();
-        return make_holder<AudioManagerImpl, AudioManager>(std::move(audioMngrImpl));
+        return make_holder<AudioManagerImpl, AudioManager>(audioMngrImpl);
     }
     return make_holder<AudioManagerImpl, AudioManager>(nullptr);
 }

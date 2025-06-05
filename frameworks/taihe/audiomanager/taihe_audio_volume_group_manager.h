@@ -26,7 +26,7 @@ using namespace ohos::multimedia::audio;
 class AudioVolumeGroupManagerImpl {
 public:
     AudioVolumeGroupManagerImpl();
-    explicit AudioVolumeGroupManagerImpl(std::unique_ptr<AudioVolumeGroupManagerImpl> obj);
+    explicit AudioVolumeGroupManagerImpl(std::shared_ptr<AudioVolumeGroupManagerImpl> obj);
 
     static AudioVolumeGroupManager CreateAudioVolumeGroupManagerWrapper(int32_t groupId);
     void SetVolumeSync(AudioVolumeType volumeType, int32_t volume);

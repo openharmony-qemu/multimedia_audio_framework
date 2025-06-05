@@ -26,11 +26,9 @@ using namespace ANI::Audio;
 namespace ANI::Audio {
 std::mutex TaiheAudioCapturerStateCallback::sWorkerMutex_;
 TaiheAudioCapturerStateCallback::TaiheAudioCapturerStateCallback(ani_env *env)
+    : env_(env)
 {
     AUDIO_DEBUG_LOG("TaiheAudioCapturerStateCallback: instance create");
-    if (env != nullptr) {
-        env_ = env;
-    }
 }
 
 TaiheAudioCapturerStateCallback::~TaiheAudioCapturerStateCallback()
@@ -45,9 +43,11 @@ void TaiheAudioCapturerStateCallback::SaveCallbackReference(const std::string &c
     CHECK_AND_RETURN_LOG(callback != nullptr, "TaiheAudioCapturerStateCallback: creating reference for callback fail");
     callback_ = callback;
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
     capturerStateCallback_ = cb;
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -119,9 +119,9 @@ void TaiheAudioCapturerStateCallback::OnJsCallbackCapturerState(std::unique_ptr<
         AUDIO_ERR_LOG("OnJsCallbackRendererState: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioCapturerStateJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     auto sharePtr = shared_from_this();
     auto task = [event, sharePtr, this]() {
         if (sharePtr != nullptr) {

@@ -69,6 +69,7 @@ void TaiheAudioVolumeKeyEvent::SaveCallbackReference(const std::string &callback
         AUDIO_ERR_LOG("TaiheAudioVolumeKeyEvent: Unknown callback type: %{public}s", callbackName.c_str());
     }
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -98,9 +99,9 @@ void TaiheAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolu
         AUDIO_ERR_LOG("OnJsCallbackVolumeEvent: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioVolumeKeyEventJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     auto sharePtr = shared_from_this();
     auto task = [event, sharePtr, this]() {
         if (sharePtr != nullptr) {

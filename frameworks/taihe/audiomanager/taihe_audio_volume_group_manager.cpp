@@ -36,7 +36,7 @@ AudioVolumeGroupManagerImpl::AudioVolumeGroupManagerImpl()
 {
 }
 
-AudioVolumeGroupManagerImpl::AudioVolumeGroupManagerImpl(std::unique_ptr<AudioVolumeGroupManagerImpl> obj)
+AudioVolumeGroupManagerImpl::AudioVolumeGroupManagerImpl(std::shared_ptr<AudioVolumeGroupManagerImpl> obj)
 {
     if (obj != nullptr) {
         audioGroupMngr_ = obj->audioGroupMngr_;
@@ -53,11 +53,11 @@ AudioVolumeGroupManager AudioVolumeGroupManagerImpl::CreateAudioVolumeGroupManag
             "GetVolumeGroupManagerSync failed: invalid param");
         return make_holder<AudioVolumeGroupManagerImpl, AudioVolumeGroupManager>(nullptr);
     }
-    std::unique_ptr<AudioVolumeGroupManagerImpl> audioVolumeGroupManagerImpl =
-        std::make_unique<AudioVolumeGroupManagerImpl>();
+    std::shared_ptr<AudioVolumeGroupManagerImpl> audioVolumeGroupManagerImpl =
+        std::make_shared<AudioVolumeGroupManagerImpl>();
     audioVolumeGroupManagerImpl->audioGroupMngr_ = groupManager;
     audioVolumeGroupManagerImpl->cachedClientId_ = getpid();
-    return make_holder<AudioVolumeGroupManagerImpl, AudioVolumeGroupManager>(std::move(audioVolumeGroupManagerImpl));
+    return make_holder<AudioVolumeGroupManagerImpl, AudioVolumeGroupManager>(audioVolumeGroupManagerImpl);
 }
 
 void AudioVolumeGroupManagerImpl::SetVolumeSync(AudioVolumeType volumeType, int32_t volume)
@@ -326,6 +326,7 @@ void AudioVolumeGroupManagerImpl::RegisterRingModeCallback(std::shared_ptr<uintp
     CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl != nullptr, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERR_NO_MEMORY), "audioVolumeGroupManagerImpl is nullptr");
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (audioVolumeGroupManagerImpl->ringerModecallbackTaihe_ == nullptr) {
         audioVolumeGroupManagerImpl->ringerModecallbackTaihe_ = std::make_shared<TaiheAudioRingerModeCallback>(env);
         int32_t ret = audioVolumeGroupManagerImpl->audioGroupMngr_->SetRingerModeCallback(
@@ -382,6 +383,7 @@ void AudioVolumeGroupManagerImpl::RegisterMicStateChangeCallback(std::shared_ptr
     CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl != nullptr, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERR_NO_MEMORY), "audioVolumeGroupManagerImpl is nullptr");
     ani_env *env = get_env();
+    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
     if (!audioVolumeGroupManagerImpl->micStateChangeCallbackTaihe_) {
         audioVolumeGroupManagerImpl->micStateChangeCallbackTaihe_ =
             std::make_shared<TaiheAudioManagerMicStateChangeCallback>(env);

@@ -26,7 +26,7 @@ using namespace ANI::Audio;
 namespace ANI::Audio {
 AudioStreamManagerImpl::AudioStreamManagerImpl() : audioStreamMngr_(nullptr) {}
 
-AudioStreamManagerImpl::AudioStreamManagerImpl(std::unique_ptr<AudioStreamManagerImpl> obj)
+AudioStreamManagerImpl::AudioStreamManagerImpl(std::shared_ptr<AudioStreamManagerImpl> obj)
 {
     if (obj != nullptr) {
         audioStreamMngr_ = obj->audioStreamMngr_;
@@ -38,11 +38,11 @@ AudioStreamManagerImpl::~AudioStreamManagerImpl() = default;
 
 AudioStreamManager AudioStreamManagerImpl::CreateStreamManagerWrapper()
 {
-    std::unique_ptr<AudioStreamManagerImpl> audioStreamMgrImpl = std::make_unique<AudioStreamManagerImpl>();
+    std::shared_ptr<AudioStreamManagerImpl> audioStreamMgrImpl = std::make_shared<AudioStreamManagerImpl>();
     if (audioStreamMgrImpl != nullptr) {
         audioStreamMgrImpl->audioStreamMngr_ = OHOS::AudioStandard::AudioStreamManager::GetInstance();
         audioStreamMgrImpl->cachedClientId_ = getpid();
-        return make_holder<AudioStreamManagerImpl, AudioStreamManager>(std::move(audioStreamMgrImpl));
+        return make_holder<AudioStreamManagerImpl, AudioStreamManager>(audioStreamMgrImpl);
     }
     return make_holder<AudioStreamManagerImpl, AudioStreamManager>(nullptr);
 }

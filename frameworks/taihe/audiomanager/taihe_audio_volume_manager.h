@@ -27,7 +27,7 @@ using namespace ohos::multimedia::audio;
 class AudioVolumeManagerImpl {
 public:
     AudioVolumeManagerImpl();
-    explicit AudioVolumeManagerImpl(std::unique_ptr<AudioVolumeManagerImpl> obj);
+    explicit AudioVolumeManagerImpl(std::shared_ptr<AudioVolumeManagerImpl> obj);
     ~AudioVolumeManagerImpl();
 
     static AudioVolumeManager CreateVolumeManagerWrapper();

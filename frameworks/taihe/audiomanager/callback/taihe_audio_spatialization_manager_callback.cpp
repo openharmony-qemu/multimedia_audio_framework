@@ -34,11 +34,9 @@ std::mutex TaiheAudioCurrentSpatializationEnabledChangeCallback::sWorkerMutex_;
 std::mutex TaiheAudioHeadTrackingEnabledChangeCallback::sWorkerMutex_;
 
 TaiheAudioSpatializationEnabledChangeCallback::TaiheAudioSpatializationEnabledChangeCallback(ani_env *env)
+    : env_(env)
 {
     AUDIO_DEBUG_LOG("TaiheAudioSpatializationEnabledChangeCallback: instance create");
-    if (env != nullptr) {
-        env_ = env;
-    }
 }
 
 TaiheAudioSpatializationEnabledChangeCallback::~TaiheAudioSpatializationEnabledChangeCallback()
@@ -79,6 +77,7 @@ void TaiheAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledCha
         spatializationEnabledChangeCbForAnyDeviceList_.push_back(cb);
     }
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -197,9 +196,7 @@ void TaiheAudioSpatializationEnabledChangeCallback::SafeJsCallbackSpatialization
             event->callback->cb_);
         CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "get reference value fail");
 
-        if (onSpatializationEnabledChangeFlag_) {
-            // (*cacheCallback)(event->enabled);
-        } else {
+        if (!onSpatializationEnabledChangeFlag_) {
             OHOS::AudioStandard::AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice;
             audioSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
             audioSpatialEnabledStateForDevice.enabled = event->enabled;
@@ -217,9 +214,9 @@ void TaiheAudioSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEn
         AUDIO_ERR_LOG("OnJsCallbackSpatializationEnabled: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioSpatializationEnabledJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     event->callbackName = "AudioSpatializationEnabled";
     auto sharePtr = shared_from_this();
     auto task = [event, sharePtr, this]() {
@@ -232,11 +229,9 @@ void TaiheAudioSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEn
 }
 
 TaiheAudioCurrentSpatializationEnabledChangeCallback::TaiheAudioCurrentSpatializationEnabledChangeCallback(ani_env *env)
+    : env_(env)
 {
     AUDIO_DEBUG_LOG("TaiheAudioCurrentSpatializationEnabledChangeCallback: instance create");
-    if (env != nullptr) {
-        env_ = env;
-    }
 }
 
 TaiheAudioCurrentSpatializationEnabledChangeCallback::~TaiheAudioCurrentSpatializationEnabledChangeCallback()
@@ -262,6 +257,7 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::SaveCurrentSpatializa
 
     spatializationEnabledChangeCbForCurrentDeviceList_.push_back(cb);
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -344,9 +340,9 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::OnJsCallbackSpatializ
         AUDIO_ERR_LOG("OnJsCallbackSpatializationEnabledForCurrentDevice: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioSpatializationEnabledForCurrentDeviceJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     auto sharePtr = shared_from_this();
     auto task = [event, sharePtr, this]() {
         if (sharePtr != nullptr) {
@@ -358,11 +354,9 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::OnJsCallbackSpatializ
 }
 
 TaiheAudioHeadTrackingEnabledChangeCallback::TaiheAudioHeadTrackingEnabledChangeCallback(ani_env *env)
+    : env_(env)
 {
     AUDIO_DEBUG_LOG("TaiheAudioHeadTrackingEnabledChangeCallback: instance create");
-    if (env != nullptr) {
-        env_ = env;
-    }
 }
 
 TaiheAudioHeadTrackingEnabledChangeCallback::~TaiheAudioHeadTrackingEnabledChangeCallback()
@@ -403,6 +397,7 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeC
         headTrackingEnabledChangeCbForAnyDeviceList_.push_back(cb);
     }
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
@@ -521,9 +516,7 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SafeJsCallbackHeadTrackingEnab
             event->callback->cb_);
         AUDIO_INFO_LOG("SafeJsCallbackHeadTrackingEnabledWork: safe js callback working.");
 
-        if (onHeadTrackingEnabledChangeFlag_) {
-            // (*cacheCallback)(event->enabled);
-        } else {
+        if (!onHeadTrackingEnabledChangeFlag_) {
             OHOS::AudioStandard::AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice;
             audioSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
             audioSpatialEnabledStateForDevice.enabled = event->enabled;
@@ -541,9 +534,9 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::OnJsCallbackHeadTrackingEnable
         AUDIO_ERR_LOG("OnJsCallbackHeadTrackingEnabled: jsCb.get() is null");
         return;
     }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioHeadTrackingEnabledJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     auto sharePtr = shared_from_this();
     auto task = [event, sharePtr, this]() {
         if (sharePtr != nullptr) {

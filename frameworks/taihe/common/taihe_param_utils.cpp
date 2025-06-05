@@ -178,6 +178,7 @@ int32_t TaiheParamUtils::GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo 
 int32_t TaiheParamUtils::GetCaptureFilterOptionsVector(OHOS::AudioStandard::CaptureFilterOptions &captureFilterOptions,
     AudioCapturerOptions const &options)
 {
+    CHECK_AND_RETURN_RET_LOG(options.playbackCaptureConfig.has_value(), AUDIO_ERR, "playbackCaptureConfig is nullptr");
     uint32_t arrayLen = options.playbackCaptureConfig->filterOptions.usages.size();
     if (arrayLen == 0) {
         captureFilterOptions.usages = {};
