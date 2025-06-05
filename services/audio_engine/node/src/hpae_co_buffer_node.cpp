@@ -58,27 +58,27 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
     BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(buffer->GetPcmDataBuffer()), writeLen};
     result = ringCache_->Enqueue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
-    if (enququeFlag_ == EnqueueFlag::FIRST_FRAME) {
-        enqueueFlag_ == EnqueueFlag::SECOND_FRAME;
-    } else if(enqueueFlag_ == EnqueueFlag::SECOND_FRAME) {
+    if (enqueueFlag_ == FrameFlag::FIRST_FRAME) {
+        enqueueFlag_ == FrameFlag::SECOND_FRAME;
+    } else if(enqueueFlag_ == FrameFlag::SECOND_FRAME) {
         enqueueRunning_.store(true);
         enqueueRunningCond_.notify_all();
-        enqueueFlag_ = EnqueueFlag::OTHER_FRAME;
+        enqueueFlag_ = FrameFlag::OTHER_FRAME;
     }
 }
 
 void HpaeCoBufferNode::DoProcess()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (processFlag_ == ProcessFalg::FIRST_FRAME) {
-        processFlag_ = ProcessFalg::SECOND_FRAME;
-    } else if (processFlag_ == ProcessFalg::SECOND_FRAME) {
+    if (processFlag_ == FrameFlag::FIRST_FRAME) {
+        processFlag_ = FrameFlag::SECOND_FRAME;
+    } else if (processFlag_ == FrameFlag::SECOND_FRAME) {
         enqueueRunningCond_.wait(lock, [this] {
             // wait until data is enqueued
             return enqueueRunning_.load();
         });
         enqueueRunning_.store(false);
-        processFlag_ = ProcessFalg::OTHER_FRAME;
+        processFlag_ = FrameFlag::OTHER_FRAME;
         std::chrono::milliseconds sleepTime = std::chrono::milliseconds(latency_);
         AUDIO_INFO_LOG("Sleep for %{public}lld ms", sleepTime.count());
         std::this_thread::sleep_for(sleepTime);
@@ -150,8 +150,8 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
     nodeInfo.nodeName = "HpaeCoBufferNode";
     SetNodeInfo(nodeInfo);
     inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
-    processFlag_ = ProcessFalg::FIRST_FRAME;
-    enqueueFlag_ = ProcessFalg::FIRST_FRAME;
+    processFlag_ = FrameFlag::FIRST_FRAME;
+    enqueueFlag_ = FrameFlag::FIRST_FRAME;
     enqueueRunning_.store(false);
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(

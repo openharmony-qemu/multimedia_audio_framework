@@ -32,7 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-enum class ProcessFalg {
+enum class FrameFlag {
     FIRST_FRAME,
     SECOND_FRAME,
     OTHER_FRAME,
@@ -63,7 +63,8 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer coBufferOut_;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
-    ProcessFalg processFlag_ = ProcessFalg::FIRST_FRAME;
+    FrameFlag processFlag_ = FrameFlag::FIRST_FRAME;
+    FrameFlag enqueueFlag_ = FrameFlag::FIRST_FRAME;
     uint64_t latency_ = 0;  // in ms
     HighResolutionTimer renderTimer_;
 #ifdef ENABLE_HOOK_PCM
