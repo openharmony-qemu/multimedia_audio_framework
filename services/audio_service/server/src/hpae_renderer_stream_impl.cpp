@@ -390,6 +390,9 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
 
 int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
 {
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
     std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(DEVICE_CLASS_OFFLOAD, "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
@@ -415,6 +418,9 @@ int32_t HpaeRendererStreamImpl::UpdateSpatializationState(bool spatializationEna
 int32_t HpaeRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
     uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
     return SUCCESS;
 }
 
@@ -505,6 +511,10 @@ void HpaeRendererStreamImpl::BlockStream() noexcept
 int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 {
     AUDIO_PRERELEASE_LOGI("set client volume success");
+    if (clientVolume < MIN_FLOAT_VOLUME || clientVolume > MAX_FLOAT_VOLUME) {
+        AUDIO_ERR_LOG("SetClientVolume with invalid clientVolume %{public}f", clientVolume);
+        return ERR_INVALID_PARAM;
+    }
     int32_t ret = IHpaeManager::GetHpaeManager().SetClientVolume(processConfig_.originalSessionId, clientVolume);
     if (ret != 0) {
         AUDIO_ERR_LOG("SetClientVolume is error");
