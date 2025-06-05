@@ -34,9 +34,6 @@ const int DEFAULT_MAJOR_MINOR_CLASS = -1;
 const int A2DP_DEFAULT_SELECTION = -1;
 const int HFP_DEFAULT_SELECTION = -1;
 const int USER_SELECTION = 1;
-const int ADDRESS_STR_LEN = 17;
-const int START_POS = 6;
-const int END_POS = 13;
 const std::map<std::pair<int, int>, DeviceCategory> bluetoothDeviceCategoryMap_ = {
     {std::make_pair(BluetoothDevice::MAJOR_AUDIO_VIDEO, BluetoothDevice::AUDIO_VIDEO_HEADPHONES), BT_HEADPHONE},
     {std::make_pair(BluetoothDevice::MAJOR_AUDIO_VIDEO, BluetoothDevice::AUDIO_VIDEO_WEARABLE_HEADSET), BT_HEADPHONE},
@@ -75,20 +72,6 @@ std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::virtualDevices_;
 std::mutex HfpBluetoothDeviceManager::stopVirtualCallHandleLock_;
 HfpBluetoothDeviceManager::DisconnectScoForDevice HfpBluetoothDeviceManager::disconnectScoFun_ = nullptr;
 BluetoothStopVirtualCallHandle HfpBluetoothDeviceManager::stopVirtualCallHandle_ = { BluetoothRemoteDevice(), false};
-
-// LCOV_EXCL_START
-std::string GetEncryptAddr(const std::string &addr)
-{
-    if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
-        return std::string("");
-    }
-    std::string tmp = "**:**:**:**:**:**";
-    std::string out = addr;
-    for (int i = START_POS; i <= END_POS; i++) {
-        out[i] = tmp[i];
-    }
-    return out;
-}
 
 int32_t RegisterDeviceObserver(IDeviceStatusObserver &observer)
 {
@@ -1198,10 +1181,11 @@ void HfpBluetoothDeviceManager::TryDisconnectScoAsync(const BluetoothRemoteDevic
     disconnectScoThread.detach();
 }
 
-void HfpBluetoothDeviceManager::TryDisconnectScoSync(const BluetoothRemoteDevice &device)
+void HfpBluetoothDeviceManager::TryDisconnectScoSync(const BluetoothRemoteDevice &device, const std::string &reason)
 {
     if (disconnectScoFun_ != nullptr) {
-        AUDIO_INFO_LOG("bluetooth service trigger disconnect sco sync");
+        AUDIO_INFO_LOG("bluetooth service trigger disconnect %{public}s sco sync with reason %{public}s",
+            GetEncryptAddr(device.GetDeviceAddr()).c_str(), reason.c_str());
         disconnectScoFun_(device);
     }
 }
@@ -1216,7 +1200,7 @@ void HfpBluetoothDeviceManager::OnDeviceCategoryUpdated(const BluetoothRemoteDev
         }
     }
     if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
-        TryDisconnectScoSync(device);
+        TryDisconnectScoSync(device, "BT_UNWEAR_HEADPHONE");
     }
 }
 
@@ -1230,7 +1214,7 @@ void HfpBluetoothDeviceManager::OnDeviceEnableUpdated(const BluetoothRemoteDevic
         }
     }
     if (!desc.isEnable_) {
-        TryDisconnectScoSync(device);
+        TryDisconnectScoSync(device, "Device Disable");
     }
 }
 // LCOV_EXCL_STOP

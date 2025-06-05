@@ -1811,7 +1811,7 @@ std::vector<SourceOutput> AudioDeviceCommon::GetSourceOutputs()
 
 void AudioDeviceCommon::ClientDiedDisconnectScoNormal(pid_t uid)
 {
-    Bluetooth::AudioHfpManager::DeleteVirtualCall(uid);
+    Bluetooth::AudioHfpManager::DeleteVirtualCallUid(uid);
     bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene, isRecord);

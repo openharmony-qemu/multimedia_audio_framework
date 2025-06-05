@@ -31,10 +31,12 @@ audio_ohos_library("audio_bluetooth_client") {
     "bluetooth_device_manager.cpp",
     "bluetooth_sco_manager.cpp",
     "bluetooth_hfp_interface.cpp",
+    "bluetooth_device_utils.cpp",
   ]
 
   include_dirs = [
     "../../../services/audio_policy/server/include/service/interface",
+    "../../../services/audio_service/client/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../audioutils/include",
@@ -52,6 +54,7 @@ audio_ohos_library("audio_bluetooth_client") {
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_single",
   ]
 

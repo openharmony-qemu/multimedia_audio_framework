@@ -66,6 +66,7 @@ enum AudioScoState : int32_t {
     DISCONNECTING,
 };
 
+std::string GetEncryptAddr(const std::string &addr);
 } // namespace Bluetooth
 } // namespace OHOS
 

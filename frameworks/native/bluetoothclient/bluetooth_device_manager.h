@@ -32,7 +32,6 @@ int32_t RegisterDeviceObserver(AudioStandard::IDeviceStatusObserver &observer);
 void UnregisterDeviceObserver();
 void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string &macAddress, int32_t eventType);
 bool IsBTWearDetectionEnable(const BluetoothRemoteDevice &device);
-std::string GetEncryptAddr(const std::string &addr);
 
 class MediaBluetoothDeviceManager {
 public:
@@ -154,7 +153,7 @@ private:
     static void HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device);
     static AudioStandard::AudioDeviceDescriptor HandleConnectDeviceInner(const BluetoothRemoteDevice &device);
     static void TryDisconnectScoAsync(const BluetoothRemoteDevice &device);
-    static void TryDisconnectScoSync(const BluetoothRemoteDevice &device);
+    static void TryDisconnectScoSync(const BluetoothRemoteDevice &device, const std::string &reason);
     static void OnDeviceCategoryUpdated(const BluetoothRemoteDevice &device,
         AudioStandard::AudioDeviceDescriptor &desc);
     static void OnDeviceEnableUpdated(const BluetoothRemoteDevice &device,

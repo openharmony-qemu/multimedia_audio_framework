@@ -44,8 +44,8 @@
     *DisconnectBluetoothA2dpSource*;
     *UpdateAudioScene*;
     *SetVirtualCall*;
-    *RefreshVirtualCall*;
-    *DeleteVirtualCall*;
+    *AddVirtualCallUid*;
+    *DeleteVirtualCallUid*;
     *IsVirtualCall*;
   local:
     *;

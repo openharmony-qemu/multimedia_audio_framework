@@ -39,76 +39,92 @@ BluetoothScoManager::BluetoothScoManager()
     currentScoState_ = AudioScoState::DISCONNECTED;
 }
 
-void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState, const BluetoothRemoteDevice &device)
+void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState,
+    const BluetoothRemoteDevice &device, int reason)
 {
-    {
-        std::unique_lock<std::mutex> stateLock(scoLock_);
-        AUDIO_INFO_LOG("recv sco %{public}s state with %{public}s device and current sco state %{public}d",
-            scoState == HfpScoConnectState::SCO_DISCONNECTED ? "diconnect" : "connect",
-            IsSameHfpDevice(activeHfpDevice_, device) ? "same" : "not same", currentScoState_);
-        switch (currentScoState_) {
-            case AudioScoState::DISCONNECTED:
-                UpdateScoStateWhenDisconnected(scoState, device);
-                break;
-            case AudioScoState::CONNECTED:
-                UpdateScoStateWhenConnected(scoState, device);
-                break;
-            case AudioScoState::CONNECTING:
-                UpdateScoStateWhenConnecting(scoState, device);
-                break;
-            case AudioScoState::DISCONNECTING:
-                UpdateScoStateWhenDisconnecting(scoState, device);
-                break;
-            default:
-                break;
-        }
+    std::unique_lock<std::mutex> stateLock(scoLock_);
+    AUDIO_INFO_LOG("recv sco %{public}s state of %{public}s device and current sco state %{public}d of %{public}s",
+        scoState == HfpScoConnectState::SCO_DISCONNECTED ? "diconnect" : "connect",
+        GetEncryptAddr(device.GetDeviceAddr()).c_str(), currentScoState_,
+        GetEncryptAddr(currentScoDevice_.GetDeviceAddr()).c_str());
+    
+    if (!IsSameHfpDevice(currentScoDevice_, device)) {
+        WriteScoStateFaultEvent(scoState, device, reason);
+        return;
+    }
+    switch (currentScoState_) {
+        case AudioScoState::DISCONNECTED:
+            UpdateScoStateWhenDisconnected(scoState, device, reason);
+            break;
+        case AudioScoState::CONNECTED:
+            UpdateScoStateWhenConnected(scoState, device, reason);
+            break;
+        case AudioScoState::CONNECTING:
+            UpdateScoStateWhenConnecting(scoState, device, reason);
+            break;
+        case AudioScoState::DISCONNECTING:
+            UpdateScoStateWhenDisconnecting(scoState, device, reason);
+            break;
+        default:
+            break;
     }
 }
 
-void BluetoothScoManager::UpdateScoStateWhenDisconnected(HfpScoConnectState scoState, const BluetoothRemoteDevice &device)
+void BluetoothScoManager::UpdateScoStateWhenDisconnected(HfpScoConnectState scoState,
+    const BluetoothRemoteDevice &device, int reason)
 {
+    WriteScoStateFaultEvent(scoState, device, reason);
     if (scoState == HfpScoConnectState::SCO_CONNECTED) {
         ForceUpdateScoState();
     }
 }
 
-void BluetoothScoManager::UpdateScoStateWhenConnected(HfpScoConnectState scoState, const BluetoothRemoteDevice &device)
+void BluetoothScoManager::UpdateScoStateWhenConnected(HfpScoConnectState scoState,
+    const BluetoothRemoteDevice &device, int reason)
 {
+    WriteScoStateFaultEvent(scoState, device, reason);
     if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-        if (IsSameHfpDevice(activeHfpDevice_, device)) {
-            currentScoState_ = AudioScoState::DISCONNECTED;
-        }
+        SetAudioScoState(AudioScoState::DISCONNECTED);
     } else if (scoState == HfpScoConnectState::SCO_CONNECTED) {
         ForceUpdateScoState();
     }
 }
 
-void BluetoothScoManager::UpdateScoStateWhenConnecting(HfpScoConnectState scoState, const BluetoothRemoteDevice &device)
+void BluetoothScoManager::UpdateScoStateWhenConnecting(HfpScoConnectState scoState,
+    const BluetoothRemoteDevice &device, int reason)
 {
     if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-        if (IsSameHfpDevice(activeHfpDevice_, device)) {
-            currentScoState_ = AudioScoState::DISCONNECTED;
-        }
+        WriteScoStateFaultEvent(scoState, device, reason);
+        SetAudioScoState(AudioScoState::DISCONNECTED);
     } else if (scoState == HfpScoConnectState::SCO_CONNECTED) {
-        if (IsSameHfpDevice(activeHfpDevice_, device)) {
-            currentScoState_ = AudioScoState::CONNECTED;
-        } else {
-            ForceUpdateScoState();
-        }
+        SetAudioScoState(AudioScoState::CONNECTED);
     }
     ProcCacheRequest();
 }
 
-void BluetoothScoManager::UpdateScoStateWhenDisconnecting(HfpScoConnectState scoState, const BluetoothRemoteDevice &device)
+void BluetoothScoManager::UpdateScoStateWhenDisconnecting(HfpScoConnectState scoState,
+    const BluetoothRemoteDevice &device, int reason)
 {
     if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-        if (IsSameHfpDevice(activeHfpDevice_, device)) {
-            currentScoState_ = AudioScoState::DISCONNECTED;
-        }
+        SetAudioScoState(AudioScoState::DISCONNECTED);
     } else if (scoState == HfpScoConnectState::SCO_CONNECTED) {
+        WriteScoStateFaultEvent(scoState, device, reason);
         ForceUpdateScoState();
     }
     ProcCacheRequest();
+}
+
+void BluetoothScoManager::WriteScoStateFaultEvent(HfpScoConnectState scoState,
+    const BluetoothRemoteDevice &device, int reason)
+{
+    auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SCO_STATE_BT",
+        HiviewDFX::HiSysEvent::EventType::FAULT,
+        "SCO_STATE", static_cast<uint8_t>(currentScoState_),
+        "REASON", static_cast<uint8_t>(reason),
+        "SCO_ADDRESS", device.GetDeviceAddr());
+    if (ret) {
+        AUDIO_ERR_LOG("write event fail: SCO_STATE_BT, ret = %{public}d", ret);
+    }
 }
 
 void BluetoothScoManager::ForceUpdateScoState()
@@ -136,13 +152,15 @@ void BluetoothScoManager::ProcCacheRequest()
     }
 }
 
-int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
+int32_t BluetoothScoManager::HandleScoConnect(ScoCategory scoCategory,
+    const BluetoothRemoteDevice &device)
 {
     std::lock_guard<std::mutex> stateLock(scoLock_);
     return HandleScoConnectNoLock(scoCategory, device);
 }
 
-int32_t BluetoothScoManager::HandleScoConnectNoLock(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
+int32_t BluetoothScoManager::HandleScoConnectNoLock(ScoCategory scoCategory,
+    const BluetoothRemoteDevice &device)
 {
     int32_t ret = SUCCESS;
     switch (currentScoState_) {
@@ -156,7 +174,7 @@ int32_t BluetoothScoManager::HandleScoConnectNoLock(ScoCategory scoCategory, con
             ret = ProcConnectReqWhenConnecting(scoCategory, device);
             break;
         case AudioScoState::DISCONNECTING:
-            ret = SaveRequestToCache(true, scoCategory, device);
+            ret = SaveRequestToCache(true, scoCategory, device, "connect request when disconnecting");
             break;
         default:
             ret = ERROR;
@@ -165,61 +183,65 @@ int32_t BluetoothScoManager::HandleScoConnectNoLock(ScoCategory scoCategory, con
     return ret;
 }
 
-int32_t BluetoothScoManager::ProcConnectReqWhenDisconnected(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
+int32_t BluetoothScoManager::ProcConnectReqWhenDisconnected(ScoCategory scoCategory,
+    const BluetoothRemoteDevice &device)
 {
     int32_t ret = ConnectSco(scoCategory, device);
     if (ret == BT_ERR_SCO_HAS_BEEN_CONNECTED) {
         AUDIO_WARNING_LOG("category %{public}d has been connected", scoCategory);
-        currentScoState_ = AudioScoState::CONNECTED;
+        SetAudioScoState(AudioScoState::CONNECTED);
     } else if (ret != 0) {
         AUDIO_ERR_LOG("connect scoCategory: %{public}d ret: %{public}d ", scoCategory, ret);
         int32_t restoreRet = TryRestoreHfpDevice(scoCategory, device);
         CHECK_AND_RETURN_RET_LOG(restoreRet == 0, restoreRet, "try restore hfp device failed");
-        currentScoState_ = AudioScoState::CONNECTING;
+        SetAudioScoState(AudioScoState::CONNECTING);
     } else {
         AUDIO_INFO_LOG("connect scoCategory: %{public}d success ", scoCategory);
-        currentScoState_ = AudioScoState::CONNECTING;
+        SetAudioScoState(AudioScoState::CONNECTING);
     }
     currentScoCategory_ = scoCategory;
-    activeHfpDevice_ = device;
+    currentScoDevice_ = device;
     return SUCCESS;
 }
 
-int32_t BluetoothScoManager::ProcConnectReqWhenConnected(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
+int32_t BluetoothScoManager::ProcConnectReqWhenConnected(ScoCategory scoCategory,
+    const BluetoothRemoteDevice &device)
 {
-    bool isSameDevice = IsSameHfpDevice(activeHfpDevice_, device);
+    bool isSameDevice = IsSameHfpDevice(currentScoDevice_, device);
     if (IsNeedSwitchScoCategory(scoCategory) && isSameDevice) {
-        AUDIO_INFO_LOG("bypass connect category %{public}d current category %{public}d for %{public}s device",
-            scoCategory, currentScoCategory_, isSameDevice ? "same" : "not same");
+        AUDIO_INFO_LOG("bypass connect category %{public}d current category %{public}d for device %{public}s",
+            scoCategory, currentScoCategory_, GetEncryptAddr(device.GetDeviceAddr()).c_str());
         return SUCCESS;
     }
 
-    AUDIO_INFO_LOG("connect category %{public}d current category %{public}d for %{public}s device",
-        scoCategory, currentScoCategory_, isSameDevice ? "same" : "not same");
-    int32_t ret = DisconnectScoReliable(currentScoCategory_, activeHfpDevice_);
+    AUDIO_INFO_LOG("connect category %{public}d current %{public}d for device %{public}s current %{public}s",
+        scoCategory, currentScoCategory_, GetEncryptAddr(device.GetDeviceAddr()).c_str(),
+        GetEncryptAddr(currentScoDevice_.GetDeviceAddr()).c_str());
+    int32_t ret = DisconnectScoReliable(currentScoCategory_, currentScoDevice_);
     if (ret != 0) {
-        currentScoState_ = AudioScoState::DISCONNECTED;
+        SetAudioScoState(AudioScoState::DISCONNECTED);
         return ProcConnectReqWhenDisconnected(scoCategory, device);
     }
 
-    currentScoState_ = AudioScoState::DISCONNECTING;
-    return SaveRequestToCache(true, scoCategory, device);
+    SetAudioScoState(AudioScoState::DISCONNECTING);
+    return SaveRequestToCache(true, scoCategory, device, "ProcConnectReqWhenConnected");
 }
 
-int32_t BluetoothScoManager::ProcConnectReqWhenConnecting(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
+int32_t BluetoothScoManager::ProcConnectReqWhenConnecting(ScoCategory scoCategory,
+    const BluetoothRemoteDevice &device)
 {
-    bool isSameDevice = IsSameHfpDevice(activeHfpDevice_, device);
+    bool isSameDevice = IsSameHfpDevice(currentScoDevice_, device);
     if (IsNeedSwitchScoCategory(scoCategory) && isSameDevice) {
-        AUDIO_INFO_LOG("connect category %{public}d current category %{public}d for %{public}s device",
-            scoCategory, currentScoCategory_, isSameDevice ? "same" : "not same");
+        AUDIO_INFO_LOG("connect category %{public}d current category %{public}d for device %{public}s",
+            scoCategory, currentScoCategory_, GetEncryptAddr(device.GetDeviceAddr()).c_str());
         return SUCCESS;
     }
-    return SaveRequestToCache(true, scoCategory, device);
+    return SaveRequestToCache(true, scoCategory, device, "ProcConnectReqWhenConnecting");
 }
 
 bool BluetoothScoManager::IsNeedSwitchScoCategory(ScoCategory scoCategory)
 {
-    if (scoCategory == currentScoCategory_ ) {
+    if (scoCategory == currentScoCategory_) {
         return false;
     }
 
@@ -227,18 +249,6 @@ bool BluetoothScoManager::IsNeedSwitchScoCategory(ScoCategory scoCategory)
         scoCategory == ScoCategory::SCO_VIRTUAL) ||
         (currentScoCategory_ == ScoCategory::SCO_VIRTUAL &&
         scoCategory == ScoCategory::SCO_DEFAULT)) {
-        return false;
-    }
-
-    if ((currentScoCategory_ == ScoCategory::SCO_RECOGNITION) &&
-        (scoCategory == ScoCategory::SCO_CALLULAR ||
-        scoCategory == ScoCategory::SCO_VIRTUAL)) {
-        return false;
-    }
-
-    if ((scoCategory == ScoCategory::SCO_RECOGNITION) &&
-        (currentScoCategory_ == ScoCategory::SCO_CALLULAR ||
-        currentScoCategory_ == ScoCategory::SCO_VIRTUAL)) {
         return false;
     }
     return true;
@@ -273,43 +283,54 @@ int32_t BluetoothScoManager::HandleScoDisconnectNoLock(const BluetoothRemoteDevi
 
 int32_t BluetoothScoManager::ProcDisconnectReqWhenConnected(const BluetoothRemoteDevice &device)
 {
-    if (!IsSameHfpDevice(activeHfpDevice_, device)) {
-        AUDIO_WARNING_LOG("disconnect device not meeting expectations");
+    if (!IsSameHfpDevice(currentScoDevice_, device)) {
+        AUDIO_WARNING_LOG("disconnect device %{public}s but current is %{public}s",
+            GetEncryptAddr(device.GetDeviceAddr()).c_str(),
+            GetEncryptAddr(currentScoDevice_.GetDeviceAddr()).c_str());
     }
     cacheReq_ = nullptr;
-    int32_t ret = DisconnectSco(currentScoCategory_, activeHfpDevice_);
+    int32_t ret = DisconnectScoReliable(currentScoCategory_, currentScoDevice_);
     if (ret != 0) {
-        currentScoState_ = AudioScoState::DISCONNECTED;
+        SetAudioScoState(AudioScoState::DISCONNECTED);
     } else {
-        currentScoState_ = AudioScoState::DISCONNECTING;
+        SetAudioScoState(AudioScoState::DISCONNECTING);
     }
     return SUCCESS;
 }
 
 int32_t BluetoothScoManager::ProcDisconnectReqWhenConnecting(const BluetoothRemoteDevice &device)
 {
-    if (!IsSameHfpDevice(activeHfpDevice_, device)) {
-        AUDIO_WARNING_LOG("disconnect device not meeting expectations");
+    if (!IsSameHfpDevice(currentScoDevice_, device)) {
+        AUDIO_WARNING_LOG("disconnect device %{public}s but current is %{public}s",
+            GetEncryptAddr(device.GetDeviceAddr()).c_str(),
+            GetEncryptAddr(currentScoDevice_.GetDeviceAddr()).c_str());
     }
     cacheReq_ = nullptr;
-    return SaveRequestToCache(false, currentScoCategory_, device);
+    return SaveRequestToCache(false, currentScoCategory_, device, "ProcDisconnectReqWhenConnecting");
 }
 
 int32_t BluetoothScoManager::SaveRequestToCache(bool isConnect, ScoCategory scoCategory,
-    const BluetoothRemoteDevice &device)
+    const BluetoothRemoteDevice &device, const std::string &reason)
 {
     if (cacheReq_ == nullptr) {
         cacheReq_ = std::make_shared<ScoCacheRequest>();
+    } else {
+        if (cacheReq_->connectReq == isConnect && cacheReq_->category == scoCategory &&
+            IsSameHfpDevice(cacheReq_->device, device)) {
+            return SUCCESS;
+        }
     }
     CHECK_AND_RETURN_RET_LOG(cacheReq_ != nullptr, ERROR, "request cache is nullptr");
     cacheReq_->connectReq = isConnect;
     cacheReq_->category = scoCategory;
     cacheReq_->device = device;
-    AUDIO_INFO_LOG("cache request, scoCategory: %{public}d isConnect: %{public}d ", scoCategory, isConnect);
+    AUDIO_INFO_LOG("%{public}s cache request, scoCategory: %{public}d isConnect: %{public}d ",
+        reason.c_str(), scoCategory, isConnect);
     return SUCCESS;
 }
 
-bool BluetoothScoManager::IsSameHfpDevice(const BluetoothRemoteDevice &device1, const BluetoothRemoteDevice &device2)
+bool BluetoothScoManager::IsSameHfpDevice(const BluetoothRemoteDevice &device1,
+    const BluetoothRemoteDevice &device2)
 {
     return device1.GetDeviceAddr() == device2.GetDeviceAddr();
 }
@@ -323,7 +344,7 @@ int32_t BluetoothScoManager::ConnectSco(ScoCategory scoCategory, const Bluetooth
         if (scoCategory == ScoCategory::SCO_DEFAULT) {
             scoCategory = ScoCategory::SCO_VIRTUAL;
         }
-        ret = BluetoothHfpInterface::GetInstance().ConnectSco(static_cast<uint8_t> (scoCategory));
+        ret = BluetoothHfpInterface::GetInstance().ConnectSco(static_cast<uint8_t>(scoCategory));
     }
     return ret;
 }
@@ -344,7 +365,7 @@ int32_t BluetoothScoManager::DisconnectSco(ScoCategory scoCategory, const Blueto
         if (scoCategory == ScoCategory::SCO_DEFAULT) {
             scoCategory = SCO_VIRTUAL;
         }
-        ret = BluetoothHfpInterface::GetInstance().DisconnectSco(static_cast<uint8_t> (scoCategory));
+        ret = BluetoothHfpInterface::GetInstance().DisconnectSco(static_cast<uint8_t>(scoCategory));
     }
 
     return ret;
@@ -368,6 +389,51 @@ AudioScoState BluetoothScoManager::GetAudioScoState()
 {
     std::lock_guard<std::mutex> stateLock(scoLock_);
     return currentScoState_;
+}
+
+ScoCategory BluetoothScoManager::GetAudioScoCategory()
+{
+    std::lock_guard<std::mutex> stateLock(scoLock_);
+    return currentScoCategory_;
+}
+
+void BluetoothScoManager::SetAudioScoState(AudioScoState state)
+{
+    if (currentScoState_ == state) {
+        return;
+    }
+    currentScoState_ = state;
+    if (currentScoState_ == AudioScoState::CONNECTING ||
+        currentScoState_ == AudioScoState::DISCONNECTING) {
+        if (scoTimer_ != nullptr) {
+            scoTimer_->StopTimer();
+        } else {
+            scoTimer_ = std::make_shared<AudioTimer>(std::bind(
+                &BluetoothScoManager::OnScoStateTimeOut, this));
+            if (scoTimer_ == nullptr) {
+                AUDIO_ERR_LOG("create audio timer failed");
+                return;
+            }
+        }
+        scoTimer_->StartTimer(scoStateDuration_);
+        AUDIO_DEBUG_LOG("start timer for state %{public}d", currentScoState_);
+    } else {
+        scoTimer_ = nullptr;
+        AUDIO_DEBUG_LOG("delete timer for state %{public}d", currentScoState_);
+    }
+}
+
+void BluetoothScoManager::OnScoStateTimeOut()
+{
+    std::lock_guard<std::mutex> stateLock(scoLock_);
+    AUDIO_ERR_LOG("scoCategory: %{public}d state: %{public}d time out",
+        currentScoCategory_, currentScoState_);
+}
+
+BluetoothRemoteDevice BluetoothScoManager::GetAudioScoDevice()
+{
+    std::lock_guard<std::mutex> stateLock(scoLock_);
+    return currentScoDevice_;
 }
 
 bool BluetoothScoManager::IsInScoCategory(ScoCategory scoCategory)

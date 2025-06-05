@@ -24,6 +24,9 @@ config("bluetooth_client_private_config") {
     "../",
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../../services/audio_policy/server/include/service/interface",
+    "../../../../services/audio_service/client/include",
   ]
 }
 
@@ -38,12 +41,49 @@ ohos_unittest("bluetooth_sco_manager_unit_test") {
   sources = [
     "bluetooth_sco_manager_test.cpp",
     "../bluetooth_sco_manager.cpp",
+    "../bluetooth_device_utils.cpp",
   ]
 
   configs = [ ":bluetooth_client_private_config" ]
 
   deps = [
     "../../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "bluetooth:btframework",
+  ]
+}
+
+ohos_unittest("bluetooth_hfp_manager_unit_test") {
+  module_out_path = module_output_path
+  testonly = true
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+  sources = [
+    "bluetooth_hfp_manager_test.cpp",
+    "../bluetooth_sco_manager.cpp",
+    "../bluetooth_device_utils.cpp",
+    "../audio_bluetooth_manager.cpp",
+    "../bluetooth_device_manager.cpp",
+  ]
+
+  configs = [ ":bluetooth_client_private_config" ]
+
+  deps = [
+    "../../audioutils:audio_utils",
+    "../../../../services/audio_policy:audio_foundation",
   ]
 
   external_deps = [

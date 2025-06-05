@@ -16,6 +16,9 @@
 #ifndef BLUETOOTH_HFP_INTERFACE_H
 #define BLUETOOTH_HFP_INTERFACE_H
 
+#include <string>
+#include <memory>
+#include <vector>
 #include "bluetooth_hfp_ag.h"
 
 namespace OHOS {
@@ -31,6 +34,16 @@ public:
     virtual int32_t OpenVoiceRecognition(const BluetoothRemoteDevice &device) = 0;
     virtual int32_t CloseVoiceRecognition(const BluetoothRemoteDevice &device) = 0;
     virtual int32_t SetActiveDevice(const BluetoothRemoteDevice &device) = 0;
+
+    virtual void void RegisterObserver(std::shared_ptr<HandsFreeAudioGatewayObserver> observer) = 0;
+    virtual void DeregisterObserver(std::shared_ptr<HandsFreeAudioGatewayObserver> observer) = 0;
+    virtual std::vector<BluetoothRemoteDevice> GetDevicesByStates(std::vector<int> states) = 0;
+    virtual void GetVirtualDeviceList(std::vector<std::string> &devices) = 0;
+    virtual BluetoothRemoteDevice GetActiveDevice() = 0;
+    virtual int32_t Connect(const BluetoothRemoteDevice &device) = 0;
+    virtual int32_t IsInbandRingingEnabled(bool &isEnabled) = 0;
+    virtual int32_t GetLastError() = 0;
+    virtual std::string GetLastOpration() = 0;
 
 protected:
     BluetoothHfpInterface() {}

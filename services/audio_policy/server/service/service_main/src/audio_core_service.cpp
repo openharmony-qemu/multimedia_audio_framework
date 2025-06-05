@@ -158,6 +158,10 @@ int32_t AudioCoreService::CreateRendererClient(
         audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
+    } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_RINGTONE ||
+        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        Bluetooth::AudioHfpManager::AddVirtualCallUid(streamDesc->appInfo.appUid,
+            streamDesc->sessionId_);
     }
 
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
@@ -800,13 +804,15 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     }
 
     const auto &rendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
-    if ((rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
-        rendererState == RENDERER_PAUSED) && (mode == AUDIO_MODE_PLAYBACK) &&
-        (rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_RANGING ||
+    if ((mode == AUDIO_MODE_PLAYBACK) && (rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_RINGTONE ||
         rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION)) {
-        Bluetooth::AudioHfpManager::RefreshVirtualCall(rendererChangeInfo.clientUID, false);
+        if ((rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
+            rendererState == RENDERER_PAUSED)) {
+            Bluetooth::AudioHfpManager::DeleteVirtualCallUid(rendererChangeInfo.clientUID,
+                rendererChangeInfo.sessionId);
+        }
     }
-
+    
     UpdateTracker(mode, streamChangeInfo, rendererState);
 
     if (audioA2dpOffloadManager_) {

@@ -16,6 +16,7 @@
 #ifndef BLUETOOTH_HFP_MOCK_INTERFACE_H
 #define BLUETOOTH_HFP_MOCK_INTERFACE_H
 
+#include <memory>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "bluetooth_hfp_interface.h"
@@ -35,14 +36,36 @@ public:
     MOCK_METHOD1(CloseVoiceRecognition, int32_t(const BluetoothRemoteDevice &));
     MOCK_METHOD1(SetActiveDevice, int32_t(const BluetoothRemoteDevice &));
 
-    static BluetoothHfpMockInterface mockInterface_;
+    MOCK_METHOD1(RegisterObserver, void(std::shared_ptr<HandsFreeAudioGatewayObserver>));
+    MOCK_METHOD1(DeregisterObserver, void(std::shared_ptr<HandsFreeAudioGatewayObserver>));
+    MOCK_METHOD1(GetDevicesByStates, std::vector<BluetoothRemoteDevice>(std::vector<int>));
+    MOCK_METHOD1(GetVirtualDeviceList, void(std::vector<std::string> &));
+    MOCK_METHOD0(GetActiveDevice, BluetoothRemoteDevice());
+    MOCK_METHOD1(Connect, int32_t(const BluetoothRemoteDevice &));
+    MOCK_METHOD1(IsInbandRingingEnabled, int32_t(bool &));
+
+    int32_t GetLastError() override
+    {
+        return 0;
+    }
+
+    std::string GetLastOpration() override
+    {
+        return "";
+    }
+
+    static std::shared_ptr<BluetoothHfpMockInterface> mockInterface_;
 };
 
-BluetoothHfpMockInterface BluetoothHfpMockInterface::mockInterface_;
+std::shared_ptr<BluetoothHfpMockInterface> BluetoothHfpMockInterface::mockInterface_ = nullptr;
 
 BluetoothHfpInterface &BluetoothHfpInterface::GetInstance()
 {
-    return BluetoothHfpMockInterface::mockInterface_;
+    if (BluetoothHfpMockInterface::mockInterface_ == nullptr) {
+        static BluetoothHfpMockInterface defaultInterface;
+        return defaultInterface;
+    }
+    return *(BluetoothHfpMockInterface::mockInterface_.get());
 }
 }
 }
