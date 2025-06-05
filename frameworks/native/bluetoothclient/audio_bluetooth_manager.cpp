@@ -661,7 +661,7 @@ bool AudioHfpManager::IsVirtualCall()
 {
     std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
     for (const auto &it : virtualCalls_) {
-        if (!it.second && (virtualCallUids_.find(uid) != virtualCallUids_.end())) {
+        if (!it.second && (virtualCallUids_.find(it.first) != virtualCallUids_.end())) {
             AUDIO_INFO_LOG("not virtual call for uid %{public}d", it.first);
             return false;
         }
@@ -750,7 +750,7 @@ void AudioHfpListener::WriteScoOprFaultEvent()
         "SCENE", static_cast<uint8_t>(scene_.load()),
         "SCO_MODE", static_cast<uint8_t>(BluetoothScoManager::GetInstance().GetAudioScoCategory()),
         "AUDIO_SCO_STATE", static_cast<uint8_t>(BluetoothScoManager::GetInstance().GetAudioScoState()),
-        "RET", static_cast<uint8_t>(BluetoothScoManager::GetInstance().GetLastError()));
+        "RET", static_cast<uint8_t>(BluetoothHfpInterface::GetInstance().GetLastError()));
     if (ret) {
         AUDIO_ERR_LOG("write event fail: SCO_STATE_AUDIO, ret = %{public}d", ret);
     }

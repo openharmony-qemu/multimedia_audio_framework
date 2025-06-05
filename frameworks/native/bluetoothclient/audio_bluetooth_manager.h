@@ -154,8 +154,8 @@ private:
     static ScoCategory JudgeScoCategory();
     static int32_t TryUpdateScoCategory();
     static void DisconnectScoForDevice(const BluetoothRemoteDevice &device);
-    static int32_t DisconnectScoWrapper()
-    static void WriteScoOprFaultEvent()
+    static int32_t DisconnectScoWrapper();
+    static void WriteScoOprFaultEvent();
 
 private:
     static std::shared_ptr<AudioHfpListener> hfpListener_;

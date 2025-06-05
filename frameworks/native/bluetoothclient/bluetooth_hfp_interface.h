@@ -35,7 +35,7 @@ public:
     virtual int32_t CloseVoiceRecognition(const BluetoothRemoteDevice &device) = 0;
     virtual int32_t SetActiveDevice(const BluetoothRemoteDevice &device) = 0;
 
-    virtual void void RegisterObserver(std::shared_ptr<HandsFreeAudioGatewayObserver> observer) = 0;
+    virtual void RegisterObserver(std::shared_ptr<HandsFreeAudioGatewayObserver> observer) = 0;
     virtual void DeregisterObserver(std::shared_ptr<HandsFreeAudioGatewayObserver> observer) = 0;
     virtual std::vector<BluetoothRemoteDevice> GetDevicesByStates(std::vector<int> states) = 0;
     virtual void GetVirtualDeviceList(std::vector<std::string> &devices) = 0;

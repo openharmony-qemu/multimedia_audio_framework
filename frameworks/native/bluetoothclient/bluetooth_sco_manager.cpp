@@ -23,6 +23,7 @@
 #include "audio_utils.h"
 #include "bluetooth_device_utils.h"
 #include "bluetooth_hfp_interface.h"
+#include "hisysevent.h"
 
 namespace OHOS {
 namespace Bluetooth {

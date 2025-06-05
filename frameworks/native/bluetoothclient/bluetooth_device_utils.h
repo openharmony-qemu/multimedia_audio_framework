@@ -16,6 +16,7 @@
 #ifndef BLUETOOTH_DEVICE_UTILS_H
 #define BLUETOOTH_DEVICE_UTILS_H
 
+#include <string>
 #include "bluetooth_device.h"
 
 namespace OHOS {

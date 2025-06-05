@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const int WAIT_TIMEOUT_IN_SECS = 5;
+const uint32_t WAIT_TIMEOUT_IN_SECS = 5;
 
 class AudioTimer {
 public:
