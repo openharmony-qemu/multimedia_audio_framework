@@ -39,7 +39,7 @@ struct HpaeRenderSessionInfo {
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
     bool isMoveAble = true;
-    ProcessClusterOperation ProcessClusterDecision = NO_NEED_TO_CREATE_PROCESSCLUSTER;
+    ProcessClusterOperation processClusterDecision = NO_NEED_TO_CREATE_PROCESSCLUSTER;
 };
 
 struct HpaeSinkInputInfo {

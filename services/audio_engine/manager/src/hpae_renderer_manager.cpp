@@ -841,8 +841,8 @@ int32_t HpaeRendererManager::SetAudioEffectMode(uint32_t sessionId, int32_t effe
         HpaeNodeInfo &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
         if (nodeInfo.effectInfo.effectMode != static_cast<AudioEffectMode>(effectMode)) {
             nodeInfo.effectInfo.effectMode = static_cast<AudioEffectMode>(effectMode);
-            if (sessionNodeMap_[sessionId].ProcessClusterDecision != USE_NONE_PROCESSCLUSTER) {
-                sessionNodeMap_[sessionId].ProcessClusterDecision = (nodeInfo.effectInfo.effectMode == EFFECT_NONE)
+            if (sessionNodeMap_[sessionId].processClusterDecision != USE_NONE_PROCESSCLUSTER) {
+                sessionNodeMap_[sessionId].processClusterDecision = (nodeInfo.effectInfo.effectMode == EFFECT_NONE)
                 ? USE_NONE_PROCESSCLUSTER : NO_NEED_TO_CREATE_PROCESSCLUSTER;
             }
             size_t sinkInputNodeConnectNum = sinkInputNodeMap_[sessionId]->GetOutputPort()->GetInputNum();
@@ -1023,7 +1023,7 @@ void HpaeRendererManager::UpdateProcessClusterConnection(uint32_t sessionId, int
         return;
     }
 
-    if (sessionNodeMap_[sessionId].ProcessClusterDecision == USE_NONE_PROCESSCLUSTER) {
+    if (sessionNodeMap_[sessionId].processClusterDecision == USE_NONE_PROCESSCLUSTER) {
         DisConnectProcessCluster(sessionId, sceneType);
         ConnectProcessCluster(sessionId, HPAE_SCENE_EFFECT_NONE);
     } else {
