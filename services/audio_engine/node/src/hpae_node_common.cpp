@@ -122,10 +122,12 @@ std::string ConvertStreamManagerState2Str(StreamManagerState state)
     return g_streamMgrStateToStrMap[state];
 }
 
-HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType)
+HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType, bool isCollaborationEnabled)
 {
     if (g_streamTypeToSceneTypeMap.find(streamType) == g_streamTypeToSceneTypeMap.end()) {
         return HPAE_SCENE_EFFECT_NONE;
+    } else if (streamType == STREAM_MUSIC || streamType == STREAM_MOVIE) {
+        return HPAE_SCENE_COLLABORATIVE;
     } else {
         return g_streamTypeToSceneTypeMap[streamType];
     }
@@ -159,6 +161,7 @@ bool CheckSceneTypeNeedMicRef(HpaeProcessorType processorType)
     return g_processorTypeNeedMicRefSet.find(processorType) != g_processorTypeNeedMicRefSet.end();
 }
 
+// todo change effectsceneType
 static std::unordered_map<HpaeProcessorType, std::string> g_processorTypeToEffectSceneTypeMap = {
     {HPAE_SCENE_DEFAULT, "HPAE_SCENE_DEFAULT"},
     {HPAE_SCENE_OTHERS, "SCENE_OTHERS"},
@@ -167,7 +170,8 @@ static std::unordered_map<HpaeProcessorType, std::string> g_processorTypeToEffec
     {HPAE_SCENE_MOVIE, "SCENE_MOVIE"},
     {HPAE_SCENE_SPEECH, "SCENE_SPEECH"},
     {HPAE_SCENE_RING, "SCENE_RING"},
-    {HPAE_SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"}};
+    {HPAE_SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"},
+    {HPAE_SCENE_COLLABORATIVE, "SCENE_COLLABORATIVE"}};
 
 std::string TransProcessorTypeToSceneType(HpaeProcessorType processorType)
 {

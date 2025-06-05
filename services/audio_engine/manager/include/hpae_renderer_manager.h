@@ -29,6 +29,7 @@
 #include "hpae_msg_channel.h"
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_renderer_manager.h"
+#include "hpae_co_buffer_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -90,6 +91,10 @@ public:
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
 
+    int32_t UpdateCollaborationState(bool isCollaborationEnabled) override;
+    std::shared_ptr<HpaeCoBufferNode> GetCoBufferNode() override;
+    int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
+    int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();
@@ -134,6 +139,8 @@ private:
     HpaeSinkInfo sinkInfo_;
     std::unordered_map<HpaeProcessorType, int32_t> sceneTypeToProcessClusterCountMap_;
     std::vector<int32_t> appsUid_;
+    std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
+    bool isCollaborationEnabled_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
