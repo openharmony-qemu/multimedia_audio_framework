@@ -1425,7 +1425,7 @@ CapturerState AudioCoreService::HandleStreamStatusToCapturerState(AudioStreamSta
 {
     switch (status) {
         case STREAM_STATUS_NEW:
-            return CAPTURER_PREPARED;
+            return CAPTURER_INVALID;
         case STREAM_STATUS_STARTED:
             return CAPTURER_PREPARED;
         case STREAM_STATUS_PAUSED:
