@@ -26,7 +26,7 @@ typedef struct {
 typedef struct {
     std::vector<HpaeSinkSourceInfo> sinkInfos;
     std::vector<HpaeSinkSourceInfo> sourceInfos;
-}
+} HpaeDeviceInfo;
 
 class AudioServiceHpaeDumpCallback {
 public:

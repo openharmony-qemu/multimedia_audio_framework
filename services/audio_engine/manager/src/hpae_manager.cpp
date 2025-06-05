@@ -443,7 +443,7 @@ void HpaeManager::DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo)
                 HpaeSinkSourceInfo{rendererPair.first, rendererPair.second->GetDeviceHDFDumpInfo()});
         }
         devicesInfo.sourceInfos.clear();
-        for (auto capturerPair : rendererManagerMap_) {
+        for (auto capturerPair : capturerManagerMap_) {
             devicesInfo.sourceInfos.emplace_back(
                 HpaeSinkSourceInfo{capturerPair.first, capturerPair.second->GetDeviceHDFDumpInfo()});
         }

@@ -221,28 +221,28 @@ void AudioServerHpaeDump::HDFModulesDump(std::string &dumpString)
         return;
     }
     
-    dumpHpaeSourceInfo_ += "\nHDF Input Modules\n";
-    AppendFormat(dumpHpaeSourceInfo_, "- %zu HDF Input Modules (s) available:\n", devicesInfo_.sourceInfos.size());
+    dumpHdfModulesInfo_ += "\nHDF Input Modules\n";
+    AppendFormat(dumpHdfModulesInfo_, "- %zu HDF Input Modules (s) available:\n", devicesInfo_.sourceInfos.size());
 
     for (auto it = devicesInfo_.sourceInfos.begin(); it != devicesInfo_.sourceInfos.end(); it++) {
         HpaeSinkSourceInfo &sourceInfo = *it;
-        AppendFormat(dumpHpaeSourceInfo_, "  Module %d\n", it - devicesInfo_.sourceInfos.begin() + 1);
-        AppendFormat(dumpHpaeSourceInfo_, "  - Module Name: %s\n", (sourceInfo.deviceName).c_str());
-        AppendFormat(dumpHpaeSourceInfo_, "  - Module Configuration: %s\n\n", sourceInfo.config.c_str());
+        AppendFormat(dumpHdfModulesInfo_, "  Module %d\n", it - devicesInfo_.sourceInfos.begin() + 1);
+        AppendFormat(dumpHdfModulesInfo_, "  - Module Name: %s\n", (sourceInfo.deviceName).c_str());
+        AppendFormat(dumpHdfModulesInfo_, "  - Module Configuration: %s\n\n", sourceInfo.config.c_str());
     }
 
-    dumpHpaeSourceInfo_ += "HDF Output Modules\n";
-    AppendFormat(dumpHpaeSourceInfo_, "- %zu HDF Output Modules (s) available:\n", devicesInfo_.sinkInfos.size());
+    dumpHdfModulesInfo_ += "HDF Output Modules\n";
+    AppendFormat(dumpHdfModulesInfo_, "- %zu HDF Output Modules (s) available:\n", devicesInfo_.sinkInfos.size());
 
     for (auto it = devicesInfo_.sinkInfos.begin(); it != devicesInfo_.sinkInfos.end(); it++) {
         HpaeSinkSourceInfo &sinkInfo = *it;
-        AppendFormat(dumpHpaeSourceInfo_, "  Module %d\n", it - devicesInfo_.sinkInfos.begin() + 1);
-        AppendFormat(dumpHpaeSourceInfo_, "  - Module Name: %s\n", (sinkInfo.deviceName).c_str());
-        AppendFormat(dumpHpaeSourceInfo_, "  - Module Configuration: %s\n\n", sinkInfo.config.c_str());
+        AppendFormat(dumpHdfModulesInfo_, "  Module %d\n", it - devicesInfo_.sinkInfos.begin() + 1);
+        AppendFormat(dumpHdfModulesInfo_, "  - Module Name: %s\n", (sinkInfo.deviceName).c_str());
+        AppendFormat(dumpHdfModulesInfo_, "  - Module Configuration: %s\n\n", sinkInfo.config.c_str());
     }
 
-    AUDIO_INFO_LOG("HDFModulesDump : \n%{public}s end", dumpHpaeSourceInfo_.c_str());
-    dumpString += dumpHpaeSourceInfo_;
+    AUDIO_INFO_LOG("HDFModulesDump : \n%{public}s end", dumpHdfModulesInfo_.c_str());
+    dumpString += dumpHdfModulesInfo_;
 }
 
 void AudioServerHpaeDump::OnDumpAllAvailableDeviceCb(int32_t result)
