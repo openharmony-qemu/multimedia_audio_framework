@@ -59,32 +59,17 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
     result = ringCache_->Enqueue(bufferWrap);
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
     if (enququeFlag_ == EnqueueFlag::FIRST_FRAME) {
+        enqueueFlag_ == EnqueueFlag::SECOND_FRAME;
+    } else if(enqueueFlag_ == EnqueueFlag::SECOND_FRAME) {
         enqueueRunning_.store(true);
         enqueueRunningCond_.notify_all();
-        enqueueFlag_ = EnqueueFlag::SECOND_FRAME;
+        enqueueFlag_ = EnqueueFlag::OTHER_FRAME;
     }
 }
 
 void HpaeCoBufferNode::DoProcess()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    // if (processFlag_ == ProcessFalg::FIRST_FRAME) {
-    //     processFlag_ = ProcessFalg::SECOND_FRAME;
-    //     renderTimer_.Start();
-    // } else if (processFlag_ == ProcessFalg::SECOND_FRAME) {
-    //     processFlag_ = ProcessFalg::OTHER_FRAME;
-    //     renderTimer_.Stop();
-    //     std::chrono::milliseconds sleepTime = std::chrono::milliseconds(latency_) -
-    //         std::chrono::milliseconds(renderTimer_.Elapsed());
-    //     if (sleepTime.count() > 0) {
-    //         AUDIO_INFO_LOG("Sleep for %{public}lld ms", sleepTime.count());
-    //         std::this_thread::sleep_for(sleepTime);
-    //     } else {
-    //         AUDIO_WARNING_LOG("Sleep time is %{public}lld ms, latency is %{public}lu ms",
-    //             sleepTime.count(), latency_);
-    //     }
-    // }
-
     if (processFlag_ == ProcessFalg::FIRST_FRAME) {
         processFlag_ = ProcessFalg::SECOND_FRAME;
     } else if (processFlag_ == ProcessFalg::SECOND_FRAME) {
@@ -166,6 +151,8 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
     SetNodeInfo(nodeInfo);
     inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
     processFlag_ = ProcessFalg::FIRST_FRAME;
+    enqueueFlag_ = ProcessFalg::FIRST_FRAME;
+    enqueueRunning_.store(false);
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeCoBufferNodeInput_id_" + std::to_string(GetNodeId()) + ".pcm");
@@ -214,10 +201,6 @@ void HpaeCoBufferNode::SetLatency(uint32_t latency)
     //     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
     //     offset += DEFAULT_FRAME_LEN_MS;
     // }
-
-    processFlag_ = ProcessFalg::FIRST_FRAME;
-    enqueueFlag_ = ProcessFalg::FIRST_FRAME;
-    enqueueRunning_.store(false);
     latency_ = static_cast<uint64_t>(latency - DEFAULT_SINK_LATENCY);
 }
 }  // namespace HPAE
