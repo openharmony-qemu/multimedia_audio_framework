@@ -681,9 +681,9 @@ static void  SplitPaSinkRenderInto(pa_sink *s, pa_memchunk *target, char *stream
     size_t length;
     size_t blockSizeMax;
 
+    CHECK_AND_RETURN_LOG(s != NULL, "s si null");
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
-    CHECK_AND_RETURN_LOG(s != NULL, "s si null");
     CHECK_AND_RETURN_LOG(target != NULL, "target si null");
     pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
     pa_assert(pa_frame_aligned(target->length, &s->sample_spec));
