@@ -47,7 +47,7 @@ public:
     int32_t Release(uint32_t sessionId) override;
     int32_t MoveStream(uint32_t sessionId, const std::string& sourceName) override;
     int32_t MoveAllStream(const std::string& sourceName, const std::vector<uint32_t>& sessionIds,
-        MOVE_SESSION_TYPE moveType = MOVE_ALL) override;
+        MoveSessionType moveType = MOVE_ALL) override;
     int32_t SetMute(bool isMute) override;
     void Process() override;
     void HandleMsg() override;
@@ -88,7 +88,7 @@ private:
     int32_t InitCapturer();
     void AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect = true);
     void MoveAllStreamToNewSource(const std::string &sourceName,
-        const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType);
+        const std::vector<uint32_t>& moveIds, MoveSessionType moveType);
     int32_t CaptureEffectCreate(const HpaeProcessorType &sceneType, const AudioEnhanceScene &enhanceScene);
     int32_t CaptureEffectRelease(const HpaeProcessorType &sceneType);
     int32_t InitCapturerManager();
@@ -96,12 +96,12 @@ private:
     int32_t CapturerSourceStart();
     int32_t CapturerSourceStop();
     void CheckIfAnyStreamRunning();
+    void UpdateAppsUidAndSessionId();
 
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> sessionNodeMap_;
-    std::unordered_map<uint32_t, HpaeStreamInfo> streamInfoMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeSourceProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSourceOutputNode>> sourceOutputNodeMap_;
     std::unordered_map<HpaeSourceInputNodeType, std::shared_ptr<HpaeSourceInputCluster>> sourceInputClusterMap_;
@@ -112,6 +112,9 @@ private:
     HpaeSourceInfo sourceInfo_;
     uint32_t captureId_ = 0;
     uint32_t renderId_ = 0;
+
+    std::vector<int32_t> appsUid_;
+    std::vector<int32_t> sessionsId_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

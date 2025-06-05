@@ -22,6 +22,7 @@
 #include <parcel.h>
 
 #include "audio_source_type.h"
+#include "timestamp.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -577,7 +578,8 @@ public:
         return parcel.WriteInt32(static_cast<int32_t>(samplingRate))
             && parcel.WriteInt32(static_cast<int32_t>(encoding))
             && parcel.WriteInt32(static_cast<int32_t>(format))
-            && parcel.WriteInt32(static_cast<int32_t>(channels));
+            && parcel.WriteInt32(static_cast<int32_t>(channels))
+            && parcel.WriteInt64(static_cast<int64_t>(channelLayout));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -585,6 +587,7 @@ public:
         encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         channels = static_cast<AudioChannel>(parcel.ReadInt32());
+        channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
     }
 };
 
@@ -597,23 +600,23 @@ struct AudioStreamData {
 };
 
 struct AudioCallBackStreamInfo {
-    uint64_t framePosition;
-    uint64_t framesWritten;
-    uint64_t timestamp;
+    uint64_t framePosition = 0;
+    uint64_t framesWritten = 0;
+    std::vector<uint64_t> timestamp = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency = 0;
-    int8_t *inputData;
-    size_t requestDataLen;
+    int8_t *inputData = nullptr;
+    size_t requestDataLen = 0;
     std::string deviceClass;
     std::string deviceNetId;
-    bool needData;
+    bool needData = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {
-    uint64_t framesRead;
-    uint64_t timestamp;
+    uint64_t framesRead = 0;
+    uint64_t timestamp = 0;
     uint64_t latency = 0;
-    int8_t *outputData;
-    size_t requestDataLen;
+    int8_t *outputData = nullptr;
+    size_t requestDataLen = 0;
 };
 
 struct AudioChannelInfo {

@@ -180,7 +180,7 @@ void AudioEndpointSeparate::InitSinkAttr(IAudioSinkAttr &attr, const AudioDevice
     attr.adapterName = isDefaultAdapterEnable ? "dp" : "primary";
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
-    attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
+    attr.format = dstStreamInfo_.format; // SAMPLE_S16LE = 1
     attr.deviceNetworkId = deviceInfo.networkId_.c_str();
     attr.deviceType = static_cast<int32_t>(deviceInfo.deviceType_);
 }
@@ -248,7 +248,8 @@ int32_t AudioEndpointSeparate::GetAdapterBufferInfo(const AudioDeviceDescriptor 
 
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "%{public}s fast sink is null.", __func__);
-    ret = sink->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
+    ret = sink->GetMmapBufferInfo(dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
+        syncInfoSize_);
     if (ret != SUCCESS || dstBufferFd_ == -1 || dstTotalSizeInframe_ == 0 || dstSpanSizeInframe_ == 0 ||
         dstByteSizePerFrame_ == 0) {
         AUDIO_ERR_LOG("%{public}s get mmap buffer info fail, ret %{public}d, dstBufferFd %{public}d, \

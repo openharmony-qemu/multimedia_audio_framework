@@ -742,6 +742,8 @@ AudioPortPin AudioRenderSink::GetAudioPortPin(void) const noexcept
             return PIN_OUT_BLUETOOTH_SCO;
         case DEVICE_TYPE_USB_HEADSET:
             return PIN_OUT_USB_EXT;
+        case DEVICE_TYPE_HDMI:
+             return PIN_OUT_HDMI;
         case DEVICE_TYPE_NONE:
             return PIN_NONE;
         default:
@@ -880,7 +882,7 @@ int32_t AudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     int32_t ret = deviceManager->SetOutputRoute(adapterNameCase_, outputDevices,
-        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY), currentAudioScene_);
     return ret;
 }
 

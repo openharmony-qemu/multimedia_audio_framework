@@ -40,14 +40,17 @@ namespace AudioStandard {
 const int32_t MIN_BUFFER_SIZE = 2;
 const int32_t FRAME_LEN_10MS = 2;
 const int32_t TENMS_PER_SEC = 100;
+static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
-HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isCallbackMode)
+HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
     spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / TENMS_PER_SEC);
-    byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
+    byteSizePerFrame_ = (processConfig.streamInfo.channels *
+        static_cast<size_t>((processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
     isCallbackMode_ = isCallbackMode;
+    isMoveAble_ = isMoveAble;
     if (!isCallbackMode_) {
         InitRingBuffer();
     }
@@ -55,6 +58,9 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
     AUDIO_DEBUG_LOG("~HpaeRendererStreamImpl");
+    if (dumpEnqueueIn_ != nullptr) {
+        DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
+    }
 }
 
 int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
@@ -74,6 +80,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
+    effectMode_ = processConfig_.rendererInfo.effectMode;
     streamInfo.effectInfo.effectMode = (effectMode_ != EFFECT_DEFAULT && effectMode_ != EFFECT_NONE) ? EFFECT_DEFAULT :
         static_cast<AudioEffectMode>(effectMode_);
     const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
@@ -83,6 +90,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.effectInfo.streamUsage = processConfig_.rendererInfo.streamUsage;
     streamInfo.sourceType = processConfig_.isInnerCapturer == true ? SOURCE_TYPE_PLAYBACK_CAPTURE : SOURCE_TYPE_INVALID;
     streamInfo.deviceName = deviceName;
+    streamInfo.isMoveAble = isMoveAble_;
     AUDIO_INFO_LOG("InitParams channels %{public}u  end", streamInfo.channels);
     AUDIO_INFO_LOG("InitParams channelLayout %{public}" PRIu64 " end", streamInfo.channelLayout);
     AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.samplingRate);
@@ -107,6 +115,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
 int32_t HpaeRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Start");
+    ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Start is error");
@@ -186,16 +195,27 @@ int32_t HpaeRendererStreamImpl::GetStreamFramesWritten(uint64_t &framesWritten)
 int32_t HpaeRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
-    timestamp = timestamp_;
+    timestamp = timestamp_[Timestamp::Timestampbase::MONOTONIC];
     return SUCCESS;
 }
 
-int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
+int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp,
+    uint64_t &latency, int32_t base)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     framePosition = framePosition_;
-    timestamp = timestamp_;
+    timestamp = base >= 0 && base < Timestamp::Timestampbase::BASESIZE ?
+        timestamp_[base] :
+        timestamp_[Timestamp::Timestampbase::MONOTONIC];
     latency = latency_;
+    if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
+        uint32_t SinkLatency = 0;
+        std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
+        if (audioRendererSink) {
+            audioRendererSink->GetLatency(SinkLatency);
+        }
+        latency = SinkLatency + latency_;
+    }
     return SUCCESS;
 }
 
@@ -203,7 +223,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
 int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
-    if (deviceClass_ != "offload") {
+    if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
         uint32_t SinkLatency = 0;
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
@@ -212,10 +232,8 @@ int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
         latency = SinkLatency + latency_;
         return SUCCESS;
     }
-    timespec tm {};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    auto timestamp = static_cast<uint64_t>(tm.tv_sec) * 1000000000ll + static_cast<uint64_t>(tm.tv_nsec);
-    auto interval = (timestamp - timestamp_) / 1000;
+    auto timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
+    auto interval = (timestamp - timestamp_[Timestamp::Timestampbase::MONOTONIC]) / 1000;
     latency = latency_ > interval ? latency_ - interval : 0;
     AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}" PRIu64 ", \
         interval %{public}llu latency %{public}" PRIu64, latency_, interval, latency);
@@ -323,6 +341,7 @@ int32_t HpaeRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         AUDIO_ERR_LOG("Enqueue buffer failed, ret:%{public}d size:%{public}zu", result.ret, result.size);
         return ERROR;
     }
+    DumpFileUtil::WriteDumpFile(dumpEnqueueIn_, bufferDesc.buffer, writeSize);
     return writeSize; // success return written in length
 }
 
@@ -367,12 +386,21 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
 
 int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
 {
-    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance("offload", "");
+    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(DEVICE_CLASS_OFFLOAD, "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
     return audioRendererSinkInstance->SetVolume(volume, volume);
+}
+
+int32_t HpaeRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)
+{
+    AUDIO_INFO_LOG("SetOffloadDataCallbackState state: %{public}d", state);
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
+    return IHpaeManager::GetHpaeManager().SetOffloadRenderCallbackType(processConfig_.originalSessionId, state);
 }
 
 int32_t HpaeRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -432,6 +460,7 @@ int32_t HpaeRendererStreamImpl::UnsetOffloadMode()
 {
     offloadEnable_ = false;
     SyncOffloadMode();
+    IHpaeManager::GetHpaeManager().SetOffloadPolicy(processConfig_.originalSessionId, OFFLOAD_DEFAULT);
     return SUCCESS;
 }
 
@@ -483,14 +512,21 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 
 void HpaeRendererStreamImpl::InitRingBuffer()
 {
-    size_t bufferSize = MIN_BUFFER_SIZE * spanSizeInFrame_ * byteSizePerFrame_;
+    uint32_t maxLength = 20; // 20 for dup and dual play, only for enqueue buffer
+    size_t bufferSize = maxLength * spanSizeInFrame_ * byteSizePerFrame_;
     AUDIO_INFO_LOG("bufferSize: %{public}zu, spanSizeInFrame: %{public}zu, byteSizePerFrame: %{public}zu,"
-        "maxLength:%{public}u", bufferSize, spanSizeInFrame_, byteSizePerFrame_, MIN_BUFFER_SIZE);
+        "maxLength:%{public}u", bufferSize, spanSizeInFrame_, byteSizePerFrame_, maxLength);
     // create ring buffer
     ringBuffer_ = AudioRingCache::Create(bufferSize);
     if (ringBuffer_ == nullptr) {
         AUDIO_ERR_LOG("Create ring buffer failed!");
     }
+
+    std::string dumpEnqueueInFileName = std::to_string(processConfig_.originalSessionId) + "_dual_in_" +
+        std::to_string(processConfig_.streamInfo.samplingRate) + "_" +
+        std::to_string(processConfig_.streamInfo.channels) + "_" +
+        std::to_string(processConfig_.streamInfo.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpEnqueueInFileName, &dumpEnqueueIn_);
 }
 
 int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen)

@@ -24,6 +24,7 @@
 #include <unordered_map>
 
 #include "parcel.h"
+#include "audio_stutter.h"
 #include "audio_device_descriptor.h"
 #include "audio_stream_change_info.h"
 #include "audio_interrupt_callback.h"
@@ -305,6 +306,15 @@ public:
 
     virtual int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) = 0;
 };
+
+
+class AudioRendererDataTransferStateChangeCallback {
+public:
+    virtual ~AudioRendererDataTransferStateChangeCallback() = default;
+
+    virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
+};
+
 
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
@@ -978,6 +988,28 @@ public:
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
+     * @brief registers the renderer data transfer callback listener
+     *
+     * @param param {@link DataTransferMonitorParam}
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t RegisterRendererDataTransferCallback(const DataTransferMonitorParam &param,
+        const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the renderer data transfer callback listener
+     *
+     * @param param {@link DataTransferMonitorParam}
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t UnregisterRendererDataTransferCallback(
+        const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback);
+
+    /**
      * @brief Set mono audio state
      *
      * @param monoState mono state
@@ -1254,6 +1286,15 @@ public:
      * @since 11
      */
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
+
+    /**
+     * @brief Set the absolute volume value for the specified Nearlink device
+     *
+     * @return Returns success or not
+     */
+    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+        const int32_t volume, const bool updateUi);
+
     /**
      * @brief Registers the availbale deviceChange callback listener.
      *
@@ -1398,6 +1439,16 @@ public:
     int32_t SetVoiceRingtoneMute(bool isMute);
 
     /**
+     * @brief Set foreground list.
+     *
+     * @param list The foreground list.
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
+     * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
+     */
+    int32_t SetForegroundList(std::vector<std::string> list);
+
+    /**
     * @brief Get standby state.
     *
     * @param sessionId Specifies which stream to be check.
@@ -1469,7 +1520,6 @@ public:
     int32_t OnVoiceWakeupState(bool state);
 
     uint16_t GetDmDeviceType() const;
-
     /**
      * @brief Get the maximum volume level for the specified stream usage.
      *
@@ -1527,6 +1577,99 @@ public:
      */
     int32_t UnregisterStreamVolumeChangeCallback(const int32_t clientPid,
         const std::shared_ptr<StreamVolumeChangeCallback> &callback = nullptr);
+
+    /**
+    * @brief create audio workgroup
+    *
+    * @return Returns id of workgroup. id < 0 if failed.
+    * @test
+    */
+    int32_t CreateAudioWorkgroup();
+ 
+    /**
+    * @brief release audio workgroup.
+    *
+    * @param workgroupId audio workgroup id.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t ReleaseAudioWorkgroup(int32_t workgroupId);
+ 
+    /**
+    * @brief add thread to audio workgroup.
+    *
+    * @param workgroupId workgroupId audio workgroup id.
+    * @param tokenId the thread id of add workgroupId.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t AddThreadToGroup(int32_t workgroupId, int32_t tokenId);
+ 
+    /**
+    * @brief remove thread to audio workgroup.y
+    *
+    * @param workgroupId workgroupId audio workgroup id.
+    * @param tokenId the thread id of remove workgroupId.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId);
+ 
+    /**
+    * @brief the deadline workgroup starts to take effect.
+    *
+    * @param workgroupId workgroupId audio workgroup id.
+    * @param startTime timestamp when the deadline task starts to be executed.
+    * @param deadlineTime complete a periodic task within the time specified by deadlineTime.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime);
+ 
+    /**
+    * @brief stop the deadline workgroup.
+    *
+    * @param workgroupId workgroupId audio workgroup id.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t StopGroup(int32_t workgroupId);
+
+    /**
+    * @brief get volume event from register callback.
+    *
+    * @return Returns std::unordered_map<AudioStreamType, VolumeEvent>.
+    * @test
+    */
+    std::unordered_map<AudioStreamType, VolumeEvent> GetVolumeEvent();
+ 
+    /**
+    * @brief set latest volume event when callback.
+    *
+    * @param type audio stream type.
+    * @param event volume event.
+    * @test
+    */
+    void SetVolumeEvent(AudioStreamType type, VolumeEvent event);
+ 
+    /**
+    * @brief get renderer change info from register callback.
+    *
+    * @return Returns std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>.
+    * @test
+    */
+    std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
+        GetAudioRendererChangeInfo();
+ 
+    /**
+    * @brief set latest renderer change info when callback.
+    *
+    * @param type audio stream type.
+    * @param info renderer change info.
+    * @test
+    */
+    void SetAudioRendererChangeInfo(AudioStreamType type, std::shared_ptr<AudioStandard::AudioRendererChangeInfo> info);
+
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:
@@ -1585,6 +1728,39 @@ private:
     std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;
 
     std::shared_ptr<WakeUpCallbackImpl> remoteWakeUpCallback_;
+
+    bool IsValidStreamType(AudioStreamType type);
+    bool IsValidToStartGroup();
+    void InitWorkgroupState();
+    class VolumeKeyEventCallbackImpl : public VolumeKeyEventCallback {
+    public:
+        VolumeKeyEventCallbackImpl() {};
+        ~VolumeKeyEventCallbackImpl() {};
+    private:
+        void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+    };
+ 
+    std::unordered_map<AudioStreamType, VolumeEvent> volumeEventMap_;
+    std::mutex volumeEventMutexMap_;
+    void AttachVolumeKeyEventListener();
+    void DetachVolumeKeyEventListener();
+    std::shared_ptr<VolumeKeyEventCallbackImpl> volumeKeyEventCallback_ = nullptr;
+ 
+    class AudioRendererStateChangeCallbackImpl : public AudioRendererStateChangeCallback {
+    public:
+        AudioRendererStateChangeCallbackImpl() {};
+        ~AudioRendererStateChangeCallbackImpl() {};
+    private:
+        void OnRendererStateChange(
+            const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+    };
+    
+    std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
+        audioRendererChangeInfoMap_;
+    std::mutex audioRendererChangeInfoMapMutex_;
+    void AttachAudioRendererEventListener();
+    void DetachAudioRendererEventListener();
+    std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioRendererStateChangeCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

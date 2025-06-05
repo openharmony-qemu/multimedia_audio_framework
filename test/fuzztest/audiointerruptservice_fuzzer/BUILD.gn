@@ -26,7 +26,7 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../frameworks/native/commcon/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../services/audio_policy/server/src/service/interrupt",
+    "../../../services/audio_policy/server/domain/interrupt/include",
     "../../../utils/system/safwk/native/include",
     "../../../../communication/bluetooth/interfaces/inner_api/include",
   ]

@@ -176,5 +176,19 @@ HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothSourceUnitTest_007, TestS
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
+/**
+ * @tc.name   : Test BluetoothSource API
+ * @tc.number : BluetoothSourceUnitTest_008
+ * @tc.desc   : Test bluetooth source set invalid state
+ */
+HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothSourceUnitTest_008, TestSize.Level1)
+{
+    EXPECT_TRUE(source_);
+    source_->SetInvalidState();
+    (void)source_->Init(attr_);
+    source_->DeInit();
+    EXPECT_FALSE(source_->IsInited());
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

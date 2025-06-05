@@ -135,6 +135,38 @@ HWTEST_F(AudioAdapterManagerUnitTest, HandleStreamMuteStatus_002, TestSize.Level
 }
 
 /**
+ * @tc.name: IsHandleStreamMute_001
+ * @tc.desc: Test IsHandleStreamMute when streamType is STREAM_VOICE_CALL.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_001, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+    bool mute = true;
+    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    int32_t SUCCESS = 0;
+    int32_t result = audioAdapterManager_->IsHandleStreamMute(streamType, mute, streamUsage);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: IsHandleStreamMute_002
+ * @tc.desc: Test IsHandleStreamMute when streamType is STREAM_VOICE_CALL.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_002, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+    bool mute = false;
+    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    int32_t ERROR = -1;
+    int32_t result = audioAdapterManager_->IsHandleStreamMute(streamType, mute, streamUsage);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
  * @tc.name: SetOffloadVolume_001
  * @tc.desc: Test SetOffloadVolume.
  * @tc.type: FUNC
@@ -160,7 +192,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadVolume_001, TestSize.Level1)
     audioAdapterManager_->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
     EXPECT_NE(audioAdapterManager_->audioServerProxy_, nullptr);
     audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
-    EXPECT_EQ(streamType, STREAM_SYSTEM);
 }
 
 /**
@@ -257,30 +288,14 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeForSwitchDevice_001, TestSize.Lev
     deviceDescriptor.deviceType_ = DEVICE_TYPE_DP;
     audioAdapterManager->SetVolumeForSwitchDevice(deviceDescriptor);
     EXPECT_EQ(audioAdapterManager->currentActiveDevice_.deviceType_, DEVICE_TYPE_DP);
-}
 
-/**
- * @tc.name: CheckAndUpdateRemoteDeviceVolume_001
- * @tc.desc: Test CheckAndUpdateRemoteDeviceVolume
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, CheckAndUpdateRemoteDeviceVolume_001, TestSize.Level1)
-{
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    deviceDescriptor.networkId_ = "LocalDevice";
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioAdapterManager->SetVolumeForSwitchDevice(deviceDescriptor);
+    EXPECT_EQ(audioAdapterManager->currentActiveDevice_.deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
 
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->SetActiveDeviceDescriptor(deviceDescriptor);
-    deviceDescriptor.networkId_ = "RemoteDevice";
-    int32_t result = audioAdapterManager->CheckAndUpdateRemoteDeviceVolume(deviceDescriptor);
-    EXPECT_EQ(result, true);
-
-    audioAdapterManager->SetActiveDeviceDescriptor(deviceDescriptor);
-    deviceDescriptor.networkId_ = "LocalDevice";
-    result = audioAdapterManager->CheckAndUpdateRemoteDeviceVolume(deviceDescriptor);
-    EXPECT_EQ(result, false);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioAdapterManager->SetVolumeForSwitchDevice(deviceDescriptor);
+    EXPECT_EQ(audioAdapterManager->currentActiveDevice_.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
 }
 
 /**

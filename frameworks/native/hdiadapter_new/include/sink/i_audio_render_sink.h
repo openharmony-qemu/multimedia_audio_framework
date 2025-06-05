@@ -88,12 +88,13 @@ public:
 
     virtual int32_t SetRenderEmpty(int32_t durationUs) SUCCESS_RET
     virtual void SetAddress(const std::string &address) {}
+    virtual void SetInvalidState(void) {}
 
     virtual void DumpInfo(std::string &dumpString) = 0;
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        uint32_t &byteSizePerFrame) NOT_SUPPORT_RET
+        uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) NOT_SUPPORT_RET
     virtual int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) NOT_SUPPORT_RET
 
     // offload extend function
@@ -101,6 +102,7 @@ public:
     virtual void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> callback) {}
     virtual void RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) {}
     virtual int32_t SetBufferSize(uint32_t sizeMs) NOT_SUPPORT_RET
+    virtual int32_t SetOffloadRenderCallbackType(RenderCallbackType type) NOT_SUPPORT_RET
     virtual int32_t LockOffloadRunningLock(void) NOT_SUPPORT_RET
     virtual int32_t UnLockOffloadRunningLock(void) NOT_SUPPORT_RET
 

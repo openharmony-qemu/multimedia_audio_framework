@@ -59,6 +59,7 @@ int32_t RemoteDeviceManager::LoadAdapter(const std::string &adapterName)
     CHECK_AND_RETURN_RET_LOG(adapters_.count(adapterName) == 0 || adapters_[adapterName] == nullptr, SUCCESS,
         "adapter %{public}s already loaded", adapterName.c_str());
 
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
     if (audioManager_ == nullptr || adapters_.size() == 0) {
         audioManager_ = nullptr;
         InitAudioManager();
@@ -94,11 +95,13 @@ int32_t RemoteDeviceManager::LoadAdapter(const std::string &adapterName)
 
 void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool force)
 {
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "audio manager is nullptr");
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    std::unique_lock<std::mutex> innerLock(wrapper->adapterMtx_);
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     CHECK_AND_RETURN_LOG(force || (wrapper->hdiRenderIds_.size() == 0 && wrapper->hdiCaptureIds_.size() == 0),
         "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu", adapterName.c_str(),
         wrapper->hdiRenderIds_.size(), wrapper->hdiCaptureIds_.size());
@@ -107,6 +110,8 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
         wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
     }
     audioManager_->UnloadAdapter(wrapper->adapterDesc_.adapterName);
+    wrapper->adapter_ = nullptr;
+    innerLock.unlock();
     std::lock_guard<std::mutex> lock(adapterMtx_);
     adapters_[adapterName].reset();
     adapters_.erase(adapterName);
@@ -165,7 +170,7 @@ int32_t RemoteDeviceManager::SetVoiceVolume(const std::string &adapterName, floa
 }
 
 int32_t RemoteDeviceManager::SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-    int32_t streamId)
+    int32_t streamId, AudioScene scene)
 {
     CHECK_AND_RETURN_RET_LOG(!devices.empty(), ERR_INVALID_PARAM, "invalid audio devices");
     DeviceType device = devices[0];

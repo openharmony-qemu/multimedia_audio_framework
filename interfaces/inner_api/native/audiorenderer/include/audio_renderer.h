@@ -145,6 +145,19 @@ public:
         const AudioStreamDeviceChangeReason reason) = 0;
 };
 
+class AudioRendererFastStatusChangeCallback {
+public:
+    virtual ~AudioRendererFastStatusChangeCallback() = default;
+
+    /**
+     * Called when the audio stream of an autio renderer changed.
+     *
+     *@param Audio device descriptors after change.
+     * since 20
+     */
+    virtual void OnFastStatusChange(FastStatus status) = 0;
+};
+
 class AudioRendererErrorCallback {
 public:
     virtual ~AudioRendererErrorCallback() = default;
@@ -601,6 +614,14 @@ public:
         const std::shared_ptr<RendererPeriodPositionCallback> &callback) = 0;
 
     /**
+     * @brief Set the audio renderer fast status change callback listener
+     *
+     * @since 20
+     */
+    virtual void SetFastStatusChangeCallback(
+        const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback) = 0;
+
+    /**
      * @brief Unregisters the renderer period position callback listener
      *
      * @since 8
@@ -649,6 +670,30 @@ public:
      * @since 8
      */
     static std::vector<AudioEncodingType> GetSupportedEncodingTypes();
+
+    /**
+     * @brief Do fade in for buffer.
+     * 
+     * @param buffer Indicates the buffer.
+     * @param format Indicates the format.
+     * @param channel Indicates the channel.
+     * 
+     * @return Returns {@link SUCCESS} or an error code defined in {@link audio_errors.h}.
+     * @since 8
+     */
+    static int32_t FadeInAudioBuffer(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel);
+
+    /**
+     * @brief Do fade out for buffer.
+     * 
+     * @param buffer Indicates the buffer.
+     * @param format Indicates the format.
+     * @param channel Indicates the channel.
+     * 
+     * @return Returns {@link SUCCESS} or an error code defined in {@link audio_errors.h}.
+     * @since 8
+     */
+    static int32_t FadeOutAudioBuffer(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel);
 
     /**
      * @brief Mute the buffer form (addr + offset) to (addr + offset + length). Make sure the buffer is valid!
@@ -978,6 +1023,8 @@ public:
      */
     virtual int32_t SetDefaultOutputDevice(DeviceType deviceType) { return 0; };
 
+    virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
+
     /**
      * @brief Mute audio rendering.
      *
@@ -1004,6 +1051,30 @@ public:
      * @since 15
      */
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
+
+    /**
+     * @brief only start data call back for offload by hdi state.
+     *
+     * @return Returns {@link SUCCESS} if the start data call back is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    virtual int32_t StartDataCallback() { return -1; };
+
+    /**
+     * @brief only stop data call back for offload by hdi state.
+     *
+     * @return Returns {@link SUCCESS} if the stop data call back is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    virtual int32_t StopDataCallback() { return -1; };
+
+    virtual void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
+    {
+        (void)callbackType;
+        return;
+    }
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

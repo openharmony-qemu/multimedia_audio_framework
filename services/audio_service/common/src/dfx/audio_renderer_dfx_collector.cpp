@@ -91,7 +91,7 @@ RenderDfxBuilder& RenderDfxBuilder::WriteStatMsg(const AudioProcessConfig &proce
         writeFrame, muteWriteFrame, dfxZerodataPercent, lastPlayduration);
 
     dfxInfo_.rendererStat = {processConfig.streamInfo.samplingRate, lastPlayduration, playStat.underFlowCnt,
-        processConfig.rendererInfo.originalFlag, dfxZerodataPercent};
+        processConfig.rendererInfo.originalFlag, dfxZerodataPercent, writeFrame};
     return *this;
 }
 

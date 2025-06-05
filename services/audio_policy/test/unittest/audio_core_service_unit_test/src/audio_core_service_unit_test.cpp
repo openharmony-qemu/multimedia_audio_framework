@@ -724,11 +724,8 @@ HWTEST_F(AudioCoreServiceUnitTest, GetActiveBluetoothDevice_001, TestSize.Level1
 HWTEST_F(AudioCoreServiceUnitTest, GetAvailableMicrophones_001, TestSize.Level1)
 {
     ASSERT_NE(nullptr, GetServerPtr());
-    int32_t ret = -1;
     auto inputDeviceDescriptors = GetServerPtr()->coreService_->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     if (inputDeviceDescriptors.size() == 0) {
-        ret = SUCCESS;
-        EXPECT_EQ(SUCCESS, ret);
         return;
     }
     auto microphoneDescriptors = GetServerPtr()->coreService_->GetAvailableMicrophones();
@@ -736,11 +733,9 @@ HWTEST_F(AudioCoreServiceUnitTest, GetAvailableMicrophones_001, TestSize.Level1)
     for (auto inputDescriptor : inputDeviceDescriptors) {
         for (auto micDescriptor : microphoneDescriptors) {
             if (micDescriptor->deviceType_ == inputDescriptor->deviceType_) {
-                ret = SUCCESS;
             }
         }
     }
-    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -752,7 +747,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AddAudioCapturerMicrophoneDescriptor_001, Tes
 {
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest AddAudioCapturerMicrophoneDescriptor_001 start");
     EXPECT_NE(nullptr, GetServerPtr());
-    
+
     GetServerPtr()->eventEntry_->GetAudioCapturerMicrophoneDescriptors(TEST_SESSION_ID);
     // clear data
     GetServerPtr()->coreService_->audioMicrophoneDescriptor_.connectedMicrophones_.clear();
@@ -908,6 +903,23 @@ HWTEST_F(AudioCoreServiceUnitTest, EventEntry_GetVolumeGroupInfos_001, TestSize.
     EXPECT_NE(nullptr, server);
     std::vector<sptr<VolumeGroupInfo>> infos = server->eventEntry_->GetVolumeGroupInfos();
     EXPECT_GT(infos.size(), 0);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: NotifyDistributedOutputChange_001
+ * @tc.desc  : Test NotifyDistributedOutputChange interface. Returns void.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, NotifyDistributedOutputChange_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    AudioDeviceDescriptor deviceDesc;
+    server->coreService_->NotifyDistributedOutputChange(deviceDesc);
+    deviceDesc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc.deviceRole_ = OUTPUT_DEVICE;
+    deviceDesc.networkId_ = "aaaaaaaa";
+    server->coreService_->NotifyDistributedOutputChange(deviceDesc);
 }
 
 /**

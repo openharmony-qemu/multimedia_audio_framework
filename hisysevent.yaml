@@ -196,6 +196,11 @@ JANK_PLAYBACK:
   POSITION: {type: UINT8, desc: jank position}
   APP_NAME: {type: STRING, desc: application name}
 
+STREAM_FREEZEN:
+  __BASE: {type: FAULT, level: CRITICAL, desc: audio stream freezen event}
+  APP_NAME: {type: STRING, desc: application name}
+  TIME_INTERVAL: {type: INT64, desc: check time interval}
+
 EXCLUDE_OUTPUT_DEVICE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: Exclude/Unexclude an audio output device}
   APP_NAME: {type: STRING, desc: application name who has excluded/unexcluded an audio output device}
@@ -228,3 +233,19 @@ HDF_AUDIO_ERROR_EVENT:
   ERROR_DESC: {type: STRING, desc: error descriptor}
   ERROR_CODE: {type: INT32, desc: error code}
   OVER_TIME: {type: INT32, desc: over time}
+
+SYSTEM_TONE_PLAYBACK:
+  __BASE: {type: BEHAVIOR, level: CRITICAL, desc: System sound plays event}
+  SYSTEM_SOUND_TYPE: {type: INT32, arrsize: 100, desc: configed sound type}
+  CLIENT_UID: {type: INT32, arrsize: 100, desc: client uid}
+  DEVICE_TYPE: {type: INT32, arrsize: 100, desc: device  type}
+  ERROR_CODE: {type: INT32, arrsize: 100, desc: error code}
+  ERROR_REASON: {type: STRING, arrsize: 100, desc: error reason}
+  MUTE_STATE: {type: BOOL, arrsize: 100, desc: mute state}
+  MUTE_HAPTICS: {type: BOOL, arrsize: 100, desc: mute haptics state}
+  RING_MODE: {type: UINT8, arrsize: 100, desc: ring mode}
+  STREAM_TYPE: {type: INT32, arrsize: 100, desc: stream type}
+  VIBRATION_STATE: {type: BOOL, arrsize: 100, desc: vibration state}
+  VOLUME_LEVEL: {type: UINT8, arrsize: 100, desc: volume level}
+  TIME_STAMP: {type: INT64, arrsize: 100, desc: the time stamp}
+  

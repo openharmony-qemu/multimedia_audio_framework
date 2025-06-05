@@ -102,6 +102,7 @@ struct Userdata {
         pa_memchunk chunk;
         bool inited;
         int32_t setHdiBufferSizeNum; // for set hdi buffer size count
+        pthread_mutex_t lockCallback;
     } offload;
     struct {
         pa_usec_t timestamp;

@@ -1167,14 +1167,14 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_006, TestSize.Level0
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetSourceName_007
-* @tc.desc  : Test AudioInfoDumpUtils GetSourceName API,Return UNKNOWN
+* @tc.desc  : Test AudioInfoDumpUtils GetSourceName API,Return SOURCE_TYPE_LIVE
 *             when sourceType is others
 */
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_007, TestSize.Level0)
 {
     SourceType sourceType = SOURCE_TYPE_MAX;
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
-    EXPECT_EQ(sourceName, "UNKNOWN");
+    EXPECT_EQ(sourceName, "SOURCE_TYPE_LIVE");
 }
 
 /**

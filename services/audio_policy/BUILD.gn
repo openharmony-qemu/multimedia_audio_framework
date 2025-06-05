@@ -30,7 +30,7 @@ group("audio_policy_packages") {
     ":audio_strategy_router",
     ":audio_usage_strategy",
     ":audio_volume_config",
-    "safe_volume_notification:audio_safe_volume_notification_impl",
+    "server/domain/volume:audio_safe_volume_notification_impl",
   ]
 
   if (audio_framework_feature_dtmf_tone) {
@@ -41,30 +41,42 @@ group("audio_policy_packages") {
 config("audio_policy_public_config") {
   include_dirs = [
     "util/include",
+    "client/service/include",
+    "server/infra/ipc_proxy/include",
     "common/definitions/include",
     "common/include",
-    "client/include",
+    "client/interface",
+    "client/proxy/include",
+    "client/stub/include",
+    "server/domain/router",
     "server/include",
+    "server/infra/async_action_handler/include",
+    "server/infra/state_monitor",
+    "server/stub/include",
+    "server/proxy/include",
     "server/include/service",
     "server/include/service/common",
-    "server/include/service/config",
-    "server/include/service/effect",
+    "server/common/include",
+    "server/infra/config/parser/include",
+    "server/domain/effect/include",
+    "server/domain/pipe/include",
+    "server/domain/interrupt/include",
+    "server/domain/volume/include",
+    "server/domain/stream",
+    "server/domain/tone",
+    "server/domain/zone/include",
     "server/include/service/interface",
     "server/include/service/listener",
+    "server/infra/appclient/include",
     "server/include/service/manager",
-    "server/include/service/manager/pnp_server",
-    "server/include/service/routers",
+    "server/infra/datashare/include",
+    "server/domain/device/src/pnp",
     "server/include/service/service",
-    "server/include/service/spatialization",
-    "server/include/service/zone",
-    "server/src/interface",
+    "server/domain/device/include",
+    "server/domain/device/src/a2dp",
     "server/src/service/concurrency",
-    "server/src/service/interrupt",
-    "server/src/service/session",
-    "services/core/config/include",
-    "services/core/include",
-    "services/pipe/include",
-    "safe_volume_notification/include",
+    "server/domain/session/include",
+    "server/service/service_main/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../audio_service/common/include/dfx",
@@ -120,10 +132,11 @@ ohos_shared_library("audio_setting_provider") {
 
   include_dirs = [
     "../../services/audio_policy/server/include/service/manager",
+    "../../services/audio_policy/server/domain/device/src/pnp",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  sources = [ "server/src/service/manager/audio_setting_provider.cpp" ]
+  sources = [ "server/infra/datashare/src/audio_setting_provider.cpp" ]
 
   deps = [ "../../frameworks/native/audioutils:audio_utils" ]
 
@@ -166,121 +179,122 @@ audio_ohos_library("audio_policy_service") {
     "../audio_service/client/src/core_service_provider_stub.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "../audio_service/client/src/policy_provider_stub.cpp",
-    "client/src/audio_interrupt_group_info.cpp",
-    "client/src/audio_volume_group_info.cpp",
-    "common/definitions/src/audio_definition_adapter_info.cpp",
-    "common/definitions/src/audio_definition_policy_utils.cpp",
-    "server/src/app_state_listener.cpp",
-    "server/src/audio_anahs_manager_listener_proxy.cpp",
-    "server/src/audio_client_tracker_callback_proxy.cpp",
-    "server/src/audio_concurrency_state_listener_proxy.cpp",
-    "server/src/audio_group_handle.cpp",
-    "server/src/audio_policy_async_action_handler.cpp",
-    "server/src/audio_policy_client_proxy.cpp",
-    "server/src/audio_policy_manager_device_stub.cpp",
-    "server/src/audio_policy_manager_listener_proxy.cpp",
-    "server/src/audio_policy_manager_stub.cpp",
-    "server/src/audio_policy_manager_zone_stub.cpp",
-    "server/src/audio_policy_server.cpp",
-    "server/src/audio_policy_server_handler.cpp",
-    "server/src/audio_policy_state_monitor.cpp",
-    "server/src/audio_routing_manager_listener_proxy.cpp",
-    "server/src/audio_spatialization_state_change_listener_proxy.cpp",
-    "server/src/audio_stream_collector.cpp",
-    "server/src/background_task_listener.cpp",
-    "server/src/service/audio_affinity_manager.cpp",
-    "server/src/service/audio_device_manager.cpp",
-    "server/src/service/audio_global_config_manager.cpp",
-    "server/src/service/audio_policy_service.cpp",
+    "server/domain/interrupt/src/audio_interrupt_group_info.cpp",
+    "server/domain/volume/src/audio_volume_group_info.cpp",
+    "server/domain/pipe/src/audio_definition_adapter_info.cpp",
+    "server/domain/pipe/src/audio_definition_policy_utils.cpp",
+    "server/infra/appclient/src/app_state_listener.cpp",
+    "server/infra/appclient/src/audio_background_manager.cpp",
+    "server/infra/appclient/src/audio_bundle_manager.cpp",
+    "server/infra/appclient/src/client_type_manager.cpp",
+    "server/infra/appclient/src/client_type_manager_handler.cpp",
+    "server/infra/async_action_handler/src/audio_policy_async_action_handler.cpp",
+    "server/infra/config/parser/src/audio_affinity_parser.cpp",
+    "server/infra/config/parser/src/audio_concurrency_parser.cpp",
+    "server/infra/config/parser/src/audio_converter_parser.cpp",
+    "server/infra/config/parser/src/audio_device_parser.cpp",
+    "server/infra/config/parser/src/audio_effect_config_parser.cpp",
+    "server/infra/config/parser/src/audio_focus_parser.cpp",
+    "server/infra/config/parser/src/audio_policy_config_parser.cpp",
+    "server/infra/config/parser/src/audio_policy_global_parser.cpp",
+    "server/infra/config/parser/src/audio_policy_parser.cpp",
+    "server/infra/config/parser/src/audio_strategy_router_parser.cpp",
+    "server/infra/config/parser/src/audio_usage_strategy_parser.cpp",
+    "server/infra/config/parser/src/audio_volume_parser.cpp",
+    "server/infra/datashare/src/audio_policy_utils.cpp",
+    "server/infra/ipc_proxy/src/audio_ability_manager.cpp",
+    "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
+    "server/infra/state_monitor/audio_policy_state_monitor.cpp",
+    "server/proxy/src/audio_anahs_manager_listener_proxy.cpp",
+    "server/proxy/src/audio_client_tracker_callback_proxy.cpp",
+    "server/proxy/src/audio_concurrency_state_listener_proxy.cpp",
+    "server/proxy/src/audio_policy_client_proxy.cpp",
+    "server/proxy/src/audio_policy_manager_listener_proxy.cpp",
+    "server/proxy/src/audio_routing_manager_listener_proxy.cpp",
+    "server/proxy/src/audio_spatialization_state_change_listener_proxy.cpp",
+    "server/domain/zone/src/audio_zone_client_proxy.cpp",
+    "server/proxy/src/sle_audio_operation_callback_proxy.cpp",
+    "server/common/src/audio_group_handle.cpp",
+    "server/service/service_main/src/audio_policy_server.cpp",
+    "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
+    "server/domain/stream/audio_stream_collector.cpp",
+    "server/infra/appclient/src/background_task_listener.cpp",
+    "server/domain/device/src/audio_affinity_manager.cpp",
+    "server/domain/device/src/audio_device_manager.cpp",
+    "server/domain/pipe/src/audio_global_config_manager.cpp",
+    "server/service/service_main/src/audio_policy_service.cpp",
     "server/src/service/audio_state_manager.cpp",
-    "server/src/service/concurrency/audio_concurrency_service.cpp",
-    "server/src/service/config/audio_adapter_info.cpp",
-    "server/src/service/config/audio_affinity_parser.cpp",
-    "server/src/service/config/audio_concurrency_parser.cpp",
-    "server/src/service/config/audio_converter_parser.cpp",
-    "server/src/service/config/audio_device_parser.cpp",
-    "server/src/service/config/audio_focus_parser.cpp",
-    "server/src/service/config/audio_policy_global_parser.cpp",
-    "server/src/service/config/audio_policy_parser.cpp",
-    "server/src/service/config/audio_strategy_router_parser.cpp",
-    "server/src/service/config/audio_usage_strategy_parser.cpp",
-    "server/src/service/config/audio_volume_parser.cpp",
-    "server/src/service/data_share_observer_callback.cpp",
-    "server/src/service/device_init_callback.cpp",
-    "server/src/service/effect/audio_effect_config_parser.cpp",
-    "server/src/service/effect/audio_effect_service.cpp",
-    "server/src/service/interrupt/audio_interrupt_dfx_collector.cpp",
-    "server/src/service/interrupt/audio_interrupt_service.cpp",
-    "server/src/service/interrupt/audio_interrupt_service_ext.cpp",
-    "server/src/service/interrupt/audio_interrupt_zone.cpp",
-    "server/src/service/listener/device_status_listener.cpp",
-    "server/src/service/listener/power_state_listener.cpp",
-    "server/src/service/manager/audio_adapter_manager.cpp",
-    "server/src/service/manager/audio_adapter_manager_handler.cpp",
-    "server/src/service/manager/client_type_manager.cpp",
-    "server/src/service/manager/client_type_manager_handler.cpp",
-    "server/src/service/manager/volume_data_maintainer.cpp",
-    "server/src/service/routers/app_select_router.cpp",
-    "server/src/service/routers/audio_router_center.cpp",
-    "server/src/service/routers/cockpit_phone_router.cpp",
-    "server/src/service/routers/default_router.cpp",
-    "server/src/service/routers/package_filter_router.cpp",
-    "server/src/service/routers/pair_device_router.cpp",
-    "server/src/service/routers/privacy_priority_router.cpp",
-    "server/src/service/routers/public_priority_router.cpp",
-    "server/src/service/routers/stream_filter_router.cpp",
-    "server/src/service/routers/user_select_router.cpp",
-    "server/src/service/service/audio_a2dp_device.cpp",
-    "server/src/service/service/audio_a2dp_offload_flag.cpp",
-    "server/src/service/service/audio_a2dp_offload_manager.cpp",
-    "server/src/service/service/audio_active_device.cpp",
-    "server/src/service/service/audio_background_manager.cpp",
-    "server/src/service/service/audio_capturer_session.cpp",
-    "server/src/service/service/audio_config_manager.cpp",
-    "server/src/service/service/audio_connected_device.cpp",
-    "server/src/service/service/audio_device_common.cpp",
-    "server/src/service/service/audio_device_lock.cpp",
-    "server/src/service/service/audio_device_status.cpp",
-    "server/src/service/service/audio_ec_manager.cpp",
-    "server/src/service/service/audio_iohandle_map.cpp",
-    "server/src/service/service/audio_microphone_descriptor.cpp",
-    "server/src/service/service/audio_offload_stream.cpp",
-    "server/src/service/service/audio_policy_dump.cpp",
-    "server/src/service/service/audio_policy_utils.cpp",
-    "server/src/service/service/audio_recovery_device.cpp",
-    "server/src/service/service/audio_router_map.cpp",
-    "server/src/service/service/audio_scene_manager.cpp",
-    "server/src/service/service/audio_server_proxy.cpp",
-    "server/src/service/service/audio_tone_manager.cpp",
-    "server/src/service/service/audio_volume_manager.cpp",
-    "server/src/service/session/audio_session.cpp",
-    "server/src/service/session/audio_session_service.cpp",
-    "server/src/service/session/audio_session_state_monitor.cpp",
-    "server/src/service/spatialization/audio_spatialization_service.cpp",
-    "server/src/service/zone/audio_zone.cpp",
-    "server/src/service/zone/audio_zone_client_manager.cpp",
-    "server/src/service/zone/audio_zone_client_proxy.cpp",
-    "server/src/service/zone/audio_zone_interrupt_reporter.cpp",
-    "server/src/service/zone/audio_zone_service.cpp",
-    "services/core/config/src/audio_policy_config_manager.cpp",
-    "services/core/config/src/audio_policy_config_parser.cpp",
-    "services/core/src/audio_core_service.cpp",
-    "services/core/src/audio_core_service_entry.cpp",
-    "services/core/src/audio_core_service_private.cpp",
-    "services/core/src/audio_core_service_utils.cpp",
-    "services/pipe/src/audio_pipe_manager.cpp",
-    "services/pipe/src/audio_pipe_selector.cpp",
-    "util/src/audio_ability_manager.cpp",
-    "util/src/audio_bundle_manager.cpp",
+    "server/domain/pipe/src/audio_concurrency_service.cpp",
+    "server/service/service_main/src/data_share_observer_callback.cpp",
+    "server/service/service_main/src/device_init_callback.cpp",
+    "server/domain/effect/src/audio_effect_service.cpp",
+    "server/domain/interrupt/src/audio_interrupt_dfx_collector.cpp",
+    "server/domain/interrupt/src/audio_interrupt_service.cpp",
+    "server/domain/interrupt/src/audio_interrupt_service_ext.cpp",
+    "server/domain/interrupt/src/audio_interrupt_zone.cpp",
+    "server/domain/device/src/device_status_listener.cpp",
+    "server/domain/interrupt/src/power_state_listener.cpp",
+    "server/domain/volume/src/audio_adapter_manager.cpp",
+    "server/domain/volume/src/audio_adapter_manager_handler.cpp",
+    "server/domain/volume/src/volume_data_maintainer.cpp",
+    "server/domain/router/app_select_router.cpp",
+    "server/domain/router/audio_router_center.cpp",
+    "server/domain/router/cockpit_phone_router.cpp",
+    "server/domain/router/default_router.cpp",
+    "server/domain/router/package_filter_router.cpp",
+    "server/domain/router/pair_device_router.cpp",
+    "server/domain/router/privacy_priority_router.cpp",
+    "server/domain/router/public_priority_router.cpp",
+    "server/domain/router/stream_filter_router.cpp",
+    "server/domain/router/user_select_router.cpp",
+    "server/domain/device/src/a2dp/audio_a2dp_device.cpp",
+    "server/domain/pipe/src/audio_a2dp_offload_flag.cpp",
+    "server/domain/pipe/src/audio_a2dp_offload_manager.cpp",
+    "server/domain/device/src/audio_active_device.cpp",
+    "server/domain/pipe/src/audio_capturer_session.cpp",
+    "server/domain/pipe/src/audio_config_manager.cpp",
+    "server/domain/device/src/audio_connected_device.cpp",
+    "server/domain/device/src/audio_device_common.cpp",
+    "server/domain/device/src/audio_device_lock.cpp",
+    "server/domain/device/src/audio_device_status.cpp",
+    "server/domain/pipe/src/audio_ec_manager.cpp",
+    "server/domain/pipe/src/audio_iohandle_map.cpp",
+    "server/domain/device/src/audio_microphone_descriptor.cpp",
+    "server/domain/pipe/src/audio_offload_stream.cpp",
+    "server/service/service_main/src/audio_policy_dump.cpp",
+    "server/domain/device/src/audio_recovery_device.cpp",
+    "server/domain/device/src/audio_router_map.cpp",
+    "server/domain/device/src/audio_scene_manager.cpp",
+    "server/domain/device/src/sle_audio_device_manager.cpp",
+    "server/domain/tone/audio_tone_manager.cpp",
+    "server/domain/volume/src/audio_volume_manager.cpp",
+    "server/domain/session/src/audio_session.cpp",
+    "server/domain/session/src/audio_session_service.cpp",
+    "server/domain/session/src/audio_session_state_monitor.cpp",
+    "server/domain/effect/src/audio_spatialization_service.cpp",
+    "server/domain/zone/src/audio_zone.cpp",
+    "server/domain/zone/src/audio_zone_client_manager.cpp",
+    "server/domain/zone/src/audio_zone_interrupt_reporter.cpp",
+    "server/domain/zone/src/audio_zone_service.cpp",
+    "server/stub/src/audio_policy_manager_device_stub.cpp",
+    "server/stub/src/audio_policy_manager_stub.cpp",
+    "server/stub/src/audio_policy_manager_zone_stub.cpp",
+    "server/domain/pipe/src/audio_policy_config_manager.cpp",
+    "server/service/service_main/src/audio_core_service.cpp",
+    "server/service/service_main/src/audio_core_service_entry.cpp",
+    "server/service/service_main/src/audio_core_service_private.cpp",
+    "server/service/service_main/src/audio_core_service_utils.cpp",
+    "server/domain/pipe/src/audio_pipe_manager.cpp",
+    "server/domain/pipe/src/audio_pipe_selector.cpp",
   ]
 
   defines = []
   if (audio_framework_feature_wired_audio) {
     defines += [ "AUDIO_WIRED_DETECT" ]
     sources += [
-      "server/src/service/manager/pnp_server/audio_input_thread.cpp",
-      "server/src/service/manager/pnp_server/audio_pnp_server.cpp",
-      "server/src/service/manager/pnp_server/audio_socket_thread.cpp",
+      "server/domain/device/src/pnp/audio_input_thread.cpp",
+      "server/domain/device/src/pnp/audio_pnp_server.cpp",
+      "server/domain/device/src/pnp/audio_socket_thread.cpp",
     ]
   }
 
@@ -299,7 +313,7 @@ audio_ohos_library("audio_policy_service") {
   }
 
   if (audio_framework_feature_dtmf_tone) {
-    sources += [ "server/src/service/config/audio_tone_parser.cpp" ]
+    sources += [ "server/infra/config/parser/src/audio_tone_parser.cpp" ]
     defines += [ "FEATURE_DTMF_TONE" ]
   }
 
@@ -379,7 +393,7 @@ audio_ohos_library("audio_policy_service") {
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
-    sources += [ "server/src/service/manager/audio_usb_manager.cpp" ]
+    sources += [ "server/domain/device/src/pnp/audio_usb_manager.cpp" ]
   }
 
   if (audio_framework_feature_detect_soundbox) {
@@ -418,7 +432,7 @@ audio_ohos_library("audio_policy_service") {
 }
 
 ohos_prebuilt_etc("audio_interrupt_policy_config") {
-  source = "server/config/audio_interrupt_policy_config.xml"
+  source = "server/infra/config/file/audio_interrupt_policy_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
@@ -426,7 +440,7 @@ ohos_prebuilt_etc("audio_interrupt_policy_config") {
 }
 
 ohos_prebuilt_etc("audio_strategy_router") {
-  source = "server/config/audio_strategy_router.xml"
+  source = "server/infra/config/file/audio_strategy_router.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
@@ -434,7 +448,7 @@ ohos_prebuilt_etc("audio_strategy_router") {
 }
 
 ohos_prebuilt_etc("audio_usage_strategy") {
-  source = "server/config/audio_usage_strategy.xml"
+  source = "server/infra/config/file/audio_usage_strategy.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
@@ -442,7 +456,7 @@ ohos_prebuilt_etc("audio_usage_strategy") {
 }
 
 ohos_prebuilt_etc("audio_device_config") {
-  source = "server/config/audio_device_privacy.xml"
+  source = "server/infra/config/file/audio_device_privacy.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
@@ -450,7 +464,7 @@ ohos_prebuilt_etc("audio_device_config") {
 }
 
 ohos_prebuilt_etc("audio_volume_config") {
-  source = "server/config/audio_volume_config.xml"
+  source = "server/infra/config/file/audio_volume_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
@@ -458,7 +472,7 @@ ohos_prebuilt_etc("audio_volume_config") {
 }
 
 ohos_prebuilt_etc("audio_affinity_config") {
-  source = "server/config/audio_affinity_config.xml"
+  source = "server/infra/config/file/audio_affinity_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
@@ -466,7 +480,7 @@ ohos_prebuilt_etc("audio_affinity_config") {
 }
 
 ohos_prebuilt_etc("audio_policy_global_config") {
-  source = "server/config/audio_policy_global_config.xml"
+  source = "server/infra/config/file/audio_policy_global_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
@@ -475,7 +489,7 @@ ohos_prebuilt_etc("audio_policy_global_config") {
 
 if (audio_framework_feature_dtmf_tone) {
   ohos_prebuilt_etc("audio_tone_dtmf_config") {
-    source = "server/config/audio_tone_dtmf_config.xml"
+    source = "server/infra/config/file/audio_tone_dtmf_config.xml"
 
     subsystem_name = "multimedia"
     relative_install_dir = "audio"
@@ -484,7 +498,7 @@ if (audio_framework_feature_dtmf_tone) {
 }
 
 ohos_prebuilt_etc("audio_converter_config") {
-  source = "server/config/audio_converter_config.xml"
+  source = "server/infra/config/file/audio_converter_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
@@ -507,9 +521,14 @@ ohos_prebuilt_etc("audio_config.para.dac") {
 
 config("audio_policy_client_config") {
   include_dirs = [
-    "client/include",
+    "client/proxy/include",
+    "client/stub/include",
     "common/include",
+    "client/interface",
     "server/include",
+    "server/proxy/include",
+    "server/stub/include",
+    "server/service/service_main/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../../frameworks/native/audiodefinitions/include",
@@ -545,25 +564,26 @@ audio_ohos_library("audio_policy_client") {
     "../audio_policy/server/src/service/device/audio_device_descriptor.cpp",
     "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
-    "client/src/audio_anahs_manager_listener_stub.cpp",
-    "client/src/audio_client_tracker_callback_stub.cpp",
-    "client/src/audio_concurrency_state_listener_stub.cpp",
-    "client/src/audio_policy_client_stub.cpp",
-    "client/src/audio_policy_client_stub_impl.cpp",
-    "client/src/audio_policy_manager.cpp",
-    "client/src/audio_policy_manager_device.cpp",
-    "client/src/audio_policy_manager_listener_stub.cpp",
-    "client/src/audio_policy_manager_zone.cpp",
-    "client/src/audio_routing_manager_listener_stub.cpp",
-    "client/src/audio_spatialization_state_change_listener_stub.cpp",
-    "client/src/audio_volume_group_info.cpp",
-    "client/src/audio_zone_client.cpp",
-    "client/src/audio_zone_manager.cpp",
-    "client/src/proxy/audio_policy_callback_proxy.cpp",
-    "client/src/proxy/audio_policy_microphone_proxy.cpp",
-    "client/src/proxy/audio_policy_proxy.cpp",
-    "client/src/proxy/audio_policy_volume_proxy.cpp",
-    "client/src/proxy/audio_policy_zone_proxy.cpp",
+    "client/proxy/src/audio_policy_callback_proxy.cpp",
+    "client/proxy/src/audio_policy_microphone_proxy.cpp",
+    "client/proxy/src/audio_policy_proxy.cpp",
+    "client/proxy/src/audio_policy_volume_proxy.cpp",
+    "client/proxy/src/audio_policy_zone_proxy.cpp",
+    "client/service/src/audio_policy_manager.cpp",
+    "client/service/src/audio_policy_manager_device.cpp",
+    "client/service/src/audio_policy_manager_zone.cpp",
+    "client/service/src/audio_zone_manager.cpp",
+    "server/domain/volume/src/audio_volume_group_info.cpp",
+    "client/stub/src/audio_anahs_manager_listener_stub.cpp",
+    "client/stub/src/audio_client_tracker_callback_stub.cpp",
+    "client/stub/src/audio_concurrency_state_listener_stub.cpp",
+    "client/stub/src/audio_policy_client_stub.cpp",
+    "client/stub/src/audio_policy_client_stub_impl.cpp",
+    "client/stub/src/audio_policy_manager_listener_stub.cpp",
+    "client/stub/src/audio_routing_manager_listener_stub.cpp",
+    "client/stub/src/audio_spatialization_state_change_listener_stub.cpp",
+    "client/stub/src/audio_zone_client.cpp",
+    "client/stub/src/sle_audio_operation_callback_stub.cpp",
   ]
 
   deps = [
@@ -666,6 +686,8 @@ ohos_executable("audio_policy_test") {
 config("audio_foundation_public_config") {
   include_dirs = [
     "util/include",
+    "server/domain/device/include",
+    "server/domain/effect/include",
     "../audio_service/util/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
@@ -688,8 +710,8 @@ ohos_shared_library("audio_foundation") {
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
     "server/src/service/device/audio_device_descriptor.cpp",
-    "util/src/audio_device_type.cpp",
-    "util/src/audio_effect_map.cpp",
+    "server/domain/device/src/audio_device_type.cpp",
+    "server/domain/effect/src/audio_effect_map.cpp",
   ]
 
   public_configs = [ ":audio_foundation_public_config" ]
@@ -720,6 +742,9 @@ ohos_shared_library("audio_foundation") {
 config("audio_manager_client_public_config") {
   include_dirs = [
     "util/include",
+    "client/service/include",
+    "server/domain/device/include",
+    "server/domain/effect/include",
     "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiodefinitions/include/common",
     "../../frameworks/native/hdiadapter_new/include/common",
@@ -740,8 +765,7 @@ ohos_shared_library("audio_manager_client") {
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_anahs_manager.cpp",
-    "util/src/audio_general_manager.cpp",
-    "util/src/audio_manager_util.cpp",
+    "client/service/src/audio_general_manager.cpp",
   ]
 
   public_configs = [ ":audio_manager_client_public_config" ]
@@ -821,6 +845,12 @@ ohos_shared_library("audio_policy_common") {
   part_name = "audio_framework"
 }
 
+config("audio_policy_ipc_config") {
+  include_dirs = [
+    "common/include",
+  ]
+}
+
 ohos_shared_library("audio_policy_ipc") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -835,7 +865,7 @@ ohos_shared_library("audio_policy_ipc") {
   install_enable = true
   sources = []
 
-  public_configs = []
+  public_configs = [ ":audio_policy_ipc_config" ]
 
   external_deps = []
 

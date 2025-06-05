@@ -78,9 +78,11 @@
 #define HDI_MIN_MS_MAINTAIN 40
 #define OFFLOAD_HDI_CACHE1 200 // ms, should equal with val in client
 #define OFFLOAD_HDI_CACHE2 7000 // ms, should equal with val in client
+#define OFFLOAD_HDI_CACHE3 500 // ms, should equal with val in client for movie
 #define OFFLOAD_FRAME_SIZE 40
 #define OFFLOAD_HDI_CACHE1_PLUS (OFFLOAD_HDI_CACHE1 + OFFLOAD_FRAME_SIZE + 5)   // ms, add 1 frame and 5ms
 #define OFFLOAD_HDI_CACHE2_PLUS (OFFLOAD_HDI_CACHE2 + OFFLOAD_FRAME_SIZE + 5)   // to make sure get full
+#define OFFLOAD_HDI_CACHE3_PLUS (OFFLOAD_HDI_CACHE3 + OFFLOAD_FRAME_SIZE + 5)   // to make sure get full for movie
 #define SPRINTF_STR_LEN 100
 #define DEFAULT_MULTICHANNEL_NUM 6
 #define DEFAULT_NUM_CHANNEL 2
@@ -173,6 +175,7 @@ static void OffloadUnlock(struct Userdata *u);
 static int32_t UpdatePresentationPosition(struct Userdata *u);
 static bool InputIsPrimary(pa_sink_input *i);
 static bool InputIsOffload(pa_sink_input *i);
+static bool InputIsMovie(pa_sink_input *i);
 static uint32_t getSinkInputUid(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
 static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
@@ -450,8 +453,8 @@ static void OffloadSetHdiBufferSize(pa_sink_input *i)
     }
 
     struct Userdata *u = i->sink->userdata;
-    const uint32_t bufSize = (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND ?
-                              OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
+    const uint32_t bufSize = InputIsMovie(i) ? OFFLOAD_HDI_CACHE3 :
+        (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
     u->offload.sinkAdapter->SinkAdapterSetBufferSize(u->offload.sinkAdapter, bufSize);
 }
 
@@ -513,7 +516,9 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
 
 static void OffloadCallback(const enum RenderCallbackType type, int8_t *userdata)
 {
+    AUTO_CTRACE("hdi_sink::OffloadCallback type: %d", type);
     struct Userdata *u = (struct Userdata *)userdata;
+    pthread_mutex_lock(&u->offload.lockCallback);
     switch (type) {
         case CB_NONBLOCK_WRITE_COMPLETED: { //need more data
             const int hdistate = pa_atomic_load(&u->offload.hdistate);
@@ -529,12 +534,21 @@ static void OffloadCallback(const enum RenderCallbackType type, int8_t *userdata
         }
         case CB_DRAIN_COMPLETED:
         case CB_FLUSH_COMPLETED:
-        case CB_RENDER_FULL:
+            break;
+        case CB_RENDER_FULL: { // no need data
+            const int hdistate = pa_atomic_load(&u->offload.hdistate);
+            if (hdistate == 0) {
+                pa_atomic_store(&u->offload.hdistate, 1);
+                OffloadUnlock(u);
+            }
+            break;
+        }
         case CB_ERROR_OCCUR:
             break;
         default:
             break;
     }
+    pthread_mutex_unlock(&u->offload.lockCallback);
 }
 
 static void RegOffloadCallback(struct Userdata *u)
@@ -1360,6 +1374,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         const char *sSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = GetExistFlag(sinkIn, sSceneType, sSceneMode);
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sSceneType, sceneType);
+        AUTO_CTRACE("hdi_sink::PrimaryCluster:existFlag:%d sceneTypeFlag:%d", existFlag, sceneTypeFlag);
         if ((IsInnerCapturer(sinkIn) && IsCaptureSilently()) || !InputIsPrimary(sinkIn)) {
             AUTO_CTRACE("hdi_sink::PrimaryCluster:InnerCapturer and CaptureSilently or not primary");
             continue;
@@ -2239,6 +2254,9 @@ static void UpdateStreamVolumeMap(struct Userdata *u)
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
         float volume = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
         struct VolumeValues *vol = (struct VolumeValues *)pa_hashmap_get(u->streamVolumeMap, &sessionID);
+        AUTO_CTRACE("Volume, sessionId: %u, devClass: %s, volume: %.3f,"
+            "volumeSystem: %.3f, volumeStream: %.3f, volumeApp: %.3f",
+            sessionID, deviceClass, volumes.volume, volumes.volumeSystem, volumes.volumeStream, volumes.volumeApp);
         if (vol) {
             vol->volume = volume;
             vol->volumeHistory = volumes.volumeHistory;
@@ -2473,6 +2491,13 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     u->primary.timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
 }
 
+static bool InputIsMovie(pa_sink_input *i)
+{
+    const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
+    const bool isMovie = !strcmp(streamType, "movie");
+    return isMovie;
+}
+
 static bool InputIsOffload(pa_sink_input *i)
 {
     if (monitorLinked(i->sink, true)) {
@@ -2610,9 +2635,6 @@ static size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool 
     const bool b = (bool)ps->sink_input->thread_info.resampler;
     const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
     const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
-    const int statePolicy = GetInputPolicyState(i);
-    u->offload.prewrite = (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ?
-                           OFFLOAD_HDI_CACHE2_PLUS : OFFLOAD_HDI_CACHE1_PLUS) * PA_USEC_PER_MSEC;
     size_t sizeFrame = pa_frame_align(pa_usec_to_bytes(OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC, &sampleSpecOut),
         &sampleSpecOut);
     size_t tlengthHalfResamp = pa_frame_align(pa_usec_to_bytes(pa_bytes_to_usec(pa_memblockq_get_tlength(
@@ -2787,7 +2809,6 @@ static void OffloadReset(struct Userdata *u)
     u->offload.pos = 0;
     u->offload.hdiPos = 0;
     u->offload.hdiPosTs = pa_rtclock_now();
-    u->offload.prewrite = OFFLOAD_HDI_CACHE1_PLUS * PA_USEC_PER_MSEC;
     u->offload.firstWriteHdi = true;
     u->offload.setHdiBufferSizeNum = OFFLOAD_SET_BUFFER_SIZE_NUM;
     pa_atomic_store(&u->offload.hdistate, 0);
@@ -2840,7 +2861,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
         if (hdistate == 0) {
             pa_atomic_store(&u->offload.hdistate, 1);
         }
-        if (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND) {
+        if (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND || InputIsMovie(i)) {
             u->offload.fullTs = pa_rtclock_now();
         }
         pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
@@ -3363,12 +3384,11 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
     static uint32_t timeWait = 1; // 1ms init
     const uint64_t pos = u->offload.pos;
     const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
-    const uint64_t pw = u->offload.prewrite;
     int64_t blockTime = (int64_t)pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
 
     int32_t nInput = -1;
     const int hdistate = (int)pa_atomic_load(&u->offload.hdistate);
-    if (pos <= hdiPos + pw && hdistate == 0) {
+    if (hdistate == 0) {
         bool wait;
         int ret = ProcessRenderUseTimingOffload(u, &wait, &nInput);
         if (ret < 0) {
@@ -4474,6 +4494,7 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
             AUDIO_ERR_LOG("Load adapter failed");
             return -1;
         }
+        pthread_mutex_init(&u->offload.lockCallback, NULL);
         u->offload.inited = false;
         u->offload.dq = pa_asyncmsgq_new(0);
         pa_atomic_store(&u->offload.dflag, 0);
@@ -4744,6 +4765,8 @@ static void UserdataFreeOffload(struct Userdata *u)
     if (u->offload.chunk.memblock) {
         pa_memblock_unref(u->offload.chunk.memblock);
     }
+
+    pthread_mutex_destroy(&u->offload.lockCallback);
 }
 
 static void UserdataFreeMultiChannel(struct Userdata *u)

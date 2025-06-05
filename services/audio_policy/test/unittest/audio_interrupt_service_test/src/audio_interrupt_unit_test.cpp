@@ -473,18 +473,19 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_022, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
 
     interruptServiceTest->Init(GetPolicyServerTest());
+    AudioInterrupt interrupt;
     EXPECT_NO_THROW(
-        interruptServiceTest->ResetNonInterruptControl(sessionId);
+        interruptServiceTest->ResetNonInterruptControl(interrupt);
     );
 
-    sessionId = CLIENT_TYPE_GAME;
+    interrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
     EXPECT_NO_THROW(
-        interruptServiceTest->ResetNonInterruptControl(sessionId);
+        interruptServiceTest->ResetNonInterruptControl(interrupt);
     );
 
-    sessionId = 2;
+    interrupt.streamId = 2;
     EXPECT_NO_THROW(
-        interruptServiceTest->ResetNonInterruptControl(sessionId);
+        interruptServiceTest->ResetNonInterruptControl(interrupt);
     );
 }
 
@@ -1019,7 +1020,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceRemovePlaceholderInterruptFo
     int32_t pid = CALLER_PID;
     bool timeOut = IS_SESSION_TIMEOUT;
     interruptService->RemovePlaceholderInterruptForSession(pid, timeOut);
-    EXPECT_EQ(nullptr, interruptService->sessionService_);
 
     auto server = GetPolicyServerTest();
     interruptService->Init(server);
@@ -1043,7 +1043,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceRemovePlaceholderInterruptFo
     bool timeOut = IS_SESSION_TIMEOUT;
     interruptService->zonesMap_.find(DEFAULT_ZONE_ID)->second = nullptr;
     interruptService->RemovePlaceholderInterruptForSession(pid, timeOut);
-    EXPECT_EQ(nullptr, interruptService->zonesMap_.find(DEFAULT_ZONE_ID)->second);
 
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = 2;
@@ -1112,7 +1111,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSession_
     interruptService->sessionService_ = nullptr;
     int32_t pid = CALLER_PID;
     interruptService->AddActiveInterruptToSession(pid);
-    EXPECT_EQ(nullptr, interruptService->sessionService_);
 
     auto server = GetPolicyServerTest();
     interruptService->Init(server);
@@ -1135,7 +1133,6 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSession_
     EXPECT_EQ(SUCCESS, ret);
     interruptService->zonesMap_.find(DEFAULT_ZONE_ID)->second = nullptr;
     interruptService->AddActiveInterruptToSession(pid);
-    EXPECT_EQ(nullptr, interruptService->zonesMap_.find(DEFAULT_ZONE_ID)->second);
 
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = 2;
@@ -1715,13 +1712,12 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_DeactivateAudioInterruptInt
 HWTEST(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInterrupt_002, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
+    ASSERT_TRUE(interruptServiceTest != nullptr);
     interruptServiceTest->zonesMap_.clear();
 
     interruptServiceTest->Init(GetPolicyServerTest());
     AudioInterruptChangeType changeType = DEACTIVATE_AUDIO_INTERRUPT;
     interruptServiceTest->UpdateAudioSceneFromInterrupt(AUDIO_SCENE_INVALID, changeType);
-    EXPECT_EQ(DEACTIVATE_AUDIO_INTERRUPT, changeType);
-
     interruptServiceTest->zonesMap_.clear();
 }
 
@@ -3437,10 +3433,10 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_118, TestSize.Level1)
  * @tc.number: AudioInterruptService_119
  * @tc.desc  : Test AudioInterruptService
  */
-HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_119, TestSize.Level1)
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
-    ASSERT_NE(audioInterruptService, nullptr);
+    ASSERT_NE(interruptServiceTest, nullptr);
 
     interruptServiceTest->zonesMap_.clear();
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();

@@ -263,9 +263,20 @@ public:
         return sharedAudioCapturer_->SetInterruptStrategy(strategy);
     }
 
+    FastStatus GetFastStatus() override
+    {
+        return FASTSTATUS_NORMAL;
+    }
+
     void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override
     {
         return sharedAudioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
+    }
+
+    void SetFastStatusChangeCallback(
+        const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) override
+    {
+        return;
     }
 
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
@@ -282,6 +293,11 @@ public:
     bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override
     {
         return sharedAudioCapturer_->GetTimeStampInfo(timestamp, base);
+    }
+
+    void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
+    {
+        return sharedAudioCapturer_->SetInterruptEventCallbackType(callbackType);
     }
 
     ~SharedCapturerWrapper() override = default;

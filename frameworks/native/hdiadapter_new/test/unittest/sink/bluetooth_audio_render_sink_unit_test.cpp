@@ -167,5 +167,19 @@ HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_006, TestSize.L
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
+/**
+ * @tc.name   : Test BluetoothSink API
+ * @tc.number : BluetoothSinkUnitTest_007
+ * @tc.desc   : Test bluetooth sink set invalid state
+ */
+HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_007, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    sink_->SetInvalidState();
+    (void)sink_->Init(attr_);
+    sink_->DeInit();
+    EXPECT_FALSE(sink_->IsInited());
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

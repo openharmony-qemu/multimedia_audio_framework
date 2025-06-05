@@ -37,7 +37,7 @@ public:
     virtual ~IRendererStream() = default;
     virtual int32_t GetStreamFramesWritten(uint64_t &framesWritten) = 0;
     virtual int32_t GetCurrentTimeStamp(uint64_t &timestamp) = 0;
-    virtual int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
+    virtual int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency, int32_t base);
     virtual int32_t GetLatency(uint64_t &latency) = 0;
     virtual int32_t SetRate(int32_t rate) = 0;
     virtual int32_t SetAudioEffectMode(int32_t effectMode) = 0;
@@ -55,6 +55,7 @@ public:
     virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) = 0;
     virtual int32_t OffloadSetVolume(float volume) = 0;
+    virtual int32_t SetOffloadDataCallbackState(int32_t state) = 0;
     virtual size_t GetWritableSize() = 0;
     virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) = 0;
     virtual int32_t UpdateMaxLength(uint32_t maxLength) = 0;

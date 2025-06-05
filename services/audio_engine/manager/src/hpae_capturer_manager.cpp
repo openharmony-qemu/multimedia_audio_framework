@@ -92,6 +92,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(sceneType);
     nodeInfo.effectInfo.enhanceScene = enhanceScene;
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
+    sourceOutputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
     sessionNodeMap_[streamInfo.sessionId].sceneType = sceneType;
     
     if (sceneType != HPAE_SCENE_EFFECT_NONE && !SafeGetMap(sceneClusterMap_, sceneType)) {
@@ -117,32 +118,34 @@ int32_t HpaeCapturerManager::CaptureEffectRelease(const HpaeProcessorType &scene
 
 void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType)
 {
-    if (sceneClusterMap_[sceneType]->GetOutputPortNum() != 0) {
+    if (!SafeGetMap(sceneClusterMap_, sceneType) || sceneClusterMap_[sceneType]->GetOutputPortNum() != 0) {
         return;
     }
     // need to disconnect sceneCluster and sourceInputCluster
     HpaeNodeInfo ecNodeInfo;
     if (CheckSceneTypeNeedEc(sceneType) &&
         sceneClusterMap_[sceneType]->GetCapturerEffectConfig(ecNodeInfo, HPAE_SOURCE_BUFFER_TYPE_EC)) {
-        if (sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER) {
+        if (sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER && SafeGetMap(sourceInputClusterMap_, mainMicType_)) {
             sceneClusterMap_[sceneType]->DisConnectWithInfo(
                 sourceInputClusterMap_[mainMicType_], ecNodeInfo); // ec from mic
-        } else if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER) {
+        } else if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER &&
+                   SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
             sceneClusterMap_[sceneType]->DisConnectWithInfo(
                 sourceInputClusterMap_[HPAE_SOURCE_EC], ecNodeInfo); // ec
         }
     }
 
     HpaeNodeInfo micRefNodeInfo;
-    if (CheckSceneTypeNeedMicRef(sceneType) &&
-        sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micRefNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MICREF) &&
-        sourceInfo_.micRef == HPAE_REF_ON) {
+    if (sourceInfo_.micRef == HPAE_REF_ON && CheckSceneTypeNeedMicRef(sceneType) &&
+        SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF) &&
+        sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micRefNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MICREF)) {
         sceneClusterMap_[sceneType]->DisConnectWithInfo(
             sourceInputClusterMap_[HPAE_SOURCE_MICREF], micRefNodeInfo); // micref
     }
 
     HpaeNodeInfo micNodeInfo;
-    if (sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MIC)) {
+    if (SafeGetMap(sourceInputClusterMap_, mainMicType_) &&
+        sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MIC)) {
         sceneClusterMap_[sceneType]->DisConnectWithInfo(
             sourceInputClusterMap_[mainMicType_], micNodeInfo); // mic
     }
@@ -171,8 +174,9 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
             CaptureEffectRelease(sceneType);
             sceneClusterMap_.erase(sceneType);
         }
-    } else {
-        sourceOutputNodeMap_[sessionId]->DisConnect(sourceInputClusterMap_[mainMicType_]);
+    } else if (SafeGetMap(sourceInputClusterMap_, mainMicType_)) {
+        sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(sourceInputClusterMap_[mainMicType_],
+            sourceOutputNodeMap_[sessionId]->GetNodeInfo());
     }
     sourceOutputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
@@ -217,7 +221,6 @@ int32_t HpaeCapturerManager::ConnectProcessClusterWithEc(HpaeProcessorType &scen
     HpaeNodeInfo ecNodeInfo;
     if (CheckSceneTypeNeedEc(sceneType) &&
         sceneClusterMap_[sceneType]->GetCapturerEffectConfig(ecNodeInfo, HPAE_SOURCE_BUFFER_TYPE_EC)) {
-        ecNodeInfo.statusCallback = weak_from_this();
         if (sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER) {
             sceneClusterMap_[sceneType]->ConnectWithInfo(
                 sourceInputClusterMap_[mainMicType_], ecNodeInfo); // ec from mic
@@ -235,7 +238,6 @@ int32_t HpaeCapturerManager::ConnectProcessClusterWithMicRef(HpaeProcessorType &
     if (CheckSceneTypeNeedMicRef(sceneType) &&
         sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micRefNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MICREF)&&
         sourceInfo_.micRef == HPAE_REF_ON) {
-        micRefNodeInfo.statusCallback = weak_from_this();
         sceneClusterMap_[sceneType]->ConnectWithInfo(
             sourceInputClusterMap_[HPAE_SOURCE_MICREF], micRefNodeInfo); // micref
     }
@@ -249,18 +251,18 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
     
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     if (sceneType != HPAE_SCENE_EFFECT_NONE && SafeGetMap(sceneClusterMap_, sceneType)) {
-        // 1. Determine if the ResampleNode needs to be created
-        // 2. If ResampleNode needs to be created, it should be connected to the UpEffectNode after creation
-        // 3. Connect the SourceOutputNode to the ResampleNode
-        sourceOutputNodeMap_[sessionId]->ConnectWithInfo(sceneClusterMap_[sceneType],
-            sourceOutputNodeMap_[sessionId]->GetNodeInfo());
         HpaeNodeInfo micNodeInfo;
-        micNodeInfo.statusCallback = weak_from_this();
         if (sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MIC)) {
             sceneClusterMap_[sceneType]->ConnectWithInfo(sourceInputClusterMap_[mainMicType_], micNodeInfo); // mic
         }
         ConnectProcessClusterWithEc(sceneType);
         ConnectProcessClusterWithMicRef(sceneType);
+
+        // 1. Determine if the ResampleNode needs to be created
+        // 2. If ResampleNode needs to be created, it should be connected to the UpEffectNode after creation
+        // 3. Connect the SourceOutputNode to the ResampleNode
+        sourceOutputNodeMap_[sessionId]->ConnectWithInfo(sceneClusterMap_[sceneType],
+            sourceOutputNodeMap_[sessionId]->GetNodeInfo());
     } else {
         sourceOutputNodeMap_[sessionId]->ConnectWithInfo(sourceInputClusterMap_[mainMicType_],
             sourceOutputNodeMap_[sessionId]->GetNodeInfo());
@@ -318,7 +320,7 @@ int32_t HpaeCapturerManager::DisConnectOutputSession(uint32_t sessionId)
         sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(
             sceneClusterMap_[sceneType], sourceOutputNodeMap_[sessionId]->GetNodeInfo());
         DisConnectSceneClusterFromSourceInputCluster(sceneType);
-    } else {
+    } else if (SafeGetMap(sourceInputClusterMap_, mainMicType_)) {
         AUDIO_INFO_LOG("sceneType[%{public}u] do not exist sceneCluster", sceneType);
         sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(sourceInputClusterMap_[mainMicType_],
             sourceOutputNodeMap_[sessionId]->GetNodeInfo());
@@ -423,10 +425,27 @@ int32_t HpaeCapturerManager::SetMute(bool isMute)
 void HpaeCapturerManager::Process()
 {
     Trace trace("HpaeCapturerManager::Process");
-    if (!sourceOutputNodeMap_.empty() && IsRunning()) {
+    if (IsRunning()) {
+        UpdateAppsUidAndSessionId();
         for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
             sourceOutputNodePair.second->DoProcess();
         }
+    }
+}
+
+void HpaeCapturerManager::UpdateAppsUidAndSessionId()
+{
+    appsUid_.clear();
+    sessionsId_.clear();
+    for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
+        if (sessionNodeMap_.find(sourceOutputNodePair.first) != sessionNodeMap_.end() &&
+            sessionNodeMap_[sourceOutputNodePair.first].state == HPAE_SESSION_RUNNING) {
+            appsUid_.emplace_back(sourceOutputNodePair.second->GetAppUid());
+            sessionsId_.emplace_back(sourceOutputNodePair.first);
+        }
+    }
+    if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
+        sourceInputClusterMap_[mainMicType_]->UpdateAppsUidAndSessionId(appsUid_, sessionsId_);
     }
 }
 
@@ -675,6 +694,7 @@ int32_t HpaeCapturerManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all source to default source");
         MoveAllStreamToNewSource(name, ids, MOVE_ALL);
     }
+    sourceInputClusterMap_.clear();
     return SUCCESS;
 }
 
@@ -804,7 +824,7 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
 }
 
 int32_t HpaeCapturerManager::MoveAllStream(const std::string &sourceName, const std::vector<uint32_t>& sessionIds,
-    MOVE_SESSION_TYPE moveType)
+    MoveSessionType moveType)
 {
     if (!IsInit()) {
         AUDIO_INFO_LOG("source is not init ,use sync mode move to: %{public}s", sourceName.c_str());
@@ -820,7 +840,7 @@ int32_t HpaeCapturerManager::MoveAllStream(const std::string &sourceName, const 
 }
 
 void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName,
-    const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType)
+    const std::vector<uint32_t>& moveIds, MoveSessionType moveType)
 {
     std::string name = sourceName;
     std::vector<HpaeCaptureMoveInfo> moveInfos;

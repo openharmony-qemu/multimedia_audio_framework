@@ -82,6 +82,7 @@ public:
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
+    void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
@@ -216,6 +217,7 @@ public:
     bool GetHighResolutionEnabled() override;
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
+    FastStatus GetFastStatus() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     void SetSwitchingStatus(bool isSwitching) override;
     void GetRestoreInfo(RestoreInfo &restoreInfo) override;
@@ -255,6 +257,7 @@ private:
     int32_t RegisterCapturerInClientPolicyServerDiedCb();
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
     void ResetCallbackLoopTid();
+    bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -458,6 +461,11 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 {
     AUDIO_WARNING_LOG("SetRendererInfo is not supported");
     return;
+}
+
+void CapturerInClientInner::GetRendererInfo(AudioRendererInfo &rendererInfo)
+{
+    AUDIO_WARNING_LOG("GetRendererInfo is not supported");
 }
 
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -871,7 +879,8 @@ State CapturerInClientInner::GetState()
     return state_;
 }
 
-bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool CapturerInClientInner::GetAudioTimeInner(
+    Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency)
 {
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
@@ -887,15 +896,20 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
     }
 
     int64_t deltaPos = writePos >= currentReadPos ? static_cast<int64_t>(writePos - currentReadPos) : 0;
-    int64_t tempLatency = 25000000; // 25000000 -> 25 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND /
         static_cast<int64_t>(streamParams_.samplingRate) * AUDIO_US_PER_S;
+    handleTime = handleTime + deltaTime + latency;
 
-    handleTime = handleTime + deltaTime + tempLatency;
     timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
 
     return true;
+}
+
+bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    int64_t tempLatency = 25000000; // 25000000 -> 25 ms
+    return GetAudioTimeInner(timestamp, base, tempLatency);
 }
 
 bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
@@ -903,6 +917,10 @@ bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Ti
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "invalid buffer status");
+
+    if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        return GetAudioTimeInner(timestamp, base, 0);
+    }
 
     uint64_t writePos = 0;
     uint64_t writeTimeStamp = 0;
@@ -2031,6 +2049,11 @@ int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
     (void)defaultOutputDevice;
     AUDIO_WARNING_LOG("not supported in capturer");
     return ERROR;
+}
+
+FastStatus CapturerInClientInner::GetFastStatus()
+{
+    return FASTSTATUS_NORMAL;
 }
 
 DeviceType CapturerInClientInner::GetDefaultOutputDevice()

@@ -37,7 +37,8 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
 {
     processConfig_ = processConfig;
     spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / TENMS_PER_SEC);
-    byteSizePerFrame_ = (processConfig.streamInfo.channels * GetSizeFromFormat(processConfig.streamInfo.format));
+    byteSizePerFrame_ = (processConfig.streamInfo.channels *
+        static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
 }
 
@@ -67,6 +68,7 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
     streamInfo.deviceName = deviceName;
+    streamInfo.isMoveAble = true;
     int32_t ret = IHpaeManager::GetHpaeManager().CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR_INVALID_PARAM, "CreateStream is error");
     return SUCCESS;

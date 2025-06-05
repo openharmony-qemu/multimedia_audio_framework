@@ -51,6 +51,7 @@ constexpr int32_t AUDIO_FLAG_MMAP = 1;
 constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
 constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
+constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
@@ -356,9 +357,14 @@ struct VolumeEvent {
     AudioVolumeType volumeType;
     int32_t volume;
     bool updateUi;
-    int32_t volumeGroupId;
-    std::string networkId;
+    int32_t volumeGroupId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+
+    VolumeEvent(AudioVolumeType volType, int32_t volLevel, bool isUiUpdated) : volumeType(volType),
+        volume(volLevel), updateUi(isUiUpdated) {}
+    VolumeEvent() = default;
+
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
@@ -860,6 +866,18 @@ enum State {
     STOPPING
 };
 
+/**
+ * @brief Defines the fast status.
+ */
+enum FastStatus {
+    /** Invalid status */
+    FASTSTATUS_INVALID = -1,
+    /** Normal status */
+    FASTSTATUS_NORMAL,
+    /** Fast status */
+    FASTSTATUS_FAST
+};
+
 struct StreamSwitchingInfo {
     bool isSwitching_ = false;
     State state_ = INVALID;
@@ -1021,6 +1039,7 @@ enum AudioPin {
     AUDIO_PIN_OUT_USB_HEADSET = 1 << 9,  // Arm usb output pin
     AUDIO_PIN_OUT_BLUETOOTH_A2DP = 1 << 10,  // Bluetooth A2dp output pin
     AUDIO_PIN_OUT_DP = 1 << 11,
+    AUDIO_PIN_OUT_NEARLINK = 1 << 12, // Nearlink output pin
     AUDIO_PIN_IN_MIC = 1 << 27 | 1 << 0, // Microphone input pin
     AUDIO_PIN_IN_HS_MIC = 1 << 27 | 1 << 1, // Wired headset microphone pin for input
     AUDIO_PIN_IN_LINEIN = 1 << 27 | 1 << 2, // Line-in pin
@@ -1030,6 +1049,7 @@ enum AudioPin {
     AUDIO_PIN_IN_USB_HEADSET = 1 << 27 | 1 << 6,  // Arm usb input pin
     AUDIO_PIN_IN_PENCIL = 1 << 27 | 1 << 7,  // Pencil input pin
     AUDIO_PIN_IN_UWB = 1 << 27 | 1 << 8,  // Remote control input pin
+    AUDIO_PIN_IN_NEARLINK = 1 << 27 | 1 << 9,  // Nearlink input pin
 };
 
 enum AudioParamKey {
@@ -1181,6 +1201,7 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
         {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
         {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
         {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
     };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
@@ -1266,12 +1287,10 @@ enum RenderMode {
 enum WriteDataCallbackType {
     /**
      * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnWriteData
-     * @since 12
      */
     WRITE_DATA_CALLBACK_WITHOUT_RESULT = 0,
     /**
-     * Use OH_AudioRenderer_OnWriteDataCallback.
-     * @since 12
+     * Use OH_AudioRenderer_OnWriteDataCallback
      */
     WRITE_DATA_CALLBACK_WITH_RESULT = 1
 };
@@ -1279,12 +1298,10 @@ enum WriteDataCallbackType {
 enum ReadDataCallbackType {
     /**
      * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnReadData
-     * @since 12
      */
     READ_DATA_CALLBACK_WITHOUT_RESULT = 0,
     /**
-     * Use OH_AudioCapturer_OnReadDataCallback.
-     * @since 12
+     * Use OH_AudioCapturer_OnReadDataCallback
      */
     READ_DATA_CALLBACK_WITH_RESULT = 1
 };
@@ -1292,41 +1309,23 @@ enum ReadDataCallbackType {
 enum StreamEventCallbackType {
     /**
      * Use OH_AudioCapturer_Callbacks.OH_AudioCapturer_OnStreamEvent
-     * @since 12
      */
-    STREAM_EVENT_CALLBACK_WITHOUT_RESULT = 0,
+    STREAM_EVENT_CALLBACK_COMBINED = 0,
     /**
-     * Use OH_AudioCapturer_OnStreamEventCallback.
-     * @since 12
+     * Use OH_AudioCapturer_OnStreamEventCallback
      */
-    STREAM_EVENT_CALLBACK_WITH_RESULT = 1
-};
-
-enum InterruptEventCallbackType {
-    /**
-     * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnInterruptEvent
-     * @since 12
-     */
-    INTERRUPT_EVENT_CALLBACK_WITHOUT_RESULT = 0,
-    /**
-     * Use OH_AudioRenderer_OnInterruptEventCallback.
-     * @since 12
-     */
-    INTERRUPT_EVENT_CALLBACK_WITH_RESULT = 1
+    STREAM_EVENT_CALLBACK_SEPERATED = 1
 };
 
 enum ErrorCallbackType {
     /**
      * Use OH_AudioRenderer_Callbacks.OH_AudioRenderer_OnError
-     *
-     * @since 12
      */
-    ERROR_CALLBACK_WITHOUT_RESULT = 0,
+    ERROR_CALLBACK_COMBINED = 0,
     /**
-     * Use OH_AudioRenderer_OnErrorCallback.
-     * @since 12
+     * Use OH_AudioRenderer_OnErrorCallback
      */
-    ERROR_CALLBACK_WITH_RESULT = 1
+    ERROR_CALLBACK_SEPERATED = 1
 };
 
 enum PolicyType {
@@ -1355,12 +1354,18 @@ enum SuscribeResultCode {
     ERR_MODE_SUBSCRIBE,
 };
 
+enum AudioProcessStage {
+    AUDIO_PROC_STAGE_STOP,
+    AUDIO_PROC_STAGE_STOP_BY_RELEASE,
+};
+
 enum RendererStage {
     RENDERER_STAGE_UNKNOWN = 0,
     RENDERER_STAGE_START_OK = 0x10,
     RENDERER_STAGE_START_FAIL = 0x11,
     RENDERER_STAGE_PAUSE_OK = 0x20,
     RENDERER_STAGE_STOP_OK = 0x30,
+    RENDERER_STAGE_STOP_BY_RELEASE = 0x31,
     RENDERER_STAGE_STANDBY_BEGIN = 0x40,
     RENDERER_STAGE_STANDBY_END = 0x41,
     RENDERER_STAGE_SET_VOLUME_ZERO = 0x50,
@@ -1372,6 +1377,7 @@ enum CapturerStage {
     CAPTURER_STAGE_START_FAIL = 0x11,
     CAPTURER_STAGE_PAUSE_OK = 0x20,
     CAPTURER_STAGE_STOP_OK = 0x30,
+    CAPTURER_STAGE_STOP_BY_RELEASE = 0x31,
 };
 
 

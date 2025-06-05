@@ -58,11 +58,16 @@ public:
     uint64_t GetLatency();
     // set timeout to suspend render and stop hdi
     int32_t SetTimeoutStopThd(uint32_t timeoutThdMs);
+    // set offload render callback type in hdi
+    int32_t SetOffloadRenderCallbackType(int32_t type);
+
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
 private:
     // lock/unlock running lock
     void RunningLock(bool isLock);
     // Set hdi buffer size, change after render frame success
     void SetBufferSizeWhileRenderFrame();
+    void SetBufferSize();
     int32_t ProcessRenderFrame();
     // get presentation position from hdi, only trigger in offloadcallback
     int32_t UpdatePresentationPosition();
@@ -94,7 +99,7 @@ private:
     AudioOffloadType hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
     struct OffloadPolicyTask {
         bool flag = false; // indicate if task exsit
-        AudioOffloadType state;
+        AudioOffloadType state = OFFLOAD_DEFAULT;
         TimePoint time;
     } setPolicyStateTask_;
 

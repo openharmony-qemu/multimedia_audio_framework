@@ -26,6 +26,7 @@
 #include "source/i_audio_capture_source.h"
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
+#include "util/kv_pair.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -78,6 +79,12 @@ public:
         const std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> cbGenerator,
         const std::function<bool(uint32_t)> &limitFunc = [](uint32_t id) -> bool { return false; });
 
+    template<typename T>
+    void UpdateSinkPrestoreInfo(const std::string infoKey, const T &info)
+    {
+        sinkPrestoreInfo_.Set(infoKey, info);
+    }
+
     void DumpInfo(std::string &dumpString);
 
 private:
@@ -92,6 +99,7 @@ private:
     void DecRefCount(uint32_t id);
     void DoRegistSinkCallback(uint32_t id, std::shared_ptr<IAudioRenderSink> sink);
     void DoRegistSourceCallback(uint32_t id, std::shared_ptr<IAudioCaptureSource> source);
+    void DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> sink);
 
 private:
     std::unordered_map<uint32_t, RenderSinkInfo> renderSinks_;
@@ -104,6 +112,8 @@ private:
     SinkCallbackWrapper sinkCbs_;
     SourceCallbackWrapper sourceCbs_;
     std::function<bool(uint32_t)> cbLimitFunc_[HDI_ID_BASE_NUM][HDI_CB_TYPE_NUM];
+    // prestore
+    KvPair<std::string> sinkPrestoreInfo_;
 };
 
 } // namespace AudioStandard

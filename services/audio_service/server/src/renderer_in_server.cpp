@@ -60,7 +60,7 @@ namespace {
     constexpr int32_t DEFAULT_SPAN_SIZE = 1;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
-    const int32_t DUP_COMMON_LEN = 40; // 40 -> 40ms
+    const int32_t DUP_COMMON_LEN = 400; // 400 -> 400ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 }
 
@@ -73,6 +73,8 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
         isNeedFade_ = true;
         oldAppliedVolume_ = MIN_FLOAT_VOLUME;
     }
+    audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
 }
 
 RendererInServer::~RendererInServer()
@@ -81,6 +83,7 @@ RendererInServer::~RendererInServer()
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpC2S_);
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
 int32_t RendererInServer::ConfigServerBuffer()
@@ -264,11 +267,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
-            lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
-            lastWriteFrame_ = static_cast<int64_t>(audioServerBuffer_->GetCurReadFrame()) - lastWriteFrame_;
-            playerDfx_->WriteDfxStopMsg(streamIndex_, RENDERER_STAGE_STOP_OK,
-                {lastWriteFrame_, lastWriteMuteFrame_, GetLastAudioDuration(), underrunCount_}, processConfig_);
+            HandleOperationStopped(RENDERER_STAGE_STOP_OK);
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
@@ -411,6 +410,7 @@ void RendererInServer::StandByCheck()
         return;
     }
     standByCounter_++;
+    audioStreamChecker_->RecordNodataFrame();
     if (!ShouldEnableStandBy()) {
         return;
     }
@@ -475,6 +475,16 @@ void RendererInServer::HandleOperationFlushed()
     }
 }
 
+void RendererInServer::HandleOperationStopped(RendererStage stage)
+{
+    CHECK_AND_RETURN_LOG(audioServerBuffer_ != nullptr && playerDfx_ != nullptr, "nullptr");
+    lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    lastWriteFrame_ = static_cast<int64_t>(audioServerBuffer_->GetCurReadFrame()) - lastWriteFrame_;
+    playerDfx_->WriteDfxStopMsg(streamIndex_, stage,
+        {lastWriteFrame_, lastWriteMuteFrame_, GetLastAudioDuration(), underrunCount_}, processConfig_);
+}
+
 BufferDesc RendererInServer::DequeueBuffer(size_t length)
 {
     return stream_->DequeueBuffer(length);
@@ -523,6 +533,9 @@ void RendererInServer::WriteMuteDataSysEvent(BufferDesc &bufferDesc)
     int64_t muteFrameCnt = 0;
     VolumeTools::CalcMuteFrame(bufferDesc, processConfig_.streamInfo, traceTag_, volumeDataCount_, muteFrameCnt);
     lastWriteMuteFrame_ += muteFrameCnt;
+    if (volumeDataCount_ < 0) {
+        audioStreamChecker_->RecordMuteFrame();
+    }
     if (silentModeAndMixWithOthers_) {
         return;
     }
@@ -667,7 +680,7 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    Trace trace1(traceTag_ + " WriteData"); // RendererInServer::sessionid:100001 WriteData
+    Trace trace1(traceTag_ + " OnWriteData"); // RendererInServer::sessionid:100001 WriteData
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         FutexTool::FutexWake(audioServerBuffer_->GetFutex());
@@ -700,7 +713,7 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
         }
 
         OtherStreamEnqueue(bufferDesc);
-
+        audioStreamChecker_->RecordNormalFrame();
         WriteMuteDataSysEvent(bufferDesc);
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
@@ -870,6 +883,7 @@ int32_t RendererInServer::Start()
 int32_t RendererInServer::StartInner()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START);
     int32_t ret = 0;
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
@@ -942,6 +956,7 @@ int32_t RendererInServer::Pause()
 {
     AUDIO_INFO_LOG("Pause.");
     std::unique_lock<std::mutex> lock(statusLock_);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE);
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
@@ -1089,6 +1104,7 @@ int32_t RendererInServer::Stop()
     AUDIO_INFO_LOG("Stop.");
     {
         std::unique_lock<std::mutex> lock(statusLock_);
+        audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
             status_ != I_STATUS_STARTING) {
             AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_.load());
@@ -1170,6 +1186,10 @@ int32_t RendererInServer::Release()
         status_ = I_STATUS_INVALID;
         return ret;
     }
+    if (status_ != I_STATUS_STOPPING &&
+        status_ != I_STATUS_STOPPED) {
+        HandleOperationStopped(RENDERER_STAGE_STOP_BY_RELEASE);
+    }
     status_ = I_STATUS_RELEASED;
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
@@ -1201,13 +1221,13 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency)
+int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
 {
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
-    stream_->GetCurrentPosition(framePos, timestamp, latency);
+    stream_->GetCurrentPosition(framePos, timestamp, latency, base);
     return SUCCESS;
 }
 
@@ -1931,6 +1951,11 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
         DumpFileUtil::WriteDumpFile(dumpDupIn_, static_cast<void *>(bufferDesc.buffer), writeSize);
     }
     return SUCCESS;
+}
+
+int32_t RendererInServer::SetOffloadDataCallbackState(int32_t state)
+{
+    return stream_->SetOffloadDataCallbackState(state);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -206,7 +206,7 @@ AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &process
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo)
 {
     return usTime * nodeInfo.samplingRate / TIME_US_PER_S /
-        (nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
+        (nodeInfo.frameLen * nodeInfo.channels * static_cast<uint32_t>(GetSizeFromFormat(nodeInfo.format)));
 }
 
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
@@ -266,9 +266,10 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
     sinkInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
     int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
-    sinkInfo.frameLen = bufferSize / (sinkInfo.channels * GetSizeFromFormat(sinkInfo.format));
+    sinkInfo.frameLen = static_cast<size_t>(bufferSize) / (sinkInfo.channels *
+                                static_cast<size_t>(GetSizeFromFormat(sinkInfo.format)));
     sinkInfo.channelLayout = 0ULL;
-    sinkInfo.deviceType = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
+    sinkInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
     sinkInfo.volume = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
     sinkInfo.openMicSpeaker = static_cast<uint32_t>(std::atol(audioModuleInfo.OpenMicSpeaker.c_str()));
     sinkInfo.renderInIdleState = static_cast<uint32_t>(std::atol(audioModuleInfo.renderInIdleState.c_str()));
@@ -296,7 +297,8 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
     sourceInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
     sourceInfo.format = TransFormatFromStringToEnum(audioModuleInfo.format);
-    sourceInfo.frameLen = bufferSize / (sourceInfo.channels * GetSizeFromFormat(sourceInfo.format));
+    sourceInfo.frameLen = static_cast<size_t>(bufferSize) / (sourceInfo.channels *
+                                static_cast<size_t>(GetSizeFromFormat(sourceInfo.format)));
     sourceInfo.samplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.rate.c_str()));
     sourceInfo.channelLayout = 0ULL;
     sourceInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));

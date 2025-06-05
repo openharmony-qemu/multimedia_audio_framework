@@ -21,8 +21,9 @@ namespace AudioStandard {
 DfxStatAction::DfxStatAction(uint8_t param1, uint8_t param2, uint8_t param3, uint8_t param4)
     : DfxStatInt32(param1, param2, param3, param4)
 {
-    auto now = std::chrono::system_clock::now();
-    timestamp = std::chrono::system_clock::to_time_t(now);
+    auto now = std::chrono::high_resolution_clock::now();
+    timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(
+        now).time_since_epoch().count();
 }
 
 } // namespace AudioStandard

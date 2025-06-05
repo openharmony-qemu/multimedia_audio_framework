@@ -53,6 +53,7 @@ public:
     const char *GetRenderFrameData(void);
     StreamManagerState GetSinkState(void);
     int32_t SetSinkState(StreamManagerState sinkState);
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
 
 private:
     void HandleRemoteTiming();

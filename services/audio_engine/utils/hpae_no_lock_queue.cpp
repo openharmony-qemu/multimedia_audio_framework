@@ -42,6 +42,7 @@ HpaeNoLockQueue::~HpaeNoLockQueue()
 }
 void HpaeNoLockQueue::InitQueue(size_t maxRequestCount)
 {
+    CHECK_AND_RETURN_LOG(maxRequestCount > 0, "maxRequestCount = 0");
     requestQueue_.resize(maxRequestCount);
     tempRequestQueue_.reserve(maxRequestCount);
 
@@ -66,9 +67,13 @@ void HpaeNoLockQueue::PushRequest(Request &&request)
 
 void HpaeNoLockQueue::HandleRequests()
 {
-    const uint64_t oldRequestFlag = (GetRequsetFlag(requestHeadIndex_) << 32) + INVALID_REQUEST_ID;
-    const uint64_t oldRequestHeadindex = requestHeadIndex_.exchange(oldRequestFlag);
-    ProcessRequests(oldRequestHeadindex, true);
+    uint64_t oldRequestFlag;
+    uint64_t requestHeadindex;
+    do {
+        requestHeadindex = requestHeadIndex_.load();
+        oldRequestFlag = (GetRequsetFlag(requestHeadindex) << 32) + INVALID_REQUEST_ID;
+    } while (!std::atomic_compare_exchange_strong(&requestHeadIndex_, &requestHeadindex, oldRequestFlag));
+    ProcessRequests(requestHeadindex, true);
 }
 
 void HpaeNoLockQueue::Reset()

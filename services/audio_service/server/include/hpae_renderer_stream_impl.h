@@ -29,7 +29,7 @@ class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererS
                                public IStreamCallback,
                                public IRendererStream {
 public:
-    HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isCallbackMode = true);
+    HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode = true);
     ~HpaeRendererStreamImpl();
     int32_t InitParams(const std::string &deviceName = "");
     int32_t Start() override;
@@ -40,7 +40,7 @@ public:
     int32_t Release() override;
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
     int32_t GetCurrentTimeStamp(uint64_t &timestamp) override;
-    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency) override;
+    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
     int32_t SetAudioEffectMode(int32_t effectMode) override;
@@ -64,6 +64,7 @@ public:
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
     int32_t OffloadSetVolume(float volume) override;
+    int32_t SetOffloadDataCallbackState(int32_t state) override;
     size_t GetWritableSize() override;
     int32_t UpdateMaxLength(uint32_t maxLength) override;
     // offload end
@@ -106,7 +107,7 @@ private:
     // latency position timeStamp
     std::shared_mutex latencyMutex_;
     uint64_t framePosition_ = 0;
-    uint64_t timestamp_ = 0;
+    std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
     std::string deviceClass_;
@@ -115,7 +116,9 @@ private:
 
     // buffer mode, write or callback
     bool isCallbackMode_ = true; // true is callback buffer mode, false is write buffer mode
+    bool isMoveAble_ = true;
     std::unique_ptr<AudioRingCache> ringBuffer_ = nullptr; // used by write buffer mode
+    FILE *dumpEnqueueIn_ = nullptr;
     // buffer mode, write or callback end
 };
 } // namespace AudioStandard

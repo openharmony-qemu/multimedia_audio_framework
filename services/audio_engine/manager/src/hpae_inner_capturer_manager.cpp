@@ -56,6 +56,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     nodeInfo.statusCallback = weak_from_this();
     sinkInputNodeMap_[sessionId]->SetNodeInfo(nodeInfo);
     SetSessionStateForRenderer(sessionId, node->GetState());
@@ -94,13 +95,17 @@ int32_t HpaeInnerCapturerManager::AddAllNodesToSink(
 }
 
 void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &sinkName,
-    const std::vector<uint32_t>& moveIds, MOVE_SESSION_TYPE moveType)
+    const std::vector<uint32_t>& moveIds, MoveSessionType moveType)
 {
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
     std::vector<uint32_t> sessionIds;
     std::string idStr;
     for (const auto &it : sinkInputNodeMap_) {
+        if (!rendererSessionNodeMap_[it.first].isMoveAble) {
+            AUDIO_INFO_LOG("move session:%{public}u failed, session is not moveable.", it.first);
+            continue;
+        }
         if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
             sinkInputs.emplace_back(it.second);
             sessionIds.emplace_back(it.first);
@@ -118,7 +123,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
 }
 
 int32_t HpaeInnerCapturerManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
-    MOVE_SESSION_TYPE moveType)
+    MoveSessionType moveType)
 {
     if (!IsInit()) {
         AUDIO_INFO_LOG("sink is not init ,use sync mode move to:%{public}s.", sinkName.c_str());
@@ -172,10 +177,12 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
             CreateRendererInputSessionInner(streamInfo);
             SetSessionStateForRenderer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
             sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
+            rendererSessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
             AUDIO_INFO_LOG("CreateCapCapturerStream sessionID: %{public}d", streamInfo.sessionId);
             CreateCapturerInputSessionInner(streamInfo);
             SetSessionStateForCapturer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
+            capturerSessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         }
     };
     SendRequestInner(request);

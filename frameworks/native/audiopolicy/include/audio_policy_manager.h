@@ -39,6 +39,7 @@
 #include "i_standard_spatialization_state_change_listener.h"
 #include "audio_combine_denoising_manager.h"
 #include "audio_stream_descriptor.h"
+#include "sle_audio_operation_callback_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -93,6 +94,9 @@ public:
     bool GetStreamMute(AudioVolumeType volumeType);
 
     bool IsStreamActive(AudioVolumeType volumeType);
+
+    bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+    bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
@@ -362,6 +366,9 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
 
+    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+        const int32_t volume, const bool updateUi);
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
@@ -607,6 +614,9 @@ public:
         const std::shared_ptr<StreamVolumeChangeCallback> &callback);
     int32_t UnsetStreamVolumeChangeCallback(const std::shared_ptr<StreamVolumeChangeCallback> &callback);
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
+    int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        const DeviceInfoUpdateCommand command);
+    int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

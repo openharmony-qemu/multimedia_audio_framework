@@ -48,11 +48,13 @@ HpaePcmBuffer::HpaePcmBuffer(HpaePcmBuffer &&other)
     pcmBufferInfo_ = other.pcmBufferInfo_;
     bufferByteSize_ = other.bufferByteSize_;
     bufferFloatSize_ = other.bufferFloatSize_;
+    dataByteSize_ = other.dataByteSize_;
     pcmDataBuffer_ = std::move(other.pcmDataBuffer_);
     pcmProcessVec_ = std::move(other.pcmProcessVec_);
     other.pcmBufferInfo_.frames = 0;
     other.bufferByteSize_ = 0;
     other.bufferFloatSize_ = 0;
+    other.dataByteSize_ = 0;
 }
 
 void HpaePcmBuffer::InitPcmProcess()
@@ -61,10 +63,12 @@ void HpaePcmBuffer::InitPcmProcess()
     size_t frameLen = GetFrameLen();
     size_t frames = GetFrames();
     size_t addBytes = MEMORY_ALIGN_BYTE_NUM - (frameLen * sizeof(float) * ch) % MEMORY_ALIGN_BYTE_NUM;
+    size_t dataSize = frameLen * sizeof(float) * ch;
     frameByteSize_ = frameLen * sizeof(float) * ch + addBytes;
     frameFloatSize_ = frameByteSize_ / sizeof(float);
     bufferByteSize_ = frameByteSize_ * frames;
     bufferFloatSize_ = frameFloatSize_ * frames;
+    dataByteSize_ = dataSize * frames;
     frameSample_ = frameLen * ch;
     pcmDataBuffer_.resize(bufferFloatSize_);
     readPos_.store(0);
@@ -272,7 +276,25 @@ bool HpaePcmBuffer::UpdateWritePos(size_t writePos)
 
 void HpaePcmBuffer::SetBufferValid(bool valid)
 {
-    pcmBufferInfo_.isValid = valid;
+    if (valid) {
+        pcmBufferInfo_.state &= ~PCM_BUFFER_STATE_INVALID;
+    } else {
+        pcmBufferInfo_.state |= PCM_BUFFER_STATE_INVALID;
+    }
+}
+
+void HpaePcmBuffer::SetBufferSilence(bool silence)
+{
+    if (silence) {
+        pcmBufferInfo_.state |= PCM_BUFFER_STATE_SILENCE;
+    } else {
+        pcmBufferInfo_.state &= ~PCM_BUFFER_STATE_SILENCE;
+    }
+}
+
+void HpaePcmBuffer::SetBufferState(uint32_t state)
+{
+    pcmBufferInfo_.state = state;
 }
 
 size_t HpaePcmBuffer::GetCurFrames() const

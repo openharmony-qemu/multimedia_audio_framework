@@ -311,15 +311,16 @@ int32_t ProRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
+int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency,
+    int32_t base)
 {
     int64_t timeSec = 0;
     int64_t timeNsec = 0;
     bool ret = GetAudioTime(framePosition, timeSec, timeNsec);
     CHECK_AND_RETURN_RET_LOG(ret, ERROR, "GetAudioTime error");
-    timespec tm {};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    int64_t stamp = 0;
+    stamp = base == Timestamp::BOOTTIME ? ClockTime::GetBootNano() : ClockTime::GetCurNano();
+    timestamp = stamp >= 0 ? stamp : 0;
     latency = 0;
     return SUCCESS;
 }
@@ -402,15 +403,15 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
     Trace trace("ProRendererStreamImpl::EnqueueBuffer::" + std::to_string(streamIndex_));
     int32_t writeIndex = PopWriteBufferIndex();
-    if (writeIndex < 0) {
-        AUDIO_ERR_LOG("write index is empty.");
-        return ERR_WRITE_BUFFER;
-    }
+    CHECK_AND_RETURN_RET_LOG(writeIndex >= 0, ERR_WRITE_BUFFER, "write index is empty.");
     std::lock_guard lock(peekMutex);
     GetStreamVolume();
     if (processConfig_.streamInfo.encoding == ENCODING_EAC3) {
-        memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
+        auto error = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
             bufferDesc.bufLength);
+        if (error != EOK) {
+            AUDIO_ERR_LOG("copy failed");
+        }
     } else {
         if (isNeedMcr_ && !isNeedResample_) {
             ConvertSrcToFloat(bufferDesc);
@@ -498,6 +499,12 @@ int32_t ProRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timest
 int32_t ProRendererStreamImpl::OffloadSetVolume(float volume)
 {
     return SUCCESS;
+}
+
+int32_t ProRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)
+{
+    AUDIO_WARNING_LOG("SetOffloadDataCallbackState not support");
+    return ERR_NOT_SUPPORTED;
 }
 
 size_t ProRendererStreamImpl::GetWritableSize()

@@ -77,6 +77,7 @@ public:
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
 
     virtual void SetAddress(const std::string &address) {}
+    virtual void SetInvalidState(void) {}
 
     virtual void DumpInfo(std::string &dumpString) {}
 
@@ -84,7 +85,7 @@ public:
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        uint32_t &byteSizePerFrame) NOT_SUPPORT_RET
+        uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) NOT_SUPPORT_RET
     virtual int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) NOT_SUPPORT_RET
 };
 

@@ -54,7 +54,7 @@ BluetoothAudioCaptureSource::~BluetoothAudioCaptureSource()
 
 int32_t BluetoothAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    if (sourceInited_) {
+    if (sourceInited_ && IsValidState()) {
         AUDIO_WARNING_LOG("source already inited");
         return SUCCESS;
     }
@@ -84,8 +84,11 @@ void BluetoothAudioCaptureSource::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH);
     CHECK_AND_RETURN(deviceManager != nullptr);
-    deviceManager->DestroyCapture(adapterNameCase_, hdiCaptureId_);
+    if (IsValidState()) {
+        deviceManager->DestroyCapture(adapterNameCase_, hdiCaptureId_);
+    }
     audioCapture_ = nullptr;
+    validState_ = true;
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -123,6 +126,7 @@ int32_t BluetoothAudioCaptureSource::Start(void)
     }
     callback_.OnCaptureState(true);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->control.Start(reinterpret_cast<AudioHandle>(audioCapture_));
     if (ret < 0) {
         AUDIO_ERR_LOG("start fail");
@@ -160,6 +164,7 @@ int32_t BluetoothAudioCaptureSource::Resume(void)
     std::lock_guard<std::mutex> lock(statusMutex_);
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
     Trace trace("BluetoothAudioCaptureSource::Resume");
@@ -174,6 +179,7 @@ int32_t BluetoothAudioCaptureSource::Pause(void)
     std::lock_guard<std::mutex> lock(statusMutex_);
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
     Trace trace("BluetoothAudioCaptureSource::Pause");
@@ -187,6 +193,7 @@ int32_t BluetoothAudioCaptureSource::Flush(void)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
     Trace trace("BluetoothAudioCaptureSource::Flush");
@@ -199,6 +206,7 @@ int32_t BluetoothAudioCaptureSource::Reset(void)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
     Trace trace("BluetoothAudioCaptureSource::Reset");
@@ -210,6 +218,7 @@ int32_t BluetoothAudioCaptureSource::Reset(void)
 int32_t BluetoothAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     Trace trace("BluetoothAudioCaptureSource::CaptureFrame");
     AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
 
@@ -250,6 +259,7 @@ std::string BluetoothAudioCaptureSource::GetAudioParameter(const AudioParamKey k
 int32_t BluetoothAudioCaptureSource::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
     leftVolume_ = left;
     rightVolume_ = right;
@@ -270,6 +280,7 @@ int32_t BluetoothAudioCaptureSource::SetVolume(float left, float right)
 int32_t BluetoothAudioCaptureSource::GetVolume(float &left, float &right)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
     float val = 0.0;
     audioCapture_->volume.GetVolume(reinterpret_cast<AudioHandle>(audioCapture_), &val);
@@ -283,6 +294,7 @@ int32_t BluetoothAudioCaptureSource::SetMute(bool isMute)
     AUDIO_INFO_LOG("isMute: %{public}d", isMute);
     muteState_ = isMute;
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
     if (sourceInited_) {
         int32_t ret = audioCapture_->volume.SetMute(reinterpret_cast<AudioHandle>(audioCapture_), isMute);
@@ -299,6 +311,7 @@ int32_t BluetoothAudioCaptureSource::SetMute(bool isMute)
 int32_t BluetoothAudioCaptureSource::GetMute(bool &isMute)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     bool hdiMuteState = false;
     int32_t ret = audioCapture_->volume.GetMute(reinterpret_cast<AudioHandle>(audioCapture_), &hdiMuteState);
     if (ret != SUCCESS) {
@@ -363,6 +376,12 @@ int32_t BluetoothAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &a
     runningLock_->UpdateAppsUidToPowerMgr();
 #endif
     return SUCCESS;
+}
+
+void BluetoothAudioCaptureSource::SetInvalidState(void)
+{
+    AUDIO_INFO_LOG("in");
+    validState_ = false;
 }
 
 void BluetoothAudioCaptureSource::DumpInfo(std::string &dumpString)
@@ -457,6 +476,8 @@ int32_t BluetoothAudioCaptureSource::CreateCapture(void)
     audioCapture_ = static_cast<struct AudioCapture *>(capture);
     CHECK_AND_RETURN_RET(audioCapture_ != nullptr, ERR_NOT_STARTED);
     SetAudioRouteInfoForEnhanceChain();
+    validState_ = true;
+
     return SUCCESS;
 }
 
@@ -534,6 +555,7 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
     }
 #endif
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
     int32_t ret = audioCapture_->control.Stop(reinterpret_cast<AudioHandle>(audioCapture_));
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "stop fail");
@@ -541,6 +563,14 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
     paused_ = false;
     callback_.OnCaptureState(false);
     return SUCCESS;
+}
+
+bool BluetoothAudioCaptureSource::IsValidState(void)
+{
+    if (!validState_) {
+        AUDIO_WARNING_LOG("disconnected, capture invalid");
+    }
+    return validState_;
 }
 
 void BluetoothAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)

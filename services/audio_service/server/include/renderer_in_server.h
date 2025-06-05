@@ -23,7 +23,8 @@
 #include "i_stream_manager.h"
 #include "audio_effect.h"
 #include "audio_ring_cache.h"
-
+#include "audio_stream_monitor.h"
+#include "audio_stream_checker.h"
 #include "player_dfx_writer.h"
 
 namespace OHOS {
@@ -65,7 +66,7 @@ public:
     int32_t Release();
 
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
-    int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency);
+    int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base);
     int32_t GetLatency(uint64_t &latency);
     int32_t SetRate(int32_t rate);
     int32_t SetLowPowerVolume(float volume);
@@ -77,6 +78,7 @@ public:
 
     int32_t SetOffloadMode(int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode();
+    int32_t SetOffloadDataCallbackState(int32_t state);
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
@@ -143,6 +145,7 @@ private:
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
     void ReConfigDupStreamCallback();
+    void HandleOperationStopped(RendererStage stage);
 
 private:
     std::mutex statusLock_;
@@ -222,6 +225,7 @@ private:
     int64_t lastWriteMuteFrame_{};
     int64_t sourceDuration_ = -1;
     std::unique_ptr<PlayerDfxWriter> playerDfx_;
+    std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

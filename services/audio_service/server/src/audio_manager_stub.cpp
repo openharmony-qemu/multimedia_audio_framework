@@ -63,6 +63,7 @@ const char *g_audioServerCodeStrs[] = {
     "LOAD_AUDIO_EFFECT_LIBRARIES",
     "CREATE_AUDIO_EFFECT_CHAIN_MANAGER",
     "SET_OUTPUT_DEVICE_SINK",
+    "SET_ACTIVE_OUTPUT_DEVICE",
     "CREATE_PLAYBACK_CAPTURER_MANAGER",
     "REGISET_POLICY_PROVIDER",
     "REGISET_CORE_SERVICE_PROVIDER",
@@ -125,10 +126,20 @@ const char *g_audioServerCodeStrs[] = {
     "DESTROY_HDI_PORT",
     "DEVICE_CONNECTED_FLAG",
     "SET_DM_DEVICE_TYPE",
+    "REGISTER_DATATRANSFER_STATE_PARAM",
+    "UNREGISTER_DATATRANSFER_STATE_PARAM",
+    "REGISTER_DATATRANSFER_CALLBACK",
     "NOTIFY_SETTINGS_DATA_READY",
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
     "SET_SESSION_MUTE_STATE",
     "NOTIFY_MUTE_STATE_CHANGE",
+    "CREATE_AUDIOWORKGROUP",
+    "RELEASE_AUDIOWORKGROUP",
+    "ADD_THREAD_TO_AUDIOWORKGROUP",
+    "REMOVE_THREAD_FROM_AUDIOWORKGROUP",
+    "START_AUDIOWORKGROUP",
+    "STOP_AUDIOWORKGROUP",
+    "SET_BT_HDI_INVALID_STATE",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -594,6 +605,15 @@ int AudioManagerStub::HandleSetOutputDeviceSink(MessageParcel &data, MessageParc
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetActiveOutputDevice(MessageParcel &data, MessageParcel &reply)
+{
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    CHECK_AND_RETURN_RET_LOG(deviceType >= DEVICE_TYPE_NONE && deviceType <= DEVICE_TYPE_MAX, AUDIO_ERR,
+        "Set active output device failed, please check log");
+    SetActiveOutputDevice(deviceType);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleCreatePlaybackCapturerManager(MessageParcel &data, MessageParcel &reply)
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -871,6 +891,26 @@ int AudioManagerStub::HandleSixthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetSessionMuteState(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_MUTE_STATE_CHANGE):
             return HandleOnMuteStateChange(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOWORKGROUP):
+            return HandleCreateAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_AUDIOWORKGROUP):
+            return HandleReleaseAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::ADD_THREAD_TO_AUDIOWORKGROUP):
+            return HandleAddThreadToAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REMOVE_THREAD_FROM_AUDIOWORKGROUP):
+            return HandleRemoveThreadFromAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::START_AUDIOWORKGROUP):
+            return HandleStartAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::STOP_AUDIOWORKGROUP):
+            return HandleStopAudioWorkgroup(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REGISTER_DATATRANSFER_STATE_PARAM):
+            return HandleRegisterDataTransferMonitorParam(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::UNREGISTER_DATATRANSFER_STATE_PARAM):
+            return HandleUnregisterDataTransferMonitorParam(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::REGISTER_DATATRANSFER_CALLBACK):
+            return HandleRegisterDataTransferCallback(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_BT_HDI_INVALID_STATE):
+            return HandleSetBtHdiInvalidState(data, reply);
         default:
             AUDIO_ERR_LOG("default case, need check AudioManagerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -942,6 +982,8 @@ int AudioManagerStub::HandleSecondPartCode(uint32_t code, MessageParcel &data, M
             return HandleCreateAudioEffectChainManager(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK):
             return HandleSetOutputDeviceSink(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE):
+            return HandleSetActiveOutputDevice(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER):
             return HandleCreatePlaybackCapturerManager(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER):
@@ -1344,6 +1386,34 @@ int AudioManagerStub::HandleCreateSourcePort(MessageParcel &data, MessageParcel 
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleRegisterDataTransferCallback(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr,  AUDIO_ERR, "Remote object as object fail.");
+
+    bool ret = RegisterDataTransferCallback(object);
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleRegisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t callbackId = data.ReadInt32();
+    DataTransferMonitorParam param;
+    param.Unmarshalling(data);
+    bool ret = RegisterDataTransferMonitorParam(callbackId, param);
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUnregisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t callbackId = data.ReadInt32();
+    bool ret = UnregisterDataTransferMonitorParam(callbackId);
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t id = data.ReadUint32();
@@ -1376,5 +1446,67 @@ int AudioManagerStub::HandleOnMuteStateChange(MessageParcel &data, MessageParcel
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleCreateAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = CreateAudioWorkgroup(pid);
+    reply.WriteInt32(workgroupId);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleReleaseAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    int32_t ret = ReleaseAudioWorkgroup(pid, workgroupId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleAddThreadToAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    int32_t tokenId = data.ReadInt32();
+    int32_t ret = AddThreadToGroup(pid, workgroupId, tokenId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleRemoveThreadFromAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    int32_t tokenId = data.ReadInt32();
+    int32_t ret = RemoveThreadFromGroup(pid, workgroupId, tokenId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleStartAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    uint64_t startTime = data.ReadUint64();
+    uint64_t deadlineTime = data.ReadUint64();
+    int32_t ret = StartGroup(pid, workgroupId, startTime, deadlineTime);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleStopAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t pid = data.ReadInt32();
+    int32_t workgroupId = data.ReadInt32();
+    int32_t ret = StopGroup(pid, workgroupId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetBtHdiInvalidState(MessageParcel &data, MessageParcel &reply)
+{
+    SetBtHdiInvalidState();
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

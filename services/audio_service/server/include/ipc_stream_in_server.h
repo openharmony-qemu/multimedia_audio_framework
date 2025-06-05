@@ -74,7 +74,7 @@ public:
 
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override;
 
-    int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency) override;
+    int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
 
     int32_t GetLatency(uint64_t &latency) override;
 
@@ -118,6 +118,8 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
     int32_t SetSourceDuration(int64_t duration) override;
+
+    int32_t SetOffloadDataCallbackState(int32_t state) override;
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();

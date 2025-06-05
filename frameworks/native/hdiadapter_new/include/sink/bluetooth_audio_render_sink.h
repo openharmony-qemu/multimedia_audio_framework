@@ -78,11 +78,13 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
+    void SetInvalidState(void) override;
+
     void DumpInfo(std::string &dumpString) override;
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        uint32_t &byteSizePerFrame) override;
+        uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
 
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
@@ -99,6 +101,7 @@ private:
     void CheckUpdateState(char *data, uint64_t len);
     int32_t DoRenderFrame(char &data, uint64_t len, uint64_t &writeLen);
     void UpdateSinkState(bool started);
+    bool IsValidState(void);
 
     // low latency
     int32_t PrepareMmapBuffer(void);
@@ -134,6 +137,7 @@ private:
     bool started_ = false;
     bool paused_ = false;
     std::atomic<bool> suspend_ = false;
+    bool validState_ = true;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = 0;
@@ -171,6 +175,7 @@ private:
     int32_t bufferFd_ = INVALID_FD;
     uint32_t bufferTotalFrameSize_ = 0;
     uint32_t eachReadFrameSize_ = 0;
+    uint32_t syncInfoSize_ = 0;
 };
 
 } // namespace AudioStandard

@@ -81,7 +81,7 @@ public:
     }
 
 private:
-    int32_t errNo_;
+    int32_t errNo_ = 0;
     float* const pcmDataPtr_;
     const size_t size_;
 };

@@ -81,7 +81,7 @@ public:
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        uint32_t &byteSizePerFrame) override;
+        uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
 
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
@@ -135,6 +135,7 @@ private:
     int32_t bufferFd_ = INVALID_FD;
     uint32_t bufferTotalFrameSize_ = 0;
     uint32_t eachReadFrameSize_ = 0;
+    uint32_t syncInfoSize_ = 0;
 #ifdef DEBUG_DIRECT_USE_HDI
     sptr<Ashmem> ashmemSource_ = nullptr;
     size_t bufferSize_ = 0;

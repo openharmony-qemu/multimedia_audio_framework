@@ -288,6 +288,26 @@ public:
     bool IsStreamActive(AudioVolumeType volumeType) const;
 
     /**
+     * @brief Is fast playback supported.
+     *
+     * @param streamInfo audio stream info.
+     * @param usage  StreamUsage.
+     * @return Returns <b>true</b> if the stream is support fast playback; returns <b>false</b> otherwise.
+     * @since 20
+     */
+    bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+
+    /**
+     * @brief Is fast recording supported.
+     *
+     * @param streamInfo audio stream info.
+     * @param source  SourceType.
+     * @return Returns <b>true</b> if the stream is support fast recording; returns <b>false</b> otherwise.
+     * @since 20
+     */
+    bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
+
+    /**
      * @brief Gets sampling rate for hardware output.
      *
      * @param AudioDeviceDescriptor Target output device.

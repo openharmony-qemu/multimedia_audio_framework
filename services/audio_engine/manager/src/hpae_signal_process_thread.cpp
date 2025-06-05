@@ -45,6 +45,7 @@ void HpaeSignalProcessThread::DeactivateThread()
 
 void HpaeSignalProcessThread::Notify()
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     recvSignal_.store(true);
     condition_.notify_all();
 }
@@ -56,8 +57,8 @@ void HpaeSignalProcessThread::Run()
         {
             std::unique_lock<std::mutex> lock(mutex_);
             condition_.wait(lock, [this] {
-                return !running_.load() || streamManager_.lock()->IsRunning() || recvSignal_.load() ||
-                       streamManager_.lock()->IsMsgProcessing();
+                return !running_.load() || streamManager_.lock()->IsRunning() ||
+                    streamManager_.lock()->IsMsgProcessing() || recvSignal_.load();
             });
         }
         if (streamManager_.lock()) {

@@ -438,6 +438,10 @@ int32_t OffloadAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHAN
 
 int32_t OffloadAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+#ifdef FEATURE_POWER_MANAGER
+    CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
+    runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+#endif
     return SUCCESS;
 }
 
@@ -473,6 +477,7 @@ int32_t OffloadAudioRenderSink::SetBufferSize(uint32_t sizeMs)
 
     // 4: bytewidth
     uint32_t size = (uint64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
+    AUDIO_INFO_LOG("SetBufferSize, size:%{public}u, sizeMs:%{public}u", size, sizeMs);
     int32_t ret = audioRender_->SetBufferSize(audioRender_, size);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "set buffer size fail");
     return SUCCESS;
@@ -481,7 +486,6 @@ int32_t OffloadAudioRenderSink::SetBufferSize(uint32_t sizeMs)
 int32_t OffloadAudioRenderSink::LockOffloadRunningLock(void)
 {
 #ifdef FEATURE_POWER_MANAGER
-    AUDIO_INFO_LOG("in");
     if (runningLock_ == nullptr) {
         WatchTimeout guard("create AudioRunningLock start");
         runningLock_ = std::make_shared<AudioRunningLock>(std::string(RUNNING_LOCK_NAME));
@@ -490,6 +494,7 @@ int32_t OffloadAudioRenderSink::LockOffloadRunningLock(void)
     CHECK_AND_RETURN_RET_LOG(runningLock_ != nullptr, ERR_OPERATION_FAILED,
         "running lock is null, playback can not work well");
     CHECK_AND_RETURN_RET(!runningLocked_, SUCCESS);
+    AUDIO_INFO_LOG("in");
     runningLock_->Lock(RUNNING_LOCK_TIMEOUTMS_LASTING);
     runningLocked_ = true;
 #endif
@@ -499,10 +504,10 @@ int32_t OffloadAudioRenderSink::LockOffloadRunningLock(void)
 int32_t OffloadAudioRenderSink::UnLockOffloadRunningLock(void)
 {
 #ifdef FEATURE_POWER_MANAGER
-    AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(runningLock_ != nullptr, ERR_OPERATION_FAILED,
         "running lock is null, playback can not work well");
     CHECK_AND_RETURN_RET(runningLocked_, SUCCESS);
+    AUDIO_INFO_LOG("in");
     runningLock_->UnLock();
     runningLocked_ = false;
 #endif
@@ -573,6 +578,24 @@ int32_t OffloadAudioRenderSink::OffloadRenderCallback(struct IAudioCallback *sel
     }
 
     impl->serviceCallback_(static_cast<RenderCallbackType>(type));
+    return SUCCESS;
+}
+
+int32_t OffloadAudioRenderSink::SetOffloadRenderCallbackType(RenderCallbackType type)
+{
+    AUDIO_INFO_LOG("SetOffloadRenderCallbackType type: %{public}d", type);
+    if (hdiCallback_.serviceCallback_ == nullptr) {
+        AUDIO_ERR_LOG("SetOffloadRenderCallbackType invalid, callback is nullptr");
+        return ERR_ILLEGAL_STATE;
+    }
+
+    if (!started_ || isFlushing_) {
+        AUDIO_INFO_LOG("SetOffloadRenderCallbackType invalid, started_ %{public}d, isFlushing_  %{public}d",
+            started_, isFlushing_);
+        return ERR_ILLEGAL_STATE;
+    }
+
+    hdiCallback_.serviceCallback_(type);
     return SUCCESS;
 }
 

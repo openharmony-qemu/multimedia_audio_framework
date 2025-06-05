@@ -105,9 +105,10 @@ void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpa
     HpaeNodeInfo &nodeInfo)
 {
     std::shared_ptr<HpaeNode> realPreNode = preNode->GetSharedInstance(nodeInfo);
+    CHECK_AND_RETURN_LOG(realPreNode != nullptr, "realPreNode is nullptr");
     inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = realPreNode->GetNodeInfo().statusCallback.lock()) {
+    if (auto callback = GetNodeStatusCallback().lock()) {
         callback->OnNotifyDfxNodeInfo(
             true, realPreNode->GetNodeId(), GetNodeInfo());
     }
@@ -118,6 +119,11 @@ void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<
     HpaeNodeInfo &nodeInfo)
 {
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+    }
+#endif
 }
 
 bool HpaeCaptureEffectNode::GetCapturerEffectConfig(HpaeNodeInfo& nodeInfo, HpaeSourceBufferType type)

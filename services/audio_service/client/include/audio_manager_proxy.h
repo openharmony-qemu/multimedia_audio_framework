@@ -64,6 +64,7 @@ public:
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
         const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam) override;
     void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
+    void SetActiveOutputDevice(DeviceType deviceType) override;
     bool CreatePlaybackCapturerManager() override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
     int32_t RegistCoreServiceProvider(const sptr<IRemoteObject> &object) override;
@@ -112,6 +113,7 @@ public:
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo) override;
     sptr<IRemoteObject> CreateIpcOfflineStream(int32_t &errorCode) override;
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
+    int32_t SetForegroundList(std::vector<std::string> list) override;
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     void NotifyAccountsChanged() override;
@@ -136,11 +138,23 @@ public:
         const IAudioSourceAttr &attr) override;
     uint32_t CreateSourcePort(HdiIdBase idBase, HdiIdType idType, const std::string &idInfo,
         const IAudioSourceAttr &attr) override;
+    int32_t RegisterDataTransferCallback(const sptr<IRemoteObject> &object) override;
+    int32_t RegisterDataTransferMonitorParam(const int32_t &callbackId,
+        const DataTransferMonitorParam &param) override;
+    int32_t UnregisterDataTransferMonitorParam(const int32_t &callbackId) override;
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    void SetBtHdiInvalidState() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
+
+    int32_t CreateAudioWorkgroup(int32_t pid) override;
+    int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) override;
+    int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
+    int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
+    int32_t StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) override;
+    int32_t StopGroup(int32_t pid, int32_t workgroupId) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS

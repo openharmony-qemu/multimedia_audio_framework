@@ -49,7 +49,7 @@ public:
     int32_t Release(uint32_t sessionId) override;
     int32_t MoveStream(uint32_t sessionId, const std::string &sinkName) override;
     int32_t MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
-        MOVE_SESSION_TYPE moveType = MOVE_ALL) override;
+        MoveSessionType moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
     int32_t SetMute(bool isMute) override;
     void Process() override;
@@ -88,6 +88,7 @@ public:
     std::string GetThreadName() override;
     void DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+    int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
 
 private:
     void SendRequest(Request &&request, bool isInit = false);
@@ -104,7 +105,7 @@ private:
     void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds,
-        MOVE_SESSION_TYPE moveType);
+        MoveSessionType moveType);
     void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);
     void ConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DisConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
@@ -115,6 +116,9 @@ private:
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
     void InitManager();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
+    void UpdateAppsUid();
+    int32_t HandlePriPaPower(uint32_t sessionId);
+    bool CheckIsStreamRunning();
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
@@ -126,8 +130,10 @@ private:
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
     std::atomic<bool> isMute_ = false;
+    std::atomic<bool> isSuspend_ = false;
     HpaeSinkInfo sinkInfo_;
     std::unordered_map<HpaeProcessorType, int32_t> sceneTypeToProcessClusterCountMap_;
+    std::vector<int32_t> appsUid_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

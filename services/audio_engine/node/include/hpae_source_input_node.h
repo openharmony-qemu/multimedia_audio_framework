@@ -59,13 +59,14 @@ public:
     HpaeSourceInputNodeType GetSourceInputNodeType();
     void SetSourceInputNodeType(HpaeSourceInputNodeType type);
     HpaeNodeInfo& GetNodeInfoWithInfo(HpaeSourceBufferType &type);
+    void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
     uint32_t GetCaptureId() const;
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);
     void SetBufferValid(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
-    std::string GetTraceInfo();
     void DoProcessInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
+    void DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
 
 private:
     std::shared_ptr<IAudioCaptureSource> audioCapturerSource_ = nullptr;
@@ -81,6 +82,7 @@ private:
     std::unordered_map<HpaeSourceBufferType, PcmBufferInfo> pcmBufferInfoMap_; // bufferInfo
     std::unordered_map<HpaeSourceBufferType, HpaePcmBuffer> inputAudioBufferMap_; // output buffer
     std::unordered_map<HpaeSourceBufferType, size_t> frameByteSizeMap_;
+    std::unordered_map<HpaeSourceBufferType, std::vector<char>> historyDataMap_;
     std::unordered_map<HpaeSourceBufferType, std::vector<char>> capturerFrameDataMap_; // input buffer
     std::unordered_map<HpaeSourceBufferType, FrameDesc> fdescMap_; // CaptureframeWithEc argument struct
 

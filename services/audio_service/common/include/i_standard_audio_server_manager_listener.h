@@ -20,6 +20,7 @@
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
+#include "audio_stutter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,12 +31,15 @@ public:
         const std::string& condition, const std::string& value) = 0;
     virtual void OnCapturerState(bool isActive) = 0;
     virtual void OnWakeupClose() = 0;
+    virtual void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) = 0;
 
     enum AudioServerManagerListenerMsg {
         ON_ERROR = 0,
         ON_PARAMETER_CHANGED,
         ON_CAPTURER_STATE,
-        ON_WAKEUP_CLOSE
+        ON_WAKEUP_CLOSE,
+        ON_DATATRANSFER_STATE_CHANGE
     };
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioServerManagerListener");
 };

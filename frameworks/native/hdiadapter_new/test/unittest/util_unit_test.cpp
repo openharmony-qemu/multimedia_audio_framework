@@ -24,6 +24,7 @@
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
+#include "util/kv_pair.h"
 
 using namespace testing::ext;
 
@@ -166,6 +167,24 @@ HWTEST_F(UtilUnitTest, CallbackWrapperUnitTest_002, TestSize.Level1)
     sourceCbWrapper.OnCaptureSourceParamChange("", NONE, "", "");
     sourceCbWrapper.OnCaptureState(false);
     sourceCbWrapper.OnWakeupClose();
+}
+
+/**
+ * @tc.name   : Test KvPair API
+ * @tc.number : KvPairUnitTest_001
+ * @tc.desc   : Test KvPair action
+ */
+HWTEST_F(UtilUnitTest, KvPairUnitTest_001, TestSize.Level1)
+{
+    KvPair<std::string> kv;
+    kv.Set<uint32_t>("test", 1);
+    uint32_t value = 0;
+    auto ret = kv.Get<uint32_t>("test", value);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(value, 1);
+    kv.Erase("test");
+    ret = kv.Get<uint32_t>("test_1", value);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 } // namespace AudioStandard

@@ -70,17 +70,20 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
 
     mixedOutput_.Reset();
 
+    uint32_t bufferState = PCM_BUFFER_STATE_INVALID | PCM_BUFFER_STATE_SILENCE;
     if (limiter_ == nullptr) {
         if (CheckUpdateInfo(inputs[0])) {
             mixedOutput_.ReConfig(pcmBufferInfo_);
         }
         for (auto input: inputs) {
             mixedOutput_ += *input;
+            bufferState &= input->GetBufferState();
         }
     } else { // limiter does not support reconfigging frameLen at runtime
         tmpOutput_.Reset();
         for (auto input: inputs) {
             tmpOutput_ += *input;
+            bufferState &= input->GetBufferState();
         }
         limiter_->Process(GetFrameLen() * GetChannelCount(),
             tmpOutput_.GetPcmDataBuffer(), mixedOutput_.GetPcmDataBuffer());
@@ -90,6 +93,7 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
     outputPcmDumper_->Dump((int8_t *)(mixedOutput_.GetPcmDataBuffer()),
         mixedOutput_.GetChannelCount() * sizeof(float) * mixedOutput_.GetFrameLen());
 #endif
+    mixedOutput_.SetBufferState(bufferState);
     return &mixedOutput_;
 }
 

@@ -42,6 +42,7 @@ namespace {
     constexpr int32_t OFFLOAD_WRITE_FAILED = -2;
     constexpr uint32_t OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS = 7000;
     constexpr uint32_t OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS = 200;
+    constexpr uint32_t OFFLOAD_HDI_CACHE_MOVIE_IN_MS = 500;
     // hdi fallback, modify when hdi change
     constexpr uint32_t OFFLOAD_FAD_INTERVAL_IN_US = 180000;
     constexpr uint32_t OFFLOAD_SET_BUFFER_SIZE_NUM = 5;
@@ -102,12 +103,13 @@ void HpaeOffloadSinkOutputNode::DoProcess()
     // if renderframe faild, sleep and return directly
     // if renderframe full, unlock the powerlock
     static uint32_t retryCount = 1;
-    if (ret != SUCCESS) {
-        if (ret == OFFLOAD_FULL) {
+    if (ret == OFFLOAD_FULL) {
+        if (hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND || GetStreamType() == STREAM_MOVIE) {
             RunningLock(false);
-            isHdiFull_.store(true);
-            return;
         }
+        isHdiFull_.store(true);
+        return;
+    } else if (ret != SUCCESS) {
         usleep(std::min(retryCount, FRAME_TIME_IN_MS) * TIME_US_PER_MS);
         if (retryCount < ERR_RETRY_COUNT) {
             retryCount++;
@@ -174,7 +176,6 @@ void HpaeOffloadSinkOutputNode::OffloadReset()
     isHdiFull_.store(false);
     renderFrameData_.clear();
     setPolicyStateTask_.flag = false; // unset the task when reset
-    RunningLock(true);
 }
 
 int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
@@ -193,8 +194,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
         "audioRendererSink_ init failed, errCode is %{public}d", ret);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return ret;
@@ -214,8 +215,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkDeInit(void)
     HdiAdapterManager::GetInstance().ReleaseId(renderId_);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return SUCCESS;
@@ -235,8 +236,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkFlush(void)
         "audioRendererSink_ flush failed, errCode is %{public}d", ret);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkFlush Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkFlush Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return ret;
@@ -261,8 +262,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStart(void)
     OffloadSetHdiVolume();
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     SetSinkState(STREAM_MANAGER_RUNNING);
@@ -285,8 +286,8 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
         "audioRendererSink_ stop failed, errCode is %{public}d", ret);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     SetSinkState(STREAM_MANAGER_SUSPENDED);
@@ -324,6 +325,7 @@ const char *HpaeOffloadSinkOutputNode::GetRenderFrameData(void)
 
 void HpaeOffloadSinkOutputNode::StopStream()
 {
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     // flush hdi when disconnect
     RunningLock(true);
     auto ret = RenderSinkFlush();
@@ -355,10 +357,7 @@ void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
         return;
     }
     hdiPolicyState_ = static_cast<AudioOffloadType>(state);
-    int32_t bufferSize = hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND ?
-        OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS : OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS;
-    AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: set hdi buffer size to %{public}d", bufferSize);
-    audioRendererSink_->SetBufferSize(bufferSize);
+    SetBufferSize();
 }
 
 uint64_t HpaeOffloadSinkOutputNode::GetLatency()
@@ -376,12 +375,18 @@ int32_t HpaeOffloadSinkOutputNode::SetTimeoutStopThd(uint32_t timeoutThdMs)
     return SUCCESS;
 }
 
+int32_t HpaeOffloadSinkOutputNode::SetOffloadRenderCallbackType(int32_t type)
+{
+    AUDIO_INFO_LOG("SetOffloadRenderCallbackType type:%{public}d", type);
+    OffloadCallback(static_cast<RenderCallbackType>(type));
+    return SUCCESS;
+}
+
 void HpaeOffloadSinkOutputNode::RunningLock(bool islock)
 {
     if (islock) {
         audioRendererSink_->LockOffloadRunningLock();
-    } else if (!islock && hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND) {
-        // only unlock when background
+    } else if (!islock) {
         audioRendererSink_->UnLockOffloadRunningLock();
     }
 }
@@ -396,18 +401,28 @@ void HpaeOffloadSinkOutputNode::SetBufferSizeWhileRenderFrame()
             AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: excute set policy state task");
             setPolicyStateTask_.flag = false;
             hdiPolicyState_ = setPolicyStateTask_.state;
-            audioRendererSink_->SetBufferSize(hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND ?
-                OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS : OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS);
+            SetBufferSize();
+            return; // no need to set buffer size twice at one process
         }
-        return; // no need to set buffer size twice at one process
     }
     // first start need to set buffer size 5 times
     if (setHdiBufferSizeNum_ > 0) {
         setHdiBufferSizeNum_--;
         AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: set policy state cause first render");
-        audioRendererSink_->SetBufferSize(hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND ?
-            OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS : OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS);
+        SetBufferSize();
     }
+}
+
+void HpaeOffloadSinkOutputNode::SetBufferSize()
+{
+    uint32_t bufferSize = OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS;
+    if (GetStreamType() == STREAM_MOVIE) {
+        bufferSize = OFFLOAD_HDI_CACHE_MOVIE_IN_MS;
+    } else {
+        bufferSize = hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND ?
+            OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS : OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS;
+    }
+    audioRendererSink_->SetBufferSize(bufferSize);
 }
 
 int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
@@ -421,8 +436,8 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     HighResolutionTimer timer;
     timer.Start();
     intervalTimer_.Stop();
-    uint64_t interval = intervalTimer_.Elapsed();
-    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderFrame interval: %{public}" PRIu64 " ms",
+    int64_t interval = intervalTimer_.Elapsed();
+    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderFrame interval: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     auto now = std::chrono::high_resolution_clock::now();
@@ -457,8 +472,8 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
     }
     timer.Stop();
-    uint64_t elapsed = timer.Elapsed();
-    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode :name %{public}s, RenderFrame elapsed time: %{public}" PRIu64 " ms",
+    int64_t elapsed = timer.Elapsed();
+    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode :name %{public}s, RenderFrame elapsed time: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), elapsed);
     intervalTimer_.Start();
 #endif
@@ -484,7 +499,7 @@ uint64_t HpaeOffloadSinkOutputNode::CalcOffloadCacheLenInHdi()
 {
     auto now = std::chrono::high_resolution_clock::now();
     uint64_t time = now > hdiPos_.second ?
-        std::chrono::duration_cast<std::chrono::microseconds>(now - hdiPos_.second).count() : 0;
+        static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(now - hdiPos_.second).count()) : 0;
     uint64_t hdiPos = hdiPos_.first + time;
     uint64_t cacheLenInHdi = writePos_ > hdiPos ? (writePos_ - hdiPos) : 0;
     AUDIO_DEBUG_LOG("offload latency: %{public}" PRIu64 " write pos: %{public}" PRIu64
@@ -511,6 +526,7 @@ void HpaeOffloadSinkOutputNode::OffloadSetHdiVolume()
 
 void HpaeOffloadSinkOutputNode::OffloadCallback(const RenderCallbackType type)
 {
+    Trace trace("HpaeOffloadSinkOutputNode::OffloadCallback");
     switch (type) {
         case CB_NONBLOCK_WRITE_COMPLETED: {
             if (isHdiFull_.load()) {
@@ -524,6 +540,13 @@ void HpaeOffloadSinkOutputNode::OffloadCallback(const RenderCallbackType type)
             }
             break;
         }
+        case CB_RENDER_FULL: {
+            if (!isHdiFull_.load()) {
+                RunningLock(false);
+                isHdiFull_.store(true);
+            }
+            break;
+        }
         default:
             break;
     }
@@ -533,6 +556,13 @@ void HpaeOffloadSinkOutputNode::RegOffloadCallback()
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     audioRendererSink_->RegistOffloadHdiCallback([this](const RenderCallbackType type) { OffloadCallback(type); });
+}
+
+int32_t HpaeOffloadSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
+    return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

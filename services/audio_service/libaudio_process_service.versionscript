@@ -52,10 +52,15 @@
     *GetOfflineStream*;
     *GetOfflineAudioEffectChains*;
     *GetStandbyStatus*;
+    *SaveForegroundList*;
+    *MatchForegroundList*;
+    *InForegroundList*;
+    *UpdateForegroundState*;
     *GenerateSessionId*;
     *LoadModernInnerCapSink*;
     *UnloadModernInnerCapSink*;
     *ConfigCoreServiceProvider*;
+    *UpdateSessionOperation*;
     *SetSessionMuteState*;
     *SetLatestMuteState*;
   local:

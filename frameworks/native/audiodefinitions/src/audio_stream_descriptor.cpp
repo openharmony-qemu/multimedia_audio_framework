@@ -122,6 +122,12 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
     }
 }
 
+void AudioStreamDescriptor::SetBunduleName(std::string &bundleName)
+{
+    AUDIO_INFO_LOG("Bundle name: %{public}s", bundleName.c_str());
+    bundleName_ = bundleName;
+}
+
 void AudioStreamDescriptor::Dump(std::string &dumpString)
 {
     AppendFormat(dumpString, "  Stream %d:\n", sessionId_);
@@ -190,6 +196,17 @@ void AudioStreamDescriptor::DumpDeviceAttrs(std::string &dumpString)
             desc->Dump(dumpString);
         }
     }
+}
+
+std::string AudioStreamDescriptor::GetNewDevicesTypeString()
+{
+    std::string out = "";
+    for (auto &desc : newDeviceDescs_) {
+        if (desc != nullptr) {
+            out += (desc->GetDeviceTypeString() + ":");
+        }
+    }
+    return out;
 }
 
 } // AudioStandard

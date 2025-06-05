@@ -71,7 +71,7 @@ enum StreamManagerState {
     STREAM_MANAGER_RELEASED
 };
 
-enum MOVE_SESSION_TYPE {
+enum MoveSessionType {
     MOVE_SINGLE,
     MOVE_ALL,
     MOVE_PREFER,
@@ -94,6 +94,7 @@ struct HpaeStreamInfo {
     int32_t pid = 0;
     HpaeEffectInfo effectInfo;
     std::string deviceName;
+    bool isMoveAble = true;
 };
 
 static inline int32_t GetSizeFromFormat(int32_t format)

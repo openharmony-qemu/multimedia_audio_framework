@@ -251,6 +251,18 @@ int64_t ClockTime::GetRealNano()
     return result;
 }
 
+int64_t ClockTime::GetBootNano()
+{
+    int64_t result = -1; // -1 for bad result
+    struct timespec time;
+    clockid_t clockId = CLOCK_BOOTTIME;
+    int ret = clock_gettime(clockId, &time);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
+        "GetBootNanotime fail, result:%{public}d", ret);
+    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
+    return result;
+}
+
 int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
 {
     int32_t ret = -1; // -1 for bad result.
@@ -303,6 +315,19 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
     }
 
     return ret;
+}
+
+void ClockTime::GetAllTimeStamp(std::vector<uint64_t> &timestamp)
+{
+    timestamp.resize(Timestamp::Timestampbase::BASESIZE);
+    int64_t tmpTime = GetCurNano();
+    if (tmpTime > 0) {
+        timestamp[Timestamp::Timestampbase::MONOTONIC] = static_cast<uint64_t>(tmpTime);
+    }
+    tmpTime = GetBootNano();
+    if (tmpTime > 0) {
+        timestamp[Timestamp::Timestampbase::BOOTTIME] = static_cast<uint64_t>(tmpTime);
+    }
 }
 
 void Trace::Count(const std::string &value, int64_t count)
@@ -402,6 +427,7 @@ bool PermissionUtil::VerifyIsSystemApp()
     return true;
 #endif
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    WatchTimeout guard("Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID");
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
 
@@ -480,6 +506,18 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
         AUDIO_ERR_LOG("failed: not allowed!");
     }
     return ret;
+}
+
+bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowedUids)
+{
+    CHECK_AND_RETURN_RET_LOG(allowedUids.size() > 0, false, "allowedUids is empty");
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    for (const auto &uid : allowedUids) {
+        if (uid == callingUid) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::mutex g_switchMapMutex;
@@ -1490,6 +1528,8 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
             AUDIO_ERR_LOG("LatencyMeas GetExtraParameter failed!");
             AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s",
                 rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+            AUTO_CTRACE("LatencyMeas RendererMockTime:%s, SinkDetectedTime:%s",
+                rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
             return;
         }
         dspBeforeSmartPa_ = dspDetectedTime_.substr(extraStrLen_, DATE_LENGTH);
@@ -1498,11 +1538,16 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
         AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s, "
                        "DspBeforeSmartPa:%{public}s, DspAfterSmartPa:%{public}s", rendererMockTime_.c_str(),
                        sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
+        AUTO_CTRACE("LatencyMeas RendererMockTime:%s, SinkDetectedTime:%s, "
+                       "DspBeforeSmartPa:%s, DspAfterSmartPa:%s", rendererMockTime_.c_str(),
+                       sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
     } else {
         AUDIO_INFO_LOG("renderer mock time %{public}s", rendererMockTime_.c_str());
         if (dspDetectedTime_.length() == 0) {
             AUDIO_ERR_LOG("LatencyMeas GetExtraParam failed!");
             AUDIO_INFO_LOG("LatencyMeas CapturerDetectedTime:%{public}s, SourceDetectedTime:%{public}s",
+                capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str());
+            AUTO_CTRACE("LatencyMeas CapturerDetectedTime:%s, SourceDetectedTime:%s",
                 capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str());
             return;
         }
@@ -1511,12 +1556,17 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
         AUDIO_INFO_LOG("LatencyMeas CapturerDetectedTime:%{public}s, SourceDetectedTime:%{public}s, "
                        "DspMockTime:%{public}s", capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str(),
                        dspMockTime_.c_str());
+        AUTO_CTRACE("LatencyMeas CapturerDetectedTime:%s, SourceDetectedTime:%s, "
+                       "DspMockTime:%s", capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str(),
+                       dspMockTime_.c_str());
     }
 }
 
 void LatencyMonitor::ShowBluetoothTimestamp()
 {
     AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
+        rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+    AUTO_CTRACE("LatencyMeas RendererMockTime:%s, BTSinkDetectedTime:%s",
         rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
 }
 
@@ -1556,6 +1606,9 @@ const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             device = "BLUETOOTH_A2DP";
+            break;
+        case DEVICE_TYPE_NEARLINK:
+            device = "NEARLINK";
             break;
         case DEVICE_TYPE_MIC:
             device = "MIC";
@@ -1740,6 +1793,7 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
         STREAM_USAGE_MOVIE,
         STREAM_USAGE_AUDIOBOOK,
         STREAM_USAGE_GAME,
+        STREAM_USAGE_NAVIGATION,
         STREAM_USAGE_VOICE_MESSAGE}},
     {STREAM_VOICE_ASSISTANT, {
         STREAM_USAGE_VOICE_ASSISTANT}},
@@ -1748,9 +1802,7 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
     {STREAM_ACCESSIBILITY, {
         STREAM_USAGE_ACCESSIBILITY}},
     {STREAM_ULTRASONIC, {
-        STREAM_USAGE_ULTRASONIC}},
-    {STREAM_NAVIGATION, {
-        STREAM_USAGE_NAVIGATION}}
+        STREAM_USAGE_ULTRASONIC}}
 };
 
 std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::pcVolumeToStreamUsageMap_ = {

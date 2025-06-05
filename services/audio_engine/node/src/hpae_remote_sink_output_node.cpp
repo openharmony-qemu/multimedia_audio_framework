@@ -54,7 +54,7 @@ HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo)
 void HpaeRemoteSinkOutputNode::HandleRemoteTiming()
 {
     remoteTimer_.Stop();
-    uint64_t remoteElapsed = remoteTimer_.Elapsed();
+    int64_t remoteElapsed = remoteTimer_.Elapsed();
     auto now = std::chrono::high_resolution_clock::now();
     remoteTimePoint_ += std::chrono::milliseconds(20);  // 20ms frameLen, need optimize
     std::this_thread::sleep_for(remoteSleepTime_);
@@ -202,8 +202,8 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     int32_t ret = audioRendererSink_->Init(attr);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRIu64
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64
                    " ms ret: %{public}d",
         sinkOutAttr_.adapterName.c_str(),
         interval,
@@ -237,8 +237,8 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkDeInit(void)
     HdiAdapterManager::GetInstance().ReleaseId(renderId_);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
@@ -301,8 +301,8 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkStart(void)
     }
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
@@ -329,8 +329,8 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkStop(void)
     }
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     SetSinkState(STREAM_MANAGER_SUSPENDED);
@@ -356,6 +356,12 @@ size_t HpaeRemoteSinkOutputNode::GetPreOutNum()
     return inputStream_.GetPreOutputNum();
 }
 
+int32_t HpaeRemoteSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
+    return audioRendererSink_->UpdateAppsUid(appsUid);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

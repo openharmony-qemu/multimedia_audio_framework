@@ -48,7 +48,7 @@ public:
     int32_t Release(uint32_t sessionId) override;
     int32_t MoveStream(uint32_t sessionId, const std::string& sinkName) override;
     int32_t MoveAllStream(const std::string& sinkName, const std::vector<uint32_t>& sessionIds,
-        MOVE_SESSION_TYPE moveType = MOVE_ALL) override;
+        MoveSessionType moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
     int32_t SetMute(bool isMute) override;
     void Process() override;
@@ -73,6 +73,7 @@ public:
     int32_t UpdateSpatializationState(uint32_t sessionId, bool spatializationEnabled,
         bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
+    int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
     HpaeSinkInfo GetSinkInfo() override;
@@ -95,10 +96,12 @@ private:
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t ConnectInputSession();
     int32_t DisConnectInputSession();
+    void DeleteInputSession();
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
-        MOVE_SESSION_TYPE moveType);
+        MoveSessionType moveType);
     void InitSinkInner();
+    void UpdateAppsUid();
 
     HpaeRenderSessionInfo sessionInfo_;
     std::shared_ptr<HpaeSinkInputNode> sinkInputNode_ = nullptr;
@@ -107,8 +110,10 @@ private:
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
+    std::vector<int32_t> appsUid_;
     HpaeSinkInfo sinkInfo_;
     bool isMute_ = false;
+    std::atomic<bool> isSuspend_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -97,6 +97,9 @@ enum AudioByteSize : int32_t {
     BYTE_SIZE_SAMPLE_S32 = 4,
 };
 
+#define PRESTORE_INFO_AUDIO_BALANCE "audio_balance"
+#define PRESTORE_INFO_AUDIO_MONO "audio_mono"
+
 #define TIMEOUT_SECONDS_10 10
 #define TIMEOUT_SECONDS_5 5
 #define MAX_MIX_CHANNELS 32

@@ -108,9 +108,12 @@ class ClockTime {
 public:
     static int64_t GetCurNano();
     static int64_t GetRealNano();
+    static int64_t GetBootNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);
     static int32_t RelativeSleep(int64_t nanoTime);
     static std::string NanoTimeToString(int64_t nanoTime);
+
+    static void GetAllTimeStamp(std::vector<uint64_t> &timestamps);
 };
 
 /**
@@ -149,6 +152,7 @@ public:
     static bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId);
     static int32_t StartUsingPermission(uint32_t targetTokenId, const char* permission);
     static int32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
+    static bool CheckCallingUidPermission(const std::vector<uid_t> &allowedUids);
 };
 
 class SwitchStreamUtil {

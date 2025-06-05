@@ -64,23 +64,23 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-sptr<AudioPolicyServer> GetServerPtr()
+AudioPolicyServer* GetServerPtr()
 {
-    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit) {
-        server->OnStart();
-        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+        server.OnStart();
+        server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+        server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server->OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
-        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        server.OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
+        server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
         g_hasServerInit = true;
     }
-    return server;
+    return &server;
 }
 
 void MoreFuzzTest()
@@ -133,13 +133,6 @@ void AddSetAudioManagerInterruptCallbackFuzzTest()
     GetServerPtr()->interruptService_->SetAudioInterruptCallback(zoneId, sessionId, object, uid);
 }
 
-void ResetNonInterruptControlFuzzTest() //build.gn 未添加宏定义defines
-{
-    uint32_t sessionId = GetData<uint32_t>();
-    GetServerPtr()->interruptService_->GetClientTypeByStreamId(sessionId);
-    GetServerPtr()->interruptService_->ResetNonInterruptControl(sessionId);
-}
-
 void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
 {
     int id = GetData<int>();
@@ -152,7 +145,6 @@ TestFuncs g_testFuncs = {
     MoreFuzzTest,
     AddAudioSessionFuzzTest,
     AddSetAudioManagerInterruptCallbackFuzzTest,
-    ResetNonInterruptControlFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
 };
 

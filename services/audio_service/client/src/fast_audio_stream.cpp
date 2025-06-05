@@ -70,6 +70,11 @@ void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
+void FastAudioStream::GetRendererInfo(AudioRendererInfo &rendererInfo)
+{
+    rendererInfo = rendererInfo_;
+}
+
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
@@ -1067,6 +1072,11 @@ int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDe
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice error.");
     defaultOutputDevice_ = defaultOutputDevice;
     return SUCCESS;
+}
+
+FastStatus FastAudioStream::GetFastStatus()
+{
+    return FASTSTATUS_FAST;
 }
 
 DeviceType FastAudioStream::GetDefaultOutputDevice()

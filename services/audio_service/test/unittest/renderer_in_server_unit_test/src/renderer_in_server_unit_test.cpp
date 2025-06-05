@@ -668,7 +668,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_002, Te
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
-    bufferDesc.buffer[0] = 0;
+    uint8_t bufferTest = 0;
+    bufferDesc.buffer = &bufferTest;
     rendererInServer->startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
@@ -1954,7 +1955,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerGetAudioPosition_001, TestSiz
     uint64_t framePos = TEST_FRAMEPOS;
     uint64_t timestamp = TEST_TIMESTAMP;
     uint64_t latency = 0;
-    int32_t ret = rendererInServer->GetAudioPosition(framePos, timestamp, latency);
+    int32_t ret = rendererInServer->GetAudioPosition(framePos, timestamp, latency, Timestamp::MONOTONIC);
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1973,7 +1974,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerGetAudioPosition_002, TestSiz
     uint64_t framePos = TEST_FRAMEPOS;
     uint64_t timestamp = TEST_TIMESTAMP;
     uint64_t latency = 0;
-    int32_t ret = rendererInServer->GetAudioPosition(framePos, timestamp, latency);
+    int32_t ret = rendererInServer->GetAudioPosition(framePos, timestamp, latency, Timestamp::MONOTONIC);
 
     EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }

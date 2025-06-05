@@ -31,6 +31,7 @@
 #include "source/i_audio_capture_source.h"
 #include "audio_volume.h"
 #include "audio_performance_monitor.h"
+#include "privacy_kit.h"
 #include "media_monitor_manager.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
@@ -44,6 +45,7 @@ static uint64_t g_id = 1;
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
+static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
@@ -59,6 +61,7 @@ static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_REMOTE_CAST
 };
+const size_t MAX_FG_LIST_SIZE = 10;
 }
 
 AudioService *AudioService::GetInstance()
@@ -107,7 +110,8 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
                 needRelease = true;
                 endpointName = (*paired).second->GetEndpointName();
-                delayTime = GetReleaseDelayTime((*paired).second, isSwitchStream);
+                delayTime = GetReleaseDelayTime((*paired).second, isSwitchStream,
+                    processConfig.audioMode == AUDIO_MODE_RECORD);
             }
             linkedPairedList_.erase(paired);
             isFind = true;
@@ -139,21 +143,17 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
     releaseEndpointThread.detach();
 }
 
-int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream)
+int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord)
 {
     if (endpoint->GetEndpointType() == AudioEndpoint::EndpointType::TYPE_VOIP_MMAP) {
-        return VOIP_ENDPOINT_RELEASE_DELAY_TIME;
+        return isRecord ? VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME : VOIP_ENDPOINT_RELEASE_DELAY_TIME;
     }
-
     if (endpoint->GetDeviceInfo().deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
         return NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS;
     }
-    if (!isSwitchStream) {
-        return A2DP_ENDPOINT_RELEASE_DELAY_TIME;
-    }
     // The delay for destruction and reconstruction cannot be set to 0, otherwise there may be a problem:
     // An endpoint exists at check process, but it may be destroyed immediately - during the re-create process
-    return A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME;
+    return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
 }
 #endif
 
@@ -273,6 +273,68 @@ void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererIn
     allRendererMap_[sessionId] = renderer;
 }
 
+void AudioService::SaveForegroundList(std::vector<std::string> list)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    if (list.size() > MAX_FG_LIST_SIZE) {
+        AUDIO_ERR_LOG("invalid list size %{public}zu", list.size());
+        return;
+    }
+
+    foregroundSet_.clear();
+    foregroundUidSet_.clear();
+    for (auto &item : list) {
+        AUDIO_WARNING_LOG("Add for hap: %{public}s", item.c_str());
+        foregroundSet_.insert(item);
+    }
+}
+
+bool AudioService::MatchForegroundList(const std::string &bundleName, uint32_t uid)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    if (foregroundSet_.find(bundleName) != foregroundSet_.end()) {
+        AUDIO_WARNING_LOG("find hap %{public}s in list!", bundleName.c_str());
+        if (uid != 0) {
+            foregroundUidSet_.insert(uid);
+        }
+        return true;
+    }
+    return false;
+}
+
+bool AudioService::InForegroundList(uint32_t uid)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    if (foregroundUidSet_.find(uid) != foregroundUidSet_.end()) {
+        AUDIO_INFO_LOG("find hap %{public}d in list!", uid);
+        return true;
+    }
+    return false;
+}
+
+bool AudioService::UpdateForegroundState(uint32_t appTokenId, bool isActive)
+{
+    // UpdateForegroundState 200001000 to active
+    std::string str = "UpdateForegroundState " + std::to_string(appTokenId) + (isActive ? "to active" : "to deactive");
+    Trace trace(str);
+    WatchTimeout guard(str);
+    int32_t res = OHOS::Security::AccessToken::PrivacyKit::SetHapWithFGReminder(appTokenId, isActive);
+    AUDIO_INFO_LOG("res is %{public}d for %{public}s", res, str.c_str());
+    return res;
+}
+
+void AudioService::DumpForegroundList(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    std::stringstream temp;
+    temp << "DumpForegroundList:\n";
+    int32_t index = 0;
+    for (auto item : foregroundSet_) {
+        temp << "    " <<  std::to_string(index++) << ": " <<  item << "\n";
+    }
+    dumpString = temp.str();
+}
+
 int32_t AudioService::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
 {
     // for normal renderer.
@@ -350,8 +412,11 @@ void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
 
     // inner-cap not working
-    if (workingConfigs_.size() == 0) {
-        return;
+    {
+        std::lock_guard<std::mutex> lock(workingConfigsMutex_);
+        if (workingConfigs_.size() == 0) {
+            return;
+        }
     }
     // in plan: check if meet with the workingConfig_
     std::set<int32_t> captureIds;
@@ -392,6 +457,7 @@ bool isFilterMatched(const std::vector<T> &params, T param, FilterMode mode)
 bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId)
 {
     bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    std::lock_guard<std::mutex> lock(workingConfigsMutex_);
     if (!canBeCaptured || innerCapId == 0 || !workingConfigs_.count(innerCapId)) {
         AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
         return false;
@@ -407,6 +473,7 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, st
         return false;
     }
     bool ret = false;
+    std::lock_guard<std::mutex> lock(workingConfigsMutex_);
     for (auto& filter : workingConfigs_) {
         if (CheckShouldCap(rendererConfig, filter.first)) {
             ret = true;
@@ -502,6 +569,7 @@ void AudioService::FilterAllFastProcess()
 
 int32_t AudioService::CheckDisableFastInner(std::shared_ptr<AudioEndpoint> endpoint)
 {
+    std::lock_guard<std::mutex> lock(workingConfigsMutex_);
     for (auto workingConfig : workingConfigs_) {
         if (!endpoint->ShouldInnerCap(workingConfig.first)) {
             endpoint->DisableFastInnerCap(workingConfig.first);
@@ -618,15 +686,21 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
     // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
     // step 2: if sessionId is already in using, this means the config is changed. Check the filtered renderer before,
     // call disable inner-cap for those not meet with the new config, than filter all allRendererMap_.
-
-    if (workingConfigs_.count(innerCapId)) {
-        workingConfigs_[innerCapId] = newConfig;
+    bool isOldCap = false;
+    {
+        std::lock_guard<std::mutex> lock(workingConfigsMutex_);
+        if (workingConfigs_.count(innerCapId)) {
+            workingConfigs_[innerCapId] = newConfig;
+            isOldCap = true;  
+        } else {
+            workingConfigs_[innerCapId] = newConfig; 
+        }
+    }
+    if (isOldCap) {
         return OnUpdateInnerCapList(innerCapId);
     } else {
-        workingConfigs_[innerCapId] = newConfig;
         return OnInitInnerCapList(innerCapId);
     }
-
     AUDIO_WARNING_LOG("%{public}u is working, comming %{public}u will not work!", innerCapId, sessionId);
     return ERR_OPERATION_FAILED;
 #endif
@@ -636,11 +710,14 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
 int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId)
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
-    if (!workingConfigs_.count(innerCapId)) {
-        AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", innerCapId, sessionId);
-        return SUCCESS;
+    {
+        std::lock_guard<std::mutex> lock(workingConfigsMutex_);
+        if (!workingConfigs_.count(innerCapId)) {
+            AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", innerCapId, sessionId);
+            return SUCCESS;
+        }
+        workingConfigs_.erase(innerCapId);
     }
-    workingConfigs_.erase(innerCapId);
 
 #ifdef SUPPORT_LOW_LATENCY
     std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
@@ -931,10 +1008,10 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
     return deviceInfo;
 }
 
-void AudioService::CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord)
+void AudioService::CheckBeforeRecordEndpointCreate(bool isRecord)
 {
     // release at once to avoid normal fastsource and voip fastsource existing at the same time
-    if (isVoip && isRecord) {
+    if (isRecord) {
         for (auto &item : endpointList_) {
             if (item.second->GetAudioMode() == AudioMode::AUDIO_MODE_RECORD) {
                 std::string endpointName = item.second->GetEndpointName();
@@ -982,7 +1059,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
                 [[fallthrough]];
             }
             case ReuseEndpointType::CREATE_ENDPOINT: {
-                CheckBeforeVoipEndpointCreate(isVoipStream, clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
+                CheckBeforeRecordEndpointCreate(clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
                 endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ? AudioEndpoint::TYPE_VOIP_MMAP :
                     AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
                 CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
@@ -1032,10 +1109,13 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
 void AudioService::Dump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("AudioService dump begin");
-    for (auto &workingConfig_ : workingConfigs_) {
-        AppendFormat(dumpString, "InnerCapid: %s  - InnerCap filter: %s\n",
+    {
+        std::lock_guard<std::mutex> lock(workingConfigsMutex_);
+        for (auto &workingConfig_ : workingConfigs_) {
+            AppendFormat(dumpString, "InnerCapid: %s  - InnerCap filter: %s\n",
             std::to_string(workingConfig_.first).c_str(),
             ProcessConfig::DumpInnerCapConfig(workingConfig_.second).c_str());
+        }
     }
 #ifdef SUPPORT_LOW_LATENCY
     // dump process

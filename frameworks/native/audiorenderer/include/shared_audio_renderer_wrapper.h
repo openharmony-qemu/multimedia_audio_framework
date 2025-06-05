@@ -201,6 +201,12 @@ public:
         sharedAudioRenderer_->UnsetRendererPeriodPositionCallback();
     }
 
+    void SetFastStatusChangeCallback(
+        const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback) override
+    {
+        return;
+    }
+
     int32_t SetBufferDuration(uint64_t bufferDuration) const override
     {
         return sharedAudioRenderer_->SetBufferDuration(bufferDuration);
@@ -415,6 +421,11 @@ public:
         return sharedAudioRenderer_->SetDefaultOutputDevice(deviceType);
     }
 
+    FastStatus GetFastStatus() override
+    {
+        return FASTSTATUS_NORMAL;
+    }
+
     bool Mute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override
     {
         return sharedAudioRenderer_->Mute(cmdType);
@@ -433,6 +444,21 @@ public:
     void SetSourceDuration(int64_t duration) override
     {
         return sharedAudioRenderer_->SetSourceDuration(duration);
+    }
+
+    int32_t StartDataCallback() override
+    {
+        return sharedAudioRenderer_->StartDataCallback();
+    }
+
+    int32_t StopDataCallback() override
+    {
+        return sharedAudioRenderer_->StopDataCallback();
+    }
+
+    void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
+    {
+        return sharedAudioRenderer_->SetInterruptEventCallbackType(callbackType);
     }
 
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)

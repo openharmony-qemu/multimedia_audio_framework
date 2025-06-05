@@ -36,13 +36,24 @@ public:
         const std::string& value) override;
     void OnCapturerState(bool isActive) override;
     void OnWakeupClose() override;
+    void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override;
 
     // AudioManagerListenerStub
     void SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback);
     void SetWakeupSourceCallback(const std::weak_ptr<WakeUpSourceCallback>& callback);
+    int32_t AddDataTransferStateChangeCallback(const DataTransferMonitorParam &param,
+        std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb);
+    std::vector<int32_t> RemoveDataTransferStateChangeCallback(
+        std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb);
 private:
+    using ParamPair = std::pair<DataTransferMonitorParam,
+        std::shared_ptr<AudioRendererDataTransferStateChangeCallback>>;
     std::weak_ptr<AudioParameterCallback> callback_;
     std::weak_ptr<WakeUpSourceCallback> wakeUpCallback_;
+    int32_t callbackId_ = 0;
+    std::mutex stateChangeMutex_;
+    std::unordered_map<int32_t, ParamPair> stateChangeCallbackMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

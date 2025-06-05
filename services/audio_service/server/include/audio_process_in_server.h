@@ -25,6 +25,8 @@
 #include "player_dfx_writer.h"
 #include "recorder_dfx_writer.h"
 #include "audio_schedule_guard.h"
+#include "audio_stream_monitor.h"
+#include "audio_stream_checker.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,7 +66,7 @@ public:
 
     int32_t Resume() override;
 
-    int32_t Stop() override;
+    int32_t Stop(AudioProcessStage stage = AUDIO_PROC_STAGE_STOP) override;
 
     int32_t RequestHandleInfo(bool isAsync) override;
 
@@ -120,7 +122,10 @@ public:
 
     int32_t SetUnderrunCount(uint32_t underrunCnt) override;
     void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
-
+    void AddMuteFrameSize(int64_t muteFrameCnt) override;
+    void AddNormalFrameSize() override;
+    void AddNoDataFrameSize() override;
+    StreamStatus GetStreamStatus() override;
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     
     bool TurnOnMicIndicator(CapturerState capturerState);
@@ -135,6 +140,7 @@ private:
     int64_t GetLastAudioDuration();
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
+    bool CheckBGCapturer();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
 
@@ -182,6 +188,7 @@ private:
 
     std::array<std::shared_ptr<SharedAudioScheduleGuard>, METHOD_MAX> scheduleGuards_ = {};
     std::mutex scheduleGuardsMutex_;
+    std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

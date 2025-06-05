@@ -1481,7 +1481,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_046, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = true;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 /**
@@ -1499,7 +1499,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_047, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = false;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, ERROR_UNSUPPORTED);
 }
 /**
@@ -1517,7 +1517,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_048, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = true;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 /**
@@ -1535,7 +1535,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_049, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = false;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 /**
@@ -2725,10 +2725,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_136, TestSize.Level1)
 
     int32_t volumeLevel = 1;
     auto ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, true, false);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 
     ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, true, false);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 
     ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, true, false);
     EXPECT_EQ(ret, SUCCESS);
@@ -2748,7 +2748,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_138, TestSize.Level1)
     EXPECT_EQ(ret, false);
 
     ret = server->GetStreamMuteInternal(AudioStreamType::STREAM_RING);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2909,7 +2909,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
 
     volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2942,7 +2942,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_150, TestSize.Level1)
     int32_t volumeLevel = 1;
     int32_t volumeFlag = VolumeFlag::FLAG_SHOW_SYSTEM_UI;
     auto ret = server->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 
     volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_APP);
     ret = server->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
@@ -3125,7 +3125,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_159, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     ret = server->AdjustVolumeByStep(VolumeAdjustType::VOLUME_DOWN);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -3305,6 +3305,19 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_169, TestSize.Level1)
 
     int32_t result = server->DeactivatePreemptMode();
     EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_170
+* @tc.desc  : Test SubscribeBackgroundTask.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_170, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    server->SubscribeBackgroundTask();
 }
 } // AudioStandard
 } // OHOS

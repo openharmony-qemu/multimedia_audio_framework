@@ -68,6 +68,14 @@ public:
         int32_t innerCapId) override;
     int32_t OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId) override;
 
+    void SaveForegroundList(std::vector<std::string> list);
+    // if match, keep uid for speed up, used in create process.
+    bool MatchForegroundList(const std::string &bundleName, uint32_t uid);
+    // used in start process.
+    bool InForegroundList(uint32_t uid);
+    bool UpdateForegroundState(uint32_t appTokenId, bool isActive);
+    void DumpForegroundList(std::string &dumpString);
+
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
@@ -78,7 +86,7 @@ public:
     int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
-    void CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord);
+    void CheckBeforeRecordEndpointCreate(bool isRecord);
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
         const AudioProcessConfig &clientConfig, bool isVoipStream);
@@ -142,7 +150,7 @@ private:
         std::shared_ptr<AudioEndpoint> audioEndpoint);
 
     void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
-    int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream);
+    int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord);
 #endif
     InnerCapFilterPolicy GetInnerCapFilterPolicy(int32_t innerCapId);
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
@@ -163,6 +171,9 @@ private:
     bool IsMuteSwitchStream(uint32_t sessionId);
 
 private:
+    std::mutex foregroundSetMutex_;
+    std::set<std::string> foregroundSet_;
+    std::set<uint32_t> foregroundUidSet_;
     std::mutex processListMutex_;
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;
@@ -183,6 +194,7 @@ private:
     std::mutex rendererMapMutex_;
     std::mutex capturerMapMutex_;
     std::mutex muteSwitchStreamSetMutex_;
+    std::mutex workingConfigsMutex_;
     std::unordered_map<int32_t, std::vector<std::weak_ptr<RendererInServer>>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};

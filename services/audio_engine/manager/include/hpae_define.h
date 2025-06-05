@@ -25,8 +25,10 @@ constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 
 struct HpaeSessionInfo {
     HpaeStreamInfo streamInfo;
-    uint32_t state = I_STATUS_IDLE;
+    HpaeSessionState state = HPAE_SESSION_NEW;
     std::weak_ptr<IStatusCallback> statusCallback;
+    int32_t offloadType = OFFLOAD_DEFAULT;
+    bool offloadEnable = false;
 };
 
 
@@ -36,6 +38,7 @@ struct HpaeRenderSessionInfo {
     uint32_t sinkInputNodeId;
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
+    bool isMoveAble = true;
 };
 
 struct HpaeSinkInputInfo {
@@ -71,6 +74,7 @@ struct HpaeSinkInfo {
 struct HpaeCapturerSessionInfo {
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
+    bool isMoveAble = true;
 };
 
 struct HpaeSourceOutputInfo {

@@ -104,7 +104,7 @@ HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_003, TestSize.Level1)
 {
     EXPECT_TRUE(sink_ && sink_->IsInited());
     int32_t ret = sink_->Start();
-    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    EXPECT_EQ(ret, SUCCESS);
     ret = sink_->Stop();
     EXPECT_EQ(ret, SUCCESS);
     ret = sink_->Resume();
@@ -128,13 +128,13 @@ HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_004, TestSize.Level1)
 {
     EXPECT_TRUE(sink_ && sink_->IsInited());
     int32_t ret = sink_->SetVolume(0.0f, 0.0f);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
     ret = sink_->SetVolume(0.0f, 1.0f);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
     ret = sink_->SetVolume(1.0f, 0.0f);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
     ret = sink_->SetVolume(1.0f, 1.0f);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
     float left;
     float right;
     ret = sink_->GetVolume(left, right);
@@ -151,7 +151,7 @@ HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_005, TestSize.Level1)
     EXPECT_TRUE(sink_ && sink_->IsInited());
     std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
     int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT, deviceTypes);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
 /**

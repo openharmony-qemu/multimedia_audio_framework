@@ -377,7 +377,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_002, TestSize.Level1)
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_MOVE);
+    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
 }
 
 /**

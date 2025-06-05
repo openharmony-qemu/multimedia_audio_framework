@@ -66,13 +66,15 @@ public:
     bool TurnOffMicIndicator(CapturerState capturerState);
 
 private:
+    bool CheckBGCapture();
     int32_t InitCacheBuffer(size_t targetSize);
     bool IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
         std::shared_ptr<IStreamListener> stateListener);
     int32_t StartInner();
     int64_t GetLastAudioDuration();
     void HandleOperationFlushed();
-    void UpdateBufferTimeStamp(const BufferDesc &dstBuffer);
+    void HandleOperationStopped(CapturerStage stage);
+    void UpdateBufferTimeStamp(size_t readLen);
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -114,6 +116,7 @@ private:
     std::unique_ptr<RecorderDfxWriter> recorderDfx_;
 
     uint64_t curProcessPos_ = 0;
+    uint64_t lastPosInc_ = 0;
     std::shared_ptr<CapturerClock> capturerClock_ = nullptr;
 };
 } // namespace AudioStandard

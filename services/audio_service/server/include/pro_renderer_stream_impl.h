@@ -40,7 +40,7 @@ public:
     int32_t Release() override;
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
     int32_t GetCurrentTimeStamp(uint64_t &timestamp) override;
-    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency) override;
+    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
     int32_t SetAudioEffectMode(int32_t effectMode) override;
@@ -63,6 +63,7 @@ public:
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex, uint64_t &cacheTimeDsp,
                                              uint64_t &cacheTimePa) override;
     int32_t OffloadSetVolume(float volume) override;
+    int32_t SetOffloadDataCallbackState(int32_t state) override;
     size_t GetWritableSize() override;
     // offload end
 

@@ -30,6 +30,9 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 constexpr uint32_t SLEEP_TIME_IN_US = 20000;
+static constexpr int64_t WAIT_CLOSE_PA_TIME = 4; // 4s
+static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
+static constexpr int64_t TIME_IN_US = 1000000;
 }
 
 HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
@@ -48,7 +51,7 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
 void HpaeSinkOutputNode::HandleRemoteTiming()
 {
     remoteTimer_.Stop();
-    uint64_t remoteElapsed = remoteTimer_.Elapsed();
+    int64_t remoteElapsed = remoteTimer_.Elapsed();
     auto now = std::chrono::high_resolution_clock::now();
     remoteTimePoint_ += std::chrono::milliseconds(20);  // 20ms frameLen, need optimize
     std::this_thread::sleep_for(remoteSleepTime_);
@@ -63,11 +66,7 @@ void HpaeSinkOutputNode::HandleRemoteTiming()
 
 void HpaeSinkOutputNode::DoProcess()
 {
-    auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
-    auto ch = "ch[" + std::to_string(GetChannelCount()) + "]_";
-    auto len = "len[" + std::to_string(GetFrameLen()) + "]_";
-    auto format = "bit[" + std::to_string(GetBitWidth()) + "]";
-    Trace trace("HpaeSinkOutputNode::DoProcess " + rate + ch + len + format);
+    Trace trace("HpaeSinkOutputNode::DoProcess " + GetTraceInfo());
     if (audioRendererSink_ == nullptr) {
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
@@ -77,6 +76,7 @@ void HpaeSinkOutputNode::DoProcess()
         return;
     }
     HpaePcmBuffer *outputData = outputVec.front();
+    HandlePaPower(outputData);
     ConvertFromFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
     uint64_t writeLen = 0;
@@ -102,8 +102,8 @@ void HpaeSinkOutputNode::DoProcess()
     }
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t elapsed = timer.Elapsed();
-    AUDIO_DEBUG_LOG("HpaeSinkOutputNode :name %{public}s, RenderFrame elapsed time: %{public}" PRIu64 " ms",
+    int64_t elapsed = timer.Elapsed();
+    AUDIO_DEBUG_LOG("HpaeSinkOutputNode :name %{public}s, RenderFrame elapsed time: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         elapsed);
     intervalTimer_.Start();
@@ -183,8 +183,8 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     int32_t ret = audioRendererSink_->Init(attr);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRIu64
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64
                    " ms ret: %{public}d",
         sinkOutAttr_.adapterName.c_str(),
         interval,
@@ -212,8 +212,8 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
     HdiAdapterManager::GetInstance().ReleaseId(renderId_);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
@@ -276,14 +276,22 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
     }
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
     SetSinkState(STREAM_MANAGER_RUNNING);
     if (GetDeviceClass() == "remote") {
         remoteTimePoint_ = std::chrono::high_resolution_clock::now();
+    }
+    if (GetDeviceClass() == "primary") {
+        ret = audioRendererSink_->SetPaPower(true);
+        isOpenPaPower_ = true;
+        isDisplayPaPowerState_ = false;
+        silenceDataUs_ = 0;
+        AUDIO_INFO_LOG("Speaker sink started, open pa:[%{public}s] -- [%{public}s], ret:%{public}d",
+            GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
     }
     return SUCCESS;
 }
@@ -304,8 +312,8 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
     }
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
-    uint64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRIu64 " ms",
+    int64_t interval = timer.Elapsed();
+    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     SetSinkState(STREAM_MANAGER_SUSPENDED);
@@ -331,6 +339,57 @@ size_t HpaeSinkOutputNode::GetPreOutNum()
     return inputStream_.GetPreOutputNum();
 }
 
+int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
+    return audioRendererSink_->UpdateAppsUid(appsUid);
+}
+
+void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
+{
+    if (GetDeviceClass() != "primary" || !pcmBuffer->IsValid()) {
+        return;
+    }
+    if (pcmBuffer->IsSilence()) {
+        if (!isDisplayPaPowerState_) {
+            AUDIO_INFO_LOG("Timing begins, will close speaker after [%{public}" PRId64 "]s", WAIT_CLOSE_PA_TIME);
+            isDisplayPaPowerState_ = true;
+        }
+        silenceDataUs_ += pcmBuffer->GetFrameLen() * TIME_IN_US / pcmBuffer->GetSampleRate();
+        if (isOpenPaPower_ && silenceDataUs_ >= WAIT_CLOSE_PA_TIME * TIME_IN_US) {
+            int32_t ret = audioRendererSink_->SetPaPower(false);
+            isOpenPaPower_ = false;
+            silenceDataUs_ = 0;
+            AUDIO_INFO_LOG("Speaker pa volume change to zero over [%{public}" PRId64
+                "]s, close %{public}s pa [%{public}s], ret:%{public}d",
+                WAIT_CLOSE_PA_TIME, GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
+        } else if (!isOpenPaPower_ && silenceDataUs_ >= MONITOR_CLOSE_PA_TIME * TIME_IN_US) {
+            silenceDataUs_ = 0;
+            AUDIO_INFO_LOG("Speaker pa have closed [%{public}" PRId64 "]s.", MONITOR_CLOSE_PA_TIME);
+        }
+    } else {
+        if (isDisplayPaPowerState_) {
+            isDisplayPaPowerState_ = false;
+            AUDIO_INFO_LOG("Volume change to non zero, break the speaker closing.");
+        }
+        silenceDataUs_ = 0;
+        if (!isOpenPaPower_) {
+            int32_t ret = audioRendererSink_->SetPaPower(true);
+            isOpenPaPower_ = true;
+            AUDIO_INFO_LOG("Volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
+                GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
+        }
+    }
+}
+
+int32_t HpaeSinkOutputNode::RenderSinkSetPriPaPower()
+{
+    int32_t ret = audioRendererSink_->SetPriPaPower();
+    AUDIO_INFO_LOG("Open pri pa:[%{public}s] -- [%{public}s], ret:%{public}d",
+        GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
+    return ret;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

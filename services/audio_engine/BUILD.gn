@@ -124,6 +124,7 @@ config("audio_engine_node_config") {
     "../audio_policy/util/include",
     "../../frameworks/native/audioeffect/include",
     "../../interfaces/inner_api/native/audiocommon/include",
+    "../../frameworks/native/audioclock/include",
     "../../frameworks/native/hdiadapter_new/include",
   ]
 
@@ -147,6 +148,12 @@ ohos_shared_library("audio_engine_node") {
     debug = false
   }
   install_enable = true
+
+  defines = []
+
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
+  }
 
   configs = [ ":audio_engine_node_config" ]
 
@@ -176,6 +183,7 @@ ohos_shared_library("audio_engine_node") {
   deps = [
     ":audio_engine_plugins",
     ":audio_engine_utils",
+    "../../frameworks/native/audioclock:audio_clock",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
@@ -234,6 +242,7 @@ ohos_shared_library("audio_engine_manager") {
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
+    "../audio_service:audio_common",
   ]
 
   external_deps = [

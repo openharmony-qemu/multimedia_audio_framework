@@ -155,6 +155,11 @@ public:
     State state_ = State::RUNNING;
 };
 
+class CapturerFastStatusChangeCallbackTest : public AudioCapturerFastStatusChangeCallback {
+public:
+    void OnFastStatusChange(FastStatus status) override { return; }
+};
+
 /**
 * @tc.name  : Test MISCELLANEOUS classes of module audio capturer.
 * @tc.number: Audio_Capturer_MISCELLANEOUS_001.
@@ -795,6 +800,57 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_027, TestSize.Level1)
 
     capturer->OnInterrupt(interruptEvent);
     EXPECT_EQ(capturer->switching_, false);
+}
+
+/**
+ * @tc.name  : Test GetFastStatus API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_028
+ * @tc.desc  : Test AudioCapturerPrivate::GetFastStatus
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_028, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    ASSERT_NE(audioCapturer, nullptr);
+
+    auto ret = audioCapturer->GetFastStatus();
+    EXPECT_EQ(ret, FASTSTATUS_NORMAL);
+
+    AudioPlaybackCaptureConfig playbackCaptureConfig;
+    audioCapturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    audioCapturer->capturerInfo_.capturerFlags = 0;
+    audioCapturer->capturerInfo_.originalFlag = 0;
+    audioCapturer->filterConfig_ = playbackCaptureConfig;
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S16LE;
+    capturerParams.samplingRate = SAMPLE_RATE_44100;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    audioCapturer->SetParams(capturerParams);
+    ret = audioCapturer->GetFastStatus();
+    EXPECT_EQ(ret, FASTSTATUS_NORMAL);
+}
+
+/**
+ * @tc.name  : Test SetFastStatusChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_029
+ * @tc.desc  : Test AudioCapturerPrivate::SetFastStatusChangeCallback
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_029, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    std::shared_ptr<CapturerFastStatusChangeCallbackTest> fastStatusChangeCallback =
+        std::make_shared<CapturerFastStatusChangeCallbackTest>();
+
+    capturer->SetFastStatusChangeCallback(fastStatusChangeCallback);
+    EXPECT_NE(capturer->fastStatusChangeCallback_, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

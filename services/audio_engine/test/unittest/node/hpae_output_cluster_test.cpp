@@ -122,6 +122,9 @@ TEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest)
     std::shared_ptr<HpaeOutputCluster> hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     nodeInfo.sessionId = SESSION_ID_1;
     nodeInfo.streamType = STREAM_MUSIC;
+    if (hpaeOutputCluster->mixerNode_) {
+        hpaeOutputCluster->mixerNode_->limiter_ = nullptr;
+    }
     std::shared_ptr<HpaeSinkInputNode> musicSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     nodeInfo.sessionId = SESSION_ID_2;
     nodeInfo.streamType = STREAM_RING;

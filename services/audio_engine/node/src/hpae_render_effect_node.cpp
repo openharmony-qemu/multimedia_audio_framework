@@ -28,11 +28,17 @@
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
+<<<<<<< HEAD
 static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNELS = 4;
 static constexpr int32_t DIRECT_CHANNELS = 2;
 static constexpr int32_t COLLABORATIVE_CHANNELS = 2;
 static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX = 2;
 static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX = 3;
+=======
+static constexpr int64_t WAIT_CLOSE_EFFECT_TIME = 4; // 4s
+static constexpr int64_t MONITOR_CLOSE_EFFECT_TIME = 5 * 60; // 5m
+static constexpr int64_t TIME_IN_US = 1000000;
+>>>>>>> upstream/master
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,8 +47,7 @@ namespace HPAE {
 HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     // DEFAUT effect out format
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
-    effectOutput_(pcmBufferInfo_),
-    nodeInfo_(nodeInfo)
+    effectOutput_(pcmBufferInfo_)
 {
     const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
     if (audioSupportedSceneTypes.find(nodeInfo.effectInfo.effectScene) !=
@@ -134,6 +139,9 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
         return inputs[0];
     }
+    if (IsByPassEffectZeroVolume(inputs[0])) {
+        return inputs[0];
+    }
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_) {
@@ -163,6 +171,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     }
 #endif
 
+    effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &effectOutput_;
 }
 
@@ -336,28 +345,30 @@ void HpaeRenderEffectNode::UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo)
 
 void HpaeRenderEffectNode::ReconfigOutputBuffer()
 {
-    uint32_t channels = static_cast<uint32_t>(nodeInfo_.channels);
-    uint64_t channelLayout = nodeInfo_.channelLayout;
+    HpaeNodeInfo &effectNodeInfo = GetNodeInfo();
+    uint32_t channels = static_cast<uint32_t>(effectNodeInfo.channels);
+    uint64_t channelLayout = effectNodeInfo.channelLayout;
     int32_t ret = AudioEffectChainManager::GetInstance()->GetOutputChannelInfo(sceneType_, channels, channelLayout);
     if (ret != SUCCESS || channels == 0 || channelLayout == 0) {
         AUDIO_WARNING_LOG("output channel info incorrect, scene type: %{public}s, "
             "channels: %{public}u, channelLayout: %{public}" PRIu64, sceneType_.c_str(), channels, channelLayout);
-    } else if (static_cast<uint32_t>(nodeInfo_.channels) != channels ||
-        static_cast<uint64_t>(nodeInfo_.channelLayout) != channelLayout) {
+    } else if (static_cast<uint32_t>(effectNodeInfo.channels) != channels ||
+        static_cast<uint64_t>(effectNodeInfo.channelLayout) != channelLayout) {
         AUDIO_INFO_LOG("output channel info changed, scene type: %{public}s, "
             "channels change from %{public}u to %{public}u, "
             "channelLayout change from %{public}" PRIu64 " to %{public}" PRIu64,
-            sceneType_.c_str(), nodeInfo_.channels, channels, nodeInfo_.channelLayout, channelLayout);
-        nodeInfo_.channels = static_cast<AudioChannel>(channels);
-        nodeInfo_.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
-        nodeInfo_.samplingRate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
-        nodeInfo_.frameLen = static_cast<uint32_t>(DEFAULT_EFFECT_FRAMELEN);
+            sceneType_.c_str(), effectNodeInfo.channels, channels, effectNodeInfo.channelLayout, channelLayout);
         PcmBufferInfo pcmBufferInfo = PcmBufferInfo(channels, DEFAULT_EFFECT_FRAMELEN,
             DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames(), effectOutput_.IsMultiFrames());
         effectOutput_.ReConfig(pcmBufferInfo);
+        effectNodeInfo.channels = static_cast<AudioChannel>(channels);
+        effectNodeInfo.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
+        effectNodeInfo.samplingRate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+        effectNodeInfo.frameLen = static_cast<uint32_t>(DEFAULT_EFFECT_FRAMELEN);
+        SetNodeInfo(effectNodeInfo);
 #ifdef ENABLE_HIDUMP_DFX
         if (auto callBack = GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), nodeInfo_);
+            callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), GetNodeInfo());
         }
 #endif
     }
@@ -368,6 +379,38 @@ int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(uint32_t &channels, ui
     return AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType_, channels, channelLayout);
 }
 
+bool HpaeRenderEffectNode::IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer)
+{
+    if (!pcmBuffer->IsValid()) {
+        return false;
+    }
+    if (pcmBuffer->IsSilence()) {
+        if (!isDisplayEffectZeroVolume_) {
+            AUDIO_INFO_LOG("Timing begins, will close [%{public}s] effect after [%{public}" PRId64 "]s",
+                sceneType_.c_str(), WAIT_CLOSE_EFFECT_TIME);
+            isDisplayEffectZeroVolume_ = true;
+        }
+        silenceDataUs_ += pcmBuffer->GetFrameLen() * TIME_IN_US / pcmBuffer->GetSampleRate();
+        if (!isByPassEffect_ && silenceDataUs_ >= WAIT_CLOSE_EFFECT_TIME * TIME_IN_US) {
+            AUDIO_INFO_LOG("Volume change to zero over %{public}" PRId64 "s, close effect:%{public}s success.",
+                WAIT_CLOSE_EFFECT_TIME, sceneType_.c_str());
+            isByPassEffect_ = true;
+            silenceDataUs_ = 0;
+        } else if (isByPassEffect_ && silenceDataUs_ >= MONITOR_CLOSE_EFFECT_TIME * TIME_IN_US) {
+            silenceDataUs_ = 0;
+            AUDIO_INFO_LOG("Effect [%{public}s] have closed [%{public}" PRId64 "]s.",
+                sceneType_.c_str(), MONITOR_CLOSE_EFFECT_TIME);
+        }
+    } else {
+        if (isDisplayEffectZeroVolume_) {
+            AUDIO_INFO_LOG("Volume change to non zero, open effect:%{public}s success.", sceneType_.c_str());
+            isDisplayEffectZeroVolume_ = false;
+        }
+        silenceDataUs_ = 0;
+        isByPassEffect_ = false;
+    }
+    return isByPassEffect_;
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

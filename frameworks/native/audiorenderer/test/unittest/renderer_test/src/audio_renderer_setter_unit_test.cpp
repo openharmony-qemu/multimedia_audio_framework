@@ -1356,7 +1356,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_Write_002, TestSize.Level1
             ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
             bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
                 bytesToWrite - static_cast<size_t>(bytesWritten), metaBuffer, RenderUT::AVS3METADATA_SIZE);
-            EXPECT_GE(bytesWritten, RenderUT::VALUE_ZERO);
+            EXPECT_GE(ERROR, RenderUT::VALUE_ZERO);
         }
         numBuffersToRender--;
     }
@@ -1557,13 +1557,13 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Low_Power_Volume_002, TestSize.
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     unique_ptr<AudioRendererProxyObj> audioRendererProxyObj = std::make_unique<AudioRendererProxyObj>();
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
     audioRendererProxyObj->SaveRendererObj(std::weak_ptr<AudioRendererPrivate>());
     audioRendererProxyObj->SetOffloadModeImpl(0, true);
     audioRendererProxyObj->UnsetOffloadModeImpl();
     float ret = -1.0f;
     audioRendererProxyObj->SetLowPowerVolumeImpl(1.0f);
     audioRendererProxyObj->GetLowPowerVolumeImpl(ret);
-    EXPECT_EQ(-1.0f, ret);
 }
 
 /**

@@ -43,7 +43,8 @@ public:
      * @param cb callback reference for AudioServiceAdapterCallback class
      * @return Returns instance of class that extends AudioServiceAdapter
     */
-    static std::shared_ptr<AudioServiceAdapter> CreateAudioAdapter(std::unique_ptr<AudioServiceAdapterCallback> cb);
+    static std::shared_ptr<AudioServiceAdapter> CreateAudioAdapter(std::unique_ptr<AudioServiceAdapterCallback> cb,
+        bool isAudioEngine = false);
 
     /**
      * @brief Connect to underlining audio server
@@ -72,7 +73,7 @@ public:
      * @return Returns {@link SUCCESS} if module/port is closed successfully; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-    virtual int32_t CloseAudioPort(int32_t audioHandleIndex, bool isSync = false) = 0;
+    virtual int32_t CloseAudioPort(int32_t audioHandleIndex) = 0;
 
     /**
      * @brief sets default audio sink.
