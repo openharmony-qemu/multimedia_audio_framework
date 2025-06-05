@@ -589,6 +589,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
             return;
         }
         AUDIO_INFO_LOG("re-Init HpaeCapturerManager success");
+        HpaePolicyManager::GetInstance().SetInputDevice(captureId_, sourceInfo_.deviceType);
         // connect
         for (const auto &moveInfo : moveInfos) {
             AddSingleNodeToSource(moveInfo, true);

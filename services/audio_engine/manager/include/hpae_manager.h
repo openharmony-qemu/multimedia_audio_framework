@@ -215,7 +215,6 @@ private:
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
-    std::unique_ptr<HpaePolicyManager> hpaePolicyManager_ = nullptr;
     std::unordered_map<std::string, std::shared_ptr<IHpaeCapturerManager>> capturerManagerMap_;
     std::unordered_map<std::string, std::shared_ptr<IHpaeRendererManager>> rendererManagerMap_;
     std::unordered_map<uint32_t, std::string> capturerIdSourceNameMap_;
