@@ -90,6 +90,7 @@ public:
         }
         return nodeIdCounter_.load();
     };
+    virtual std::string GetDeviceHDFDumpInfo() = 0;
 private:
     std::atomic<uint32_t> nodeIdCounter_ = 0;
 #ifdef ENABLE_HIDUMP_DFX

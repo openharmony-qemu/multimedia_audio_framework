@@ -771,6 +771,12 @@ std::string HpaeInnerCapturerManager::GetThreadName()
     return sinkInfo_.deviceName;
 }
 
+std::string HpaeInnerCapturerManager::GetDeviceHDFDumpInfo()
+{
+    std::string config;
+    TransDeviceInfoToString(sinkInfo_, config);
+    return config;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

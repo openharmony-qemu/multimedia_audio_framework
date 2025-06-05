@@ -106,6 +106,13 @@ static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
     {"f32le", SAMPLE_F32LE},
 };
 
+static std::map<std::string, uint32_t> g_formatFromParserEnumToStr = {
+    {SAMPLE_S16LE, "s16le"},
+    {SAMPLE_S24LE, "s24le"},
+    {SAMPLE_S32LE, "s32le"},
+    {SAMPLE_F32LE, "f32le"},
+};
+
 std::string ConvertSessionState2Str(HpaeSessionState state)
 {
     if (g_sessionStateToStrMap.find(state) == g_sessionStateToStrMap.end()) {
@@ -353,6 +360,12 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
     return getKey(info) != getKey(oldInfo);
 }
 
+std::string TransFormatFromEnumToString(AudioSampleFormat format)
+{
+    CHECK_AND_RETURN_RET_LOG(g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(),
+        "", "error param format");
+    return g_formatFromParserEnumToStr[format];
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
