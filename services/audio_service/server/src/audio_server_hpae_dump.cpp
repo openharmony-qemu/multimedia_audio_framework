@@ -251,7 +251,7 @@ void AudioServerHpaeDump::OnDumpAllAvailableDeviceCb(int32_t result)
     isFinishGetHdfModulesInfo_ = true;
     AUDIO_INFO_LOG(
         "sink count %{public}zu, source count %{public}zu, result %{public}d",
-        devicesInfo_.sinkInfos.size(), devicesInfo_.sourceInfos, result);
+        devicesInfo_.sinkInfos.size(), devicesInfo_.sourceInfos.size(), result);
     callbackCV_.notify_all();
 }
 
