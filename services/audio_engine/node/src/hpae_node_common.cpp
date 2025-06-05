@@ -161,7 +161,6 @@ bool CheckSceneTypeNeedMicRef(HpaeProcessorType processorType)
     return g_processorTypeNeedMicRefSet.find(processorType) != g_processorTypeNeedMicRefSet.end();
 }
 
-// todo change effectsceneType
 static std::unordered_map<HpaeProcessorType, std::string> g_processorTypeToEffectSceneTypeMap = {
     {HPAE_SCENE_DEFAULT, "HPAE_SCENE_DEFAULT"},
     {HPAE_SCENE_OTHERS, "SCENE_OTHERS"},

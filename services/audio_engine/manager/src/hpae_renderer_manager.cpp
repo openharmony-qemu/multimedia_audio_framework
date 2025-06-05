@@ -317,9 +317,7 @@ void HpaeRendererManager::DeleteProcessCluster(
     if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
         // for collaboration
         if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
-            // todo hpaeCoBufferNode info更新
             hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
-            // triggerback
             TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
         }
         outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
@@ -561,7 +559,6 @@ void HpaeRendererManager::DisConnectProcessCluster(uint32_t sessionId, HpaeProce
         // for collaboration
         if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
             hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
-            // triggerback
             TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
         }
         sceneClusterMap_[sceneType]->SetConnectedFlag(false);
@@ -1096,7 +1093,6 @@ void HpaeRendererManager::DumpSinkInfo()
     SendRequest(request);
 }
 
-<<<<<<< HEAD
 int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 {
     auto request = [this, sessionId, state]() {
@@ -1107,7 +1103,12 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
             sinkInputNodeMap_[sessionId]->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
         } else {
             AUDIO_ERR_LOG("not find sessionId %{public}u", sessionId);
-=======
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
 int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnabled)
 {
     auto request = [this, isCollaborationEnabled]() {
@@ -1128,14 +1129,12 @@ int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnable
             }
             TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
             hpaeCoBufferNode_.reset();
->>>>>>> d056295217f402fb39cd738ed34552700e0c6bee
         }
     };
     SendRequest(request);
     return SUCCESS;
 }
 
-<<<<<<< HEAD
 int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
 {
     if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
@@ -1153,7 +1152,6 @@ int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
     }
     return SUCCESS;
 }
-=======
 std::shared_ptr<HpaeCoBufferNode> HpaeRendererManager::GetCoBufferNode()
 {
     CHECK_AND_RETURN_RET_LOG(hpaeCoBufferNode_ != nullptr, nullptr,
@@ -1203,7 +1201,6 @@ void HpaeRendererManager::HandleCollaborationStateChangedInner(HpaeProcessorType
         AddSingleNodeToSink(sinkInputNodeMap_[sessionID], false);
     }
 }
->>>>>>> d056295217f402fb39cd738ed34552700e0c6bee
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

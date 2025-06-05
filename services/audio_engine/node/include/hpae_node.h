@@ -224,37 +224,30 @@ std::vector<T>& InputPort<T>::ReadPreOutputData()
 template <class T>
 void InputPort<T>::Connect(const std::shared_ptr<HpaeNode> &node, OutputPort<T>* output, HpaeBufferType bufferType)
 {
-<<<<<<< HEAD
-    if (output) {
-        output->AddInput(this);
-    }
-    AddPreOutput(node, output);
-=======
     switch (bufferType) {
         case HPAE_BUFFER_TYPE_DEFAULT:
-            output->AddInput(this);
+            if (output) {
+                output->AddInput(this);
+            }
             AddPreOutput(node, output);
             break;
         case HPAE_BUFFER_TYPE_COBUFFER:
-            output->AddInput(this, node);
+            if (output) {
+                output->AddInput(this, node);
+            }
             AddPreOutput(node, output);
             break;
         default:
             break;
     }
->>>>>>> d056295217f402fb39cd738ed34552700e0c6bee
 }
 
 template <class T>
 void InputPort<T>::DisConnect(OutputPort<T>* output, HpaeBufferType bufferType)
 {
-<<<<<<< HEAD
     if (output) {
-        output->RemoveInput(this);
+        output->RemoveInput(this, bufferType);
     }
-=======
-    output->RemoveInput(this, bufferType);
->>>>>>> d056295217f402fb39cd738ed34552700e0c6bee
     RemovePreOutput(output);
 }
 

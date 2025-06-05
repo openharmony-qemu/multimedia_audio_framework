@@ -54,12 +54,8 @@ public:
     const char *GetRenderFrameData(void);
     StreamManagerState GetSinkState(void);
     int32_t SetSinkState(StreamManagerState sinkState);
-<<<<<<< HEAD
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
-
-=======
     uint32_t GetLatency();
->>>>>>> d056295217f402fb39cd738ed34552700e0c6bee
 private:
     void HandleRemoteTiming();
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
@@ -73,13 +69,10 @@ private:
     HighResolutionTimer remoteTimer_;
     TimePoint remoteTimePoint_;
     std::chrono::milliseconds remoteSleepTime_ = std::chrono::milliseconds(0);
-<<<<<<< HEAD
     int64_t silenceDataUs_ = 0;
     bool isOpenPaPower_ = true;
     bool isDisplayPaPowerState_ = false;
-=======
     uint32_t latency_ = 0;
->>>>>>> d056295217f402fb39cd738ed34552700e0c6bee
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;

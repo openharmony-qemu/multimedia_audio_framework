@@ -249,7 +249,6 @@ bool HpaeOutputCluster::IsProcessClusterConnected(HpaeProcessorType sceneType)
     return connectedProcessCluster_.find(sceneType) != connectedProcessCluster_.end();
 }
 
-<<<<<<< HEAD
 int32_t HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
@@ -258,11 +257,9 @@ int32_t HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 int32_t HpaeOutputCluster::SetPriPaPower(void)
 {
     return hpaeSinkOutputNode_->RenderSinkSetPriPaPower();
-=======
 uint32_t HpaeOutputCluster::GetLatency()
 {
     return hpaeSinkOutputNode_->GetLatency();
->>>>>>> d056295217f402fb39cd738ed34552700e0c6bee
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

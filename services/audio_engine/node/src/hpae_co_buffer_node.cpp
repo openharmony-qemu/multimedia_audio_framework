@@ -28,13 +28,12 @@ static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t DEFAULT_SINK_LATENCY = 40;
 
-HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo)
+HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), 
       outputStream_(this),
       pcmBufferInfo_(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000),
       coBufferOut_(pcmBufferInfo_),
       latency_(0),
-      processFlag_(FrameFlag::FIRST_FRAME),
       enqueueFlag_(FrameFlag::FIRST_FRAME),
       enqueueRunning_(false)
 {
@@ -48,68 +47,46 @@ HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo& nodeInfo)
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ && buffer) {
-        inputPcmDumper_->Dump((int8_t *)buffer->GetPcmDataBuffer(),
-            buffer->GetFrameLen() * sizeof(float) * buffer->GetChannelCount());
+        const size_t dumpSize = buffer->GetFrameLen() * sizeof(float) * buffer->GetChannelCount();
+        inputPcmDumper_->Dump(reinterpret_cast<int8_t*>(buffer->GetPcmDataBuffer()), dumpSize);
     }
 #endif
-    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
-    OptResult result = ringCache_->GetWritableSize();
-    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-    size_t writeLen = buffer->GetFrameLen() * buffer->GetChannelCount() * sizeof(float);
-    CHECK_AND_RETURN_LOG(result.size >= writeLen,
-        "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
-        result.size, writeLen);
-    BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(buffer->GetPcmDataBuffer()), writeLen};
-    result = ringCache_->Enqueue(bufferWrap);
-    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
+
+    // process input buffer
+    ProcessInputFrame(buffer);
+    
+    // process enqueue flag
     if (enqueueFlag_ == FrameFlag::FIRST_FRAME) {
         enqueueFlag_ = FrameFlag::SECOND_FRAME;
-    } else if(enqueueFlag_ == FrameFlag::SECOND_FRAME) {
+    } else if (enqueueFlag_ == FrameFlag::SECOND_FRAME) {
         enqueueRunning_.store(true);
         enqueueFlag_ = FrameFlag::OTHER_FRAME;
-        CHECK_AND_RETURN(ringCache_ != nullptr, "ring cache is null");
+        // fill silence frames for latency adjustment
+        AUDIO_INFO_LOG("Filling silence frames for latency adjustment");
         ringCache_->ResetBuffer();
-        uint32_t offset = 0;
-        while (offset < latency - DEFAULT_SINK_LATENCY) {
-            OptResult result = ringCache_->GetWritableSize();
-            CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-            size_t writeLen = coBufferOut_.GetFrameLen() * coBufferOut_.GetChannelCount() * sizeof(float);
-            memset_s(coBufferOut_.GetPcmDataBuffer(), writeLen, 0, writeLen);
-            CHECK_AND_RETURN_LOG(result.size >= writeLen,
-                "Get writable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
-                result.size, writeLen);
-            BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), writeLen};
-            result = ringCache_->Enqueue(bufferWrap);
-            CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
-            offset += DEFAULT_FRAME_LEN_MS;
-        }
+        FillSilenceFramesInner(latency_ - DEFAULT_SINK_LATENCY);
     }
 }
 
 void HpaeCoBufferNode::DoProcess()
 {
     std::unique_lock<std::mutex> lock(mutex_);
+    
+    // write silence data if enqueue is not running
     if (!enqueueRunning_.load()) {
         outputStream_.WriteDataToOutput(&silenceData_);
     }
-    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "ring cache is null");
-    OptResult result = ringCache_->GetReadableSize();
-    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get readable size failed");
-    size_t requesetDataLen = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
-        sizeof(float) * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
-    CHECK_AND_RETURN_LOG(result.size >= requesetDataLen,
-        "Get readable size is not enough, size is %{public}zu, requestDataLen is %{public}zu",
-        result.size, requesetDataLen);
-    BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), requesetDataLen};
-    result = ringCache_->Dequeue(bufferWrap);
-    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
-    outputStream_.WriteDataToOutput(&coBufferOut_);
+    
+    // process output buffer
+    ProcessOutputFrame();
+    
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
-        outputPcmDumper_->Dump((int8_t *)coBufferOut_.GetPcmDataBuffer(),
-            coBufferOut_.GetFrameLen() * sizeof(float) * coBufferOut_.GetChannelCount());
+        const size_t dumpSize = coBufferOut_.GetFrameLen() * sizeof(float) * coBufferOut_.GetChannelCount();
+        outputPcmDumper_->Dump(reinterpret_cast<int8_t*>(coBufferOut_.GetPcmDataBuffer()), dumpSize);
     }
 #endif
 }
@@ -145,22 +122,21 @@ std::shared_ptr<HpaeNode> HpaeCoBufferNode::GetSharedInstance()
     return shared_from_this();
 }
 
-OutputPort<HpaePcmBuffer*>* HpaeCoBufferNode::GetOutputPort()
+OutputPort<HpaePcmBuffer *> * HpaeCoBufferNode::GetOutputPort()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return &outputStream_;
 }
 
-void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
+void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
-    HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
-    HpaeNodeInfo nodeInfo = preNodeInfo;
+    HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
     nodeInfo.nodeName = "HpaeCoBufferNode";
     SetNodeInfo(nodeInfo);
     inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
-    processFlag_ = FrameFlag::FIRST_FRAME;
+    AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
+    // reset status flag
     enqueueFlag_ = FrameFlag::FIRST_FRAME;
     enqueueRunning_.store(false);
 #ifdef ENABLE_HOOK_PCM
@@ -174,8 +150,8 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>
 void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("HpaeCoBufferNode disconnect from preNode");
     inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
+    AUDIO_INFO_LOG("HpaeCoBufferNode disconnect from preNode");
 }
 
 // todo delete
@@ -194,8 +170,78 @@ size_t HpaeCoBufferNode::GetOutputPortNum()
 void HpaeCoBufferNode::SetLatency(uint32_t latency)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    latency_ = (latency > DEFAULT_SINK_LATENCY) ? (latency - DEFAULT_SINK_LATENCY) : 0;
     AUDIO_INFO_LOG("latency is %{public}d", latency);
-    latency_ = static_cast<uint64_t>(latency - DEFAULT_SINK_LATENCY);
+}
+
+void HpaeCoBufferNode::FillSilenceFramesInner(uint32_t latencyMs)
+{
+    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
+    
+    uint32_t offset = 0;
+    const size_t frameSize = silenceData_.GetFrameLen() * silenceData_.GetChannelCount() * sizeof(float);
+    
+    while (offset < latencyMs) {
+        // check writable size
+        OptResult result = ringCache_->GetWritableSize();
+        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
+        if (result.size < frameSize) {
+            AUDIO_WARNING_LOG("Insufficient space for silence frame: %{public}zu < %{public}zu",
+                result.size, frameSize);
+            break;
+        }
+        
+        // create silence frame
+        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(silenceData_.GetPcmDataBuffer()), frameSize};
+        result = ringCache_->Enqueue(bufferWrap);
+        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue silence frame failed");
+        offset += DEFAULT_FRAME_LEN_MS;
+    }
+    AUDIO_INFO_LOG("Filled %{public}u ms of silence frames", offset);
+}
+
+void HpaeCoBufferNode::ProcessInputFrameInner(HpaePcmBuffer* buffer)
+{
+    CHECK_AND_RETURN_LOG(ringCache_ != nullptr && buffer != nullptr,
+        "Ring cache or buffer is null");
+    
+    const size_t writeLen = buffer->GetFrameLen() * buffer->GetChannelCount() * sizeof(float);
+    
+    // check writable size
+    OptResult result = ringCache_->GetWritableSize();
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
+    CHECK_AND_RETURN_LOG(result.size >= writeLen,
+        "Insufficient cache space: %{public}zu < %{public}zu", result.size, writeLen);
+    
+    // enqueue buffer
+    BufferWrap bufferWrap = {reinterpret_cast<uint8_t*>(buffer->GetPcmDataBuffer()), writeLen};
+    result = ringCache_->Enqueue(bufferWrap);
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue data failed");
+}
+
+void HpaeCoBufferNode::ProcessOutputFrameInner()
+{
+    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
+    
+    const size_t requestDataLen = SAMPLE_RATE_48000 * STEREO * 
+                                sizeof(float) * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
+    
+    // check readable size
+    OptResult result = ringCache_->GetReadableSize();
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get readable size failed");
+    
+    if (result.size < requestDataLen) {
+        AUDIO_WARNING_LOG("Insufficient data: %{public}zu < %{public}zu, outputting silence",
+            result.size, requestDataLen);
+        memset_s(coBufferOut_.GetPcmDataBuffer(), requestDataLen, 0, requestDataLen);
+    } else {
+        // read buffer
+        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), requestDataLen};
+        result = ringCache_->Dequeue(bufferWrap);
+        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
+    }
+    
+    outputStream_.WriteDataToOutput(&coBufferOut_);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

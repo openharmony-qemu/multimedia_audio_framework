@@ -55,18 +55,19 @@ public:
     void SetBufferSize(size_t size);
     void SetLatency(uint32_t latency);
 private:
+    void FillSilenceFramesInner(uint32_t latencyMs);
+    void ProcessInputFrameInner(HpaePcmBuffer* buffer);
+    void ProcessOutputFrameInner();
     std::mutex mutex_;
     std::atomic<bool> enqueueRunning_;
-    std::condition_variable enqueueRunningCond_;
-    InputPort<HpaePcmBuffer*> inputStream_;
+    InputPort<HpaePcmBuffer *> inputStream_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer coBufferOut_;
+    HpaePcmBuffer silenceData_;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
-    FrameFlag processFlag_ = FrameFlag::FIRST_FRAME;
-    FrameFlag enqueueFlag_ = FrameFlag::FIRST_FRAME;
-    uint64_t latency_ = 0;  // in ms
-    HighResolutionTimer renderTimer_;
+    FrameFlag enqueueFlag_;
+    uint64_t latency_ ;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
