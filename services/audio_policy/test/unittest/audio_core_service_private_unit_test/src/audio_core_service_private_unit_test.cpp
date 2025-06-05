@@ -1326,14 +1326,19 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_071, TestSize.Level1
  */
 HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_072, TestSize.Level1)
 {
-    int32_t callerPid = 0;
-    int32_t sessionId = 0;
-    uint32_t routeFlag = true;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 0,
+    streamDesc->callerUid_ = 0;
+    streamDesc->appInfo_.appUid = 0;
+    streamDesc->appInfo_.appPid = 0;
+    streamDesc->appInfo_.appTokenId = 0;
+    streamDesc->streamStatus_ = STREAM_STATUS_NEW;
+    streamDesc->routeFlag_ = true;
 
     auto audioCoreService = AudioCoreService::GetCoreService();
     audioCoreService->SetCallbackHandler(nullptr);
 
-    audioCoreService->TriggerRecreateCapturerStreamCallback(callerPid, sessionId, routeFlag);
+    audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
 
     EXPECT_EQ(audioCoreService->audioPolicyServerHandler_, nullptr);
 }
@@ -1345,17 +1350,60 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_072, TestSize.Level1
  */
 HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1)
 {
-    int32_t callerPid = 0;
-    int32_t sessionId = 0;
-    uint32_t routeFlag = true;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 0,
+    streamDesc->callerUid_ = 0;
+    streamDesc->appInfo_.appUid = 0;
+    streamDesc->appInfo_.appPid = 0;
+    streamDesc->appInfo_.appTokenId = 0;
+    streamDesc->streamStatus_ = STREAM_STATUS_NEW;
+    streamDesc->routeFlag_ = true;
+
+    SwitchStreamInfo info = {
+        streamDesc->sessionId_,
+        streamDesc->callerUid_,
+        streamDesc->appInfo_.appUid,
+        streamDesc->appInfo_.appPid,
+        streamDesc->appInfo_.appTokenId,
+        HandleStreamStatusToCapturerState(streamDesc->streamStatus_),
+    };
 
     auto audioCoreService = AudioCoreService::GetCoreService();
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     audioCoreService->SetCallbackHandler(handler);
 
-    audioCoreService->TriggerRecreateCapturerStreamCallback(callerPid, sessionId, routeFlag);
+    audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
 
+    auto iter = g_switchStreamRecordMap.find(info);
+    EXPECT_EQ(iter->second, SWITCH_STATE_WAITING);
     EXPECT_NE(audioCoreService->audioPolicyServerHandler_, nullptr);
+}
+
+/**
+ * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_074
+ * @tc.desc : Test AudioCoreService::HandleStreamStatusToCapturerState
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2)
+{
+    CapturerState state = HandleStreamStatusToCapturerState(STREAM_STATUS_NEW);
+    EXPECT_EQ(state, CAPTURER_PREPARED);
+
+    state = HandleStreamStatusToCapturerState(STREAM_STATUS_STARTED);
+    EXPECT_EQ(state, CAPTURER_RUNNING);
+
+    state = HandleStreamStatusToCapturerState(STREAM_STATUS_PAUSED);
+    EXPECT_EQ(state, CAPTURER_PAUSED);
+
+    state = HandleStreamStatusToCapturerState(STREAM_STATUS_STOPPED);
+    EXPECT_EQ(state, CAPTURER_STOPPED);
+
+    state = HandleStreamStatusToCapturerState(STREAM_STATUS_RELEASED);
+    EXPECT_EQ(state, CAPTURER_RELEASED);
+
+    state = HandleStreamStatusToCapturerState(100);
+    EXPECT_EQ(state, CAPTURER_INVALID);
+
 }
 
 /**
