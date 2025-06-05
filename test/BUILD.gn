@@ -157,7 +157,10 @@ group("audio_fuzz_test") {
     "fuzztest/audioeffectservice_fuzzer:fuzztest",
     "fuzztest/audiointerruptservice_fuzzer:fuzztest",
     "fuzztest/audiointerruptservicemore_fuzzer:fuzztest",
+    "fuzztest/audiolimitermanager_fuzzer:fuzztest",
     "fuzztest/audiomanager_fuzzer:fuzztest",
+    "fuzztest/audiopipemanager_fuzzer:fuzztest",
+    "fuzztest/audiopipeselector_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
