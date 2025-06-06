@@ -741,7 +741,7 @@ int32_t AudioHfpManager::DisconnectScoWrapper()
     return ret; 
 }
 
-void AudioHfpListener::WriteScoOprFaultEvent()
+void AudioHfpManager::WriteScoOprFaultEvent()
 {
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SCO_STATE_AUDIO",
         HiviewDFX::HiSysEvent::EventType::FAULT,

@@ -146,8 +146,6 @@ void AudioPolicyServiceEnhanceOneFuzzTest()
 
 void AudioPolicyServiceEnhanceTwoFuzzTest()
 {
-    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
-
     AudioStreamInfo audioStreamInfo;
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
         audioStreamInfo, "", "", SOURCE_TYPE_VOICE_RECOGNITION);
