@@ -613,7 +613,7 @@ int32_t AudioHfpManager::AddVirtualCallUid(pid_t uid, int32_t streamId)
 void AudioHfpManager::DeleteVirtualCallUid(pid_t uid, int32_t streamId)
 {
     if (uid == 5527) { /* 5527: caas service uid */
-        uid = 20020014; /* 20020014: com.huawei.hmos.meetimeservice */
+        uid = 20020014; /* 20020014: meetimeservice */
     }
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
@@ -641,7 +641,7 @@ void AudioHfpManager::DeleteVirtualCallUid(pid_t uid, int32_t streamId)
 void AudioHfpManager::DeleteVirtualCallUid(pid_t uid)
 {
     if (uid == 5527) { /* 5527: caas service uid */
-        uid = 20020014; /* 20020014: com.huawei.hmos.meetimeservice */
+        uid = 20020014; /* 20020014: meetimeservice */
     }
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
@@ -738,7 +738,7 @@ int32_t AudioHfpManager::DisconnectScoWrapper()
     if (ret != 0) {
         WriteScoOprFaultEvent();
     }
-    return ret; 
+    return ret;
 }
 
 void AudioHfpManager::WriteScoOprFaultEvent()
