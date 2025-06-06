@@ -68,9 +68,9 @@ config("audio_policy_public_config") {
     "server/include/service/interface",
     "server/include/service/listener",
     "server/infra/appclient/include",
-    "server/include/service/manager",
     "server/infra/datashare/include",
     "server/domain/device/src/pnp",
+    "server/domain/device/src/sle",
     "server/include/service/service",
     "server/domain/device/include",
     "server/domain/device/src/a2dp",
@@ -131,7 +131,7 @@ ohos_shared_library("audio_setting_provider") {
   install_enable = true
 
   include_dirs = [
-    "../../services/audio_policy/server/include/service/manager",
+    "../../services/audio_policy/server/infra/datashare/include",
     "../../services/audio_policy/server/domain/device/src/pnp",
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
@@ -223,7 +223,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_device_manager.cpp",
     "server/domain/pipe/src/audio_global_config_manager.cpp",
     "server/service/service_main/src/audio_policy_service.cpp",
-    "server/src/service/audio_state_manager.cpp",
+    "server/domain/device/src/audio_state_manager.cpp",
     "server/domain/pipe/src/audio_concurrency_service.cpp",
     "server/service/service_main/src/data_share_observer_callback.cpp",
     "server/service/service_main/src/device_init_callback.cpp",
@@ -265,7 +265,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_recovery_device.cpp",
     "server/domain/device/src/audio_router_map.cpp",
     "server/domain/device/src/audio_scene_manager.cpp",
-    "server/domain/device/src/sle_audio_device_manager.cpp",
+    "server/domain/device/src/sle/sle_audio_device_manager.cpp",
     "server/domain/tone/audio_tone_manager.cpp",
     "server/domain/volume/src/audio_volume_manager.cpp",
     "server/domain/session/src/audio_session.cpp",
@@ -561,7 +561,7 @@ audio_ohos_library("audio_policy_client") {
   }
 
   sources = [
-    "../audio_policy/server/src/service/device/audio_device_descriptor.cpp",
+    "../audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
     "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "client/proxy/src/audio_policy_callback_proxy.cpp",
@@ -709,7 +709,7 @@ ohos_shared_library("audio_foundation") {
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
-    "server/src/service/device/audio_device_descriptor.cpp",
+    "server/domain/device/src/audio_device_descriptor.cpp",
     "server/domain/device/src/audio_device_type.cpp",
     "server/domain/effect/src/audio_effect_map.cpp",
   ]
