@@ -133,6 +133,7 @@ const char *g_audioServerCodeStrs[] = {
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
     "SET_SESSION_MUTE_STATE",
     "NOTIFY_MUTE_STATE_CHANGE",
+    "FORCE_STOP_AUDIO_STREAM",
     "CREATE_AUDIOWORKGROUP",
     "RELEASE_AUDIOWORKGROUP",
     "ADD_THREAD_TO_AUDIOWORKGROUP",
@@ -854,6 +855,8 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleGetStandbyStatus(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID):
             return HandleGenerateSessionId(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::FORCE_STOP_AUDIO_STREAM):
+            return HandleForceStopAudioStream(data, reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT):
             return HandleSetInnerCapLimit(data, reply);
@@ -1507,6 +1510,12 @@ int AudioManagerStub::HandleSetBtHdiInvalidState(MessageParcel &data, MessagePar
 {
     SetBtHdiInvalidState();
     return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleForceStopAudioStream(MessageParcel &data, MessageParcel &reply)
+{
+    StopAudioType audioType = static_cast<StopAudioType>(data.ReadInt32());
+    return ForceStopAudioStream(audioType);
 }
 } // namespace AudioStandard
 } // namespace OHOS
