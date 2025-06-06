@@ -1364,10 +1364,10 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1
     audioCoreService->SetCallbackHandler(handler);
     
     audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
-
-    auto ret = SwitchStreamUtil::RemoveAllRecordBySessionId(123456);
-    EXPECT_EQ(ret, true);
     EXPECT_NE(audioCoreService->audioPolicyServerHandler_, nullptr);
+
+    bool ret = SwitchStreamUtil::RemoveAllRecordBySessionId(123456);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -1378,6 +1378,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1
 HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2)
 {
     auto audioCoreService = AudioCoreService::GetCoreService();
+    
     CapturerState state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_NEW);
     EXPECT_EQ(state, CAPTURER_PREPARED);
 
@@ -1395,7 +1396,6 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2
 
     state = audioCoreService->HandleStreamStatusToCapturerState(100);
     EXPECT_EQ(state, CAPTURER_INVALID);
-
 }
 
 /**
