@@ -150,6 +150,7 @@ public:
 
     int32_t StartDataCallback() override;
     int32_t StopDataCallback() override;
+    void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
@@ -276,6 +277,7 @@ private:
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
 
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
+    int32_t audioHapticsSyncId_ = 0;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
