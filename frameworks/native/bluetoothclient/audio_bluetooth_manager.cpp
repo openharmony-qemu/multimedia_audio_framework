@@ -581,7 +581,7 @@ bool AudioHfpManager::IsRecognitionStatus()
 int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
     if (uid == 5523) { /* 5523: all manager uid */
-        uid = 20020014; /* 20020014: com.huawei.hmos.meetimeservice */
+        uid = 20020014; /* 20020014: meetimeservice */
     }
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
