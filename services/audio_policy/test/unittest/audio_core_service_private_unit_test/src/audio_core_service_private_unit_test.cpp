@@ -1351,7 +1351,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_072, TestSize.Level1
 HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->sessionId_ = 0,
+    streamDesc->sessionId_ = 123456,
     streamDesc->callerUid_ = 0;
     streamDesc->appInfo_.appUid = 0;
     streamDesc->appInfo_.appPid = 0;
@@ -1359,23 +1359,14 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1
     streamDesc->streamStatus_ = STREAM_STATUS_NEW;
     streamDesc->routeFlag_ = true;
 
-    SwitchStreamInfo info = {
-        streamDesc->sessionId_,
-        streamDesc->callerUid_,
-        streamDesc->appInfo_.appUid,
-        streamDesc->appInfo_.appPid,
-        streamDesc->appInfo_.appTokenId,
-        HandleStreamStatusToCapturerState(streamDesc->streamStatus_),
-    };
-
     auto audioCoreService = AudioCoreService::GetCoreService();
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     audioCoreService->SetCallbackHandler(handler);
-
+    
     audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
 
-    auto iter = g_switchStreamRecordMap.find(info);
-    EXPECT_EQ(iter->second, SWITCH_STATE_WAITING);
+    auto ret = SwitchStreamUtil::RemoveAllRecordBySessionId(123456);
+    EXPECT_EQ(ret, true);
     EXPECT_NE(audioCoreService->audioPolicyServerHandler_, nullptr);
 }
 
@@ -1386,22 +1377,23 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1
  */
 HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2)
 {
-    CapturerState state = HandleStreamStatusToCapturerState(STREAM_STATUS_NEW);
+    auto audioCoreService = AudioCoreService::GetCoreService();
+    CapturerState state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_NEW);
     EXPECT_EQ(state, CAPTURER_PREPARED);
 
-    state = HandleStreamStatusToCapturerState(STREAM_STATUS_STARTED);
+    state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_STARTED);
     EXPECT_EQ(state, CAPTURER_RUNNING);
 
-    state = HandleStreamStatusToCapturerState(STREAM_STATUS_PAUSED);
+    state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_PAUSED);
     EXPECT_EQ(state, CAPTURER_PAUSED);
 
-    state = HandleStreamStatusToCapturerState(STREAM_STATUS_STOPPED);
+    state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_STOPPED);
     EXPECT_EQ(state, CAPTURER_STOPPED);
 
-    state = HandleStreamStatusToCapturerState(STREAM_STATUS_RELEASED);
+    state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_RELEASED);
     EXPECT_EQ(state, CAPTURER_RELEASED);
 
-    state = HandleStreamStatusToCapturerState(100);
+    state = audioCoreService->HandleStreamStatusToCapturerState(100);
     EXPECT_EQ(state, CAPTURER_INVALID);
 
 }
