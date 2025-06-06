@@ -781,6 +781,23 @@ void AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sin
     return;
 }
 
+void AudioManagerProxy::SetActiveOutputDevice(DeviceType deviceType)
+{
+    int32_t error;
+
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    MessageOption option;
+    bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    dataParcel.WriteInt32(static_cast<int32_t>(deviceType));
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE), dataParcel, replyParcel, option);
+        CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetActiveOutputDevice failed, error: %{public}d", error);
+    return;
+}
+
 bool AudioManagerProxy::CreatePlaybackCapturerManager()
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
