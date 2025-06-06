@@ -2212,7 +2212,7 @@ void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDes
         allSessionInfos.push_back(a2dpStreamInfo);
     }
     if (isCreateProcess) {
-        a2dpStreamInfo.sessionId = streamDesc->sessionId_;
+        a2dpStreamInfo.sessionId = static_cast<int32_t>(streamDesc->sessionId_);
         StreamUsage tempStreamUsage = streamDesc->rendererInfo_.streamUsage;
         a2dpStreamInfo.streamType =
             streamCollector_.GetStreamType(streamDesc->rendererInfo_.contentType, tempStreamUsage);
