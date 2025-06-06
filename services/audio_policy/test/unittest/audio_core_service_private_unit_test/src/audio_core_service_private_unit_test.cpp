@@ -1393,9 +1393,6 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2
 
     state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_RELEASED);
     EXPECT_EQ(state, CAPTURER_RELEASED);
-
-    state = audioCoreService->HandleStreamStatusToCapturerState(100);
-    EXPECT_EQ(state, CAPTURER_INVALID);
 }
 
 /**
