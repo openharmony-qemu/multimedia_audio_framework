@@ -45,7 +45,7 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "../hdiadapter/sink/common",
     "../hdiadapter/source/common",
     "../../../services/audio_engine/manager/include",
-    "../../../services/audio_policy/server/include/service/common",
+    "../../../services/audio_policy/common/include",
     "../../../services/audio_service/common/include",
   ]
 
