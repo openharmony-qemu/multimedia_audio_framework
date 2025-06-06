@@ -31,6 +31,7 @@ constexpr int BIT_8 = 8;
 constexpr float TEST_VALUE_PRESION = 0.001;
 constexpr int TEST_FREAME_LEN = 125;
 constexpr int TEST_SUB_FREAME_LEN = 50;
+constexpr int TEST_LEN_LT_FOUR = 3;
 
 #define DEFAULT_TEST_SINK_NAME "hdi_output"
 #define DEFAULT_TEST_AUDIO_DEVICE_NAME "Speaker"
