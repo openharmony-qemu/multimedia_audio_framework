@@ -325,8 +325,7 @@ int32_t AudioCoreService::SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDesc
         return SUCCESS;
     }
 
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_,
-        deviceDescriptor->deviceName_);
+    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
     if (result != SUCCESS) {
         audioActiveDevice_.SetActiveBtDeviceMac(lastActiveA2dpDevice);
         audioPolicyManager_.SetActiveDeviceDescriptor(lastDevice);
@@ -508,7 +507,9 @@ bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, con
 
 int32_t AudioCoreService::FetchDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
-    return FetchOutputDeviceAndRoute(reason) && FetchInputDeviceAndRoute();
+    int32_t ret = FetchOutputDeviceAndRoute(reason);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fetch output device failed");
+    return FetchInputDeviceAndRoute();
 }
 
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -2175,7 +2176,7 @@ void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDes
         allSessionInfos.push_back(a2dpStreamInfo);
     }
     if (isCreateProcess) {
-        a2dpStreamInfo.sessionId = streamDesc->sessionId_;
+        a2dpStreamInfo.sessionId = static_cast<int32_t>(streamDesc->sessionId_);
         StreamUsage tempStreamUsage = streamDesc->rendererInfo_.streamUsage;
         a2dpStreamInfo.streamType =
             streamCollector_.GetStreamType(streamDesc->rendererInfo_.contentType, tempStreamUsage);
@@ -2216,11 +2217,11 @@ bool AudioCoreService::IsFastAllowed(std::string &bundleName)
 
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    std::variant<StreamUsage, SourceType> audioStreamConfig;
-
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "Stream desc is nullptr");
     auto deviceDesc = streamDesc->newDeviceDescs_.front();
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "Device desc is nullptr");
 
+    std::variant<StreamUsage, SourceType> audioStreamConfig;
     bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;

@@ -199,6 +199,7 @@ void AudioVolumeParser::ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> cur
             int32_t result = curNode->GetProp("defaultidx", pValueStr);
             if (result == SUCCESS) {
                 StringConverter<int32_t>(pValueStr, deviceVolInfo->defaultLevel);
+                AUDIO_DEBUG_LOG("defaultidx: %{public}d", deviceVolInfo->defaultLevel);
             } else {
                 AUDIO_DEBUG_LOG("The defaultidx attribute is not configured or defaultidx parameter is invalid");
             }

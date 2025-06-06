@@ -50,7 +50,6 @@ const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
-const uint64_t AUDIO_NS_PER_S = 1000000000;
 const uint64_t AUDIO_CYCLE_TIME_US = 20000;
 const uint64_t BUF_LENGTH_IN_MS = 20;
 const uint64_t CAST_BUF_LENGTH_IN_MS = 10;
@@ -448,7 +447,8 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
+int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency,
+    int32_t base)
 {
     Trace trace("PaRendererStreamImpl::GetCurrentPosition");
     PaLockGuard lock(mainloop_);
@@ -487,13 +487,14 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     latency += a2dpOffloadLatency * sampleSpec->rate / AUDIO_MS_PER_S;
 
-    timespec tm {};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    int64_t stamp = 0;
+    stamp = base == Timestamp::BOOTTIME ? ClockTime::GetBootNano() : ClockTime::GetCurNano();
+    timestamp = stamp >= 0 ? stamp : 0;
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
-        ",timestamp %{public}" PRIu64 ", effect latency: %{public}u ms, a2dp offload latency: %{public}u ms",
-        framePosition, readIndex, timestamp, algorithmLatency, a2dpOffloadLatency);
+        ", base %{public}d, timestamp %{public}" PRIu64
+        ", effect latency: %{public}u ms, a2dp offload latency: %{public}u ms",
+        framePosition, readIndex, base, timestamp, algorithmLatency, a2dpOffloadLatency);
     return SUCCESS;
 }
 

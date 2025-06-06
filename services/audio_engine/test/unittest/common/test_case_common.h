@@ -31,6 +31,7 @@ constexpr int BIT_8 = 8;
 constexpr float TEST_VALUE_PRESION = 0.001;
 constexpr int TEST_FREAME_LEN = 125;
 constexpr int TEST_SUB_FREAME_LEN = 50;
+constexpr int TEST_LEN_LT_FOUR = 3;
 
 #define DEFAULT_TEST_SINK_NAME "hdi_output"
 #define DEFAULT_TEST_AUDIO_DEVICE_NAME "Speaker"
@@ -99,6 +100,8 @@ class NodeStatusCallback : public HPAE::INodeCallback, public std::enable_shared
 public:
     virtual ~NodeStatusCallback() = default;
 };
+
+void TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif

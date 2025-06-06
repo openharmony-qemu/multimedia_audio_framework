@@ -424,7 +424,9 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const std::shared_ptr<Audio
                 return descriptor->macAddress_ == deviceDescriptor->macAddress_;
             }
             if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
-                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
+                descriptor->deviceType_ != DEVICE_TYPE_NEARLINK &&
+                descriptor->deviceType_ != DEVICE_TYPE_NEARLINK_IN) {
                 return true;
             } else {
                 // if the disconnecting device is A2DP, need to compare mac address in addition.

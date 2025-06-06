@@ -40,7 +40,7 @@ public:
     int32_t Release() override;
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
     int32_t GetCurrentTimeStamp(uint64_t &timestamp) override;
-    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency) override;
+    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
     int32_t SetAudioEffectMode(int32_t effectMode) override;
@@ -107,7 +107,7 @@ private:
     // latency position timeStamp
     std::shared_mutex latencyMutex_;
     uint64_t framePosition_ = 0;
-    uint64_t timestamp_ = 0;
+    std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
     std::string deviceClass_;

@@ -47,7 +47,7 @@ public:
     HpaeSessionState GetState();
     uint64_t GetFramesWritten();
 
-    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp);
+    int32_t GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp);
     int32_t RewindHistoryBuffer(uint64_t rewindTime);
 
     void SetAppUid(int32_t appUid);

@@ -128,7 +128,9 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
 void HpaeOffloadRendererManager::DeleteInputSession()
 {
     DisConnectInputSession();
-    sinkOutputNode_->StopStream();
+    if (sinkInputNode_->GetState() == HPAE_SESSION_RUNNING) {
+        sinkOutputNode_->StopStream();
+    }
     sinkInputNode_ = nullptr;
     formatConverterNode_ = nullptr;
 }
@@ -171,8 +173,6 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
         OnNotifyDfxNodeInfo(true, sinkOutputNode_->GetNodeId(), formatConverterNode_->GetNodeInfo());
         OnNotifyDfxNodeInfo(true, formatConverterNode_->GetNodeId(), sinkInputNode_->GetNodeInfo());
     }
-    // when sinkInput moved, need unable process
-    enableProcess_ = sinkInputNode_->GetOffloadEnabled();
     // single stream manager
     HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
     nodeInfo.sessionId = sinkInputNode_->GetSessionId();
@@ -220,8 +220,11 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
             sessionId == sinkInputNode_->GetSessionId(), "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
         DisConnectInputSession();
+        auto state = sinkInputNode_->GetState();
         sinkInputNode_->SetState(HPAE_SESSION_PAUSED);
-        sinkOutputNode_->StopStream();
+        if (state == HPAE_SESSION_RUNNING) {
+            sinkOutputNode_->StopStream();
+        }
         sessionInfo_.state = HPAE_SESSION_PAUSED;
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_PAUSED);
     };
@@ -268,9 +271,12 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
             sessionId == sinkInputNode_->GetSessionId(), "Stop not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Stop sessionId %{public}u", sessionId);
         DisConnectInputSession();
+        auto state = sinkInputNode_->GetState();
         sinkInputNode_->SetState(HPAE_SESSION_STOPPED);
         sessionInfo_.state = HPAE_SESSION_STOPPED;
-        sinkOutputNode_->StopStream();
+        if (state == HPAE_SESSION_RUNNING) {
+            sinkOutputNode_->StopStream();
+        }
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_STOPPED);
     };
     SendRequest(request);
@@ -476,8 +482,7 @@ bool HpaeOffloadRendererManager::IsInit()
 bool HpaeOffloadRendererManager::IsRunning(void)
 {
     if (sinkOutputNode_ != nullptr && hpaeSignalProcessThread_ != nullptr) {
-        return sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING && hpaeSignalProcessThread_->IsRunning() &&
-            enableProcess_;
+        return sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING && hpaeSignalProcessThread_->IsRunning();
     }
     return false;
 }
@@ -559,10 +564,9 @@ int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t
         CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
             "SetOffloadPolicy not find sessionId %{public}u",
             sessionId);
-        enableProcess_ = state != OFFLOAD_DEFAULT;
-        sinkInputNode_->SetOffloadEnabled(enableProcess_);
+        sinkInputNode_->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
         // OFFLOAD_DEFAULT do not need set buffersize
-        if (enableProcess_ && sinkOutputNode_) {
+        if (state != OFFLOAD_DEFAULT && sinkOutputNode_) {
             sinkOutputNode_->SetPolicyState(state);
         }
     };
@@ -662,6 +666,13 @@ void HpaeOffloadRendererManager::DumpSinkInfo()
         UploadDumpSinkInfo(sinkInfo_.deviceName);
     };
     SendRequest(request);
+}
+
+std::string HpaeOffloadRendererManager::GetDeviceHDFDumpInfo()
+{
+    std::string config;
+    TransDeviceInfoToString(sinkInfo_, config);
+    return config;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

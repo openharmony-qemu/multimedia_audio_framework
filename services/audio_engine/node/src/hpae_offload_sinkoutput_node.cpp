@@ -176,7 +176,6 @@ void HpaeOffloadSinkOutputNode::OffloadReset()
     isHdiFull_.store(false);
     renderFrameData_.clear();
     setPolicyStateTask_.flag = false; // unset the task when reset
-    RunningLock(true);
 }
 
 int32_t HpaeOffloadSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
@@ -326,6 +325,7 @@ const char *HpaeOffloadSinkOutputNode::GetRenderFrameData(void)
 
 void HpaeOffloadSinkOutputNode::StopStream()
 {
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     // flush hdi when disconnect
     RunningLock(true);
     auto ret = RenderSinkFlush();

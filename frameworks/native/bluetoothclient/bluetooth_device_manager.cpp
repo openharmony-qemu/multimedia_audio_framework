@@ -446,8 +446,8 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::CONNECTED;
     AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address\
-        is %{public}s, category is %{public}d, device name is %{public}s", deviceStatus,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
+        is %{public}s, category is %{public}d", deviceStatus,
+        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_);
     {
         std::lock_guard<std::mutex> deviceMapLock(g_a2dpDeviceMapLock);
         if (deviceStatus == DeviceStatus::ADD) {
@@ -633,8 +633,7 @@ void A2dpInBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemo
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::CONNECTED;
     AUDIO_INFO_LOG("a2dpInBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
-        category is %{public}d, device name is %{public}s", deviceStatus,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
+        category is %{public}d", deviceStatus, GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_);
     {
         std::lock_guard<std::mutex> a2dpInDeviceMapLock(g_a2dpInDeviceMapLock);
         if (deviceStatus == DeviceStatus::ADD) {
@@ -1036,8 +1035,7 @@ void HfpBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemoteD
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::DEACTIVE_CONNECTED;
     AUDIO_WARNING_LOG("hfpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
-        category is %{public}d, device name is %{public}s", deviceStatus,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.deviceName_.c_str());
+        category is %{public}d", deviceStatus, GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_);
     {
         std::lock_guard<std::mutex> deviceMapLock(g_hfpDeviceMapLock);
         if (deviceStatus == DeviceStatus::ADD) {

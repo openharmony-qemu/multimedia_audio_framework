@@ -18,11 +18,13 @@
 #endif
 
 #include "test_case_common.h"
+#include <iostream>
 #include "hpae_info.h"
 #include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
+static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 
 int32_t WriteFixedDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
 {
@@ -174,6 +176,37 @@ ReadDataCb::~ReadDataCb()
 int32_t ReadDataCb::OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo)
 {
     return SUCCESS;
+}
+
+void TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
+{
+    std::string filePath = g_rootCapturerPath;
+    std::string dirPath;
+    std::string fileName;
+
+    auto pos = filePath.rfind("/");
+    if (pos != std::string::npos) {
+        dirPath = filePath.substr(0, pos);
+        fileName = filePath.substr(pos);
+    }
+
+    char realPath[PATH_MAX + 1] = { 0x00 };
+    CHECK_AND_RETURN_LOG((filePath.length() < PATH_MAX) && (realpath(dirPath.c_str(), realPath) != nullptr),
+        "invalid path, errno: %{public}d", errno);
+
+    std::string realPathStr(realPath);
+    FILE *file = fopen(realPathStr.append(fileName).c_str(), "rb");
+    CHECK_AND_RETURN_LOG(file != nullptr, "open file fail, errno: %{public}d", errno);
+
+    if (feof(file)) {
+        AUDIO_INFO_LOG("reach end of the file, start reading from beginning");
+        rewind(file);
+    }
+    replyBytes = fread(frame, 1, requestBytes, file);
+    if (file != nullptr) {
+        fclose(file);
+        file = nullptr;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

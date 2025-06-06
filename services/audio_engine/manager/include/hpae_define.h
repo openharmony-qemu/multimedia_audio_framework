@@ -27,6 +27,8 @@ struct HpaeSessionInfo {
     HpaeStreamInfo streamInfo;
     HpaeSessionState state = HPAE_SESSION_NEW;
     std::weak_ptr<IStatusCallback> statusCallback;
+    int32_t offloadType = OFFLOAD_DEFAULT;
+    bool offloadEnable = false;
 };
 
 

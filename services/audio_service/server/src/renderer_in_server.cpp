@@ -60,7 +60,7 @@ namespace {
     constexpr int32_t DEFAULT_SPAN_SIZE = 1;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
-    const int32_t DUP_COMMON_LEN = 40; // 40 -> 40ms
+    const int32_t DUP_COMMON_LEN = 400; // 400 -> 400ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 }
 
@@ -1221,13 +1221,13 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency)
+int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
 {
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
-    stream_->GetCurrentPosition(framePos, timestamp, latency);
+    stream_->GetCurrentPosition(framePos, timestamp, latency, base);
     return SUCCESS;
 }
 

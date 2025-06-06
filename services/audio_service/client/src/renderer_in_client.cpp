@@ -656,12 +656,16 @@ void RendererInClientInner::ResetFramePosition()
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampVal, latency);
+    int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampVal, latency,
+        Timestamp::Timestampbase::MONOTONIC);
     if (ret != SUCCESS) {
         AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
         return;
     }
-    lastFramePosition_ = 0;
+    // no need to reset timestamp, only reset frameposition
+    for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
+        lastFramePosition_[base].first = 0;
+    }
     lastReadIdx_ = 0;
     lastLatency_ = latency;
     lastLatencyPosition_ = latency * speed_;

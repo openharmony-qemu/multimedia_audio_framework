@@ -1522,6 +1522,13 @@ int32_t AudioSystemManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     return AudioPolicyManager::GetInstance().SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
 
+int32_t AudioSystemManager::SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+    const int32_t volume, const bool updateUi)
+{
+    AUDIO_INFO_LOG("volume: %{public}d, update ui: %{public}d", volume, updateUi);
+    return AudioPolicyManager::GetInstance().SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
+}
+
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
 {
     AudioPin pin = AUDIO_PIN_NONE;
@@ -2093,10 +2100,7 @@ void AudioSystemManager::InitWorkgroupState()
         info->rendererState = RendererState::RENDERER_INVALID;
         SetAudioRendererChangeInfo(t, info);
  
-        VolumeEvent e = {
-            .volumeType = t,
-            .volume = GetVolume(t),
-        };
+        VolumeEvent e(t, GetVolume(t), false);
         SetVolumeEvent(t, e);
     }
 }

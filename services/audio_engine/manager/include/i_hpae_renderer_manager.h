@@ -99,6 +99,7 @@ public:
         dfxTree_.UpdateNodeInfo(nodeId, nodeInfo);
 #endif
     }
+    virtual std::string GetDeviceHDFDumpInfo() = 0;
 
 private:
     std::atomic<uint32_t> nodeIdCounter_ = 0;

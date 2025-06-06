@@ -326,11 +326,13 @@ bool AudioService::UpdateForegroundState(uint32_t appTokenId, bool isActive)
 void AudioService::DumpForegroundList(std::string &dumpString)
 {
     std::lock_guard<std::mutex> lock(foregroundSetMutex_);
-    dumpString += "DumpForegroundList:\n";
+    std::stringstream temp;
+    temp << "DumpForegroundList:\n";
     int32_t index = 0;
     for (auto item : foregroundSet_) {
-        dumpString += "    " + std::to_string(index++) + item + "\n";
+        temp << "    " <<  std::to_string(index++) << ": " <<  item << "\n";
     }
+    dumpString = temp.str();
 }
 
 int32_t AudioService::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)

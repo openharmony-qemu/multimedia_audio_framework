@@ -1217,6 +1217,12 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     return audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
 }
 
+int32_t AudioPolicyService::SetNearlinkDeviceVolume(const std::string &macAddress, AudioStreamType streamType,
+    const int32_t volume, bool internalCall)
+{
+    return audioVolumeManager_.SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
+}
+
 int32_t AudioPolicyService::GetAudioLatencyFromXml() const
 {
     return audioConfigManager_.GetAudioLatencyFromXml();
@@ -2120,6 +2126,7 @@ int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObjec
         "sleAudioOperationCallback_ is nullptr");
 
     sleAudioDeviceManager_.SetSleAudioOperationCallback(sleAudioOperationCallback);
+
     return SUCCESS;
 }
 
