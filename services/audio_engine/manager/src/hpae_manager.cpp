@@ -1865,7 +1865,7 @@ int32_t HpaeManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyAr
 
 void HpaeManager::InitHdiState()
 {
-    auto request = [this]() {
+    auto request = []() {
         HpaePolicyManager::GetInstance().InitHdiState();
     };
     SendRequest(request, __func__);
