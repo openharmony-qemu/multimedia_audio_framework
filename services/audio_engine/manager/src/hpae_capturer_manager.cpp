@@ -652,7 +652,8 @@ int32_t HpaeCapturerManager::Init()
             AUDIO_INFO_LOG("Init HpaeCapturerManager success");
             TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
             CheckIfAnyStreamRunning();
-            TriggerCallback(GET_CAPTURE_ID, captureId_, sourceInfo_.deviceType);
+            HpaePolicyManager::GetInstance().SetInputDevice(captureId,
+                static_cast<DeviceType>(sourceInfo_.deviceType));
         }
     };
     SendRequest(request, true);

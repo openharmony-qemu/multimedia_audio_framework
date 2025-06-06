@@ -95,7 +95,6 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
     RegisterHandler(DUMP_SINK_INFO, &HpaeManager::HandleDumpSinkInfo);
     RegisterHandler(DUMP_SOURCE_INFO, &HpaeManager::HandleDumpSourceInfo);
     RegisterHandler(MOVE_SESSION_FAILED, &HpaeManager::HandleMoveSessionFailed);
-    RegisterHandler(GET_CAPTURE_ID, &HpaeManager::HandleGetCaptureId);
 }
 
 HpaeManager::~HpaeManager()
@@ -1067,11 +1066,6 @@ void HpaeManager::HandleDeInitDeviceResult(std::string deviceName, int32_t resul
     }
 }
 
-void HpaeManager::HandleGetCaptureId(uint32_t captureId, int32_t deviceType)
-{
-    HpaePolicyManager::GetInstance().SetInputDevice(captureId, static_cast<DeviceType>(deviceType));
-}
-
 void HpaeManager::SendRequest(Request &&request, std::string funcName)
 {
     Trace trace("sendrequest::" + funcName);
@@ -1924,16 +1918,6 @@ void HpaeManager::InitAudioEnhanceChainManager(const std::vector<EffectChain> &e
         HpaePolicyManager::GetInstance().InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList);
     };
     SendRequest(request, __func__);
-}
-
-int32_t HpaeManager::SetInputDevice(
-    const uint32_t &captureId, const DeviceType &inputDevice, const std::string &deviceName)
-{
-    auto request = [this, captureId, inputDevice, deviceName]() {
-        HpaePolicyManager::GetInstance().SetInputDevice(captureId, inputDevice, deviceName);
-    };
-    SendRequest(request, __func__);
-    return SUCCESS;
 }
 
 int32_t HpaeManager::SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice)

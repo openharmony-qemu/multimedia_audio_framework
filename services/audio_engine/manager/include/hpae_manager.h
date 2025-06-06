@@ -147,8 +147,6 @@ public:
     void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
         const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList) override;
-    int32_t SetInputDevice(
-        const uint32_t &captureId, const DeviceType &inputDevice, const std::string &deviceName = "") override;
     int32_t SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice) override;
     int32_t SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol) override;
     int32_t SetMicrophoneMuteInfo(const bool &isMute) override;
@@ -188,7 +186,6 @@ private:
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
-    void HandleGetCaptureId(uint32_t captureId, int32_t deviceType);
 
     void SendRequest(Request &&request, std::string funcName);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
