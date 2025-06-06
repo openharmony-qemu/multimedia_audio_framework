@@ -1323,6 +1323,7 @@ bool AudioCapturerPrivate::IsDeviceChanged(AudioDeviceDescriptor &newDeviceInfo)
 
 void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
 {
+    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     audioInterrupt = audioInterrupt_;
 }
 
