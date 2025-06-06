@@ -135,14 +135,6 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     processNodeInfo.channels = STEREO;
     processNodeInfo.channelLayout = CH_LAYOUT_STEREO;
     CreateProcessCluster(processNodeInfo);
-    if (SafeGetMap(sceneClusterMap_, nodeInfo.sceneType)) {
-        sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
-        int32_t ret = sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
-        if (ret != SUCCESS) {
-            AUDIO_WARNING_LOG("[FinishMove] session:%{public}u update audio effect when creating failed ret %{public}d",
-                sessionId, ret);
-        }
-    }
     if (!sessionNodeMap_[nodeInfo.sessionId].bypass){
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
         "[FinishMove] could not find processorType %{public}d", nodeInfo.sceneType);
