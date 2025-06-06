@@ -2717,7 +2717,6 @@ void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
     AUDIO_PRERELEASE_LOGI("AudioRendererPrivate::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
     audioHapticsSyncId_ = audioHapticsSyncId;
-    return SUCCESS;
 }
 
 int32_t AudioRendererPrivate::StopDataCallback()
