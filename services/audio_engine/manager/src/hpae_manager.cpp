@@ -1200,7 +1200,8 @@ bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t 
             if (capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType == SOURCE_TYPE_LIVE &&
                 (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
                 const std::string combinedParam = "live_effect=" + effectLiveState_;
-                HpaePolicyManager::GetInstance().SetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
+                HpaePolicyManager::GetInstance().SetAudioParameter("primary",
+                    AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
             }
         }
     }
@@ -1280,7 +1281,8 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
             if (capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType == SOURCE_TYPE_LIVE &&
                 (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
                 const std::string combinedParam = "live_effect=" + effectLiveState_;
-                HpaePolicyManager::GetInstance().SetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
+                HpaePolicyManager::GetInstance().SetAudioParameter("primary",
+                    AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
             }               
         } else {
             AUDIO_WARNING_LOG("Start can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
@@ -1759,15 +1761,16 @@ void HpaeManager::InitAudioEffectChainManager(const std::vector<EffectChain> &ef
     const EffectChainManagerParam &effectChainManagerParam,
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList)
 {
-    auto request = [this, effectChains, effectChainManagerParam, effectLibraryList]() {
-        HpaePolicyManager::GetInstance().InitAudioEffectChainManager(effectChains, effectChainManagerParam, effectLibraryList);
+    auto request = [effectChains, effectChainManagerParam, effectLibraryList]() {
+        HpaePolicyManager::GetInstance().InitAudioEffectChainManager(effectChains,
+            effectChainManagerParam, effectLibraryList);
     };
     SendRequest(request, __func__);
 }
 
 void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
-    auto request = [this, device, sinkName]() {
+    auto request = [device, sinkName]() {
         HpaePolicyManager::GetInstance().SetOutputDeviceSink(device, sinkName);
     };
     SendRequest(request, __func__);
@@ -1775,7 +1778,7 @@ void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkNam
 
 int32_t HpaeManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
-    auto request = [this, spatializationState]() {
+    auto request = [spatializationState]() {
         HpaePolicyManager::GetInstance().UpdateSpatializationState(spatializationState);
     };
     SendRequest(request, __func__);
@@ -1784,7 +1787,7 @@ int32_t HpaeManager::UpdateSpatializationState(AudioSpatializationState spatiali
 
 int32_t HpaeManager::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
 {
-    auto request = [this, spatialDeviceType]() {
+    auto request = [spatialDeviceType]() {
         HpaePolicyManager::GetInstance().UpdateSpatialDeviceType(spatialDeviceType);
     };
     SendRequest(request, __func__);
@@ -1793,7 +1796,7 @@ int32_t HpaeManager::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDevic
 
 int32_t HpaeManager::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
 {
-    auto request = [this, spatializationSceneType]() {
+    auto request = [spatializationSceneType]() {
         HpaePolicyManager::GetInstance().SetSpatializationSceneType(spatializationSceneType);
     };
     SendRequest(request, __func__);
@@ -1802,7 +1805,7 @@ int32_t HpaeManager::SetSpatializationSceneType(AudioSpatializationSceneType spa
 
 int32_t HpaeManager::EffectRotationUpdate(const uint32_t rotationState)
 {
-    auto request = [this, rotationState]() {
+    auto request = [rotationState]() {
         HpaePolicyManager::GetInstance().EffectRotationUpdate(rotationState);
     };
     SendRequest(request, __func__);
@@ -1811,7 +1814,7 @@ int32_t HpaeManager::EffectRotationUpdate(const uint32_t rotationState)
 
 int32_t HpaeManager::SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume)
 {
-    auto request = [this, systemVolumeType, systemVolume]() {
+    auto request = [systemVolumeType, systemVolume]() {
         HpaePolicyManager::GetInstance().SetEffectSystemVolume(systemVolumeType, systemVolume);
     };
     SendRequest(request, __func__);
@@ -1820,7 +1823,7 @@ int32_t HpaeManager::SetEffectSystemVolume(const int32_t systemVolumeType, const
 
 int32_t HpaeManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
 {
-    auto request = [this, propertyArray]() {
+    auto request = [propertyArray]() {
         HpaePolicyManager::GetInstance().SetAudioEffectProperty(propertyArray);
     };
     SendRequest(request, __func__);
@@ -1841,7 +1844,7 @@ int32_t HpaeManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &property
 
 int32_t HpaeManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
-    auto request = [this, propertyArray]() {
+    auto request = [propertyArray]() {
         HpaePolicyManager::GetInstance().SetAudioEffectProperty(propertyArray);
     };
     SendRequest(request, __func__);
@@ -1870,7 +1873,7 @@ void HpaeManager::InitHdiState()
 
 void HpaeManager::UpdateEffectBtOffloadSupported(const bool &isSupported)
 {
-    auto request = [this, isSupported]() {
+    auto request = [isSupported]() {
         HpaePolicyManager::GetInstance().UpdateEffectBtOffloadSupported(isSupported);
     };
     SendRequest(request, __func__);
@@ -1878,7 +1881,7 @@ void HpaeManager::UpdateEffectBtOffloadSupported(const bool &isSupported)
 
 void HpaeManager::UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value)
 {
-    auto request = [this, mainkey, subkey, value]() {
+    auto request = [mainkey, subkey, value]() {
         HpaePolicyManager::GetInstance().UpdateParamExtra(mainkey, subkey, value);
     };
     SendRequest(request, __func__);
@@ -1914,7 +1917,7 @@ void HpaeManager::InitAudioEnhanceChainManager(const std::vector<EffectChain> &e
     const EffectChainManagerParam &managerParam,
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
-    auto request = [this, enhanceChains, managerParam, enhanceLibraryList]() {
+    auto request = [enhanceChains, managerParam, enhanceLibraryList]() {
         HpaePolicyManager::GetInstance().InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList);
     };
     SendRequest(request, __func__);
@@ -1922,7 +1925,7 @@ void HpaeManager::InitAudioEnhanceChainManager(const std::vector<EffectChain> &e
 
 int32_t HpaeManager::SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice)
 {
-    auto request = [this, renderId, outputDevice]() {
+    auto request = [renderId, outputDevice]() {
         HpaePolicyManager::GetInstance().SetOutputDevice(renderId, outputDevice);
     };
     SendRequest(request, __func__);
@@ -1931,7 +1934,7 @@ int32_t HpaeManager::SetOutputDevice(const uint32_t &renderId, const DeviceType 
 
 int32_t HpaeManager::SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol)
 {
-    auto request = [this, volumeType, systemVol]() {
+    auto request = [volumeType, systemVol]() {
         HpaePolicyManager::GetInstance().SetVolumeInfo(volumeType, systemVol);
     };
     SendRequest(request, __func__);
@@ -1940,7 +1943,7 @@ int32_t HpaeManager::SetVolumeInfo(const AudioVolumeType &volumeType, const floa
 
 int32_t HpaeManager::SetMicrophoneMuteInfo(const bool &isMute)
 {
-    auto request = [this, isMute]() {
+    auto request = [isMute]() {
         HpaePolicyManager::GetInstance().SetMicrophoneMuteInfo(isMute);
     };
     SendRequest(request, __func__);
@@ -1949,7 +1952,7 @@ int32_t HpaeManager::SetMicrophoneMuteInfo(const bool &isMute)
 
 int32_t HpaeManager::SetStreamVolumeInfo(const uint32_t &sessionId, const float &streamVol)
 {
-    auto request = [this, sessionId, streamVol]() {
+    auto request = [sessionId, streamVol]() {
         HpaePolicyManager::GetInstance().SetStreamVolumeInfo(sessionId, streamVol);
     };
     SendRequest(request, __func__);
@@ -1958,7 +1961,7 @@ int32_t HpaeManager::SetStreamVolumeInfo(const uint32_t &sessionId, const float 
 
 int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType)
 {
-    auto request = [this, propertyArray, deviceType]() {
+    auto request = [propertyArray, deviceType]() {
         HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray, deviceType);
     };
     SendRequest(request, __func__);
@@ -1967,7 +1970,7 @@ int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &p
 
 int32_t HpaeManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType)
 {
-    auto request = [this, &propertyArray, deviceType]() {
+    auto request = [&propertyArray, deviceType]() {
         HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray, deviceType);
     };
     SendRequest(request, __func__);
@@ -1976,7 +1979,7 @@ int32_t HpaeManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propert
 
 int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
 {
-    auto request = [this, propertyArray, deviceType]() {
+    auto request = [propertyArray, deviceType]() {
         HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray, deviceType);
     };
     SendRequest(request, __func__);
@@ -1985,7 +1988,7 @@ int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &pr
 
 int32_t HpaeManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray, DeviceType deviceType)
 {
-    auto request = [this, &propertyArray, deviceType]() {
+    auto request = [&propertyArray, deviceType]() {
         HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray, deviceType);
     };
     SendRequest(request, __func__);
@@ -1995,7 +1998,7 @@ int32_t HpaeManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &property
 void HpaeManager::UpdateExtraSceneType(
     const std::string &mainkey, const std::string &subkey, const std::string &extraSceneType)
 {
-    auto request = [this, mainkey, subkey, extraSceneType]() {
+    auto request = [mainkey, subkey, extraSceneType]() {
         HpaePolicyManager::GetInstance().UpdateExtraSceneType(mainkey, subkey, extraSceneType);
     };
     SendRequest(request, __func__);
