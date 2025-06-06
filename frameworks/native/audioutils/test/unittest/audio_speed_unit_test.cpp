@@ -117,7 +117,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_004, TestSize.Level1)
     size_t channels = 1;
 
     uint8_t *buffer = nullptr;
-    int32_t bufferSize = 100001;
+    int32_t bufferSize = MAX_SPEED_BUFFER_SIZE + 1;
     std::unique_ptr<uint8_t []> outBuffer = nullptr;
     int32_t outBufferSize;
 
@@ -183,7 +183,7 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_007, TestSize.Level1)
     size_t channels = 1;
 
     uint8_t *buffer = nullptr;
-    int32_t bufferSize = 100001;
+    int32_t bufferSize = MAX_SPEED_BUFFER_SIZE + 1;
     std::unique_ptr<uint8_t []> outBuffer = nullptr;
     int32_t outBufferSize;
 
