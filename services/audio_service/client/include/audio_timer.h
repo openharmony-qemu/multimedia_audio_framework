@@ -95,7 +95,7 @@ private:
     void TimerLoopFunc()
     {
         while (true) {
-            bool temp = false;
+            bool isCallBack = false;
             {
                 std::unique_lock<std::mutex> lck(timerMutex);
                 if (exitLoop) {
@@ -103,18 +103,18 @@ private:
                 }
                 if (isTimerStarted) {
                     if (!timerCtrl.wait_for(lck, std::chrono::seconds(timeoutDuration),
-                        [this] { return CheckTimerStopped(); })) {
+                        [this] { return CheckTimerStopped() || exitLoop; })) {
                         isTimedOut = true;
-                        temp = true;
+                        isCallBack = !exitLoop;
                         isTimerStarted = false;
                         OnTimeOut();
                     }
                 } else {
-                    timerCtrl.wait(lck, [this] { return CheckTimerStarted(); });
+                    timerCtrl.wait(lck, [this] { return CheckTimerStarted() || exitLoop; });
                     isTimedOut = false;
                 }
             }
-            if (temp && timeOutCallBack_ != nullptr) {
+            if (isCallBack && timeOutCallBack_ != nullptr) {
                 timeOutCallBack_();
             }
         }

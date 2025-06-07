@@ -39,6 +39,7 @@ public:
 
     void TearDown(void) override
     {
+        BluetoothScoManager::GetInstance().scoTimer_ = nullptr;
         BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::DISCONNECTED;
         BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_DEFAULT;
         BluetoothScoManager::GetInstance().cacheReq_ = nullptr;
