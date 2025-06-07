@@ -699,7 +699,7 @@ int32_t AudioCoreService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioR
 {
     int32_t status = streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, status,
-        "AudioPolicyServer:: Get renderer change info failed");
+        "AudioPolicyServer Get renderer change info failed");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices =
         audioConnectedDevice_.GetDevicesInner(OUTPUT_DEVICES_FLAG);
