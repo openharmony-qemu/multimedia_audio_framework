@@ -116,6 +116,7 @@ void AudioPolicyConfigManager::OnUpdateDefaultAdapter(bool isEnable)
 
 bool AudioPolicyConfigManager::GetDefaultAdapterEnable()
 {
+    // GetDefaultAdapterEnable
     return isDefaultAdapterEnable_;
 }
 
