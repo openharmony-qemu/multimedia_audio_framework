@@ -391,7 +391,7 @@ int32_t HpaeSinkOutputNode::RenderSinkSetPriPaPower()
     return ret;
 }
 
-int32_t HpaeSinkOutputNode::GetLatency()
+uint32_t HpaeSinkOutputNode::GetLatency()
 {
     if (audioRendererSink_ == nullptr) {
         return ERROR;

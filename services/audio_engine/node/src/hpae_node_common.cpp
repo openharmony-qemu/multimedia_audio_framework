@@ -130,12 +130,10 @@ std::string ConvertStreamManagerState2Str(StreamManagerState state)
     return g_streamMgrStateToStrMap[state];
 }
 
-HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType, bool isCollaborationEnabled)
+HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType)
 {
     if (g_streamTypeToSceneTypeMap.find(streamType) == g_streamTypeToSceneTypeMap.end()) {
         return HPAE_SCENE_EFFECT_NONE;
-    } else if (streamType == STREAM_MUSIC || streamType == STREAM_MOVIE) {
-        return HPAE_SCENE_COLLABORATIVE;
     } else {
         return g_streamTypeToSceneTypeMap[streamType];
     }
@@ -150,11 +148,21 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
     }
 }
 
-TransSceneTypeForCollaboration(HpaeNodeInfo &preNodeInfo)
+void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled_)
 {
-    if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
-        nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-        nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    if (isCollaborationEnabled_) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+            nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
+            nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+            nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+            AUDIO_INFO_LOG("collaboration enabled, effectScene from %{public}d, sceneType changed to %{public}d",
+                nodeInfo.effectInfo.lastEffectScene, nodeInfo.sceneType);
+        }
+    } else if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
+        nodeInfo.effectInfo.effectScene = nodeInfo.effectInfo.lastEffectScene;
+        nodeInfo.sceneType = TransEffectSceneToSceneType(nodeInfo.effectInfo.effectScene);
+        AUDIO_INFO_LOG("collaboration disabled, effectScene changed to %{public}d, sceneType changed to %{public}d",
+            nodeInfo.effectInfo.effectScene, nodeInfo.sceneType);
     }
 }
 

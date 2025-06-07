@@ -60,6 +60,7 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.streamType = streamInfo.streamType;
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
+    TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         nodeInfo.sceneType = TransStreamUsageToSplitSceneType(streamInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
     } else {
@@ -111,6 +112,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.historyFrameCount = 0;
     nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.statusCallback = weak_from_this();
+    TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         nodeInfo.sceneType = TransStreamUsageToSplitSceneType(nodeInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
     } else {
@@ -119,9 +121,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     if (IsMchDevice()) {
         nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     }
-    if (isCollaborationEnabled_) {
-        TransSceneTypeForCollaboration(nodeInfo);
-    }
+
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
     
@@ -1126,6 +1126,11 @@ int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnable
 {
     auto request = [this, isCollaborationEnabled]() {
         AUDIO_INFO_LOG("UpdateCollaborationState %{public}d", isCollaborationEnabled);
+        if (isCollaborationEnabled_ == isCollaborationEnabled) {
+            AUDIO_INFO_LOG("collaboration state not changed, isCollaborationEnabled_ %{public}d",
+                isCollaborationEnabled_);
+            return;
+        }
         isCollaborationEnabled_ = isCollaborationEnabled;
         if (isCollaborationEnabled_) {
             if (hpaeCoBufferNode_ == nullptr) {
@@ -1135,12 +1140,10 @@ int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnable
             for (auto it : sessionNodeMap_) {
                 HandleCollaborationStateChangedInner(it.second.sceneType, it.first);
             }
-            TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
         } else if (!isCollaborationEnabled_ && hpaeCoBufferNode_ != nullptr) {
             for (auto it : sessionNodeMap_) {
                 HandleCollaborationStateChangedInner(it.second.sceneType, it.first);
             }
-            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
             hpaeCoBufferNode_.reset();
         }
     };

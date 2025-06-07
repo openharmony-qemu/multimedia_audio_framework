@@ -32,7 +32,7 @@ const std::unordered_map<AudioEffectScene, std::string>& GetSupportedSceneType()
         {SCENE_SPEECH, "SCENE_SPEECH"},
         {SCENE_RING, "SCENE_RING"},
         {SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"},
-        {SCENE_COLLABORATION, "SCENE_COLLABORATION"},
+        {SCENE_COLLABORATIVE, "SCENE_COLLABORATIVE"},
     };
     return audioSupportedSceneTypes;
 }
