@@ -209,7 +209,7 @@ int32_t BluetoothScoManager::ProcConnectReqWhenConnected(ScoCategory scoCategory
     const BluetoothRemoteDevice &device)
 {
     bool isSameDevice = IsSameHfpDevice(currentScoDevice_, device);
-    if (IsNeedSwitchScoCategory(scoCategory) && isSameDevice) {
+    if (!IsNeedSwitchScoCategory(scoCategory) && isSameDevice) {
         AUDIO_INFO_LOG("bypass connect category %{public}d current category %{public}d for device %{public}s",
             scoCategory, currentScoCategory_, GetEncryptAddr(device.GetDeviceAddr()).c_str());
         return SUCCESS;
@@ -232,7 +232,7 @@ int32_t BluetoothScoManager::ProcConnectReqWhenConnecting(ScoCategory scoCategor
     const BluetoothRemoteDevice &device)
 {
     bool isSameDevice = IsSameHfpDevice(currentScoDevice_, device);
-    if (IsNeedSwitchScoCategory(scoCategory) && isSameDevice) {
+    if (!IsNeedSwitchScoCategory(scoCategory) && isSameDevice) {
         AUDIO_INFO_LOG("connect category %{public}d current category %{public}d for device %{public}s",
             scoCategory, currentScoCategory_, GetEncryptAddr(device.GetDeviceAddr()).c_str());
         return SUCCESS;
@@ -325,7 +325,7 @@ int32_t BluetoothScoManager::SaveRequestToCache(bool isConnect, ScoCategory scoC
     cacheReq_->connectReq = isConnect;
     cacheReq_->category = scoCategory;
     cacheReq_->device = device;
-    AUDIO_INFO_LOG("%{public}s cache request, scoCategory: %{public}d isConnect: %{public}d ",
+    AUDIO_INFO_LOG("%{public}s cache request, scoCategory: %{public}d isConnect: %{public}d",
         reason.c_str(), scoCategory, isConnect);
     return SUCCESS;
 }

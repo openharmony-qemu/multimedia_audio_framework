@@ -135,7 +135,6 @@ public:
     static int32_t DisconnectSco();
     static void DisconnectBluetoothHfpSink();
     static void ClearCurrentActiveHfpDevice(const BluetoothRemoteDevice &device);
-    static std::string GetCurrentActiveHfpDevice();
     static void CheckHfpDeviceReconnect();
     static int32_t Connect(const std::string &macAddress);
 

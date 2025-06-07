@@ -472,7 +472,7 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         int32_t ret = DisconnectScoWrapper();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     }
-    bool res = BluetoothHfpInterface::GetInstance().SetActiveDevice(device);
+    int32_t res = BluetoothHfpInterface::GetInstance().SetActiveDevice(device);
     CHECK_AND_RETURN_RET_LOG(res == 0, ERROR, "SetActiveHfpDevice failed, result: %{public}d", res);
     activeHfpDevice_ = device;
     return SUCCESS;
@@ -600,12 +600,13 @@ int32_t AudioHfpManager::AddVirtualCallUid(pid_t uid, int32_t streamId)
             std::list<int32_t> streamIds;
             streamIds.push_back(streamId);
             virtualCallUids_[uid] = streamIds;
+        } else {
+            virtualCallUids_[uid].push_back(streamId);
         }
-        virtualCallUids_[uid].push_back(uid);
+        AUDIO_INFO_LOG("add virtual call uid %{public}d streamId %{public}d size %{public}zu",
+            uid, streamId, virtualCallUids_[uid].size());
     }
 
-    AUDIO_INFO_LOG("add virtual call uid %{public}d streamId %{public}d size %{public}zu",
-        uid, streamId, virtualCallUids_[uid].size());
     return TryUpdateScoCategory();
 }
 
@@ -711,7 +712,7 @@ int32_t AudioHfpManager::TryUpdateScoCategory()
         return DisconnectScoWrapper();
     }
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(category, activeHfpDevice_);
+    int32_t ret = BluetoothScoManager::GetInstance().HandleScoConnect(category, activeHfpDevice_);
     if (ret != 0) {
         WriteScoOprFaultEvent();
     }
@@ -733,7 +734,7 @@ void AudioHfpManager::DisconnectScoForDevice(const BluetoothRemoteDevice &device
 
 int32_t AudioHfpManager::DisconnectScoWrapper()
 {
-    int ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
+    int32_t ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
     if (ret != 0) {
         WriteScoOprFaultEvent();
     }

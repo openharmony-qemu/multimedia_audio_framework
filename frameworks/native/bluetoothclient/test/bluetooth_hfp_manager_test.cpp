@@ -33,7 +33,7 @@ using namespace testing;
 #define HFP_DEVICE_MAC2 "24:E9:CA:60:2F:CB"
 #define TEST_VIRTUAL_CALL_UID 5555
 
-class BluetoothScoManagerTest : public testing::Test {
+class BluetoothHfpManagerTest : public testing::Test {
 public:
     void SetUp(void) override
     {
@@ -64,35 +64,35 @@ public:
 };
 
 /**
- * @tc.name  : Test BluetoothScoManagerTest.
- * @tc.number: BluetoothScoManagerTest_001
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: BluetoothHfpManagerTest_001
  * @tc.desc  : Test hfp device manager.
  */
-HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_001, TestSize.Level1)
+HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_001, TestSize.Level1)
 {
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), SetActiveDevice(_))
         .Times(2)
         .WillOnce(Return(SUCCESS))
         .WillOnce(Return(SUCCESS));
     
-    EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice("33:33:33"), SUCCESS);
+    EXPECT_NE(AudioHfpManager::SetActiveHfpDevice("33:33:33"), SUCCESS);
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC1), SUCCESS);
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC2), SUCCESS);
 }
 
 /**
- * @tc.name  : Test BluetoothScoManagerTest.
- * @tc.number: BluetoothScoManagerTest_002
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: BluetoothHfpManagerTest_002
  * @tc.desc  : Test hfp device manager.
  */
-HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_002, TestSize.Level1)
+HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_002, TestSize.Level1)
 {
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), SetActiveDevice(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), IsInbandRingingEnabled(_))
         .Times(1)
-        .WillOnce(Invoke([](bool &enable) -> int32_t {
+        .WillOnce(Invoke([](bool &enable) ->int32_t {
             enable = true;
             return SUCCESS;
         }));
@@ -107,11 +107,11 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test BluetoothScoManagerTest.
- * @tc.number: BluetoothScoManagerTest_003
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: BluetoothHfpManagerTest_003
  * @tc.desc  : Test hfp device manager.
  */
-HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_003, TestSize.Level1)
+HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_003, TestSize.Level1)
 {
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), SetActiveDevice(_))
         .Times(1)
@@ -120,8 +120,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_003, TestSize.Level1)
         .Times(1)
         .WillOnce(Return(SUCCESS));
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), IsInbandRingingEnabled(_))
-        .Times(1)
-        .WillOnce(Invoke([](bool &enable) -> int32_t {
+        .WillRepeatedly(Invoke([](bool &enable) ->int32_t {
             enable = true;
             return SUCCESS;
         }));
@@ -133,23 +132,22 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test BluetoothScoManagerTest.
- * @tc.number: BluetoothScoManagerTest_004
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: BluetoothHfpManagerTest_004
  * @tc.desc  : Test hfp device manager.
  */
-HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_004, TestSize.Level1)
+HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_004, TestSize.Level1)
 {
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), IsInbandRingingEnabled(_))
-        .Times(1)
-        .WillOnce(Invoke([](bool &enable) -> int32_t {
+        .WillRepeatedly(Invoke([](bool &enable) ->int32_t {
             enable = true;
             return SUCCESS;
         }));
     AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice(HFP_DEVICE_MAC2);
-    
+
     AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT, true);
     EXPECT_EQ(AudioHfpManager::IsAudioScoStateConnect(), true);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
@@ -157,48 +155,46 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_004, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test BluetoothScoManagerTest.
- * @tc.number: BluetoothScoManagerTest_005
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: BluetoothHfpManagerTest_005
  * @tc.desc  : Test hfp device manager.
  */
-HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_005, TestSize.Level1)
+HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_005, TestSize.Level1)
 {
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), OpenVoiceRecognition(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), IsInbandRingingEnabled(_))
-        .Times(1)
-        .WillOnce(Invoke([](bool &enable) -> int32_t {
+        .WillRepeatedly(Invoke([](bool &enable) ->int32_t {
             enable = true;
             return SUCCESS;
         }));
     AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice(HFP_DEVICE_MAC2);
-    
+
     AudioHfpManager::HandleScoWithRecongnition(true);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
     EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_RECOGNITION), true);
 }
 
 /**
- * @tc.name  : Test BluetoothScoManagerTest.
- * @tc.number: BluetoothScoManagerTest_006
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: BluetoothHfpManagerTest_006
  * @tc.desc  : Test hfp device manager.
  */
-HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_006, TestSize.Level1)
+HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_006, TestSize.Level1)
 {
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .WillRepeatedly(Return(SUCCESS));
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), DisconnectSco(_))
         .WillRepeatedly(Return(SUCCESS));
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), IsInbandRingingEnabled(_))
-        .Times(1)
-        .WillOnce(Invoke([](bool &enable) -> int32_t {
+        .WillRepeatedly(Invoke([](bool &enable) ->int32_t {
             enable = true;
             return SUCCESS;
         }));
     AudioHfpManager::scene_ = AUDIO_SCENE_PHONE_CHAT;
     AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice(HFP_DEVICE_MAC2);
-    
+
     AudioHfpManager::SetVirtualCall(TEST_VIRTUAL_CALL_UID, false);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
     EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
