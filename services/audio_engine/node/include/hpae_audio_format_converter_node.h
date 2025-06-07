@@ -24,6 +24,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
 class HpaeAudioFormatConverterNode : public HpaePluginNode {
 public:
     HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo);

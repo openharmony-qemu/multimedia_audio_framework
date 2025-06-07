@@ -38,14 +38,18 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_10MS = 2;
-const int32_t TENMS_PER_SEC = 100;
+const int32_t FRAME_LEN_MS = 20;
+const int32_t FRAME_LEN_11205_MS = 40;
+const int32_t MS_PER_SEC = 1000;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / TENMS_PER_SEC);
+    spanSizeInFrame_ = FRAME_LEN_MS * processConfig.streamInfo.samplingRate / MS_PER_SEC;
+    if (processConfig.streamInfo.samplingRate == SAMPLE_RATE_11025) {
+        spanSizeInFrame_ = FRAME_LEN_11205_MS * processConfig.streamInfo.samplingRate / MS_PER_SEC;
+    }
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>((processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;

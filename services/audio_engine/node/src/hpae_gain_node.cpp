@@ -71,6 +71,11 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
         AUDIO_WARNING_LOG("HpaeGainNode inputs size is empty, SessionId:%{public}d", GetSessionId());
         return nullptr;
     }
+    // for 11025 check if input data is empty
+    if ((inputs[0]->GetSampleRate() == SAMPLE_RATE_11025) && (inputs[0]->DataSize() == 0)) {
+        AUDIO_INFO_LOG("ZYX data size is 0");
+        return inputs[0];
+    }
     auto rate = "rate[" + std::to_string(inputs[0]->GetSampleRate()) + "]_";
     auto ch = "ch[" + std::to_string(inputs[0]->GetChannelCount()) + "]_";
     auto len = "len[" + std::to_string(inputs[0]->GetFrameLen()) + "]";

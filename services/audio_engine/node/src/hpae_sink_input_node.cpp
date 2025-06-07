@@ -32,7 +32,8 @@ namespace HPAE {
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
-      inputAudioBuffer_(pcmBufferInfo_), outputStream_(this),
+      emptyBufferInfo_(nodeInfo.channels, 0, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
+      inputAudioBuffer_(pcmBufferInfo_), emptyAudioBuffer_(emptyBufferInfo_), outputStream_(this),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)), framesWritten_(0),
       totalFrames_(0)
 {
@@ -53,6 +54,9 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
         AUDIO_INFO_LOG("HpaeSinkInputNode::historybuffer created");
     } else {
         historyBuffer_ = nullptr;
+    }
+    if (nodeInfo.samplingRate == SAMPLE_RATE_11025) {
+        pullDataFlag_ = true;
     }
 }
 
@@ -97,6 +101,12 @@ void HpaeSinkInputNode::DoProcess()
 {
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " +
     GetTraceInfo());
+    if (GetSampleRate() == SAMPLE_RATE_11025 && !pullDataFlag_) {
+        // for 11025 input sample rate, pull 40ms data at a time, so pull once each two DoProcess()
+        pullDataFlag_ = true;
+        outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
+        return;
+    }
     CHECK_AND_RETURN_LOG(
         writeCallback_.lock(), "HpaeSinkInputNode writeCallback_ is nullptr, SessionId:%{public}d", GetSessionId());
 
@@ -106,6 +116,9 @@ void HpaeSinkInputNode::DoProcess()
     }
 
     int32_t ret = GetDataFromSharedBuffer();
+    if (GetSampleRate() == SAMPLE_RATE_11025) { // for 11025, skip pull data next time
+        pullDataFlag_ = false;
+    }
     // if historyBuffer has enough data, write to outputStream
     if (!streamInfo_.needData && historyBuffer_) {
         historyBuffer_->GetFrameData(inputAudioBuffer_);

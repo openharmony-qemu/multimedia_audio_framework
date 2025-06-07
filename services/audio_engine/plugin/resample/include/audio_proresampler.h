@@ -17,6 +17,7 @@
 
 #include "resampler.h"
 #include "audio_proresampler_process.h"
+#include <vector>
 #include <string>
 namespace OHOS {
 namespace AudioStandard {
@@ -31,7 +32,7 @@ public:
     ProResampler(ProResampler &&) noexcept;
     ProResampler &operator=(ProResampler &&) noexcept;
     void Reset() override;
-    int Process(const float *inBuffer, uint32_t *inFrameSize, float *outBuffer, uint32_t *outFrameSize)
+    int Process(const float *inBuffer, uint32_t inFrameSize, float *outBuffer, uint32_t outFrameSize)
         override;
     int32_t UpdateRates(uint32_t inRate, uint32_t outRate) override;
     void UpdateChannels(uint32_t channels) override;
@@ -40,11 +41,16 @@ public:
     uint32_t GetChannels() const override;
     uint32_t GetQuality() const;
 private:
+    int32_t Process11025SampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer, uint32_t outFrameSize);
+    int32_t ProcessOtherSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer, uint32_t outFrameSize);
     std::string ErrCodeToString(int32_t errCode);
+    std::vector<float> buf11025_;
     uint32_t inRate_;
     uint32_t outRate_;
     uint32_t channels_;
     uint32_t quality_;
+    uint32_t expectedOutFrameLen_;
+    uint32_t expectedInFrameLen_;
     SingleStagePolyphaseResamplerState* state_ = nullptr;
 };
 } // HPAE
