@@ -105,10 +105,6 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
         }
         return ret;
     }
-    CHECK_AND_RETURN_RET_LOG()
-    if (inFrameSize != expectedInFrameLen_) {
-        AUDIO_WARNING_LOG("11025 in frameSize %{public}d is not expected", inFrameSize);
-    }
     std::vector<float> tmpOutBuf(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE, 0.0f);
     uint32_t tmpOutFrameLen = expectedOutFrameLen_ * BUFFER_EXPAND_SIZE;
     uint32_t reserveOutFrameLen = tmpOutFrameLen;
