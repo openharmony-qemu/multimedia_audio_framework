@@ -117,7 +117,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     sessionNodeMap_[sessionId].sinkInputNodeId = nodeInfo.nodeId;
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
 
-    AUDIO_INFO_LOG("[FinishMove] session: %{public}u to sink: %{public}s, sceneType: %{public}d",
+    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
         sessionId, sinkInfo_.deviceClass.c_str(), nodeInfo.sceneType);
     HpaeNodeInfo processNodeInfo = nodeInfo;
     processNodeInfo.samplingRate = (AudioSamplingRate)DEFAULT_EFFECT_RATE;
