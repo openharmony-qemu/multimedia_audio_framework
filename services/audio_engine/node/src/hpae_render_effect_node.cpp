@@ -28,17 +28,14 @@
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
-<<<<<<< HEAD
 static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNELS = 4;
 static constexpr int32_t DIRECT_CHANNELS = 2;
 static constexpr int32_t COLLABORATIVE_CHANNELS = 2;
 static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX = 2;
 static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX = 3;
-=======
 static constexpr int64_t WAIT_CLOSE_EFFECT_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_EFFECT_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
->>>>>>> upstream/master
 
 namespace OHOS {
 namespace AudioStandard {

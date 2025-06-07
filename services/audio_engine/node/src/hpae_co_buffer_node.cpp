@@ -34,7 +34,7 @@ HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo &nodeInfo)
       outputStream_(this),
       pcmBufferInfo_(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000),
       coBufferOut_(pcmBufferInfo_),
-      silencaData_(pcmBufferInfo_),
+      silenceData_(pcmBufferInfo_),
       enqueueFlag_(FrameFlag::FIRST_FRAME),
       latency_(0)
 {

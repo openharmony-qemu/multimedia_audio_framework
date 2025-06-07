@@ -110,7 +110,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
         nodeInfo.sceneType = TransStreamUsageToSplitSceneType(nodeInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
     }
     if (isCollaborationEnabled_) {
-        nodeInfo.sceneType = TransStreamTypeToSceneType(nodeInfo.streamType, isCollaborationEnabled_);
+        TransSceneTypeForCollaboration(nodeInfo);
     }
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;

@@ -36,6 +36,7 @@ static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
     SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_REMOTE_CAST};
 }  // namespace
 static constexpr int32_t SINK_INVALID_ID = -1;
+static const std::string BT_SINK_NAME = "Bt_Speaker";
 
 HpaeManagerThread::~HpaeManagerThread()
 {
@@ -2264,7 +2265,7 @@ int32_t HpaeManager::UpdateCollaborationState(bool isCollaborationEnabled)
             "can not find sink[%{public}s] in rendererManagerMap_", BT_SINK_NAME.c_str());
         rendererManager->UpdateCollaborationState(isCollaborationEnabled);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return true;
 }
 
@@ -2272,26 +2273,26 @@ void HpaeManager::HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hp
 {
     auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleConnectCoBufferNode");
-        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(DEFAULT_SINK_NAME);
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(defaultSink_);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", DEFAULT_SINK_NAME.c_str());
+            "can not find sink[%{public}s] in rendererManagerMap_", defaultSink_.c_str());
         CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
         defaultRendererManager->ConnectCoBufferNode(hpaeCoBufferNode);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
 }
 
 void HpaeManager::HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode)
 {
     auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleDisConnectCoBufferNode");
-        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(DEFAULT_SINK_NAME);
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(defaultSink_);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", DEFAULT_SINK_NAME.c_str());
+            "can not find sink[%{public}s] in rendererManagerMap_", defaultSink_.c_str());
         CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
         defaultRendererManager->DisConnectCoBufferNode(hpaeCoBufferNode);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

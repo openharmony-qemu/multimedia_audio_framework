@@ -185,7 +185,7 @@ enum AudioEffectScene {
     SCENE_SPEECH = 4,
     SCENE_RING = 5,
     SCENE_VOIP_DOWN = 6,
-    SCENE_COLLABORATION = 7,
+    SCENE_COLLABORATIVE = 7,
 };
 
 /**

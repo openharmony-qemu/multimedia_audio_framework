@@ -389,6 +389,8 @@ int32_t HpaeSinkOutputNode::RenderSinkSetPriPaPower()
     AUDIO_INFO_LOG("Open pri pa:[%{public}s] -- [%{public}s], ret:%{public}d",
         GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
     return ret;
+}
+
 int32_t HpaeSinkOutputNode::GetLatency()
 {
     if (audioRendererSink_ == nullptr) {

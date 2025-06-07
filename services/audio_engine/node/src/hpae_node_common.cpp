@@ -46,7 +46,8 @@ static std::map<AudioEffectScene, HpaeProcessorType> g_effectSceneToProcessorTyp
     {SCENE_GAME, HPAE_SCENE_GAME},
     {SCENE_SPEECH, HPAE_SCENE_SPEECH},
     {SCENE_RING, HPAE_SCENE_RING},
-    {SCENE_VOIP_DOWN, HPAE_SCENE_VOIP_DOWN}
+    {SCENE_VOIP_DOWN, HPAE_SCENE_VOIP_DOWN},
+    {SCENE_COLLABORATIVE, HPAE_SCENE_COLLABORATIVE}
 };
 
 static std::unordered_map<SourceType, HpaeProcessorType> g_sourceTypeToSceneTypeMap = {
@@ -146,6 +147,14 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
         return HPAE_SCENE_EFFECT_NONE;
     } else {
         return g_effectSceneToProcessorTypeMap[effectScene];
+    }
+}
+
+TransSceneTypeForCollaboration(HpaeNodeInfo &preNodeInfo)
+{
+    if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+        nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+        nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     }
 }
 
