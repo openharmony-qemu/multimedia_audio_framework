@@ -149,7 +149,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
         }
     }
 
-    CHECK_AND_RETURN_LOG(isConnect == false, "[FinishMove] not need connect session:%{public}d", sessionId);
+    CHECK_AND_RETURN_LOG(isConnect == true, "[FinishMove] not need connect session:%{public}d", sessionId);
     if (node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:%{public}s",
             sessionId, sinkInfo_.deviceClass.c_str());
