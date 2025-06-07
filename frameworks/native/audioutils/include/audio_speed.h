@@ -32,6 +32,7 @@ public:
     AudioSpeed(size_t rate, size_t format, size_t channels);
 
     ~AudioSpeed();
+    static float GetPitchForSpeed(float speed);
     int32_t Init();
     int32_t LoadChangeSpeedFunc();
     int32_t SetSpeed(float speed);

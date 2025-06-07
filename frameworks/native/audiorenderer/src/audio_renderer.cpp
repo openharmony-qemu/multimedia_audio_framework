@@ -26,6 +26,7 @@
 #include "audio_renderer_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
+#include "audio_speed.h"
 
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
@@ -2500,7 +2501,7 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
         lock.unlock();
     }
 
-    SetPitch(std::min(speed, NORMAL_STREAM_SPEED_LEVEL));
+    SetPitch(AudioSpeed::GetPitchForSpeed(speed));
     return SUCCESS;
 }
 

@@ -600,6 +600,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
 
 int32_t RendererInClientInner::SetPitch(float pitch)
 {
+    std::lock_guard lock(speedMutex_);
     if (audioSpeed_ == nullptr) {
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
             curStreamParams_.channels);
