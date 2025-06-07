@@ -1852,5 +1852,11 @@ int32_t RendererInClientInner::SetOffloadDataCallbackState(int cbState)
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
     return ipcStream_->SetOffloadDataCallbackState(cbState);
 }
+
+bool RendererInClientInner::GetStopFlag() const
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
+    return clientBuffer_->GetStopFlag();
+}
 } // namespace AudioStandard
 } // namespace OHOS

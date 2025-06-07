@@ -229,6 +229,7 @@ public:
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
+    bool GetStopFlag() const override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -2140,6 +2141,12 @@ void CapturerInClientInner::ResetCallbackLoopTid()
 {
     AUDIO_INFO_LOG("Reset callback loop tid to -1");
     callbackLoopTid_ = -1;
+}
+
+bool CapturerInClientInner::GetStopFlag() const
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
+    return clientBuffer_->GetStopFlag();
 }
 } // namespace AudioStandard
 } // namespace OHOS

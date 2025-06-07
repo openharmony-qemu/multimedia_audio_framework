@@ -354,6 +354,24 @@ public:
      * @since 20
      */
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+
+    /**
+     * @brief Force Stop the audio stream.
+     *
+     * @return Returns {@link SUCCESS} if the operation is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t ForceStopAudioStream(StopAudioType audioType);
+
+    /**
+     * Checks whether it is possible to obtain the recording focus.
+     * @param { AudioCapturerChangeInfo } AudioCapturerChangeInfo.
+     * @returns { bool } Indicating whether obtaining the recording focus is possible.
+     *
+     * @since 20
+     */
+    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo);
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

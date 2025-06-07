@@ -175,5 +175,104 @@ void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &c
     focusEntry.hintType = INTERRUPT_HINT_MUTE;
 }
 
+int32_t AudioInterruptService::ProcessActiveStreamFocus(
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
+    const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt)
+{
+    incomingState = ACTIVE;
+    activeInterrupt = audioFocusInfoList.end();
+
+    for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
+        activeInterrupt = iterActive;
+        if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) { continue; }
+        // if peeling is the incomming interrupt while at the momount there are already some existing recordings
+        // peeling should be rejected
+        if (IsLowestPriorityRecording(incomingInterrupt) && IsRecordingInterruption(iterActive->first)) {
+            incomingState = STOP;
+            AUDIO_INFO_LOG("PEELING AUDIO fail, there's a device recording");
+            break;
+        }
+
+        std::pair<AudioFocusType, AudioFocusType> focusPair =
+            std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
+        CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM, "no focus cfg");
+        AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
+        UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
+        CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
+        if (FocusEntryContinue(iterActive, focusEntry, incomingInterrupt)) { continue; }
+        if (focusEntry.isReject) {
+            if (IsGameAvoidCallbackCase(iterActive->first)) {
+                incomingState = PAUSE;
+                AUDIO_INFO_LOG("incomingState: %{public}d", incomingState);
+                continue;
+            }
+
+            AUDIO_INFO_LOG("the incoming stream is rejected by streamId:%{public}d, pid:%{public}d",
+                (iterActive->first).streamId, (iterActive->first).pid);
+            incomingState = STOP;
+            break;
+        }
+        incomingState = GetNewIncomingState(focusEntry.hintType, incomingState);
+    }
+    if (incomingState == STOP && !incomingInterrupt.deviceTag.empty()) {
+        incomingState = ACTIVE;
+    }
+    return SUCCESS;
+}
+
+void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
+    const AudioInterrupt &activeInterrupt, int32_t reason)
+{
+    AUDIO_INFO_LOG("recording failed to start, incoming: sourceType %{public}d pid %{public}d uid %{public}d"\
+        "active: sourceType %{public}d pid %{public}d uid %{public}d",
+        incomingInterrupt.audioFocusType.sourceType, incomingInterrupt.pid, incomingInterrupt.uid,
+        activeInterrupt.audioFocusType.sourceType, activeInterrupt.pid, activeInterrupt.uid);
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_RECORD_ERROR,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+
+    bean->Add("INCOMIMG_SOURCE", incomingInterrupt.audioFocusType.sourceType);
+    bean->Add("INCOMIMG_PID", incomingInterrupt.pid);
+    bean->Add("INCOMIMG_UID", incomingInterrupt.uid);
+    bean->Add("ACTIVE_SOURCE", activeInterrupt.audioFocusType.sourceType);
+    bean->Add("ACTIVE_PID", activeInterrupt.pid);
+    bean->Add("ACTIVE_UID", activeInterrupt.uid);
+    bean->Add("REASON", reason);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const AudioCapturerChangeInfo &capturerInfo)
+{
+    if (isPreemptMode_) {
+        AUDIO_INFO_LOG("Preempt mode, recording is not allowed");
+        return false;
+    }
+
+    uint32_t incomingSessionId = static_cast<uint32_t>(capturerInfo.sessionId);
+    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId)) {
+        AUDIO_INFO_LOG("Stream is active in focus list, recording is allowed");
+        return true;
+    }
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamId = incomingSessionId;
+    incomingInterrupt.pid = capturerInfo.clientPid;
+    incomingInterrupt.uid = capturerInfo.clientUID;
+    incomingInterrupt.audioFocusType.sourceType = capturerInfo.capturerInfo.sourceType;
+    incomingInterrupt.audioFocusType.isPlay = false;
+    AudioFocuState incomingState = ACTIVE;
+    auto itZone = zonesMap_.find(zoneId);
+    CHECK_AND_RETURN_RET_LOG(itZone != zonesMap_.end(), false, "can not find zoneid");
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
+    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
+        audioFocusInfoList = itZone->second->audioFocusInfoList;
+    }
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator activeInterrupt = audioFocusInfoList.end();
+    int32_t res = ProcessActiveStreamFocus(audioFocusInfoList, incomingInterrupt, incomingState, activeInterrupt);
+    return res == SUCCESS && incomingState < PAUSE;
+}
 }
 } // namespace OHOS
