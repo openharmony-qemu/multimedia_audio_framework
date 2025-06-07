@@ -2063,6 +2063,7 @@ void HpaeManager::LoadEffectLive()
 
 bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
 {
+    CHECK_AND_RETURN_RET_LOG(!params.empty(), false, "params is empty");
     const auto &[paramKey, paramValue] = params[0];
     if (paramKey != "live_effect" || (paramValue != "NRON" && paramValue != "NROFF")) {
         AUDIO_ERR_LOG("Parameter Error");
