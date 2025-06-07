@@ -26,6 +26,7 @@
 #include "napi_audio_volume_manager.h"
 #include "napi_audio_interrupt_manager.h"
 #include "napi_audio_spatialization_manager.h"
+#include "napi_audio_collaborative_manager.h"
 #include "napi_asr_processing_controller.h"
 #include "napi_audio_session_manager.h"
 

@@ -1307,19 +1307,21 @@ void AudioPolicyManagerStub::SetBackgroundMuteCallbackInternal(MessageParcel &da
 void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE):
-        SetCollaborativePlayBackEnabledForDeviceInternal(data, reply);
-        break;
-    case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_COLLABORATIVE_PALYBACK_SUPPORTED):
-        IsCollaborativePlaybackSupportedInternal(data, reply);
-        break;
-    case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE):
-        IsCollaborativePlaybackEnabledForDeviceInternal(data, reply);
-        break;
-    default:
-        AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-        IPCObjectStub::OnRemoteRequest(code, data, reply, option);
-        break;
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE):
+            SetCollaborativePlayBackEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_COLLABORATIVE_PALYBACK_SUPPORTED):
+            IsCollaborativePlaybackSupportedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE):
+            IsCollaborativePlaybackEnabledForDeviceInternal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
 }
 
 void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(

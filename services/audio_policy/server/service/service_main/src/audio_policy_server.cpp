@@ -118,6 +118,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioPolicyUtils_(AudioPolicyUtils::GetInstance()),
       audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService()),
+      audioCollaborativeService_(AudioCollaborativeService::GetAudioCollaborativeService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
       audioPolicyDump_(AudioPolicyDump::GetInstance()),
       audioActiveDevice_(AudioActiveDevice::GetInstance())
