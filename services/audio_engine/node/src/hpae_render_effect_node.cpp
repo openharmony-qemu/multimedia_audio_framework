@@ -218,8 +218,16 @@ void HpaeRenderEffectNode::ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo,
     int32_t ret = 0;
     switch (reason) {
         case ADD_AUDIO_EFFECT_CHAIN_INFO: {
+            const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes =
+                GetAudioSupportedSceneModes();
             SessionEffectInfo info;
-            info.sceneMode = std::to_string(nodeInfo.effectInfo.effectMode);
+            auto sceneMode = audioSupportedSceneModes.find(nodeInfo.effectInfo.effectMode);
+            if (sceneMode != audioSupportedSceneModes.end()) {
+                info.sceneMode = sceneMode->second;
+            } else {
+                AUDIO_WARNING_LOG("sceneMode: %{public}d is not supported", nodeInfo.effectInfo.effectMode);
+                info.sceneMode = "EFFECT_NONE";
+            }
             info.sceneType = sceneType;
             info.channels = static_cast<uint32_t>(nodeInfo.channels);
             info.channelLayout = nodeInfo.channelLayout;
