@@ -116,7 +116,6 @@ void AudioPolicyConfigManager::OnUpdateDefaultAdapter(bool isEnable)
 
 bool AudioPolicyConfigManager::GetDefaultAdapterEnable()
 {
-    // GetDefaultAdapterEnable
     return isDefaultAdapterEnable_;
 }
 
@@ -132,7 +131,7 @@ void AudioPolicyConfigManager::OnVoipConfigParsed(bool enableFastVoip)
 
 void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
-    AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
+    AUDIO_INFO_LOG("show type: %{public}s", anahsShowType.c_str());
     AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
 }
 
