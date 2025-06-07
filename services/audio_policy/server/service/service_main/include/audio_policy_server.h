@@ -43,6 +43,7 @@
 #include "audio_policy_client_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "session_processor.h"
+#include "audio_collaborative_service.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
 #include "audio_interrupt_service.h"
@@ -547,6 +548,14 @@ public:
     void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);
 
+    int32_t SetCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled) override;
+    
+    bool IsCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice) override;
+
+    bool IsCollaborativePlaybackSupported() override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -770,6 +779,7 @@ private:
         [this] (const uint64_t sessionID) {this->ProcessorCloseWakeupSource(sessionID); }};
 
     AudioSpatializationService& audioSpatializationService_;
+    AudioCollaborativeService& audioCollaborativeService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
     bool supportVibrator_ = false;

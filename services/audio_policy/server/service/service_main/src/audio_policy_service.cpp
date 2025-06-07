@@ -31,6 +31,7 @@
 #endif
 
 #include "audio_affinity_manager.h"
+#include "audio_collaborative_service.h"
 #include "audio_spatialization_service.h"
 #include "audio_converter_parser.h"
 #include "media_monitor_manager.h"
@@ -1018,6 +1019,7 @@ void AudioPolicyService::LoadEffectLibrary()
 
     audioEffectService_.SetEffectChainManagerAvailable();
     AudioSpatializationService::GetAudioSpatializationService().Init(supportedEffectConfig.effectChains);
+    AudioCollaborativeService::GetAudioCollaborativeService().Init(supportedEffectConfig.effectChains);
 }
 
 void AudioPolicyService::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)

@@ -1285,6 +1285,13 @@ int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &
     return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
+int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnabled)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    AUDIO_INFO_LOG("AudioCollaborativeService UpdateCollaborativeState entered!");
+    return audioServiceAdapter_->UpdateCollaborativeState(isCollaborationEnabled);
+}
+
 void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.name.empty()) {

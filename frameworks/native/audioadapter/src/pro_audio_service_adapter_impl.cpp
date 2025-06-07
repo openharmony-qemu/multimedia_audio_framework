@@ -518,6 +518,12 @@ void ProAudioServiceAdapterImpl::HandleSourceAudioStreamRemoved(uint32_t session
     CHECK_AND_RETURN_LOG(g_audioServiceAdapterCallback != nullptr, "g_audioServiceAdapterCallback is nullptr");
     g_audioServiceAdapterCallback->OnAudioStreamRemoved(sessionId);
 }
+
+int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
+{
+    AUDIO_INFO_LOG("UpdateCollaborativeState, state %{public}d", isCollaborationEnabled);
+    return SUCCESS;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

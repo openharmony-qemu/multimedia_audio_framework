@@ -50,6 +50,7 @@ static napi_value Init(napi_env env, napi_value exports)
     NapiAudioManager::Init(env, exports);
     NapiAsrProcessingController::Init(env, exports);
     NapiAudioSessionMgr::Init(env, exports);
+    NapiAudioCollaborativeManager::Init(env, exports);
     return exports;
 }
 

@@ -28,6 +28,7 @@
 #include "audio_usb_manager.h"
 #include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
+#include "audio_collaborative_service.h"
 #include "ipc_skeleton.h"
 
 namespace OHOS {
@@ -1258,6 +1259,7 @@ void AudioCoreService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescripto
     }
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
+    AudioCollaborativeService::GetAudioCollaborativeService().UpdateCurrentDevice(deviceDescriptor);
 }
 
 void AudioCoreService::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)

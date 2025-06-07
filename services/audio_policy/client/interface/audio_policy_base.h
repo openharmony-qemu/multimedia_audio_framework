@@ -487,6 +487,14 @@ public:
     virtual int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         const DeviceInfoUpdateCommand command) = 0;
     virtual int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual bool IsCollaborativePlaybackSupported() = 0;
+    
+    virtual int32_t SetCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled) = 0;
+    
+    virtual bool IsCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

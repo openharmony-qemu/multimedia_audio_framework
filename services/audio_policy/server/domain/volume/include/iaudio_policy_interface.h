@@ -219,6 +219,8 @@ public:
         doNotDisturbStatusWhiteList) = 0;
 
     virtual int32_t SetDoNotDisturbStatus(bool isDoNotDisturb) = 0;
+
+    virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

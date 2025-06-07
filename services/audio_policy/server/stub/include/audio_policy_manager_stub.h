@@ -239,7 +239,11 @@ private:
     void SetCallbackStreamUsageInfoInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void IsCollaborativePlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void SetCollaborativePlayBackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void IsCollaborativePlaybackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleTweRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

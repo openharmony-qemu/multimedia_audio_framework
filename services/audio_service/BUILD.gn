@@ -188,6 +188,7 @@ ohos_shared_library("audio_client") {
   install_enable = true
   sources = [
     "client/src/audio_manager_util.cpp",
+    "client/src/audio_collaborative_manager.cpp",
     "client/src/audio_combine_denoising_manager.cpp",
     "client/src/audio_effect_manager.cpp",
     "client/src/audio_group_manager.cpp",

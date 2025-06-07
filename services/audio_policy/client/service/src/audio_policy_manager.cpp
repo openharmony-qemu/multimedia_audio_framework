@@ -2543,6 +2543,29 @@ int32_t AudioPolicyManager::SetCallbackStreamUsageInfo(const std::set<StreamUsag
     return gsp->SetCallbackStreamUsageInfo(streamUsages);
 }
 
+bool AudioPolicyManager::IsCollaborativePlaybackSupported()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsCollaborativePlaybackSupported();
+}
+
+bool AudioPolicyManager::IsCollaborativePlaybackEnabledForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
+}
+
+int32_t AudioPolicyManager::SetCollaborativePlaybackEnabledForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->SetCollaborativePlaybackEnabledForDevice(selectedAudioDevice, enabled);
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

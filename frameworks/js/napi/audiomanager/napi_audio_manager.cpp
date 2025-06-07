@@ -21,6 +21,7 @@
 #include "napi_audio_stream_manager.h"
 #include "napi_audio_volume_manager.h"
 #include "napi_audio_interrupt_manager.h"
+#include "napi_audio_collaborative_manager.h"
 #include "napi_audio_spatialization_manager.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
@@ -135,6 +136,7 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("getInterruptManager", GetInterruptManager),
         DECLARE_NAPI_FUNCTION("getSpatializationManager", GetSpatializationManager),
         DECLARE_NAPI_FUNCTION("disableSafeMediaVolume", DisableSafeMediaVolume),
+        DECLARE_NAPI_FUNCTION("getCollaborativeManager", GetCollaborativeManager),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_MNGR_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
@@ -1561,5 +1563,20 @@ napi_value NapiAudioManager::Off(napi_env env, napi_callback_info info)
     }
     return undefinedResult;
 }
+
+napi_value NapiAudioManager::GetCollaborativeManager(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    size_t argCount = 0;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
+    if (status != napi_ok || argCount != 0) {
+        AUDIO_ERR_LOG("Invalid arguments!");
+        return nullptr;
+    }
+
+    return NapiAudioCollaborativeManager::CreateCollaborativeManagerWrapper(env);
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS
