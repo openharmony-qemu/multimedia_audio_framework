@@ -27,6 +27,7 @@ static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t DEFAULT_SINK_LATENCY = 40;
+static constexpr int32_t TEST_LATENCY = 280;
 
 HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), 
@@ -68,7 +69,7 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
         // fill silence frames for latency adjustment
         AUDIO_INFO_LOG("Filling silence frames for latency adjustment");
         ringCache_->ResetBuffer();
-        FillSilenceFramesInner(latency_ - DEFAULT_SINK_LATENCY);
+        FillSilenceFramesInner(TEST_LATENCY);
     }
 }
 
@@ -171,7 +172,7 @@ size_t HpaeCoBufferNode::GetOutputPortNum()
 void HpaeCoBufferNode::SetLatency(uint32_t latency)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    latency_ = (latency > DEFAULT_SINK_LATENCY) ? (latency - DEFAULT_SINK_LATENCY) : 0;
+    latency_ = latency;
     AUDIO_INFO_LOG("latency is %{public}d", latency);
 }
 
