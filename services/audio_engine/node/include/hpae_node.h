@@ -224,22 +224,16 @@ std::vector<T>& InputPort<T>::ReadPreOutputData()
 template <class T>
 void InputPort<T>::Connect(const std::shared_ptr<HpaeNode> &node, OutputPort<T>* output, HpaeBufferType bufferType)
 {
-    switch (bufferType) {
-        case HPAE_BUFFER_TYPE_DEFAULT:
-            if (output) {
-                output->AddInput(this);
-            }
-            AddPreOutput(node, output);
-            break;
-        case HPAE_BUFFER_TYPE_COBUFFER:
-            if (output) {
-                output->AddInput(this, node);
-            }
-            AddPreOutput(node, output);
-            break;
-        default:
-            break;
+    if (bufferType == HPAE_BUFFER_TYPE_DEFAULT) {
+        if (output) {
+            output->AddInput(this);
+        }
+    } else if (bufferType == HPAE_BUFFER_TYPE_COBUFFER) {
+        if (output) {
+            output->AddInput(this, node);
+        }
     }
+    AddPreOutput(node, output);
 }
 
 template <class T>
@@ -293,22 +287,17 @@ T OutputPort<T>::PullOutputData()
 template <class T>
 void OutputPort<T>::WriteDataToOutput(T data, HpaeBufferType bufferType)
 {
-    switch (bufferType) {
-        case HPAE_BUFFER_TYPE_DEFAULT:
-            outputData_.clear();
-            outputData_.emplace_back(std::move(data));
+    if (bufferType == HPAE_BUFFER_TYPE_DEFAULT) {
+        outputData_.clear();
+        outputData_.emplace_back(std::move(data));
 
-            for (size_t i = 1; i < inputPortSet_.size(); i++) {
-                outputData_.push_back(outputData_[0]);
-            }
-            break;
-        case HPAE_BUFFER_TYPE_COBUFFER:
-            for (auto &i : coInputPorts_) {
-                i.second->Enqueue(data);
-            }
-            break;
-        default:
-            break;
+        for (size_t i = 1; i < inputPortSet_.size(); i++) {
+            outputData_.push_back(outputData_[0]);
+        }
+    } else if (bufferType == HPAE_BUFFER_TYPE_COBUFFER) {
+        for (auto &i : coInputPorts_) {
+            i.second->Enqueue(data);
+        }
     }
 }
 
@@ -330,25 +319,18 @@ size_t OutputPort<T>::GetInputNum() const
 template <class T>
 bool OutputPort<T>::RemoveInput(InputPort<T> *input, HpaeBufferType bufferType)
 {
-    switch (bufferType) {
-        case HPAE_BUFFER_TYPE_DEFAULT: {
-            auto it = inputPortSet_.find(input);
-            if (it == inputPortSet_.end()) {
-                return false;
-            }
-            inputPortSet_.erase(it);
-            break;
+    if (bufferType == HPAE_BUFFER_TYPE_DEFAULT) {
+        auto it = inputPortSet_.find(input);
+        if (it == inputPortSet_.end()) {
+            return false;
         }
-        case HPAE_BUFFER_TYPE_COBUFFER: {
-            auto it = coInputPorts_.find(input);
-            if (it == coInputPorts_.end()) {
-                return false;
-            }
-            coInputPorts_.erase(it);
-            break;
+        inputPortSet_.erase(it);
+    } else if (bufferType == HPAE_BUFFER_TYPE_COBUFFER) {
+        auto it = coInputPorts_.find(input);
+        if (it == coInputPorts_.end()) {
+            return false;
         }
-        default:
-            break;
+        coInputPorts_.erase(it);
     }
     return true;
 }

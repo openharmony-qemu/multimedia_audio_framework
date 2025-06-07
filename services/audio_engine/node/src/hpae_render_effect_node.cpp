@@ -93,21 +93,17 @@ void HpaeRenderEffectNode::DoProcess()
         int32_t ret = SplitCollaborativeData();
         if (ret != SUCCESS) {
             outputStream_.WriteDataToOutput(&silenceData_);
-            // todo yjy use new function
-            // outputStream_.WriteDataToOutput(&silenceData_, flag);
+            outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
         } else {
             outputStream_.WriteDataToOutput(directOutput_.get());
-            // todo yjy use new function
-            // outputStream_.WriteDataToOutput(collaborativeOutput_.get(), flag);
+            outputStream_.WriteDataToOutput(collaborativeOutput_.get(), HPAE_BUFFER_TYPE_COBUFFER);
         }
     } else if (!preOutputs.empty()) {
         outputStream_.WriteDataToOutput(preOutputs[0]);
-        // todo yjy use new function
-        // outputStream_.WriteDataToOutput(preOutputs[0], flag);
+        outputStream_.WriteDataToOutput(preOutputs[0], HPAE_BUFFER_TYPE_COBUFFER);
     } else {
         outputStream_.WriteDataToOutput(&silenceData_);
-        // todo yjy use new function
-        // outputStream_.WriteDataToOutput(&silenceData_, flag);
+        outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
     }
 #ifdef ENABLE_HOOK_PCM
     if (directPcmDumper_ && directOutput_) {
