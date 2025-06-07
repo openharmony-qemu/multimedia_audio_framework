@@ -1309,7 +1309,7 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
                 (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
                 const std::string combinedParam = "live_effect=" + effectLiveState_;
                 hpaePolicyManager_->SetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
-            }               
+            }
         } else {
             AUDIO_WARNING_LOG("Start can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
                 streamClassType, sessionId);

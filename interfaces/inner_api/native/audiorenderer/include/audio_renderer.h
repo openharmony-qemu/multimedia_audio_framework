@@ -673,11 +673,11 @@ public:
 
     /**
      * @brief Do fade in for buffer.
-     * 
+     *
      * @param buffer Indicates the buffer.
      * @param format Indicates the format.
      * @param channel Indicates the channel.
-     * 
+     *
      * @return Returns {@link SUCCESS} or an error code defined in {@link audio_errors.h}.
      * @since 8
      */
@@ -685,11 +685,11 @@ public:
 
     /**
      * @brief Do fade out for buffer.
-     * 
+     *
      * @param buffer Indicates the buffer.
      * @param format Indicates the format.
      * @param channel Indicates the channel.
-     * 
+     *
      * @return Returns {@link SUCCESS} or an error code defined in {@link audio_errors.h}.
      * @since 8
      */
@@ -712,7 +712,7 @@ public:
      * @brief Sets the render mode. By default the mode is RENDER_MODE_NORMAL.
      * This API is needs to be used only if RENDER_MODE_CALLBACK is required.
      *
-     * * @param renderMode The mode of render.
+     * @param renderMode The mode of render.
      * @return  Returns {@link SUCCESS} if render mode is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 8

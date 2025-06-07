@@ -40,7 +40,7 @@ public:
     void OnSelfAppVolumeChanged(const VolumeEvent &event) override {}
 };
 
-class DataTransferStateChangeCallbackTest: public AudioRendererDataTransferStateChangeCallback {
+class DataTransferStateChangeCallbackTest : public AudioRendererDataTransferStateChangeCallback {
 public:
     void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) override {}
 };

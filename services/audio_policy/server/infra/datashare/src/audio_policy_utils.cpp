@@ -82,7 +82,7 @@ int32_t AudioPolicyUtils::startDeviceId = 1;
 void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
 {
     Trace trace("SYSEVENT FAULT EVENT AUDIO_SERVICE_STARTUP_ERROR, SERVICE_ID: "
-        + std::to_string(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID) + 
+        + std::to_string(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID) +
         ", ERROR_CODE: " + std::to_string(Media::MediaMonitor::AUDIO_POLICY_SERVER));
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_SERVICE_STARTUP_ERROR,

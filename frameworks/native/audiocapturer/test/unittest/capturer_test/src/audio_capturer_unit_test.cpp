@@ -2557,7 +2557,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_001, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test GetTimeStampInfo API via illegal state, 
+* @tc.name  : Test GetTimeStampInfo API via illegal state,
 *             CAPTURER_NEW: GetTimeStampInfo without initializing the capturer.
 * @tc.number: Audio_Capturer_GetTimeStampInfo_002
 * @tc.desc  : Test GetTimeStampInfo interface. Returns false, if the capturer state is CAPTURER_NEW.

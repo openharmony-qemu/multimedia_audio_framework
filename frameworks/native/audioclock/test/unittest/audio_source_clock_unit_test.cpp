@@ -65,7 +65,7 @@ void AudioSourceClockUnitTest::TearDownTestCase()
 }
 
 /**
- * @tc.name   : Test Audio source clock 
+ * @tc.name   : Test Audio source clock
  * @tc.number : AudioSourceClockUnitTest_001
  * @tc.desc   : Test Audio source clock normal case
  */
