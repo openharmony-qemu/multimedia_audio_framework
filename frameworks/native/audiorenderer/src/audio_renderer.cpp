@@ -2713,6 +2713,12 @@ int32_t AudioRendererPrivate::StartDataCallback()
     return audioStream_->SetOffloadDataCallbackState(0); // 0 hdi state need data
 }
 
+void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
+{
+    AUDIO_PRERELEASE_LOGI("AudioRendererPrivate::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
+    audioHapticsSyncId_ = audioHapticsSyncId;
+}
+
 int32_t AudioRendererPrivate::StopDataCallback()
 {
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);

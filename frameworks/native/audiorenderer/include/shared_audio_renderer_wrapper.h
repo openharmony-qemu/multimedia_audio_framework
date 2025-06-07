@@ -451,6 +451,11 @@ public:
         return sharedAudioRenderer_->StartDataCallback();
     }
 
+    void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override
+    {
+        sharedAudioRenderer_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    }
+
     int32_t StopDataCallback() override
     {
         return sharedAudioRenderer_->StopDataCallback();

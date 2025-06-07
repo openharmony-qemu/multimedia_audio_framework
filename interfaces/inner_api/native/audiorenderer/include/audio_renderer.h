@@ -1076,6 +1076,14 @@ public:
         return;
     }
 
+    /**
+     * @brief Set audio haptics sync id
+     *
+     * @param syncId use this id to sync audio and haptics.
+     * @since 20
+     */
+    virtual void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) {};
+
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
