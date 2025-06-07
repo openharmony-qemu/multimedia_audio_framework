@@ -394,9 +394,22 @@ void AudioPipeManager::RemoveModemCommunicationId(uint32_t sessionId)
     }
 }
 
+std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetModemCommunicationStreamDescById(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    if (modemCommunicationIdMap_.find(sessionId) != modemCommunicationIdMap_.end()) {
+        AUDIO_INFO_LOG("Get %{public}u success", sessionId);
+        return modemCommunicationIdMap_[sessionId];
+    } else {
+        AUDIO_WARNING_LOG("Cannot find id %{public}u", sessionId);
+        return nullptr;
+    }
+}
+
 std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetModemCommunicationMap()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    AUDIO_INFO_LOG("map size %{public}zu", modemCommunicationIdMap_.size());
     return modemCommunicationIdMap_;
 }
 

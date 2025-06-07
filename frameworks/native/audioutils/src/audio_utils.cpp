@@ -512,6 +512,9 @@ bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowed
 {
     CHECK_AND_RETURN_RET_LOG(allowedUids.size() > 0, false, "allowedUids is empty");
     auto callingUid = IPCSkeleton::GetCallingUid();
+    if (UID_AUDIO == callingUid) {
+        return true;
+    }
     for (const auto &uid : allowedUids) {
         if (uid == callingUid) {
             return true;

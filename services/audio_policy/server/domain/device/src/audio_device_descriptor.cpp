@@ -247,8 +247,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel, int32_
     parcel.WriteInt32(deviceCategory_);
     parcel.WriteInt32(connectState_);
     parcel.WriteBool(spatializationSupported_);
-    parcel.WriteBool(mediaVolume_);
-    parcel.WriteBool(callVolume_);
+    parcel.WriteInt32(mediaVolume_);
+    parcel.WriteInt32(callVolume_);
     return true;
 }
 
