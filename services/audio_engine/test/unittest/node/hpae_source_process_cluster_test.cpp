@@ -28,6 +28,7 @@ namespace AudioStandard {
 namespace HPAE {
 
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
+constexpr uint64_t INVALID_SCENE_KEY_CODE = 66;
 
 class HpaeSourceProcessClusterTest : public ::testing::Test {
 public:
@@ -89,6 +90,36 @@ TEST_F(HpaeSourceProcessClusterTest, constructHpaeSourceProcessClusterNode)
     EXPECT_EQ(hpaeSourceProcessCluster->GetPreOutNum(), 0);
 }
 
+TEST_F(HpaeSourceProcessClusterTest, testInterfaces)
+{
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_VOIP_UP;
+    nodeInfo.statusCallback = testStatuscallback;
+    std::shared_ptr<HpaeSourceProcessCluster> hpaeSourceProcessCluster =
+        std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
+    std::shared_ptr<HpaeSourceInputNode> inputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    std::shared_ptr<HpaeNode> hpaeNode = hpaeSourceProcessCluster->GetSharedInstance();
+    ASSERT_NE(hpaeNode, nullptr);
+    EXPECT_NE(hpaeSourceProcessCluster->GetSharedInstance(hpaeNode->GetNodeInfo()), nullptr);
+    EXPECT_NE(hpaeSourceProcessCluster->GetOutputPort(), nullptr);
+    EXPECT_NE(hpaeSourceProcessCluster->GetOutputPort(hpaeNode->GetNodeInfo(), true), nullptr);
+    EXPECT_NE(hpaeSourceProcessCluster->GetOutputPort(hpaeNode->GetNodeInfo(), false), nullptr);
+    EXPECT_NE(hpaeSourceProcessCluster->GetCapturerEffectConfig(nodeInfo, HPAE_SOURCE_BUFFER_TYPE_MIC), true);
+    EXPECT_EQ(hpaeSourceProcessCluster->GetOutputPortNum(), 0);
+    hpaeSourceProcessCluster->DoProcess();
+    uint64_t sceneKeyCode = INVALID_SCENE_KEY_CODE;
+    CaptureEffectAttr attr;
+    EXPECT_NE(hpaeSourceProcessCluster->CaptureEffectCreate(sceneKeyCode, attr), 0);
+    EXPECT_NE(hpaeSourceProcessCluster->CaptureEffectRelease(sceneKeyCode), 0);
+    hpaeSourceProcessCluster->Connect(inputNode);
+    hpaeSourceProcessCluster->DisConnect(inputNode);
+    EXPECT_EQ(hpaeSourceProcessCluster->ResetAll(), true);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
