@@ -30,15 +30,17 @@ static constexpr int32_t DEFAULT_SINK_LATENCY = 40;
 
 HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), 
+      enqueueRunning_(false),
       outputStream_(this),
       pcmBufferInfo_(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000),
       coBufferOut_(pcmBufferInfo_),
-      latency_(0),
+      silencaData_(pcmBufferInfo_),
       enqueueFlag_(FrameFlag::FIRST_FRAME),
-      enqueueRunning_(false)
+      latency_(0)
 {
     AUDIO_INFO_LOG("HpaeCoBufferNode created");
-    const size_t size = SAMPLE_RATE_48000 * STEREO * sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
+    const size_t size = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
+        sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     AUDIO_INFO_LOG("Created ring cache, size: %zu", size);
@@ -54,9 +56,8 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
         inputPcmDumper_->Dump(reinterpret_cast<int8_t*>(buffer->GetPcmDataBuffer()), dumpSize);
     }
 #endif
-
     // process input buffer
-    ProcessInputFrame(buffer);
+    ProcessInputFrameInner(buffer);
     
     // process enqueue flag
     if (enqueueFlag_ == FrameFlag::FIRST_FRAME) {
@@ -81,7 +82,7 @@ void HpaeCoBufferNode::DoProcess()
     }
     
     // process output buffer
-    ProcessOutputFrame();
+    ProcessOutputFrameInner();
     
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
@@ -223,7 +224,7 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
 {
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
     
-    const size_t requestDataLen = SAMPLE_RATE_48000 * STEREO * 
+    const size_t requestDataLen = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) * 
                                 sizeof(float) * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
     
     // check readable size

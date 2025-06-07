@@ -1152,12 +1152,6 @@ int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
     }
     return SUCCESS;
 }
-std::shared_ptr<HpaeCoBufferNode> HpaeRendererManager::GetCoBufferNode()
-{
-    CHECK_AND_RETURN_RET_LOG(hpaeCoBufferNode_ != nullptr, nullptr,
-        "hpaeCoBufferNode_ is nullptr");
-    return hpaeCoBufferNode_;
-}
 
 int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
 {

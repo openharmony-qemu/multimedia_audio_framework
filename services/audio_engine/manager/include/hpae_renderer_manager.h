@@ -92,7 +92,6 @@ public:
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
 
     int32_t UpdateCollaborationState(bool isCollaborationEnabled) override;
-    std::shared_ptr<HpaeCoBufferNode> GetCoBufferNode() override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
 private:
