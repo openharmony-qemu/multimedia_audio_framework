@@ -131,7 +131,9 @@ void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType,
         nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen,
         capturerFrameDataMap_.at(bufferType).data(),
         inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
-    outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
+    if (inputAudioBufferMap_.at(bufferType).IsValid()) {
+        outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
+    }
 }
 
 void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
@@ -151,8 +153,10 @@ void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferTy
 
     size_t appendSize = std::min<size_t>(replyBytes, remainCapacity);
     historyData.insert(historyData.end(), newData, newData + appendSize);
-
-    if (historyData.size() < frameByteSizeMap_.at(bufferType)) {
+    uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
+        static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
+    if (replyBytes != byteSize && historyData.size() < frameByteSizeMap_.at(bufferType)) {
+        // replyBytes == byteSize should send data right now, else cached history
         AUDIO_DEBUG_LOG("Partial frame accumulated: %{public}zu/%{public}zu",
             historyData.size(), frameByteSizeMap_.at(bufferType));
         return;
