@@ -116,7 +116,8 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
         (reserveOutFrameLen - fillSize) * channels_ * sizeof(float),
         tmpOutBuf.data(), tmpOutFrameLen * channels_ * sizeof(float));
     // output first half of data
-    ret += memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float), buf11025_.data(), expectedOutFrameLen_ * channels_ * sizeof(float));
+    ret += memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float),
+        buf11025_.data(), expectedOutFrameLen_ * channels_ * sizeof(float));
     buf11025_.resize(expectedOutFrameLen_ * channels_);
     if (ret != EOK) {
         ret = RESAMPLER_ERR_ALLOC_FAILED;
