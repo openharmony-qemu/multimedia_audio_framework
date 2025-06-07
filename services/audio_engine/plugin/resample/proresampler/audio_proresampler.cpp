@@ -44,7 +44,7 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
             ErrCodeToString(errRet).c_str());
     }
     if (inRate_ == SAMPLE_RATE_11025) { // for 11025, process input 40ms per time and output 20ms per time
-        buf11025_.reverse(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE + ADD_SIZE);
+        buf11025_.reserve(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE + ADD_SIZE);
         AUDIO_INFO_LOG("Proresampler input 11025hz, output resample rate %{public}d, buf11025_ size %{public}d",
             outRate_, expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE + ADD_SIZE);
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE;
@@ -92,7 +92,7 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
     CHECK_AND_RETURN_RET_LOG(outFrameSize >= expectedOutFrameLen_, RESAMPLER_ERR_INVALID_ARG,
         "output frame size %{public}d is not valid", outFrameSize);
     CHECK_AND_RETURN_RET_LOG(((inFrameSize == 0) || (inFrameSize == expectedInFrameLen_)), RESAMPLER_ERR_INVALID_ARG,
-        "input frame size %{public}d is not valid", outFrameSize);
+        "input frame size %{public}d is not valid", inFrameSize);
     if (inFrameSize == 0) {
         int32_t ret = RESAMPLER_ERR_SUCCESS;
         if (buf11025_.size() > 0) { // output second half of 11025 buffer

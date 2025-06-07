@@ -73,7 +73,6 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
     }
     // for 11025 check if input data is empty
     if ((inputs[0]->GetSampleRate() == SAMPLE_RATE_11025) && (inputs[0]->DataSize() == 0)) {
-        AUDIO_INFO_LOG("ZYX data size is 0");
         return inputs[0];
     }
     auto rate = "rate[" + std::to_string(inputs[0]->GetSampleRate()) + "]_";
