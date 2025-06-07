@@ -45,9 +45,9 @@ static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string devic
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / TENMS_PER_SEC);
+    spanSizeInFrame_ = FRAME_LEN_10MS * processConfig.streamInfo.samplingRate / TENMS_PER_SEC;
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
-        static_cast<size_t>((processConfig.streamInfo.format)));
+        static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
     isCallbackMode_ = isCallbackMode;
     isMoveAble_ = isMoveAble;
