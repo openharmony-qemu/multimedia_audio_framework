@@ -236,10 +236,10 @@ int32_t HpaeRendererManager::AddAllNodesToSink(
     return SUCCESS;
 }
 
-HpaeProcessCluster HpaeRendererManager::GetProcessorType(uint32_t sessionId)
+HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
 {
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
-    if((sessionNodeMap_[sessionId].bypass || nodeInfo.effectInfo.effectMode == EFFECT_NONE) &&
+    if ((sessionNodeMap_[sessionId].bypass || nodeInfo.effectInfo.effectMode == EFFECT_NONE) &&
         (!isSplitProcessorType(nodeInfo.sceneType))) {
             return HPAE_SCENE_EFFECT_NONE;
     }
@@ -320,7 +320,7 @@ void HpaeRendererManager::DeleteProcessCluster(
 {
     Trace trace("[" + std::to_string(sessionId) +
         "]HpaeRendererManager::DeleteProcessCluster sceneType:" + std::to_string(sessionId));
-    if (!sessionNodeMap_[sessionId].bypass){
+    if (!sessionNodeMap_[sessionId].bypass) {
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
             "could not find processorType %{public}d", nodeInfo.sceneType);
         sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(sinkInputNodeMap_[sessionId]->GetNodeInfo());
