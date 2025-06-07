@@ -1195,6 +1195,13 @@ void HpaeRendererManager::HandleCollaborationStateChangedInner(HpaeProcessorType
         AddSingleNodeToSink(sinkInputNodeMap_[sessionID], false);
     }
 }
+
+std::string HpaeRendererManager::GetDeviceHDFDumpInfo()
+{
+    std::string config;
+    TransDeviceInfoToString(sinkInfo_, config);
+    return config;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

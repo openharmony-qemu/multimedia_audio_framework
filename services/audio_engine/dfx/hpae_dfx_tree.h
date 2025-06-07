@@ -51,6 +51,7 @@ public:
     bool Remove(const uint32_t nodeId);
     void PrintTree(std::string &outStr);
     void UpdateNodeInfo(uint32_t nodeId, const HpaeDfxNodeInfo &nodeInfo);
+    DfxTreeNode *GetRoot() const { return root_; }
 private:
     DfxTreeNode *FindDfxNode(DfxTreeNode *currentNode, const uint32_t nodeId);
     DfxTreeNode *FindDfxParent(DfxTreeNode *target);

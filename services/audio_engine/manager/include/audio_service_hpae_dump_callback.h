@@ -18,11 +18,21 @@
 #include <string>
 namespace OHOS {
 namespace AudioStandard {
+typedef struct {
+    std::string deviceName;
+    std::string config;
+} HpaeSinkSourceInfo;
+
+typedef struct {
+    std::vector<HpaeSinkSourceInfo> sinkInfos;
+    std::vector<HpaeSinkSourceInfo> sourceInfos;
+} HpaeDeviceInfo;
+
 class AudioServiceHpaeDumpCallback {
 public:
     virtual void OnDumpSinkInfoCb(std::string& dumpStr, int32_t result) = 0;
     virtual void OnDumpSourceInfoCb(std::string &dumpStr, int32_t result) = 0;
-
+    virtual void OnDumpAllAvailableDeviceCb(int32_t result) = 0;
     virtual ~AudioServiceHpaeDumpCallback()
     {}
 };

@@ -39,6 +39,7 @@ namespace AudioStandard {
 namespace {
     AudioStreamManager *g_audioManagerInstance = nullptr;
     int g_isCallbackReceived = false;
+    int g_changeInfoNum = 0;
     constexpr uint32_t MIN_DEVICE_ID = 1;
     constexpr int32_t VALUE_NEGATIVE = -1;
     constexpr int32_t RENDERER_FLAG = 0;
@@ -62,6 +63,9 @@ AudioFormatUnsupportedErrorCallbackTest::AudioFormatUnsupportedErrorCallbackTest
 void AudioStreamManagerUnitTest::SetUpTestCase(void)
 {
     g_audioManagerInstance = AudioStreamManager::GetInstance();
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    g_changeInfoNum = static_cast<int32_t>(audioRendererChangeInfos.size());
     if (g_audioManagerInstance == nullptr) {
         AUDIO_ERR_LOG("AudioStreamManagerUnitTest:  AudioStreamManager get instance fails");
         return;
@@ -294,7 +298,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
 
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum + 1, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(1, audioRendererChangeInfos[0]->rendererState);
     EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
     audioRendererChangeInfos.clear();
@@ -303,7 +307,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
 
 /**
@@ -319,7 +323,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
 
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
 
 /**
@@ -342,7 +346,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     EXPECT_EQ(true, isStarted);
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum + 1, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(2, audioRendererChangeInfos[0]->rendererState);
     EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
 
@@ -355,7 +359,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
 
 /**
@@ -380,7 +384,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum + 1, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(3, audioRendererChangeInfos[0]->rendererState);
     EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
 
@@ -390,7 +394,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
 
 /**
@@ -420,7 +424,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
 
 /**
@@ -449,7 +453,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     audioRendererChangeInfos.clear();
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(2, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum + 2, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(2, audioRendererChangeInfos[0]->rendererState);
     EXPECT_EQ(2, audioRendererChangeInfos[1]->rendererState);
     EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
@@ -460,7 +464,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     audioRendererChangeInfos.clear();
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(2, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum + 2, static_cast<int32_t>(audioRendererChangeInfos.size()));
     EXPECT_EQ(3, audioRendererChangeInfos[0]->rendererState);
     EXPECT_EQ(2, audioRendererChangeInfos[1]->rendererState);
     EXPECT_NE(0, audioRendererChangeInfos[0]->tokenId);
@@ -478,7 +482,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     audioRendererChangeInfos.clear();
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
 
 /**
@@ -534,7 +538,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     for (int32_t i = 0; i < VALUE_HUNDRED; i++) {
         ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
         EXPECT_EQ(SUCCESS, ret);
-        EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
+        EXPECT_EQ(g_changeInfoNum + 1, static_cast<int32_t>(audioRendererChangeInfos.size()));
         EXPECT_EQ(2, audioRendererChangeInfos[0]->rendererState);
         audioRendererChangeInfos.clear();
     }
@@ -548,7 +552,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
 
 /**
@@ -573,7 +577,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     for (int32_t i = 0; i < VALUE_HUNDRED; i++) {
         ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
         EXPECT_EQ(SUCCESS, ret);
-        EXPECT_EQ(1, static_cast<int32_t>(audioRendererChangeInfos.size()));
+        EXPECT_EQ(g_changeInfoNum + 1, static_cast<int32_t>(audioRendererChangeInfos.size()));
         EXPECT_EQ(2, audioRendererChangeInfos[0]->rendererState);
         EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.deviceRole_, DeviceRole::OUTPUT_DEVICE);
         EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.deviceType_, DeviceType::DEVICE_TYPE_SPEAKER);
@@ -598,7 +602,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
 
 /**
@@ -630,7 +634,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
         // Wait here for callback. If not callback for 2 mintues, will skip this step
         AudioStreamManagerUnitTest::WaitForCallback();
         g_isCallbackReceived = false;
-        EXPECT_EQ(1, static_cast<int32_t>(g_audioRendererChangeInfosRcvd.size()));
+        EXPECT_EQ(g_changeInfoNum + 1, static_cast<int32_t>(g_audioRendererChangeInfosRcvd.size()));
         EXPECT_EQ(1, g_audioRendererChangeInfosRcvd[0]->rendererState);
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }
@@ -647,7 +651,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     g_audioManagerInstance->UnregisterAudioRendererEventListener(getpid());
@@ -698,7 +702,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
 
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     g_audioManagerInstance->UnregisterAudioRendererEventListener(getpid());
@@ -748,7 +752,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
 
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     g_audioManagerInstance->UnregisterAudioRendererEventListener(getpid());
@@ -798,7 +802,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_RendererStateCh
 
     ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
+    EXPECT_EQ(g_changeInfoNum, static_cast<int32_t>(audioRendererChangeInfos.size()));
 
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
     g_audioManagerInstance->UnregisterAudioRendererEventListener(getpid());
