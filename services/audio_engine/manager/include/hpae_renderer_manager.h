@@ -120,6 +120,7 @@ private:
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
+    HpaeProcessorType GetProcessorType(uint32_t sessionId);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;

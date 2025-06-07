@@ -105,15 +105,6 @@ enum SceneTypeOperation {
     REMOVE_SCENE_TYPE = 1,
 };
 
-enum ProcessClusterOperation {
-    NO_NEED_TO_CREATE_PROCESSCLUSTER,
-    CREATE_NEW_PROCESSCLUSTER,
-    CREATE_DEFAULT_PROCESSCLUSTER,
-    USE_DEFAULT_PROCESSCLUSTER,
-    USE_NONE_PROCESSCLUSTER,
-    CREATE_EXTRA_PROCESSCLUSTER
-};
-
 class AudioEffectChainManager {
 public:
     AudioEffectChainManager();
