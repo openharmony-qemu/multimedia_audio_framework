@@ -26,7 +26,6 @@ static constexpr int32_t DEFAULT_FRAME_LEN = 960;
 static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
-static constexpr int32_t DEFAULT_SINK_LATENCY = 40;
 static constexpr int32_t TEST_LATENCY = 280;
 
 HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo &nodeInfo)
@@ -44,7 +43,7 @@ HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo &nodeInfo)
         sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
-    AUDIO_INFO_LOG("Created ring cache, size: %zu", size);
+    AUDIO_INFO_LOG("Created ring cache, size: %{public}zu", size);
 }
 
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
