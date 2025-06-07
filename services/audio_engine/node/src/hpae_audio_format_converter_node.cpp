@@ -21,7 +21,8 @@
 #include "cinttypes"
 
 static constexpr uint32_t DEFAULT_EFFECT_RATE = 48000;
-static constexpr uint32_t DOUBLE_EXPAND_SIZE = 2;
+static constexpr float FRAME_LEN_20MS = 0.02f;
+static constexpr uint32_t REASAMPLE_QUAILTY = 1;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -86,10 +87,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
         AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
     }
     CHECK_AND_RETURN_RET_LOG(resampler_, &silenceData_, "NodeId %{public}d resampler_ is nullptr", GetNodeId());
-    // check if no data is passed to converterNode
-    if((inputs[0]->GetSampleRate() == SAMPLE_RATE_11025) && (inputs[0]->DataSize() == 0)) {
-        AUDIO_INFO_LOG("ZYX input buffer is empty, input framelen %{public}d", inputs[0]->GetFrameLen());
-    }
+
     // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
     CheckAndUpdateInfo(inputs[0]);
     // pass valid tag to next node
@@ -260,6 +258,10 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
         resampler_->UpdateRates(sampleRate, resampler_->GetOutRate());
         isInfoUpdated = true;
     }
+    // special case for 11025, frameLen is 441, 0, 441, 0... alternating
+    if (preNodeInfo_.samplingRate == (uint32_t)SAMPLE_RATE_11025) {
+        preNodeInfo_.frameLen = input->GetFrameLen();
+    }
     return isInfoUpdated;
 }
 
@@ -297,8 +299,9 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
     outPcmBufferInfo.frameLen = preNodeInfo_.frameLen * resampler_->GetOutRate() / resampler_->GetInRate();
     outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
 
-    if (preNodeInfo.samplingRate == SAMPLE_RATE_11025) { // for 11025, after resample frameLen 40ms -> 20ms
-        outPcmBufferInfo.frameLen /= DOUBLE_EXPAND_SIZE;
+    if (preNodeInfo_.samplingRate == SAMPLE_RATE_11025) {
+        // for 11025, fix out frameLen based on output sample rate and fixed frameLen 20ms
+        outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS;
     }
 
     AUDIO_INFO_LOG("NodeId %{public}d: output or input format info is changed, update tmp PCM buffer info!",
