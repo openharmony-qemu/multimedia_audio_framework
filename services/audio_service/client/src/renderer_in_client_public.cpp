@@ -366,11 +366,13 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
+    CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,
+        ERR_INVALID_PARAM, "Timestampbase is not allowed");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     uint64_t readIdx = 0;
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency);
+    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
 
     uint64_t framePosition = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
@@ -382,13 +384,13 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
     }
 
-    if (lastFramePosition_ < framePosition) {
-        lastFramePosition_ = framePosition;
-        lastFrameTimestamp_ = timestampVal;
+    // reset the timestamp
+    if (lastFramePosition_[base].first < framePosition || lastFramePosition_[base].second == 0) {
+        lastFramePosition_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
-        framePosition = lastFramePosition_;
-        timestampVal = lastFrameTimestamp_;
+        framePosition = lastFramePosition_[base].first;
+        timestampVal = lastFramePosition_[base].second;
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u, Sinklatency %{public}" PRIu64, framePosition,
@@ -1720,13 +1722,15 @@ DeviceType RendererInClientInner::GetDefaultOutputDevice()
 int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Renderer stream state is not RUNNING");
+    CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,
+        ERR_INVALID_PARAM, "Timestampbase is not allowed");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
     uint64_t readIdx = 0;
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
-    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency);
+    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
-    uint64_t framePosition = lastFramePosition_;
+    uint64_t framePosition = lastFramePosition_[base].first;
     if (readIdx >= latency + lastReadIdx_) { // happen when last speed latency consumed
         framePosition += lastLatencyPosition_ + (readIdx - lastReadIdx_ - latency) * speed_;
         lastLatency_ = latency;
@@ -1745,19 +1749,19 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         mcrLatency = converter_->GetLatency() * curStreamParams_.samplingRate / AUDIO_MS_PER_S;
         framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
     }
- 
-    if (lastFramePosition_ < framePosition) {
-        lastFramePosition_ = framePosition;
-        lastFrameTimestamp_ = timestampVal;
+
+    // reset the timestamp
+    if (lastFramePosition_[base].first < framePosition || lastFramePosition_[base].second == 0) {
+        lastFramePosition_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
-        framePosition = lastFramePosition_;
-        timestampVal = lastFrameTimestamp_;
+        framePosition = lastFramePosition_[base].first;
+        timestampVal = lastFramePosition_[base].second;
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", lastLatencyPosition_ %{public}" PRIu64 ", totlatency %{public}" PRIu64,
         framePosition, lastFlushReadIndex_, timestampVal, lastLatencyPosition_, latency + mcrLatency);
- 
+
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);

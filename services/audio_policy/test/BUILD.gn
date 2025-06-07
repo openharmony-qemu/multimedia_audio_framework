@@ -2884,7 +2884,7 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
 ohos_unittest("volume_data_maintainer_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
-    "../../audio_policy/server/include/service/manager",
+    "../../audio_policy/server/infra/datashare/include",
     "./unittest/volume_data_maintainer_unit_test/include",
   ]
 
@@ -3791,7 +3791,7 @@ ohos_unittest("audio_adapter_manager_unit_test") {
   include_dirs = [
     "../server/include",
     "./unittest/audio_adapter_manager_unit_test/include",
-    "../../../services/audio_policy/server/include/service/manager",
+    "../../../services/audio_policy/server/infra/datashare/include",
     "../../../frameworks/native/audiodefinitions/include",
     "../../../services/audio_policy/server/domain/interrupt/include",
   ]
@@ -4265,7 +4265,7 @@ ohos_unittest("audio_policy_client_proxy_unit_test") {
 
   sources = [
     "../../../services/audio_policy/server/proxy/src/audio_policy_client_proxy.cpp",
-    "../../../services/audio_policy/server/src/service/device/audio_device_descriptor.cpp",
+    "../../../services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
     "./unittest/audio_policy_client_proxy_unit_test/src/audio_policy_client_proxy_unit_test.cpp",
   ]
 
@@ -5193,7 +5193,7 @@ ohos_unittest("dfx_msg_manager_unit_test") {
 ohos_unittest("client_type_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
-    "../../audio_policy/server/include/service/manager",
+    "../../audio_policy/server/infra/datashare/include",
     "../../audio_policy/server/domain/volume/include",
     "./unittest/client_type_manager_unit_test/include",
   ]

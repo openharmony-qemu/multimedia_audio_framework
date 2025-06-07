@@ -247,7 +247,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_010, TestSize.Level1)
     uint64_t timestamp = 0;
     uint64_t framePosition = 0;
     uint64_t latency = 0;
-    int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency);
+    int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 

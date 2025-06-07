@@ -120,7 +120,7 @@ config("audio_engine_node_config") {
     "../audio_service/common/include",
     "../audio_service/common/include/limiter",
     "../audio_service/server/include",
-    "../audio_policy/server/include/service/common",
+    "../audio_policy/common/include",
     "../audio_policy/util/include",
     "../../frameworks/native/audioeffect/include",
     "../../interfaces/inner_api/native/audiocommon/include",
@@ -148,6 +148,12 @@ ohos_shared_library("audio_engine_node") {
     debug = false
   }
   install_enable = true
+
+  defines = []
+
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
+  }
 
   configs = [ ":audio_engine_node_config" ]
 
@@ -208,8 +214,8 @@ ohos_shared_library("audio_engine_manager") {
 
   include_dirs = [
     "manager/include",
-    "../audio_policy/server/include/service/common",
-    "../audio_policy/server/include/service/manager",
+    "../audio_policy/common/include",
+    "../audio_policy/server/infra/datashare/include",
     "../../frameworks/native/audioeffect/include",
     "../../frameworks/native/audioschedule/include",
   ]

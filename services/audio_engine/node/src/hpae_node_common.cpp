@@ -95,7 +95,7 @@ static std::unordered_map<StreamManagerState, std::string> g_streamMgrStateToStr
     {STREAM_MANAGER_RELEASED, "RELEASED"}
 };
 
-static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
+static std::map<std::string, uint32_t> g_formatFromParserStrToEnum = {
     {"s16", SAMPLE_S16LE},
     {"s16le", SAMPLE_S16LE},
     {"s24", SAMPLE_S24LE},
@@ -104,6 +104,13 @@ static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
     {"s32le", SAMPLE_S32LE},
     {"f32", SAMPLE_F32LE},
     {"f32le", SAMPLE_F32LE},
+};
+
+static std::map<uint32_t, std::string> g_formatFromParserEnumToStr = {
+    {SAMPLE_S16LE, "s16le"},
+    {SAMPLE_S24LE, "s24le"},
+    {SAMPLE_S32LE, "s32le"},
+    {SAMPLE_F32LE, "f32le"},
 };
 
 std::string ConvertSessionState2Str(HpaeSessionState state)
@@ -226,7 +233,7 @@ uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
 
 AudioSampleFormat TransFormatFromStringToEnum(std::string format)
 {
-    return static_cast<AudioSampleFormat>(formatFromParserStrToEnum[format]);
+    return static_cast<AudioSampleFormat>(g_formatFromParserStrToEnum[format]);
 }
 
 void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
@@ -248,7 +255,7 @@ void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sin
 
 int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
 {
-    if (formatFromParserStrToEnum.find(audioModuleInfo.format) == formatFromParserStrToEnum.end()) {
+    if (g_formatFromParserStrToEnum.find(audioModuleInfo.format) == g_formatFromParserStrToEnum.end()) {
         AUDIO_ERR_LOG("openaudioport failed,format:%{public}s not supported", audioModuleInfo.format.c_str());
         return ERROR;
     }
@@ -283,7 +290,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
 
 int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo)
 {
-    if (formatFromParserStrToEnum.find(audioModuleInfo.format) == formatFromParserStrToEnum.end()) {
+    if (g_formatFromParserStrToEnum.find(audioModuleInfo.format) == g_formatFromParserStrToEnum.end()) {
         AUDIO_ERR_LOG("openaudioport failed,format:%{public}s not supported", audioModuleInfo.format.c_str());
         return ERROR;
     }
@@ -353,6 +360,12 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
     return getKey(info) != getKey(oldInfo);
 }
 
+std::string TransFormatFromEnumToString(AudioSampleFormat format)
+{
+    CHECK_AND_RETURN_RET_LOG(g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(),
+        "", "error param format");
+    return g_formatFromParserEnumToStr[format];
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

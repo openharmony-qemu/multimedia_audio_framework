@@ -90,8 +90,9 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
         .deviceNetId = GetDeviceNetId(),
         .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
     GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
-    if (writeCallback_.lock() != nullptr) {
-        return writeCallback_.lock()->OnStreamData(streamInfo_);
+    auto writeCallback = writeCallback_.lock();
+    if (writeCallback != nullptr) {
+        return writeCallback->OnStreamData(streamInfo_);
     }
     AUDIO_ERR_LOG("sessionId: %{public}d, writeCallback is nullptr", GetSessionId());
     return SUCCESS;
@@ -99,39 +100,41 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
 
 void HpaeSinkInputNode::DoProcess()
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " +
-    GetTraceInfo());
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " + GetTraceInfo());
     if (GetSampleRate() == SAMPLE_RATE_11025 && !pullDataFlag_) {
         // for 11025 input sample rate, pull 40ms data at a time, so pull once each two DoProcess()
         pullDataFlag_ = true;
         outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
         return;
     }
-    CHECK_AND_RETURN_LOG(
-        writeCallback_.lock(), "HpaeSinkInputNode writeCallback_ is nullptr, SessionId:%{public}d", GetSessionId());
-
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
 
-    int32_t ret = GetDataFromSharedBuffer();
-    if (GetSampleRate() == SAMPLE_RATE_11025) { // for 11025, skip pull data next time
-        pullDataFlag_ = false;
-    }
-    // if historyBuffer has enough data, write to outputStream
-    if (!streamInfo_.needData && historyBuffer_) {
-        historyBuffer_->GetFrameData(inputAudioBuffer_);
-        outputStream_.WriteDataToOutput(&inputAudioBuffer_);
-        return;
-    }
-    CheckAndDestroyHistoryBuffer();
-    if (nodeCallback && ret) {
-        nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
-        if (isDrain_) {
-            AUDIO_INFO_LOG("OnNodeStatusUpdate Drain sessionId:%{public}u", GetSessionId());
-            nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_DRAINED);
-            isDrain_ = false;
+    int32_t ret = SUCCESS;
+    if (GetDeviceClass() == "offload" && !offloadEnable_) {
+        ret = ERR_OPERATION_FAILED;
+        AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
+    } else {
+        ret = GetDataFromSharedBuffer();
+        if (GetSampleRate() == SAMPLE_RATE_11025) { // for 11025, skip pull data next time
+            pullDataFlag_ = false;
+        }
+        // if historyBuffer has enough data, write to outputStream
+        if (!streamInfo_.needData && historyBuffer_) {
+            historyBuffer_->GetFrameData(inputAudioBuffer_);
+            outputStream_.WriteDataToOutput(&inputAudioBuffer_);
+            return;
+        }
+        CheckAndDestroyHistoryBuffer();
+        if (nodeCallback && ret) {
+            nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
+            if (isDrain_) {
+                AUDIO_INFO_LOG("OnNodeStatusUpdate Drain sessionId:%{public}u", GetSessionId());
+                nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_DRAINED);
+                isDrain_ = false;
+            }
         }
     }
     inputAudioBuffer_.SetBufferValid(ret ? false : true);
@@ -235,7 +238,7 @@ uint64_t HpaeSinkInputNode::GetFramesWritten()
     return framesWritten_;
 }
 
-int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
+int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp)
 {
     framePosition = GetFramesWritten();
     if (historyBuffer_) {
@@ -243,7 +246,7 @@ int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, uint64_t 
                             ? framePosition - historyBuffer_->GetCurFrames() * GetFrameLen()
                             : 0;
     }
-    timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
+    ClockTime::GetAllTimeStamp(timestamp);
     return SUCCESS;
 }
 

@@ -127,6 +127,9 @@ private:
     bool IsConfigRouterStrategy(SourceType sourceType);
     shared_ptr<AudioDeviceDescriptor> FetchCapturerInputDevice(SourceType sourceType,
         int32_t clientUID, RouterType &routerType, const uint32_t sessionID);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesInner(StreamUsage streamUsage,
+        int32_t clientUID, RouterType &routerType, const RouterType &bypassType,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;

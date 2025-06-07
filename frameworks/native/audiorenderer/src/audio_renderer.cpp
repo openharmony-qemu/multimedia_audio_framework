@@ -2101,6 +2101,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         AUDIO_ERR_LOG("Re-create stream failed, create normal ipc stream");
         newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, switchInfo.params,
             switchInfo.eStreamType, appInfo_.appUid);
+        targetClass = IAudioStream::PA_STREAM;
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
         switchResult = SetSwitchInfo(switchInfo, newAudioStream);
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "Init ipc stream failed");
@@ -2711,6 +2712,12 @@ int32_t AudioRendererPrivate::StartDataCallback()
     CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
         "StartDataCallback failed. Illegal state:%{public}u", state);
     return audioStream_->SetOffloadDataCallbackState(0); // 0 hdi state need data
+}
+
+void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
+{
+    AUDIO_PRERELEASE_LOGI("AudioRendererPrivate::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
+    audioHapticsSyncId_ = audioHapticsSyncId;
 }
 
 int32_t AudioRendererPrivate::StopDataCallback()

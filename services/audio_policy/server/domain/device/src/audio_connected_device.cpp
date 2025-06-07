@@ -278,7 +278,6 @@ void AudioConnectedDevice::SetDisplayName(const std::string macAddress, const st
             device->deviceName_ = deviceName;
             int32_t bluetoothId_ = device->deviceId_;
             std::string name_ = device->deviceName_;
-            AUDIO_INFO_LOG("bluetoothId %{public}d alias name changing to %{public}s", bluetoothId_, name_.c_str());
         }
     }
 }

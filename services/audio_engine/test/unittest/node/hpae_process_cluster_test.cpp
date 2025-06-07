@@ -168,5 +168,36 @@ TEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest)
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 0);
 }
 
+TEST_F(HpaeProcessClusterTest, testEffectNode_001)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeSinkInfo dummySinkInfo;
+
+    std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    hpaeProcessCluster->DoProcess();
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), 0);
+    hpaeProcessCluster->DoProcess();
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo), 0);
+
+    nodeInfo.sceneType = HPAE_SCENE_SPLIT_MEDIA;
+    hpaeProcessCluster =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    hpaeProcessCluster->GetEffectNodeInputChannelInfo(channels, channelLayout);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo), 0);
+}
 } // AudioStandard
 } // OHOS

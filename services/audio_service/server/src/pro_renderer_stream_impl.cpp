@@ -311,15 +311,16 @@ int32_t ProRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency)
+int32_t ProRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency,
+    int32_t base)
 {
     int64_t timeSec = 0;
     int64_t timeNsec = 0;
     bool ret = GetAudioTime(framePosition, timeSec, timeNsec);
     CHECK_AND_RETURN_RET_LOG(ret, ERROR, "GetAudioTime error");
-    timespec tm {};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    int64_t stamp = 0;
+    stamp = base == Timestamp::BOOTTIME ? ClockTime::GetBootNano() : ClockTime::GetCurNano();
+    timestamp = stamp >= 0 ? stamp : 0;
     latency = 0;
     return SUCCESS;
 }

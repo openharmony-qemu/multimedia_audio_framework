@@ -67,6 +67,12 @@ void HpaeManagerImpl::DumpSourceInfo(std::string deviceName)
     manager_->DumpSourceInfo(std::move(deviceName));
 }
 
+void HpaeManagerImpl::DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->DumpAllAvailableDevice(devicesInfo);
+}
+
 uint32_t HpaeManagerImpl::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, 0,

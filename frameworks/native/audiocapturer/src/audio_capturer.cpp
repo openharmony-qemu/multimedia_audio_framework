@@ -1323,6 +1323,7 @@ bool AudioCapturerPrivate::IsDeviceChanged(AudioDeviceDescriptor &newDeviceInfo)
 
 void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
 {
+    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     audioInterrupt = audioInterrupt_;
 }
 
@@ -1538,6 +1539,10 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     // Operation of replace audioStream_ must be performed before StartAudioStream.
     // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
     audioStream_ = newAudioStream;
+    if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        auto ret = UpdatePlaybackCaptureConfig(filterConfig_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "UpdatePlaybackCaptureConfig Failed!");
+    }
     if (audioInterruptCallback_ != nullptr) {
         std::shared_ptr<AudioCapturerInterruptCallbackImpl> interruptCbImpl =
             std::static_pointer_cast<AudioCapturerInterruptCallbackImpl>(audioInterruptCallback_);

@@ -29,7 +29,7 @@ struct SleVolumeConfigInfo {
     bool isMute = false;
 
     SleVolumeConfigInfo() = default;
-    SleVolumeConfigInfo(AudioVolumeType volumeType) : volumeType(volumeType) {}
+    SleVolumeConfigInfo(AudioVolumeType volumeType, int32_t volume) : volumeType(volumeType), volumeLevel(volume) {}
 };
 
 class SleAudioDeviceManager : public SleAudioOperationCallback {

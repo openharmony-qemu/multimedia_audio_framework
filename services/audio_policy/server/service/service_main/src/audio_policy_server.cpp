@@ -1504,6 +1504,9 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
     } else if (desc.deviceType_ == DEVICE_TYPE_NEARLINK && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     }
+    if (desc.deviceType_ == DEVICE_TYPE_NEARLINK && desc.deviceRole_ == INPUT_DEVICE) {
+        desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    }
 }
 
 int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
@@ -3010,6 +3013,35 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
     }
     return ret;
+}
+
+int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress, AudioStreamType streamType,
+    const int32_t volume, const bool updateUi)
+{
+    std::vector<uid_t> allowedUids = { UID_NEARLINK_SA };
+    bool ret = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
+
+    CHECK_AND_RETURN_RET_LOG(IsVolumeLevelValid(streamType, volume), ERR_NOT_SUPPORTED,
+        "Error volume level: %{public}d", volume);
+
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    if (streamType == STREAM_MUSIC) {
+        int32_t result = audioPolicyService_.SetNearlinkDeviceVolume(macAddress, streamType, volume);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+            "Set volume failed, macAddress: %{public}s", macAddress.c_str());
+
+        VolumeEvent volumeEvent = VolumeEvent(streamType, volume, updateUi);
+
+        CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
+        if (audioPolicyService_.GetActiveOutputDevice() == DEVICE_TYPE_NEARLINK) {
+            audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+        }
+    } else {
+        return SetSystemVolumeLevelWithDeviceInternal(streamType, volume, updateUi, DEVICE_TYPE_NEARLINK);
+    }
+
+    return SUCCESS;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvailableDevices(AudioDeviceUsage usage)

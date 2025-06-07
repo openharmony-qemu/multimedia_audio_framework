@@ -149,15 +149,20 @@ group("audio_fuzz_test") {
   testonly = true
 
   deps = [
+    "fuzztest/audioa2dpoffloadmanager_fuzzer:fuzztest",
     "fuzztest/audioadaptorbluetooth_fuzzer:fuzztest",
     "fuzztest/audiobluetoothmanager_fuzzer:fuzztest",
+    "fuzztest/audiocoreserviceprivate_fuzzer:fuzztest",
     "fuzztest/audioeffect_fuzzer:fuzztest",
     "fuzztest/audioeffectchain_fuzzer:fuzztest",
     "fuzztest/audioeffectenhance_fuzzer:fuzztest",
     "fuzztest/audioeffectservice_fuzzer:fuzztest",
     "fuzztest/audiointerruptservice_fuzzer:fuzztest",
     "fuzztest/audiointerruptservicemore_fuzzer:fuzztest",
+    "fuzztest/audiolimitermanager_fuzzer:fuzztest",
     "fuzztest/audiomanager_fuzzer:fuzztest",
+    "fuzztest/audiopipemanager_fuzzer:fuzztest",
+    "fuzztest/audiopipeselector_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",

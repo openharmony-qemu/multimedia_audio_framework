@@ -351,8 +351,7 @@ int32_t AudioCoreService::SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDesc
         return SUCCESS;
     }
 
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_,
-        deviceDescriptor->deviceName_);
+    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
     if (result != SUCCESS) {
         audioActiveDevice_.SetActiveBtDeviceMac(lastActiveA2dpDevice);
         audioPolicyManager_.SetActiveDeviceDescriptor(lastDevice);
@@ -534,7 +533,9 @@ bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, con
 
 int32_t AudioCoreService::FetchDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
-    return FetchOutputDeviceAndRoute(reason) && FetchInputDeviceAndRoute();
+    int32_t ret = FetchOutputDeviceAndRoute(reason);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fetch output device failed");
+    return FetchInputDeviceAndRoute();
 }
 
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -686,8 +687,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateCapturerStreamCallback(desc->appInfo_.appPid,
-                    desc->sessionId_, desc->routeFlag_);
+                TriggerRecreateCapturerStreamCallback(desc);
                 break;
             default:
                 break;
@@ -714,8 +714,7 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateCapturerStreamCallback(desc->appInfo_.appPid,
-                    desc->sessionId_, desc->routeFlag_);
+                TriggerRecreateCapturerStreamCallback(desc);
                 break;
             default:
                 break;
@@ -1421,15 +1420,42 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(int32_t callerPid, 
     }
 }
 
-void AudioCoreService::TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId,
-    uint32_t routeFlag)
+CapturerState AudioCoreService::HandleStreamStatusToCapturerState(AudioStreamStatus status)
+{
+    switch (status) {
+        case STREAM_STATUS_NEW:
+            return CAPTURER_PREPARED;
+        case STREAM_STATUS_STARTED:
+            return CAPTURER_RUNNING;
+        case STREAM_STATUS_PAUSED:
+            return CAPTURER_PAUSED;
+        case STREAM_STATUS_STOPPED:
+            return CAPTURER_STOPPED;
+        case STREAM_STATUS_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
+}
+
+void AudioCoreService::TriggerRecreateCapturerStreamCallback(shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     Trace trace("AudioCoreService::TriggerRecreateCapturerStreamCallback");
     AUDIO_INFO_LOG("Trigger recreate capturer stream, pid: %{public}d, sessionId: %{public}d, flag: %{public}d",
-        callerPid, sessionId, routeFlag);
+        streamDesc->appInfo_.appPid, streamDesc->sessionId_, streamDesc->routeFlag_);
+
+    SwitchStreamInfo info = {
+        streamDesc->sessionId_,
+        streamDesc->callerUid_,
+        streamDesc->appInfo_.appUid,
+        streamDesc->appInfo_.appPid,
+        streamDesc->appInfo_.appTokenId,
+        HandleStreamStatusToCapturerState(streamDesc->streamStatus_),
+    };
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(callerPid, sessionId, routeFlag,
-            AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(streamDesc->appInfo_.appPid,
+            streamDesc->sessionId_, streamDesc->routeFlag_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     } else {
         AUDIO_WARNING_LOG("No audio policy server handler");
     }
@@ -2210,7 +2236,7 @@ void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDes
         allSessionInfos.push_back(a2dpStreamInfo);
     }
     if (isCreateProcess) {
-        a2dpStreamInfo.sessionId = streamDesc->sessionId_;
+        a2dpStreamInfo.sessionId = static_cast<int32_t>(streamDesc->sessionId_);
         StreamUsage tempStreamUsage = streamDesc->rendererInfo_.streamUsage;
         a2dpStreamInfo.streamType =
             streamCollector_.GetStreamType(streamDesc->rendererInfo_.contentType, tempStreamUsage);
@@ -2251,11 +2277,11 @@ bool AudioCoreService::IsFastAllowed(std::string &bundleName)
 
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    std::variant<StreamUsage, SourceType> audioStreamConfig;
-
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "Stream desc is nullptr");
     auto deviceDesc = streamDesc->newDeviceDescs_.front();
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "Device desc is nullptr");
 
+    std::variant<StreamUsage, SourceType> audioStreamConfig;
     bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;
