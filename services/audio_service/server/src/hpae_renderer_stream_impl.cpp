@@ -249,7 +249,7 @@ int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)
 
 int32_t HpaeRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 {
-    AUDIO_INFO_LOG("SetAudioEffectMode: %d", effectMode);
+    AUDIO_INFO_LOG("SetAudioEffectMode: %{public}d", effectMode);
     int32_t ret = IHpaeManager::GetHpaeManager().SetAudioEffectMode(processConfig_.originalSessionId, effectMode);
     if (ret != 0) {
         AUDIO_ERR_LOG("SetAudioEffectMode is error");
@@ -267,7 +267,7 @@ int32_t HpaeRendererStreamImpl::GetAudioEffectMode(int32_t &effectMode)
 
 int32_t HpaeRendererStreamImpl::SetPrivacyType(int32_t privacyType)
 {
-    AUDIO_DEBUG_LOG("SetInnerCapturerState: %d", privacyType);
+    AUDIO_DEBUG_LOG("SetInnerCapturerState: %{public}d", privacyType);
     privacyType_ = privacyType;
     return SUCCESS;
 }
