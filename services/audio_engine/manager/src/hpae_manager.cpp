@@ -2273,9 +2273,9 @@ void HpaeManager::HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hp
 {
     auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleConnectCoBufferNode");
-        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(defaultSink_);
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(coreSink_);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", defaultSink_.c_str());
+            "can not find sink[%{public}s] in rendererManagerMap_", coreSink_.c_str());
         CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
         defaultRendererManager->ConnectCoBufferNode(hpaeCoBufferNode);
     };
@@ -2286,9 +2286,9 @@ void HpaeManager::HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode>
 {
     auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleDisConnectCoBufferNode");
-        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(defaultSink_);
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(coreSink_);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", defaultSink_.c_str());
+            "can not find sink[%{public}s] in rendererManagerMap_", coreSink_.c_str());
         CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
         defaultRendererManager->DisConnectCoBufferNode(hpaeCoBufferNode);
     };

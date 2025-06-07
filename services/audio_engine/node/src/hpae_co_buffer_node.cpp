@@ -29,7 +29,7 @@ static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t TEST_LATENCY = 280;
 
 HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo &nodeInfo)
-    : HpaeNode(nodeInfo), 
+    : HpaeNode(nodeInfo),
       enqueueRunning_(false),
       outputStream_(this),
       pcmBufferInfo_(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000),
@@ -123,7 +123,7 @@ std::shared_ptr<HpaeNode> HpaeCoBufferNode::GetSharedInstance()
     return shared_from_this();
 }
 
-OutputPort<HpaePcmBuffer *> * HpaeCoBufferNode::GetOutputPort()
+OutputPort<HpaePcmBuffer *> *HpaeCoBufferNode::GetOutputPort()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return &outputStream_;
@@ -224,7 +224,7 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
 {
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
     
-    const size_t requestDataLen = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) * 
+    const size_t requestDataLen = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
                                 sizeof(float) * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
     
     // check readable size
