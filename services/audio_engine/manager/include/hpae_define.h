@@ -39,6 +39,7 @@ struct HpaeRenderSessionInfo {
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
     bool isMoveAble = true;
+    bool bypass = false;
 };
 
 struct HpaeSinkInputInfo {

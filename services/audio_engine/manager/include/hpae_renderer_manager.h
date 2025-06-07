@@ -125,6 +125,7 @@ private:
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
     void HandleCollaborationStateChangedInner(HpaeProcessorType sceneType, uint32_t sessionID);
+    HpaeProcessorType GetProcessorType(uint32_t sessionId);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
