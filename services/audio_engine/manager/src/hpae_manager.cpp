@@ -2062,7 +2062,7 @@ void HpaeManager::LoadEffectLive()
 }
 
 bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
- {
+{
     const auto &[paramKey, paramValue] = params[0];
     if (paramKey != "live_effect" || (paramValue != "NRON" && paramValue != "NROFF")) {
         AUDIO_ERR_LOG("Parameter Error");
@@ -2093,7 +2093,7 @@ bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string
         return false;
     }
     return true;
- }
+}
     
 bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
