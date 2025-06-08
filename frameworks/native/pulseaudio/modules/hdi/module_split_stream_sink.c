@@ -1273,7 +1273,8 @@ int pa__init(pa_module *m)
     bool defaultEmptyChunkMode = true;
     int getEmptyModeRet = pa_modargs_get_value_boolean(ma, "need_empty_chunk", &defaultEmptyChunkMode);
     g_needEmptyChunk = defaultEmptyChunkMode;
-    AUDIO_INFO_LOG("module_split_stream_sink pa__init getEmptyModeRet: %{public}d, bool state: %{public}d", getEmptyModeRet, g_needEmptyChunk);
+    AUDIO_INFO_LOG("module_split_stream_sink pa__init getEmptyModeRet: %{public}d, bool state: %{public}d",
+        getEmptyModeRet, g_needEmptyChunk);
 
     ConvertToSplitArr(SPLIT_MODE);
 
