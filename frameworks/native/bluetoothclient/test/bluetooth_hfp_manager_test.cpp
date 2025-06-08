@@ -39,9 +39,9 @@ public:
     {
         BluetoothHfpMockInterface::mockInterface_ = std::make_shared<BluetoothHfpMockInterface>();
 
-        HfpBluetoothDeviceManager::HfpBluetoothDeviceMap_[HFP_DEVICE_MAC1] =
+        HfpBluetoothDeviceManager::hfpBluetoothDeviceMap_[HFP_DEVICE_MAC1] =
             BluetoothRemoteDevice(HFP_DEVICE_MAC1);
-        HfpBluetoothDeviceManager::HfpBluetoothDeviceMap_[HFP_DEVICE_MAC2] =
+        HfpBluetoothDeviceManager::hfpBluetoothDeviceMap_[HFP_DEVICE_MAC2] =
             BluetoothRemoteDevice(HFP_DEVICE_MAC2);
     }
 
@@ -55,7 +55,7 @@ public:
         BluetoothHfpMockInterface::mockInterface_ = nullptr;
 
         AudioHfpManager::hfpListener_ = nullptr;
-        AudioHfpManager::scene_.AUDIO_SCENE_DEFAULT;
+        AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
         AudioHfpManager::isRecognitionScene_.store(false);
         AudioHfpManager::isRecordScene_.store(false);
         AudioHfpManager::virtualCalls_.clear();
@@ -75,7 +75,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_001, TestSize.Level1)
         .Times(2)
         .WillOnce(Return(SUCCESS))
         .WillOnce(Return(SUCCESS));
-    
+
     EXPECT_NE(AudioHfpManager::SetActiveHfpDevice("33:33:33"), SUCCESS);
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC1), SUCCESS);
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC2), SUCCESS);

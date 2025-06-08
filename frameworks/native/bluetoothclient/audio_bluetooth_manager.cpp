@@ -589,7 +589,7 @@ int32_t AudioHfpManager::SetVirtualCall(const std::string &name, const bool isVi
     return TryUpdateScoCategory();
 }
 
-int32_t AudioHfpManager::AddVirtualCallBundleName(const std::string &name int32_t streamId)
+int32_t AudioHfpManager::AddVirtualCallBundleName(const std::string &name, int32_t streamId)
 {
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
@@ -612,18 +612,18 @@ void AudioHfpManager::DeleteVirtualCallStream(int32_t streamId)
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         std::string bundleName;
-        for (auto &it : virtualCallStreams_) {
+        for (auto &stream : virtualCallStreams_) {
             bool found = false;
-            for (auto it = it.second.begin(); it != it.second.end();) {
+            for (auto it = stream.second.begin(); it != stream.second.end();) {
                 if (*it == streamId) {
                     found = true;
-                    it.second.erase(it);
+                    stream.second.erase(it);
                     break;
                 }
                 it++;
             }
             if (found) {
-                bundleName = it.first;
+                bundleName = stream.first;
                 break;
             }
         }

@@ -1996,7 +1996,10 @@ void AudioDeviceCommon::SetFirstScreenOn()
 
 int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
-    std::string bundleName = AudioBundleManager::GetBundleInfoFromUid(uid);
+    if (uid == 5523) { /* 5523 call manager */
+        return Bluetooth::AudioHfpManager::SetVirtualCall("meetimeservice", isVirtual);
+    }
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
     return Bluetooth::AudioHfpManager::SetVirtualCall(bundleName, isVirtual);
 }
 

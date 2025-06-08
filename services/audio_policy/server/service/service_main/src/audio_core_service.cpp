@@ -160,7 +160,7 @@ int32_t AudioCoreService::CreateRendererClient(
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
     } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_RINGTONE ||
         streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
-        std::string bundleName = AudioBundleManager::GetBundleInfoFromUid(streamDesc->appInfo_.appUid);
+        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(streamDesc->appInfo_.appUid);
         Bluetooth::AudioHfpManager::AddVirtualCallBundleName(bundleName, streamDesc->sessionId_);
     }
 
