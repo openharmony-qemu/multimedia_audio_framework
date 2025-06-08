@@ -305,14 +305,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     ret = InitAudioStream(audioStreamParams);
     // When the fast stream creation fails, a normal stream is created
     if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
-        AUDIO_INFO_LOG("Create fast Stream fail, record by normal stream");
-        streamClass = IAudioStream::PA_STREAM;
-        audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_, appInfo_.appUid);
-        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Get normal record stream failed");
-        ret = InitAudioStream(audioStreamParams);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init normal audio stream failed");
-        audioStream_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
-        callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+        ret = HandleCreateFastStreamError(audioStreamParams);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
@@ -2060,6 +2053,29 @@ int32_t AudioCapturerPrivate::CheckAndStopAudioCapturer(std::string callingFunc)
     }
     Stop();
     return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::HandleCreateFastStreamError(AudioStreamParams &audioStreamParams)
+{
+    AUDIO_INFO_LOG("Create fast Stream fail, record by normal stream");
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
+
+    // Create stream desc and pipe
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, sessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
+    AUDIO_INFO_LOG("Create normal capturer, id: %{public}u", sessionId);
+
+    audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_, appInfo_.appUid);
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Get normal record stream failed");
+    ret = InitAudioStream(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init normal audio stream failed");
+    audioStream_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+    return ret;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
