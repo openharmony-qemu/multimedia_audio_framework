@@ -26,7 +26,7 @@
 #include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
-
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -160,8 +160,8 @@ int32_t AudioCoreService::CreateRendererClient(
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
     } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_RINGTONE ||
         streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
-        Bluetooth::AudioHfpManager::AddVirtualCallUid(streamDesc->appInfo_.appUid,
-            streamDesc->sessionId_);
+        std::string bundleName = AudioBundleManager::GetBundleInfoFromUid(streamDesc->appInfo_.appUid);
+        Bluetooth::AudioHfpManager::AddVirtualCallBundleName(bundleName, streamDesc->sessionId_);
     }
 
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
@@ -808,8 +808,7 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
         rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION)) {
         if ((rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
             rendererState == RENDERER_PAUSED)) {
-            Bluetooth::AudioHfpManager::DeleteVirtualCallUid(rendererChangeInfo.clientUID,
-                rendererChangeInfo.sessionId);
+            Bluetooth::AudioHfpManager::DeleteVirtualCallStream(rendererChangeInfo.sessionId);
         }
     }
     
@@ -840,7 +839,7 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
     }
     FetchOutputDeviceAndRoute();
 
-    audioDeviceCommon_.ClientDiedDisconnectScoNormal(uid);
+    audioDeviceCommon_.ClientDiedDisconnectScoNormal();
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 
     if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {

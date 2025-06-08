@@ -28,6 +28,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_recovery_device.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1809,9 +1810,8 @@ std::vector<SourceOutput> AudioDeviceCommon::GetSourceOutputs()
     return sourceOutputs;
 }
 
-void AudioDeviceCommon::ClientDiedDisconnectScoNormal(pid_t uid)
+void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
 {
-    Bluetooth::AudioHfpManager::DeleteVirtualCallUid(uid);
     bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene, isRecord);
@@ -1996,7 +1996,8 @@ void AudioDeviceCommon::SetFirstScreenOn()
 
 int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
-    return Bluetooth::AudioHfpManager::SetVirtualCall(uid, isVirtual);
+    std::string bundleName = AudioBundleManager::GetBundleInfoFromUid(uid);
+    return Bluetooth::AudioHfpManager::SetVirtualCall(bundleName, isVirtual);
 }
 
 void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)

@@ -114,7 +114,7 @@ public:
         ConnectState connectState);
     std::vector<SourceOutput> GetSourceOutputs();
     void SetFirstScreenOn();
-    void ClientDiedDisconnectScoNormal(pid_t uid);
+    void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
     int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
     void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);

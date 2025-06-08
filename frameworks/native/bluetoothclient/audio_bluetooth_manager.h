@@ -142,10 +142,9 @@ public:
     static int32_t UpdateAudioScene(AudioStandard::AudioScene scene);
     static int32_t HandleScoWithRecongnition(bool handleFlag);
     static bool IsRecognitionStatus();
-    static int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
-    static int32_t AddVirtualCallUid(pid_t uid, int32_t streamId);
-    static void DeleteVirtualCallUid(pid_t uid, int32_t streamId);
-    static void DeleteVirtualCallUid(pid_t uid);
+    static int32_t SetVirtualCall(const std::string &name, const bool isVirtual);
+    static int32_t AddVirtualCallBundleName(const std::string &name, int32_t streamId);
+    static void DeleteVirtualCallStream(int32_t streamId);
     static bool IsVirtualCall();
     static bool IsAudioScoStateConnect();
 
@@ -162,8 +161,8 @@ private:
     static BluetoothRemoteDevice activeHfpDevice_;
     static std::atomic<bool> isRecognitionScene_;
     static std::atomic<bool> isRecordScene_;
-    static std::map<pid_t, bool> virtualCalls_;
-    static std::map<pid_t, std::list<int32_t>> virtualCallUids_;
+    static std::map<std::string, bool> virtualCalls_;
+    static std::map<std::string, std::list<int32_t>> virtualCallStreams_;
     static std::mutex virtualCallMutex_;
 };
 }

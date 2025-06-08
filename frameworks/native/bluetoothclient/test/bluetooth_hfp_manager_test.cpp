@@ -31,7 +31,7 @@ using namespace testing;
 
 #define HFP_DEVICE_MAC1 "28:FA:19:1E:41:0E"
 #define HFP_DEVICE_MAC2 "24:E9:CA:60:2F:CB"
-#define TEST_VIRTUAL_CALL_UID 5555
+#define TEST_VIRTUAL_CALL_BUNDLE_NAME "test.service"
 
 class BluetoothHfpManagerTest : public testing::Test {
 public:
@@ -196,14 +196,14 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_006, TestSize.Level1)
     AudioHfpManager::scene_ = AUDIO_SCENE_PHONE_CHAT;
     AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice(HFP_DEVICE_MAC2);
 
-    AudioHfpManager::SetVirtualCall(TEST_VIRTUAL_CALL_UID, false);
+    AudioHfpManager::SetVirtualCall(TEST_VIRTUAL_CALL_BUNDLE_NAME, false);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
     EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
     BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_CONNECTED,
         AudioHfpManager::activeHfpDevice_);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTED);
 
-    AudioHfpManager::AddVirtualCallUid(TEST_VIRTUAL_CALL_UID, 1);
+    AudioHfpManager::AddVirtualCallBundleName(TEST_VIRTUAL_CALL_BUNDLE_NAME, 1);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
     BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED,
         AudioHfpManager::activeHfpDevice_);
@@ -213,7 +213,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_006, TestSize.Level1)
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTED);
     EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
 
-    AudioHfpManager::DeleteVirtualCallUid(TEST_VIRTUAL_CALL_UID, 1);
+    AudioHfpManager::DeleteVirtualCallStream(1);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
 }
 } // namespace Bluetooth

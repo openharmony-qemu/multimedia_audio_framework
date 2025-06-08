@@ -1382,7 +1382,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoNormal_001, TestS
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
     audioDeviceCommon.streamCollector_.audioRendererChangeInfos_.push_back(rendererChangeInfo);
 
-    audioDeviceCommon.ClientDiedDisconnectScoNormal(0);
+    audioDeviceCommon.ClientDiedDisconnectScoNormal();
     EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentOutputDeviceType(), DEVICE_TYPE_BLUETOOTH_SCO);
 }
 
@@ -1406,7 +1406,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoNormal_002, TestS
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
     audioDeviceCommon.streamCollector_.audioRendererChangeInfos_.push_back(rendererChangeInfo);
 
-    audioDeviceCommon.ClientDiedDisconnectScoNormal(0);
+    audioDeviceCommon.ClientDiedDisconnectScoNormal();
     EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentOutputDeviceType(), DEVICE_TYPE_SPEAKER);
 }
 

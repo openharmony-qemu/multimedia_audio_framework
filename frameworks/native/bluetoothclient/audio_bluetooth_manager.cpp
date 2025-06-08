@@ -46,8 +46,8 @@ std::atomic<AudioScene> AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
 std::atomic<bool> AudioHfpManager::isRecognitionScene_ = false;
 std::atomic<bool> AudioHfpManager::isRecordScene_ = false;
-std::map<pid_t, bool> AudioHfpManager::virtualCalls_;
-std::map<pid_t, std::list<int32_t>> AudioHfpManager::virtualCallUids_;
+std::map<std::string, bool> AudioHfpManager::virtualCalls_;
+std::map<std::string, std::list<int32_t>> AudioHfpManager::virtualCallStreams_;
 std::mutex AudioHfpManager::virtualCallMutex_;
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
@@ -578,80 +578,65 @@ bool AudioHfpManager::IsRecognitionStatus()
     return BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_RECOGNITION);
 }
 
-int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
+int32_t AudioHfpManager::SetVirtualCall(const std::string &name, const bool isVirtual)
 {
-    if (uid == 5523) { /* 5523: all manager uid */
-        uid = 20020014; /* 20020014: meetimeservice */
-    }
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-        virtualCalls_[uid] = isVirtual;
+        virtualCalls_[name] = isVirtual;
     }
 
-    AUDIO_INFO_LOG("set virtual call %{public}d by uid %{public}d", isVirtual, uid);
+    AUDIO_INFO_LOG("set virtual call %{public}d by service %{public}s", isVirtual, name.c_str());
     return TryUpdateScoCategory();
 }
 
-int32_t AudioHfpManager::AddVirtualCallUid(pid_t uid, int32_t streamId)
+int32_t AudioHfpManager::AddVirtualCallBundleName(const std::string &name int32_t streamId)
 {
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-        if (virtualCallUids_.find(uid) == virtualCallUids_.end()) {
+        if (virtualCallStreams_.find(name) == virtualCallStreams_.end()) {
             std::list<int32_t> streamIds;
             streamIds.push_back(streamId);
-            virtualCallUids_[uid] = streamIds;
+            virtualCallStreams_[name] = streamIds;
         } else {
-            virtualCallUids_[uid].push_back(streamId);
+            virtualCallStreams_[name].push_back(streamId);
         }
-        AUDIO_INFO_LOG("add virtual call uid %{public}d streamId %{public}d size %{public}zu",
-            uid, streamId, virtualCallUids_[uid].size());
+        AUDIO_INFO_LOG("add virtual call bundlename %{public}s streamId %{public}d size %{public}zu",
+            name.c_str(), streamId, virtualCallStreams_[name].size());
     }
 
     return TryUpdateScoCategory();
 }
 
-void AudioHfpManager::DeleteVirtualCallUid(pid_t uid, int32_t streamId)
+void AudioHfpManager::DeleteVirtualCallStream(int32_t streamId)
 {
-    if (uid == 5527) { /* 5527: caas service uid */
-        uid = 20020014; /* 20020014: meetimeservice */
-    }
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-        if (virtualCallUids_.find(uid) == virtualCallUids_.end()) {
-            AUDIO_WARNING_LOG("not found uid %{public}d", uid);
-            return;
-        }
-        for (auto it = virtualCallUids_[uid].begin(); it != virtualCallUids_[uid].end();) {
-            if (*it == streamId) {
-                virtualCallUids_[uid].erase(it);
+        std::string bundleName;
+        for (auto &it : virtualCallStreams_) {
+            bool found = false;
+            for (auto it = it.second.begin(); it != it.second.end();) {
+                if (*it == streamId) {
+                    found = true;
+                    it.second.erase(it);
+                    break;
+                }
+                it++;
+            }
+            if (found) {
+                bundleName = it.first;
                 break;
             }
-            it++;
         }
-        AUDIO_INFO_LOG("del virtual call uid %{public}d streamId %{public}d size %{public}zu",
-            uid, streamId, virtualCallUids_[uid].size());
-        if (virtualCallUids_[uid].size() == 0) {
-            virtualCallUids_.erase(uid);
-        }
-    }
-
-    TryUpdateScoCategory();
-}
-
-void AudioHfpManager::DeleteVirtualCallUid(pid_t uid)
-{
-    if (uid == 5527) { /* 5527: caas service uid */
-        uid = 20020014; /* 20020014: meetimeservice */
-    }
-    {
-        std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-        if (virtualCallUids_.find(uid) == virtualCallUids_.end()) {
-            AUDIO_WARNING_LOG("not found uid %{public}d", uid);
+        if (bundleName.empty()) {
+            AUDIO_WARNING_LOG("not found bundle name %{public}s", bundleName.c_str());
             return;
         }
-        AUDIO_INFO_LOG("del virtual call uid %{public}d size %{public}zu",
-            uid, virtualCallUids_[uid].size());
-        virtualCallUids_.erase(uid);
+
+        AUDIO_INFO_LOG("del virtual call name %{public}s streamId %{public}d size %{public}zu",
+            bundleName.c_str(), streamId, virtualCallStreams_[bundleName].size());
+        if (virtualCallStreams_[bundleName].size() == 0) {
+            virtualCallStreams_.erase(bundleName);
+        }
     }
 
     TryUpdateScoCategory();
@@ -660,9 +645,15 @@ void AudioHfpManager::DeleteVirtualCallUid(pid_t uid)
 bool AudioHfpManager::IsVirtualCall()
 {
     std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-    for (const auto &it : virtualCalls_) {
-        if (!it.second && (virtualCallUids_.find(it.first) != virtualCallUids_.end())) {
-            AUDIO_INFO_LOG("not virtual call for uid %{public}d", it.first);
+    for (const auto &it : virtualCallStreams_) {
+        if (virtualCalls_.find(it.first) != virtualCalls_.end()) {
+            AUDIO_INFO_LOG("not virtual call for service %{public}s", it.first.c_str());
+            return false;
+        }
+        std::string suffix = "meetimeservice";
+        if (std::mismatch(suffix.rbegin(), suffix.rend(), it.first.rbegin()).first ==
+            suffix.rend()) {
+            AUDIO_INFO_LOG("not virtual call for service %{public}s", it.first.c_str());
             return false;
         }
     }
