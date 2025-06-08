@@ -2260,5 +2260,10 @@ int32_t AudioPolicyService::SetCallbackStreamUsageInfo(const std::set<StreamUsag
         return AUDIO_ERR;
     }
 }
+
+int32_t AudioPolicyService::ForceStopAudioStream(StopAudioType audioType)
+{
+    return AudioServerProxy::GetInstance().ForceStopAudioStreamProxy(audioType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

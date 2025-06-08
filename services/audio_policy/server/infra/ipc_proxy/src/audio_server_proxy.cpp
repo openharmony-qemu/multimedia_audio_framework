@@ -635,5 +635,15 @@ void AudioServerProxy::SetBtHdiInvalidState()
     gsp->SetBtHdiInvalidState();
     IPCSkeleton::SetCallingIdentity(identity);
 }
+
+int32_t AudioServerProxy::ForceStopAudioStreamProxy(StopAudioType audioType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_OPERATION, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t res = gsp->ForceStopAudioStream(audioType);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
 }
 }

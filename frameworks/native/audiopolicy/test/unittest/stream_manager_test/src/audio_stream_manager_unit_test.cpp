@@ -1612,5 +1612,118 @@ HWTEST_F(AudioStreamManagerUnitTest, SetAudioFormatUnsupportedErrorCallback_002,
     ret = g_audioManagerInstance->UnsetAudioFormatUnsupportedErrorCallback();
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+* @tc.name   : Test ForceStopAudioStream API
+* @tc.number : ForceStopAudioStream_001
+* @tc.desc   : Test ForceStopAudioStream interface
+*/
+HWTEST_F(AudioStreamManagerUnitTest, ForceStopAudioStream_001, TestSize.Level1)
+{
+    ASSERT_NE(g_audioManagerInstance, nullptr);
+    int32_t result = g_audioManagerInstance->ForceStopAudioStream(StopAudioType::STOP_ALL);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name   : Test ForceStopAudioStream API
+* @tc.number : ForceStopAudioStream_002
+* @tc.desc   : Test ForceStopAudioStream interface
+*/
+HWTEST_F(AudioStreamManagerUnitTest, ForceStopAudioStream_002, TestSize.Level1)
+{
+    ASSERT_NE(g_audioManagerInstance, nullptr);
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    int32_t result = g_audioManagerInstance->ForceStopAudioStream(StopAudioType::STOP_RENDER);
+    EXPECT_EQ(result, SUCCESS);
+    bool res = audioRenderer->Start();
+    EXPECT_EQ(res, true);
+}
+
+/**
+* @tc.name   : Test ForceStopAudioStream API
+* @tc.number : ForceStopAudioStream_003
+* @tc.desc   : Test ForceStopAudioStream interface
+*/
+HWTEST_F(AudioStreamManagerUnitTest, ForceStopAudioStream_003, TestSize.Level1)
+{
+    ASSERT_NE(g_audioManagerInstance, nullptr);
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+    int32_t result = g_audioManagerInstance->ForceStopAudioStream(StopAudioType::STOP_RECORD);
+    EXPECT_EQ(result, SUCCESS);
+    bool res = audioCapturer->Start();
+    EXPECT_EQ(res, true);
+}
+
+/**
+* @tc.name   : Test IsCapturerFocusAvailable API
+* @tc.number : IsCapturerFocusAvailable_001
+* @tc.desc   : Test IsCapturerFocusAvailable interface
+*/
+HWTEST_F(AudioStreamManagerUnitTest, IsCapturerFocusAvailable_001, TestSize.Level1)
+{
+    ASSERT_NE(g_audioManagerInstance, nullptr);
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerChangeInfo changeInfo;
+    int32_t result = audioCapturer->GetCurrentCapturerChangeInfo(changeInfo);
+    EXPECT_EQ(result, SUCCESS);
+    bool isAvailable = g_audioManagerInstance->IsCapturerFocusAvailable(changeInfo);
+    EXPECT_EQ(isAvailable, true);
+}
+
+/**
+* @tc.name   : Test IsCapturerFocusAvailable API
+* @tc.number : IsCapturerFocusAvailable_002
+* @tc.desc   : Test IsCapturerFocusAvailable interface
+*/
+HWTEST_F(AudioStreamManagerUnitTest, IsCapturerFocusAvailable_002, TestSize.Level1)
+{
+    ASSERT_NE(g_audioManagerInstance, nullptr);
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool result = audioCapturer->Start();
+    EXPECT_EQ(result, true);
+
+    AudioCapturerChangeInfo changeInfo;
+    changeInfo.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    result = g_audioManagerInstance->IsCapturerFocusAvailable(changeInfo);
+    EXPECT_EQ(result, false);
+
+    result = audioCapturer->Stop();
+    EXPECT_EQ(result, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

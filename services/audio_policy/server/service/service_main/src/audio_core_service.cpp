@@ -33,6 +33,7 @@ namespace AudioStandard {
 namespace {
 const uint32_t FIRST_SESSIONID = 100000;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
+static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 }
@@ -168,12 +169,20 @@ int32_t AudioCoreService::CreateRendererClient(
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
     streamDesc->newDeviceDescs_ =
         audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
+    CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 && streamDesc->newDeviceDescs_.front() != nullptr,
+        ERR_NULL_POINTER, "Invalid deviceDesc");
     AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
     if (isModemStream) {
         return SUCCESS;
     }
+
+    // Bluetooth may be inactive (paused ringtone stream at Speaker switches to A2dp)
+    std::string encryptMacAddr = GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
+    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc,
+        AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
+    CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
     UpdatePlaybackStreamFlag(streamDesc, true);
     AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
@@ -694,7 +703,7 @@ int32_t AudioCoreService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioR
 {
     int32_t status = streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, status,
-        "AudioPolicyServer:: Get renderer change info failed");
+        "AudioPolicyServer Get renderer change info failed");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices =
         audioConnectedDevice_.GetDevicesInner(OUTPUT_DEVICES_FLAG);

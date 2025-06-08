@@ -27,7 +27,7 @@ config("audio_engine_private_config") {
     "../../../hdiadapter_new/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../services/audio_engine/manager/include",
-    "../../../../../services/audio_policy/server/include/service/common",
+    "../../../../../services/audio_policy/common/include",
     "../../../../../services/audio_service/common/include",
     "../../../../../services/audio_service/server/include",
   ]
@@ -72,7 +72,7 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
     "../../../../../interfaces/inner_api/native/audiocommon/include/",
     "../../../../../frameworks/native/audioutils/include",
     "../../../../../services/audio_service/server/include",
-    "../../../../../services/audio_policy/server/include/service/common",
+    "../../../../../services/audio_policy/common/include",
     "../../../../../services/audio_engine/manager/include",
   ]
 

@@ -727,7 +727,7 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     return SUCCESS;
 }
 
-int32_t AudioCapturerPrivate::AsyncCheckAndRestoreAudioCapturer(std::string callingFunc)
+int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
 {
     if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
         return SUCCESS;
@@ -739,7 +739,7 @@ int32_t AudioCapturerPrivate::AsyncCheckAndRestoreAudioCapturer(std::string call
         uint32_t taskCount;
         do {
             taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
-            sharedCapturer->CheckAndRestoreAudioCapturer(callingFunc + "withNewThread");
+            sharedCapturer->CheckAudioCapturer(callingFunc + "withNewThread");
         } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
     });
     return SUCCESS;
@@ -747,7 +747,7 @@ int32_t AudioCapturerPrivate::AsyncCheckAndRestoreAudioCapturer(std::string call
 
 bool AudioCapturerPrivate::Start()
 {
-    AsyncCheckAndRestoreAudioCapturer("Start");
+    AsyncCheckAudioCapturer("Start");
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
@@ -789,7 +789,7 @@ int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBloc
 {
     Trace trace("AudioCapturer::Read");
     CheckSignalData(&buffer, userSize);
-    AsyncCheckAndRestoreAudioCapturer("Read");
+    AsyncCheckAudioCapturer("Read");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int size = currentStream->Read(buffer, userSize, isBlockingRead);
@@ -1192,7 +1192,7 @@ int32_t AudioCapturerPrivate::SetCapturerReadCallback(const std::shared_ptr<Audi
 
 int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
 {
-    AsyncCheckAndRestoreAudioCapturer("GetBufferDesc");
+    AsyncCheckAudioCapturer("GetBufferDesc");
     std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->GetBufferDesc(bufDesc);
@@ -1202,7 +1202,7 @@ int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
 
 int32_t AudioCapturerPrivate::Enqueue(const BufferDesc &bufDesc)
 {
-    AsyncCheckAndRestoreAudioCapturer("Enqueue");
+    AsyncCheckAudioCapturer("Enqueue");
     std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     CheckSignalData(bufDesc.buffer, bufDesc.bufLength);
@@ -1323,6 +1323,7 @@ bool AudioCapturerPrivate::IsDeviceChanged(AudioDeviceDescriptor &newDeviceInfo)
 
 void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
 {
+    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     audioInterrupt = audioInterrupt_;
 }
 
@@ -2033,6 +2034,32 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GetStreamDescBySwit
 void AudioCapturerPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
 {
     audioInterrupt_.callbackType = callbackType;
+}
+
+int32_t AudioCapturerPrivate::CheckAudioCapturer(std::string callingFunc)
+{
+    CheckAndStopAudioCapturer(callingFunc);
+    return CheckAndRestoreAudioCapturer(callingFunc);
+}
+
+int32_t AudioCapturerPrivate::CheckAndStopAudioCapturer(std::string callingFunc)
+{
+    std::unique_lock<std::shared_mutex> lock(capturerMutex_, std::defer_lock);
+    if (callbackLoopTid_ != gettid()) {
+        lock.lock();
+    }
+    CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_INVALID_PARAM, "audioStream_ is nullptr");
+    bool isNeedStop = audioStream_->GetStopFlag();
+    if (!isNeedStop) {
+        return SUCCESS;
+    }
+
+    AUDIO_INFO_LOG("Before %{public}s, stop audio capturer %{public}u", callingFunc.c_str(), sessionID_);
+    if (lock.owns_lock()) {
+        lock.unlock();
+    }
+    Stop();
+    return SUCCESS;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

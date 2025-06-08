@@ -663,8 +663,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateCapturerStreamCallback(desc->appInfo_.appPid,
-                    desc->sessionId_, desc->routeFlag_);
+                TriggerRecreateCapturerStreamCallback(desc);
                 break;
             default:
                 break;
@@ -691,8 +690,7 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateCapturerStreamCallback(desc->appInfo_.appPid,
-                    desc->sessionId_, desc->routeFlag_);
+                TriggerRecreateCapturerStreamCallback(desc);
                 break;
             default:
                 break;
@@ -1398,15 +1396,42 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(int32_t callerPid, 
     }
 }
 
-void AudioCoreService::TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId,
-    uint32_t routeFlag)
+CapturerState AudioCoreService::HandleStreamStatusToCapturerState(AudioStreamStatus status)
+{
+    switch (status) {
+        case STREAM_STATUS_NEW:
+            return CAPTURER_PREPARED;
+        case STREAM_STATUS_STARTED:
+            return CAPTURER_RUNNING;
+        case STREAM_STATUS_PAUSED:
+            return CAPTURER_PAUSED;
+        case STREAM_STATUS_STOPPED:
+            return CAPTURER_STOPPED;
+        case STREAM_STATUS_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
+}
+
+void AudioCoreService::TriggerRecreateCapturerStreamCallback(shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     Trace trace("AudioCoreService::TriggerRecreateCapturerStreamCallback");
     AUDIO_INFO_LOG("Trigger recreate capturer stream, pid: %{public}d, sessionId: %{public}d, flag: %{public}d",
-        callerPid, sessionId, routeFlag);
+        streamDesc->appInfo_.appPid, streamDesc->sessionId_, streamDesc->routeFlag_);
+
+    SwitchStreamInfo info = {
+        streamDesc->sessionId_,
+        streamDesc->callerUid_,
+        streamDesc->appInfo_.appUid,
+        streamDesc->appInfo_.appPid,
+        streamDesc->appInfo_.appTokenId,
+        HandleStreamStatusToCapturerState(streamDesc->streamStatus_),
+    };
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(callerPid, sessionId, routeFlag,
-            AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(streamDesc->appInfo_.appPid,
+            streamDesc->sessionId_, streamDesc->routeFlag_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     } else {
         AUDIO_WARNING_LOG("No audio policy server handler");
     }
@@ -1476,6 +1501,9 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
     Trace trace("AudioCoreService::HandleScoOutputDeviceFetched");
 #ifdef BLUETOOTH_ENABLE
     std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
+    if ((streamDesc->streamStatus_ != STREAM_STATUS_STARTED) || (desc == nullptr)) {
+        return SUCCESS;
+    }
     int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");

@@ -125,6 +125,7 @@ public:
     void SetDefaultAdapterEnable(bool isEnable);
     bool GetDefaultAdapterEnable();
     RestoreStatus RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo);
+    int32_t ForceStopAudioStream(StopAudioType audioType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code);
     void RegisterMuteStateChangeCallback(uint32_t sessionId, const MuteStateChangeCallbck &callback);
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);

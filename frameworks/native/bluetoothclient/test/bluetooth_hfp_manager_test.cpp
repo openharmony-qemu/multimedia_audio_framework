@@ -59,7 +59,7 @@ public:
         AudioHfpManager::isRecognitionScene_.store(false);
         AudioHfpManager::isRecordScene_.store(false);
         AudioHfpManager::virtualCalls_.clear();
-        AudioHfpManager::virtualCallUids_.clear();
+        AudioHfpManager::virtualCallStreams_.clear();
         AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice();
     }
 };

@@ -70,7 +70,7 @@ int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const Au
     AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::OpenAudioPort", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("OpenAudioPort timeout");
+            AUDIO_ERR_LOG("[xcollie] OpenAudioPort timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("OpenAudioPort");
@@ -97,7 +97,7 @@ int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
     AUDIO_INFO_LOG("CloseAudioPort:audioHandleIndex:%{public}d", audioHandleIndex);
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::CloseAudioPort", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("CloseAudioPort timeout");
+            AUDIO_ERR_LOG("[xcollie] CloseAudioPort timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace("CloseAudioPort");
     lock_guard<mutex> lock(lock_);
@@ -131,7 +131,7 @@ bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool i
     AUDIO_INFO_LOG("SetSinkMute: [%{public}s] : [%{public}d] isSync [%{public}d]", sinkName.c_str(), isMute, isSync);
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::SetSinkMute", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("SetSinkMute timeout");
+            AUDIO_ERR_LOG("[xcollie] SetSinkMute timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("SetSinkMute:" + sinkName + "isMute:" + std::to_string(isMute));
@@ -176,7 +176,7 @@ std::vector<SinkInfo> ProAudioServiceAdapterImpl::GetAllSinks()
     AUDIO_INFO_LOG("GetAllSinks: enter");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinks", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("GetAllSinks timeout");
+            AUDIO_ERR_LOG("[xcollie] GetAllSinks timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("GetAllSinks");
@@ -223,7 +223,7 @@ int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
         sinkName.c_str());
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("MoveSinkInputByIndexOrName timeout");
+            AUDIO_ERR_LOG("[xcollie] MoveSinkInputByIndexOrName timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("MoveSinkInputByIndexOrName: " + std::to_string(sinkInputId) + " index:" + std::to_string(sinkIndex) +
@@ -252,7 +252,7 @@ int32_t ProAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(
         sourceName.c_str());
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("MoveSourceOutputByIndexOrName timeout");
+            AUDIO_ERR_LOG("[xcollie] MoveSourceOutputByIndexOrName timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     Trace trace("MoveSourceOutputByIndexOrName: " + std::to_string(sourceOutputId) +
@@ -295,7 +295,7 @@ std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
     AUDIO_INFO_LOG("Enter");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSinkInputs", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("GetAllSinkInputs timeout");
+            AUDIO_ERR_LOG("[xcollie] GetAllSinkInputs timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     isFinishGetAllSinkInputs_ = false;
@@ -317,7 +317,7 @@ std::vector<SourceOutput> ProAudioServiceAdapterImpl::GetAllSourceOutputs()
     AUDIO_INFO_LOG("GetAllSourceOutputs");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSourceOutputs", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
-            AUDIO_ERR_LOG("GetAllSourceOutputs timeout");
+            AUDIO_ERR_LOG("[xcollie] GetAllSourceOutputs timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
     isFinishGetAllSourceOutputs_ = false;

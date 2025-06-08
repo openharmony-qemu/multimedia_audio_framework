@@ -27,7 +27,7 @@ config("audio_effect_config") {
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/common/include",
     "../../../services/audio_service/test/example",
-    "../../../services/audio_policy/server/include/service/manager",
+    "../../../services/audio_policy/server/infra/datashare/include",
     "../../../services/audio_policy/util/include",
   ]
 

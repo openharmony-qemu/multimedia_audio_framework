@@ -87,6 +87,7 @@ struct BasicBufferInfo {
     std::atomic<float> duckFactor;
     std::atomic<float> muteFactor;
     std::atomic<RestoreStatus> restoreStatus = NO_NEED_FOR_RESTORE;
+    std::atomic<bool> isNeedStop = false;
 
     RestoreInfo restoreInfo;
 };
@@ -200,6 +201,9 @@ public:
 
     void GetTimeStampInfo(uint64_t &position, uint64_t &timeStamp);
     void SetTimeStampInfo(uint64_t position, uint64_t timeStamp);
+
+    void SetStopFlag(bool isNeedStop);
+    bool GetStopFlag() const;
 
 private:
     int32_t Init(int dataFd, int infoFd);

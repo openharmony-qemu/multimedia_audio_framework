@@ -310,7 +310,7 @@ int32_t TonePlayerImpl::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t req
     uint32_t index;
     uint8_t *data;
     uint16_t freqVal;
-    float pi = 3.1428f;
+    double pi = 3.1415926;
     for (uint32_t i = 0; i <= TONEINFO_MAX_WAVES; i++) {
         if (freqs[i] == 0) {
             break;
