@@ -674,6 +674,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     streamDesc->callerPid_ = static_cast<int32_t>(getpid());
+    streamDesc->sessionId_ = audioStreamParams.originalSessionId;
     return streamDesc;
 }
 
@@ -2763,10 +2764,10 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     // Create stream desc and pipe
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t sessionId = 0;
-    int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, sessionId);
+    int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
+        audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
-    AUDIO_INFO_LOG("Create normal renderer, id: %{public}u", sessionId);
+    AUDIO_INFO_LOG("Create normal renderer, id: %{public}u", audioStreamParams.originalSessionId);
 
     audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Re-create normal stream failed.");

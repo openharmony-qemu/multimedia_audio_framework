@@ -356,6 +356,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     streamDesc->callerPid_ = static_cast<int32_t>(getpid());
+    streamDesc->sessionId_ = audioStreamParams.originalSessionId;
     return streamDesc;
 }
 
@@ -2064,10 +2065,10 @@ int32_t AudioCapturerPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     // Create stream desc and pipe
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
-    uint32_t sessionId = 0;
-    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, sessionId);
+    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag,
+        audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
-    AUDIO_INFO_LOG("Create normal capturer, id: %{public}u", sessionId);
+    AUDIO_INFO_LOG("Create normal capturer, id: %{public}u", audioStreamParams.originalSessionId);
 
     audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Get normal record stream failed");
