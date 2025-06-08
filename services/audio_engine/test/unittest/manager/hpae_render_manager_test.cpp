@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_offload_renderer_manager.h"
+#include "hpae_co_buffer_node.h"
 #include <thread>
 #include <chrono>
 #include <cstdio>
@@ -120,7 +121,7 @@ void TestIRendererManagerInit()
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
-void TestRendererManagerCrteateStream(
+void TestRendererManagerCreateStream(
     std::shared_ptr<IHpaeRendererManager> &hpaeRendererManager, HpaeStreamInfo &streamInfo)
 {
     streamInfo.channels = STEREO;
@@ -157,7 +158,7 @@ void TestIRendererManagerCreateDestoryStream()
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
-    TestRendererManagerCrteateStream(hpaeRendererManager, streamInfo);
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
     int32_t ret = hpaeRendererManager->DestroyStream(streamInfo.sessionId);
     EXPECT_EQ(ret == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
@@ -201,7 +202,7 @@ static void TestIRendererManagerStartPuaseStream()
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
-    TestRendererManagerCrteateStream(hpaeRendererManager, streamInfo);
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
     HpaeSinkInputInfo sinkInputInfo;
     std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
     EXPECT_EQ(hpaeRendererManager->RegisterWriteCallback(streamInfo.sessionId, writeIncDataCb), SUCCESS);
@@ -260,5 +261,72 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerStartPuaseStreamTest)
     TestIRendererManagerStartPuaseStream<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestIRendererManagerStartPuaseStream<HpaeOffloadRendererManager>();
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborationState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborationState_001
+ * @tc.desc  : Test UpdateCollaborationState when config in vaild.
+ */
+TEST_F(HpaeRendererManagerTest, UpdateCollaborationState_001)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    WaitForMsgProcessing(hpaeRendererManager);
+    int32_t ret = hpaeRendererManager->UpdateCollaborationState(true);
+    EXPECT_EQ(ret == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    ret = hpaeRendererManager->UpdateCollaborationState(false);
+    EXPECT_EQ(ret == SUCCESS, true);
+}
+
+/**
+ * @tc.name  : Test ConnectCoBufferNode
+ * @tc.type  : FUNC
+ * @tc.number: ConnectCoBufferNode_001
+ * @tc.desc  : Test ConnectCoBufferNode when config in vaild.
+ */
+TEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.channels = CHANNEL_STEREO;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.channelLayout = CH_LAYOUT_STEREO;
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>(nodeInfo);
+    EXPECT_NE(coBufferNode, nullptr);
+    int32_t ret = hpaeRendererManager->ConnectCoBufferNode(coBufferNode);
+    EXPECT_EQ(ret == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
+    ret = hpaeRendererManager->DisConnectCoBufferNode(coBufferNode);
+    EXPECT_EQ(ret == SUCCESS, true);
 }
 }  // namespace

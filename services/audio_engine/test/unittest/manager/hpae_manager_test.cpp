@@ -708,4 +708,22 @@ TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003)
     EXPECT_EQ(subKeys[0], result[0].first);
     EXPECT_EQ("NoSupport", result[0].second);
 }
+
+/**
+ * @tc.name  : Test UpdateCollaborationState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborationState_001
+ * @tc.desc  : Test UpdateCollaborationState when config in vaild.
+ */
+TEST_F(HpaeManagerUnitTest, UpdateCollaborationState_001)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborationState(true);
+    EXPECT_EQ(ret, true);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborationState(false);
+    EXPECT_EQ(ret, true);
+}
 }  // namespace

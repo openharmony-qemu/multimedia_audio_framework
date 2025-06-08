@@ -52,7 +52,6 @@ public:
     virtual size_t GetPreOutNum();
     virtual size_t GetOutputPortNum();
     void Enqueue(HpaePcmBuffer* buffer) override;
-    void SetBufferSize(size_t size);
     void SetLatency(uint32_t latency);
 private:
     void FillSilenceFramesInner(uint32_t latencyMs);
