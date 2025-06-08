@@ -1538,7 +1538,7 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
             FetchOutputDeviceAndRoute(reason);
             return ERROR;
         }
-        if ((desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene())) {
+        if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) {
             Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
             return SUCCESS;
         }
