@@ -692,7 +692,7 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
     } else if (scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_PHONE_CHAT) {
         return !IsVirtualCall() ? ScoCategory::SCO_CALLULAR : ScoCategory::SCO_VIRTUAL;
     }
-     
+
     return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
 }
 
@@ -722,7 +722,7 @@ int32_t AudioHfpManager::TryUpdateScoCategory()
 void AudioHfpManager::DisconnectScoForDevice(const BluetoothRemoteDevice &device)
 {
     std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
-    
+
     if (device.GetDeviceAddr() != activeHfpDevice_.GetDeviceAddr()) {
         AUDIO_WARNING_LOG("disconnect sco for device %{public}s but active device %{public}s",
             GetEncryptAddr(device.GetDeviceAddr()).c_str(),

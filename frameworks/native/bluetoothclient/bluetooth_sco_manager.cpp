@@ -48,7 +48,7 @@ void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState,
         scoState == HfpScoConnectState::SCO_DISCONNECTED ? "diconnect" : "connect",
         GetEncryptAddr(device.GetDeviceAddr()).c_str(), currentScoState_,
         GetEncryptAddr(currentScoDevice_.GetDeviceAddr()).c_str());
-    
+
     if (!IsSameHfpDevice(currentScoDevice_, device)) {
         WriteScoStateFaultEvent(scoState, device, reason);
         return;
@@ -444,5 +444,5 @@ bool BluetoothScoManager::IsInScoCategory(ScoCategory scoCategory)
         (currentScoState_ == AudioScoState::CONNECTING ||
         currentScoState_ == AudioScoState::CONNECTED);
 }
-}
-}
+} // Bluetooth
+} // OHOS
