@@ -815,7 +815,7 @@ static void SendStreamData(struct userdata *u, int num, pa_memchunk chunk)
 static bool ShouldSendChunk(int idx, unsigned numNotSilence)
 {
     if (numNotSilence == 0) {
-        if (g_noDataCount[idx] == -1 || ! g_needEmptyChunk) {
+        if (!g_needEmptyChunk || g_noDataCount[idx] == -1) {
             AUDIO_DEBUG_LOG("stream idx: %d, stream suspend, don't send", idx);
             return false;
         }
@@ -1269,8 +1269,12 @@ int pa__init(pa_module *m)
 
     SPLIT_MODE = pa_modargs_get_value(ma, "split_mode", "1");
     AUDIO_INFO_LOG("module_split_stream_sink pa__init splitMode is %{public}s", SPLIT_MODE);
-    int getEmptyModeRet = pa_modargs_get_value_boolean(ma, "need_empty_chunk", &g_needEmptyChunk);
+    
+    bool defaultEmptyChunkMode = true;
+    int getEmptyModeRet = pa_modargs_get_value_boolean(ma, "need_empty_chunk", &defaultEmptyChunkMode);
+    g_needEmptyChunk = defaultEmptyChunkMode;
     AUDIO_INFO_LOG("module_split_stream_sink pa__init getEmptyModeRet: %{public}d, bool state: %{public}d", getEmptyModeRet, g_needEmptyChunk);
+
     ConvertToSplitArr(SPLIT_MODE);
 
     m->userdata = u = pa_xnew0(struct userdata, 1);
