@@ -14,6 +14,7 @@
  */
 
 #include "multimedia_audio_volume_group_manager_callback.h"
+
 #include "multimedia_audio_common.h"
 
 namespace OHOS {
@@ -24,7 +25,7 @@ void CjAudioRingerModeCallback::RegisterFunc(std::function<void(int32_t)> cjCall
     func_ = cjCallback;
 }
 
-void CjAudioRingerModeCallback::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
+void CjAudioRingerModeCallback::OnRingerModeUpdated(const AudioRingerMode& ringerMode)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ == nullptr) {
@@ -39,13 +40,13 @@ void CjAudioManagerMicStateChangeCallback::RegisterFunc(std::function<void(CMicS
     func_ = cjCallback;
 }
 
-void CjAudioManagerMicStateChangeCallback::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
+void CjAudioManagerMicStateChangeCallback::OnMicStateUpdated(const MicStateChangeEvent& micStateChangeEvent)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ == nullptr) {
         return;
     }
-    CMicStateChangeEvent cMic{};
+    CMicStateChangeEvent cMic {};
     cMic.mute = micStateChangeEvent.mute;
     func_(cMic);
 }
