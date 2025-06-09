@@ -1644,6 +1644,7 @@ int32_t CapturerInClientInner::FlushCbBuffer()
     if (cbBuffer_ != nullptr && capturerMode_ == CAPTURE_MODE_CALLBACK) {
         std::lock_guard<std::mutex> lock(cbBufferMutex_);
         int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "Clear buffer fail, ret %{public}d.", ret);
         AUDIO_INFO_LOG("Flush cbBuffer_ for sessionId:%{public}d uid:%{public}d, ret:%{public}d",
             sessionId_, clientUid_, ret);
     }
