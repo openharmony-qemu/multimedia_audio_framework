@@ -458,6 +458,22 @@ enum RecorderType : int32_t {
     RECORDER_TYPE_AV_RECORDER = 1000,
 };
 
+enum AudioLoopbackMode {
+    /** The hardware mode of audio loopback.*/
+    HARDWARE = 0,
+};
+
+enum AudioLoopbackStatus {
+    /** Audio loopback unavailable by the output or input device. For example, the device change.*/
+    UNAVAILABLE_DEVICE = -2,
+    /** Audio loopback unavailable by the audio scene. For example, the audio interrupt.*/
+    UNAVAILABLE_SCENE = -1,
+    /** Audio loopback available and idle.*/
+    AVAILABLE_IDLE = 0,
+    /** Audio loopback available and running.*/
+    AVAILABLE_RUNNING = 1,
+};
+
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -480,6 +496,8 @@ struct AudioRendererInfo {
     // 0 is the default value, it is considered that no
     uint64_t expectedPlaybackDurationBytes = 0;
     int32_t effectMode = 1;
+    bool isLoopback = false;
+    AudioLoopbackMode loopbackMode = HARDWARE;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -499,7 +517,9 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(playerType)
             && parcel.WriteUint64(expectedPlaybackDurationBytes)
             && parcel.WriteInt32(effectMode)
-            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
+            && parcel.WriteBool(isLoopback)
+            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -520,6 +540,8 @@ struct AudioRendererInfo {
         expectedPlaybackDurationBytes = parcel.ReadUint64();
         effectMode = parcel.ReadInt32();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+        isLoopback = parcel.ReadBool();
+        loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
     }
 };
 
@@ -534,6 +556,8 @@ public:
     uint64_t channelLayout = 0ULL;
     std::string sceneType = "";
     RecorderType recorderType = RECORDER_TYPE_DEFAULT;
+    bool isLoopback = false;
+    AudioLoopbackMode loopbackMode = HARDWARE;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -545,15 +569,17 @@ public:
     ~AudioCapturerInfo()= default;
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteInt32(static_cast<int32_t>(sourceType)) &&
-            parcel.WriteInt32(capturerFlags) &&
-            parcel.WriteInt32(originalFlag) &&
-            parcel.WriteInt32(static_cast<int32_t>(pipeType)) &&
-            parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
-            parcel.WriteUint8(encodingType) &&
-            parcel.WriteUint64(channelLayout) &&
-            parcel.WriteString(sceneType) &&
-            parcel.WriteInt32(static_cast<int32_t>(recorderType));
+        return parcel.WriteInt32(static_cast<int32_t>(sourceType))
+            && parcel.WriteInt32(capturerFlags) 
+            && parcel.WriteInt32(originalFlag)
+            && parcel.WriteInt32(static_cast<int32_t>(pipeType))
+            && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
+            && parcel.WriteUint8(encodingType)
+            && parcel.WriteUint64(channelLayout)
+            && parcel.WriteString(sceneType)
+            && parcel.WriteInt32(static_cast<int32_t>(recorderType))
+            && parcel.WriteBool(isLoopback)
+            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -566,6 +592,8 @@ public:
         channelLayout = parcel.ReadUint64();
         sceneType = parcel.ReadString();
         recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+        isLoopback = parcel.ReadBool();
+        loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
     }
 };
 
@@ -1419,7 +1447,6 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_WRITE_OR_READ,
     METHOD_MAX
 };
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

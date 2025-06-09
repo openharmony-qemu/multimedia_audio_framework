@@ -452,5 +452,17 @@ bool AudioServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
     AUDIO_INFO_LOG("IsAcousticEchoCancelerSupported not support");
     return false;
 }
+
+bool AudioServer::SetKaraokeParameters(const std::string &parameters)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
+        "SetKaraokeParameters refused for %{public}d", callingUid);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, false, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", parameters);
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS

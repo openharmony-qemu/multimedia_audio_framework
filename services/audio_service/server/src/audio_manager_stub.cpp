@@ -140,6 +140,7 @@ const char *g_audioServerCodeStrs[] = {
     "START_AUDIOWORKGROUP",
     "STOP_AUDIOWORKGROUP",
     "SET_BT_HDI_INVALID_STATE",
+    "SET_KARAOKE_PARAMETERS",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -957,6 +958,8 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetAudioEnhanceProperty(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY):
             return HandleSetAudioEffectProperty(data, reply);
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_KARAOKE_PARAMETERS):
+            return HandleSetKaraokeParameters(data, reply);
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }
@@ -1426,6 +1429,14 @@ int AudioManagerStub::HandleIsAcousticEchoCancelerSupported(MessageParcel &data,
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
     bool ret = IsAcousticEchoCancelerSupported(sourceType);
     reply.WriteBool(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetKaraokeParameters(MessageParcel &data, MessageParcel &reply)
+{
+    std::string parameters = data.ReadString();
+    bool result = SetKaraokeParameters(parameters);
+    reply.WriteBool(result);
     return AUDIO_OK;
 }
 

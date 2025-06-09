@@ -145,6 +145,7 @@ public:
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool SetKaraokeParameters(const std::string &parameters) override;
     void SetBtHdiInvalidState() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;

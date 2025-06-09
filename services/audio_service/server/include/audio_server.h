@@ -244,6 +244,7 @@ public:
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool SetKaraokeParameters(const std::string &parameters) override;
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
     void RemoveRendererDataTransferCallback(const int32_t &pid);
@@ -316,6 +317,7 @@ private:
     void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
     int32_t CheckMaxRendererInstances();
+    int32_t CheckMaxLoopbackInstances(AudioMode audioMode);
     bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);

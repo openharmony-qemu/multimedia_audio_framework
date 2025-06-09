@@ -90,4 +90,4 @@ config("audio_external_library_config") {
         "../../../interfaces/inner_api/native/audiorenderer/include",
         "../../../interfaces/inner_api/native/audioloopback/include",
     ]
-}
+}

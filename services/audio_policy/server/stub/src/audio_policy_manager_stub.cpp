@@ -238,6 +238,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_CALLBACK_STREAM_USAGE_INFO",
     "UPDATE_DEVICE_INFO",
     "SET_SLE_AUDIO_OPERATION_CALLBACK",
+    "SET_KARAOKE_PARAMETERS",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1452,6 +1453,9 @@ void AudioPolicyManagerStub::OnMiddleNinRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_EFFECT_PROPERTY):
             SetAudioEffectPropertyInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_KARAOKE_PARAMETERS):
+            SetKaraokeParametersInternal(data, reply);
+            break;
         default:
             OnMiddleTenRemoteRequest(code, data, reply, option);
             break;
@@ -2341,6 +2345,13 @@ void AudioPolicyManagerStub::IsAcousticEchoCancelerSupportedInternal(MessageParc
 {
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
     bool result = IsAcousticEchoCancelerSupported(sourceType);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::SetKaraokeParametersInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string parameters = data.ReadString();
+    bool result = SetKaraokeParameters(parameters);
     reply.WriteBool(result);
 }
 

@@ -171,6 +171,8 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
     capturer->capturerInfo_.recorderType = capturerOptions.capturerInfo.recorderType;
+    capturer->capturerInfo_.isLoopback = capturerOptions.capturerInfo.isLoopback;
+    capturer->capturerInfo_.loopbackMode = capturerOptions.capturerInfo.loopbackMode;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
     capturer->strategy_ = capturerOptions.strategy;
     if (capturer->SetParams(params) != SUCCESS) {

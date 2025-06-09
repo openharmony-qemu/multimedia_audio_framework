@@ -1802,6 +1802,23 @@ bool AudioManagerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return reply.ReadBool();
 }
 
+bool AudioManagerProxy::SetKaraokeParameters(const std::string &parameters)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    data.WriteString(parameters);
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_KARAOKE_PARAMETERS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "failed,error:%d", error);
+    return reply.ReadBool();
+}
+
 void AudioManagerProxy::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
 {
     MessageParcel data;

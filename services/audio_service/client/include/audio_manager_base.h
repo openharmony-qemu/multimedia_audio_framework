@@ -521,6 +521,8 @@ public:
 
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
 
+    virtual bool SetKaraokeParameters(const std::string &parameters) = 0;
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
      * set inner capture limit.
@@ -762,6 +764,7 @@ private:
     int HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply);
     int HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply);
     int HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply);
+    int HandleSetKaraokeParameters(MessageParcel &data, MessageParcel &reply);
     int HandleSetSessionMuteState(MessageParcel &data, MessageParcel &reply);
     int HandleOnMuteStateChange(MessageParcel &data, MessageParcel &reply);
     int HandleRegisterDataTransferCallback(MessageParcel &data, MessageParcel &reply);

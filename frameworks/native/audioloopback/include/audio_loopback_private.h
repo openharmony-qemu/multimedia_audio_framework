@@ -21,37 +21,83 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioLoopbackPrivate : public AudioLoopback, public std::enable_shared_from_this<AudioLoopbackPrivate>  {
+class AudioLoopbackPrivate : public AudioLoopback,
+                             public std::enable_shared_from_this<AudioLoopbackPrivate>,
+                             public AudioCapturerReadCallback,
+                             public AudioRendererWriteCallback {
 public:
-    bool Enable(bool enable) override;
-
-    AudioLoopbackStatus GetStatus() const override;
-
-    void SetVolume(float volume) override;
-
-    int32_t SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback) override;
-
     explicit AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo);
-
     virtual ~AudioLoopbackPrivate();
-private:
-    AudioRendererOptions ConfigAudioRendererOptions();
-    AudioCapturerOptions ConfigAudioCapturerOptions();
 
-    bool CreateAudioLoopback();
-    bool DestroyAudioLoopback();
+    bool Enable(bool enable) override;
+    AudioLoopbackStatus GetStatus() override;
+    void SetVolume(float volume) override;
+    int32_t SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback) override;
+    int32_t RemoveAudioLoopbackCallback() override;
+    void OnWriteData(size_t length) override;
+    void OnReadData(size_t length) override;
+
+private:
+
+    class RendererCallbackImpl : public AudioRendererCallback,
+                                 public AudioRendererOutputDeviceChangeCallback,
+                                 public AudioRendererFastStatusChangeCallback {
+    public:
+        explicit RendererCallbackImpl(AudioLoopbackPrivate &parent);
+        void OnInterrupt(const InterruptEvent &interruptEvent) override {}
+        void OnStateChange(const RendererState state, const StateChangeCmdType cmdType) override;
+        void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
+            const AudioStreamDeviceChangeReason reason) override;
+        void OnFastStatusChange(FastStatus status) override;
+
+    private:
+        AudioLoopbackPrivate &parent_;
+    };
+
+    class CapturerCallbackImpl : public AudioCapturerCallback,
+                                 public AudioCapturerDeviceChangeCallback,
+                                 public AudioCapturerFastStatusChangeCallback {
+    public:
+        explicit CapturerCallbackImpl(AudioLoopbackPrivate &parent);
+        void OnInterrupt(const InterruptEvent &interruptEvent) override {}
+        void OnStateChange(const CapturerState state) override;
+        void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override;
+        void OnFastStatusChange(FastStatus status) override;
+
+    private:
+        AudioLoopbackPrivate &parent_;
+    };
+    void InitStatus();
+    void InitializeCallbacks();
+    void UpdateStatus();
+
+    AudioRendererOptions GenerateRendererConfig();
+    AudioCapturerOptions GenerateCapturerConfig();
+
+    void CreateAudioLoopback();
+    void DestroyAudioLoopback();
     bool IsAudioLoopbackSupported();
     bool CheckDeviceSupport();
-    int32_t OffKaraoke();
-    int32_t SetKaraokeParameters();
-    void updateState(AudioLoopbackStatus state);
+    bool SetKaraokeParameters();
+
+    AudioRendererOptions rendererOptions_;
+    AudioCapturerOptions capturerOptions_;
     AppInfo appInfo_ = {};
-    float volume_ = 0.5;
+    std::map<std::string, std::string> karaokeParams_ = {};
     std::shared_ptr<AudioRenderer> audioRenderer_;
     std::shared_ptr<AudioCapturer> audioCapturer_;
-    AudioLoopbackStatus state_ = AVAILABLE_IDLE;
-    AudioLoopbackMode mode_;
+    std::mutex mutex_;
+    std::shared_ptr<AudioLoopbackCallback> statusCallback_;
+    AudioLoopbackStatus currentStatus_ = AVAILABLE_IDLE;
+    AudioLoopbackMode mode_ = HARDWARE;
 
+    RendererState rendererState_ = RENDERER_INVALID;
+    bool isRendererUsb_ = false;
+    FastStatus rendererFastStatus_ = FASTSTATUS_NORMAL;
+
+    CapturerState capturerState_ = CAPTURER_INVALID;
+    bool isCapturerUsb_ = false;
+    FastStatus capturerFastStatus_ = FASTSTATUS_NORMAL;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

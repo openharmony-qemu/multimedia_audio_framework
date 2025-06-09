@@ -2251,6 +2251,11 @@ bool AudioPolicyService::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
 }
 
+bool AudioPolicyService::SetKaraokeParameters(const std::string &parameters)
+{
+    return AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
+}
+
 int32_t AudioPolicyService::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
 {
     if (audioPolicyServerHandler_ != nullptr) {
