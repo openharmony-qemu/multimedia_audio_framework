@@ -174,7 +174,7 @@ void AudioLoopbackPrivate::DisableLoopback()
     karaokeParams_["Karaoke_enable"] = "disable";
     std::string parameters = "Karaoke_enable=" + karaokeParams_["Karaoke_enable"];
     CHECK_AND_RETURN_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters),
-            "DisableLoopback failed");
+        "DisableLoopback failed");
  }
 
 void AudioLoopbackPrivate::DestroyAudioLoopback()
