@@ -249,7 +249,6 @@ private:
     int32_t HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer, bool isBlockingRead);
     int32_t RegisterCapturerInClientPolicyServerDiedCb();
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
-
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -518,8 +517,7 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
         " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
         info.encoding);
-    AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
-         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
+    AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND);
     if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) || !IsSamplingRateValid(info.samplingRate)) {
         AUDIO_ERR_LOG("CapturerInClient: Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
@@ -904,7 +902,6 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         static_cast<int64_t>(streamParams_.samplingRate) * AUDIO_US_PER_S;
 
     handleTime = handleTime + deltaTime + tempLatency;
-
     timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
 
@@ -982,6 +979,12 @@ int32_t CapturerInClientInner::SetSpeed(float speed)
 {
     AUDIO_ERR_LOG("SetSpeed is not supported");
     return ERROR;
+}
+
+float CapturerInClientInner::GetSpeed()
+{
+    AUDIO_ERR_LOG("GetSpeed is not supported");
+    return 1.0;
 }
 
 int32_t CapturerInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
@@ -1064,11 +1067,9 @@ void CapturerInClientInner::InitCallbackLoop()
     auto weakRef = weak_from_this();
 
     // OS_AudioWriteCB
-    ResetCallbackLoopTid();
     callbackLoop_ = std::thread([weakRef] {
         bool keepRunning = true;
         std::shared_ptr<CapturerInClientInner> strongRef = weakRef.lock();
-        strongRef->SetCallbackLoopTid(gettid());
         if (strongRef != nullptr) {
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", strongRef->sessionId_);
@@ -1537,7 +1538,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
         cbThreadCv_.notify_all();
         readDataCV_.notify_all();
         if (callbackLoop_.joinable()) {
-            callbackLoop_.join();
+            callbackLoop_.detach();
         }
     }
     paramsIsSet_ = false;
@@ -1678,7 +1679,6 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
         AUDIO_DEBUG_LOG("availableSizeInFrame %{public}" PRId64 "", availableSizeInFrame);
         if (availableSizeInFrame > 0) { // If OHAudioBuffer has data
             BufferDesc currentOHBuffer_ = {};
-            clientBuffer_->GetTimeStampInfo(currentOHBuffer_.position, currentOHBuffer_.timeStampInNs);
             clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
             BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
             ringCache_->Enqueue(bufferWrap);
@@ -1728,7 +1728,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
+            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid));
         needSetThreadPriority_ = false;
     }
 
@@ -2025,11 +2025,6 @@ int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
     return ERROR;
 }
 
-FastStatus CapturerInClientInner::GetFastStatus()
-{
-    return FASTSTATUS_NORMAL;
-}
-
 DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 {
     AUDIO_WARNING_LOG("not supported in capturer");
@@ -2039,7 +2034,7 @@ DeviceType CapturerInClientInner::GetDefaultOutputDevice()
 // diffrence from GetAudioPosition only when set speed
 int32_t CapturerInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    return GetAudioTime(timestamp, base) ? SUCCESS : ERROR;
+    return GetAudioTime(timestamp, base);
 }
 
 void CapturerInClientInner::SetSwitchingStatus(bool isSwitching)
@@ -2084,43 +2079,6 @@ void CapturerInClientInner::FetchDeviceForSplitStream()
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
 }
 
-void CapturerInClientInner::SetCallStartByUserTid(pid_t tid)
-{
-    AUDIO_WARNING_LOG("not supported in capturer");
-}
-
-void CapturerInClientInner::SetCallbackLoopTid(int32_t tid)
-{
-    AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
-    callbackLoopTid_ = tid;
-    callbackLoopTidCv_.notify_all();
-}
-
-int32_t CapturerInClientInner::GetCallbackLoopTid()
-{
-    std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
-    bool stopWaiting = callbackLoopTidCv_.wait_for(waitLock, std::chrono::seconds(1), [this] {
-        return callbackLoopTid_ != -1; // callbackLoopTid_ will change when got notified.
-    });
-
-    if (!stopWaiting) {
-        AUDIO_WARNING_LOG("Wait timeout");
-        callbackLoopTid_ = 0; // set tid to prevent get operation from getting stuck
-    }
-    return callbackLoopTid_;
-}
-
-void CapturerInClientInner::ResetCallbackLoopTid()
-{
-    AUDIO_INFO_LOG("Reset callback loop tid to -1");
-    callbackLoopTid_ = -1;
-}
-
-bool CapturerInClientInner::GetStopFlag() const
-{
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
-    return clientBuffer_->GetStopFlag();
-}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FAST_AUDIO_STREAM_H
