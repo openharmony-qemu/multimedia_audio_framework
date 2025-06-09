@@ -253,7 +253,8 @@ PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
     sessionId_ = sessionId;
 }
 
-PipeInfoGuard::~PipeInfoGuard() {
+PipeInfoGuard::~PipeInfoGuard()
+{
     if (releaseFlag_) {
         CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
     }

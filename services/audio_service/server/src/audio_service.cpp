@@ -691,9 +691,9 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
         std::lock_guard<std::mutex> lock(workingConfigsMutex_);
         if (workingConfigs_.count(innerCapId)) {
             workingConfigs_[innerCapId] = newConfig;
-            isOldCap = true;  
+            isOldCap = true;
         } else {
-            workingConfigs_[innerCapId] = newConfig; 
+            workingConfigs_[innerCapId] = newConfig;
         }
     }
     if (isOldCap) {

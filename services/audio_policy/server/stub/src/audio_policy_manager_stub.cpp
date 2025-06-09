@@ -1281,6 +1281,8 @@ void AudioPolicyManagerStub::NotifyFreezeStateChangeInternal(MessageParcel &data
     std::set<int32_t> pidList;
     bool isFreeze = data.ReadBool();
     int32_t pidListSize = data.ReadInt32();
+    int32_t size = 100;
+    CHECK_AND_RETURN_LOG(pidListSize <= size, "MessageParcel more than 100.");
     for (int32_t i = 0; i < pidListSize; i ++) {
         pidList.insert(data.ReadInt32());
     }

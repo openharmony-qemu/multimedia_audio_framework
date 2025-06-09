@@ -51,7 +51,7 @@ bool OHAudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
     if (AudioSystemManager::GetInstance()->StartGroup(workgroupId, startTime, deadlineTime) == AUDIO_OK) {
         return true;
     }
-    return false; 
+    return false;
 }
 
 bool OHAudioWorkgroup::Stop()
@@ -59,7 +59,7 @@ bool OHAudioWorkgroup::Stop()
     if (AudioSystemManager::GetInstance()->StopGroup(workgroupId) == AUDIO_OK) {
         return true;
     }
-    return false; 
+    return false;
 }
 
 } // namespace AudioStandard
