@@ -22,6 +22,9 @@
 #include "audio_stream_info.h"
 #include "audio_policy_manager.h"
 #include "securec.h"
+#include "access_token.h"
+#include "accesstoken_kit.h"
+#include "ipc_skeleton.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -29,6 +32,14 @@ namespace {
 }
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
 {
+    Security::AccessToken::AccessTokenID tokenId = appInfo.appTokenId;
+    if (tokenId == Security::AccessToken::INVALID_TOKENID) {
+        tokenId = IPCSkeleton::GetCallingTokenID();
+    }
+
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, MICROPHONE_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
+        nullptr, "Permission denied [tid:%{public}d]", tokenId);
     return std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
 }
 
