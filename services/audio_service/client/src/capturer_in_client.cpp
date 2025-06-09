@@ -243,7 +243,7 @@ private:
     int32_t InitCacheBuffer(size_t targetSize);
     int32_t InitSharedBuffer();
     int32_t FlushRingCache();
-    int32_t ResetCallbackBuffer();
+    int32_t FlushCbBuffer();
 
     void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
 
@@ -1515,6 +1515,7 @@ bool CapturerInClientInner::StopAudioStream()
 
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         state_ = STOPPING;
+        readDataCV_.notify_all();
         AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     }
 
@@ -1606,9 +1607,7 @@ bool CapturerInClientInner::FlushAudioStream()
         return false;
     }
     CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush ringCache failed");
-    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
-        CHECK_AND_RETURN_RET_LOG(ResetCallbackBuffer() == SUCCESS, false, "Flush callbackBuffer failed");
-    }
+    CHECK_AND_RETURN_RET_LOG(FlushCbBuffer() == SUCCESS, false, "Flush cbBuffer failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
@@ -1639,15 +1638,14 @@ int32_t CapturerInClientInner::FlushRingCache()
     return SUCCESS;
 }
 
-int32_t CapturerInClientInner::ResetCallbackBuffer()
+int32_t CapturerInClientInner::FlushCbBuffer()
 {
-    Trace trace("CapturerInClientInner::ResetCbBuffer");
-    
-    std::lock_guard<std::mutex> lock(cbBufferMutex_);
-    if (cbBufferSize_ != nullptr && cbBufferSize_ >0) {
+    Trace trace("CapturerInClientInner::FlushCbBuffer");
+    if (cbBufferSize_ != nullptr && capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        std::lock_guard<std::mutex> lock(cbBufferMutex_);
         int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "Reset cbBuffer fail, ret %{public}d.", ret);
-        cbBufferSize_ =0;
+        AUDIO_INFO_LOG("Flush cbBuffer_ for sessionId:%{public}d uid:%{public}d, ret:%{public}d",
+            sessionId_, clientUid_, ret);
     }
     return SUCCESS;
 }
