@@ -63,6 +63,9 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
     capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
     outputStreamMap_.emplace(sourceBufferType, this);
     historyDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
+    if (historyDataMap_.find(sourceBufferType) != historyDataMap_.end()) {
+        historyDataMap_.at(sourceBufferType).resize(0);
+    }
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumperMap_.emplace(sourceBufferType,
         std::make_unique<HpaePcmDumper>("HpaeSourceInputNode_id_"+ std::to_string(GetSessionId()) +
@@ -91,6 +94,9 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
             FrameDesc{capturerFrameDataMap_.at(sourceBufferType).data(), frameByteSizeMap_.at(sourceBufferType)});
         outputStreamMap_.emplace(sourceBufferType, this);
         historyDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
+        if (historyDataMap_.find(sourceBufferType) != historyDataMap_.end()) {
+            historyDataMap_.at(sourceBufferType).resize(0);
+        }
 #ifdef ENABLE_HOOK_PCM
         inputPcmDumperMap_.emplace(sourceBufferType,
             std::make_unique<HpaePcmDumper>("HpaeSourceInputNode_id_"+ std::to_string(GetSessionId()) +
