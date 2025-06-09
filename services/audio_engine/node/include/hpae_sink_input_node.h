@@ -59,6 +59,7 @@ public:
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
+    bool ReadToAudioBuffer(int32_t &ret);
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;
     PcmBufferInfo pcmBufferInfo_;

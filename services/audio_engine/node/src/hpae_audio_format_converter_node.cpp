@@ -21,7 +21,8 @@
 #include "cinttypes"
 
 static constexpr uint32_t DEFAULT_EFFECT_RATE = 48000;
-static constexpr float FRAME_LEN_20MS = 0.02f;
+static constexpr uint32_t FRAME_LEN_20MS = 20;
+static constexpr uint32_t MS_IN_SECOND = 1000;
 static constexpr uint32_t REASAMPLE_QUAILTY = 1;
 namespace OHOS {
 namespace AudioStandard {
@@ -261,7 +262,8 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
         isInfoUpdated = true;
     }
     // special case for 11025, frameLen is 441, 0, 441, 0... alternating
-    if (preNodeInfo_.samplingRate == (uint32_t)SAMPLE_RATE_11025) {
+    // do not influence isInfoUpdated flag, which is used for update tmp data length
+    if (preNodeInfo_.samplingRate == SAMPLE_RATE_11025) {
         preNodeInfo_.frameLen = input->GetFrameLen();
     }
     return isInfoUpdated;
@@ -303,7 +305,7 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
 
     if (preNodeInfo_.samplingRate == SAMPLE_RATE_11025) {
         // for 11025, fix out frameLen based on output sample rate and fixed frameLen 20ms
-        outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS;
+        outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MS_IN_SECOND;
     }
 
     AUDIO_INFO_LOG("NodeId %{public}d: output or input format info is changed, update tmp PCM buffer info!",

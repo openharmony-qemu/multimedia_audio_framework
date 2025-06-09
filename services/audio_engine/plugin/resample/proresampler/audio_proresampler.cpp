@@ -25,13 +25,14 @@ namespace AudioStandard {
 namespace HPAE {
 constexpr uint32_t BUFFER_EXPAND_SIZE = 2;
 constexpr uint32_t SAMPLE_RATE_11025 = 11025;
-constexpr float FRAME_LEN_20MS = 0.02;
+constexpr uint32_t FRAME_LEN_20MS = 20;
+constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t ADD_SIZE = 100;
 // for now ProResampler accept input 20ms for other sample rates, 40ms input for 11025hz
 // output 20ms for all sample rates
 ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels, uint32_t quality)
     : inRate_(inRate), outRate_(outRate), channels_(channels), quality_(quality),
-    expectedOutFrameLen_(outRate_ * FRAME_LEN_20MS)
+    expectedOutFrameLen_(outRate_ * FRAME_LEN_20MS / MS_PER_SECOND)
 {
     int32_t errRet;
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
@@ -47,9 +48,9 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
         buf11025_.reserve(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE + ADD_SIZE);
         AUDIO_INFO_LOG("Proresampler input 11025hz, output resample rate %{public}d, buf11025_ size %{public}d",
             outRate_, expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE + ADD_SIZE);
-        expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE;
+        expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE / MS_PER_SECOND;
     } else {
-        expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS;
+        expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
     }
 }
 
@@ -95,12 +96,12 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
         "input frame size %{public}d is not valid", inFrameSize);
     if (inFrameSize == 0) {
         int32_t ret = RESAMPLER_ERR_SUCCESS;
-        if (buf11025_.size() > 0) { // output second half of 11025 buffer
+        if (buf11025Index_ > 0) { // output second half of 11025 buffer
             ret += memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float),
-                buf11025_.data() + buf11025_.size(),  expectedOutFrameLen_ * channels_ * sizeof(float));
+                buf11025_.data() + buf11025Index_,  expectedOutFrameLen_ * channels_ * sizeof(float));
             ret += memset_s(buf11025_.data(), buf11025_.capacity() * sizeof(float), 0,
                 buf11025_.capacity() * sizeof(float));
-            buf11025_.resize(0);
+            buf11025Index_ = 0;
         } else { // no data left in buffer, the only thing can be done is to return 0s
             ret += memset_s(outBuffer, outFrameSize * channels_ * sizeof(float), 0,
                 outFrameSize * channels_ * sizeof(float));
@@ -120,7 +121,7 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
     // output first half of data
     ret += memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float),
         buf11025_.data(), expectedOutFrameLen_ * channels_ * sizeof(float));
-    buf11025_.resize(expectedOutFrameLen_ * channels_);
+    buf11025Index_ = expectedOutFrameLen_ * channels_;
     if (ret != EOK) {
         ret = RESAMPLER_ERR_ALLOC_FAILED;
     }

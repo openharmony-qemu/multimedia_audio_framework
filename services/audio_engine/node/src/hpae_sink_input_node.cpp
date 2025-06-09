@@ -98,21 +98,12 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
     return SUCCESS;
 }
 
-void HpaeSinkInputNode::DoProcess()
+bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " + GetTraceInfo());
-    if (GetSampleRate() == SAMPLE_RATE_11025 && !pullDataFlag_) {
-        // for 11025 input sample rate, pull 40ms data at a time, so pull once each two DoProcess()
-        pullDataFlag_ = true;
-        outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
-        return;
-    }
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
-
-    int32_t ret = SUCCESS;
     if (GetDeviceClass() == "offload" && !offloadEnable_) {
         ret = ERR_OPERATION_FAILED;
         AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
@@ -125,7 +116,7 @@ void HpaeSinkInputNode::DoProcess()
         if (!streamInfo_.needData && historyBuffer_) {
             historyBuffer_->GetFrameData(inputAudioBuffer_);
             outputStream_.WriteDataToOutput(&inputAudioBuffer_);
-            return;
+            return false; // do not continue in DoProcess!
         }
         CheckAndDestroyHistoryBuffer();
         if (nodeCallback && ret) {
@@ -138,6 +129,24 @@ void HpaeSinkInputNode::DoProcess()
         }
     }
     inputAudioBuffer_.SetBufferValid(ret ? false : true);
+    return true; // continue in DoProcess!
+}
+
+void HpaeSinkInputNode::DoProcess()
+{
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " + GetTraceInfo());
+    if (GetSampleRate() == SAMPLE_RATE_11025 && !pullDataFlag_) {
+        // for 11025 input sample rate, pull 40ms data at a time, so pull once each two DoProcess()
+        pullDataFlag_ = true;
+        outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
+        return;
+    }
+
+    int32_t ret = SUCCESS;
+
+    if (!ReadToAudioBuffer(ret)) {
+        return;
+    }
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr && inputAudioBuffer_.IsValid()) {
