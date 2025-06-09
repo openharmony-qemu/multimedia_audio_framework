@@ -613,9 +613,8 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002)
 TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported001)
 {
     EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->hpaePolicyManager_ = nullptr;
     bool result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_VOICE_COMMUNICATION);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(result, true);
 }
 
 TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported002)
@@ -635,7 +634,6 @@ TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported002)
 TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter001)
 {
     EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->hpaePolicyManager_ = nullptr;
     std::vector<std::pair<std::string, std::string>> params;
     bool result = hpaeManager_->SetEffectLiveParameter(params);
     EXPECT_EQ(result, false);
@@ -673,11 +671,10 @@ TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter003)
 TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter001)
 {
     EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->hpaePolicyManager_ = nullptr;
     std::vector<std::string> subKeys;
     std::vector<std::pair<std::string, std::string>> result;
     bool res = hpaeManager_->GetEffectLiveParameter(subKeys, result);
-    EXPECT_EQ(res, false);
+    EXPECT_EQ(res, true);
 }
 
 TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter002)

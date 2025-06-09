@@ -606,6 +606,8 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 
+    int32_t ForceStopAudioStream(StopAudioType audioType);
+    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo);
     int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage);
     int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage);
     int32_t GetVolumeLevelByUsage(StreamUsage streamUsage);

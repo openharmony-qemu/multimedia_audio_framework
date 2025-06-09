@@ -80,6 +80,7 @@ public:
     int32_t ActivateAudioInterrupt(
         const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    bool IsCapturerFocusAvailable(int32_t zoneId, const AudioCapturerChangeInfo &capturerInfo);
 
     // preempt audio focus interfaces
     int32_t ActivatePreemptMode();
@@ -279,6 +280,12 @@ private:
     bool IsGameAvoidCallbackCase(const AudioInterrupt &audioInterrupt);
     void ResetNonInterruptControl(AudioInterrupt audioInterrupt);
     ClientType GetClientTypeByStreamId(int32_t streamId);
+
+    int32_t ProcessActiveStreamFocus(std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
+        const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,
+        std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
+    void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
+        const AudioInterrupt &activeInterrupt, int32_t reason);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

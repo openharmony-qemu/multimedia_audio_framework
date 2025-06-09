@@ -846,5 +846,18 @@ RestoreStatus OHAudioBuffer::SetRestoreStatus(RestoreStatus restoreStatus)
     }
     return expectedStatus;
 }
+
+void OHAudioBuffer::SetStopFlag(bool isNeedStop)
+{
+    CHECK_AND_RETURN_LOG(basicBufferInfo_ != nullptr, "basicBufferInfo_ is nullptr");
+    basicBufferInfo_->isNeedStop.store(isNeedStop);
+}
+
+bool OHAudioBuffer::GetStopFlag() const
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, false, "basicBufferInfo_ is nullptr");
+    bool isNeedStop = basicBufferInfo_->isNeedStop.exchange(false);
+    return isNeedStop;
+}
 } // namespace AudioStandard
 } // namespace OHOS

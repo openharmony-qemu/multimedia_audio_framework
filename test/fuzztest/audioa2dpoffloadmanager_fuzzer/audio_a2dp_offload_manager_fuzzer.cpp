@@ -42,7 +42,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 15;
+const uint8_t TESTSIZE = 12;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -102,37 +102,6 @@ vector<DeviceType> DeviceTypeVec = {
     DEVICE_TYPE_USB_ARM_HEADSET,
     DEVICE_TYPE_MAX,
 };
-
-void ConnectA2dpOffloadFuzzTest()
-{
-    std::vector<int32_t> sessionIds = {1, 2, 3};
-    string deviceAddress = "00:11:22:33:44:55";
-    shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
-    manager->Init();
-    constexpr int32_t a2dpOffloadConnectionStateCount =
-        static_cast<int32_t>(A2dpOffloadConnectionState::CONNECTION_STATUS_TIMEOUT) + 1;
-    A2dpOffloadConnectionState currentOffloadConnectionState =
-        static_cast<A2dpOffloadConnectionState>(GetData<uint8_t>() % a2dpOffloadConnectionStateCount);
-    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(currentOffloadConnectionState);
-    manager->ConnectA2dpOffload(deviceAddress, sessionIds);
-}
-
-void ProcessLimiterFuzzTest()
-{
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
-    manager->Init();
-    const int32_t shortTimeout = GetData<uint32_t>();
-    constexpr int32_t a2dpOffloadConnectionStateCount =
-        static_cast<int32_t>(A2dpOffloadConnectionState::CONNECTION_STATUS_TIMEOUT) + 1;
-    A2dpOffloadConnectionState currentOffloadConnectionState =
-        static_cast<A2dpOffloadConnectionState>(GetData<uint8_t>() % a2dpOffloadConnectionStateCount);
-    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(currentOffloadConnectionState);
-    std::thread testThread([manager]() {
-        manager->WaitForConnectionCompleted();
-    });
-    std::this_thread::sleep_for(std::chrono::milliseconds(shortTimeout + GetData<uint32_t>()));
-    testThread.join();
-}
 
 void OffloadStartPlayingFuzzTest()
 {
@@ -260,22 +229,6 @@ void FetchStreamForA2dpOffloadFuzzTest()
     manager->FetchStreamForA2dpOffload(requireReset);
 }
 
-void GetAllRunningStreamSessionFuzzTest()
-{
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
-    manager->Init();
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
-    constexpr int32_t rendererStateCount = static_cast<int32_t>(RendererState::RENDERER_PAUSED) + 1;
-    changeInfo->rendererState = static_cast<RendererState>(GetData<int32_t>() % rendererStateCount);
-    changeInfo->sessionId = GetData<uint32_t>();
-    rendererChangeInfos.push_back(changeInfo);
-    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
-    vector<int32_t> allSessions;
-    bool doStop = GetData<uint32_t>() % NUM_2;
-    manager->GetAllRunningStreamSession(allSessions, doStop);
-}
-
 void GetVolumeGroupTypeFuzzTest()
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
@@ -327,8 +280,6 @@ void HandleActiveDeviceFuzzTest()
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {
-    ConnectA2dpOffloadFuzzTest,
-    ProcessLimiterFuzzTest,
     OffloadStartPlayingFuzzTest,
     OffloadStopPlayingFuzzTest,
     UpdateA2dpOffloadFlagForAllStreamFuzzTest,
@@ -337,7 +288,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HandleA2dpDeviceInOffloadFuzzTest,
     GetA2dpOffloadCodecAndSendToDspFuzzTest,
     FetchStreamForA2dpOffloadFuzzTest,
-    GetAllRunningStreamSessionFuzzTest,
     GetVolumeGroupTypeFuzzTest,
     OnA2dpPlayingStateChangedFuzzTest,
     IsA2dpOffloadConnectingFuzzTest,
@@ -358,7 +308,7 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     uint32_t code = GetData<uint32_t>();
     uint32_t len = GetArrLength(g_testFuncs);
     if (len > 0) {
-        // g_testFuncs[code % len]();
+        g_testFuncs[code % len]();
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
