@@ -26,10 +26,10 @@ public:
     virtual ~CjRendererPositionCallback() = default;
     void RegisterFunc(std::function<void(int64_t)> cjCallback);
 
-    void OnMarkReached(const int64_t &framePosition) override;
+    void OnMarkReached(const int64_t& framePosition) override;
 
 private:
-    std::function<void(int64_t)> func_{};
+    std::function<void(int64_t)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -39,10 +39,10 @@ public:
     virtual ~CjRendererPeriodPositionCallback() = default;
     void RegisterFunc(std::function<void(int64_t)> cjCallback);
 
-    void OnPeriodReached(const int64_t &frameNumber) override;
+    void OnPeriodReached(const int64_t& frameNumber) override;
 
 private:
-    std::function<void(int64_t)> func_{};
+    std::function<void(int64_t)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -52,11 +52,11 @@ public:
     virtual ~CjAudioRendererOutputDeviceChangeCallback() = default;
     void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
 
-    void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReason reason) override;
+    void OnOutputDeviceChange(
+        const AudioDeviceDescriptor& deviceInfo, const AudioStreamDeviceChangeReason reason) override;
 
 private:
-    std::function<void(CArrDeviceDescriptor)> func_{};
+    std::function<void(CArrDeviceDescriptor)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -66,11 +66,11 @@ public:
     virtual ~CjAudioRendererOutputDeviceChangeWithInfoCallback() = default;
     void RegisterFunc(std::function<void(CAudioStreamDeviceChangeInfo)> cjCallback);
 
-    void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReason reason) override;
+    void OnOutputDeviceChange(
+        const AudioDeviceDescriptor& deviceInfo, const AudioStreamDeviceChangeReason reason) override;
 
 private:
-    std::function<void(CAudioStreamDeviceChangeInfo)> func_{};
+    std::function<void(CAudioStreamDeviceChangeInfo)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -83,8 +83,8 @@ public:
     void OnWriteData(size_t length) override;
 
 private:
-    std::function<int32_t(CArrUI8)> func_{};
-    std::shared_ptr<AudioRenderer> audioRenderer_{};
+    std::function<int32_t(CArrUI8)> func_ {};
+    std::shared_ptr<AudioRenderer> audioRenderer_ {};
     std::mutex cbMutex_;
 };
 
@@ -95,12 +95,12 @@ public:
     void RegisterFunc(std::function<void(int32_t)> cjCallback);
     void RegisterInterruptFunc(std::function<void(CInterruptEvent)> cjCallback);
 
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnInterrupt(const InterruptEvent& interruptEvent) override;
     void OnStateChange(const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType) override;
 
 private:
-    std::function<void(CInterruptEvent)> interruptCallback_{};
-    std::function<void(int32_t)> stateChangeCallback_{};
+    std::function<void(CInterruptEvent)> interruptCallback_ {};
+    std::function<void(int32_t)> stateChangeCallback_ {};
     std::mutex cbMutex_;
 };
 } // namespace AudioStandard

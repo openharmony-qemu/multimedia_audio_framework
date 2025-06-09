@@ -21,12 +21,12 @@
 #include "cinttypes"
 
 static constexpr uint32_t DEFAULT_EFFECT_RATE = 48000;
-
+static constexpr uint32_t FRAME_LEN_20MS = 20;
+static constexpr uint32_t MS_IN_SECOND = 1000;
+static constexpr uint32_t REASAMPLE_QUAILTY = 1;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-constexpr int REASAMPLE_QUAILTY = 1;
-
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
@@ -50,19 +50,21 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     // for now, work at float32le by default
     channelConverter_.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, true);
     AUDIO_INFO_LOG("node id %{public}d, sessionid %{public}d, "
-        "input: bitformat %{public}d, sample rate %{public}d, channels %{public}d,"
-        "channelLayout %{public}" PRIu64 ", output: bitformat %{public}d, sample rate %{public}d,"
+        "input: bitformat %{public}d, frameLen %{public}d, sample rate %{public}d, channels %{public}d,"
+        "channelLayout %{public}" PRIu64 ", output: bitformat %{public}d, frameLen %{public}d, sample rate %{public}d,"
         "channels %{public}d, channelLayout %{public}" PRIu64 "", GetNodeId(), GetSessionId(),
-        preNodeInfo.format, preNodeInfo.samplingRate, inChannelInfo.numChannels,
-        inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.samplingRate,
+        preNodeInfo.format, preNodeInfo.frameLen, preNodeInfo.samplingRate, inChannelInfo.numChannels,
+        inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.frameLen, nodeInfo.samplingRate,
         outChannelInfo.numChannels, outChannelInfo.channelLayout);
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeConverterNodeInput_id_" + std::to_string(GetSessionId()) +
+        "HpaeConverterNodeInput_sessionId_" + std::to_string(GetSessionId()) +
+        + "_nodeId_" + std::to_string(GetNodeId()) +
         "_ch_" + std::to_string(preNodeInfo_.channels) + "_rate_" +
         std::to_string(preNodeInfo_.samplingRate) + "_" + GetTime() + ".pcm");
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
+        + "_nodeId_" + std::to_string(GetNodeId()) +
         "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
         std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
 #endif
@@ -88,6 +90,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
         AUDIO_WARNING_LOG("error inputs size is not eqaul to 1, SessionId:%{public}d", GetSessionId());
     }
     CHECK_AND_RETURN_RET_LOG(resampler_, &silenceData_, "NodeId %{public}d resampler_ is nullptr", GetNodeId());
+
     // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
     CheckAndUpdateInfo(inputs[0]);
     // pass valid tag to next node
@@ -144,14 +147,15 @@ int32_t HpaeAudioFormatConverterNode::ConverterProcess(float *srcData, float *ds
     if ((inChannelInfo.numChannels == outChannelInfo.numChannels) && (inRate == outRate)) {
         ret = memcpy_s(dstData, outputFrameBytes, srcData, inputFrameBytes);
     } else if (inChannelInfo.numChannels == outChannelInfo.numChannels) {
-        ret = resampler_->Process(srcData, &inputFrameLen, dstData, &outputFrameLen);
+        ret = resampler_->Process(srcData, inputFrameLen, dstData, outputFrameLen);
     } else if (inRate == outRate) {
+        // for 11025, input output rate cannot be the same now
         ret = channelConverter_.Process(inputFrameLen, srcData, (*input).Size(), dstData, converterOutput_.Size());
     } else if (inChannelInfo.numChannels > outChannelInfo.numChannels) { // convert, then resample
         ret = channelConverter_.Process(inputFrameLen, srcData, (*input).Size(), tmpData, tmpOutBuf_.Size());
-        ret += resampler_->Process(tmpData, &inputFrameLen, dstData, &outputFrameLen);
+        ret += resampler_->Process(tmpData, inputFrameLen, dstData, outputFrameLen);
     } else { // output channels larger than input channels, resample, then convert
-        ret = resampler_->Process(srcData, &inputFrameLen, tmpData, &outputFrameLen);
+        ret = resampler_->Process(srcData, inputFrameLen, tmpData, outputFrameLen);
         ret += channelConverter_.Process(outputFrameLen, tmpData, tmpOutBuf_.Size(), dstData, converterOutput_.Size());
     }
     return ret;
@@ -258,6 +262,11 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
         resampler_->UpdateRates(sampleRate, resampler_->GetOutRate());
         isInfoUpdated = true;
     }
+    // special case for 11025, frameLen is 441, 0, 441, 0... alternating
+    // do not influence isInfoUpdated flag, which is used for update tmp data length
+    if (preNodeInfo_.samplingRate == SAMPLE_RATE_11025) {
+        preNodeInfo_.frameLen = input->GetFrameLen();
+    }
     return isInfoUpdated;
 }
 
@@ -294,6 +303,11 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
     outPcmBufferInfo.rate = resampler_->GetOutRate();
     outPcmBufferInfo.frameLen = preNodeInfo_.frameLen * resampler_->GetOutRate() / resampler_->GetInRate();
     outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
+
+    if (preNodeInfo_.samplingRate == SAMPLE_RATE_11025) {
+        // for 11025, fix out frameLen based on output sample rate and fixed frameLen 20ms
+        outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MS_IN_SECOND;
+    }
 
     AUDIO_INFO_LOG("NodeId %{public}d: output or input format info is changed, update tmp PCM buffer info!",
         GetNodeId());

@@ -142,19 +142,24 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
     for (auto pipe : curPipeList_) {
-        if (pipe->streamDescriptors_.empty() && IsSpecialPipe(pipe->routeFlag_)) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "Pipe is nullptr");
+        if (pipe->streamDescriptors_.empty() && IsSpecialPipe(pipe)) {
             newList.push_back(pipe);
         }
     }
     return newList;
 }
 
-bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
+bool AudioPipeManager::IsSpecialPipe(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
-    AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "Pipe info is null");
+    uint32_t routeFlag = pipeInfo->routeFlag_;
+    AUDIO_INFO_LOG("Flag %{public}u, pipe adapter name: %{public}s", routeFlag, pipeInfo->adapterName_.c_str());
     if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD)) {
+        (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
+        (pipeInfo->adapterName_ == PRIMARY_CLASS && routeFlag == AUDIO_INPUT_FLAG_NORMAL) ||
+        (pipeInfo->adapterName_ == USB_CLASS && routeFlag == AUDIO_INPUT_FLAG_NORMAL)) {
         return true;
     }
     return false;
@@ -394,9 +399,22 @@ void AudioPipeManager::RemoveModemCommunicationId(uint32_t sessionId)
     }
 }
 
+std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetModemCommunicationStreamDescById(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    if (modemCommunicationIdMap_.find(sessionId) != modemCommunicationIdMap_.end()) {
+        AUDIO_INFO_LOG("Get %{public}u success", sessionId);
+        return modemCommunicationIdMap_[sessionId];
+    } else {
+        AUDIO_WARNING_LOG("Cannot find id %{public}u", sessionId);
+        return nullptr;
+    }
+}
+
 std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetModemCommunicationMap()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    AUDIO_INFO_LOG("map size %{public}zu", modemCommunicationIdMap_.size());
     return modemCommunicationIdMap_;
 }
 

@@ -814,6 +814,7 @@ bool BluetoothAudioRenderSink::IsValidState(void)
 
 int32_t BluetoothAudioRenderSink::PrepareMmapBuffer(void)
 {
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     uint32_t totalBufferInMs = 40; // 40: 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency
     uint32_t reqBufferFrameSize = totalBufferInMs * (attr_.sampleRate / SECOND_TO_MILLISECOND);
     struct AudioMmapBufferDescriptor desc = {0};

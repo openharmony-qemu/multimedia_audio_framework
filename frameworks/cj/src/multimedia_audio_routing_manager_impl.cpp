@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #include "multimedia_audio_routing_manager_impl.h"
-#include "cj_lambda.h"
+
 #include "audio_policy_log.h"
+#include "cj_lambda.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 
@@ -52,15 +53,14 @@ int32_t MMAAudioRoutingManagerImpl::SetCommunicationDevice(int32_t deviceType, b
     return SUCCESS_CODE;
 }
 
-CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetDevices(int32_t flags, int32_t *errorCode)
+CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetDevices(int32_t flags, int32_t* errorCode)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
         audioMgr_->GetDevices(static_cast<DeviceFlag>(flags));
     if (deviceDescriptors.empty()) {
-        *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor arr{};
+    CArrDeviceDescriptor arr {};
     Convert2CArrDeviceDescriptor(arr, deviceDescriptors, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(arr);
@@ -69,17 +69,32 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetDevices(int32_t flags, int32
     return arr;
 }
 
-CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredInputDeviceForCapturerInfo(CAudioCapturerInfo cInfo,
-    int32_t *errorCode)
+CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetAvailableDevices(uint32_t deviceUsage, int32_t* errorCode)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors{};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
+        routingMgr_->GetAvailableDevices(static_cast<AudioDeviceUsage>(deviceUsage));
+    CArrDeviceDescriptor arr {};
+    if (deviceDescriptors.empty()) {
+        return arr;
+    }
+    Convert2CArrDeviceDescriptor(arr, deviceDescriptors, errorCode);
+    if (*errorCode != SUCCESS_CODE) {
+        FreeCArrDeviceDescriptor(arr);
+        return CArrDeviceDescriptor();
+    }
+    return arr;
+}
+
+CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredInputDeviceForCapturerInfo(
+    CAudioCapturerInfo cInfo, int32_t* errorCode)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors {};
     AudioCapturerInfo capturerInfo(static_cast<SourceType>(cInfo.source), cInfo.capturerFlags);
     routingMgr_->GetPreferredInputDeviceForCapturerInfo(capturerInfo, outDeviceDescriptors);
     if (outDeviceDescriptors.empty()) {
-        *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor arr{};
+    CArrDeviceDescriptor arr {};
     Convert2CArrDeviceDescriptor(arr, outDeviceDescriptors, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(arr);
@@ -88,19 +103,18 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredInputDeviceForCaptu
     return arr;
 }
 
-CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredOutputDeviceForRendererInfo(CAudioRendererInfo cInfo,
-    int32_t *errorCode)
+CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredOutputDeviceForRendererInfo(
+    CAudioRendererInfo cInfo, int32_t* errorCode)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors{};
-    AudioRendererInfo rendererInfo{};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors {};
+    AudioRendererInfo rendererInfo {};
     rendererInfo.streamUsage = static_cast<StreamUsage>(cInfo.usage);
     rendererInfo.rendererFlags = cInfo.rendererFlags;
     routingMgr_->GetPreferredOutputDeviceForRendererInfo(rendererInfo, outDeviceDescriptors);
     if (outDeviceDescriptors.empty()) {
-        *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor arr{};
+    CArrDeviceDescriptor arr {};
     Convert2CArrDeviceDescriptor(arr, outDeviceDescriptors, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(arr);
@@ -109,8 +123,8 @@ CArrDeviceDescriptor MMAAudioRoutingManagerImpl::GetPreferredOutputDeviceForRend
     return arr;
 }
 
-void MMAAudioRoutingManagerImpl::RegisterCallback(int32_t callbackType, uint32_t deviceUsage,
-    void (*callback)(), int32_t *errorCode)
+void MMAAudioRoutingManagerImpl::RegisterCallback(
+    int32_t callbackType, uint32_t deviceUsage, void (*callback)(), int32_t* errorCode)
 {
     if (callbackType == AudioRoutingManagerCallbackType::AVAILABLE_DEVICE_CHANGE) {
         auto func = CJLambda::Create(reinterpret_cast<void (*)(CDeviceChangeAction)>(callback));
@@ -125,8 +139,8 @@ void MMAAudioRoutingManagerImpl::RegisterCallback(int32_t callbackType, uint32_t
     }
 }
 
-void MMAAudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(int32_t callbackType, void (*callback)(),
-    CAudioCapturerInfo info, int32_t *errorCode)
+void MMAAudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(
+    int32_t callbackType, void (*callback)(), CAudioCapturerInfo info, int32_t* errorCode)
 {
     if (callbackType == AudioRoutingManagerCallbackType::INPUT_DEVICE_CHANGE_FOR_CAPTURER_INFO) {
         auto func = CJLambda::Create(reinterpret_cast<void (*)(CArrDeviceDescriptor)>(callback));
@@ -141,8 +155,8 @@ void MMAAudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(int3
     }
 }
 
-void MMAAudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(int32_t callbackType, void (*callback)(),
-    CAudioRendererInfo info, int32_t *errorCode)
+void MMAAudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(
+    int32_t callbackType, void (*callback)(), CAudioRendererInfo info, int32_t* errorCode)
 {
     if (callbackType == AudioRoutingManagerCallbackType::OUTPUT_DEVICE_CHANGE_FOR_RENDERER_INFO) {
         auto func = CJLambda::Create(reinterpret_cast<void (*)(CArrDeviceDescriptor)>(callback));
@@ -151,7 +165,7 @@ void MMAAudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(int
             *errorCode = CJ_ERR_SYSTEM;
             return;
         }
-        AudioRendererInfo rendererInfo{};
+        AudioRendererInfo rendererInfo {};
         rendererInfo.streamUsage = static_cast<StreamUsage>(info.usage);
         rendererInfo.rendererFlags = info.rendererFlags;
         preferredOutputDeviceChangeCallBack_->RegisterFunc(func);
@@ -159,8 +173,8 @@ void MMAAudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(int
     }
 }
 
-void MMAAudioRoutingManagerImpl::RegisterDeviceChangeCallback(int32_t callbackType, void (*callback)(), int32_t flags,
-    int32_t *errorCode)
+void MMAAudioRoutingManagerImpl::RegisterDeviceChangeCallback(
+    int32_t callbackType, void (*callback)(), int32_t flags, int32_t* errorCode)
 {
     if (callbackType == AudioRoutingManagerCallbackType::DEVICE_CHANGE) {
         auto func = CJLambda::Create(reinterpret_cast<void (*)(CDeviceChangeAction)>(callback));

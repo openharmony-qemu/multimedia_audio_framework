@@ -25,7 +25,7 @@ public:
     CjAudioCapturerCallback() = default;
     virtual ~CjAudioCapturerCallback() = default;
 
-    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnInterrupt(const InterruptEvent& interruptEvent) override;
 
     void OnStateChange(const CapturerState state) override;
 
@@ -34,8 +34,8 @@ public:
     void RegisterStateChangeFunc(std::function<void(int32_t)> cjCallback);
 
 private:
-    std::function<void(CInterruptEvent)> interruptEventfunc_{};
-    std::function<void(int32_t)> stateChangefunc_{};
+    std::function<void(CInterruptEvent)> interruptEventfunc_ {};
+    std::function<void(int32_t)> stateChangefunc_ {};
     std::mutex cbMutex_;
 };
 
@@ -45,10 +45,10 @@ public:
     virtual ~CjCapturerPositionCallback() = default;
     void RegisterFunc(std::function<void(int64_t)> cjCallback);
 
-    void OnMarkReached(const int64_t &framePosition) override;
+    void OnMarkReached(const int64_t& framePosition) override;
 
 private:
-    std::function<void(int64_t)> func_{};
+    std::function<void(int64_t)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -57,10 +57,10 @@ public:
     CjCapturerPeriodPositionCallback() = default;
     virtual ~CjCapturerPeriodPositionCallback() = default;
     void RegisterFunc(std::function<void(int64_t)> cjCallback);
-    void OnPeriodReached(const int64_t &frameNumber) override;
+    void OnPeriodReached(const int64_t& frameNumber) override;
 
 private:
-    std::function<void(int64_t)> func_{};
+    std::function<void(int64_t)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -73,8 +73,8 @@ public:
     void OnReadData(size_t length) override;
 
 private:
-    std::function<void(CArrUI8)> func_{};
-    std::shared_ptr<AudioCapturer> audioCapturer_{};
+    std::function<void(CArrUI8)> func_ {};
+    std::shared_ptr<AudioCapturer> audioCapturer_ {};
     std::mutex cbMutex_;
 };
 
@@ -85,10 +85,10 @@ public:
 
     void RegisterFunc(std::function<void(CAudioCapturerChangeInfo)> cjCallback);
 
-    void OnStateChange(const AudioCapturerChangeInfo &capturerChangeInfo) override;
+    void OnStateChange(const AudioCapturerChangeInfo& capturerChangeInfo) override;
 
 private:
-    std::function<void(CAudioCapturerChangeInfo)> func_{};
+    std::function<void(CAudioCapturerChangeInfo)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -99,10 +99,10 @@ public:
 
     void RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback);
 
-    void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override;
+    void OnStateChange(const AudioDeviceDescriptor& deviceInfo) override;
 
 private:
-    std::function<void(CArrDeviceDescriptor)> func_{};
+    std::function<void(CArrDeviceDescriptor)> func_ {};
     std::mutex cbMutex_;
 };
 } // namespace AudioStandard

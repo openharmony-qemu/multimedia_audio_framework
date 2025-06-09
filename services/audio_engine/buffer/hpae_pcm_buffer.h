@@ -274,8 +274,8 @@ private:
     std::atomic<size_t> curFrames_;
     std::vector<HpaePcmProcess> pcmProcessVec_;
     PcmBufferInfo pcmBufferInfo_;
-    HpaeSourceBufferType sourceBufferType_;
-    HpaeSplitStreamType splitStreamType_;
+    HpaeSourceBufferType sourceBufferType_ = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
+    HpaeSplitStreamType splitStreamType_ = STREAM_TYPE_DEFAULT;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

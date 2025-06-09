@@ -92,6 +92,7 @@ const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL"
 const std::string CALLER_NAME = "audio_server";
 const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
+const std::string HIVIEWCARE_PERMISSION = "ohos.permission.ACCESS_HIVIEWCARE";
 
 constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_MCU = 7500;
@@ -4141,6 +4142,30 @@ bool AudioPolicyServer::GetStreamMuteByUsage(StreamUsage streamUsage)
 int32_t AudioPolicyServer::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
 {
     return audioPolicyService_.SetCallbackStreamUsageInfo(streamUsages);
+}
+
+int32_t AudioPolicyServer::ForceStopAudioStream(StopAudioType audioType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioType >= STOP_ALL && audioType <= STOP_RECORD,
+        ERR_INVALID_PARAM, "Invalid audioType");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    // root user case for auto test
+    CHECK_AND_RETURN_RET_LOG(static_cast<uid_t>(IPCSkeleton::GetCallingUid()) == ROOT_UID,
+        ERR_PERMISSION_DENIED, "not root user");
+#else
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(HIVIEWCARE_PERMISSION,
+        IPCSkeleton::GetCallingTokenID()), ERR_PERMISSION_DENIED, "not hiviewcare");
+#endif
+    AUDIO_INFO_LOG("stop audio stream, type:%{public}d", audioType);
+    return audioPolicyService_.ForceStopAudioStream(audioType);
+}
+
+bool AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, false, "interruptService_ is nullptr");
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    return interruptService_->IsCapturerFocusAvailable(zoneId, capturerInfo);
 }
 
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)

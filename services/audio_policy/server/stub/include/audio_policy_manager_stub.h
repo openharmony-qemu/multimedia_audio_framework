@@ -232,6 +232,8 @@ private:
     void NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void ResetAllProxyInternal(MessageParcel &data, MessageParcel &reply);
     void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void ForceStopAudioStreamInternal(MessageParcel &data, MessageParcel &reply);
+    void IsCapturerFocusAvailableInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);

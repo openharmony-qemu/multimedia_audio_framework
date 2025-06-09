@@ -295,7 +295,7 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
 
 int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(uint32_t &channels, uint64_t &channelLayout)
 {
-    return AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType_, channels, channelLayout);
+    return AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(sceneType_, channels, channelLayout);
 }
 
 bool HpaeRenderEffectNode::IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer)

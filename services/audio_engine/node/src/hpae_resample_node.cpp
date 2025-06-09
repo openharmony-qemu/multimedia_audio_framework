@@ -117,7 +117,7 @@ HpaePcmBuffer *HpaeResampleNode::SignalProcess(const std::vector<HpaePcmBuffer *
 
 void HpaeResampleNode::ResampleProcess(float *srcData, uint32_t inputFrameLen, float *dstData, uint32_t outputFrameLen)
 {
-    resampler_->Process(srcData, &inputFrameLen, dstData, &outputFrameLen);
+    resampler_->Process(srcData, inputFrameLen, dstData, outputFrameLen);
     int32_t addZeroLen = GetFrameLen() - outputFrameLen > 0 ? GetFrameLen() - outputFrameLen : 0;
 
     if (preNodeInfo_.channels == GetChannelCount()) {

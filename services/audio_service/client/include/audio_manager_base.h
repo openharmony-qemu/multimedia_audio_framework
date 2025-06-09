@@ -521,6 +521,8 @@ public:
 
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
 
+    virtual int32_t ForceStopAudioStream(StopAudioType audioType) = 0;
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
      * set inner capture limit.
@@ -764,6 +766,7 @@ private:
     int HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply);
     int HandleSetSessionMuteState(MessageParcel &data, MessageParcel &reply);
     int HandleOnMuteStateChange(MessageParcel &data, MessageParcel &reply);
+    int HandleForceStopAudioStream(MessageParcel &data, MessageParcel &reply);
     int HandleRegisterDataTransferCallback(MessageParcel &data, MessageParcel &reply);
     int HandleRegisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply);
     int HandleUnregisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply);

@@ -14,6 +14,7 @@
  */
 
 #include "multimedia_audio_renderer_callback.h"
+
 #include "multimedia_audio_common.h"
 
 namespace OHOS {
@@ -23,7 +24,7 @@ void CjRendererPositionCallback::RegisterFunc(std::function<void(int64_t)> cjCal
     func_ = cjCallback;
 }
 
-void CjRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
+void CjRendererPositionCallback::OnMarkReached(const int64_t& framePosition)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ != nullptr) {
@@ -36,7 +37,7 @@ void CjRendererPeriodPositionCallback::RegisterFunc(std::function<void(int64_t)>
     func_ = cjCallback;
 }
 
-void CjRendererPeriodPositionCallback::OnPeriodReached(const int64_t &frameNumber)
+void CjRendererPeriodPositionCallback::OnPeriodReached(const int64_t& frameNumber)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ != nullptr) {
@@ -49,14 +50,14 @@ void CjAudioRendererOutputDeviceChangeCallback::RegisterFunc(std::function<void(
     func_ = cjCallback;
 }
 
-void CjAudioRendererOutputDeviceChangeCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
-    const AudioStreamDeviceChangeReason reason)
+void CjAudioRendererOutputDeviceChangeCallback::OnOutputDeviceChange(
+    const AudioDeviceDescriptor& deviceInfo, const AudioStreamDeviceChangeReason reason)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ == nullptr) {
         return;
     }
-    CArrDeviceDescriptor arr{};
+    CArrDeviceDescriptor arr {};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
@@ -73,15 +74,15 @@ void CjAudioRendererOutputDeviceChangeWithInfoCallback::RegisterFunc(
     func_ = cjCallback;
 }
 
-void CjAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
-    const AudioStreamDeviceChangeReason reason)
+void CjAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(
+    const AudioDeviceDescriptor& deviceInfo, const AudioStreamDeviceChangeReason reason)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ == nullptr) {
         return;
     }
-    CAudioStreamDeviceChangeInfo info{};
-    CArrDeviceDescriptor arr{};
+    CAudioStreamDeviceChangeInfo info {};
+    CArrDeviceDescriptor arr {};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
@@ -94,8 +95,8 @@ void CjAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(con
     FreeCArrDeviceDescriptor(arr);
 }
 
-void CjAudioRendererWriteCallback::RegisterFunc(std::function<int32_t(CArrUI8)> cjCallback,
-    std::shared_ptr<AudioRenderer> audioRenderer)
+void CjAudioRendererWriteCallback::RegisterFunc(
+    std::function<int32_t(CArrUI8)> cjCallback, std::shared_ptr<AudioRenderer> audioRenderer)
 {
     func_ = cjCallback;
     audioRenderer_ = audioRenderer;
@@ -107,8 +108,8 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
     if (func_ == nullptr) {
         return;
     }
-    CArrUI8 arr{};
-    BufferDesc buf{};
+    CArrUI8 arr {};
+    BufferDesc buf {};
     audioRenderer_->GetBufferDesc(buf);
     if (buf.buffer == nullptr) {
         return;
@@ -118,7 +119,7 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(uint8_t) * MAX_MEM_MALLOC_SIZE)) {
         return;
     }
-    arr.head = static_cast<uint8_t *>(malloc(mallocSize));
+    arr.head = static_cast<uint8_t*>(malloc(mallocSize));
     if (arr.head == nullptr) {
         return;
     }
@@ -145,21 +146,21 @@ void CjAudioRendererCallback::RegisterInterruptFunc(std::function<void(CInterrup
     interruptCallback_ = cjCallback;
 }
 
-void CjAudioRendererCallback::OnInterrupt(const InterruptEvent &interruptEvent)
+void CjAudioRendererCallback::OnInterrupt(const InterruptEvent& interruptEvent)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (interruptCallback_ == nullptr) {
         return;
     }
-    CInterruptEvent event{};
+    CInterruptEvent event {};
     event.eventType = static_cast<int32_t>(interruptEvent.eventType);
     event.forceType = static_cast<int32_t>(interruptEvent.forceType);
     event.hintType = static_cast<int32_t>(interruptEvent.hintType);
     interruptCallback_(event);
 }
 
-void CjAudioRendererCallback::OnStateChange(const RendererState state,
-    const StateChangeCmdType __attribute__((unused)) cmdType)
+void CjAudioRendererCallback::OnStateChange(
+    const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (stateChangeCallback_ == nullptr) {

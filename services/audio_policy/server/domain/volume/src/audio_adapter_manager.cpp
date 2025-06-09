@@ -1334,6 +1334,10 @@ void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(" split_mode=");
         args.append(audioModuleInfo.extra);
     }
+    if (audioModuleInfo.needEmptyChunk) {
+        args.append(" need_empty_chunk");
+        args.append(std::to_string(*audioModuleInfo.needEmptyChunk));
+    }
 }
 
 void UpdateEcAndMicRefArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)

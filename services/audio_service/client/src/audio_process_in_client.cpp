@@ -140,6 +140,8 @@ public:
 
     int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
 
+    bool GetStopFlag() const override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -1908,6 +1910,12 @@ int32_t AudioProcessInClientInner::RegisterThreadPriority(pid_t tid, const std::
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
     return processProxy_->RegisterThreadPriority(tid, bundleName, method);
+}
+
+bool AudioProcessInClientInner::GetStopFlag() const
+{
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
+    return audioBuffer_->GetStopFlag();
 }
 } // namespace AudioStandard
 } // namespace OHOS

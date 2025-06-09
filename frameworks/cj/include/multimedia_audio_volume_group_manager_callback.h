@@ -26,10 +26,10 @@ public:
     CjAudioRingerModeCallback() = default;
     virtual ~CjAudioRingerModeCallback() = default;
     void RegisterFunc(std::function<void(int32_t)> cjCallback);
-    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
+    void OnRingerModeUpdated(const AudioRingerMode& ringerMode) override;
 
 private:
-    std::function<void(int32_t)> func_{};
+    std::function<void(int32_t)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -38,10 +38,10 @@ public:
     CjAudioManagerMicStateChangeCallback() = default;
     virtual ~CjAudioManagerMicStateChangeCallback() = default;
     void RegisterFunc(std::function<void(CMicStateChangeEvent)> cjCallback);
-    void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
+    void OnMicStateUpdated(const MicStateChangeEvent& micStateChangeEvent) override;
 
 private:
-    std::function<void(CMicStateChangeEvent)> func_{};
+    std::function<void(CMicStateChangeEvent)> func_ {};
     std::mutex cbMutex_;
 };
 } // namespace AudioStandard

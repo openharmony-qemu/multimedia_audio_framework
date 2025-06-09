@@ -903,6 +903,17 @@ enum AudioMode {
     AUDIO_MODE_RECORD
 };
 
+enum StopAudioType {
+    STOP_ALL,
+    STOP_RENDER,
+    STOP_RECORD
+};
+
+enum RecordErrorCode {
+    RECORD_ERROR_GET_FOCUS_FAIL = 0,
+    RECORD_ERROR_NO_FOCUS_CFG = 1,
+};
+
 // LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
 // LEGACY_MUTE_CAP: Called from hap build with api >= 12, will cap mute data.
 // MODERN_INNER_CAP: Called from SA with inner-cap right, work with filter.

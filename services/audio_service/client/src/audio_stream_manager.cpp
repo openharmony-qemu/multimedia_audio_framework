@@ -275,5 +275,15 @@ bool AudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     return AudioPolicyManager::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
 }
+
+int32_t AudioStreamManager::ForceStopAudioStream(StopAudioType audioType)
+{
+    return AudioPolicyManager::GetInstance().ForceStopAudioStream(audioType);
+}
+
+bool AudioStreamManager::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+{
+    return AudioPolicyManager::GetInstance().IsCapturerFocusAvailable(capturerInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

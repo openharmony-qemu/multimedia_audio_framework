@@ -25,7 +25,7 @@ namespace HPAE {
 
 class HpaePolicyManager {
 public:
-    HpaePolicyManager();
+    static HpaePolicyManager &GetInstance();
     ~HpaePolicyManager();
     // interfaces for render effect
     void InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,
@@ -70,6 +70,9 @@ public:
         const std::string &condition);
     void SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition, const std::string &value);
+
+private:
+    HpaePolicyManager();
 };
 
 } // namespace HPAE

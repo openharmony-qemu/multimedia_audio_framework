@@ -104,6 +104,7 @@
     *ApplyAudioEnhanceChainDefault*;
     *SendInitCommand*;
     *CheckProcessClusterInstances*;
+    *QueryEffectChannelInfo*;
   local:
     *;
 };
