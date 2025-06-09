@@ -57,7 +57,6 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
         AudioPolicyUtils::GetInstance().SetScoExcluded(false);
-        Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
 #endif
     }
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
