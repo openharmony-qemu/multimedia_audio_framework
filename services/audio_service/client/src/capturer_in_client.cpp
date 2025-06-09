@@ -66,7 +66,6 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
-const float ERROR_VOLUME = -0.1f;
 }
 
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
@@ -82,7 +81,6 @@ public:
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
-    void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
@@ -92,7 +90,6 @@ public:
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     void GetAudioPipeType(AudioPipeType &pipeType) override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
-    bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     int32_t GetBufferSize(size_t &bufferSize) override;
     int32_t GetFrameCount(uint32_t &frameCount) override;
@@ -101,15 +98,14 @@ public:
     float GetVolume() override;
     int32_t SetVolume(float volume) override;
     int32_t SetDuckVolume(float volume) override;
-    float GetDuckVolume() override;
     int32_t SetMute(bool mute) override;
-    bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
     int32_t SetSpeed(float speed) override;
-    int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
+        int32_t &outBufferSize) override;
 
     // callback mode api
     AudioRenderMode GetRenderMode() override;
@@ -217,7 +213,6 @@ public:
     bool GetHighResolutionEnabled() override;
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
-    FastStatus GetFastStatus() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     void SetSwitchingStatus(bool isSwitching) override;
     void GetRestoreInfo(RestoreInfo &restoreInfo) override;
@@ -226,10 +221,6 @@ public:
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
     void FetchDeviceForSplitStream() override;
 
-    void SetCallStartByUserTid(pid_t tid) override;
-    void SetCallbackLoopTid(int32_t tid) override;
-    int32_t GetCallbackLoopTid() override;
-    bool GetStopFlag() const override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -258,8 +249,7 @@ private:
     int32_t HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer, bool isBlockingRead);
     int32_t RegisterCapturerInClientPolicyServerDiedCb();
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
-    void ResetCallbackLoopTid();
-    bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -282,9 +272,6 @@ private:
     // callback mode
     AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;
     std::thread callbackLoop_; // thread for callback to client and write.
-    int32_t callbackLoopTid_ = -1;
-    std::mutex callbackLoopTidMutex_;
-    std::condition_variable callbackLoopTidCv_;
     std::atomic<bool> cbThreadReleased_ = true;
     std::mutex readCbMutex_; // lock for change or use callback
     std::condition_variable cbThreadCv_;
@@ -432,6 +419,26 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     notifiedOperation_ = operation;
     notifiedResult_ = result;
 
+    if (notifiedResult_ == SUCCESS) {
+        std::unique_lock<std::mutex> lock(streamCbMutex_);
+        std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+        switch (operation) {
+            case START_STREAM :
+                state_ = RUNNING;
+                break;
+            case PAUSE_STREAM :
+                state_ = PAUSED;
+                break;
+            case STOP_STREAM :
+                state_ = STOPPED;
+            default :
+                break;
+        }
+        if (streamCb != nullptr) {
+            streamCb->OnStateChange(state_, CMD_FROM_SYSTEM);
+        }
+    }
+
     callServerCV_.notify_all();
     return SUCCESS;
 }
@@ -463,11 +470,6 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 {
     AUDIO_WARNING_LOG("SetRendererInfo is not supported");
     return;
-}
-
-void CapturerInClientInner::GetRendererInfo(AudioRendererInfo &rendererInfo)
-{
-    AUDIO_WARNING_LOG("GetRendererInfo is not supported");
 }
 
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -881,8 +883,7 @@ State CapturerInClientInner::GetState()
     return state_;
 }
 
-bool CapturerInClientInner::GetAudioTimeInner(
-    Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency)
+bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
@@ -898,41 +899,14 @@ bool CapturerInClientInner::GetAudioTimeInner(
     }
 
     int64_t deltaPos = writePos >= currentReadPos ? static_cast<int64_t>(writePos - currentReadPos) : 0;
+    int64_t tempLatency = 25000000; // 25000000 -> 25 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND /
         static_cast<int64_t>(streamParams_.samplingRate) * AUDIO_US_PER_S;
-    handleTime = handleTime + deltaTime + latency;
+
+    handleTime = handleTime + deltaTime + tempLatency;
 
     timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
-
-    return true;
-}
-
-bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
-{
-    int64_t tempLatency = 25000000; // 25000000 -> 25 ms
-    return GetAudioTimeInner(timestamp, base, tempLatency);
-}
-
-bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
-{
-    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
-    CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "invalid buffer status");
-
-    if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        return GetAudioTimeInner(timestamp, base, 0);
-    }
-
-    uint64_t writePos = 0;
-    uint64_t writeTimeStamp = 0;
-    clientBuffer_->GetTimeStampInfo(writePos, writeTimeStamp);
-    CHECK_AND_RETURN_RET_LOG(writeTimeStamp != 0, false, "writeTimeStamp is zero");
-    AUDIO_DEBUG_LOG("pos:%{public}" PRIu64 " ts:%{public}" PRIu64, writePos, writeTimeStamp);
-
-    timestamp.framePosition = writePos;
-    timestamp.time.tv_sec = static_cast<time_t>(writeTimeStamp / AUDIO_NS_PER_SECOND);
-    timestamp.time.tv_nsec = static_cast<time_t>(writeTimeStamp % AUDIO_NS_PER_SECOND);
 
     return true;
 }
@@ -998,22 +972,10 @@ int32_t CapturerInClientInner::SetMute(bool mute)
     return ERROR;
 }
 
-bool CapturerInClientInner::GetMute()
-{
-    AUDIO_WARNING_LOG("only for renderer");
-    return false;
-}
-
 int32_t CapturerInClientInner::SetDuckVolume(float volume)
 {
     AUDIO_WARNING_LOG("only for renderer");
     return ERROR;
-}
-
-float CapturerInClientInner::GetDuckVolume()
-{
-    AUDIO_WARNING_LOG("only for renderer");
-    return ERROR_VOLUME;
 }
 
 int32_t CapturerInClientInner::SetSpeed(float speed)
@@ -1022,16 +984,11 @@ int32_t CapturerInClientInner::SetSpeed(float speed)
     return ERROR;
 }
 
-int32_t CapturerInClientInner::SetPitch(float pitch)
+int32_t CapturerInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
+    int32_t &outBufferSize)
 {
-    AUDIO_ERR_LOG("SetPitch is not supported");
+    AUDIO_ERR_LOG("ChangeSpeed is not supported");
     return ERROR;
-}
-
-float CapturerInClientInner::GetSpeed()
-{
-    AUDIO_ERR_LOG("GetSpeed is not supported");
-    return 1.0;
 }
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
