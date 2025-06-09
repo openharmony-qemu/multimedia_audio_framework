@@ -1268,6 +1268,10 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
     AUDIO_INFO_LOG("release effect chain for scene type: %{public}s", sceneType.c_str());
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
+    sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
+    if (sceneTypeToSpecialEffectSet_.erase(sceneType) > 0) {
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->InitEffectChain();
+    }
     if (!isDefaultEffectChainExisted_) {
         return ERROR;
     }
@@ -1277,6 +1281,7 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
         if (defaultEffectChainCount_ <= 1) {
             defaultEffectChainCount_= 0;
             isDefaultEffectChainExisted_ = false;
+            sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
             AUDIO_INFO_LOG("default effect chain will be released");
             return SUCCESS;
         } else {
@@ -1543,6 +1548,10 @@ int32_t AudioEffectChainManager::NotifyAndCreateAudioEffectChain(const std::stri
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr &&
         sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
+        if (defaultEffectChainCreated_ == true) {
+            sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] =
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+        }
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 1;
         AUDIO_INFO_LOG("Reusing existing sceneTypeAndDeviceKey [%{public}s]", sceneTypeAndDeviceKey.c_str());
         cv_.notify_all();
@@ -1635,9 +1644,11 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamicInner(const std::
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     if (!sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
+        (sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) ||
         (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0)) {
         sceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
+        AUDIO_WARNING_LOG("scene type %{public}s has null effect chain", sceneTypeAndDeviceKey.c_str());
         return SUCCESS;
     } else if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] > 1) {
@@ -1651,11 +1662,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamicInner(const std::
             sceneType.c_str(), sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
         return SUCCESS;
     }
-
-    sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
-    sceneTypeToSpecialEffectSet_.erase(sceneType);
     int32_t ret = CheckAndReleaseCommonEffectChain(sceneType);
-    sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->InitEffectChain();
     std::thread([this, sceneType, sceneTypeAndDeviceKey, defaultSceneTypeAndDeviceKey, ret]() {
         WaitAndReleaseEffectChain(sceneType, sceneTypeAndDeviceKey, defaultSceneTypeAndDeviceKey, ret);
     }).detach();
