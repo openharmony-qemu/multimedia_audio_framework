@@ -38,16 +38,20 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_10MS = 2;
-const int32_t TENMS_PER_SEC = 100;
+const int32_t FRAME_LEN_20MS = 20;
+const int32_t FRAME_LEN_40MS = 40;
+const int32_t MS_PER_SEC = 1000;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = FRAME_LEN_10MS * (processConfig.streamInfo.samplingRate / TENMS_PER_SEC);
+    spanSizeInFrame_ = FRAME_LEN_20MS * processConfig.streamInfo.samplingRate / MS_PER_SEC;
+    if (processConfig.streamInfo.samplingRate == SAMPLE_RATE_11025) {
+        spanSizeInFrame_ = FRAME_LEN_40MS * processConfig.streamInfo.samplingRate / MS_PER_SEC;
+    }
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
-        static_cast<size_t>((processConfig.streamInfo.format)));
+        static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
     isCallbackMode_ = isCallbackMode;
     isMoveAble_ = isMoveAble;
@@ -249,7 +253,7 @@ int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)
 
 int32_t HpaeRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 {
-    AUDIO_INFO_LOG("SetAudioEffectMode: %d", effectMode);
+    AUDIO_INFO_LOG("SetAudioEffectMode: %{public}d", effectMode);
     int32_t ret = IHpaeManager::GetHpaeManager().SetAudioEffectMode(processConfig_.originalSessionId, effectMode);
     if (ret != 0) {
         AUDIO_ERR_LOG("SetAudioEffectMode is error");
@@ -267,7 +271,7 @@ int32_t HpaeRendererStreamImpl::GetAudioEffectMode(int32_t &effectMode)
 
 int32_t HpaeRendererStreamImpl::SetPrivacyType(int32_t privacyType)
 {
-    AUDIO_DEBUG_LOG("SetInnerCapturerState: %d", privacyType);
+    AUDIO_DEBUG_LOG("SetInnerCapturerState: %{public}d", privacyType);
     privacyType_ = privacyType;
     return SUCCESS;
 }

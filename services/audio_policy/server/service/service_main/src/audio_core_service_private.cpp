@@ -43,6 +43,7 @@ static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
+static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const int64_t MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US = 100000; // 100ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 400000; // 400ms
@@ -90,12 +91,46 @@ std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
     return out;
 }
 
+void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
+{
+    bool needUpdateActiveDevice = true;
+    bool isUpdateActiveDevice = false;
+    for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
+        //  if streamDesc select bluetooth or headset, active it
+        if (!HandleOutputStreamInRunning(streamDesc, reason)) {
+            continue;
+        }
+        int32_t outputRet = ActivateOutputDevice(streamDesc);
+        CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
+
+        // update current output device
+        if (needUpdateActiveDevice) {
+            isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
+                reason);
+            needUpdateActiveDevice = !isUpdateActiveDevice;
+        }
+
+        // started stream need to mute when switch device
+        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+            MuteSinkPortForSwitchDevice(streamDesc, reason);
+        }
+    }
+    
+    if (isUpdateActiveDevice) {
+        AUDIO_INFO_LOG("active device updated, update volume");
+        AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
+        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
+        OnPreferredOutputDeviceUpdated(audioDeviceDescriptor);
+    }
+}
+
 int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu output streams", streamDescs.size());
+    UpdateActiveDeviceAndVolumeBeforeMoveSession(streamDescs, reason);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
-
     AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
@@ -910,7 +945,6 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(streamDesc->callerPid_,
             streamDesc->sessionId_, callbackDesc, reason);
     }
-    MuteSinkForSwitchGeneralDevice(streamDesc, reason);
 
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(newDeviceDesc->deviceType_);
 
@@ -1528,19 +1562,20 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
     Trace trace("AudioCoreService::HandleScoOutputDeviceFetched");
 #ifdef BLUETOOTH_ENABLE
     std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
-    int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
-        desc->exceptionFlag_ = true;
-        audioDeviceManager_.UpdateDevicesListInfo(
-            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-        FetchOutputDeviceAndRoute(reason);
-        return ERROR;
-    }
-    if ((desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) &&
-        streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-        Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
-        return SUCCESS;
+    if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+        int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
+            desc->exceptionFlag_ = true;
+            audioDeviceManager_.UpdateDevicesListInfo(
+                std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
+            FetchOutputDeviceAndRoute(reason);
+            return ERROR;
+        }
+        if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) {
+            Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
+            return SUCCESS;
+        }
     }
 #endif
     AUDIO_INFO_LOG("out");
@@ -1932,6 +1967,10 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer run over.");
         isRingDualToneOnPrimarySpeaker_ = false;
+        // Add delay between end of double ringtone and device switch.
+        // After the ringtone ends, there may still be residual audio data in the pipeline.
+        // Switching the device immediately can cause pop noise due the undrained buffers.
+        usleep(RING_DUAL_END_DELAY_US);
         FetchOutputDeviceAndRoute();
         for (std::pair<AudioStreamType, StreamUsage> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
             audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
@@ -2181,7 +2220,6 @@ bool AudioCoreService::HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDe
         !Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage)) {
         return false;
     }
-    MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
     return true;
 }
 

@@ -19,6 +19,7 @@
 #include "hpae_sink_input_node.h"
 #include "hpae_resample_node.h"
 #include "hpae_sink_output_node.h"
+#include "hpae_source_input_node.h"
 #include <fstream>
 #include <streambuf>
 #include <string>
@@ -74,6 +75,39 @@ TEST_F(HpaeResampleNodeTest, constructHpaeResampleNode)
     EXPECT_EQ(retNi.format, dstNodeInfo.format);
 }
 
+TEST_F(HpaeResampleNodeTest, testReset)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeNodeInfo dstNodeInfo;
+    dstNodeInfo.nodeId = TEST_ID2;
+    dstNodeInfo.frameLen = TEST_FRAMELEN1;
+    dstNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    dstNodeInfo.channels = CHANNEL_4;
+    dstNodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeResampleNode> hpaeResampleNode =
+        std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo, ResamplerType::PRORESAMPLER);
+    std::shared_ptr<HpaeResampleNode> hpaeResampleNode2 =
+        std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo, (ResamplerType)0xff);
+    EXPECT_EQ(hpaeResampleNode->GetSampleRate(), dstNodeInfo.samplingRate);
+    EXPECT_EQ(hpaeResampleNode->GetNodeId(), dstNodeInfo.nodeId);
+    EXPECT_EQ(hpaeResampleNode->GetFrameLen(), dstNodeInfo.frameLen);
+    EXPECT_EQ(hpaeResampleNode->GetChannelCount(), dstNodeInfo.channels);
+    EXPECT_EQ(hpaeResampleNode->GetBitWidth(), dstNodeInfo.format);
+    HpaeNodeInfo &retNi = hpaeResampleNode->GetNodeInfo();
+    EXPECT_EQ(retNi.samplingRate, dstNodeInfo.samplingRate);
+    EXPECT_EQ(retNi.nodeId, dstNodeInfo.nodeId);
+    EXPECT_EQ(retNi.frameLen, dstNodeInfo.frameLen);
+    EXPECT_EQ(retNi.channels, dstNodeInfo.channels);
+    EXPECT_EQ(retNi.format, dstNodeInfo.format);
+    EXPECT_EQ(hpaeResampleNode->Reset(), true);
+    EXPECT_EQ(hpaeResampleNode2->Reset(), false);
+}
+
 TEST_F(HpaeResampleNodeTest, testHpaeReampleNodeProcess)
 {
     HpaeNodeInfo srcNodeInfo;
@@ -90,5 +124,85 @@ TEST_F(HpaeResampleNodeTest, testHpaeReampleNodeProcess)
     dstNodeInfo.channels = CHANNEL_4;
     dstNodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeResampleNode> hpaeResampleNode = std::make_shared<HpaeResampleNode>(srcNodeInfo, dstNodeInfo);
+}
+
+TEST_F(HpaeResampleNodeTest, testSignalProcess_001)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeNodeInfo dstNodeInfo;
+    dstNodeInfo.nodeId = TEST_ID2;
+    dstNodeInfo.frameLen = TEST_FRAMELEN1;
+    dstNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    dstNodeInfo.channels = MONO;
+    dstNodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeResampleNode> hpaeResampleNode = std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo);
+
+    std::vector<HpaePcmBuffer *> inputs;
+    EXPECT_EQ(hpaeResampleNode->SignalProcess(inputs), nullptr);
+    PcmBufferInfo pcmBufferInfo(MONO, TEST_FRAMELEN1, SAMPLE_RATE_44100);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    inputs.emplace_back(&hpaePcmBuffer);
+    EXPECT_NE(hpaeResampleNode->SignalProcess(inputs), nullptr);
+    inputs.emplace_back(&hpaePcmBuffer);
+    EXPECT_NE(hpaeResampleNode->SignalProcess(inputs), nullptr);
+}
+
+TEST_F(HpaeResampleNodeTest, testSignalProcess_002)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = MONO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeNodeInfo dstNodeInfo;
+    dstNodeInfo.nodeId = TEST_ID2;
+    dstNodeInfo.frameLen = TEST_FRAMELEN1;
+    dstNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    dstNodeInfo.channels = MONO;
+    dstNodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeResampleNode> hpaeResampleNode =
+        std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo, (ResamplerType)0xff);
+
+    std::vector<HpaePcmBuffer *> inputs;
+    PcmBufferInfo pcmBufferInfo(MONO, TEST_FRAMELEN1, SAMPLE_RATE_44100);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    inputs.emplace_back(&hpaePcmBuffer);
+    EXPECT_NE(hpaeResampleNode->SignalProcess(inputs), nullptr);
+
+    std::shared_ptr<HpaeResampleNode> hpaeResampleNode2 =
+        std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo);
+    EXPECT_NE(hpaeResampleNode2->SignalProcess(inputs), nullptr);
+}
+
+TEST_F(HpaeResampleNodeTest, testConnectWithInfo)
+{
+    HpaeNodeInfo srcNodeInfo;
+    srcNodeInfo.nodeId = TEST_ID;
+    srcNodeInfo.frameLen = TEST_FRAMELEN1;
+    srcNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    srcNodeInfo.channels = STEREO;
+    srcNodeInfo.format = SAMPLE_S32LE;
+    std::shared_ptr<HpaeSourceInputNode> hpaeInputNode = std::make_shared<HpaeSourceInputNode>(srcNodeInfo);
+    HpaeNodeInfo dstNodeInfo;
+    dstNodeInfo.nodeId = TEST_ID;
+    dstNodeInfo.frameLen = TEST_FRAMELEN2;
+    dstNodeInfo.samplingRate = SAMPLE_RATE_32000;
+    dstNodeInfo.channels = CHANNEL_4;
+    dstNodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeResampleNode> hpaeResampleNode = std::make_shared<HpaeResampleNode>(srcNodeInfo, dstNodeInfo);
+    EXPECT_EQ(hpaeResampleNode->GetSampleRate(), dstNodeInfo.samplingRate);
+    EXPECT_EQ(hpaeResampleNode->GetNodeId(), dstNodeInfo.nodeId);
+    EXPECT_EQ(hpaeResampleNode->GetFrameLen(), dstNodeInfo.frameLen);
+    EXPECT_EQ(hpaeResampleNode->GetChannelCount(), dstNodeInfo.channels);
+    EXPECT_EQ(hpaeResampleNode->GetBitWidth(), dstNodeInfo.format);
+
+    hpaeResampleNode->ConnectWithInfo(hpaeInputNode, srcNodeInfo);
+    hpaeResampleNode->DisConnectWithInfo(hpaeInputNode, srcNodeInfo);
 }
 } // namespace

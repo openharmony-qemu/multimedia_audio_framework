@@ -29,13 +29,22 @@ constexpr int32_t OFFSET = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
+const int32_t NUM_2 = 2;
 const int32_t LIMITSIZE = 4;
 const int32_t SHIFT_LEFT_8 = 8;
 const int32_t SHIFT_LEFT_16 = 16;
 const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_MIN = 0;
+const int32_t AUDIO_DISTRIBUTED_SERVICE_ID = 3001;
+const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
 const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
 typedef void (*TestPtr)(const uint8_t *, size_t);
+
+const vector<std::string> g_testKeys = {
+    "PCM_DUMP",
+    "live_effect",
+    "test",
+};
 
 template<class T>
 uint32_t GetArrLength(T& arr)
@@ -80,6 +89,12 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
         sptr<AudioPolicyManagerListenerStub> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
         sptr<IRemoteObject> object = focusListenerStub->AsObject();
         AudioServerPtr->SetParameterCallback(object);
+        return;
+    }
+    if (code == static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE)) {
+        AsrAecMode asrAecMode = (static_cast<AsrAecMode>(0));
+        AudioServerPtr->SetAsrAecMode(asrAecMode);
+        AudioServerPtr->OnRemoteRequest(code, data, reply, option);
         return;
     }
     AudioServerPtr->OnRemoteRequest(code, data, reply, option);
@@ -659,10 +674,151 @@ void AudioServerAudioWorkgroupStopGroupTest(const uint8_t *rawData, size_t size)
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::STOP_AUDIOWORKGROUP),
         data, reply, option);
 }
+
+void AudioServerDumpTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    vector<std::u16string> gTestDumpArges = {
+        u"-fb",
+        u"test",
+        u"test2",
+        u"test3",
+    };
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    std::vector<std::u16string> args(gTestDumpArges.begin(), gTestDumpArges.begin() +
+        (static_cast<uint32_t>(size) % gTestDumpArges.size()));
+    int32_t fd = static_cast<int32_t>(size);
+
+    audioServerPtr->Dump(fd, args);
+}
+
+void AudioServerGetUsbParameterTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->GetUsbParameter("address=card2;device=0 role=1");
+}
+
+void AudioServerOnAddSystemAbilityTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    vector<int32_t> gTestSystemAbilityId = {
+        0,
+        AUDIO_POLICY_SERVICE_ID,
+        AUDIO_DISTRIBUTED_SERVICE_ID,
+    };
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+
+    uint32_t id = static_cast<uint32_t>(size) % gTestSystemAbilityId.size();
+    std::string deviceId = "0";
+
+    audioServerPtr->OnAddSystemAbility(gTestSystemAbilityId[id], deviceId);
+}
+
+void AudioServerSetExtraParametersTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    std::vector<std::pair<std::string, std::string>> kvpairs;
+    uint32_t id = static_cast<uint32_t>(size) % g_testKeys.size();
+    std::string key = g_testKeys[id];
+    std::pair<std::string, std::string> kvpair = std::make_pair(g_testKeys[id], g_testKeys[id]);
+    kvpairs.push_back(kvpair);
+    audioServerPtr->CacheExtraParameters(key, kvpairs);
+    audioServerPtr->ParseAudioParameter();
+}
+
+void AudioServerSetA2dpAudioParameterTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    vector<std::string> gTestAudioParameterKeys = {
+        "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG",
+        "A2dpSuspended",
+        "AUDIO_EXT_PARAM_KEY_LOWPOWER",
+        "bt_headset_nrec",
+        "bt_wbs",
+        "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG",
+        "mmi",
+        "perf_info",
+    };
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t id = static_cast<uint32_t>(size) % gTestAudioParameterKeys.size();
+    audioServerPtr->SetAudioParameter(gTestAudioParameterKeys[id], "");
+}
+
+void AudioServerGetExtraParametersTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t id = static_cast<uint32_t>(size) % g_testKeys.size();
+    bool isAudioParameterParsed = static_cast<uint32_t>(size) % NUM_2;
+    audioServerPtr->isAudioParameterParsed_.store(isAudioParameterParsed);
+    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<std::string> subKeys;
+    audioServerPtr->GetExtraParameters(g_testKeys[id], subKeys, result);
+}
+
+void AudioServerGetDPParameterTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    vector<std::string> tetsNetworkId = {
+        "LocalDevice",
+        "TestNetwork",
+    };
+    vector<AudioParamKey> audioParamKey {
+        NONE,
+        VOLUME,
+        INTERRUPT,
+        PARAM_KEY_STATE,
+        A2DP_SUSPEND_STATE,
+        BT_HEADSET_NREC,
+        BT_WBS,
+        A2DP_OFFLOAD_STATE,
+        GET_DP_DEVICE_INFO,
+        GET_PENCIL_INFO,
+        GET_UWB_INFO,
+        USB_DEVICE,
+        PERF_INFO,
+        MMI,
+        PARAM_KEY_LOWPOWER,
+    };
+    uint32_t id = static_cast<uint32_t>(size) % audioParamKey.size();
+    AudioParamKey key = static_cast<AudioParamKey>(audioParamKey[id]);
+    id = static_cast<uint32_t>(size) % tetsNetworkId.size();
+    audioServerPtr->GetAudioParameter(tetsNetworkId[id], key, "");
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
 OHOS::AudioStandard::TestPtr g_testPtrs[] = {
+    OHOS::AudioStandard::AudioServerDumpTest,
+    OHOS::AudioStandard::AudioServerGetUsbParameterTest,
+    OHOS::AudioStandard::AudioServerOnAddSystemAbilityTest,
+    OHOS::AudioStandard::AudioServerSetExtraParametersTest,
+    OHOS::AudioStandard::AudioServerSetA2dpAudioParameterTest,
+    OHOS::AudioStandard::AudioServerGetExtraParametersTest,
+    OHOS::AudioStandard::AudioServerGetDPParameterTest,
     OHOS::AudioStandard::AudioServerFuzzTest,
     OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
     OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest,

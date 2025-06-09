@@ -25,7 +25,6 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr float SLOW_PLAY_1_8_SPEED = 0.125f;
-static constexpr float SLOW_PLAY_1_8_VOL = 0.0625f;
 
 AudioSpeed::AudioSpeed(size_t rate, size_t format, size_t channels):rate_(rate), format_(format), channels_(channels)
 {
@@ -108,12 +107,6 @@ int32_t AudioSpeed::SetSpeed(float speed)
     AUDIO_INFO_LOG("SetSpeed %{public}f", speed);
     speed_ = speed;
     sonicSetSpeed(sonicStream_, speed_);
-    // Lower the volume to avoid noise at 0.125x speed
-    if (isEqual(speed, SLOW_PLAY_1_8_SPEED)) {
-        sonicSetVolume(sonicStream_, SLOW_PLAY_1_8_VOL);
-    } else {
-        sonicSetVolume(sonicStream_, SPEED_NORMAL);
-    }
     return SUCCESS;
 }
 
@@ -121,7 +114,22 @@ int32_t AudioSpeed::SetPitch(float pitch)
 {
     AUDIO_INFO_LOG("SetPitch %{public}f", pitch);
     sonicSetPitch(sonicStream_, pitch);
+    sonicSetRate(sonicStream_, 1.0f);
     return SUCCESS;
+}
+
+float AudioSpeed::GetPitchForSpeed(float speed)
+{
+    float noPitchPoint = 0.5f;
+    float pitch = SPEED_NORMAL;
+    if (speed > noPitchPoint) {
+        pitch = SPEED_NORMAL;
+    } else {
+        pitch = (speed - SLOW_PLAY_1_8_SPEED) * (SPEED_NORMAL - SLOW_PLAY_1_8_SPEED) /
+            (noPitchPoint - SLOW_PLAY_1_8_SPEED) + SLOW_PLAY_1_8_SPEED;
+    }
+    AUDIO_INFO_LOG("final pitch is %{public}f for speed %{public}f", pitch, speed);
+    return pitch;
 }
 
 float AudioSpeed::GetSpeed()
