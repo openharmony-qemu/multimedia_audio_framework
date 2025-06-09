@@ -1031,6 +1031,39 @@ HWTEST_F(AudioPipeManagerUnitTest, RemoveModemCommunicationId_002, TestSize.Leve
 }
 
 /**
+ * @tc.name: GetModemCommunicationStreamDescById_001
+ * @tc.desc: Test GetModemCommunicationStreamDescById when sessionId is within the valid range.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetModemCommunicationStreamDescById_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t sessionId = 100000;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
+    auto streamDescRet = audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
+    EXPECT_EQ(streamDescRet != nullptr, true);
+}
+
+/**
+ * @tc.name: GetModemCommunicationStreamDescById_002
+ * @tc.desc: Test GetModemCommunicationStreamDescById when sessionId is without the valid range.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetModemCommunicationStreamDescById_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t sessionId = 100000;
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    auto streamDescRet = audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
+    EXPECT_EQ(streamDescRet == nullptr, true);
+}
+
+/**
  * @tc.name: GetNormalSourceInfo_001
  * @tc.desc: Test GetNormalSourceInfo when isEcFeatureEnable is true.
  * @tc.type: FUNC

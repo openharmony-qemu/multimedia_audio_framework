@@ -1941,8 +1941,9 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
+        bool isRemoved = true;
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetStreamDescById(
-            streamChangeInfo.audioRendererChangeInfo.sessionId));
+            streamChangeInfo.audioRendererChangeInfo.sessionId), isRemoved);
         FetchOutputDeviceAndRoute();
     }
 
@@ -2336,7 +2337,8 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERROR,
-            "Nearlink device activation failed, macAddress: %{public}s", deviceDesc->macAddress_.c_str());
+            "Nearlink device activation failed, macAddress: %{public}s",
+                GetEncryptAddr(deviceDesc->macAddress_).c_str());
     }
     return SUCCESS;
 }

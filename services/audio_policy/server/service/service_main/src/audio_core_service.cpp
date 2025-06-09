@@ -435,6 +435,9 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
+        bool isRemoved = true;
+        sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetModemCommunicationStreamDescById(sessionId),
+            isRemoved);
         pipeManager_->RemoveModemCommunicationId(sessionId);
         return SUCCESS;
     }
