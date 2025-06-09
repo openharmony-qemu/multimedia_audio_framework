@@ -305,14 +305,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     ret = InitAudioStream(audioStreamParams);
     // When the fast stream creation fails, a normal stream is created
     if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
-        AUDIO_INFO_LOG("Create fast Stream fail, record by normal stream");
-        streamClass = IAudioStream::PA_STREAM;
-        audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_, appInfo_.appUid);
-        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Get normal record stream failed");
-        ret = InitAudioStream(audioStreamParams);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init normal audio stream failed");
-        audioStream_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
-        callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+        ret = HandleCreateFastStreamError(audioStreamParams);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
@@ -363,6 +356,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     streamDesc->callerPid_ = static_cast<int32_t>(getpid());
+    streamDesc->sessionId_ = audioStreamParams.originalSessionId;
     return streamDesc;
 }
 
@@ -1517,6 +1511,12 @@ bool AudioCapturerPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
 bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo,
     CapturerState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
+        streamDesc, flag, switchInfo.params.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateCapturerClient failed");
+
     bool switchResult = false;
     std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
@@ -1528,6 +1528,11 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     int32_t initResult = SetSwitchInfo(switchInfo, newAudioStream);
     if (initResult != SUCCESS && switchInfo.capturerInfo.originalFlag != AUDIO_FLAG_NORMAL) {
         AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
+        streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
+        int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
+            streamDesc, flag, switchInfo.params.originalSessionId);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
+
         newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, switchInfo.params,
             switchInfo.eStreamType, appInfo_.appUid);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
@@ -1607,13 +1612,6 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Stop old stream, get stream info and frames written for new stream, and release old stream.
     switchResult = FinishOldStream(targetClass, restoreInfo, previousState, switchInfo);
     CHECK_AND_RETURN_RET_LOG(switchResult, false, "Finish old stream failed");
-
-    // Create stream and pipe
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
-    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
-    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
-        streamDesc, flag, switchInfo.params.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
 
     // Create and start new stream.
     switchResult = GenerateNewStream(targetClass, restoreInfo, previousState, switchInfo);
@@ -2060,6 +2058,29 @@ int32_t AudioCapturerPrivate::CheckAndStopAudioCapturer(std::string callingFunc)
     }
     Stop();
     return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::HandleCreateFastStreamError(AudioStreamParams &audioStreamParams)
+{
+    AUDIO_INFO_LOG("Create fast Stream fail, record by normal stream");
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
+
+    // Create stream desc and pipe
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag,
+        audioStreamParams.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
+    AUDIO_INFO_LOG("Create normal capturer, id: %{public}u", audioStreamParams.originalSessionId);
+
+    audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_, appInfo_.appUid);
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Get normal record stream failed");
+    ret = InitAudioStream(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init normal audio stream failed");
+    audioStream_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+    return ret;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -610,17 +610,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     ret = InitAudioStream(audioStreamParams);
     // When the fast stream creation fails, a normal stream is created
     if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
-        AUDIO_INFO_LOG("Create fast Stream fail, play by normal stream.");
-        streamClass = IAudioStream::PA_STREAM;
-        isFastRenderer_ = false;
-        audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
-            appInfo_.appUid);
-        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr,
-            ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed when create normal stream.");
-        ret = InitAudioStream(audioStreamParams);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
-        audioStream_->SetRenderMode(RENDER_MODE_CALLBACK);
-        callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+        ret = HandleCreateFastStreamError(audioStreamParams, audioStreamType);
     }
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioStreamInfo Failed");
@@ -684,6 +674,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     streamDesc->callerPid_ = static_cast<int32_t>(getpid());
+    streamDesc->sessionId_ = audioStreamParams.originalSessionId;
     return streamDesc;
 }
 
@@ -2087,6 +2078,12 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
 bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo,
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
+        streamDesc, flag, switchInfo.params.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
+
     bool switchResult = false;
     std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     // create new IAudioStream
@@ -2100,6 +2097,11 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     switchResult = SetSwitchInfo(switchInfo, newAudioStream);
     if (!switchResult && switchInfo.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
         AUDIO_ERR_LOG("Re-create stream failed, create normal ipc stream");
+        streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
+        int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
+            switchInfo.params.originalSessionId);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
+
         newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, switchInfo.params,
             switchInfo.eStreamType, appInfo_.appUid);
         targetClass = IAudioStream::PA_STREAM;
@@ -2187,13 +2189,6 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Stop old stream, get stream info and frames written for new stream, and release old stream.
     switchResult = FinishOldStream(targetClass, restoreInfo, previousState, switchInfo);
     CHECK_AND_RETURN_RET_LOG(switchResult, false, "Finish old stream failed");
-
-    // Create stream and pipe
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
-        streamDesc, flag, switchInfo.params.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
 
     // Create and start new stream.
     switchResult = GenerateNewStream(targetClass, restoreInfo, previousState, switchInfo);
@@ -2760,6 +2755,31 @@ int32_t AudioRendererPrivate::CheckAndStopAudioRenderer(std::string callingFunc)
     }
     Stop();
     return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &audioStreamParams,
+    AudioStreamType audioStreamType)
+{
+    AUDIO_INFO_LOG("Create fast Stream fail, play by normal stream.");
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    isFastRenderer_ = false;
+    rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
+
+    // Create stream desc and pipe
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
+        audioStreamParams.originalSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
+    AUDIO_INFO_LOG("Create normal renderer, id: %{public}u", audioStreamParams.originalSessionId);
+
+    audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType, appInfo_.appUid);
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Re-create normal stream failed.");
+    ret = InitAudioStream(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
+    audioStream_->SetRenderMode(RENDER_MODE_CALLBACK);
+    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+    return ret;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
