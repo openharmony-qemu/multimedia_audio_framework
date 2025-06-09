@@ -234,6 +234,7 @@ private:
     int32_t InitCacheBuffer(size_t targetSize);
     int32_t InitSharedBuffer();
     int32_t FlushRingCache();
+    int32_t FlushCbBuffer();
 
     void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
 
@@ -1472,6 +1473,7 @@ bool CapturerInClientInner::StopAudioStream()
 
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         state_ = STOPPING;
+        readDataCV_.notify_all();
         AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     }
 
@@ -1562,7 +1564,8 @@ bool CapturerInClientInner::FlushAudioStream()
         AUDIO_ERR_LOG("Flush failed. Illegal state:%{public}u", state_.load());
         return false;
     }
-    CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");
+    CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush ringCache failed");
+    CHECK_AND_RETURN_RET_LOG(FlushCbBuffer() == SUCCESS, false, "Flush cbBuffer failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
@@ -1590,6 +1593,18 @@ bool CapturerInClientInner::FlushAudioStream()
 int32_t CapturerInClientInner::FlushRingCache()
 {
     ringCache_->ResetBuffer();
+    return SUCCESS;
+}
+
+int32_t CapturerInClientInner::FlushCbBuffer()
+{
+    Trace trace("CapturerInClientInner::FlushCbBuffer");
+    if (cbBuffer_ != nullptr && capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        std::lock_guard<std::mutex> lock(cbBufferMutex_);
+        int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
+        AUDIO_INFO_LOG("Flush cbBuffer_ for sessionId:%{public}d uid:%{public}d, ret:%{public}d",
+            sessionId_, clientUid_, ret);
+    }
     return SUCCESS;
 }
 
