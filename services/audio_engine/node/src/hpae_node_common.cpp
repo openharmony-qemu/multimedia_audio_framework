@@ -158,11 +158,8 @@ void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationE
             AUDIO_INFO_LOG("collaboration enabled, effectScene from %{public}d, sceneType changed to %{public}d",
                 nodeInfo.effectInfo.lastEffectScene, nodeInfo.sceneType);
         }
-    } else if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
-        nodeInfo.effectInfo.effectScene = nodeInfo.effectInfo.lastEffectScene;
-        nodeInfo.sceneType = TransEffectSceneToSceneType(nodeInfo.effectInfo.effectScene);
-        AUDIO_INFO_LOG("collaboration disabled, effectScene changed to %{public}d, sceneType changed to %{public}d",
-            nodeInfo.effectInfo.effectScene, nodeInfo.sceneType);
+    } else {
+        RecoverNodeInfoForCollaboration(nodeInfo);
     }
 }
 
@@ -385,6 +382,16 @@ std::string TransFormatFromEnumToString(AudioSampleFormat format)
     CHECK_AND_RETURN_RET_LOG(g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(),
         "", "error param format");
     return g_formatFromParserEnumToStr[format];
+}
+
+void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo)
+{
+    if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
+        nodeInfo.effectInfo.effectScene = nodeInfo.effectInfo.lastEffectScene;
+        nodeInfo.sceneType = TransEffectSceneToSceneType(nodeInfo.effectInfo.effectScene);
+        AUDIO_INFO_LOG("collaboration disabled, effectScene changed to %{public}d, sceneType changed to %{public}d",
+            nodeInfo.effectInfo.effectScene, nodeInfo.sceneType);
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -501,6 +501,12 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
         // todo: do fade out
     }
     DeleteInputSession(sessionId);
+    // for collaboration
+    if (isCollaborationEnabled_) {
+        HpaeNodeInfo nodeInfo = inputNode->GetNodeInfo();
+        RecoverNodeInfoForCollaboration(nodeInfo);
+        inputNode->SetNodeInfo(nodeInfo);
+    }
     std::string name = sinkName;
     TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
 }
@@ -1166,6 +1172,13 @@ int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
     return SUCCESS;
 }
 
+std::string HpaeRendererManager::GetDeviceHDFDumpInfo()
+{
+    std::string config;
+    TransDeviceInfoToString(sinkInfo_, config);
+    return config;
+}
+
 int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode)
 {
     auto request = [this, coBufferNode]() {
@@ -1207,13 +1220,6 @@ void HpaeRendererManager::HandleCollaborationStateChangedInner(HpaeProcessorType
         AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionID);
         AddSingleNodeToSink(sinkInputNodeMap_[sessionID], false);
     }
-}
-
-std::string HpaeRendererManager::GetDeviceHDFDumpInfo()
-{
-    std::string config;
-    TransDeviceInfoToString(sinkInfo_, config);
-    return config;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
