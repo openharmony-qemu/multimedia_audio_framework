@@ -36,9 +36,11 @@
     *ProcessCbProxy*;
     *GetCapturerBySessionID*;
     *GetCurrentRendererStreamCnt*;
+    *GetCurrentLoopbackStreamCnt*;
     *GetCreatedAudioStreamMostUid*;
     *GetAudioProcess*;
     *SetIncMaxRendererStreamCnt*;
+    *SetIncMaxLoopbackStreamCnt*;
     *GetIpcStream*;
     *SetActiveOutputDevice*;
     *GetActiveOutPutDevice*;

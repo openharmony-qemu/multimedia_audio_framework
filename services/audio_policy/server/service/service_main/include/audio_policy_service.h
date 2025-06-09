@@ -520,7 +520,10 @@ public:
     void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
         bool registrationResult);
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+
+    bool SetKaraokeParameters(const std::string &parameters);
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
 private:

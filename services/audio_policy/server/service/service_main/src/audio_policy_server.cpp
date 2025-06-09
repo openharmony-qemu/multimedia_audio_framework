@@ -4153,9 +4153,15 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioPolicyService_.TriggerFetchDevice();
 }
+
 bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     return audioPolicyService_.IsAcousticEchoCancelerSupported(sourceType);
+}
+
+bool AudioPolicyServer::SetKaraokeParameters(const std::string &parameters)
+{
+    return audioPolicyService_.SetKaraokeParameters(parameters);
 }
 
 int32_t AudioPolicyServer::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,

@@ -20,25 +20,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-enum AudioLoopbackMode {
-    /** The hardware mode of audio loopback.*/
-    HARDWARE = 0,
-};
 
-/**
- * Enumerates audio loopback status.
- * @since 20
- */
-enum AudioLoopbackStatus {
-    /** Audio loopback unavailable by the output or input device. For example, the device change.*/
-    UNAVAILABLE_DEVICE = -2,
-    /** Audio loopback unavailable by the audio scene. For example, the audio interrupt.*/
-    UNAVAILABLE_SCENE = -1,
-    /** Audio loopback available and idle.*/
-    AVAILABLE_IDLE = 0,
-    /** Audio loopback available and running.*/
-    AVAILABLE_RUNNING = 1,
-};
 
 class AudioLoopbackCallback {
 public:
@@ -50,7 +32,7 @@ public:
      * @param state Indicates updated state of the loopback.
      * For details, refer AudioLoopbackStatus enum.
      */
-    virtual void OnStateChange(const AudioLoopbackStatus state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
+    virtual void OnStatusChange(const AudioLoopbackStatus state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 };
 
 /**
@@ -67,18 +49,21 @@ public:
      * @return Returns shared pointer to the AudioLoopback object
      * @since 20
     */
-    static std::shared_ptr<AudioLoopback> CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo = AppInfo());
+    static std::shared_ptr<AudioLoopback> CreateAudioLoopback(AudioLoopbackMode mode,
+        const AppInfo &appInfo = AppInfo());
 
     virtual bool Enable(bool enable) = 0;
 
-    virtual AudioLoopbackStatus GetStatus() const = 0;
+    virtual AudioLoopbackStatus GetStatus() = 0;
 
     virtual void SetVolume(float volume) = 0;
 
     virtual int32_t SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback) = 0;
 
+    virtual int32_t RemoveAudioLoopbackCallback() = 0;
+
     virtual ~AudioLoopback();
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif
+#endif

@@ -457,6 +457,8 @@ public:
 
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 
+    bool SetKaraokeParameters(const std::string &parameters) override;
+
     int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
 
     int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) override;

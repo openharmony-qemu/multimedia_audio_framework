@@ -299,6 +299,7 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool SetKaraokeParameters(const std::string &parameters) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
