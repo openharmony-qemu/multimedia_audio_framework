@@ -152,6 +152,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioa2dpoffloadmanager_fuzzer:fuzztest",
     "fuzztest/audioadaptorbluetooth_fuzzer:fuzztest",
     "fuzztest/audiobluetoothmanager_fuzzer:fuzztest",
+    "fuzztest/audiocoreserviceentry_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceprivate_fuzzer:fuzztest",
     "fuzztest/audioeffect_fuzzer:fuzztest",
     "fuzztest/audioeffectchain_fuzzer:fuzztest",
@@ -187,6 +188,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioserviceserversrcenhance_fuzzer:fuzztest",
     "fuzztest/audiostream_fuzzer:fuzztest",
     "fuzztest/audioutils_fuzzer:fuzztest",
+    "fuzztest/audiovolumemanager_fuzzer:fuzztest",
   ]
 }
 
