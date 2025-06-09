@@ -28,6 +28,12 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
+HpaePolicyManager &HpaePolicyManager::GetInstance()
+{
+    static HpaePolicyManager hpaePolicyManager;
+    return hpaePolicyManager;
+}
+
 HpaePolicyManager::HpaePolicyManager()
 {
     AUDIO_DEBUG_LOG("Hpae policy manager created");
