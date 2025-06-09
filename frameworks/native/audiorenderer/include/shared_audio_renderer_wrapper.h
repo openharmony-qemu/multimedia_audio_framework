@@ -204,7 +204,7 @@ public:
     void SetFastStatusChangeCallback(
         const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback) override
     {
-        return ;
+        return;
     }
 
     int32_t SetBufferDuration(uint64_t bufferDuration) const override
@@ -421,9 +421,9 @@ public:
         return sharedAudioRenderer_->SetDefaultOutputDevice(deviceType);
     }
 
-    bool GetFastStatus() override
+    FastStatus GetFastStatus() override
     {
-        return false;
+        return FASTSTATUS_NORMAL;
     }
 
     bool Mute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override

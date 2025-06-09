@@ -359,11 +359,15 @@ bool AudioPolicyConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo
 bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
     std::shared_ptr<AdapterDeviceInfo> &deviceInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "deviceInfo is nullptr");
     if (deviceInfo->role_ != INPUT_DEVICE && deviceInfo->role_ != OUTPUT_DEVICE) {
         return false;
     }
 
     for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+        if (pipeIt.second == nullptr) {
+            continue;
+        }
         if ((pipeIt.second->supportFlags_ != AUDIO_INPUT_FLAG_FAST) &&
             (pipeIt.second->supportFlags_ != AUDIO_OUTPUT_FLAG_FAST)) {
             continue;

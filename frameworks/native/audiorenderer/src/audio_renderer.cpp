@@ -902,7 +902,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         interruptCbImpl->StartSwitch();
     }
 
-    bool bFlag = GetFastStatus();
+    FastStatus fastStatus = GetFastStatusInner();
     // Switch to target audio stream. Deactivate audio interrupt if switch failed.
     AUDIO_INFO_LOG("Before %{public}s, restore audiorenderer %{public}u", callingFunc.c_str(), sessionID_);
     if (!SwitchToTargetStream(targetClass, restoreInfo)) {
@@ -920,7 +920,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
             return ERR_OPERATION_FAILED;
         }
     } else {
-        FastStatusChangeCallback(bFlag);
+        FastStatusChangeCallback(fastStatus);
     }
 
     // Unblock interrupt callback.
@@ -2597,11 +2597,21 @@ int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)
     return currentStream->SetDefaultOutputDevice(deviceType);
 }
 
-bool AudioRendererPrivate::GetFastStatus()
+FastStatus AudioRendererPrivate::GetFastStatus()
 {
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, false, "audioStream_ is nullptr");
-    return currentStream->GetFastStatus();
+    std::unique_lock<std::shared_mutex> lock(rendererMutex_, std::defer_lock);
+    if (callbackLoopTid_ != gettid()) {
+        lock.lock();
+    }
+
+    return GetFastStatusInner();
+}
+
+FastStatus AudioRendererPrivate::GetFastStatusInner()
+{
+    // inner function. Must be called with AudioRendererPrivate::rendererMutex_ held.
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, FASTSTATUS_INVALID, "audioStream_ is nullptr");
+    return audioStream_->GetFastStatus();
 }
 
 // diffrence from GetAudioPosition only when set speed
@@ -2624,16 +2634,12 @@ int32_t AudioRendererPrivate::InitFormatUnsupportedErrorCallback()
     return SUCCESS;
 }
 
-void AudioRendererPrivate::FastStatusChangeCallback(bool flag)
+void AudioRendererPrivate::FastStatusChangeCallback(FastStatus status)
 {
-    bool bRet = GetFastStatus();
-
-    if (bRet != flag) {
-        AudioStreamFastStatus fastStatus = (bRet)
-            ? AudioStreamFastStatus::FASTSTATUS_FAST : AudioStreamFastStatus::FASTSTATUS_NORMAL;
-
+    FastStatus newStatus = GetFastStatusInner();
+    if (newStatus != status) {
         if (fastStatusChangeCallback_ != nullptr) {
-            fastStatusChangeCallback_->OnFastStatusChange(fastStatus);
+            fastStatusChangeCallback_->OnFastStatusChange(newStatus);
         }
     }
 }

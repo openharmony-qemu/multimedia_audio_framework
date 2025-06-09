@@ -197,7 +197,7 @@ public:
     bool RestoreAudioStream(bool needStoreState = true) override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
-    bool GetFastStatus() override;
+    FastStatus GetFastStatus() override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
 

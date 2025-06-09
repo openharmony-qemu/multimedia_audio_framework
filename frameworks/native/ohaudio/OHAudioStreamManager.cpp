@@ -21,8 +21,6 @@
 #include "OHAudioStreamManager.h"
 
 namespace {
-const int32_t SUCCESS = 0;
-
 const std::set<OH_AudioStream_SourceType> VALID_OH_SOURCE_TYPES = {
     AUDIOSTREAM_SOURCE_TYPE_MIC,
     AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION,
@@ -185,34 +183,13 @@ bool OHAudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType
 bool OHAudioStreamManager::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
 {
     CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
-    AudioRendererInfo rendererInfo = {};
-    rendererInfo.streamUsage = usage;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = {};
-
-    int32_t ret = AudioRoutingManager::GetInstance()->GetPreferredOutputDeviceForRendererInfo(rendererInfo, desc);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("call failed!");
-        return false;
-    }
-
-    return audioStreamManager_->IsFastStreamSupported(streamInfo, desc);
+    return audioStreamManager_->IsFastPlaybackSupported(streamInfo, usage);
 }
 
 bool OHAudioStreamManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
 {
     CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
-
-    AudioCapturerInfo capturerInfo = {};
-    capturerInfo.sourceType = source;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = {};
-
-    int32_t ret = AudioRoutingManager::GetInstance()->GetPreferredInputDeviceForCapturerInfo(capturerInfo, desc);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("call failed!");
-        return false;
-    }
-
-    return audioStreamManager_->IsFastStreamSupported(streamInfo, desc);
+    return audioStreamManager_->IsFastRecordingSupported(streamInfo, source);
 }
 } // namespace AudioStandard
 } // namespace OHOS
