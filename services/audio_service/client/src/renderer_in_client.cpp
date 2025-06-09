@@ -375,7 +375,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
         } else {
             if (sleepCount_++ == LOG_COUNT_LIMIT) {
                 sleepCount_ = 0;
-                AUDIO_WARNING_LOG("OnWriteData Process 1st or 500 times INVALID buffer");
+                AUDIO_WARNING_LOG("OnWriteData Process 1st or 200 times INVALID buffer");
             }
             usleep(WAIT_FOR_NEXT_CB);
         }
