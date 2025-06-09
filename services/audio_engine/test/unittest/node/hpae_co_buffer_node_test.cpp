@@ -40,7 +40,7 @@ HpaeNodeInfo GetTestNodeInfo()
     HpaeNodeInfo nodeInfo;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.format = SAMPLE_F32LE;
-    nodeInfo.channels = CHANNEL_STEREO;
+    nodeInfo.channels = STEREO;
     nodeInfo.frameLen = TEST_FRAME_LEN;
     nodeInfo.channelLayout = CH_LAYOUT_STEREO;
     return nodeInfo;
@@ -49,7 +49,7 @@ HpaeNodeInfo GetTestNodeInfo()
 int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
     for (int32_t i = 0; i < len / SAMPLE_F32LE; i++) {
-        EXPECT_EQ((float*)data + i, 0);
+        EXPECT_EQ(*((float*)data + i), 0);
     }
     return 0;
 }
@@ -103,13 +103,13 @@ TEST_F(HpaeCoBufferNodeUnitTest, Connect_001)
     EXPECT_NE(coBufferNode, nullptr);
     coBufferNode->Connect(sinkInputNode);
     HpaeNodeInfo &coNodeInfo = coBufferNode->GetNodeInfo();
-    EXPECT_EQ(nodeInfo.samplingRate, coNodeInfo.samplingRate);
-    EXPECT_EQ(nodeInfo.format, coNodeInfo.format);
-    EXPECT_EQ(nodeInfo.channels, coNodeInfo.channels);
-    EXPECT_EQ(nodeInfo.frameLen, coNodeInfo.frameLen);
+    EXPECT_EQ(sinkInputNodeInfo.samplingRate, coNodeInfo.samplingRate);
+    EXPECT_EQ(sinkInputNodeInfo.format, coNodeInfo.format);
+    EXPECT_EQ(sinkInputNodeInfo.channels, coNodeInfo.channels);
+    EXPECT_EQ(sinkInputNodeInfo.frameLen, coNodeInfo.frameLen);
     EXPECT_EQ(coBufferNode->GetPreOutNum(), 1);
     coBufferNode->DisConnect(sinkInputNode);
-    EXPECT_EQ(coBufferNode->GetPreOutNum(), 1);
+    EXPECT_EQ(coBufferNode->GetPreOutNum(), 0);
 }
 
 /**
@@ -126,16 +126,16 @@ TEST_F(HpaeCoBufferNodeUnitTest, Process_001)
     std::shared_ptr<HpaeSinkOutputNode> sinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
     sinkOutputNode->Connect(coBufferNode);
     PcmBufferInfo pcmBufferInfo;
-    pcmBufferInfo.ch = CHANNEL_STEREO;
-    pcmBufferInfo.frameLen = DEFAULT_FRAME_LEN;
+    pcmBufferInfo.ch = STEREO;
+    pcmBufferInfo.frameLen = TEST_FRAME_LEN;
     HpaePcmBuffer pcmBuffer(pcmBufferInfo);
     coBufferNode->Enqueue(&pcmBuffer);
     coBufferNode->Enqueue(&pcmBuffer);
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    EXPECT_EQ(sinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
     sinkOutputNode->DoProcess();
-    TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
+    TestRendererRenderFrame(sinkOutputNode->GetRenderFrameData(),
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
 }
 }

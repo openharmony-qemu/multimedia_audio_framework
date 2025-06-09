@@ -281,9 +281,10 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborationState_001)
     sinkInfo.format = SAMPLE_F32LE;
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
+    HpaeStreamInfo streamInfo;
     TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
     WaitForMsgProcessing(hpaeRendererManager);
     int32_t ret = hpaeRendererManager->UpdateCollaborationState(true);
@@ -311,13 +312,13 @@ TEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001)
     sinkInfo.format = SAMPLE_F32LE;
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     HpaeNodeInfo nodeInfo;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.format = SAMPLE_F32LE;
-    nodeInfo.channels = CHANNEL_STEREO;
+    nodeInfo.channels = STEREO;
     nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.channelLayout = CH_LAYOUT_STEREO;
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>(nodeInfo);

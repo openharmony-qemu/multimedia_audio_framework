@@ -22,8 +22,10 @@
 #include <vector>
 
 #include "audio_effect.h"
+#include "audio_errors.h"
 #include "audio_module_info.h"
 
+#define NOT_SUPPORT_RET { return ERR_NOT_SUPPORTED; }
 namespace OHOS {
 namespace AudioStandard {
 class AudioServiceAdapterCallback {
@@ -210,6 +212,12 @@ public:
     virtual int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
+    /**
+     * @brief Set collaborative service enabled
+     * 
+     * @return int32_t the result, only supports proaudio for now.
+     */
+    virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) NOT_SUPPORT_RET
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard
