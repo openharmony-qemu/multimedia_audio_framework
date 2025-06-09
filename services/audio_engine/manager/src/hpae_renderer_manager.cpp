@@ -1199,10 +1199,6 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
         CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr),
             "outputCluster or coBufferNode is nullptr");
         outputCluster_->DisConnect(coBufferNode);
-        if (outputCluster_->GetState() == STREAM_MANAGER_RUNNING) {
-            // todo check stop/pause
-            outputCluster_->Stop();
-        }
     };
     SendRequest(request);
     return SUCCESS;
