@@ -79,6 +79,7 @@ private:
     bool IsAudioLoopbackSupported();
     bool CheckDeviceSupport();
     bool SetKaraokeParameters();
+    void DisableLoopback();
 
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
