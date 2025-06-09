@@ -1136,7 +1136,7 @@ void HpaeManager::AddStreamToCollection(const HpaeStreamInfo &streamInfo, const 
         sinkInput.deviceSinkId = sinkNameSinkIdMap_[name];
         sinkInput.pid = streamInfo.pid;
         sinkInput.uid = streamInfo.uid;
-        sinkInput.startTime = ms.count();
+        sinkInput.startTime = static_cast<uint64_t>(ms.count());
         sinkInputs_[streamInfo.sessionId] = sinkInput;
     } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
         SourceOutput sourceOutputInfo;
@@ -1146,7 +1146,7 @@ void HpaeManager::AddStreamToCollection(const HpaeStreamInfo &streamInfo, const 
         sourceOutputInfo.deviceSourceId = sourceNameSourceIdMap_[name];
         sourceOutputInfo.pid = streamInfo.pid;
         sourceOutputInfo.uid = streamInfo.uid;
-        sourceOutputInfo.startTime = ms.count();
+        sourceOutputInfo.startTime = static_cast<uint64_t>(ms.count());
         sourceOutputs_[streamInfo.sessionId] = sourceOutputInfo;
     }
 }
