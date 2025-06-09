@@ -1652,19 +1652,6 @@ int32_t CapturerInClientInner::ResetCallbackBuffer()
     return SUCCESS;
 }
 
-int32_t CapturerInClientInner::Clear()
-{
-    Trace trace("CapturerInClientInner::Clear");
-    if (capturerMode_ != CAPTURE_MODE_CALLBACK) {
-        AUDIO_ERR_LOG("Not supported, mode is not callback.");
-        return ERR_INCORRECT_MODE;
-    }
-    std::lock_guard<std::mutex> lock(cbBufferMutex_);
-    int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "Clear buffer fail, ret %{public}d.", ret);
-    return SUCCESS;
-}
-
 bool CapturerInClientInner::DrainAudioStream(bool stopFlag)
 {
     AUDIO_ERR_LOG("Drain is not supported");
