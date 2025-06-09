@@ -1269,7 +1269,6 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
-    sceneTypeToSpecialEffectSet_.erase(sceneType);
     if (sceneTypeToSpecialEffectSet_.erase(sceneType) > 0) {
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->InitEffectChain();
     }
