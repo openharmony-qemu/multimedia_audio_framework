@@ -1641,7 +1641,7 @@ int32_t CapturerInClientInner::FlushRingCache()
 int32_t CapturerInClientInner::FlushCbBuffer()
 {
     Trace trace("CapturerInClientInner::FlushCbBuffer");
-    if (cbBufferSize_ != nullptr && capturerMode_ == CAPTURE_MODE_CALLBACK) {
+    if (cbBuffer_ != nullptr && capturerMode_ == CAPTURE_MODE_CALLBACK) {
         std::lock_guard<std::mutex> lock(cbBufferMutex_);
         int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
         AUDIO_INFO_LOG("Flush cbBuffer_ for sessionId:%{public}d uid:%{public}d, ret:%{public}d",
