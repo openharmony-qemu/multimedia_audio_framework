@@ -148,8 +148,9 @@ void GetUnusedPipeFuzzTest()
 void IsSpecialPipeFuzzTest()
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_FAST;
-    audioPipeManager->IsSpecialPipe(routeFlag);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    audioPipeManager->IsSpecialPipe(pipeInfo);
 }
 
 void GetPipeinfoByNameAndFlagFuzzTest()
