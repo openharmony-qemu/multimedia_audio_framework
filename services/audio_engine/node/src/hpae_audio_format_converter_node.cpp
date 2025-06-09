@@ -149,6 +149,7 @@ int32_t HpaeAudioFormatConverterNode::ConverterProcess(float *srcData, float *ds
     } else if (inChannelInfo.numChannels == outChannelInfo.numChannels) {
         ret = resampler_->Process(srcData, inputFrameLen, dstData, outputFrameLen);
     } else if (inRate == outRate) {
+        // for 11025, input output rate cannot be the same now
         ret = channelConverter_.Process(inputFrameLen, srcData, (*input).Size(), dstData, converterOutput_.Size());
     } else if (inChannelInfo.numChannels > outChannelInfo.numChannels) { // convert, then resample
         ret = channelConverter_.Process(inputFrameLen, srcData, (*input).Size(), tmpData, tmpOutBuf_.Size());
