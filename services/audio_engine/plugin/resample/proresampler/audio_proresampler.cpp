@@ -98,10 +98,12 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
         if (buf11025_.size() > 0) { // output second half of 11025 buffer
             ret += memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float),
                 buf11025_.data() + buf11025_.size(),  expectedOutFrameLen_ * channels_ * sizeof(float));
-            ret += memset_s(buf11025_.data(), buf11025_.capacity() * sizeof(float), 0,  buf11025_.capacity() * sizeof(float));
+            ret += memset_s(buf11025_.data(), buf11025_.capacity() * sizeof(float), 0,
+                buf11025_.capacity() * sizeof(float));
             buf11025_.resize(0);
         } else { // no data left in buffer, the only thing can be done is to return 0s
-            ret += memset_s(outBuffer, outFrameSize * channels_ * sizeof(float), 0, outFrameSize * channels_ * sizeof(float));
+            ret += memset_s(outBuffer, outFrameSize * channels_ * sizeof(float), 0,
+                outFrameSize * channels_ * sizeof(float));
         }
         return ret;
     }

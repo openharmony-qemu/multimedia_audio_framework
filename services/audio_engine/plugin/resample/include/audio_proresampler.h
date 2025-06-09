@@ -41,8 +41,10 @@ public:
     uint32_t GetChannels() const override;
     uint32_t GetQuality() const;
 private:
-    int32_t Process11025SampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer, uint32_t outFrameSize);
-    int32_t ProcessOtherSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer, uint32_t outFrameSize);
+    int32_t Process11025SampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
+        uint32_t outFrameSize);
+    int32_t ProcessOtherSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
+        uint32_t outFrameSize);
     std::string ErrCodeToString(int32_t errCode);
     std::vector<float> buf11025_;
     uint32_t inRate_;
