@@ -273,7 +273,7 @@ int32_t AudioCoreService::EventEntry::SetCallDeviceActive(
     InternalDeviceType deviceType, bool active, std::string address, const int32_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock device %{public}d, active %{public}d, uid %{public}d",
+    AUDIO_INFO_LOG("[ADeviceEvent] withlock device %{public}d, active %{public}d, uid %{public}d",
         deviceType, active, uid);
     coreService_->SetCallDeviceActive(deviceType, active, address, uid);
     return SUCCESS;
@@ -303,7 +303,7 @@ int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStream
 void AudioCoreService::EventEntry::RegisteredTrackerClientDied(pid_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock uid %{public}d", uid);
+    AUDIO_INFO_LOG("[ADeviceEvent] withlock uid %{public}d", uid);
     coreService_->RegisteredTrackerClientDied(uid);
 }
 
@@ -401,6 +401,7 @@ void AudioCoreService::EventEntry::SetDisplayName(const std::string &deviceName,
 int32_t AudioCoreService::EventEntry::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("[ADeviceEvent] withlock");
     return coreService_->TriggerFetchDevice(reason);
 }
 

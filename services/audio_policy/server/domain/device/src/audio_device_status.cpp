@@ -120,8 +120,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     int32_t result = HandleSpecialDeviceType(devType, isConnected, macAddress, role);
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
 
-    AUDIO_WARNING_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d], address[%{public}s], "
-        "role[%{public}d]", devType, isConnected, GetEncryptStr(macAddress).c_str(), role);
+    AUDIO_WARNING_LOG("[ADeviceEvent] device[%{public}d] address[%{public}s] role[%{public}d] connect[%{public}d]",
+        devType, GetEncryptStr(macAddress).c_str(), role, isConnected);
 
     AudioDeviceDescriptor updatedDesc(devType, role == DEVICE_ROLE_NONE ?
         AudioPolicyUtils::GetInstance().GetDeviceRole(devType) : role);
@@ -682,9 +682,9 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
     std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
-    AUDIO_INFO_LOG("OnDeviceConfigurationChanged start, deviceType: %{public}d, currentActiveDevice_: %{public}d, "
-        "macAddress:[%{public}s], activeBTDevice:[%{public}s]", deviceType,
-        audioActiveDevice_.GetCurrentOutputDeviceType(),
+    AUDIO_INFO_LOG("[ADeviceEvent] device[%{public}d] currentOutputDevice[%{public}d] "
+        "macAddress:[%{public}s], activeBTDevice:[%{public}s]",
+        deviceType, audioActiveDevice_.GetCurrentOutputDeviceType(),
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
     // only for the active a2dp device.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
@@ -772,8 +772,8 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
-    AUDIO_WARNING_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d]"
-        " NETWORKID[%{public}s]", statusInfo.hdiPin, statusInfo.isConnected,
+    AUDIO_WARNING_LOG("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
+        "networkId[%{public}s]", statusInfo.hdiPin, statusInfo.isConnected,
         GetEncryptStr(statusInfo.networkId).c_str());
     if (isStop) {
         HandleOfflineDistributedDevice();
@@ -1021,7 +1021,7 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
         AUDIO_ERR_LOG("failed as the macAddress is empty!");
         return;
     }
-    AUDIO_INFO_LOG("bt select device type[%{public}d] address[%{public}s]",
+    AUDIO_INFO_LOG("[ADeviceEvent] bt select device type[%{public}d] address[%{public}s]",
         devType, GetEncryptAddr(macAddress).c_str());
     std::vector<shared_ptr<AudioDeviceDescriptor>> bluetoothDevices =
         audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
@@ -1052,8 +1052,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
     bool isConnected)
 {
-    AUDIO_WARNING_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d], mac[%{public}s]",
-        devType, isConnected, GetEncryptStr(macAddress).c_str());
+    AUDIO_WARNING_LOG("[ADeviceEvent] bt device[%{public}d] mac[%{public}s] connect[%{public}d]",
+        devType, GetEncryptStr(macAddress).c_str(), isConnected);
 
     auto devDesc = make_shared<AudioDeviceDescriptor>(updatedDesc);
     if (!isActualConnection && audioDeviceManager_.IsConnectedDevices(devDesc)) {
@@ -1132,7 +1132,7 @@ void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 
 void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
-    AUDIO_WARNING_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
+    AUDIO_WARNING_LOG("[ADeviceEvent] bt [%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
         "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
         desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     std::string portNeedClose = "";

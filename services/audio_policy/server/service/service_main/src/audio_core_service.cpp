@@ -451,8 +451,9 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
 
 int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    AUDIO_INFO_LOG("Set audio scene start: %{public}d, lastScene: %{public}d, uid: %{public}d, pid: %{public}d",
+    AUDIO_INFO_LOG("[ADeviceEvent] targetScene[%{public}d] lastScene[%{public}d] from uid %{public}d pid %{public}d",
         audioScene, audioSceneManager_.GetLastAudioScene(), uid, pid);
+
     audioSceneManager_.SetAudioScenePre(audioScene);
     audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
     bool isSameScene = audioSceneManager_.IsSameAudioScene();
@@ -487,6 +488,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetDevices
 
 int32_t AudioCoreService::SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid)
 {
+    AUDIO_INFO_LOG("[ADeviceEvent] withlock device %{public}d, active %{public}d from uid %{public}d",
+        deviceType, active, uid);
     int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active, uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
@@ -1007,6 +1010,8 @@ void AudioCoreService::UnregisterBluetoothListener()
 void AudioCoreService::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
+    AUDIO_INFO_LOG("[ADeviceEvent] device %{public}d, cast type %{public}d",
+        (descriptor != nullptr) ? descriptor->deviceType_ : -1, type);
     StoreDistributedRoutingRoleInfo(descriptor, type);
     FetchDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
 }
@@ -1016,7 +1021,7 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
     int32_t result = audioPolicyManager_.SetRingerMode(ringMode);
     if (result == SUCCESS) {
         if (Util::IsRingerAudioScene(audioSceneManager_.GetAudioScene(true))) {
-            AUDIO_INFO_LOG("fetch output device after switch new ringmode.");
+            AUDIO_INFO_LOG("[ADeviceEvent] fetch output device after switch new ringmode");
             FetchOutputDeviceAndRoute();
             audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
                 audioActiveDevice_.GetCurrentOutputDevice(), "SetRingerMode");
@@ -1060,7 +1065,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
         UpdatePlaybackStreamFlag(streamDesc, false);
-        AUDIO_INFO_LOG("Target audioFlag %{public}u for stream %{public}u",
+        AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}u",
             streamDesc->audioFlag_, streamDesc->sessionId_);
     }
 
