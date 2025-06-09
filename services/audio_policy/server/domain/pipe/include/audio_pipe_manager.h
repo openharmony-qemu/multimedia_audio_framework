@@ -81,7 +81,7 @@ public:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs);
 
 private:
-    bool IsSpecialPipe(uint32_t routeFlag);
+    bool IsSpecialPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemCommunicationIdMap_{};
