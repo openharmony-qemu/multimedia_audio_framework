@@ -22,8 +22,8 @@ class Resampler {
 public:
     virtual ~Resampler() = default;
     virtual void Reset() = 0;
-    virtual int Process(const float *in_buffer, uint32_t *inFrameSize, float *out_buffer,
-        uint32_t *outFrameSize) = 0;
+    virtual int Process(const float *in_buffer, uint32_t inFrameSize, float *out_buffer,
+        uint32_t outFrameSize) = 0;
     virtual int32_t UpdateRates(uint32_t inRate, uint32_t outRate) = 0;
     virtual uint32_t GetInRate() const = 0;
     virtual uint32_t GetOutRate() const = 0;
