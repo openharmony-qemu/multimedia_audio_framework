@@ -707,20 +707,20 @@ TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003)
 }
 
 /**
- * @tc.name  : Test UpdateCollaborationState
+ * @tc.name  : Test UpdateCollaborativeState
  * @tc.type  : FUNC
- * @tc.number: UpdateCollaborationState_001
- * @tc.desc  : Test UpdateCollaborationState when config in vaild.
+ * @tc.number: UpdateCollaborativeState_001
+ * @tc.desc  : Test UpdateCollaborativeState when config in vaild.
  */
-TEST_F(HpaeManagerUnitTest, UpdateCollaborationState_001)
+TEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
     EXPECT_EQ(hpaeManager_->IsInit(), true);
-    int32_t ret = hpaeManager_->UpdateCollaborationState(true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(true);
     EXPECT_EQ(ret, true);
     WaitForMsgProcessing(hpaeManager_);
-    ret = hpaeManager_->UpdateCollaborationState(false);
+    ret = hpaeManager_->UpdateCollaborativeState(false);
     EXPECT_EQ(ret, true);
 }
 }  // namespace

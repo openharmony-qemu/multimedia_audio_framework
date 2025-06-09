@@ -408,12 +408,12 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage)
 }
 
 /**
- * @tc.name  : Test UpdateCollaborationState
+ * @tc.name  : Test UpdateCollaborativeState
  * @tc.type  : FUNC
- * @tc.number: UpdateCollaborationState_001
- * @tc.desc  : Test UpdateCollaborationState when config in vaild.
+ * @tc.number: UpdateCollaborativeState_001
+ * @tc.desc  : Test UpdateCollaborativeState when config in vaild.
  */
-TEST_F(HpaeRendererManagerTest, UpdateCollaborationState_001)
+TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -431,10 +431,10 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborationState_001)
     HpaeStreamInfo streamInfo;
     TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
     WaitForMsgProcessing(hpaeRendererManager);
-    int32_t ret = hpaeRendererManager->UpdateCollaborationState(true);
+    int32_t ret = hpaeRendererManager->UpdateCollaborativeState(true);
     EXPECT_EQ(ret == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
-    ret = hpaeRendererManager->UpdateCollaborationState(false);
+    ret = hpaeRendererManager->UpdateCollaborativeState(false);
     EXPECT_EQ(ret == SUCCESS, true);
 }
 

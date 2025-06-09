@@ -149,7 +149,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
         }
     }
 
-    CHECK_AND_RETURN_LOG(isConnect == true, "[FinishMove] not need connect session:%{public}d", sessionId);
+    CHECK_AND_RETURN_LOG(isConnect == false, "[FinishMove] not need connect session:%{public}d", sessionId);
     if (node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:%{public}s",
             sessionId, sinkInfo_.deviceClass.c_str());
@@ -1125,10 +1125,10 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::UpdateCollaborationState(bool isCollaborationEnabled)
+int32_t HpaeRendererManager::UpdateCollaborativeState(bool isCollaborationEnabled)
 {
     auto request = [this, isCollaborationEnabled]() {
-        AUDIO_INFO_LOG("UpdateCollaborationState %{public}d", isCollaborationEnabled);
+        AUDIO_INFO_LOG("UpdateCollaborativeState %{public}d", isCollaborationEnabled);
         if (isCollaborationEnabled_ == isCollaborationEnabled) {
             AUDIO_INFO_LOG("collaboration state not changed, isCollaborationEnabled_ %{public}d",
                 isCollaborationEnabled_);
@@ -1214,7 +1214,7 @@ void HpaeRendererManager::HandleCollaborationStateChangedInner(HpaeProcessorType
         "sinkInputNodeMap_ not find sessionId %{public}u", sessionID);
     if (SafeGetMap(sinkInputNodeMap_, sessionID)) {
         AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionID);
-        AddSingleNodeToSink(sinkInputNodeMap_[sessionID], false);
+        AddSingleNodeToSink(sinkInputNodeMap_[sessionID], true);
     }
 }
 }  // namespace HPAE

@@ -2138,13 +2138,13 @@ bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys
     return true;
 }
 
-int32_t HpaeManager::UpdateCollaborationState(bool isCollaborationEnabled)
+int32_t HpaeManager::UpdateCollaborativeState(bool isCollaborationEnabled)
 {
     auto request = [this, isCollaborationEnabled]() {
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(BT_SINK_NAME);
         CHECK_AND_RETURN_LOG(rendererManager != nullptr,
             "can not find sink[%{public}s] in rendererManagerMap_", BT_SINK_NAME.c_str());
-        rendererManager->UpdateCollaborationState(isCollaborationEnabled);
+        rendererManager->UpdateCollaborativeState(isCollaborationEnabled);
     };
     SendRequest(request, __func__);
     return true;

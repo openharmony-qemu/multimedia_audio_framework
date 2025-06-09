@@ -168,7 +168,7 @@ public:
     bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
-    int32_t UpdateCollaborationState(bool isCollaborationEnabled) override;
+    int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
