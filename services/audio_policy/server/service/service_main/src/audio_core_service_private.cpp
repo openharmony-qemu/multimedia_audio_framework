@@ -57,6 +57,7 @@ static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_SLEEP_US = 350000; // 350ms
 static const int32_t DISTRIBUTED_DEVICE = 1003;
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -137,6 +138,10 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
+        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER) {
+            isOffloadOpened_.store(true);
+            offloadCloseCondition_.notify_all();
+        }
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -763,6 +768,10 @@ void AudioCoreService::RemoveUnusedPipe()
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe();
     for (auto &pipeInfo : pipeInfos) {
         AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER) {
+            DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_);
+            continue;
+        }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
     }
@@ -1992,6 +2001,40 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
         audioEcManager_.UpdateStreamMicRefInfo(pipeInfo->moduleInfo_, sourceType);
         audioEcManager_.SetOpenedNormalSource(sourceType);
     }
+}
+
+void AudioCoreService::DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_LOG(isOffloadOpened_.load(), "Offload is already released");
+    isOffloadOpened_.store(false);
+    auto unloadOffloadThreadFuc = [this, id, paIndex] { this->ReleaseOffloadPipe(id, paIndex); };
+    std::thread unloadOffloadThread(unloadOffloadThreadFuc);
+    unloadOffloadThread.detach();
+}
+
+int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    AUDIO_INFO_LOG("unload offload module");
+    std::unique_lock<std::mutex> lock(offloadCloseMutex_);
+    // Try to wait 10 seconds before unloading the module, because the audio driver takes some time to process
+    // the shutdown process..
+    offloadCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_SEC), [this] () {
+        return isOffloadOpened_.load();
+    });
+
+    {
+        std::lock_guard<std::mutex> lk(offloadReOpenMutex_);
+        AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", isOffloadOpened_.load());
+        if (isOffloadOpened_.load()) {
+            AUDIO_INFO_LOG("offload restart");
+            return ERROR;
+        }
+        AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
+        audioPolicyManager_.CloseAudioPort(id, paIndex);
+        pipeManager_->RemoveAudioPipeInfo(id);
+    }
+    return SUCCESS;
 }
 
 void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo)
