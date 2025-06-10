@@ -99,7 +99,7 @@ ohos_shared_library("audio") {
     "../../../services/audio_service:audio_client",
     "../../native/audiocapturer:audio_capturer",
     "../../native/audiorenderer:audio_renderer",
-    "../../native/audiorenderer:audio_loopback",
+    "../../native/audioloopback:audio_loopback",
     "../../native/audioutils:audio_utils",
   ]
 
