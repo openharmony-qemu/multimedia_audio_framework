@@ -104,6 +104,7 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAudioEnhanceProperty", GetAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("setAudioEnhanceProperty", SetAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("isAcousticEchoCancelerSupported", IsAcousticEchoCancelerSupported),
+        DECLARE_NAPI_FUNCTION("isAudioLoopbackSupported", IsAudioLoopbackSupported),
     };
 
     status = napi_define_class(env, AUDIO_STREAM_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -821,6 +822,37 @@ napi_value NapiAudioStreamMgr::IsAcousticEchoCancelerSupported(napi_env env, nap
     
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsAcousticEchoCancelerSupported(
         static_cast<SourceType>(sourceType));
+    NapiParamUtils::SetValueBoolean(env, isSupported, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::IsAudioLoopbackSupported(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of loopback mode must be number"),
+        "invalid valueType");
+
+    int32_t loopbackMode;
+    NapiParamUtils::GetValueInt32(env, loopbackMode, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(loopbackMode),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of loopbackMode must be enum AudioLoopbackMode"),
+        "get loopbackMode failed");
+
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
+        "audioStreamMngr_ is nullptr");
+    bool isSupported = napiStreamMgr->audioStreamMngr_->
+        IsAudioLoopbackSupported(static_cast<AudioLoopbackMode>(loopbackMode));
     NapiParamUtils::SetValueBoolean(env, isSupported, result);
     return result;
 }

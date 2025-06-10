@@ -1656,5 +1656,19 @@ AudioScene NapiAudioEnum::GetJsAudioScene(AudioScene audioScene)
     }
     return newAudioScene;
 }
+
+bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
+{
+    bool result = false;
+    switch (inputMode) {
+        case AudioLoopbackModeNapi::HARDWARE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

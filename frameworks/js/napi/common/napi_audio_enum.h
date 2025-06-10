@@ -94,6 +94,10 @@ public:
         CALLBACK_RESULT_VALID = 0,
     };
 
+    enum AudioLoopbackModeNapi {
+        HARDWARE = 0
+    };
+
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
@@ -121,6 +125,7 @@ public:
     static AudioStandard::InterruptMode GetNativeInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType);
     static AudioScene GetJsAudioScene(AudioScene audioScene);
+    static bool IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
