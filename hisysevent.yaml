@@ -249,11 +249,11 @@ SYSTEM_TONE_PLAYBACK:
   VOLUME_LEVEL: {type: UINT8, arrsize: 100, desc: volume level}
   TIME_STAMP: {type: INT64, arrsize: 100, desc: the time stamp}
   
-AUDIO_RECORD_ERROR:
+RECORD_ERROR:
   __BASE: {type: FAULT, level: CRITICAL, tag: AudioRecord, desc: AudioRecordErrorEvent}
-  INCOMIMG_SOURCE: {type: UINT8, desc: source of incoming record}
-  INCOMIMG_PID: {type: INT32, desc: pid of incoming record}
-  INCOMIMG_PKG: {type: STRING, desc: pkg of incoming record}
+  INCOMING_SOURCE: {type: UINT8, desc: source of incoming record}
+  INCOMING_PID: {type: INT32, desc: pid of incoming record}
+  INCOMING_PKG: {type: STRING, desc: pkg of incoming record}
   ACTIVE_SOURCE: {type: UINT8, desc: source of active record}
   ACTIVE_PID: {type: INT32, desc: pid of active record}
   ACTIVE_PKG: {type: STRING, desc: pkg of active record}
