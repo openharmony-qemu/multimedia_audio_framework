@@ -52,7 +52,6 @@ private:
     HpaePcmBuffer effectOutput_;
     std::unique_ptr<HpaePcmBuffer> directOutput_ = nullptr;
     std::unique_ptr<HpaePcmBuffer> collaborativeOutput_ = nullptr;
-    HpaeNodeInfo nodeInfo_;
     std::string sceneType_ = "EFFECT_NONE";
     int64_t silenceDataUs_ = 0;
     bool isByPassEffect_ = false;

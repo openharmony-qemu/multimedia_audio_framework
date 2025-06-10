@@ -15,8 +15,6 @@
 
 #ifndef HPAE_COBUFFER_NODE_H
 #define HPAE_COBUFFER_NODE_H
-#include <atomic>
-#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include "audio_ring_cache.h"
@@ -39,7 +37,7 @@ enum class FrameFlag {
 };
 class HpaeCoBufferNode : public OutputNode<HpaePcmBuffer *>, public InputNode<HpaePcmBuffer *> {
 public:
-    HpaeCoBufferNode(HpaeNodeInfo& nodeInfo);
+    HpaeCoBufferNode();
     virtual ~HpaeCoBufferNode() {};
     void DoProcess() override;
     bool Reset() override;
@@ -49,8 +47,6 @@ public:
     OutputPort<HpaePcmBuffer*>* GetOutputPort() override;
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode) override;
-    virtual size_t GetPreOutNum();
-    virtual size_t GetOutputPortNum();
     void Enqueue(HpaePcmBuffer* buffer) override;
     void SetLatency(uint32_t latency);
 private:
@@ -58,15 +54,15 @@ private:
     void ProcessInputFrameInner(HpaePcmBuffer* buffer);
     void ProcessOutputFrameInner();
     std::mutex mutex_;
-    std::atomic<bool> enqueueRunning_;
+    bool enqueueRunning_ = false;
     InputPort<HpaePcmBuffer *> inputStream_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer coBufferOut_;
     HpaePcmBuffer silenceData_;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
-    FrameFlag enqueueFlag_;
-    uint64_t latency_ ;
+    int32_t enqueueCount_ = 1;
+    uint64_t latency_  = 0; // in ms
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;

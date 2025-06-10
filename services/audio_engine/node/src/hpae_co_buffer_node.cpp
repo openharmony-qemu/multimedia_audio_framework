@@ -27,23 +27,20 @@ static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t TEST_LATENCY = 280;
+static constexpr int32_t ENQUEUE_SECOND_FRAME = 2;
 
-HpaeCoBufferNode::HpaeCoBufferNode(HpaeNodeInfo &nodeInfo)
-    : HpaeNode(nodeInfo),
-      enqueueRunning_(false),
+HpaeCoBufferNode::HpaeCoBufferNode()
+    : HpaeNode(),
       outputStream_(this),
       pcmBufferInfo_(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000),
       coBufferOut_(pcmBufferInfo_),
       silenceData_(pcmBufferInfo_),
-      enqueueFlag_(FrameFlag::FIRST_FRAME),
-      latency_(0)
 {
-    AUDIO_INFO_LOG("HpaeCoBufferNode created");
     const size_t size = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
         sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
+    AUDIO_INFO_LOG("Created ring cache, size: %{public}zu", size);
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
-    AUDIO_INFO_LOG("Created ring cache, size: %{public}zu", size);
 }
 
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
@@ -60,11 +57,11 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
     ProcessInputFrameInner(buffer);
     
     // process enqueue flag
-    if (enqueueFlag_ == FrameFlag::FIRST_FRAME) {
-        enqueueFlag_ = FrameFlag::SECOND_FRAME;
-    } else if (enqueueFlag_ == FrameFlag::SECOND_FRAME) {
-        enqueueRunning_.store(true);
-        enqueueFlag_ = FrameFlag::OTHER_FRAME;
+    if (enqueueCount_ < ENQUEUE_SECOND_FRAME) {
+        enqueueCount_++;
+    } else if (enqueueCount_ == ENQUEUE_SECOND_FRAME) {
+        enqueueCount_++;
+        enqueueRunning_ = true;
         // fill silence frames for latency adjustment
         AUDIO_INFO_LOG("Filling silence frames for latency adjustment");
         ringCache_->ResetBuffer();
@@ -77,7 +74,7 @@ void HpaeCoBufferNode::DoProcess()
     std::unique_lock<std::mutex> lock(mutex_);
     
     // write silence data if enqueue is not running
-    if (!enqueueRunning_.load()) {
+    if (!enqueueRunning_) {
         outputStream_.WriteDataToOutput(&silenceData_);
     }
     
@@ -138,8 +135,8 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
     inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
     AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
     // reset status flag
-    enqueueFlag_ = FrameFlag::FIRST_FRAME;
-    enqueueRunning_.store(false);
+    enqueueCount_ = 1;
+    enqueueRunning_ = false;
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeCoBufferNodeInput_id_" + std::to_string(GetNodeId()) + ".pcm");
@@ -153,19 +150,6 @@ void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer
     std::lock_guard<std::mutex> lock(mutex_);
     inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
     AUDIO_INFO_LOG("HpaeCoBufferNode disconnect from preNode");
-}
-
-// todo delete
-size_t HpaeCoBufferNode::GetPreOutNum()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    return inputStream_.GetPreOutputNum();
-}
-
-size_t HpaeCoBufferNode::GetOutputPortNum()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    return outputStream_.GetInputNum();
 }
 
 void HpaeCoBufferNode::SetLatency(uint32_t latency)

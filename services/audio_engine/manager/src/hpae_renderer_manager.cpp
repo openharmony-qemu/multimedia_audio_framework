@@ -1137,15 +1137,14 @@ int32_t HpaeRendererManager::UpdateCollaborativeState(bool isCollaborationEnable
         isCollaborationEnabled_ = isCollaborationEnabled;
         if (isCollaborationEnabled_) {
             if (hpaeCoBufferNode_ == nullptr) {
-                HpaeNodeInfo nodeInfo;
-                hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>(nodeInfo);
+                hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>();
             }
-            for (auto it : sessionNodeMap_) {
-                HandleCollaborationStateChangedInner(it.second.sceneType, it.first);
+            for (auto it : sinkInputNodeMap_) {
+                ReConnectNodeForCollaboration(it.first);
             }
-        } else if (!isCollaborationEnabled_ && hpaeCoBufferNode_ != nullptr) {
-            for (auto it : sessionNodeMap_) {
-                HandleCollaborationStateChangedInner(it.second.sceneType, it.first);
+        } else if (hpaeCoBufferNode_ != nullptr) {
+            for (auto it : sinkInputNodeMap_) {
+                ReConnectNodeForCollaboration(it.first);
             }
             hpaeCoBufferNode_.reset();
         }
@@ -1204,18 +1203,18 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
     return SUCCESS;
 }
 
-void HpaeRendererManager::HandleCollaborationStateChangedInner(HpaeProcessorType sceneType, uint32_t sessionID)
+void HpaeRendererManager::ReConnectNodeForCollaboration(uint32_t sessionID)
 {
-    AUDIO_INFO_LOG("sceneType:%{public}d sessionId %{public}u", sceneType, sessionID);
-    // delete the session
     // todo fade out
-    DeleteInputSession(sessionID);
     CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionID),
         "sinkInputNodeMap_ not find sessionId %{public}u", sessionID);
-    if (SafeGetMap(sinkInputNodeMap_, sessionID)) {
-        AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionID);
-        AddSingleNodeToSink(sinkInputNodeMap_[sessionID], true);
+    HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
+    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    if (SafeGetMap(sceneClusterMap_, sceneType)) {
+        DeleteProcessCluster(nodeInfo, sceneType, sessionId);
     }
+    AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionID);
+    AddSingleNodeToSink(sinkInputNodeMap_[sessionID]);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
