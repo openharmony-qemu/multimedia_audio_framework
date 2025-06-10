@@ -16,6 +16,7 @@
 #include "../include/audio_router_center_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_zone_service.h"
 
 #include <thread>
 #include <memory>
@@ -52,6 +53,90 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_001, TestSize.Level1)
 
     descs.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     EXPECT_TRUE(audioRouterCenter.NeedSkipSelectAudioOutputDeviceRefined(STREAM_USAGE_ALARM, descs));
+}
+
+/**
+ * @tc.name  : Test StreamFilterRouter.
+ * @tc.number: AudioRouterCenter_002
+ * @tc.desc  : Test IsMediaFollowCallStrategy interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_002, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CALL));
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CHAT));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_RINGING));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_VOICE_RINGING));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_DEFAULT));
+}
+
+/**
+ * @tc.name  : Test StreamFilterRouter.
+ * @tc.number: AudioRouterCenter_003
+ * @tc.desc  : Test FetchOutputDevices interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_003, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 0, ROUTER_TYPE_NONE);
+    EXPECT_EQ(descs.size(), 1);
+    std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    AudioZoneService::GetInstance().Init(handler, interruptService);
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("1", context);
+    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 1);
+    descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 1, ROUTER_TYPE_NONE);
+    EXPECT_EQ(descs.size(), 0);
+}
+
+/**
+ * @tc.name  : Test StreamFilterRouter.
+ * @tc.number: AudioRouterCenter_004
+ * @tc.desc  : Test IsConfigRouterStrategy interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_004, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(SOURCE_TYPE_MIC));
+    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(SOURCE_TYPE_VOICE_COMMUNICATION));
+    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(SOURCE_TYPE_VOICE_MESSAGE));
+    EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(SOURCE_TYPE_INVALID));
+}
+
+/**
+ * @tc.name  : Test IsMediaFollowCallStrategy.
+ * @tc.number: AudioRouterCenter_005
+ * @tc.desc  : Test IsMediaFollowCallStrategy interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_005, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CALL));
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CHAT));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_RINGING));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_VOICE_RINGING));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_DEFAULT));
+}
+
+/**
+ * @tc.name  : Test IsConfigRouterStrategy.
+ * @tc.number: AudioRouterCenter_006
+ * @tc.desc  : Test IsConfigRouterStrategy interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_006, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    SourceType type = SOURCE_TYPE_MIC;
+    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(type));
+    type = SOURCE_TYPE_VOICE_COMMUNICATION;
+    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(type));
+    type = SOURCE_TYPE_VOICE_MESSAGE;
+    EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(type));
+    type = SOURCE_TYPE_INVALID;
+    EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(type));
 }
 } // namespace AudioStandard
 } // namespace OHOS
