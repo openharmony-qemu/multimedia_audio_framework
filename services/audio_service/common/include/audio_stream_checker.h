@@ -48,7 +48,7 @@ public:
     void MonitorCheckFrame();
     void CleanRecordData(CheckerParam &para);
     void MonitorOnCallback(DataTransferStateChangeType type, bool isNeedCallback, CheckerParam &para);
-    void MonitorOnAllCallback(DataTransferStateChangeType type);
+    void MonitorOnAllCallback(DataTransferStateChangeType type, bool isStandby);
     int32_t GetAppUid();
     void InitChecker(DataTransferMonitorParam para, const int32_t pid, const int32_t callbackId);
     void RecordMuteFrame();
@@ -56,11 +56,13 @@ public:
     void RecordNormalFrame();
     void DeleteCheckerPara(const int32_t pid, const int32_t callbackId);
     void StopCheckStreamThread();
+    void OnRemoteAppDied(const int32_t pid);
 private:
     bool IsMonitorMuteFrame(const CheckerParam &para);
     bool IsMonitorNoDataFrame(const CheckerParam &para);
     void InitCallbackInfo(DataTransferStateChangeType type, AudioRendererDataTransferStateChangeInfo &callbackInfo);
     void CheckStreamThread();
+    void MonitorCheckFrameAction(CheckerParam &para, int64_t abnormalFrameNum, float badFrameRatio);
     std::vector<CheckerParam> checkParaVector_;
     bool monitorSwitch_ = false;
     std::recursive_mutex checkLock_;
