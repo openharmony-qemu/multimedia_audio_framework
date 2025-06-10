@@ -118,7 +118,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolume(streamType, appUid, sessionId));
     volumes->volume = volumes->volumeSystem * volumes->volumeStream * doNotDisturbStatusVolume;
-    if (it != streamVolume_.end() && it->second.monitorVolume_ != volumes->volume) {
+    if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
         it->second.monitorVolume_ = volumes->volume;
         it->second.monitorVolumeLevel_ = volumeLevel;
         AUDIO_INFO_LOG("volume, sessionId:%{public}u, volume:%{public}f, volumeType:%{public}d, devClass:%{public}s,"
@@ -186,7 +186,7 @@ float AudioVolume::GetStreamVolume(uint32_t sessionId)
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
-    if (it != streamVolume_.end() && it->second.monitorVolume_ != volumeStream) {
+    if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumeStream)) {
         it->second.monitorVolume_ = volumeStream;
         AUDIO_INFO_LOG("volume, sessionId:%{public}u, stream volume:%{public}f", sessionId, volumeStream);
     }
