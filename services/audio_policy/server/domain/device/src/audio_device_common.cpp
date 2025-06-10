@@ -1823,7 +1823,6 @@ void AudioDeviceCommon::BluetoothScoDisconectForRecongnition()
     int32_t ret = ScoInputDeviceFetchedForRecongnition(false, tempDesc.macAddress_, tempDesc.connectState_);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
         GetEncryptAddr(tempDesc.macAddress_).c_str());
-    }
 }
 
 void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
