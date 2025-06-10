@@ -89,6 +89,7 @@ public:
     void DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
+    std::string GetDeviceHDFDumpInfo() override;
 
 private:
     void SendRequest(Request &&request, bool isInit = false);
@@ -119,6 +120,7 @@ private:
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
+    HpaeProcessorType GetProcessorType(uint32_t sessionId);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;

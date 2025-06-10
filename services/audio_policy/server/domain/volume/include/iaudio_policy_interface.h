@@ -163,6 +163,8 @@ public:
 
     virtual DeviceType GetActiveDevice() = 0;
 
+    virtual DeviceCategory GetCurrentOutputDeviceCategory() = 0;
+
     virtual AudioDeviceDescriptor GetActiveDeviceDescriptor() = 0;
 
     virtual void NotifyAccountsChanged(const int &id) = 0;

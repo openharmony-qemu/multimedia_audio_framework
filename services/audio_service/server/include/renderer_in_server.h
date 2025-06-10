@@ -66,7 +66,7 @@ public:
     int32_t Release();
 
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
-    int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency);
+    int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base);
     int32_t GetLatency(uint64_t &latency);
     int32_t SetRate(int32_t rate);
     int32_t SetLowPowerVolume(float volume);
@@ -122,6 +122,7 @@ public:
     bool Dump(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
+    int32_t StopSession();
     void dualToneStreamInStart();
 
 public:
@@ -141,6 +142,7 @@ private:
     void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
     void InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
     int32_t StartInner();
+    int32_t StopInner();
     int64_t GetLastAudioDuration();
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);

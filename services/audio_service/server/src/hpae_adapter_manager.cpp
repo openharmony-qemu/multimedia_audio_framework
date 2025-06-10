@@ -320,7 +320,7 @@ uint64_t HpaeAdapterManager::GetLatency() noexcept
 
 void HpaeAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
-    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    std::lock_guard<std::mutex> lock(sinkInputsMutex_);
     sinkInputs = sinkInputs_;
     return;
 }

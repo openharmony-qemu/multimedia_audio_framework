@@ -431,6 +431,15 @@ struct AlgoConfig {
     uint32_t micRefNum;
     uint32_t outNum;
 };
+
+enum ProcessClusterOperation {
+    NO_NEED_TO_CREATE_PROCESSCLUSTER,
+    CREATE_NEW_PROCESSCLUSTER,
+    CREATE_DEFAULT_PROCESSCLUSTER,
+    USE_DEFAULT_PROCESSCLUSTER,
+    USE_NONE_PROCESSCLUSTER,
+    CREATE_EXTRA_PROCESSCLUSTER
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

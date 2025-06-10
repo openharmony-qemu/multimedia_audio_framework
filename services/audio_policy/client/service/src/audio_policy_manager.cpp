@@ -1538,6 +1538,14 @@ int32_t AudioPolicyManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     return gsp->SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
 
+int32_t AudioPolicyManager::SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+    const int32_t volume, const bool updateUi)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
+}
+
 int32_t AudioPolicyManager::ConfigDistributedRoutingRole(
     std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
@@ -2533,6 +2541,20 @@ int32_t AudioPolicyManager::SetCallbackStreamUsageInfo(const std::set<StreamUsag
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->SetCallbackStreamUsageInfo(streamUsages);
+}
+
+int32_t AudioPolicyManager::ForceStopAudioStream(StopAudioType audioType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->ForceStopAudioStream(audioType);
+}
+
+bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsCapturerFocusAvailable(capturerInfo);
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()

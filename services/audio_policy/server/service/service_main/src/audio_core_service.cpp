@@ -33,6 +33,7 @@ namespace AudioStandard {
 namespace {
 const uint32_t FIRST_SESSIONID = 100000;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
+static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 }
@@ -164,12 +165,20 @@ int32_t AudioCoreService::CreateRendererClient(
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
     streamDesc->newDeviceDescs_ =
         audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
+    CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 && streamDesc->newDeviceDescs_.front() != nullptr,
+        ERR_NULL_POINTER, "Invalid deviceDesc");
     AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
     if (isModemStream) {
         return SUCCESS;
     }
+
+    // Bluetooth may be inactive (paused ringtone stream at Speaker switches to A2dp)
+    std::string encryptMacAddr = GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
+    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc,
+        AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
+    CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
     UpdatePlaybackStreamFlag(streamDesc, true);
     AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
@@ -259,6 +268,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     AUDIO_INFO_LOG("deviceType: %{public}d", streamDesc->newDeviceDescs_.front()->deviceType_);
     // fast/normal has done in audioRendererPrivate
     if (streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
+        streamDesc->rendererInfo_.rendererFlags == AUDIO_FLAG_FORCED_NORMAL ||
         (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
          streamDesc->rendererInfo_.samplingRate != SAMPLE_RATE_48000)) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
@@ -325,7 +335,8 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
 
 void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
-    if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
+    if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
+        streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_FORCED_NORMAL) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("Forced normal cases");
         return;
@@ -424,6 +435,9 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
+        bool isRemoved = true;
+        sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetModemCommunicationStreamDescById(sessionId),
+            isRemoved);
         pipeManager_->RemoveModemCommunicationId(sessionId);
         return SUCCESS;
     }
@@ -690,7 +704,7 @@ int32_t AudioCoreService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioR
 {
     int32_t status = streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, status,
-        "AudioPolicyServer:: Get renderer change info failed");
+        "AudioPolicyServer Get renderer change info failed");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices =
         audioConnectedDevice_.GetDevicesInner(OUTPUT_DEVICES_FLAG);
@@ -821,7 +835,7 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
-    std::vector<uint32_t> sessionIds = pipeManager_->GetSessionIdsByUid(uid);
+    std::vector<uint32_t> sessionIds = pipeManager_->GetFastStreamIdsByUid(uid);
     for (auto sessionId : sessionIds) {
         ReleaseClient(sessionId);
     }
@@ -1017,6 +1031,16 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
     return result;
 }
 
+bool AudioCoreService::IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs)
+{
+    for (auto streamDesc : outputStreamDescs) {
+        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+            return false;
+        }
+    }
+    return true;
+}
+
 int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
@@ -1028,41 +1052,23 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(const AudioStreamDeviceChang
         return HandleFetchOutputWhenNoRunningStream();
     }
 
-    bool needUpdateActiveDevice = true;
-    bool isUpdateActiveDevice = false;
     isVoiceCallMuted_ = false;
     for (auto &streamDesc : outputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
-            audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));       
+            audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc));
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
         UpdatePlaybackStreamFlag(streamDesc, false);
-        if (!HandleOutputStreamInRunning(streamDesc, reason)) {
-            continue;
-        }
-
-        int32_t outputRet = ActivateOutputDevice(streamDesc);
-        CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
-        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED && needUpdateActiveDevice) {
-            isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
-                reason);
-            needUpdateActiveDevice = !isUpdateActiveDevice;
-            if (isUpdateActiveDevice) {
-                AUDIO_INFO_LOG("active device updated, update volume");
-                AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
-                audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
-                OnPreferredOutputDeviceUpdated(audioDeviceDescriptor);
-            }
-        }
         AUDIO_INFO_LOG("Target audioFlag %{public}u for stream %{public}u",
             streamDesc->audioFlag_, streamDesc->sessionId_);
     }
-    if (!isUpdateActiveDevice) {
-        HandleFetchOutputWhenNoRunningStream();
-    }
 
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
+    if (IsNoRunningStream(outputStreamDescs)) {
+        AUDIO_INFO_LOG("no running stream");
+        HandleFetchOutputWhenNoRunningStream();
+    }
     return ret;
 }
 

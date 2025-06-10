@@ -250,8 +250,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
         moduleInfo.sourceType = std::to_string(sourceType);
     } else {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
-        CHECK_AND_RETURN_LOG(inputDesc != nullptr, "inputDesc is nullptr");
-        if (inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
             moduleInfo = usbSourceModuleInfo_;
             moduleInfo.sourceType = std::to_string(sourceType);
         } else {
@@ -262,7 +261,9 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
             moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
             moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
             moduleInfo.sourceType = std::to_string(sourceType);
-            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
+            if (inputDesc != nullptr) {
+                moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
+            }
             // update primary info for ec config to get later
             primaryMicModuleInfo_.channels = std::to_string(targetInfo.channels_);
             primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
@@ -756,9 +757,14 @@ std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const D
     return halName;
 }
 
-void AudioEcManager::SetOpenedNormalSource(SourceType targetSource)
+void AudioEcManager::SetOpenedNormalSource(SourceType sourceType)
 {
-    normalSourceOpened_ = targetSource;
+    SourceType targetSourceType = SOURCE_TYPE_MIC;
+    // useMatchingPropInfo is used when selecting route parameters.
+    // Here only need to get the targetSourceType, useMatchingDropInfo is not required.
+    bool useMatchingPropInfo = false;
+    GetTargetSourceTypeAndMatchingFlag(sourceType, targetSourceType, useMatchingPropInfo);
+    normalSourceOpened_ = targetSourceType;
 }
 
 int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,

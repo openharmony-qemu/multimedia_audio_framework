@@ -42,7 +42,7 @@ namespace AudioStandard {
 
 #ifdef SUPPORT_LOW_LATENCY
 static uint64_t g_id = 1;
-static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
+static const int32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
@@ -326,11 +326,13 @@ bool AudioService::UpdateForegroundState(uint32_t appTokenId, bool isActive)
 void AudioService::DumpForegroundList(std::string &dumpString)
 {
     std::lock_guard<std::mutex> lock(foregroundSetMutex_);
-    dumpString += "DumpForegroundList:\n";
+    std::stringstream temp;
+    temp << "DumpForegroundList:\n";
     int32_t index = 0;
     for (auto item : foregroundSet_) {
-        dumpString += "    " + std::to_string(index++) + item + "\n";
+        temp << "    " <<  std::to_string(index++) << ": " <<  item << "\n";
     }
+    dumpString = temp.str();
 }
 
 int32_t AudioService::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
@@ -689,9 +691,9 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
         std::lock_guard<std::mutex> lock(workingConfigsMutex_);
         if (workingConfigs_.count(innerCapId)) {
             workingConfigs_[innerCapId] = newConfig;
-            isOldCap = true;  
+            isOldCap = true;
         } else {
-            workingConfigs_[innerCapId] = newConfig; 
+            workingConfigs_[innerCapId] = newConfig;
         }
     }
     if (isOldCap) {
@@ -1561,6 +1563,45 @@ void AudioService::SetLatestMuteState(const uint32_t sessionId, const bool muteF
     }
     AUDIO_INFO_LOG("session:%{public}u muteflag=%{public}d", sessionId, muteFlag ? 1 : 0);
     muteStateCallbacks_[sessionId](muteFlag);
+}
+
+int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioType >= STOP_ALL && audioType <= STOP_RECORD, ERR_INVALID_PARAM, "Invalid audioType");
+    AUDIO_INFO_LOG("stop audio stream, type:%{public}d", audioType);
+    if (audioType == StopAudioType::STOP_ALL || audioType == StopAudioType::STOP_RENDER) {
+        std::lock_guard<std::mutex> lock(rendererMapMutex_);
+        for (auto &rendererMap : allRendererMap_) {
+            std::shared_ptr<RendererInServer> rendererInServer = rendererMap.second.lock();
+            CHECK_AND_CONTINUE_LOG(rendererInServer != nullptr, "stream could be released, no need to stop");
+            rendererInServer->StopSession();
+        }
+    }
+    if (audioType == StopAudioType::STOP_ALL || audioType == StopAudioType::STOP_RECORD) {
+        std::lock_guard<std::mutex> lock(capturerMapMutex_);
+        for (auto &capturerMap : allCapturerMap_) {
+            std::shared_ptr<CapturerInServer> capturerInServer = capturerMap.second.lock();
+            CHECK_AND_CONTINUE_LOG(capturerInServer != nullptr, "stream could be released, no need to stop");
+            capturerInServer->StopSession();
+        }
+    }
+#ifdef SUPPORT_LOW_LATENCY
+    {
+        std::lock_guard<std::mutex> lock(processListMutex_);
+        for (auto &[audioProcessInServer, audioEndpoint]: linkedPairedList_) {
+            CHECK_AND_CONTINUE_LOG(audioProcessInServer && audioEndpoint,
+                "stream could be released, no need to stop");
+            AudioMode audioMode = audioEndpoint->GetAudioMode();
+            bool isNeedStop = (audioType == StopAudioType::STOP_ALL) ||
+                (audioMode == AudioMode::AUDIO_MODE_PLAYBACK && audioType == StopAudioType::STOP_RENDER) ||
+                (audioMode == AudioMode::AUDIO_MODE_RECORD && audioType == StopAudioType::STOP_RECORD);
+            if (isNeedStop) {
+                audioProcessInServer->StopSession();
+            }
+        }
+    }
+#endif
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

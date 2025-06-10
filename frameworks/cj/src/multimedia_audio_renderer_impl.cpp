@@ -14,10 +14,11 @@
  */
 
 #include "multimedia_audio_renderer_impl.h"
-#include "cj_lambda.h"
+
 #include "audio_errors.h"
 #include "audio_interrupt_info.h"
 #include "audio_renderer_log.h"
+#include "cj_lambda.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 #include "timestamp.h"
@@ -37,7 +38,7 @@ MMAAudioRendererImpl::~MMAAudioRendererImpl()
 
 int32_t MMAAudioRendererImpl::CreateAudioRenderer(CAudioRendererOptions options)
 {
-    AudioRendererOptions rendererOptions{};
+    AudioRendererOptions rendererOptions {};
     Convert2AudioRendererOptions(rendererOptions, options);
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
     if (audioRenderer_ == nullptr) {
@@ -63,9 +64,9 @@ int32_t MMAAudioRendererImpl::GetState()
     return audioRenderer_->GetStatus();
 }
 
-int64_t MMAAudioRendererImpl::GetAudioTime(int32_t *errorCode)
+int64_t MMAAudioRendererImpl::GetAudioTime(int32_t* errorCode)
 {
-    Timestamp timestamp{};
+    Timestamp timestamp {};
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CJ_ERR_INVALID_RETURN_VALUE;
@@ -82,7 +83,7 @@ int64_t MMAAudioRendererImpl::GetAudioTime(int32_t *errorCode)
     return static_cast<int64_t>(time);
 }
 
-uint32_t MMAAudioRendererImpl::GetBufferSize(int32_t *errorCode)
+uint32_t MMAAudioRendererImpl::GetBufferSize(int32_t* errorCode)
 {
     size_t bufferSize = 0;
     if (audioRenderer_ == nullptr) {
@@ -137,7 +138,7 @@ int32_t MMAAudioRendererImpl::Pause()
     return SUCCESS_CODE;
 }
 
-CArrDeviceDescriptor MMAAudioRendererImpl::GetCurrentOutputDevices(int32_t *errorCode)
+CArrDeviceDescriptor MMAAudioRendererImpl::GetCurrentOutputDevices(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -150,7 +151,7 @@ CArrDeviceDescriptor MMAAudioRendererImpl::GetCurrentOutputDevices(int32_t *erro
         *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor devices{};
+    CArrDeviceDescriptor devices {};
     Convert2CArrDeviceDescriptorByDeviceInfo(devices, deviceInfo, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(devices);
@@ -159,7 +160,7 @@ CArrDeviceDescriptor MMAAudioRendererImpl::GetCurrentOutputDevices(int32_t *erro
     return devices;
 }
 
-double MMAAudioRendererImpl::GetSpeed(int32_t *errorCode)
+double MMAAudioRendererImpl::GetSpeed(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -168,7 +169,7 @@ double MMAAudioRendererImpl::GetSpeed(int32_t *errorCode)
     return audioRenderer_->GetSpeed();
 }
 
-bool MMAAudioRendererImpl::GetSilentModeAndMixWithOthers(int32_t *errorCode)
+bool MMAAudioRendererImpl::GetSilentModeAndMixWithOthers(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -181,7 +182,7 @@ bool MMAAudioRendererImpl::GetSilentModeAndMixWithOthers(int32_t *errorCode)
     return on;
 }
 
-double MMAAudioRendererImpl::GetVolume(int32_t *errorCode)
+double MMAAudioRendererImpl::GetVolume(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -190,7 +191,7 @@ double MMAAudioRendererImpl::GetVolume(int32_t *errorCode)
     return audioRenderer_->GetVolume();
 }
 
-uint32_t MMAAudioRendererImpl::GetUnderflowCount(int32_t *errorCode)
+uint32_t MMAAudioRendererImpl::GetUnderflowCount(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -199,7 +200,7 @@ uint32_t MMAAudioRendererImpl::GetUnderflowCount(int32_t *errorCode)
     return audioRenderer_->GetUnderflowCount();
 }
 
-void MMAAudioRendererImpl::SetVolumeWithRamp(double volume, int32_t duration, int32_t *errorCode)
+void MMAAudioRendererImpl::SetVolumeWithRamp(double volume, int32_t duration, int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -215,7 +216,7 @@ void MMAAudioRendererImpl::SetVolumeWithRamp(double volume, int32_t duration, in
     }
 }
 
-void MMAAudioRendererImpl::SetSpeed(double speed, int32_t *errorCode)
+void MMAAudioRendererImpl::SetSpeed(double speed, int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -231,7 +232,7 @@ void MMAAudioRendererImpl::SetSpeed(double speed, int32_t *errorCode)
     }
 }
 
-void MMAAudioRendererImpl::SetVolume(double volume, int32_t *errorCode)
+void MMAAudioRendererImpl::SetVolume(double volume, int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -247,7 +248,7 @@ void MMAAudioRendererImpl::SetVolume(double volume, int32_t *errorCode)
     }
 }
 
-void MMAAudioRendererImpl::SetSilentModeAndMixWithOthers(bool on, int32_t *errorCode)
+void MMAAudioRendererImpl::SetSilentModeAndMixWithOthers(bool on, int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -256,7 +257,7 @@ void MMAAudioRendererImpl::SetSilentModeAndMixWithOthers(bool on, int32_t *error
     audioRenderer_->SetSilentModeAndMixWithOthers(on);
 }
 
-void MMAAudioRendererImpl::SetInterruptMode(int32_t mode, int32_t *errorCode)
+void MMAAudioRendererImpl::SetInterruptMode(int32_t mode, int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -265,7 +266,7 @@ void MMAAudioRendererImpl::SetInterruptMode(int32_t mode, int32_t *errorCode)
     audioRenderer_->SetInterruptMode(static_cast<InterruptMode>(mode));
 }
 
-void MMAAudioRendererImpl::SetChannelBlendMode(int32_t mode, int32_t *errorCode)
+void MMAAudioRendererImpl::SetChannelBlendMode(int32_t mode, int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -277,7 +278,19 @@ void MMAAudioRendererImpl::SetChannelBlendMode(int32_t mode, int32_t *errorCode)
     }
 }
 
-void MMAAudioRendererImpl::RegisterOutputDeviceCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void MMAAudioRendererImpl::SetDefaultOutputDevice(int32_t type, int32_t* errorCode)
+{
+    if (audioRenderer_ == nullptr) {
+        *errorCode = CJ_ERR_SYSTEM;
+        return;
+    }
+    int32_t ret = audioRenderer_->SetDefaultOutputDevice(static_cast<DeviceType>(type));
+    if (ret != SUCCESS_CODE) {
+        *errorCode = CJ_ERR_ILLEGAL_STATE;
+    }
+}
+
+void MMAAudioRendererImpl::RegisterOutputDeviceCallback(int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     if (callbackType == AudioRendererCallbackType::AR_OUTPUT_DEVICE_CHANGE) {
         auto func = CJLambda::Create(reinterpret_cast<void (*)(CArrDeviceDescriptor)>(callback));
@@ -321,7 +334,7 @@ void MMAAudioRendererImpl::RegisterOutputDeviceCallback(int32_t callbackType, vo
     }
 }
 
-void MMAAudioRendererImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void MMAAudioRendererImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -364,8 +377,8 @@ void MMAAudioRendererImpl::RegisterCallback(int32_t callbackType, void (*callbac
     RegisterOutputDeviceCallback(callbackType, callback, errorCode);
 }
 
-void MMAAudioRendererImpl::RegisterCallbackWithFrame(int32_t callbackType, void (*callback)(), int64_t frame,
-    int32_t *errorCode)
+void MMAAudioRendererImpl::RegisterCallbackWithFrame(
+    int32_t callbackType, void (*callback)(), int64_t frame, int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -417,7 +430,7 @@ void MMAAudioRendererImpl::RegisterCallbackWithFrame(int32_t callbackType, void 
     }
 }
 
-int32_t MMAAudioRendererImpl::GetAudioEffectMode(int32_t *errorCode)
+int32_t MMAAudioRendererImpl::GetAudioEffectMode(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -426,7 +439,7 @@ int32_t MMAAudioRendererImpl::GetAudioEffectMode(int32_t *errorCode)
     return audioRenderer_->GetAudioEffectMode();
 }
 
-void MMAAudioRendererImpl::SetAudioEffectMode(int32_t mode, int32_t *errorCode)
+void MMAAudioRendererImpl::SetAudioEffectMode(int32_t mode, int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -439,7 +452,7 @@ void MMAAudioRendererImpl::SetAudioEffectMode(int32_t mode, int32_t *errorCode)
     }
 }
 
-double MMAAudioRendererImpl::GetMinStreamVolume(int32_t *errorCode)
+double MMAAudioRendererImpl::GetMinStreamVolume(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -448,7 +461,7 @@ double MMAAudioRendererImpl::GetMinStreamVolume(int32_t *errorCode)
     return audioRenderer_->GetMinStreamVolume();
 }
 
-double MMAAudioRendererImpl::GetMaxStreamVolume(int32_t *errorCode)
+double MMAAudioRendererImpl::GetMaxStreamVolume(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -457,7 +470,7 @@ double MMAAudioRendererImpl::GetMaxStreamVolume(int32_t *errorCode)
     return audioRenderer_->GetMaxStreamVolume();
 }
 
-void MMAAudioRendererImpl::Release(int32_t *errorCode)
+void MMAAudioRendererImpl::Release(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -469,7 +482,7 @@ void MMAAudioRendererImpl::Release(int32_t *errorCode)
     }
 }
 
-uint32_t MMAAudioRendererImpl::GetStreamId(int32_t *errorCode)
+uint32_t MMAAudioRendererImpl::GetStreamId(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -484,7 +497,7 @@ uint32_t MMAAudioRendererImpl::GetStreamId(int32_t *errorCode)
     return sessionId;
 }
 
-void MMAAudioRendererImpl::Stop(int32_t *errorCode)
+void MMAAudioRendererImpl::Stop(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -496,7 +509,7 @@ void MMAAudioRendererImpl::Stop(int32_t *errorCode)
     }
 }
 
-void MMAAudioRendererImpl::Start(int32_t *errorCode)
+void MMAAudioRendererImpl::Start(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -508,41 +521,41 @@ void MMAAudioRendererImpl::Start(int32_t *errorCode)
     }
 }
 
-CAudioStreamInfo MMAAudioRendererImpl::GetStreamInfo(int32_t *errorCode)
+CAudioStreamInfo MMAAudioRendererImpl::GetStreamInfo(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioStreamInfo();
     }
-    AudioStreamInfo streamInfo{};
+    AudioStreamInfo streamInfo {};
     auto ret = audioRenderer_->GetStreamInfo(streamInfo);
     if (ret != SUCCESS_CODE) {
         AUDIO_ERR_LOG("Get StreamInfo failed.");
         *errorCode = CJ_ERR_INVALID_VALUE;
         return CAudioStreamInfo();
     }
-    CAudioStreamInfo cInfo{};
+    CAudioStreamInfo cInfo {};
     Convert2CAudioStreamInfo(cInfo, streamInfo);
     return cInfo;
 }
 
-CAudioRendererInfo MMAAudioRendererImpl::GetRendererInfo(int32_t *errorCode)
+CAudioRendererInfo MMAAudioRendererImpl::GetRendererInfo(int32_t* errorCode)
 {
     if (audioRenderer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioRendererInfo();
     }
-    AudioRendererInfo rendererInfo{};
+    AudioRendererInfo rendererInfo {};
     auto ret = audioRenderer_->GetRendererInfo(rendererInfo);
     if (ret != SUCCESS_CODE) {
         AUDIO_ERR_LOG("Get RendererInfo failed.");
         *errorCode = CJ_ERR_INVALID_VALUE;
         return CAudioRendererInfo();
     }
-    CAudioRendererInfo cInfo{};
+    CAudioRendererInfo cInfo {};
     Convert2AudioRendererInfo(cInfo, rendererInfo);
     return cInfo;
 }
 }
 } // namespace AudioStandard
-} // namespace OHO
+} // namespace OHOS

@@ -249,3 +249,22 @@ SYSTEM_TONE_PLAYBACK:
   VOLUME_LEVEL: {type: UINT8, arrsize: 100, desc: volume level}
   TIME_STAMP: {type: INT64, arrsize: 100, desc: the time stamp}
   
+RECORD_ERROR:
+  __BASE: {type: FAULT, level: CRITICAL, tag: AudioRecord, desc: AudioRecordErrorEvent}
+  INCOMING_SOURCE: {type: UINT8, desc: source of incoming record}
+  INCOMING_PID: {type: INT32, desc: pid of incoming record}
+  INCOMING_PKG: {type: STRING, desc: pkg of incoming record}
+  ACTIVE_SOURCE: {type: UINT8, desc: source of active record}
+  ACTIVE_PID: {type: INT32, desc: pid of active record}
+  ACTIVE_PKG: {type: STRING, desc: pkg of active record}
+  REASON: {type: INT32, desc: reason}
+
+STREAM_OCCUPANCY:
+  __BASE: {type: STATISTIC, level: MINOR, desc: stream occupancy event}
+  IS_PLAYBACK: {type: BOOL, desc: is playback or record}
+  SESSIONID: {type: INT32, desc: sessionid}
+  UID: {type: INT32, desc: uid of app}
+  PKGNAME: {type: STRING, desc: pkgname of app}
+  STREAM_OR_SOURCE_TYPE: {type: INT32, desc: streamusage or sourcetype}
+  START_TIME: {type: INT64, desc: time of start}
+  UPLOAD_TIME: {type: INT64, desc: time of upload}

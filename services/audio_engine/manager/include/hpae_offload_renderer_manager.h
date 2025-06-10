@@ -89,6 +89,7 @@ public:
     std::string GetThreadName() override;
     void DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+    std::string GetDeviceHDFDumpInfo() override;
 
 private:
     void SendRequest(Request &&request, bool isInit = false);
@@ -114,8 +115,6 @@ private:
     HpaeSinkInfo sinkInfo_;
     bool isMute_ = false;
     std::atomic<bool> isSuspend_ = false;
-    // only set offload mode enableProcessing
-    bool enableProcess_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

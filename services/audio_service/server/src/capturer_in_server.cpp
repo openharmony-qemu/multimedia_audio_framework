@@ -33,6 +33,7 @@
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
 #include "core_service_handler.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -483,7 +484,7 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
             "after NotifyPrivacyStart success!", streamIndex_);
         isMicIndicatorOn_ = true;
     }
@@ -520,6 +521,9 @@ int32_t CapturerInServer::Start()
     CapturerStage stage = ret == SUCCESS ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
     if (recorderDfx_) {
         recorderDfx_->WriteDfxStartMsg(streamIndex_, stage, processConfig_);
+    }
+    if (ret == SUCCESS) {
+        StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
     }
     return ret;
 }
@@ -575,6 +579,7 @@ int32_t CapturerInServer::Pause()
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     if (capturerClock_ != nullptr) {
         capturerClock_->Stop();
     }
@@ -641,6 +646,7 @@ int32_t CapturerInServer::Stop()
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
 
@@ -660,6 +666,7 @@ int32_t CapturerInServer::Release()
             CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
     }
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
@@ -819,5 +826,11 @@ int64_t CapturerInServer::GetLastAudioDuration()
     return ret < 0 ? -1 : ret;
 }
 
+int32_t CapturerInServer::StopSession()
+{
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_INVALID_PARAM, "audioServerBuffer_ is nullptr");
+    audioServerBuffer_->SetStopFlag(true);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

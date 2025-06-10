@@ -40,6 +40,7 @@
 #include "core_service_handler.h"
 #include "audio_service_enum.h"
 #include "i_hpae_manager.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -60,7 +61,7 @@ namespace {
     constexpr int32_t DEFAULT_SPAN_SIZE = 1;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
-    const int32_t DUP_COMMON_LEN = 40; // 40 -> 40ms
+    const int32_t DUP_COMMON_LEN = 400; // 400 -> 400ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 }
 
@@ -843,12 +844,15 @@ int32_t RendererInServer::UpdateWriteIndex()
         }
     }
 
-    if (afterDrain == true) {
-        if (writeLock_.try_lock()) {
-            afterDrain = false;
-            AUDIO_DEBUG_LOG("After drain, start write data");
-            WriteData();
-            writeLock_.unlock();
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        if (afterDrain == true) {
+            if (writeLock_.try_lock()) {
+                afterDrain = false;
+                AUDIO_DEBUG_LOG("After drain, start write data");
+                WriteData();
+                writeLock_.unlock();
+            }
         }
     }
     return SUCCESS;
@@ -876,6 +880,9 @@ int32_t RendererInServer::Start()
     RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
     if (playerDfx_) {
         playerDfx_->WriteDfxStartMsg(streamIndex_, stage, sourceDuration_, processConfig_);
+    }
+    if (ret == SUCCESS) {
+        StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
     }
     return ret;
 }
@@ -1011,6 +1018,7 @@ int32_t RendererInServer::Pause()
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
     DataTransferStateChangeType type = isStandbyTmp ? DATA_TRANS_STOP : AUDIO_STREAM_PAUSE;
     audioStreamChecker_->MonitorOnAllCallback(type, isStandbyTmp);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
 
@@ -1121,6 +1129,11 @@ int32_t RendererInServer::Stop()
         }
         status_ = I_STATUS_STOPPING;
     }
+    return StopInner();
+}
+
+int32_t RendererInServer::StopInner()
+{
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
@@ -1163,6 +1176,7 @@ int32_t RendererInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
 
@@ -1187,6 +1201,7 @@ int32_t RendererInServer::Release()
 
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
 
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
@@ -1231,13 +1246,13 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     return SUCCESS;
 }
 
-int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency)
+int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
 {
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
-    stream_->GetCurrentPosition(framePos, timestamp, latency);
+    stream_->GetCurrentPosition(framePos, timestamp, latency, base);
     return SUCCESS;
 }
 
@@ -1966,6 +1981,13 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
 int32_t RendererInServer::SetOffloadDataCallbackState(int32_t state)
 {
     return stream_->SetOffloadDataCallbackState(state);
+}
+
+int32_t RendererInServer::StopSession()
+{
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_INVALID_PARAM, "audioServerBuffer_ is nullptr");
+    audioServerBuffer_->SetStopFlag(true);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

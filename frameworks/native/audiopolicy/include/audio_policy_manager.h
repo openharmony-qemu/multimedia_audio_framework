@@ -366,6 +366,9 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
 
+    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+        const int32_t volume, const bool updateUi);
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
@@ -603,6 +606,8 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 
+    int32_t ForceStopAudioStream(StopAudioType audioType);
+    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo);
     int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage);
     int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage);
     int32_t GetVolumeLevelByUsage(StreamUsage streamUsage);

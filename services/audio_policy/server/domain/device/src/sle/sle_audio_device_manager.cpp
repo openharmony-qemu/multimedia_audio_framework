@@ -171,6 +171,18 @@ int32_t SleAudioDeviceManager::SetActiveDevice(const std::string &device, Source
     return SetActiveSinkDevice(device, GetSleStreamTypeBySourceType(sourceType));
 }
 
+int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
+    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
+}
+
+int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
+    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
+}
+
 int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
@@ -183,16 +195,22 @@ int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDe
     return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
 }
 
-int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
+int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &device, AudioStreamType streamType, int32_t volume)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
-}
+    CHECK_AND_RETURN_RET_LOG(volume >= 0, ERR_INVALID_PARAM, "volume is invalid");
 
-int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
-{
-    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
-    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
+    auto it = deviceVolumeConfigInfo_.find(device);
+    CHECK_AND_RETURN_RET_LOG(it != deviceVolumeConfigInfo_.end(), ERR_INVALID_PARAM, "device not found");
+
+    int32_t ret = SUCCESS;
+    if (streamType == STREAM_MUSIC) {
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000002); // MEDIA
+    } else {
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000004); // VOICE_CALL
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set device to nearlink failed");
+
+    return ret;
 }
 
 int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
@@ -210,17 +228,16 @@ int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &de
 int32_t SleAudioDeviceManager::AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-
     std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
-    deviceVolumeConfigInfo_[deviceDesc.macAddress_] = std::make_pair(SleVolumeConfigInfo{STREAM_MUSIC},
-        SleVolumeConfigInfo{STREAM_VOICE_CALL});
+    deviceVolumeConfigInfo_[deviceDesc.macAddress_] =
+        std::make_pair(SleVolumeConfigInfo{STREAM_MUSIC, deviceDesc.mediaVolume_},
+        SleVolumeConfigInfo{STREAM_VOICE_CALL, deviceDesc.callVolume_});
     return SUCCESS;
 }
 
 int32_t SleAudioDeviceManager::RemoveNearlinkDevice(const AudioDeviceDescriptor &deviceDesc)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-
     std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
     deviceVolumeConfigInfo_.erase(deviceDesc.macAddress_);
     startedSleStreamType_.erase(deviceDesc.macAddress_);
@@ -261,14 +278,15 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
     if (isAdd) {
         sessionSet.insert(sessionId);
     } else {
-        sessionSet.erase(sessionId);
-        if (sessionSet.empty()) {
+        bool isErased = sessionSet.erase(sessionId) > 0;
+        if (isErased && sessionSet.empty()) {
             StopPlaying(deviceAddr, streamType);
         }
     }
 }
 
-void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isRemoved)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
 
@@ -288,6 +306,9 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
                 AUDIO_INFO_LOG("session %{public}d is not running", sessionId);
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, false);
             }
+            if (isRemoved) {
+                UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
+            }
         }
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {
             oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
@@ -304,6 +325,9 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
             } else {
                 AUDIO_INFO_LOG("session %{public}d is not running", sessionId);
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, false);
+            }
+            if (isRemoved) {
+                UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
             }
         }
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {
@@ -334,7 +358,7 @@ int32_t SleAudioDeviceManager::SetNearlinkDeviceVolumeLevel(const std::string &d
         ERR_INVALID_PARAM, "device not found");
     if (streamType == STREAM_MUSIC) {
         deviceVolumeConfigInfo_[device].first.volumeLevel = volumeLevel;
-    } else {
+    } else if (streamType == STREAM_VOICE_CALL && volumeLevel > 0) {
         deviceVolumeConfigInfo_[device].second.volumeLevel = volumeLevel;
     }
     return SUCCESS;
@@ -350,8 +374,7 @@ int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volume
         return deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.isMute ? 0 :
             deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.volumeLevel;
     } else if (volumeType == STREAM_VOICE_CALL) {
-        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.isMute ? 0 :
-            deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
+        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
     }
     return 0;
 }

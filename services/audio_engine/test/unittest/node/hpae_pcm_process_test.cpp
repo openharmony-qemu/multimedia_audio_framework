@@ -23,6 +23,7 @@ namespace AudioStandard {
 namespace HPAE {
 
 constexpr uint32_t NUM_TWO = 2;
+constexpr int ALIGIN_FLOAT_SIZE = 4;
 
 class HpaePcmProcessTest : public testing::Test {
 public:
@@ -117,6 +118,160 @@ TEST_F(HpaePcmProcessTest, calHpaeProcessTest)
     }
     hpaePcmProcessTest2.Reset();
     for (int i = 0; i < TEST_SUB_FREAME_LEN; i++) {
+        EXPECT_EQ(hpaePcmProcessTest2[i], 0);
+    }
+}
+
+TEST_F(HpaePcmProcessTest, selfAssignHpaeProcessTest)
+{
+    std::vector<float> testData(TEST_SUB_FREAME_LEN);
+    for (int i = 0; i < TEST_SUB_FREAME_LEN; i++) {
+        testData[i] = i + 1;
+    }
+    
+    HpaePcmProcess hpaePcmProcessTest(testData.data(), TEST_SUB_FREAME_LEN);
+    
+    std::vector<float> originalData;
+    for (int i = 0; i < TEST_SUB_FREAME_LEN; i++) {
+        originalData.push_back(hpaePcmProcessTest[i]);
+    }
+    
+    HpaePcmProcess& hpaePcmProcessTestRef = hpaePcmProcessTest;
+    hpaePcmProcessTest = hpaePcmProcessTestRef;
+    
+    for (int i = 0; i < TEST_SUB_FREAME_LEN; i++) {
+        EXPECT_EQ(hpaePcmProcessTest[i], originalData[i]);
+        EXPECT_EQ(hpaePcmProcessTest[i], i + 1);
+    }
+    
+    EXPECT_EQ(hpaePcmProcessTest.Begin(), testData.data());
+    EXPECT_EQ(hpaePcmProcessTest.End(), testData.data() + TEST_SUB_FREAME_LEN);
+}
+
+TEST_F(HpaePcmProcessTest, smallArrayOperations)
+{
+    // Only test lengths smaller than ALIGIN_FLOAT_SIZE (0,1,2,3)
+    const size_t testLengths[] = {0, 1, 2};
+    for (auto len : testLengths) {
+        // ================== Addition Test ==================
+        {
+            // Initialize objects with fixed size data
+            std::vector<float> leftData(len, 1.5f);
+            std::vector<float> rightData(len, 2.5f);
+            HpaePcmProcess leftObj(leftData.data(), len);
+            HpaePcmProcess rightObj(rightData.data(), len);
+            // Force operation on small arrays
+            leftObj += rightObj;
+            // Verify all elements
+            for (size_t i = 0; i < len; i++) {
+                EXPECT_FLOAT_EQ(leftObj[i], 4.0f);
+            }
+        }
+        // ================== Subtraction Test ==================
+        {
+            std::vector<float> leftData(len, 5.0f);
+            std::vector<float> rightData(len, 3.0f);
+            HpaePcmProcess leftObj(leftData.data(), len);
+            HpaePcmProcess rightObj(rightData.data(), len);
+            leftObj -= rightObj;
+            for (size_t i = 0; i < len; i++) {
+                EXPECT_FLOAT_EQ(leftObj[i], 2.0f);
+            }
+        }
+        // ================== Multiplication Test ==================
+        {
+            std::vector<float> leftData(len, 3.0f);
+            std::vector<float> rightData(len, 1.5f);
+            
+            HpaePcmProcess leftObj(leftData.data(), len);
+            HpaePcmProcess rightObj(rightData.data(), len);
+            leftObj *= rightObj;
+            for (size_t i = 0; i < len; i++) {
+                EXPECT_FLOAT_EQ(leftObj[i], 4.5f);
+            }
+        }
+    }
+}
+
+TEST_F(HpaePcmProcessTest, multiplicationExactAlignment)
+{
+    // Test lengths that are multiples of ALIGIN_FLOAT_SIZE
+    const size_t testLen = ALIGIN_FLOAT_SIZE * 4;  // 16 elements
+    // Prepare data with unique values for each element
+    std::vector<float> leftData(testLen);
+    std::vector<float> rightData(testLen);
+    std::vector<float> expected(testLen);
+    for (size_t i = 0; i < testLen; i++) {
+        leftData[i] = 1.0f + i * 0.1f;
+        rightData[i] = 2.0f + i * 0.1f;
+        expected[i] = leftData[i] * rightData[i];
+    }
+    HpaePcmProcess leftObj(leftData.data(), testLen);
+    HpaePcmProcess rightObj(rightData.data(), testLen);
+    // Execute multiplication operation
+    leftObj *= rightObj;
+    // Verify all elements
+    for (size_t i = 0; i < testLen; i++) {
+        EXPECT_FLOAT_EQ(leftObj[i], expected[i]);
+    }
+}
+
+TEST_F(HpaePcmProcessTest, zeroRemainderEdgeCases)
+{
+    // Test multiple exact alignment cases
+    const size_t multipliers[] = {1, 2, 3};  // x4, x8, x12
+    const float testValue = 0.0f;
+    
+    for (auto multiplier : multipliers) {
+        const size_t testLen = ALIGIN_FLOAT_SIZE * multiplier;
+        
+        std::vector<float> leftVec(testLen, testValue);
+        std::vector<float> rightVec(testLen, testValue);
+        
+        HpaePcmProcess leftObj(leftVec.data(), testLen);
+        HpaePcmProcess rightObj(rightVec.data(), testLen);
+        
+        // Test all operations
+        leftObj += rightObj;
+        for (size_t i = 0; i < testLen; i++) {
+            EXPECT_FLOAT_EQ(leftObj[i], testValue);
+        }
+        
+        leftObj -= rightObj;
+        for (size_t i = 0; i < testLen; i++) {
+            EXPECT_FLOAT_EQ(leftObj[i], testValue);
+        }
+        
+        leftObj *= rightObj;
+        for (size_t i = 0; i < testLen; i++) {
+            EXPECT_FLOAT_EQ(leftObj[i], 0.0f);
+        }
+    }
+}
+
+TEST_F(HpaePcmProcessTest, hpaeProcessTestShortLen)
+{
+    std::vector<float> testData(TEST_LEN_LT_FOUR);
+    for (int i = 0; i < TEST_LEN_LT_FOUR; i++) {
+        testData[i] = i;
+    }
+    HpaePcmProcess hpaePcmProcessTest(testData.data(), TEST_LEN_LT_FOUR);
+    std::vector<float> testData2(TEST_LEN_LT_FOUR, NUM_TWO);
+    HpaePcmProcess hpaePcmProcessTest2(testData2.data(), TEST_LEN_LT_FOUR);
+    hpaePcmProcessTest2 += hpaePcmProcessTest;
+    for (int i = 0; i < TEST_LEN_LT_FOUR; i++) {
+        EXPECT_EQ(hpaePcmProcessTest2[i], i + NUM_TWO);
+    }
+    hpaePcmProcessTest2 -= hpaePcmProcessTest;
+    for (int i = 0; i < TEST_LEN_LT_FOUR; i++) {
+        EXPECT_EQ(hpaePcmProcessTest2[i], NUM_TWO);
+    }
+    hpaePcmProcessTest2 *= hpaePcmProcessTest;
+    for (int i = 0; i < TEST_LEN_LT_FOUR; i++) {
+        EXPECT_EQ(hpaePcmProcessTest2[i], NUM_TWO * i);
+    }
+    hpaePcmProcessTest2.Reset();
+    for (int i = 0; i < TEST_LEN_LT_FOUR; i++) {
         EXPECT_EQ(hpaePcmProcessTest2[i], 0);
     }
 }

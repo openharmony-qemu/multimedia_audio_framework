@@ -108,9 +108,12 @@ class ClockTime {
 public:
     static int64_t GetCurNano();
     static int64_t GetRealNano();
+    static int64_t GetBootNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);
     static int32_t RelativeSleep(int64_t nanoTime);
     static std::string NanoTimeToString(int64_t nanoTime);
+
+    static void GetAllTimeStamp(std::vector<uint64_t> &timestamps);
 };
 
 /**

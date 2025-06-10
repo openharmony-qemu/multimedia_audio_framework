@@ -32,6 +32,8 @@ const std::map<DeviceType, std::string> deviceTypeStringMap = {
     {DEVICE_TYPE_BLUETOOTH_SCO, "BLUETOOTH_SCO"},
     {DEVICE_TYPE_BLUETOOTH_A2DP, "BLUETOOTH_A2DP"},
     {DEVICE_TYPE_BLUETOOTH_A2DP_IN, "BLUETOOTH_A2DP_IN"},
+    {DEVICE_TYPE_NEARLINK, "NEARLINK"},
+    {DEVICE_TYPE_NEARLINK_IN, "NEARLINK_IN"},
     {DEVICE_TYPE_MIC, "MIC"},
     {DEVICE_TYPE_WAKEUP, "WAKEUP"},
     {DEVICE_TYPE_USB_HEADSET, "USB_HEADSET"},
@@ -245,6 +247,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceDescriptor(Parcel &parcel, int32_
     parcel.WriteInt32(deviceCategory_);
     parcel.WriteInt32(connectState_);
     parcel.WriteBool(spatializationSupported_);
+    parcel.WriteInt32(mediaVolume_);
+    parcel.WriteInt32(callVolume_);
     return true;
 }
 
@@ -358,6 +362,8 @@ void AudioDeviceDescriptor::UnmarshallingToDeviceDescriptor(Parcel &parcel)
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
     connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
     spatializationSupported_ = parcel.ReadBool();
+    mediaVolume_ = parcel.ReadInt32();
+    callVolume_ = parcel.ReadInt32();
 }
 
 void AudioDeviceDescriptor::UnmarshallingToDeviceInfo(Parcel &parcel)

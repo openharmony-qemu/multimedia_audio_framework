@@ -107,10 +107,9 @@ int32_t DownMixer::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo out
 
 int32_t DownMixer::Process(uint32_t frameLen, float* in, uint32_t inLen, float* out, uint32_t outLen)
 {
-    if ((in == nullptr) || (out == nullptr) || frameLen <= 0) {
-        AUDIO_ERR_LOG("invalid input params for downmix process, frameLen %{public}d", frameLen);
-        return DMIX_ERR_ALLOC_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(in, DMIX_ERR_INVALID_ARG, "input pointer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(out, DMIX_ERR_INVALID_ARG, "output pointer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(frameLen >= 0, DMIX_ERR_INVALID_ARG, "invalid frameSize");
     if (!isInitialized_) {
         AUDIO_DEBUG_LOG("Downmixe table has not been initialized!");
         return DMIX_ERR_ALLOC_FAILED;

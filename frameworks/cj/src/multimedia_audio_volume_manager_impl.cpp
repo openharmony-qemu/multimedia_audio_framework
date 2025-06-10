@@ -14,8 +14,9 @@
  */
 
 #include "multimedia_audio_volume_manager_impl.h"
-#include "cj_lambda.h"
+
 #include "audio_policy_log.h"
+#include "cj_lambda.h"
 #include "multimedia_audio_error.h"
 #include "multimedia_audio_volume_group_manager_impl.h"
 
@@ -29,7 +30,7 @@ MMAAudioVolumeManagerImpl::MMAAudioVolumeManagerImpl()
     cachedClientId_ = getpid();
 }
 
-int64_t MMAAudioVolumeManagerImpl::GetVolumeGroupManager(int32_t groupId, int32_t *errorCode)
+int64_t MMAAudioVolumeManagerImpl::GetVolumeGroupManager(int32_t groupId, int32_t* errorCode)
 {
     auto mgr = FFIData::Create<MMAAudioVolumeGroupManagerImpl>(groupId);
     if (mgr == nullptr) {
@@ -41,7 +42,7 @@ int64_t MMAAudioVolumeManagerImpl::GetVolumeGroupManager(int32_t groupId, int32_
     return mgr->GetID();
 }
 
-void MMAAudioVolumeManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void MMAAudioVolumeManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     if (callbackType != AudioVolumeManagerCallbackType::VOLUME_CHANGE) {
         return;

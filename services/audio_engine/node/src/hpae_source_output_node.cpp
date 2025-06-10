@@ -50,10 +50,6 @@ void HpaeSourceOutputNode::DoProcess()
         return;
     }
     HpaePcmBuffer *outputData = outputVec.front();
-    if (!outputData->IsValid()) {
-        AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), drop invalid data", GetSessionId());
-        return;
-    }
     ConvertFromFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), sourceOutputData_.data());
 #ifdef ENABLE_HOOK_PCM

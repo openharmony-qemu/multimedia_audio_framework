@@ -24,6 +24,7 @@
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #include "audio_effect_map.h"
+#include "hpae_policy_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -589,6 +590,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
             return;
         }
         AUDIO_INFO_LOG("re-Init HpaeCapturerManager success");
+        HpaePolicyManager::GetInstance().SetInputDevice(captureId_, static_cast<DeviceType>(sourceInfo_.deviceType));
         // connect
         for (const auto &moveInfo : moveInfos) {
             AddSingleNodeToSource(moveInfo, true);
@@ -651,7 +653,8 @@ int32_t HpaeCapturerManager::Init()
             AUDIO_INFO_LOG("Init HpaeCapturerManager success");
             TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
             CheckIfAnyStreamRunning();
-            TriggerCallback(GET_CAPTURE_ID, captureId_, sourceInfo_.deviceType);
+            HpaePolicyManager::GetInstance().SetInputDevice(captureId_,
+                static_cast<DeviceType>(sourceInfo_.deviceType));
         }
     };
     SendRequest(request, true);
@@ -937,6 +940,12 @@ void HpaeCapturerManager::CheckIfAnyStreamRunning()
     }
 }
 
+std::string HpaeCapturerManager::GetDeviceHDFDumpInfo()
+{
+    std::string config;
+    TransDeviceInfoToString(sourceInfo_, config);
+    return config;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

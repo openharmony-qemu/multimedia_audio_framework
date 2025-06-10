@@ -118,6 +118,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_DEVICE_ABSOLUTE_VOLUME_SUPPORTED",
     "GET_ABS_VOLUME_SCENE",
     "SET_A2DP_DEVICE_VOLUME",
+    "SET_NEARLINK_DEVICE_VOLUME",
     "GET_AVAILABLE_DESCRIPTORS",
     "SET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
     "UNSET_AVAILABLE_DEVICE_CHANGE_CALLBACK",
@@ -230,6 +231,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "RESET_ALL_PROXY",
     "SET_BACKGROUND_MUTE_CALLBACK",
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
+    "FORCE_STOP_AUDIO_STREAM",
+    "IS_CAPTURER_FOCUS_AVAILABLE",
     "GET_MAX_VOLUME_LEVEL_BY_USAGE",
     "GET_MIN_VOLUME_LEVEL_BY_USAGE",
     "GET_VOLUME_LEVEL_BY_USAGE",
@@ -1006,15 +1009,6 @@ void AudioPolicyManagerStub::IsAbsVolumeSceneInternal(MessageParcel &data, Messa
     reply.WriteBool(IsAbsVolumeScene());
 }
 
-void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply)
-{
-    std::string macAddress = data.ReadString();
-    int32_t volume = data.ReadInt32();
-    bool updateUi = data.ReadBool();
-    int32_t result = SetA2dpDeviceVolume(macAddress, volume, updateUi);
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
@@ -1287,6 +1281,8 @@ void AudioPolicyManagerStub::NotifyFreezeStateChangeInternal(MessageParcel &data
     std::set<int32_t> pidList;
     bool isFreeze = data.ReadBool();
     int32_t pidListSize = data.ReadInt32();
+    int32_t size = 100;
+    CHECK_AND_RETURN_LOG(pidListSize <= size, "MessageParcel more than 100.");
     for (int32_t i = 0; i < pidListSize; i ++) {
         pidList.insert(data.ReadInt32());
     }
@@ -1307,6 +1303,23 @@ void AudioPolicyManagerStub::SetBackgroundMuteCallbackInternal(MessageParcel &da
     CHECK_AND_RETURN_LOG(object != nullptr, "SetBackgroundMuteCallbackInternal is null");
     int32_t result = SetBackgroundMuteCallback(object);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::FORCE_STOP_AUDIO_STREAM):
+            ForceStopAudioStreamInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_CAPTURER_FOCUS_AVAILABLE):
+            IsCapturerFocusAvailableInternal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
 }
 
 void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
@@ -1356,8 +1369,7 @@ void AudioPolicyManagerStub::OnMiddleEleRemoteRequest(
             SetSleAudioOperationCallbackInternal(data, reply);
             break;
         default:
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            OnMiddleTweRemoteRequest(code, data, reply, option);
             break;
     }
 }
@@ -1633,6 +1645,9 @@ void AudioPolicyManagerStub::OnMiddleFifRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_A2DP_DEVICE_VOLUME):
             SetA2dpDeviceVolumeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_NEARLINK_DEVICE_VOLUME):
+            SetNearlinkDeviceVolumeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AVAILABLE_DESCRIPTORS):
             GetAvailableDevicesInternal(data, reply);
@@ -2346,6 +2361,21 @@ void AudioPolicyManagerStub::IsAcousticEchoCancelerSupportedInternal(MessageParc
 {
     SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
     bool result = IsAcousticEchoCancelerSupported(sourceType);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::ForceStopAudioStreamInternal(MessageParcel &data, MessageParcel &reply)
+{
+    StopAudioType audioType = static_cast<StopAudioType>(data.ReadInt32());
+    int32_t result = ForceStopAudioStream(audioType);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsCapturerFocusAvailableInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioCapturerChangeInfo capturerInfo = {};
+    capturerInfo.Unmarshalling(data);
+    bool result = IsCapturerFocusAvailable(capturerInfo);
     reply.WriteBool(result);
 }
 

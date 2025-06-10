@@ -1286,6 +1286,15 @@ public:
      * @since 11
      */
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi);
+
+    /**
+     * @brief Set the absolute volume value for the specified Nearlink device
+     *
+     * @return Returns success or not
+     */
+    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+        const int32_t volume, const bool updateUi);
+
     /**
      * @brief Registers the availbale deviceChange callback listener.
      *

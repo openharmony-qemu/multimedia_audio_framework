@@ -29,7 +29,7 @@ struct SleVolumeConfigInfo {
     bool isMute = false;
 
     SleVolumeConfigInfo() = default;
-    SleVolumeConfigInfo(AudioVolumeType volumeType) : volumeType(volumeType) {}
+    SleVolumeConfigInfo(AudioVolumeType volumeType, int32_t volume) : volumeType(volumeType), volumeLevel(volume) {}
 };
 
 class SleAudioDeviceManager : public SleAudioOperationCallback {
@@ -68,7 +68,7 @@ public:
     // Core Device Management Methods
     int32_t AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     int32_t RemoveNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
-    void UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isRemoved = false);
 
     // Devcice Volume Manager
     int32_t SetNearlinkDeviceMute(const std::string &device, AudioStreamType streamType, bool isMute);

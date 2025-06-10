@@ -19,7 +19,7 @@
 #include "gmock/gmock.h"
 #include "audio_affinity_manager.h"
 #include "audio_system_manager.h"
-#include "audio_device_descriptor.cpp"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {

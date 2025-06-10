@@ -338,10 +338,11 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     uint64_t framePos = 0;
     uint64_t timestamp = 0;
     uint64_t latency = 0;
+    int32_t base = GetData<int32_t>();
     if (ipcStream->rendererInServer_ != nullptr) {
         ipcStream->Flush();
         ipcStream->GetAudioTime(framePos, timestamp);
-        ipcStream->GetAudioPosition(framePos, timestamp, latency);
+        ipcStream->GetAudioPosition(framePos, timestamp, latency, base);
         ipcStream->GetLatency(timestamp);
     }
     int32_t param = 0;

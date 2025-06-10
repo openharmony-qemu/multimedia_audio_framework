@@ -152,6 +152,8 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
     bool isScoRealConnected_ = false;
     bool isEnable_ = true;
+    int32_t mediaVolume_ = 0;
+    int32_t callVolume_ = 0;
     // DeviceInfo
     bool isLowLatencyDevice_ = false;
     int32_t a2dpOffloadFlag_ = NO_A2DP_DEVICE;

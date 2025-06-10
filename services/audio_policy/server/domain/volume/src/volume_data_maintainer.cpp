@@ -703,6 +703,7 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
             return type;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_NEARLINK:
             type = "_wireless";
             return type;
         case DEVICE_TYPE_WIRED_HEADSET:
