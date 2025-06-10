@@ -210,7 +210,7 @@ int32_t AudioCoreService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, 
     ConnectState connectState)
 {
     AUDIO_INFO_LOG("handleflag %{public}d, address %{public}s, connectState %{public}d",
-        handleFlag, address.c_str(), connectState);
+        handleFlag, GetEncryptAddr(address).c_str(), connectState);
     if (handleFlag && connectState != DEACTIVE_CONNECTED) {
         return SUCCESS;
     }
