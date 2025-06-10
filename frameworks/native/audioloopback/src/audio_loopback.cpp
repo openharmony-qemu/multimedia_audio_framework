@@ -201,7 +201,10 @@ void AudioLoopbackPrivate::DestroyAudioLoopback()
         if (!ret) {
             AUDIO_ERR_LOG("audioCapturer Release failed");
         }
+        AUDIO_INFO_LOG("audioCapturer Release success");
         audioCapturer_ = nullptr;
+    } else {
+         AUDIO_ERR_LOG("audioCapturer is nullptr");
     }
     if (audioRenderer_) {
         ret = audioRenderer_->Stop();
@@ -212,7 +215,10 @@ void AudioLoopbackPrivate::DestroyAudioLoopback()
         if (!ret) {
             AUDIO_ERR_LOG("audioRenderer Release failed");
         }
+        AUDIO_INFO_LOG("audioRenderer Release success");
         audioRenderer_ = nullptr;
+    } else {
+         AUDIO_ERR_LOG("audioRenderer is nullptr");
     }
 }
 
@@ -270,6 +276,7 @@ bool AudioLoopbackPrivate::SetKaraokeParameters()
 
 void AudioLoopbackPrivate::OnReadData(size_t length)
 {
+    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "audioCapturer is nullptr");
     BufferDesc bufDesc;
     int32_t ret = audioCapturer_->GetBufferDesc(bufDesc);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "get bufDesc failed, bufLength=%{public}zu, dataLength=%{public}zu",
@@ -278,6 +285,7 @@ void AudioLoopbackPrivate::OnReadData(size_t length)
 
 void AudioLoopbackPrivate::OnWriteData(size_t length)
 {
+    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "audioRenderer is nullptr");
     BufferDesc bufDesc;
     audioRenderer_->GetBufferDesc(bufDesc);
     memset_s((void*)bufDesc.buffer, bufDesc.bufLength, 0, bufDesc.bufLength);
@@ -367,6 +375,7 @@ void AudioLoopbackPrivate::UpdateStatus()
     if (newStatus != currentStatus_) {
         AUDIO_INFO_LOG("UpdateStatus: %{public}d -> %{public}d", currentStatus_, newStatus);
         if (currentStatus_ == AVAILABLE_RUNNING) {
+            currentStatus_ = newStatus;
             DestroyAudioLoopback();
         }
         currentStatus_ = newStatus;
