@@ -354,6 +354,15 @@ public:
      * @since 20
      */
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+
+    /**
+     * Checks whether the audio loopback is supported.
+     * @param   { AudioLoopbackMode } mode - The audio loopback mode.
+     * @returns { boolean } The value true means that the audio loopback is supported,
+     *          and false means the opposite.
+     * @since 20
+     */
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

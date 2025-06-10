@@ -275,5 +275,10 @@ bool AudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     return AudioPolicyManager::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
 }
+
+bool AudioStreamManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS
