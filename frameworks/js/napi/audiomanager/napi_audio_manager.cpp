@@ -1566,6 +1566,9 @@ napi_value NapiAudioManager::Off(napi_env env, napi_callback_info info)
 
 napi_value NapiAudioManager::GetCollaborativeManager(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+    
     napi_status status;
     size_t argCount = 0;
 

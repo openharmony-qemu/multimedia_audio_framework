@@ -45,10 +45,7 @@ bool NapiAudioCollaborativeManager::CheckAudioCollaborativeManagerStatus(NapiAud
 
 void NapiAudioCollaborativeManager::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
-    if (nativeObject == nullptr) {
-        AUDIO_WARNING_LOG("Native object is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(nativeObject, "Native object is null");
     auto obj = static_cast<NapiAudioCollaborativeManager *>(nativeObject);
     ObjectRefMap<NapiAudioCollaborativeManager>::DecreaseRef(obj);
     AUDIO_INFO_LOG("Decrease obj count");
@@ -110,19 +107,13 @@ napi_value NapiAudioCollaborativeManager::CreateCollaborativeManagerWrapper(napi
     napi_value constructor;
 
     status = napi_get_reference_value(env, g_collaborativeManagerConstructor, &constructor);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("Failed in CreateCollaborativeManagerWrapper, %{public}d", status);
-        goto fail;
-    }
-    status = napi_new_instance(env, constructor, 0, nullptr, &result);
-    if (status != napi_ok) {
-        AUDIO_ERR_LOG("napi_new_instance failed, status:%{public}d", status);
-        goto fail;
-    }
-    return result;
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napi_get_undefined(env, &result),
+        "Failed in CreateCollaborativeManagerWrapper");
 
-fail:
-    napi_get_undefined(env, &result);
+    status = napi_new_instance(env, constructor, 0, nullptr, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napi_get_undefined(env, &result),
+        "napi_new_instance failed");
+
     return result;
 }
 
@@ -265,7 +256,7 @@ napi_value NapiAudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevi
     return updateCollaborativeEnabled(env, context);
 }
 
-napi_value NapiAudioCollaborativeManager::updateCollaborativeEnabled(napi_env env,
+napi_value NapiAudioCollaborativeManager::UpdateCollaborativeEnabled(napi_env env,
     std::shared_ptr<AudioCollaborativeManagerAsyncContext> &context)
 {
     auto executor = [context]() {

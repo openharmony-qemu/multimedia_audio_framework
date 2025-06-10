@@ -53,7 +53,5 @@ int32_t AudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevice(
     return AudioPolicyManager::GetInstance().SetCollaborativePlaybackEnabledForDevice(
         selectedAudioDevice, enabled);
 }
-
-
 } // AudioStandard
 } // OHOS

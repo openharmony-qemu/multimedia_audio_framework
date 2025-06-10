@@ -30,7 +30,7 @@ public:
      * @brief Check whether the collaborative is supported for local device
      *
      * @return Returns <b>true</b> if the collaborative is successfully enabled; returns <b>false</b> otherwise.
-     * @since xx
+     * @since 20
      */
     bool IsCollaborativePlaybackSupported();
 
@@ -39,7 +39,7 @@ public:
      * @brief Set the spatialization enabled or disabled by the specified device.
      *
      * @return Returns success or not
-     * @since xx
+     * @since 20
      */
     int32_t SetCollaborativePlaybackEnabledForDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
 
@@ -47,7 +47,7 @@ public:
      * @brief Check whether the collaborative is supported for some device
      *
      * @return Returns <b>true</b> if the spatialization is supported; returns <b>false</b> otherwise.
-     * @since 11
+     * @since 20
      */
     bool IsCollaborativePlaybackEnabledForDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 private:

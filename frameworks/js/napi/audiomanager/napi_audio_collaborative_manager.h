@@ -37,7 +37,7 @@ private:
     static napi_value IsCollaborativePlaybackSupported(napi_env env, napi_callback_info info);
     static napi_value IsCollaborativePlaybackEnabledForDevice(napi_env env, napi_callback_info info);
     static napi_value SetCollaborativePlaybackEnabledForDevice(napi_env env, napi_callback_info info);
-    static napi_value updateCollaborativeEnabled(
+    static napi_value UpdateCollaborativeEnabled(
         napi_env env, std::shared_ptr<AudioCollaborativeManagerAsyncContext> &context);
 
     AudioCollaborativeManager *audioCollaborativeMngr_;

@@ -22,8 +22,6 @@ public:
     int32_t SetCollaborativePlaybackEnabledForDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
     // current device change, map state unchanged
     void UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice);
-    // to do: check
-    // void UpdateRendererInfo(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
 private:
     AudioCollaborativeService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())

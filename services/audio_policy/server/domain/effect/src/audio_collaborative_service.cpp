@@ -10,15 +10,14 @@ static const std::string AUDIO_COLLABORATIVE_SERVICE_LABEL = "COLLABORATIVE";
 void AudioCollaborativeService::Init(const std::vector<EffectChain> &effectChains)
 {
     AUDIO_INFO_LOG("AudioCollaborative service initialized!");
-    isCollaborativePlaybackSupported_ = false;
-    // for (auto effectChain: effectChains) {
-    //     if (effectChain.name != BLUETOOTH_EFFECT_CHAIN_NAME) { // only support bluebooth effectchain?
-    //         continue;
-    //     }
-    //     if (effectChain.label == AUDIO_COLLABORATIVE_SERVICE_LABEL) {
-    //         isCollaborativePlaybackSupported_ = true;
-    //     }
-    // }
+    for (auto effectChain: effectChains) {
+        if (effectChain.name != BLUETOOTH_EFFECT_CHAIN_NAME) { // only support bluebooth effectchain?
+            continue;
+        }
+        if (effectChain.label == AUDIO_COLLABORATIVE_SERVICE_LABEL) {
+            isCollaborativePlaybackSupported_ = true;
+        }
+    }
 }
 
 bool AudioCollaborativeService::IsCollaborativePlaybackSupported()
