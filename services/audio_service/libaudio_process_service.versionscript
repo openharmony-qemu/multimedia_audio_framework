@@ -65,6 +65,7 @@
     *UpdateSessionOperation*;
     *SetSessionMuteState*;
     *SetLatestMuteState*;
+    *ForceStopAudioStream*;
   local:
     *;
 };

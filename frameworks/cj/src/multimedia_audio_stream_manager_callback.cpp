@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "multimedia_audio_stream_manager_callback.h"
+
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 
@@ -24,19 +25,19 @@ void CjAudioCapturerStateChangeCallback::RegisterFunc(std::function<void(CArrAud
 }
 
 void CjAudioCapturerStateChangeCallback::OnCapturerStateChange(
-    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>>& audioCapturerChangeInfos)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ == nullptr) {
         return;
     }
-    CArrAudioCapturerChangeInfo arrInfo{};
+    CArrAudioCapturerChangeInfo arrInfo {};
     arrInfo.size = static_cast<int64_t>(audioCapturerChangeInfos.size());
     int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioCapturerChangeInfo)) * static_cast<int32_t>(arrInfo.size);
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(CAudioCapturerChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
         return;
     }
-    auto head = static_cast<CAudioCapturerChangeInfo *>(malloc(mallocSize));
+    auto head = static_cast<CAudioCapturerChangeInfo*>(malloc(mallocSize));
     if (head == nullptr) {
         return;
     }
@@ -63,19 +64,19 @@ void CjAudioRendererStateChangeCallback::RegisterFunc(std::function<void(CArrAud
 }
 
 void CjAudioRendererStateChangeCallback::OnRendererStateChange(
-    const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+    const std::vector<std::shared_ptr<AudioRendererChangeInfo>>& audioRendererChangeInfos)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ == nullptr) {
         return;
     }
-    CArrAudioRendererChangeInfo arrInfo{};
+    CArrAudioRendererChangeInfo arrInfo {};
     arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
     int32_t mallocSize = static_cast<int32_t>(sizeof(CAudioRendererChangeInfo)) * static_cast<int32_t>(arrInfo.size);
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(CAudioRendererChangeInfo) * MAX_MEM_MALLOC_SIZE)) {
         return;
     }
-    auto head = static_cast<CAudioRendererChangeInfo *>(malloc(mallocSize));
+    auto head = static_cast<CAudioRendererChangeInfo*>(malloc(mallocSize));
     if (head == nullptr) {
         return;
     }

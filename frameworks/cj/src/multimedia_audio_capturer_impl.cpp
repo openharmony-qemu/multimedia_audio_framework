@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #include "multimedia_audio_capturer_impl.h"
-#include "cj_lambda.h"
+
 #include "audio_capturer_log.h"
+#include "cj_lambda.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 #include "timestamp.h"
@@ -29,7 +30,7 @@ MMAAudioCapturerImpl::MMAAudioCapturerImpl()
 
 int32_t MMAAudioCapturerImpl::CreateAudioCapturer(CAudioCapturerOptions options)
 {
-    AudioCapturerOptions capturerOptions{};
+    AudioCapturerOptions capturerOptions {};
     Convert2AudioCapturerOptions(capturerOptions, options);
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
     if (audioCapturer_ == nullptr) {
@@ -62,7 +63,7 @@ int32_t MMAAudioCapturerImpl::GetState()
     return audioCapturer_->GetStatus();
 }
 
-uint32_t MMAAudioCapturerImpl::GetStreamId(int32_t *errorCode)
+uint32_t MMAAudioCapturerImpl::GetStreamId(int32_t* errorCode)
 {
     uint32_t id = 0;
     if (audioCapturer_ == nullptr) {
@@ -77,9 +78,9 @@ uint32_t MMAAudioCapturerImpl::GetStreamId(int32_t *errorCode)
     return id;
 }
 
-int64_t MMAAudioCapturerImpl::GetAudioTime(int32_t *errorCode)
+int64_t MMAAudioCapturerImpl::GetAudioTime(int32_t* errorCode)
 {
-    Timestamp timestamp{};
+    Timestamp timestamp {};
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CJ_ERR_INVALID_RETURN_VALUE;
@@ -96,7 +97,7 @@ int64_t MMAAudioCapturerImpl::GetAudioTime(int32_t *errorCode)
     return static_cast<int64_t>(time);
 }
 
-uint32_t MMAAudioCapturerImpl::GetBufferSize(int32_t *errorCode)
+uint32_t MMAAudioCapturerImpl::GetBufferSize(int32_t* errorCode)
 {
     size_t bufferSize = 0;
     if (audioCapturer_ == nullptr) {
@@ -159,9 +160,9 @@ int32_t MMAAudioCapturerImpl::Release()
     return SUCCESS_CODE;
 }
 
-CAudioCapturerInfo MMAAudioCapturerImpl::GetCurrentCapturerInfo(int32_t *errorCode)
+CAudioCapturerInfo MMAAudioCapturerImpl::GetCurrentCapturerInfo(int32_t* errorCode)
 {
-    AudioCapturerInfo capturerInfo{};
+    AudioCapturerInfo capturerInfo {};
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioCapturerInfo();
@@ -172,14 +173,14 @@ CAudioCapturerInfo MMAAudioCapturerImpl::GetCurrentCapturerInfo(int32_t *errorCo
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioCapturerInfo();
     }
-    CAudioCapturerInfo cInfo{};
+    CAudioCapturerInfo cInfo {};
     Convert2CAudioCapturerInfo(cInfo, capturerInfo);
     return cInfo;
 }
 
-CAudioStreamInfo MMAAudioCapturerImpl::GetStreamInfo(int32_t *errorCode)
+CAudioStreamInfo MMAAudioCapturerImpl::GetStreamInfo(int32_t* errorCode)
 {
-    AudioStreamInfo streamInfo{};
+    AudioStreamInfo streamInfo {};
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioStreamInfo();
@@ -190,14 +191,14 @@ CAudioStreamInfo MMAAudioCapturerImpl::GetStreamInfo(int32_t *errorCode)
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioStreamInfo();
     }
-    CAudioStreamInfo cInfo{};
+    CAudioStreamInfo cInfo {};
     Convert2CAudioStreamInfo(cInfo, streamInfo);
     return cInfo;
 }
 
-CAudioCapturerChangeInfo MMAAudioCapturerImpl::GetAudioCapturerChangeInfo(int32_t *errorCode)
+CAudioCapturerChangeInfo MMAAudioCapturerImpl::GetAudioCapturerChangeInfo(int32_t* errorCode)
 {
-    AudioCapturerChangeInfo changeInfo{};
+    AudioCapturerChangeInfo changeInfo {};
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioCapturerChangeInfo();
@@ -208,7 +209,7 @@ CAudioCapturerChangeInfo MMAAudioCapturerImpl::GetAudioCapturerChangeInfo(int32_
         *errorCode = CJ_ERR_SYSTEM;
         return CAudioCapturerChangeInfo();
     }
-    CAudioCapturerChangeInfo cInfo{};
+    CAudioCapturerChangeInfo cInfo {};
     Convert2CAudioCapturerChangeInfo(cInfo, changeInfo, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(cInfo.deviceDescriptors);
@@ -217,7 +218,7 @@ CAudioCapturerChangeInfo MMAAudioCapturerImpl::GetAudioCapturerChangeInfo(int32_
     return cInfo;
 }
 
-CArrDeviceDescriptor MMAAudioCapturerImpl::GetInputDevices(int32_t *errorCode)
+CArrDeviceDescriptor MMAAudioCapturerImpl::GetInputDevices(int32_t* errorCode)
 {
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     if (audioCapturer_ == nullptr) {
@@ -230,7 +231,7 @@ CArrDeviceDescriptor MMAAudioCapturerImpl::GetInputDevices(int32_t *errorCode)
         *errorCode = CJ_ERR_SYSTEM;
         return CArrDeviceDescriptor();
     }
-    CArrDeviceDescriptor devices{};
+    CArrDeviceDescriptor devices {};
     Convert2CArrDeviceDescriptorByDeviceInfo(devices, deviceInfo, errorCode);
     if (*errorCode != SUCCESS_CODE) {
         FreeCArrDeviceDescriptor(devices);
@@ -239,7 +240,7 @@ CArrDeviceDescriptor MMAAudioCapturerImpl::GetInputDevices(int32_t *errorCode)
     return devices;
 }
 
-void MMAAudioCapturerImpl::RegisterCArrCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void MMAAudioCapturerImpl::RegisterCArrCallback(int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -277,7 +278,7 @@ void MMAAudioCapturerImpl::RegisterCArrCallback(int32_t callbackType, void (*cal
     }
 }
 
-void MMAAudioCapturerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void MMAAudioCapturerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
@@ -320,8 +321,8 @@ void MMAAudioCapturerImpl::RegisterCallback(int32_t callbackType, void (*callbac
     RegisterCArrCallback(callbackType, callback, errorCode);
 }
 
-void MMAAudioCapturerImpl::RegisterCallbackWithFrame(int32_t callbackType, void (*callback)(), int64_t frame,
-    int32_t *errorCode)
+void MMAAudioCapturerImpl::RegisterCallbackWithFrame(
+    int32_t callbackType, void (*callback)(), int64_t frame, int32_t* errorCode)
 {
     if (audioCapturer_ == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;

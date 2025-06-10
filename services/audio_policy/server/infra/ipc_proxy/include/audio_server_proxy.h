@@ -117,6 +117,7 @@ public:
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
     void SetBtHdiInvalidState();
+    int32_t ForceStopAudioStreamProxy(StopAudioType audioType);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

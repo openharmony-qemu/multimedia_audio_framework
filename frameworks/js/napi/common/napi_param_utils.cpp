@@ -1396,5 +1396,48 @@ bool NapiParamUtils::CheckArgType(napi_env env, napi_value arg, napi_valuetype e
     }
     return true;
 }
+
+napi_status NapiParamUtils::GetAudioCapturerChangeInfo(const napi_env &env, AudioCapturerChangeInfo &capturerInfo,
+    napi_value in)
+{
+    napi_value result = nullptr;
+    napi_status status = napi_ok;
+    status = NapiParamUtils::GetValueInt32(env, "streamId", capturerInfo.sessionId, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse streamId failed");
+
+    status = NapiParamUtils::GetValueInt32(env, "clientUid", capturerInfo.clientUID, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse clientUid failed");
+
+    status = napi_get_named_property(env, in, "capturerInfo", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
+
+    status = NapiParamUtils::GetCapturerInfo(env, &(capturerInfo.capturerInfo), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse capturerInfo failed");
+
+    int32_t capturerState = 0;
+    status = NapiParamUtils::GetValueInt32(env, "capturerState", capturerState, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse capturerState failed");
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalCapturerState(capturerState),
+        napi_generic_failure, "Invailed capturerState");
+    capturerInfo.capturerState = static_cast<CapturerState>(capturerState);
+
+    status = napi_get_named_property(env, in, "deviceDescriptors", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get deviceDescriptors name failed");
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptorsVector;
+    bool argTransFlag = false;
+    status = NapiParamUtils::GetAudioDeviceDescriptorVector(env, deviceDescriptorsVector, argTransFlag, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse deviceDescriptors failed");
+    if (!deviceDescriptorsVector.empty() && deviceDescriptorsVector.front() != nullptr) {
+        capturerInfo.inputDeviceInfo = *(deviceDescriptorsVector.front());
+    }
+
+    if (napi_get_named_property(env, in, "muted", &result) == napi_ok) {
+        return NapiParamUtils::GetValueBoolean(env, capturerInfo.muted, result);
+    }
+
+    AUDIO_INFO_LOG("Parse AudioCapturerChangeInfo, without muted");
+    return napi_ok;
+}
 } // namespace AudioStandard
 } // namespace OHOS

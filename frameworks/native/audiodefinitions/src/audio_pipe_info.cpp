@@ -86,7 +86,7 @@ void AudioPipeInfo::DumpInputAttrs(std::string &dumpString)
 std::string AudioPipeInfo::ToString()
 {
     std::string out = "";
-    AppendFormat(out, "id %d, adapter %s, name %s",
+    AppendFormat(out, "id %u, adapter %s, name %s",
         id_, adapterName_.c_str(), name_.c_str());
     return out;
 }

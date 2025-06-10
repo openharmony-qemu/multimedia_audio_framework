@@ -254,7 +254,8 @@ PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
     sessionId_ = sessionId;
 }
 
-PipeInfoGuard::~PipeInfoGuard() {
+PipeInfoGuard::~PipeInfoGuard()
+{
     if (releaseFlag_) {
         CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
     }
@@ -2799,5 +2800,13 @@ void AudioServer::SetActiveOutputDevice(DeviceType deviceType)
     return;
 }
 
+int32_t AudioServer::ForceStopAudioStream(StopAudioType audioType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioType >= STOP_ALL && audioType <= STOP_RECORD,
+        ERR_INVALID_PARAM, "Invalid audioType");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
+    return AudioService::GetInstance()->ForceStopAudioStream(audioType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

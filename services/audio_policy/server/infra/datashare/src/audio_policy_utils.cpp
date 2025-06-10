@@ -82,7 +82,7 @@ int32_t AudioPolicyUtils::startDeviceId = 1;
 void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
 {
     Trace trace("SYSEVENT FAULT EVENT AUDIO_SERVICE_STARTUP_ERROR, SERVICE_ID: "
-        + std::to_string(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID) + 
+        + std::to_string(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID) +
         ", ERROR_CODE: " + std::to_string(Media::MediaMonitor::AUDIO_POLICY_SERVER));
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_SERVICE_STARTUP_ERROR,
@@ -637,7 +637,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
 std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     std::string devices;
-    devices.append("device type:id:(category:constate) ");
+    devices.append("device type:id:(category:constate:enable:exceptionflag) ");
     for (auto iter : descs) {
         CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
@@ -646,6 +646,8 @@ std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceD
             iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->isEnable_)));
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->exceptionFlag_)));
         } else if (IsUsb(iter->getType())) {
             devices.append(":" + GetEncryptAddr(iter->macAddress_));
         }

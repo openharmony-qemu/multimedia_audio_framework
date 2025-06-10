@@ -331,8 +331,9 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_003, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_FAST;
-    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    bool result = audioPipeManager->IsSpecialPipe(pipeInfo);
     EXPECT_TRUE(result);
 }
 
@@ -345,8 +346,9 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_001, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_002, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    uint32_t routeFlag = AUDIO_INPUT_FLAG_FAST;
-    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+    bool result = audioPipeManager->IsSpecialPipe(pipeInfo);
     EXPECT_TRUE(result);
 }
 
@@ -359,8 +361,9 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_002, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_003, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD;
-    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD;
+    bool result = audioPipeManager->IsSpecialPipe(pipeInfo);
     EXPECT_TRUE(result);
 }
 
@@ -373,8 +376,9 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_003, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_004, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_NORMAL;
-    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    bool result = audioPipeManager->IsSpecialPipe(pipeInfo);
     EXPECT_FALSE(result);
 }
 
@@ -1024,6 +1028,39 @@ HWTEST_F(AudioPipeManagerUnitTest, RemoveModemCommunicationId_002, TestSize.Leve
     audioPipeManager->RemoveModemCommunicationId(sessionId);
     auto modemMap = audioPipeManager->GetModemCommunicationMap();
     EXPECT_EQ(modemMap.find(sessionId), modemMap.end());
+}
+
+/**
+ * @tc.name: GetModemCommunicationStreamDescById_001
+ * @tc.desc: Test GetModemCommunicationStreamDescById when sessionId is within the valid range.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetModemCommunicationStreamDescById_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t sessionId = 100000;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
+    auto streamDescRet = audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
+    EXPECT_EQ(streamDescRet != nullptr, true);
+}
+
+/**
+ * @tc.name: GetModemCommunicationStreamDescById_002
+ * @tc.desc: Test GetModemCommunicationStreamDescById when sessionId is without the valid range.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetModemCommunicationStreamDescById_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t sessionId = 100000;
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    auto streamDescRet = audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
+    EXPECT_EQ(streamDescRet == nullptr, true);
 }
 
 /**

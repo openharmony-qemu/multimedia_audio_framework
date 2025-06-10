@@ -276,6 +276,14 @@ bool AudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return AudioPolicyManager::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
 }
 
+    return AudioPolicyManager::GetInstance().ForceStopAudioStream(audioType);
+}
+
+bool AudioStreamManager::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+{
+    return AudioPolicyManager::GetInstance().IsCapturerFocusAvailable(capturerInfo);
+}
+
 bool AudioStreamManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
 {
     return true;

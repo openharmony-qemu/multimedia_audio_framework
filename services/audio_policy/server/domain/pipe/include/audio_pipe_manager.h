@@ -71,6 +71,7 @@ public:
     bool IsModemCommunicationIdExist(uint32_t sessionId);
     void AddModemCommunicationId(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void RemoveModemCommunicationId(uint32_t sessionId);
+    std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDescById(uint32_t sessionId);
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetModemCommunicationMap();
     void UpdateModemStreamStatus(AudioStreamStatus streamStatus);
     void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
@@ -81,7 +82,7 @@ public:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs);
 
 private:
-    bool IsSpecialPipe(uint32_t routeFlag);
+    bool IsSpecialPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemCommunicationIdMap_{};

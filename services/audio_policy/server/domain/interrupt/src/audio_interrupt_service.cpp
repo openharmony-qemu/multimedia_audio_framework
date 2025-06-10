@@ -1530,40 +1530,13 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end()) { audioFocusInfoList = itZone->second->audioFocusInfoList; }
 
-    for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
-        if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) { continue; }
-        // if peeling is the incomming interrupt while at the momount there are already some existing recordings
-        // peeling should be rejected
-        if (IsLowestPriorityRecording(incomingInterrupt) && IsRecordingInterruption(iterActive->first)) {
-            incomingState = STOP;
-            AUDIO_INFO_LOG("PEELING AUDIO fail, there's a device recording");
-            break;
-        }
-
-        std::pair<AudioFocusType, AudioFocusType> focusPair =
-            std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
-        CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM, "no focus cfg");
-        AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
-        UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
-        CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
-        if (FocusEntryContinue(iterActive, focusEntry, incomingInterrupt)) { continue; }
-        if (focusEntry.isReject) {
-            if (IsGameAvoidCallbackCase(iterActive->first)) {
-                incomingState = PAUSE;
-                AUDIO_INFO_LOG("incomingState: %{public}d", incomingState);
-                continue;
-            }
-
-            AUDIO_INFO_LOG("the incoming stream is rejected by streamId:%{public}d, pid:%{public}d",
-                (iterActive->first).streamId, (iterActive->first).pid);
-            incomingState = STOP;
-            break;
-        }
-        incomingState = GetNewIncomingState(focusEntry.hintType, incomingState);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator activeInterrupt = audioFocusInfoList.end();
+    int32_t res = ProcessActiveStreamFocus(audioFocusInfoList, incomingInterrupt, incomingState, activeInterrupt);
+    if ((incomingState >= PAUSE || res != SUCCESS) && activeInterrupt != audioFocusInfoList.end()) {
+        ReportRecordGetFocusFail(incomingInterrupt, activeInterrupt->first,
+            res == SUCCESS ? RECORD_ERROR_GET_FOCUS_FAIL : RECORD_ERROR_NO_FOCUS_CFG);
     }
-    if (incomingState == STOP && !incomingInterrupt.deviceTag.empty()) {
-        incomingState = ACTIVE;
-    }
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "ProcessActiveStreamFocus fail");
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
     AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
     SendInterruptEventToIncomingStream(interruptEvent, incomingInterrupt);

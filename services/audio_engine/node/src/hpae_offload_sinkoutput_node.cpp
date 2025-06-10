@@ -91,7 +91,7 @@ void HpaeOffloadSinkOutputNode::DoProcess()
     size_t frameSize = GetSizeFromFormat(GetBitWidth()) * GetFrameLen() * GetChannelCount();
     while (renderFrameData_.size() < CACHE_FRAME_COUNT * frameSize) {
         std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-        if (outputVec.front()->IsValid()) {
+        if (outputVec.size() && outputVec.front()->IsValid()) {
             renderFrameData_.resize(renderFrameData_.size() + frameSize);
             ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(),
                 outputVec.front()->GetPcmDataBuffer(), renderFrameData_.data() + renderFrameData_.size() - frameSize);

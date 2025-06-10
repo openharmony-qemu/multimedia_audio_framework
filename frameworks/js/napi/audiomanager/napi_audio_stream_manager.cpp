@@ -104,6 +104,7 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAudioEnhanceProperty", GetAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("setAudioEnhanceProperty", SetAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("isAcousticEchoCancelerSupported", IsAcousticEchoCancelerSupported),
+        DECLARE_NAPI_FUNCTION("isCapturerFocusAvailable", IsCapturerFocusAvailable),
         DECLARE_NAPI_FUNCTION("isAudioLoopbackSupported", IsAudioLoopbackSupported),
     };
 
@@ -823,6 +824,27 @@ napi_value NapiAudioStreamMgr::IsAcousticEchoCancelerSupported(napi_env env, nap
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsAcousticEchoCancelerSupported(
         static_cast<SourceType>(sourceType));
     NapiParamUtils::SetValueBoolean(env, isSupported, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::IsCapturerFocusAvailable(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE && napiStreamMgr != nullptr &&
+        napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID,
+        "parameter verification failed: mandatory parameters are left unspecified"), "argcCount invalid");
+    AudioCapturerChangeInfo changeInfo = {};
+    napi_status status = NapiParamUtils::GetAudioCapturerChangeInfo(env, changeInfo, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "parameter verification failed"),
+        "get audioCapturerChangeInfo failed");
+
+    bool isAvailable = napiStreamMgr->audioStreamMngr_->IsCapturerFocusAvailable(changeInfo);
+    NapiParamUtils::SetValueBoolean(env, isAvailable, result);
     return result;
 }
 

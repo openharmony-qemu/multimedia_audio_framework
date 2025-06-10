@@ -232,6 +232,8 @@ private:
     void NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void ResetAllProxyInternal(MessageParcel &data, MessageParcel &reply);
     void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void ForceStopAudioStreamInternal(MessageParcel &data, MessageParcel &reply);
+    void IsCapturerFocusAvailableInternal(MessageParcel &data, MessageParcel &reply);
     void SetKaraokeParametersInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
@@ -241,6 +243,7 @@ private:
     void UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleTweRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

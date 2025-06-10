@@ -127,6 +127,7 @@ public:
     void AddNoDataFrameSize() override;
     StreamStatus GetStreamStatus() override;
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
+    int32_t StopSession();
     
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);

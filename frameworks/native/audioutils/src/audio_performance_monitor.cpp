@@ -77,7 +77,7 @@ void AudioPerformanceMonitor::ReportWriteSlow(AdapterType adapterType, int32_t o
     AUDIO_WARNING_LOG("AdapterType %{public}d, PipeType %{public}d, write time interval %{public}d ms! overTime!",
         adapterType, PIPE_TYPE_MAP[adapterType], overtimeMs);
     AUTO_CTRACE("Fast pipe OVERTIME_EVENT, overtimeMs: %d, pipeType %d, adapterType: %d", overtimeMs,
-            PIPE_TYPE_MAP[adapterType], adapterType);
+        PIPE_TYPE_MAP[adapterType], adapterType);
     ReportEvent(OVERTIME_EVENT, overtimeMs, PIPE_TYPE_MAP[adapterType], adapterType);
 }
 

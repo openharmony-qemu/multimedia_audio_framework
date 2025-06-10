@@ -1852,6 +1852,23 @@ void AudioManagerProxy::SetSessionMuteState(const uint32_t sessionId, const bool
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
 }
 
+int32_t AudioManagerProxy::ForceStopAudioStream(StopAudioType audioType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(audioType));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, AUDIO_ERR, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::FORCE_STOP_AUDIO_STREAM), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_ERR, "failed, error:%d", error);
+    return reply.ReadInt32();
+}
+
 int32_t AudioManagerProxy::CreateAudioWorkgroup(int32_t pid)
 {
     MessageParcel data;

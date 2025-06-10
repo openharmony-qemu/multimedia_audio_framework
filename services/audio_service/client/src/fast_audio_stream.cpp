@@ -1184,5 +1184,11 @@ void FastAudioStream::ResetCallbackLoopTid()
     AUDIO_INFO_LOG("Reset callback loop tid to -1");
     callbackLoopTid_ = -1;
 }
+
+bool FastAudioStream::GetStopFlag() const
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
+    return processClient_->GetStopFlag();
+}
 } // namespace AudioStandard
 } // namespace OHOS

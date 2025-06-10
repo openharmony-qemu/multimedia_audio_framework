@@ -109,8 +109,6 @@ public:
     virtual void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
         const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList) = 0;
-    virtual int32_t SetInputDevice(
-        const uint32_t &captureId, const DeviceType &inputDevice, const std::string &deviceName = "") = 0;
     virtual int32_t SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice) = 0;
     virtual int32_t SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol) = 0;
     virtual int32_t SetMicrophoneMuteInfo(const bool &isMute) = 0;

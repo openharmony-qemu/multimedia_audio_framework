@@ -167,6 +167,8 @@ public:
 
     DeviceType GetActiveDevice();
 
+    DeviceCategory GetCurrentOutputDeviceCategory();
+
     AudioDeviceDescriptor GetActiveDeviceDescriptor();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);

@@ -63,6 +63,9 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
     capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
     outputStreamMap_.emplace(sourceBufferType, this);
     historyDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
+    if (historyDataMap_.find(sourceBufferType) != historyDataMap_.end()) {
+        historyDataMap_.at(sourceBufferType).resize(0);
+    }
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumperMap_.emplace(sourceBufferType,
         std::make_unique<HpaePcmDumper>("HpaeSourceInputNode_id_"+ std::to_string(GetSessionId()) +
@@ -91,6 +94,9 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
             FrameDesc{capturerFrameDataMap_.at(sourceBufferType).data(), frameByteSizeMap_.at(sourceBufferType)});
         outputStreamMap_.emplace(sourceBufferType, this);
         historyDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
+        if (historyDataMap_.find(sourceBufferType) != historyDataMap_.end()) {
+            historyDataMap_.at(sourceBufferType).resize(0);
+        }
 #ifdef ENABLE_HOOK_PCM
         inputPcmDumperMap_.emplace(sourceBufferType,
             std::make_unique<HpaePcmDumper>("HpaeSourceInputNode_id_"+ std::to_string(GetSessionId()) +
@@ -131,7 +137,9 @@ void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType,
         nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen,
         capturerFrameDataMap_.at(bufferType).data(),
         inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
-    outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
+    if (inputAudioBufferMap_.at(bufferType).IsValid()) {
+        outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
+    }
 }
 
 void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
@@ -151,8 +159,10 @@ void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferTy
 
     size_t appendSize = std::min<size_t>(replyBytes, remainCapacity);
     historyData.insert(historyData.end(), newData, newData + appendSize);
-
-    if (historyData.size() < frameByteSizeMap_.at(bufferType)) {
+    uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
+        static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
+    if (replyBytes != byteSize && historyData.size() < frameByteSizeMap_.at(bufferType)) {
+        // replyBytes == byteSize should send data right now, else cached history
         AUDIO_DEBUG_LOG("Partial frame accumulated: %{public}zu/%{public}zu",
             historyData.size(), frameByteSizeMap_.at(bufferType));
         return;

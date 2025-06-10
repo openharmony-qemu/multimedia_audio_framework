@@ -247,6 +247,7 @@ public:
     bool SetKaraokeParameters(const std::string &parameters) override;
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
+    int32_t ForceStopAudioStream(StopAudioType audioType) override;
     void RemoveRendererDataTransferCallback(const int32_t &pid);
     int32_t RegisterDataTransferCallback(const sptr<IRemoteObject> &object) override;
     int32_t RegisterDataTransferMonitorParam(const int32_t &callbackId,

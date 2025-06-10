@@ -201,7 +201,8 @@ public:
         AudioSessionStrategy &audioSessionStrategy, napi_value in);
     static napi_status SetAudioSessionDeactiveEvent(const napi_env &env,
         const AudioSessionDeactiveEvent &deactiveEvent, napi_value &result);
-
+    static napi_status GetAudioCapturerChangeInfo(const napi_env &env, AudioCapturerChangeInfo &capturerInfo,
+        napi_value in);
     static bool CheckArgType(napi_env env, napi_value arg, napi_valuetype expectedType);
 };
 } // namespace AudioStandard

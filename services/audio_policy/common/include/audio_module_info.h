@@ -17,6 +17,7 @@
 #define ST_AUDIO_CONFIG_H
 
 #include <list>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -135,6 +136,10 @@ struct AudioModuleInfo {
     std::list<AudioModuleInfo> ports;
     std::string extra;
     AudioPipeRole pipeRole;
+    /**
+     * split stream, sent a few empty chunk when stream pause or stop
+     */
+    std::optional<bool> needEmptyChunk;
 };
 
 } // namespace AudioStandard

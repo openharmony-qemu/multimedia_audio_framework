@@ -1657,6 +1657,26 @@ AudioScene NapiAudioEnum::GetJsAudioScene(AudioScene audioScene)
     return newAudioScene;
 }
 
+bool NapiAudioEnum::IsLegalCapturerState(int32_t state)
+{
+    bool result = false;
+    switch (state) {
+        case CapturerState::CAPTURER_INVALID:
+        case CapturerState::CAPTURER_NEW:
+        case CapturerState::CAPTURER_PREPARED:
+        case CapturerState::CAPTURER_RUNNING:
+        case CapturerState::CAPTURER_STOPPED:
+        case CapturerState::CAPTURER_RELEASED:
+        case CapturerState::CAPTURER_PAUSED:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
 {
     bool result = false;

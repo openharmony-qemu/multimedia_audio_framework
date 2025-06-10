@@ -159,7 +159,10 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     GetFadeLength(byteLength, input);
     if (fadeInState_) {
-        CHECK_AND_RETURN_LOG(input->IsValid(), "GainNode: invalid data no need to do fade in");
+        if (!input->IsValid()) {
+            AUDIO_WARNING_LOG("GainNode: invalid data no need to do fade in");
+            return;
+        }
         if (IsSilentData(input)) {
             AUDIO_DEBUG_LOG("GainNode: silent data no need to do fade in");
             return;
@@ -230,7 +233,7 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
         }
         input->SetBufferSilence(false);
     }
-    if (curSystemGain != preSystemGain) {
+    if (fabs(curSystemGain - preSystemGain) > EPSILON) {
         audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
         audioVolume->Monitor(GetSessionId(), true);
     }
