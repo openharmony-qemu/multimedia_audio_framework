@@ -34,7 +34,7 @@ HpaeCoBufferNode::HpaeCoBufferNode()
       outputStream_(this),
       pcmBufferInfo_(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000),
       coBufferOut_(pcmBufferInfo_),
-      silenceData_(pcmBufferInfo_),
+      silenceData_(pcmBufferInfo_)
 {
     const size_t size = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
         sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
@@ -218,15 +218,18 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
     if (result.size < requestDataLen) {
         AUDIO_WARNING_LOG("Insufficient data: %{public}zu < %{public}zu, outputting silence",
             result.size, requestDataLen);
-        memset_s(coBufferOut_.GetPcmDataBuffer(), requestDataLen, 0, requestDataLen);
+        outputStream_.WriteDataToOutput(&silenceData_);
     } else {
         // read buffer
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), requestDataLen};
         result = ringCache_->Dequeue(bufferWrap);
         CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
+        if (result.ret != OPERATION_SUCCESS) {
+            outputStream_.WriteDataToOutput(&silenceData_);
+        } else {
+            outputStream_.WriteDataToOutput(&coBufferOut_);
+        }
     }
-    
-    outputStream_.WriteDataToOutput(&coBufferOut_);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

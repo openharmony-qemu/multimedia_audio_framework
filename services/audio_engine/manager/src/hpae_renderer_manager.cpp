@@ -1203,18 +1203,18 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
     return SUCCESS;
 }
 
-void HpaeRendererManager::ReConnectNodeForCollaboration(uint32_t sessionID)
+void HpaeRendererManager::ReConnectNodeForCollaboration(uint32_t sessionId)
 {
     // todo fade out
-    CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionID),
-        "sinkInputNodeMap_ not find sessionId %{public}u", sessionID);
+    CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
+        "sinkInputNodeMap_ not find sessionId %{public}u", sessionId);
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     HpaeProcessorType sceneType = GetProcessorType(sessionId);
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         DeleteProcessCluster(nodeInfo, sceneType, sessionId);
     }
-    AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionID);
-    AddSingleNodeToSink(sinkInputNodeMap_[sessionID]);
+    AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionId);
+    AddSingleNodeToSink(sinkInputNodeMap_[sessionId]);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
