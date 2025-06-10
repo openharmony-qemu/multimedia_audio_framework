@@ -757,9 +757,14 @@ std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const D
     return halName;
 }
 
-void AudioEcManager::SetOpenedNormalSource(SourceType targetSource)
+void AudioEcManager::SetOpenedNormalSource(SourceType sourceType)
 {
-    normalSourceOpened_ = targetSource;
+    SourceType targetSourceType = SOURCE_TYPE_MIC;
+    // useMatchingPropInfo is used when selecting route parameters.
+    // Here only need to get the targetSourceType, useMatchingDropInfo is not required.
+    bool useMatchingPropInfo = false;
+    GetTargetSourceTypeAndMatchingFlag(sourceType, targetSourceType, useMatchingPropInfo);
+    normalSourceOpened_ = targetSourceType;
 }
 
 int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,

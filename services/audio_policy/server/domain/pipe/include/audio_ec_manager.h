@@ -67,7 +67,7 @@ public:
     bool GetEcFeatureEnable();
     bool GetMicRefFeatureEnable();
     void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
-    void SetOpenedNormalSource(SourceType targetSource);
+    void SetOpenedNormalSource(SourceType sourceType);
     int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
     void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
