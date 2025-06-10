@@ -342,7 +342,16 @@ HWTEST(AudioAdapterManagerUnitTest, UpdateSinkArgs_001, TestSize.Level1)
     info.needEmptyChunk = true;
     std::string ret {};
     AudioAdapterManager::UpdateSinkArgs(info, ret);
-    EXPECT_EQ(ret, " sink_name=hello adapter_name=world device_class=CALSS file_path=sink.so sink_latency=300ms network_id=ASD**G124 device_type=AE00 split_mode=1:13:2 need_empty_chunk=1");
+    EXPECT_EQ(ret,
+    " sink_name=hello"
+    " adapter_name=world"
+    " device_class=CALSS"
+    " file_path=sink.so"
+    " sink_latency=300ms"
+    " network_id=ASD**G124"
+    " device_type=AE00"
+    " split_mode=1:13:2"
+    " need_empty_chunk=1");
 }
 
 /**
