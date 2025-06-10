@@ -1820,12 +1820,9 @@ void AudioDeviceCommon::BluetoothScoDisconectForRecongnition()
     AUDIO_INFO_LOG("Recongnition scoCategory: %{public}d, deviceType: %{public}d, scoState: %{public}d",
         Bluetooth::AudioHfpManager::GetScoCategory(), tempDesc.deviceType_,
         audioDeviceManager_.GetScoState());
-    if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        int32_t ret = ScoInputDeviceFetchedForRecongnition(false, tempDesc.macAddress_,
-            tempDesc.connectState_);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
-            GetEncryptAddr(tempDesc.macAddress_).c_str());
-    }
+    int32_t ret = ScoInputDeviceFetchedForRecongnition(false, tempDesc.macAddress_, tempDesc.connectState_);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
+        GetEncryptAddr(tempDesc.macAddress_).c_str());
 }
 
 void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
@@ -1844,10 +1841,6 @@ void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
 {
     bool hasRunningRecognitionCapturerStream = streamCollector_.HasRunningRecognitionCapturerStream();
     if (hasRunningRecognitionCapturerStream) {
-        return;
-    }
-    AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
-    if (tempDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
         return;
     }
     if (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
