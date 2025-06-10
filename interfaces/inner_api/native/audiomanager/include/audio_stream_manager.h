@@ -376,7 +376,7 @@ public:
     /**
      * Checks whether the audio loopback is supported.
      * @param   { AudioLoopbackMode } mode - The audio loopback mode.
-     * @returns { boolean } The value true means that the audio loopback is supported,
+     * @returns { bool } The value true means that the audio loopback is supported,
      *          and false means the opposite.
      * @since 20
      */

@@ -285,7 +285,7 @@ void AudioLoopbackPrivate::OnReadData(size_t length)
 
 void AudioLoopbackPrivate::OnWriteData(size_t length)
 {
-    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "audioRenderer is nullptr");
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "audioRenderer is nullptr");
     BufferDesc bufDesc;
     audioRenderer_->GetBufferDesc(bufDesc);
     memset_s((void*)bufDesc.buffer, bufDesc.bufLength, 0, bufDesc.bufLength);
