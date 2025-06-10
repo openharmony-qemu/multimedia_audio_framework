@@ -626,6 +626,23 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
     }
 }
 
+int32_t AudioSpatializationService::InitSpatializationScene()
+{
+    int32_t sceneType = 0;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_SCENE_SETTINGKEY, sceneType);
+    CHECK_AND_RETURN_RET_LOG(ret != ERR_NO_INIT, ERROR, "database not initialized");
+    if (ret != SUCCESS || sceneType < SPATIALIZATION_SCENE_TYPE_DEFAULT ||
+            sceneType > SPATIALIZATION_SCENE_TYPE_MAX) {
+        AUDIO_WARNING_LOG("Failed to read spatialization_scene from setting db! Err: %{public}d", ret);
+        WriteSpatializationStateToDb(WRITE_SPATIALIZATION_SCENE);
+    } else {
+        spatializationSceneType_ = static_cast<AudioSpatializationSceneType>(sceneType);
+        UpdateSpatializationSceneType();
+    }
+    return SUCCESS;
+}
+
 void AudioSpatializationService::InitSpatializationState()
 {
     std::map<std::string, uint32_t> tmpAddressToDeviceIDMap;
@@ -633,7 +650,6 @@ void AudioSpatializationService::InitSpatializationState()
         std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
         CHECK_AND_RETURN_LOG(!isLoadedfromDb_, "the spatialization values have already been loaded");
         int32_t pack = 0;
-        int32_t sceneType = 0;
         std::string deviceSpatialInfo;
 
         AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
@@ -646,17 +662,8 @@ void AudioSpatializationService::InitSpatializationState()
             UnpackSpatializationState(pack, spatializationStateFlag_);
             UpdateSpatializationStateReal(false);
         }
-
-        ret = settingProvider.GetIntValue(SPATIALIZATION_SCENE_SETTINGKEY, sceneType);
-        CHECK_AND_RETURN_LOG(ret != ERR_NO_INIT, "database not initialized");
-        if (ret != SUCCESS || sceneType < SPATIALIZATION_SCENE_TYPE_DEFAULT ||
-                sceneType > SPATIALIZATION_SCENE_TYPE_MAX) {
-            AUDIO_WARNING_LOG("Failed to read spatialization_scene from setting db! Err: %{public}d", ret);
-            WriteSpatializationStateToDb(WRITE_SPATIALIZATION_SCENE);
-        } else {
-            spatializationSceneType_ = static_cast<AudioSpatializationSceneType>(sceneType);
-            UpdateSpatializationSceneType();
-        }
+        
+        CHECK_AND_RETURN(InitSpatializationScene() == SUCCESS);
 
         for (uint32_t i = 1; i <= MAX_DEVICE_NUM; ++i) {
             ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" + std::to_string(i),
