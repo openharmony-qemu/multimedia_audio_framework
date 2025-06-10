@@ -1556,6 +1556,22 @@ int32_t HpaeManager::SetClientVolume(uint32_t sessionId, float volume)
     return SUCCESS;
 }
 
+int32_t HpaeManager::SetClientLoudnessGain(uint32_t sessionId, float loudnessGain)
+{
+    auto request = [this, sessionId, loudnessGain]() {
+        AUDIO_INFO_LOG("SetClientLoudnessGain sessionId %{public}u %{public}f", sessionId, loudnessGain);
+        if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
+            rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetClientLoudnessGain(sessionId, loudnessGain);
+        } else {
+            AUDIO_WARNING_LOG("SetClientLoudnessGain can not find sessionId, sessionId %{public}u", sessionId);
+        }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t HpaeManager::SetRate(uint32_t sessionId, int32_t rate)
 {
     auto request = [this, sessionId, rate]() {

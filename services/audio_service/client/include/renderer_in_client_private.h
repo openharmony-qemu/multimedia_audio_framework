@@ -76,6 +76,8 @@ public:
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
+    int32_t SetLoudnessGain(float loudnessGain) override;
+    float GetLoudnessGain() override;
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
     int32_t SetMute(bool mute) override;
@@ -352,6 +354,8 @@ private:
     float muteVolume_ = 1.0;
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
+
+    float clientLoudnessGain_ = 0.0f;
     
     bool flushAfterStop_ = false;
 

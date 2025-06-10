@@ -61,6 +61,7 @@ public:
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;
+    int32_t SetClientLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetRate(uint32_t sessionId, int32_t rate) override;
     int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
     int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;

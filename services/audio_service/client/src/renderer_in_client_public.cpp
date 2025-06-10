@@ -470,6 +470,24 @@ float RendererInClientInner::GetVolume()
     return clientVolume_;
 }
 
+int32_t RendererInClientInner::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d loudness gain:%{public}f", (offloadEnable_ ? "offload" : "normal"),
+        sessionId_, loudnessGain);
+    if (loudnessGain > 24.0 || loudnessGain < -96.0) {
+        AUDIO_ERR_LOG("SetLoudnessGain with invalid volume %{public}f", loudnessGain);
+        return ERR_INVALID_PARAM;
+    }
+    clientLoudnessGain_ = loudnessGain;    
+    return SetInnerLoudnessGain(loudnessGain);
+}
+
+float RendererInClientInner::GetLoudnessGain()
+{
+    Trace trace("RendererInClientInner::GetLoudnessGain:" + std::to_string(clientLoudnessGain_));
+    return clientLoudnessGain_;
+}
+
 int32_t RendererInClientInner::SetDuckVolume(float volume)
 {
     Trace trace("RendererInClientInner::SetDuckVolume:" + std::to_string(volume));

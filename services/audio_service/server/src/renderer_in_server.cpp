@@ -1667,6 +1667,12 @@ int32_t RendererInServer::SetClientVolume()
     return ret;
 }
 
+int32_t RendererInServer::SetClientLoudnessGain(float clientLoudnessGain)
+{
+    int32_t ret = stream_->SetClientLoudnessGain(clientLoudnessGain);
+    return ret;
+}
+
 int32_t RendererInServer::SetMute(bool isMute)
 {
     isMuted_ = isMute;

@@ -68,6 +68,8 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetSilentModeAndMixWithOthers(data, reply);
         case ON_SET_CLIENT_VOLUME:
             return HandleSetClientVolume(data, reply);
+        case ON_SET_CLIENT_LOUDNESSGAIN:
+            return HandleSetClientLoudnessGain(data, reply);
         case ON_SET_MUTE:
             return HandleSetMute(data, reply);
         case ON_SET_DUCK_FACTOR:
@@ -407,6 +409,13 @@ int32_t IpcStreamStub::HandleSetSilentModeAndMixWithOthers(MessageParcel &data, 
 int32_t IpcStreamStub::HandleSetClientVolume(MessageParcel &data, MessageParcel &reply)
 {
     reply.WriteInt32(SetClientVolume());
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleSetClientLoudnessGain(MessageParcel &data, MessageParcel &reply)
+{
+    float clientLoudnessGain = data.ReadFloat();
+    reply.WriteInt32(SetClientLoudnessGain(clientLoudnessGain));
     return AUDIO_OK;
 }
 

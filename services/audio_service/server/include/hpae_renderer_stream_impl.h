@@ -74,6 +74,7 @@ public:
     int32_t ReturnIndex(int32_t index) override;
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
     int32_t SetClientVolume(float clientVolume) override;
+    int32_t SetClientLoudnessGain(float clientLoudnessGain) override;
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
     void OnStatusUpdate(IOperation operation) override;
@@ -104,6 +105,7 @@ private:
     std::atomic<int32_t> offloadStatePolicy_ = OFFLOAD_DEFAULT;
     // offload end
     float clientVolume_ = 1.0f;
+    float clientLoudnessGain_ = 0.0f;
     // latency position timeStamp
     std::shared_mutex latencyMutex_;
     uint64_t framePosition_ = 0;
