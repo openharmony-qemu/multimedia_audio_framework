@@ -1593,8 +1593,8 @@ int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
                 "stream could be released, no need to stop");
             AudioMode audioMode = audioEndpoint->GetAudioMode();
             bool isNeedStop = (audioType == StopAudioType::STOP_ALL) ||
-                (audioMode == AudioMode::AUDIO_MODE_RECORD && audioType == StopAudioType::STOP_RENDER) ||
-                (audioMode == AudioMode::AUDIO_MODE_PLAYBACK && audioType == StopAudioType::STOP_RECORD);
+                (audioMode == AudioMode::AUDIO_MODE_PLAYBACK && audioType == StopAudioType::STOP_RENDER) ||
+                (audioMode == AudioMode::AUDIO_MODE_RECORD && audioType == StopAudioType::STOP_RECORD);
             if (isNeedStop) {
                 audioProcessInServer->StopSession();
             }
