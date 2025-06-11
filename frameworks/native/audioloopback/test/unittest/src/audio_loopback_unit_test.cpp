@@ -71,6 +71,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_005, TestSize.L
     audioLoopback->isRendererUsb_ = true;
     audioLoopback->isCapturerUsb_ = true;
     audioLoopback->CreateAudioLoopback();
+    audioLoopback->isStarted_ = true;
     audioLoopback->UpdateStatus();
     EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
     EXPECT_EQ(audioLoopback->GetStatus(), AVAILABLE_RUNNING);

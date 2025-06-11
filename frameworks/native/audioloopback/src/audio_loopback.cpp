@@ -75,6 +75,7 @@ AudioLoopbackPrivate::~AudioLoopbackPrivate()
 
 bool AudioLoopbackPrivate::Enable(bool enable)
 {
+    AUDIO_INFO_LOG("Enable %{public}d, currentStatus_ %{public}d", enable, currentStatus_);
     if (enable) {
         CHECK_AND_RETURN_RET_LOG(currentStatus_ != AVAILABLE_RUNNING, false, "AudioLoopback already running");
         InitStatus();
@@ -83,8 +84,8 @@ bool AudioLoopbackPrivate::Enable(bool enable)
             AUDIO_ERR_LOG("Create AudioLoopback failed");
             DestroyAudioLoopback();
         }
+        isStarted_ = true;
         UpdateStatus();
-        InitializeCallbacks();
         CHECK_AND_RETURN_RET_LOG(currentStatus_ == AVAILABLE_RUNNING, false, "AudioLoopback Enable failed");
     } else {
         CHECK_AND_RETURN_RET_LOG(currentStatus_ == AVAILABLE_RUNNING, true, "AudioLoopback not Running");
@@ -95,6 +96,7 @@ bool AudioLoopbackPrivate::Enable(bool enable)
 
 void AudioLoopbackPrivate::InitStatus()
 {
+    isStarted_ = false;
     currentStatus_ = AVAILABLE_IDLE;
 
     rendererState_ = RENDERER_INVALID;
@@ -173,6 +175,7 @@ bool AudioLoopbackPrivate::CreateAudioLoopback()
         return false;
     }
     audioCapturer_->SetCapturerReadCallback(shared_from_this());
+    InitializeCallbacks();
     capturerFastStatus_ = FASTSTATUS_FAST;
     bool ret = audioRenderer_->Start();
     if (!ret) {
@@ -201,6 +204,7 @@ void AudioLoopbackPrivate::DisableLoopback()
 
 void AudioLoopbackPrivate::DestroyAudioLoopback()
 {
+    isStarted_ = false;
     bool ret = true;
     DisableLoopback();
     currentStatus_ = AVAILABLE_IDLE;
@@ -310,7 +314,6 @@ AudioLoopbackPrivate::RendererCallbackImpl::RendererCallbackImpl(AudioLoopbackPr
 void AudioLoopbackPrivate::RendererCallbackImpl::OnStateChange(
     const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType)
 {
-    std::lock_guard<std::mutex> lock(parent_.mutex_);
     parent_.rendererState_ = state;
     parent_.UpdateStatus();
 }
@@ -318,14 +321,12 @@ void AudioLoopbackPrivate::RendererCallbackImpl::OnStateChange(
 void AudioLoopbackPrivate::RendererCallbackImpl::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason __attribute__((unused)) reason)
 {
-    std::lock_guard<std::mutex> lock(parent_.mutex_);
     parent_.isRendererUsb_ = (deviceInfo.deviceType_ == DEVICE_TYPE_USB_HEADSET);
     parent_.UpdateStatus();
 }
 
 void AudioLoopbackPrivate::RendererCallbackImpl::OnFastStatusChange(FastStatus status)
 {
-    std::lock_guard<std::mutex> lock(parent_.mutex_);
     parent_.rendererFastStatus_ = status;
     parent_.UpdateStatus();
 }
@@ -335,21 +336,18 @@ AudioLoopbackPrivate::CapturerCallbackImpl::CapturerCallbackImpl(AudioLoopbackPr
 
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const CapturerState state)
 {
-    std::lock_guard<std::mutex> lock(parent_.mutex_);
     parent_.capturerState_ = state;
     parent_.UpdateStatus();
 }
 
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
 {
-    std::lock_guard<std::mutex> lock(parent_.mutex_);
     parent_.isCapturerUsb_ = (deviceInfo.deviceType_ == DEVICE_TYPE_USB_HEADSET);
     parent_.UpdateStatus();
 }
 
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnFastStatusChange(FastStatus status)
 {
-    std::lock_guard<std::mutex> lock(parent_.mutex_);
     parent_.capturerFastStatus_ = status;
     parent_.UpdateStatus();
 }
@@ -369,6 +367,7 @@ void AudioLoopbackPrivate::InitializeCallbacks()
 
 void AudioLoopbackPrivate::UpdateStatus()
 {
+    CHECK_AND_RETURN(isStarted_);
     AudioLoopbackStatus oldStatus = currentStatus_;
     AudioLoopbackStatus newStatus = currentStatus_;
     const bool isDeviceValid = isRendererUsb_ && isCapturerUsb_;
@@ -383,12 +382,12 @@ void AudioLoopbackPrivate::UpdateStatus()
 
     if (newStatus == AVAILABLE_RUNNING) {
         karaokeParams_["Karaoke_enable"] = "enable";
-        currentStatus_= AVAILABLE_RUNNING;
+        currentStatus_ = AVAILABLE_RUNNING;
         newStatus = SetKaraokeParameters() ? AVAILABLE_RUNNING : UNAVAILABLE_SCENE;
     }
     if (newStatus != oldStatus) {
         AUDIO_INFO_LOG("UpdateStatus: %{public}d -> %{public}d", oldStatus, newStatus);
-        if (currentStatus_ == AVAILABLE_RUNNING) {
+        if (currentStatus_ == AVAILABLE_RUNNING && newStatus != AVAILABLE_RUNNING) {
             DestroyAudioLoopback();
         }
         currentStatus_ = newStatus;

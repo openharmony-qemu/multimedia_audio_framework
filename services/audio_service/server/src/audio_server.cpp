@@ -1656,6 +1656,9 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         return nullptr;
     }
     AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+    if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
+        AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(config.audioMode);
+    }
     sptr<IRemoteObject> remoteObject= process->AsObject();
     pipeInfoGuard->SetReleaseFlag(false);
     return remoteObject;

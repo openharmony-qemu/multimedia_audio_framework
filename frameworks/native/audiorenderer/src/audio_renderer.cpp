@@ -349,6 +349,8 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
+    audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
+    audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
     audioRenderer->strategy_ = rendererOptions.strategy;
     audioRenderer->originalStrategy_ = rendererOptions.strategy;

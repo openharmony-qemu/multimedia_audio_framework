@@ -99,6 +99,7 @@ private:
     CapturerState capturerState_ = CAPTURER_INVALID;
     bool isCapturerUsb_ = false;
     FastStatus capturerFastStatus_ = FASTSTATUS_NORMAL;
+    bool isStarted_ = false;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
