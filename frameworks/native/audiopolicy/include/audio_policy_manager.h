@@ -241,6 +241,28 @@ public:
 
     int32_t UnsetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
 
+    int32_t SetAudioSessionScene(const AudioSessionScene audioSessionScene);
+
+    int32_t SetAudioSessionStateChangedCallback(
+        const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback);
+
+    int32_t UnsetAudioSessionStateChangedCallback();
+
+    int32_t UnsetAudioSessionStateChangedCallback(
+        const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback);
+
+    int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const;
+
+    int32_t SetDefaultOutputDevice(DeviceType deviceType);
+
+    int32_t SetAudioSessionCurrentDeviceChangedCallback(
+        const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
+
+    int32_t UnsetAudioSessionCurrentDeviceChangedCallback();
+
+    int32_t UnsetAudioSessionCurrentDeviceChangedCallback(
+        const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
+
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
 

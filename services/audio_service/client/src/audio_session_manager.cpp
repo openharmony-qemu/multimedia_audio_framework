@@ -80,5 +80,55 @@ int32_t AudioSessionManager::UnsetAudioSessionCallback(
         "UnsetAudioSessionCallback result:%{public}d", result);
     return result;
 }
+
+int32_t AudioSessionManager::SetAudioSessionScene(const AudioSessionScene audioSessionScene)
+{
+    AUDIO_INFO_LOG("Set audio session scene: %{public}d", static_cast<int32_t>(audioSessionScene));
+    return SUCCESS;
+}
+
+int32_t AudioSessionManager::SetAudioSessionStateChangedCallback(
+    const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
+{
+    return SUCCESS;
+}
+
+int32_t AudioSessionManager::UnsetAudioSessionStateChangedCallback()
+{
+    return SUCCESS;
+}
+
+int32_t AudioSessionManager::UnsetAudioSessionStateChangedCallback(
+    const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
+{
+    return SUCCESS;
+}
+
+int32_t AudioSessionManager::GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const
+{
+    return SUCCESS;
+}
+
+int32_t AudioSessionManager::SetDefaultOutputDevice(DeviceType deviceType)
+{
+    return SUCCESS;
+}
+
+int32_t AudioSessionManager::SetAudioSessionCurrentDeviceChangedCallback(
+    const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback)
+{
+    return SUCCESS;
+}
+
+int32_t AudioSessionManager::UnsetAudioSessionCurrentDeviceChangedCallback()
+{
+    return SUCCESS;
+}
+
+int32_t AudioSessionManager::UnsetAudioSessionCurrentDeviceChangedCallback(
+    const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback)
+{
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
