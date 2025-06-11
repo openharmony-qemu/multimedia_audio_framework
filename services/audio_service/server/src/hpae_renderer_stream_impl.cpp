@@ -38,9 +38,9 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_10MS = 10;
-const int32_t FRAME_LEN_20MS = 20;
-const int32_t FRAME_LEN_40MS = 40;
+const uint64_t FRAME_LEN_10MS = 10;
+const uint64_t FRAME_LEN_20MS = 20;
+const uint64_t FRAME_LEN_40MS = 40;
 const int32_t MS_PER_SEC = 1000;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
