@@ -740,6 +740,24 @@ private:
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
 
+    AudioEffectService& audioEffectService_;
+    AudioAffinityManager &audioAffinityManager_;
+    AudioCapturerSession& audioCapturerSession_;
+    AudioStateManager &audioStateManager_;
+    AudioToneManager& audioToneManager_;
+    AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
+    AudioDeviceStatus& audioDeviceStatus_;
+    AudioPolicyConfigManager& audioConfigManager_;
+    AudioSceneManager& audioSceneManager_;
+    AudioConnectedDevice& audioConnectedDevice_;
+    AudioDeviceLock& audioDeviceLock_;
+    AudioStreamCollector& streamCollector_;
+    AudioOffloadStream& audioOffloadStream_;
+    AudioBackgroundManager& audioBackgroundManager_;
+    AudioVolumeManager& audioVolumeManager_;
+    AudioDeviceCommon& audioDeviceCommon_;
+    IAudioPolicyInterface& audioPolicyManager_;
+    AudioPolicyConfigManager &audioPolicyConfigManager_;
     AudioPolicyService& audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
     AudioDeviceManager &audioDeviceManager_;
