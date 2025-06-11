@@ -191,6 +191,8 @@ group("audio_fuzz_test") {
     "fuzztest/audiostream_fuzzer:fuzztest",
     "fuzztest/audioutils_fuzzer:fuzztest",
     "fuzztest/audiovolumemanager_fuzzer:fuzztest",
+    "fuzztest/dfxmsgmanager_fuzzer:fuzztest",
+    "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
   ]
 }
 
