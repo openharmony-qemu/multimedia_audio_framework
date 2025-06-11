@@ -126,7 +126,7 @@ void NapiAudioLoopbackCallback::SafeJsCallbackStatusChangeWork(napi_env env, nap
         "OnJsCallbackStatusChange: no memory");
     std::shared_ptr<AudioLoopbackJsCallback> safeContext(
         static_cast<AudioLoopbackJsCallback*>(data),
-        [](AudioRendererJsCallback *ptr) {
+        [](AudioLoopbackJsCallback *ptr) {
             delete ptr;
     });
     std::string request = event->callbackName;
