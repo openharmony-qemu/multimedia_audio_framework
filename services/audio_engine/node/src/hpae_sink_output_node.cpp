@@ -72,9 +72,7 @@ void HpaeSinkOutputNode::DoProcess()
         return;
     }
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-    if (outputVec.empty()) {
-        return;
-    }
+    CHECK_AND_RETURN(!outputVec.empty());
     HpaePcmBuffer *outputData = outputVec.front();
     HandlePaPower(outputData);
     ConvertFromFloat(
@@ -170,9 +168,7 @@ int32_t HpaeSinkOutputNode::GetRenderSinkInstance(std::string deviceClass, std::
 
 int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 {
-    if (audioRendererSink_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
 
     sinkOutAttr_ = attr;
     SetSinkState(STREAM_MANAGER_IDLE);
@@ -199,9 +195,7 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 
 int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
 {
-    if (audioRendererSink_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
     SetSinkState(STREAM_MANAGER_RELEASED);
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -222,17 +216,13 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
 
 int32_t HpaeSinkOutputNode::RenderSinkFlush(void)
 {
-    if (audioRendererSink_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
     return audioRendererSink_->Flush();
 }
 
 int32_t HpaeSinkOutputNode::RenderSinkPause(void)
 {
-    if (audioRendererSink_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
     audioRendererSink_->Pause();
     SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
@@ -240,30 +230,22 @@ int32_t HpaeSinkOutputNode::RenderSinkPause(void)
 
 int32_t HpaeSinkOutputNode::RenderSinkReset(void)
 {
-    if (audioRendererSink_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
     return audioRendererSink_->Reset();
 }
 
 int32_t HpaeSinkOutputNode::RenderSinkResume(void)
 {
-    if (audioRendererSink_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
     int32_t ret = audioRendererSink_->Resume();
-    if (ret != SUCCESS) {
-        return ret;
-    }
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     SetSinkState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
 }
 
 int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 {
-    if (audioRendererSink_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
 
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
@@ -271,9 +253,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
     timer.Start();
 #endif
     ret = audioRendererSink_->Start();
-    if (ret != SUCCESS) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
@@ -298,18 +278,14 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 
 int32_t HpaeSinkOutputNode::RenderSinkStop(void)
 {
-    if (audioRendererSink_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
 #endif
     ret = audioRendererSink_->Stop();
-    if (ret != SUCCESS) {
-        return ret;
-    }
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();

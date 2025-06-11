@@ -48,6 +48,9 @@ ohos_fuzztest("AudioPolicyServEnhanceFuzzTest") {
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+  }
 
   deps = [
     "../../../services/audio_policy:audio_policy_client",

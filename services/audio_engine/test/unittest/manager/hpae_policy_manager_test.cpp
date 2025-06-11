@@ -26,13 +26,10 @@ class HpaePolicyManagerTest : public testing::Test {
 public:
     void SetUp();
     void TearDown();
-    std::shared_ptr<HpaePolicyManager> hpaePolicyManager_ = nullptr;
 };
 
 void HpaePolicyManagerTest::SetUp()
-{
-    hpaePolicyManager_ = std::make_shared<HpaePolicyManager>();
-}
+{}
 
 void HpaePolicyManagerTest::TearDown()
 {}
@@ -40,44 +37,44 @@ void HpaePolicyManagerTest::TearDown()
 TEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_001)
 {
     AudioSpatializationState spatializationState = {};
-    int32_t ret = hpaePolicyManager_->UpdateSpatializationState(spatializationState);
+    int32_t ret = HpaePolicyManager::GetInstance().UpdateSpatializationState(spatializationState);
     EXPECT_EQ(ret, 0);
 
-    ret = hpaePolicyManager_->UpdateSpatialDeviceType(EARPHONE_TYPE_NONE);
+    ret = HpaePolicyManager::GetInstance().UpdateSpatialDeviceType(EARPHONE_TYPE_NONE);
     EXPECT_EQ(ret, 0);
 
-    ret = hpaePolicyManager_->SetSpatializationSceneType(SPATIALIZATION_SCENE_TYPE_DEFAULT);
+    ret = HpaePolicyManager::GetInstance().SetSpatializationSceneType(SPATIALIZATION_SCENE_TYPE_DEFAULT);
     EXPECT_EQ(ret, 0);
 
-    ret = hpaePolicyManager_->EffectRotationUpdate(0);
+    ret = HpaePolicyManager::GetInstance().EffectRotationUpdate(0);
     EXPECT_EQ(ret, 0);
 
-    ret = hpaePolicyManager_->SetEffectSystemVolume(0, 1.f);
+    ret = HpaePolicyManager::GetInstance().SetEffectSystemVolume(0, 1.f);
     EXPECT_EQ(ret, 0);
 
     AudioEffectPropertyArrayV3 propertyArray;
-    ret = hpaePolicyManager_->SetAudioEffectProperty(propertyArray);
+    ret = HpaePolicyManager::GetInstance().SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ret, 0);
 
     AudioEffectPropertyArray propertyArray1;
-    ret = hpaePolicyManager_->GetAudioEffectProperty(propertyArray1);
+    ret = HpaePolicyManager::GetInstance().GetAudioEffectProperty(propertyArray1);
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(propertyArray1.property.size(), 0);
 
-    ret = hpaePolicyManager_->SetInputDevice(0, DEVICE_TYPE_MIC, "Built_in_mic");
+    ret = HpaePolicyManager::GetInstance().SetInputDevice(0, DEVICE_TYPE_MIC, "Built_in_mic");
     EXPECT_EQ(ret, 0);
 
-    ret = hpaePolicyManager_->SetOutputDevice(0, DEVICE_TYPE_SPEAKER);
+    ret = HpaePolicyManager::GetInstance().SetOutputDevice(0, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(0);
-    ret = hpaePolicyManager_->SetVolumeInfo(volumeType, 1.f);
+    ret = HpaePolicyManager::GetInstance().SetVolumeInfo(volumeType, 1.f);
     EXPECT_EQ(ret, 0);
 
-    ret = hpaePolicyManager_->SetMicrophoneMuteInfo(true);
+    ret = HpaePolicyManager::GetInstance().SetMicrophoneMuteInfo(true);
     EXPECT_EQ(ret, 0);
 
-    ret = hpaePolicyManager_->SetStreamVolumeInfo(SESSION_ID, 1.f);
+    ret = HpaePolicyManager::GetInstance().SetStreamVolumeInfo(SESSION_ID, 1.f);
     EXPECT_EQ(ret, 0);
 }
 
@@ -85,25 +82,25 @@ TEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_002)
 {
     AudioEffectPropertyArrayV3 propertyArray2;
     propertyArray2.property.push_back({"invalidEffect", "property1"});
-    int32_t ret = hpaePolicyManager_->SetAudioEnhanceProperty(propertyArray2, DEVICE_TYPE_SPEAKER);
+    int32_t ret = HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray2, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
     AudioEffectPropertyArrayV3 propertyArray3;
-    ret = hpaePolicyManager_->GetAudioEnhanceProperty(propertyArray3, DEVICE_TYPE_SPEAKER);
+    ret = HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray3, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
     AudioEnhancePropertyArray propertyArray4;
-    ret = hpaePolicyManager_->SetAudioEnhanceProperty(propertyArray4, DEVICE_TYPE_SPEAKER);
+    ret = HpaePolicyManager::GetInstance().SetAudioEnhanceProperty(propertyArray4, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
     AudioEnhancePropertyArray propertyArray5;
-    ret = hpaePolicyManager_->GetAudioEnhanceProperty(propertyArray5, DEVICE_TYPE_SPEAKER);
+    ret = HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray5, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
     std::string mainkey = "other_mainkey";
     std::string subkey = "other_subkey";
     std::string extraSceneType = "extra_scene";
-    hpaePolicyManager_->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+    HpaePolicyManager::GetInstance().UpdateExtraSceneType(mainkey, subkey, extraSceneType);
     EXPECT_EQ(mainkey, "other_mainkey");
     EXPECT_EQ(subkey, "other_subkey");
     EXPECT_EQ(extraSceneType, "extra_scene");

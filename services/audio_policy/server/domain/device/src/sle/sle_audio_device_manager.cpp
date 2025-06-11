@@ -197,16 +197,16 @@ int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDe
 
 int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &device, AudioStreamType streamType, int32_t volume)
 {
-    CHECK_AND_RETURN_RET_LOG(volume > 0, ERR_INVALID_PARAM, "volume is invalid");
+    CHECK_AND_RETURN_RET_LOG(volume >= 0, ERR_INVALID_PARAM, "volume is invalid");
 
     auto it = deviceVolumeConfigInfo_.find(device);
     CHECK_AND_RETURN_RET_LOG(it != deviceVolumeConfigInfo_.end(), ERR_INVALID_PARAM, "device not found");
 
     int32_t ret = SUCCESS;
     if (streamType == STREAM_MUSIC) {
-        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000002);
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000002); // MEDIA
     } else {
-        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000004);
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000004); // VOICE_CALL
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set device to nearlink failed");
 
@@ -285,7 +285,8 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
     }
 }
 
-void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isRemoved)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
 
@@ -305,6 +306,9 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
                 AUDIO_INFO_LOG("session %{public}d is not running", sessionId);
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, false);
             }
+            if (isRemoved) {
+                UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
+            }
         }
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {
             oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
@@ -321,6 +325,9 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
             } else {
                 AUDIO_INFO_LOG("session %{public}d is not running", sessionId);
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, false);
+            }
+            if (isRemoved) {
+                UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
             }
         }
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {

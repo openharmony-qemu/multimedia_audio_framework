@@ -14,17 +14,18 @@
  */
 
 #include "multimedia_audio_capturer_callback.h"
+
 #include "multimedia_audio_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
-void CjAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
+void CjAudioCapturerCallback::OnInterrupt(const InterruptEvent& interruptEvent)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (interruptEventfunc_ == nullptr) {
         return;
     }
-    CInterruptEvent event{};
+    CInterruptEvent event {};
     event.eventType = static_cast<int32_t>(interruptEvent.eventType);
     event.forceType = static_cast<int32_t>(interruptEvent.forceType);
     event.hintType = static_cast<int32_t>(interruptEvent.hintType);
@@ -55,7 +56,7 @@ void CjCapturerPositionCallback::RegisterFunc(std::function<void(int64_t)> cjCal
     func_ = cjCallback;
 }
 
-void CjCapturerPositionCallback::OnMarkReached(const int64_t &framePosition)
+void CjCapturerPositionCallback::OnMarkReached(const int64_t& framePosition)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ != nullptr) {
@@ -67,7 +68,7 @@ void CjCapturerPeriodPositionCallback::RegisterFunc(std::function<void(int64_t)>
 {
     func_ = cjCallback;
 }
-void CjCapturerPeriodPositionCallback::OnPeriodReached(const int64_t &frameNumber)
+void CjCapturerPeriodPositionCallback::OnPeriodReached(const int64_t& frameNumber)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ != nullptr) {
@@ -75,8 +76,8 @@ void CjCapturerPeriodPositionCallback::OnPeriodReached(const int64_t &frameNumbe
     }
 }
 
-void CjAudioCapturerReadCallback::RegisterFunc(std::function<void(CArrUI8)> cjCallback,
-    std::shared_ptr<AudioCapturer> audioCapturer)
+void CjAudioCapturerReadCallback::RegisterFunc(
+    std::function<void(CArrUI8)> cjCallback, std::shared_ptr<AudioCapturer> audioCapturer)
 {
     func_ = cjCallback;
     audioCapturer_ = audioCapturer;
@@ -88,8 +89,8 @@ void CjAudioCapturerReadCallback::OnReadData(size_t length)
     if (func_ == nullptr) {
         return;
     }
-    CArrUI8 arr{};
-    BufferDesc buf{};
+    CArrUI8 arr {};
+    BufferDesc buf {};
     audioCapturer_->GetBufferDesc(buf);
     if (buf.buffer == nullptr) {
         return;
@@ -99,7 +100,7 @@ void CjAudioCapturerReadCallback::OnReadData(size_t length)
     if (mallocSize <= 0 || mallocSize > static_cast<int32_t>(sizeof(uint8_t) * MAX_MEM_MALLOC_SIZE)) {
         return;
     }
-    arr.head = static_cast<uint8_t *>(malloc(mallocSize));
+    arr.head = static_cast<uint8_t*>(malloc(mallocSize));
     if (arr.head == nullptr) {
         return;
     }
@@ -121,13 +122,13 @@ void CjAudioCapturerInfoChangeCallback::RegisterFunc(std::function<void(CAudioCa
     func_ = cjCallback;
 }
 
-void CjAudioCapturerInfoChangeCallback::OnStateChange(const AudioCapturerChangeInfo &capturerChangeInfo)
+void CjAudioCapturerInfoChangeCallback::OnStateChange(const AudioCapturerChangeInfo& capturerChangeInfo)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ == nullptr) {
         return;
     }
-    CAudioCapturerChangeInfo cInfo{};
+    CAudioCapturerChangeInfo cInfo {};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CAudioCapturerChangeInfo(cInfo, capturerChangeInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {
@@ -143,13 +144,13 @@ void CjAudioCapturerDeviceChangeCallback::RegisterFunc(std::function<void(CArrDe
     func_ = cjCallback;
 }
 
-void CjAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
+void CjAudioCapturerDeviceChangeCallback::OnStateChange(const AudioDeviceDescriptor& deviceInfo)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
     if (func_ == nullptr) {
         return;
     }
-    CArrDeviceDescriptor arr{};
+    CArrDeviceDescriptor arr {};
     int32_t errorCode = SUCCESS_CODE;
     Convert2CArrDeviceDescriptorByDeviceInfo(arr, deviceInfo, &errorCode);
     if (errorCode != SUCCESS_CODE) {

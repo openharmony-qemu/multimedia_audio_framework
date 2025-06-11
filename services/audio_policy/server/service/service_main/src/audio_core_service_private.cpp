@@ -43,6 +43,7 @@ static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
+static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const int64_t MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US = 100000; // 100ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 400000; // 400ms
@@ -56,6 +57,7 @@ static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_SLEEP_US = 350000; // 350ms
 static const int32_t DISTRIBUTED_DEVICE = 1003;
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -100,7 +102,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;
         }
-        int32_t outputRet = ActivateOutputDevice(streamDesc);
+        int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
         // update current output device
@@ -136,6 +138,10 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
+        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER) {
+            isOffloadOpened_.store(true);
+            offloadCloseCondition_.notify_all();
+        }
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -178,7 +184,7 @@ int32_t AudioCoreService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, 
     ConnectState connectState)
 {
     AUDIO_INFO_LOG("handleflag %{public}d, address %{public}s, connectState %{public}d",
-        handleFlag, address.c_str(), connectState);
+        handleFlag, GetEncryptAddr(address).c_str(), connectState);
     if (handleFlag && connectState != DEACTIVE_CONNECTED) {
         return SUCCESS;
     }
@@ -738,6 +744,10 @@ void AudioCoreService::RemoveUnusedPipe()
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe();
     for (auto &pipeInfo : pipeInfos) {
         AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER) {
+            DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_);
+            continue;
+        }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
     }
@@ -1534,9 +1544,6 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
     Trace trace("AudioCoreService::HandleScoOutputDeviceFetched");
 #ifdef BLUETOOTH_ENABLE
     std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
-    if ((streamDesc->streamStatus_ != STREAM_STATUS_STARTED) || (desc == nullptr)) {
-        return SUCCESS;
-    }
     int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
@@ -1546,7 +1553,9 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
         FetchOutputDeviceAndRoute(reason);
         return ERROR;
     }
-    Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
+    if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+        Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
+    } 
 #endif
     AUDIO_INFO_LOG("out");
     return SUCCESS;
@@ -1909,8 +1918,9 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
+        bool isRemoved = true;
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetStreamDescById(
-            streamChangeInfo.audioRendererChangeInfo.sessionId));
+            streamChangeInfo.audioRendererChangeInfo.sessionId), isRemoved);
         FetchOutputDeviceAndRoute();
     }
 
@@ -1935,6 +1945,10 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer run over.");
         isRingDualToneOnPrimarySpeaker_ = false;
+        // Add delay between end of double ringtone and device switch.
+        // After the ringtone ends, there may still be residual audio data in the pipeline.
+        // Switching the device immediately can cause pop noise due the undrained buffers.
+        usleep(RING_DUAL_END_DELAY_US);
         FetchOutputDeviceAndRoute();
         for (std::pair<AudioStreamType, StreamUsage> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
             audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
@@ -1955,6 +1969,40 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
         audioEcManager_.UpdateStreamMicRefInfo(pipeInfo->moduleInfo_, sourceType);
         audioEcManager_.SetOpenedNormalSource(sourceType);
     }
+}
+
+void AudioCoreService::DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_LOG(isOffloadOpened_.load(), "Offload is already released");
+    isOffloadOpened_.store(false);
+    auto unloadOffloadThreadFuc = [this, id, paIndex] { this->ReleaseOffloadPipe(id, paIndex); };
+    std::thread unloadOffloadThread(unloadOffloadThreadFuc);
+    unloadOffloadThread.detach();
+}
+
+int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    AUDIO_INFO_LOG("unload offload module");
+    std::unique_lock<std::mutex> lock(offloadCloseMutex_);
+    // Try to wait 10 seconds before unloading the module, because the audio driver takes some time to process
+    // the shutdown process..
+    offloadCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_SEC), [this] () {
+        return isOffloadOpened_.load();
+    });
+
+    {
+        std::lock_guard<std::mutex> lk(offloadReOpenMutex_);
+        AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", isOffloadOpened_.load());
+        if (isOffloadOpened_.load()) {
+            AUDIO_INFO_LOG("offload restart");
+            return ERROR;
+        }
+        AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
+        audioPolicyManager_.CloseAudioPort(id, paIndex);
+        pipeManager_->RemoveAudioPipeInfo(id);
+    }
+    return SUCCESS;
 }
 
 void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo)
@@ -2134,14 +2182,14 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
     }
 }
 
-int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Stream desc is nullptr");
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
 
     std::string encryptMacAddr = GetEncryptAddr(deviceDesc->macAddress_);
-    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc,
-        AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
+    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc, reason, encryptMacAddr);
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
@@ -2300,7 +2348,8 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERROR,
-            "Nearlink device activation failed, macAddress: %{public}s", deviceDesc->macAddress_.c_str());
+            "Nearlink device activation failed, macAddress: %{public}s",
+                GetEncryptAddr(deviceDesc->macAddress_).c_str());
     }
     return SUCCESS;
 }

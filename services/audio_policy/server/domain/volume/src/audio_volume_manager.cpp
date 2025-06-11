@@ -319,7 +319,7 @@ void AudioVolumeManager::CheckToCloseNotification(AudioStreamType streamType, in
 bool AudioVolumeManager::DeviceIsSupportSafeVolume()
 {
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    DeviceCategory curOutputDeviceCategory = audioActiveDevice_.GetCurrentOutputDeviceCategory();
+    DeviceCategory curOutputDeviceCategory = audioPolicyManager_.GetCurrentOutputDeviceCategory();
     switch (curOutputDeviceType) {
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
@@ -482,7 +482,7 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
     }
     DeviceType curOutputDeviceType = (deviceType == DEVICE_TYPE_NONE) ?
         audioActiveDevice_.GetCurrentOutputDeviceType() : deviceType;
-    DeviceCategory curOutputDeviceCategory = audioActiveDevice_.GetCurrentOutputDeviceCategory();
+    DeviceCategory curOutputDeviceCategory = audioPolicyManager_.GetCurrentOutputDeviceCategory();
     if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
         switch (curOutputDeviceType) {
             case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -673,7 +673,7 @@ void AudioVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
 int32_t AudioVolumeManager::DealWithSafeVolume(const int32_t volumeLevel, bool isBtDevice)
 {
     if (isBtDevice) {
-        DeviceCategory curOutputDeviceCategory = audioActiveDevice_.GetCurrentOutputDeviceCategory();
+        DeviceCategory curOutputDeviceCategory = audioPolicyManager_.GetCurrentOutputDeviceCategory();
         AUDIO_INFO_LOG("bluetooth Category:%{public}d", curOutputDeviceCategory);
         if (curOutputDeviceCategory == BT_SOUNDBOX || curOutputDeviceCategory == BT_CAR) {
             return volumeLevel;
@@ -728,8 +728,8 @@ bool AudioVolumeManager::IsWiredHeadSet(const DeviceType &deviceType)
 bool AudioVolumeManager::IsBlueTooth(const DeviceType &deviceType)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        if (audioActiveDevice_.GetCurrentOutputDeviceCategory() != BT_CAR &&
-            audioActiveDevice_.GetCurrentOutputDeviceCategory() != BT_SOUNDBOX) {
+        if (audioPolicyManager_.GetCurrentOutputDeviceCategory() != BT_CAR &&
+            audioPolicyManager_.GetCurrentOutputDeviceCategory() != BT_SOUNDBOX) {
             return true;
         }
     }

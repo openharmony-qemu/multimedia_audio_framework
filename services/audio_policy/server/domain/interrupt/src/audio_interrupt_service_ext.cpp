@@ -230,13 +230,13 @@ void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incom
         activeInterrupt.audioFocusType.sourceType, activeInterrupt.pid, activeInterrupt.uid);
 
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_RECORD_ERROR,
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
         Media::MediaMonitor::EventType::FAULT_EVENT);
     CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
 
-    bean->Add("INCOMIMG_SOURCE", incomingInterrupt.audioFocusType.sourceType);
-    bean->Add("INCOMIMG_PID", incomingInterrupt.pid);
-    bean->Add("INCOMIMG_UID", incomingInterrupt.uid);
+    bean->Add("INCOMING_SOURCE", incomingInterrupt.audioFocusType.sourceType);
+    bean->Add("INCOMING_PID", incomingInterrupt.pid);
+    bean->Add("INCOMING_UID", incomingInterrupt.uid);
     bean->Add("ACTIVE_SOURCE", activeInterrupt.audioFocusType.sourceType);
     bean->Add("ACTIVE_PID", activeInterrupt.pid);
     bean->Add("ACTIVE_UID", activeInterrupt.uid);

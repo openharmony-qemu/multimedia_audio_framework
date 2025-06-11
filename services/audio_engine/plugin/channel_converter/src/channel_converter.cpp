@@ -101,9 +101,9 @@ AudioChannelInfo ChannelConverter::GetOutChannelInfo() const
  
 int32_t ChannelConverter::Process(uint32_t frameSize, float* in, uint32_t inLen, float* out, uint32_t outLen)
 {
-    if ((in == nullptr) || (out == nullptr) || frameSize <= 0 || inLen <= 0 || outLen <= 0) {
-        return DMIX_ERR_ALLOC_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(in, DMIX_ERR_INVALID_ARG, "input pointer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(out, DMIX_ERR_INVALID_ARG, "output pointer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(frameSize >= 0, DMIX_ERR_INVALID_ARG, "invalid frameSize");
     if (inChannelInfo_.numChannels < outChannelInfo_.numChannels) {
         return Upmix(frameSize, in, inLen, out, outLen);
     }

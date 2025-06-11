@@ -46,6 +46,9 @@ ohos_fuzztest("AudioPolicyConcurrencyFuzzTest") {
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+  }
 
   sources = [ "audio_policy_concurrency_fuzzer.cpp" ]
 

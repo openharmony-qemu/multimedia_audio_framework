@@ -1938,11 +1938,11 @@ void EndPointRemoveWatchdog(const std::string &message, const std::string &endPo
 
 void AudioEndpointInner::WatchingRecordEndpointWorkLoopFuc()
 {
-    recordEndpointWorkLoopFucThreadStatus_ = true;
+    recordEndpointWorkLoopFucThreadStatus_.store(true);
     auto taskFunc = [this]() {
-        if (recordEndpointWorkLoopFucThreadStatus_) {
+        if (recordEndpointWorkLoopFucThreadStatus_.load()) {
             AUDIO_DEBUG_LOG("Set recordEndpointWorkLoopFucThreadStatus_ to false");
-            recordEndpointWorkLoopFucThreadStatus_ = false;
+            recordEndpointWorkLoopFucThreadStatus_.store(false);
         } else {
             AUDIO_INFO_LOG("watchdog happened");
         }
@@ -1965,7 +1965,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
     WatchingRecordEndpointWorkLoopFuc();
     while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
-            recordEndpointWorkLoopFucThreadStatus_ = true;
+            recordEndpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
         threadStatus_ = INRUNNING;
@@ -1973,7 +1973,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
             RecordReSyncPosition();
             wakeUpTime = ClockTime::GetCurNano();
             needReSyncPosition_ = false;
-            recordEndpointWorkLoopFucThreadStatus_ = true;
+            recordEndpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
         curTime = ClockTime::GetCurNano();
@@ -1996,7 +1996,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
-        recordEndpointWorkLoopFucThreadStatus_ = true;
+        recordEndpointWorkLoopFucThreadStatus_.store(true);
     }
     ResetThreadQosLevel();
     // stop watchdog
@@ -2005,11 +2005,11 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 
 void AudioEndpointInner::WatchingEndpointWorkLoopFuc()
 {
-    endpointWorkLoopFucThreadStatus_ = true;
+    endpointWorkLoopFucThreadStatus_.store(true);
     auto taskFunc = [this]() {
-        if (endpointWorkLoopFucThreadStatus_) {
+        if (endpointWorkLoopFucThreadStatus_.load()) {
             AUDIO_DEBUG_LOG("Set endpointWorkLoopFucThreadStatus_ to false");
-            endpointWorkLoopFucThreadStatus_ = false;
+            endpointWorkLoopFucThreadStatus_.store(false);
         } else {
             AUDIO_INFO_LOG("watchdog happened");
         }
@@ -2080,7 +2080,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     WatchingEndpointWorkLoopFuc();
     while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
-            endpointWorkLoopFucThreadStatus_ = true;
+            endpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
         threadStatus_ = INRUNNING;
@@ -2090,7 +2090,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             ReSyncPosition();
             wakeUpTime = curTime;
             needReSyncPosition_ = false;
-            endpointWorkLoopFucThreadStatus_ = true;
+            endpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
 
@@ -2115,7 +2115,7 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
-        endpointWorkLoopFucThreadStatus_ = true;
+        endpointWorkLoopFucThreadStatus_.store(true);
     }
     AUDIO_DEBUG_LOG("Endpoint work loop fuc end");
     if (setPriorityResult) {

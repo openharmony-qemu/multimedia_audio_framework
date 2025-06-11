@@ -162,7 +162,7 @@ public:
 
 class AudioRendererCallbackTest : public AudioRendererCallback {
 public:
-    void OnInterrupt(const InterruptEvent &interruptEvent) override { 
+    void OnInterrupt(const InterruptEvent &interruptEvent) override {
         AudioRendererUnitTest::interruptEventTest_.hintType = interruptEvent.hintType;
     }
     void OnStateChange(const RendererState state, const StateChangeCmdType cmdType) override {}

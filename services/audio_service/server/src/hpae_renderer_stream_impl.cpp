@@ -38,14 +38,18 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_10MS = 2;
-const int32_t TENMS_PER_SEC = 100;
+const int32_t FRAME_LEN_20MS = 20;
+const int32_t FRAME_LEN_40MS = 40;
+const int32_t MS_PER_SEC = 1000;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = FRAME_LEN_10MS * processConfig.streamInfo.samplingRate / TENMS_PER_SEC;
+    spanSizeInFrame_ = FRAME_LEN_20MS * processConfig.streamInfo.samplingRate / MS_PER_SEC;
+    if (processConfig.streamInfo.samplingRate == SAMPLE_RATE_11025) {
+        spanSizeInFrame_ = FRAME_LEN_40MS * processConfig.streamInfo.samplingRate / MS_PER_SEC;
+    }
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
@@ -386,6 +390,9 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
 
 int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
 {
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
     std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(DEVICE_CLASS_OFFLOAD, "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
@@ -411,6 +418,9 @@ int32_t HpaeRendererStreamImpl::UpdateSpatializationState(bool spatializationEna
 int32_t HpaeRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
     uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
     return SUCCESS;
 }
 
@@ -501,6 +511,10 @@ void HpaeRendererStreamImpl::BlockStream() noexcept
 int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 {
     AUDIO_PRERELEASE_LOGI("set client volume success");
+    if (clientVolume < MIN_FLOAT_VOLUME || clientVolume > MAX_FLOAT_VOLUME) {
+        AUDIO_ERR_LOG("SetClientVolume with invalid clientVolume %{public}f", clientVolume);
+        return ERR_INVALID_PARAM;
+    }
     int32_t ret = IHpaeManager::GetHpaeManager().SetClientVolume(processConfig_.originalSessionId, clientVolume);
     if (ret != 0) {
         AUDIO_ERR_LOG("SetClientVolume is error");

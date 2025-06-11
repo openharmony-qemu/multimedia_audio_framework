@@ -169,6 +169,7 @@ private:
     IAudioStream::StreamClass SetCaptureInfo(AudioStreamParams &audioStreamParams);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
+    int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
     mutable std::shared_mutex switchStreamMutex_;

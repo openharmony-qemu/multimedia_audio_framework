@@ -44,11 +44,15 @@ std::shared_mutex g_a2dpInstanceLock;
 std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
 std::atomic<AudioScene> AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
+<<<<<<< HEAD
 std::atomic<bool> AudioHfpManager::isRecognitionScene_ = false;
 std::atomic<bool> AudioHfpManager::isRecordScene_ = false;
 std::map<std::string, bool> AudioHfpManager::virtualCalls_;
 std::map<std::string, std::list<int32_t>> AudioHfpManager::virtualCallStreams_;
 std::mutex AudioHfpManager::virtualCallMutex_;
+=======
+BluetoothRemoteDevice AudioHfpManager::activeRecgDevice_;
+>>>>>>> e1141940f374c67ebd9214b84385651a3d30b88a
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_a2dpPlayingStateChangedLock;

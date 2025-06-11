@@ -45,7 +45,6 @@ static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_SLEEP_US = 50000; // 50ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_SLEEP_US = 350000; // 350ms
-static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int VOLUME_LEVEL_DEFAULT = 5;
 static const int VOLUME_LEVEL_MIN_SIZE = 5;
@@ -1744,10 +1743,6 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer stop/release.");
         isRingDualToneOnPrimarySpeaker_ = false;
-        // Add delay between end of double ringtone and device switch.
-        // After the ringtone ends, there may still be residual audio data in the pipeline.
-        // Switching the device immediately can cause pop noise due the undrained buffers.
-        usleep(RING_DUAL_END_DELAY_US);
         for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
             audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
         }

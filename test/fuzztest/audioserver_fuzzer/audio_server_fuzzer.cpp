@@ -808,6 +808,141 @@ void AudioServerGetDPParameterTest(const uint8_t *rawData, size_t size)
     audioServerPtr->GetAudioParameter(tetsNetworkId[id], key, "");
 }
 
+void AudioServerIsFastBlockedTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    vector<PlayerType> gPlayerType = {
+        PLAYER_TYPE_DEFAULT,
+        PLAYER_TYPE_SOUND_POOL,
+        PLAYER_TYPE_AV_PLAYER,
+    };
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+
+    uint32_t id = static_cast<uint32_t>(size) % gPlayerType.size();
+    audioServerPtr->IsFastBlocked(static_cast<uint32_t>(id), gPlayerType[id]);
+}
+
+void AudioServerCheckRemoteDeviceStateTestTwo(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    vector<DeviceRole> gDeviceRole = {
+        DEVICE_ROLE_NONE,
+        INPUT_DEVICE,
+        OUTPUT_DEVICE,
+        DEVICE_ROLE_MAX,
+    };
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    bool isStartDevice = static_cast<uint32_t>(size) % NUM_2;
+    uint32_t id = static_cast<uint32_t>(size) % gDeviceRole.size();
+    audioServerPtr->CheckRemoteDeviceState("LocalDevice", gDeviceRole[id], isStartDevice);
+}
+
+void AudioServerCreateAudioStreamTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    sptr<IRemoteObject> remoteObject = nullptr;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->NotifyProcessStatus();
+    AudioProcessConfig config;
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(0);
+    vector<int32_t> gTestCallingUid = {
+        AudioServer::VASSISTANT_UID,
+        AudioServer::MEDIA_SERVICE_UID,
+    };
+    uint32_t id = static_cast<uint32_t>(size) % gTestCallingUid.size();
+    config.audioMode = AUDIO_MODE_RECORD;
+    remoteObject = audioServerPtr->CreateAudioStream(config, gTestCallingUid[id], pipeinfoGuard);
+    vector<AudioParamKey> audioParamKey {
+        NONE,
+        VOLUME,
+        INTERRUPT,
+        PARAM_KEY_STATE,
+        A2DP_SUSPEND_STATE,
+        BT_HEADSET_NREC,
+        BT_WBS,
+        A2DP_OFFLOAD_STATE,
+        GET_DP_DEVICE_INFO,
+        GET_PENCIL_INFO,
+        GET_UWB_INFO,
+        USB_DEVICE,
+        PERF_INFO,
+        MMI,
+        PARAM_KEY_LOWPOWER,
+    };
+
+    config.audioMode = static_cast<AudioMode>(-1);
+    audioServerPtr->IsNormalIpcStream(config);
+    id = static_cast<uint32_t>(size) % audioParamKey.size();
+    audioServerPtr->OnRenderSinkParamChange("", audioParamKey[id], "", "");
+    audioServerPtr->OnCaptureSourceParamChange("", audioParamKey[id], "", "");
+    audioServerPtr->OnWakeupClose();
+    id = static_cast<uint32_t>(size) % NUM_2;
+    audioServerPtr->OnCapturerState(static_cast<bool>(id), id, id);
+    audioServerPtr->SetParameterCallback(remoteObject);
+    audioServerPtr->SetWakeupSourceCallback(remoteObject);
+    audioServerPtr->RegiestPolicyProvider(remoteObject);
+    audioServerPtr->RegistCoreServiceProvider(remoteObject);
+}
+
+void AudioServerSetSinkRenderEmptyTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+
+    uint32_t id = static_cast<uint32_t>(size) % NUM_2;
+    audioServerPtr->SetSinkRenderEmpty("primary", id);
+}
+
+void AudioServerOnRenderSinkStateChangeTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+
+    uint32_t id = static_cast<uint32_t>(size) % NUM_2;
+    audioServerPtr->OnRenderSinkStateChange(id, static_cast<bool>(id));
+}
+
+void AudioServerCreateHdiSinkPortTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    IAudioSinkAttr attr;
+    std::string deviceClass = "audio_test_class";
+    std::string idInfo = "audio_indo";
+    audioServerPtr->CreateHdiSinkPort(deviceClass, idInfo, attr);
+}
+
+void AudioServerCreateHdiSourcePortTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    IAudioSourceAttr attr;
+    std::string deviceClass = "audio_test_class";
+    std::string idInfo = "audio_indo";
+
+    audioServerPtr->CreateHdiSourcePort(deviceClass, idInfo, attr);
+}
+
+// NotifyProcessStatus
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -819,6 +954,13 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerSetA2dpAudioParameterTest,
     OHOS::AudioStandard::AudioServerGetExtraParametersTest,
     OHOS::AudioStandard::AudioServerGetDPParameterTest,
+    OHOS::AudioStandard::AudioServerIsFastBlockedTest,
+    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateTestTwo,
+    OHOS::AudioStandard::AudioServerCreateAudioStreamTest,
+    OHOS::AudioStandard::AudioServerSetSinkRenderEmptyTest,
+    OHOS::AudioStandard::AudioServerOnRenderSinkStateChangeTest,
+    OHOS::AudioStandard::AudioServerCreateHdiSinkPortTest,
+    OHOS::AudioStandard::AudioServerCreateHdiSourcePortTest,
     OHOS::AudioStandard::AudioServerFuzzTest,
     OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
     OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest,

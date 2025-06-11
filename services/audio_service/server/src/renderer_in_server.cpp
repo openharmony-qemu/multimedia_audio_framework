@@ -844,12 +844,15 @@ int32_t RendererInServer::UpdateWriteIndex()
         }
     }
 
-    if (afterDrain == true) {
-        if (writeLock_.try_lock()) {
-            afterDrain = false;
-            AUDIO_DEBUG_LOG("After drain, start write data");
-            WriteData();
-            writeLock_.unlock();
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag != 1) {
+        if (afterDrain == true) {
+            if (writeLock_.try_lock()) {
+                afterDrain = false;
+                AUDIO_DEBUG_LOG("After drain, start write data");
+                WriteData();
+                writeLock_.unlock();
+            }
         }
     }
     return SUCCESS;
