@@ -272,6 +272,7 @@ std::string MultichannelAudioRenderSink::GetAudioParameter(const AudioParamKey k
         adapterNameCase_ = "usb";
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
         std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+        CHECK_AND_RETURN_RET(deviceManager != nullptr, "");
         return deviceManager->GetAudioParameter(adapterNameCase_, key, condition);
     }
     return "";
