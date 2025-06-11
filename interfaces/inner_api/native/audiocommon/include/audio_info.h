@@ -570,16 +570,16 @@ public:
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(sourceType)) &&
-           parcel.WriteInt32(capturerFlags) &&
-           parcel.WriteInt32(originalFlag) &&
-           parcel.WriteInt32(static_cast<int32_t>(pipeType)) &&
-           parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
-           parcel.WriteUint8(encodingType) &&
-           parcel.WriteUint64(channelLayout) &&
-           parcel.WriteString(sceneType) &&
-           parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
-           parcel.WriteBool(isLoopback) &&
-           parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
+            parcel.WriteInt32(capturerFlags) &&
+            parcel.WriteInt32(originalFlag) &&
+            parcel.WriteInt32(static_cast<int32_t>(pipeType)) &&
+            parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
+            parcel.WriteUint8(encodingType) &&
+            parcel.WriteUint64(channelLayout) &&
+            parcel.WriteString(sceneType) &&
+            parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
+            parcel.WriteBool(isLoopback) &&
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
