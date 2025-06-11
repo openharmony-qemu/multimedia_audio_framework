@@ -243,7 +243,10 @@ napi_value NapiAudioLoopback::SetVolume(napi_env env, napi_callback_info info)
             context->SignError(NAPI_ERR_INVALID_PARAM);
             return;
         }
-        napiAudioLoopback->loopback_->SetVolume(static_cast<float>(context->volLevel));
+        context->intValue = napiAudioLoopback->loopback_->SetVolume(static_cast<float>(context->volLevel));
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
     };
 
     auto complete = [env](napi_value &output) {
