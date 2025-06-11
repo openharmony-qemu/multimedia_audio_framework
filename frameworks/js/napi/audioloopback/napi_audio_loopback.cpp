@@ -108,7 +108,7 @@ napi_value NapiAudioLoopback::Construct(napi_env env, napi_callback_info info)
 
     if (napiLoopback->loopback_  == nullptr) {
         AUDIO_ERR_LOG("AudioLoopback Create failed");
-        NapiAudioLoopback::isConstructSuccess_ = NAPI_ERR_PERMISSION_DENIED;
+        NapiAudioLoopback::isConstructSuccess_ = NAPI_ERR_NO_PERMISSION;
     }
     if (napiLoopback->loopback_ != nullptr && napiLoopback->callbackNapi_ == nullptr) {
         napiLoopback->callbackNapi_ = std::make_shared<NapiAudioLoopbackCallback>(env);

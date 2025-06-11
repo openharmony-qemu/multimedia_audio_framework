@@ -32,7 +32,8 @@ class NapiAudioLoopbackCallback : public AudioLoopbackCallback,
 public:
     explicit NapiAudioLoopbackCallback(napi_env env);
     ~NapiAudioLoopbackCallback() override;
-    void OnStatusChange(const AudioLoopbackStatus status, const StateChangeCmdType __attribute__((unused)) cmdType) override;
+    void OnStatusChange(const AudioLoopbackStatus status,
+        const StateChangeCmdType __attribute__((unused)) cmdType) override;
     void CreateArStatusChange(napi_env env);
     bool GetArStatusChangeTsfnFlag();
     void SaveCallbackReference(const std::string &callbackName, napi_value args) override;

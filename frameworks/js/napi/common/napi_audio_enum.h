@@ -95,7 +95,7 @@ public:
     };
 
     enum AudioLoopbackModeNapi {
-        HARDWARE = 0
+        LOOPBACK_MODE_HARDWARE = 0
     };
 
     static napi_value Init(napi_env env, napi_value exports);
@@ -211,6 +211,8 @@ private:
     static napi_ref audioDataCallbackResult_;
     static napi_ref concurrencyMode_;
     static napi_ref reason_;
+    static napi_ref audioLoopbackMode_;
+    static napi_ref audioLoopbackStatus_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
@@ -260,6 +262,8 @@ private:
     static const std::map<std::string, int32_t> audioDataCallbackResultMap;
     static const std::map<std::string, int32_t> concurrencyModeMap;
     static const std::map<std::string, int32_t> reasonMap;
+    static const std::map<std::string, int32_t> audioLoopbackModeMap;
+    static const std::map<std::string, int32_t> audioLoopbackStatusMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;
