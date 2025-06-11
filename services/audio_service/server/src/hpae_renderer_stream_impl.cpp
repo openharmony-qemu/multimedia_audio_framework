@@ -56,7 +56,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
     expectedPlaybackDurationMs_ =
-        (processConfig.rendererInfo.expectedPlaybackDurationBytes / byteSizePerFrame_ * MS_PER_SEC) /
+        (processConfig.rendererInfo.expectedPlaybackDurationBytes * MS_PER_SEC / byteSizePerFrame_) /
             processConfig.streamInfo.samplingRate;
     isCallbackMode_ = isCallbackMode;
     isMoveAble_ = isMoveAble;
@@ -572,11 +572,6 @@ static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string devic
 
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs)
 {
-    // 0 is default; duration > 40ms do default fade
-    if (expectedPlaybackDurationMs == 0 || expectedPlaybackDurationMs > FRAME_LEN_40MS) {
-        return DEFAULT_FADE;
-    }
-
     // duration <= 10 ms no fade
     if (expectedPlaybackDurationMs <= FRAME_LEN_10MS && expectedPlaybackDurationMs > 0) {
         return NONE_FADE;
@@ -587,6 +582,7 @@ static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs)
         return SHORT_FADE;
     }
 
+    // 0 is default; duration > 40ms do default fade
     return DEFAULT_FADE;
 }
 } // namespace AudioStandard
