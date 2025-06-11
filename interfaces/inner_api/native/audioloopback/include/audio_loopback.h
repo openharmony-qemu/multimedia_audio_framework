@@ -57,7 +57,7 @@ public:
 
     virtual AudioLoopbackStatus GetStatus() = 0;
 
-    virtual void SetVolume(float volume) = 0;
+    virtual int32_t SetVolume(float volume) = 0;
 
     virtual int32_t SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback) = 0;
 

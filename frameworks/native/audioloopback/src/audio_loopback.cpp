@@ -123,14 +123,19 @@ AudioLoopbackStatus AudioLoopbackPrivate::GetStatus()
     return currentStatus_;
 }
 
-void AudioLoopbackPrivate::SetVolume(float volume)
+int32_t AudioLoopbackPrivate::SetVolume(float volume)
 {
+    if (volume < 0.0 || volume > 1.0) {
+        AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
+        return ERR_INVALID_PARAM;
+    }
     karaokeParams_["Karaoke_volume"] = std::to_string(static_cast<int>(volume * VALUE_HUNDRED));
     if (currentStatus_ == AVAILABLE_RUNNING) {
         std::string parameters = "Karaoke_volume=" + karaokeParams_["Karaoke_volume"];
-        CHECK_AND_RETURN_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters),
+        CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), ERROR,
             "SetVolume failed");
     }
+    return SUCCESS;
 }
 
 int32_t AudioLoopbackPrivate::SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback)

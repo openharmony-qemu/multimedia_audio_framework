@@ -15,6 +15,7 @@
 
 #include "audio_loopback_unit_test.h"
 #include "audio_loopback_private.h"
+#include "audio_errors.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -140,7 +141,8 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_011, TestSize.L
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_001, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(HARDWARE, AppInfo());
-    audioLoopback->SetVolume(1);
+    int32_t ret = audioLoopback->SetVolume(1);
+    EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(audioLoopback->karaokeParams_["Karaoke_volume"], "100");
 }
 
@@ -148,8 +150,25 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_002, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(HARDWARE, AppInfo());
     audioLoopback->currentStatus_ = AVAILABLE_RUNNING;
-    audioLoopback->SetVolume(1);
+    int32_t ret = audioLoopback->SetVolume(1);
+    EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(audioLoopback->karaokeParams_["Karaoke_volume"], "100");
 }
+
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_003, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(HARDWARE, AppInfo());
+    int32_t ret = audioLoopback->SetVolume(10);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_004, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(HARDWARE, AppInfo());
+    audioLoopback->currentStatus_ = AVAILABLE_RUNNING;
+    int32_t ret = audioLoopback->SetVolume(-1);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -31,7 +31,7 @@ public:
 
     bool Enable(bool enable) override;
     AudioLoopbackStatus GetStatus() override;
-    void SetVolume(float volume) override;
+    int32_t SetVolume(float volume) override;
     int32_t SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback) override;
     int32_t RemoveAudioLoopbackCallback() override;
     void OnWriteData(size_t length) override;
