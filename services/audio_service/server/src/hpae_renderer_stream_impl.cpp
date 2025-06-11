@@ -38,11 +38,13 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t MIN_BUFFER_SIZE = 2;
-const int32_t FRAME_LEN_20MS = 20;
-const int32_t FRAME_LEN_40MS = 40;
+const uint64_t FRAME_LEN_10MS = 10;
+const uint64_t FRAME_LEN_20MS = 20;
+const uint64_t FRAME_LEN_40MS = 40;
 const int32_t MS_PER_SEC = 1000;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
+static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
@@ -53,6 +55,9 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
+    expectedPlaybackDurationMs_ =
+        (processConfig.rendererInfo.expectedPlaybackDurationBytes * MS_PER_SEC / byteSizePerFrame_) /
+            processConfig.streamInfo.samplingRate;
     isCallbackMode_ = isCallbackMode;
     isMoveAble_ = isMoveAble;
     if (!isCallbackMode_) {
@@ -80,7 +85,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.frameLen = spanSizeInFrame_;
     streamInfo.sessionId = processConfig_.originalSessionId;
     streamInfo.streamType = processConfig_.streamType;
-    streamInfo.fadeType = FadeType::DEFAULT_FADE; // to be passed from processConfig
+    streamInfo.fadeType = GetFadeType(expectedPlaybackDurationMs_);
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
@@ -104,6 +109,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     AUDIO_INFO_LOG("InitParams sessionId %{public}u  end", streamInfo.sessionId);
     AUDIO_INFO_LOG("InitParams streamClassType %{public}u  end", streamInfo.streamClassType);
     AUDIO_INFO_LOG("InitParams sourceType %{public}d  end", streamInfo.sourceType);
+    AUDIO_INFO_LOG("InitParams fadeType %{public}d  end", streamInfo.fadeType);
     auto &hpaeManager = IHpaeManager::GetHpaeManager();
     int32_t ret = hpaeManager.CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "CreateStream is error");
@@ -572,6 +578,22 @@ static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string devic
     renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
         deviceNetId.empty() ? HDI_ID_INFO_DEFAULT : deviceNetId, false);
     return HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
+}
+
+static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs)
+{
+    // duration <= 10 ms no fade
+    if (expectedPlaybackDurationMs <= FRAME_LEN_10MS && expectedPlaybackDurationMs > 0) {
+        return NONE_FADE;
+    }
+
+    // duration > 10ms && duration <= 40ms do 5ms fade
+    if (expectedPlaybackDurationMs <= FRAME_LEN_40MS && expectedPlaybackDurationMs > FRAME_LEN_10MS) {
+        return SHORT_FADE;
+    }
+
+    // 0 is default; duration > 40ms do default fade
+    return DEFAULT_FADE;
 }
 } // namespace AudioStandard
 } // namespace OHOS
