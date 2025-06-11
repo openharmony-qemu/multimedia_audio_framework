@@ -75,6 +75,39 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+const vector<DfxAppState> DfxAppStateVec = {
+    DFX_APP_STATE_UNKNOWN,
+    DFX_APP_STATE_START,
+    DFX_APP_STATE_FOREGROUND,
+    DFX_APP_STATE_BACKGROUND,
+    DFX_APP_STATE_END,
+};
+
+const vector<RendererStage> RendererStageVec = {
+    RENDERER_STAGE_UNKNOWN,
+    RENDERER_STAGE_START_OK,
+    RENDERER_STAGE_START_FAIL,
+    RENDERER_STAGE_PAUSE_OK,
+    RENDERER_STAGE_STOP_OK,
+    RENDERER_STAGE_STOP_BY_RELEASE,
+    RENDERER_STAGE_STANDBY_BEGIN,
+    RENDERER_STAGE_STANDBY_END,
+    RENDERER_STAGE_SET_VOLUME_ZERO,
+    RENDERER_STAGE_SET_VOLUME_NONZERO,
+};
+
+const vector<InterruptStage> InterruptStageVec = {
+    INTERRUPT_STAGE_START,
+    INTERRUPT_STAGE_RESTART,
+    INTERRUPT_STAGE_STOP,
+    INTERRUPT_STAGE_PAUSED,
+    INTERRUPT_STAGE_RESUMED,
+    INTERRUPT_STAGE_STOPPED,
+    INTERRUPT_STAGE_DUCK_BEGIN,
+    INTERRUPT_STAGE_DUCK_END,
+    INTERRUPT_STAGE_TIMEOUT,
+};
+
 void SaveAppInfoFuzzTest()
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -252,7 +285,54 @@ void CheckCanAddAppInfoFuzzTest()
     dfxMsgManager.CheckCanAddAppInfo(appUid);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+void UpdateAppStateFuzzTest()
+{
+    DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
+    int32_t appUid = 1;
+    uint32_t appStateCount = GetData<uint32_t>() % DfxAppStateVec.size();
+    DfxAppState appState = DfxAppStateVec[appStateCount];
+    bool forceUpdate = GetData<uint32_t>() % NUM_2;
+    DfxRunningAppInfo appinfo;
+    appinfo.appUid = 1;
+    appinfo.appName = "appName";
+    appinfo.versionName = "1.0";
+    appinfo.appStateVec.push_back(0);
+    appinfo.appStateTimeStampVec.push_back(1);
+    dfxMsgManager.appInfo_[appUid] = appinfo;
+    dfxMsgManager.UpdateAppState(appUid, appState, forceUpdate);
+}
+
+void UpdateActionFuzzTest()
+{
+    DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
+    int32_t appUid = 1;
+    std::list<RenderDfxInfo> renderInfo;
+    RenderDfxInfo renderdfxInfo;
+
+    uint32_t fourthByteCount = GetData<uint32_t>() % RendererStageVec.size();
+    renderdfxInfo.rendererAction.fourthByte = RendererStageVec[fourthByteCount];
+    renderInfo.push_back(renderdfxInfo);
+    dfxMsgManager.UpdateAction(appUid, renderInfo);
+}
+
+void GetDfxIndexByTypeFuzzTest()
+{
+    DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
+    int32_t appUid = 1;
+    int32_t typeCount = static_cast<int32_t>(DfxMsgIndexType::DFX_MSG_IDX_TYPE_INTERRUPT_EFFECT) + 1;
+    DfxMsgIndexType type = static_cast<DfxMsgIndexType>(GetData<uint8_t>() % typeCount);
+    dfxMsgManager.GetDfxIndexByType(appUid, type);
+}
+
+void CheckIsInterruptedFuzzTest()
+{
+    DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
+    uint32_t interruptStageVecCount = GetData<uint32_t>() % InterruptStageVec.size();
+    InterruptStage stage = InterruptStageVec[interruptStageVecCount];
+    dfxMsgManager.CheckIsInterrupted(stage);
+}
+
+TestFuncs g_testFuncs[] = {
     SaveAppInfoFuzzTest,
     ProcessCheckFuzzTest,
     ProcessFuzzTest,
@@ -268,6 +348,10 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HandleThreadExitFuzzTest,
     WriteRunningAppMsgFuzzTest,
     CheckCanAddAppInfoFuzzTest,
+    UpdateAppStateFuzzTest,
+    UpdateActionFuzzTest,
+    GetDfxIndexByTypeFuzzTest,
+    CheckIsInterruptedFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

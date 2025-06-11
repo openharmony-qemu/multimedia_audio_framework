@@ -20,6 +20,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t NUM_2 = 2;
+const int32_t NUM_3 = 3;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 const vector<DeviceType> g_testDeviceTypes = {
@@ -295,6 +296,19 @@ void VolumeDataMaintainerGetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, s
     volumeDataMaintainer.GetRestoreVolumeLevel(deviceType, volume);
 }
 
+void VolumeDataMaintainerGetRingerModeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    int32_t affectedRet = static_cast<int32_t>(size);
+    bool statusRet = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    uint32_t index = static_cast<uint32_t>(size) % NUM_3;
+    AudioRingerMode ringerModeRet = static_cast<AudioRingerMode>(index);
+    volumeDataMaintainerRet.SetMuteAffectedToMuteStatusDataBase(affectedRet);
+    volumeDataMaintainerRet.SaveMuteTransferStatus(statusRet);
+    volumeDataMaintainerRet.SaveRingerMode(ringerModeRet);
+    volumeDataMaintainerRet.GetRingerMode(ringerModeRet);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -317,6 +331,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::VolumeDataMaintainerSetMuteAffectedToMuteStatusDataBaseFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerSetRestoreVolumeLevelFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerGetRestoreVolumeLevelFuzzTest,
+    OHOS::AudioStandard::VolumeDataMaintainerGetRingerModeFuzzTest,
 };
 
 /* Fuzzer entry point */

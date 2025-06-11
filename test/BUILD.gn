@@ -193,6 +193,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiovolumemanager_fuzzer:fuzztest",
     "fuzztest/dfxmsgmanager_fuzzer:fuzztest",
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
+    "fuzztest/audiostreamcollector_fuzzer:fuzztest",
   ]
 }
 
