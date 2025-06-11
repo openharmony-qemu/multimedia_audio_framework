@@ -22,6 +22,7 @@
 #include "hpae_format_convert.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "hpae_node_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -151,6 +152,20 @@ void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<H
         callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
     }
 #endif
+}
+
+int32_t HpaeSourceOutputNode::SetState(HpaeSessionState captureState)
+{
+    AUDIO_INFO_LOG(" Capturer[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
+        GetDeviceClass().c_str(), GetSessionId(), GetStreamType(), ConvertSessionState2Str(state_).c_str(),
+        ConvertSessionState2Str(captureState).c_str());
+    state_ = captureState;
+    return SUCCESS;
+}
+
+HpaeSessionState HpaeSourceOutputNode::GetState()
+{
+    return state_;
 }
 
 void HpaeSourceOutputNode::SetAppUid(int32_t appUid)

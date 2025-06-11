@@ -152,6 +152,7 @@ TEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase)
     }
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStop(), SUCCESS);
     EXPECT_EQ(hpaeSoruceInputNode->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
+    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceDeInit(), SUCCESS);
 }
 
 TEST_F(HpaeSourceInputNodeTest, testInterfaces_001)
@@ -234,6 +235,7 @@ TEST_F(HpaeSourceInputNodeTest, testInterfaces_002)
     EXPECT_NE(hpaeSoruceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_NE(hpaeSoruceInputNode->CapturerSourceStart(), SUCCESS);
     EXPECT_NE(hpaeSoruceInputNode->CapturerSourceStop(), SUCCESS);
+    EXPECT_NE(hpaeSoruceInputNode->CapturerSourceDeInit(), SUCCESS);
 }
 } // namespace HPAE
 } // namespace AudioStandard
