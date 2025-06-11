@@ -85,6 +85,8 @@ napi_ref NapiAudioEnum::audioDataCallbackResult_ = nullptr;
 napi_ref NapiAudioEnum::concurrencyMode_ = nullptr;
 napi_ref NapiAudioEnum::reason_ = nullptr;
 napi_ref NapiAudioEnum::policyType_ = nullptr;
+napi_ref NapiAudioEnum::audioLoopbackMode_ = nullptr;
+napi_ref NapiAudioEnum::audioLoopbackStatus_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -544,6 +546,17 @@ const std::map<std::string, int32_t> NapiAudioEnum::reasonMap = {
     {"DEACTIVATED_TIMEOUT", static_cast<int32_t>(AudioSessionDeactiveReason::TIMEOUT)}
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackModeMap = {
+    {"HARDWARE", LOOPBACK_MODE_HARDWARE},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackStatusMap = {
+    {"UNAVAILABLE_DEVICE", UNAVAILABLE_DEVICE},
+    {"UNAVAILABLE_SCENE", UNAVAILABLE_SCENE},
+    {"AVAILABLE_IDLE", AVAILABLE_IDLE},
+    {"AVAILABLE_RUNNING", AVAILABLE_RUNNING},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -720,6 +733,9 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, concurrencyModeMap, concurrencyMode_)),
         DECLARE_NAPI_PROPERTY("AudioSessionDeactivatedReason", CreateEnumObject(env, reasonMap, reason_)),
         DECLARE_NAPI_PROPERTY("PolicyType", CreateEnumObject(env, policyTypeMap, policyType_)),
+        DECLARE_NAPI_PROPERTY("AudioLoopbackMode", CreateEnumObject(env, audioLoopbackModeMap, audioLoopbackMode_)),
+        DECLARE_NAPI_PROPERTY("AudioLoopbackStatus",
+            CreateEnumObject(env, audioLoopbackStatusMap, audioLoopbackStatus_)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1681,7 +1697,7 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
 {
     bool result = false;
     switch (inputMode) {
-        case AudioLoopbackModeNapi::HARDWARE:
+        case AudioLoopbackModeNapi::LOOPBACK_MODE_HARDWARE:
             result = true;
             break;
         default:

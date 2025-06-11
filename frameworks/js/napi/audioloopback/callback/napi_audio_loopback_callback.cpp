@@ -119,7 +119,8 @@ bool NapiAudioLoopbackCallback::CheckIfTargetCallbackName(const std::string &cal
     return false;
 }
 
-void NapiAudioLoopbackCallback::SafeJsCallbackStatusChangeWork(napi_env env, napi_value js_cb, void *context, void *data)
+void NapiAudioLoopbackCallback::SafeJsCallbackStatusChangeWork(napi_env env, napi_value js_cb, void *context,
+    void *data)
 {
     AudioLoopbackJsCallback *event = reinterpret_cast<AudioLoopbackJsCallback *>(data);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
