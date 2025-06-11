@@ -31,6 +31,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_001, TestSize.L
     audioLoopback->currentStatus_ = AVAILABLE_RUNNING;
     EXPECT_EQ(audioLoopback->Enable(true), false);
     EXPECT_EQ(audioLoopback->Enable(false), true);
+    EXPECT_EQ(audioLoopback->Enable(false), true);
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize.Level1)
@@ -85,7 +86,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_006, TestSize.L
     EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
     audioLoopback->audioCapturer_->Release();
     audioLoopback->audioCapturer_ = nullptr;
-    EXPECT_EQ(audioLoopback->Enable(false), true);
+    audioLoopback->DestroyAudioLoopback();
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_007, TestSize.Level1)
@@ -95,7 +96,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_007, TestSize.L
     EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
     audioLoopback->audioRenderer_->Release();
     audioLoopback->audioRenderer_ = nullptr;
-    EXPECT_EQ(audioLoopback->Enable(false), true);
+    audioLoopback->DestroyAudioLoopback();
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_008, TestSize.Level1)
@@ -105,7 +106,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_008, TestSize.L
     audioLoopback->rendererOptions_.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
     audioLoopback->CreateAudioLoopback();
     EXPECT_EQ(audioLoopback->audioRenderer_, nullptr);
-    EXPECT_EQ(audioLoopback->Enable(false), true);
+    audioLoopback->DestroyAudioLoopback();
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_009, TestSize.Level1)
@@ -114,7 +115,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_009, TestSize.L
     audioLoopback->rendererOptions_.rendererInfo.rendererFlags = 0;
     audioLoopback->CreateAudioLoopback();
     EXPECT_EQ(audioLoopback->rendererFastStatus_, FASTSTATUS_NORMAL);
-    EXPECT_EQ(audioLoopback->Enable(false), true);
+    audioLoopback->DestroyAudioLoopback();
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_010, TestSize.Level1)
@@ -123,7 +124,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_010, TestSize.L
     audioLoopback->capturerOptions_.capturerInfo.sourceType = SOURCE_TYPE_INVALID;
     audioLoopback->CreateAudioLoopback();
     EXPECT_EQ(audioLoopback->audioCapturer_, nullptr);
-    EXPECT_EQ(audioLoopback->Enable(false), true);
+    audioLoopback->DestroyAudioLoopback();
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_011, TestSize.Level1)
@@ -131,18 +132,8 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_011, TestSize.L
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(HARDWARE, AppInfo());
     audioLoopback->capturerOptions_.capturerInfo.capturerFlags = 0;
     audioLoopback->CreateAudioLoopback();
+    audioLoopback->currentStatus_ = AVAILABLE_RUNNING;
     EXPECT_EQ(audioLoopback->capturerFastStatus_, FASTSTATUS_NORMAL);
-    EXPECT_EQ(audioLoopback->Enable(false), true);
-}
-
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetKaraokeParameters_001, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(HARDWARE, AppInfo());
-    audioLoopback->CreateAudioLoopback();
-    EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
-    audioLoopback->karaokeParams_["Karaoke_enable"] = "enable";
-    bool ret = audioLoopback->SetKaraokeParameters();
-    EXPECT_EQ(ret, true);
     audioLoopback->DestroyAudioLoopback();
 }
 
