@@ -20,15 +20,14 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-constexpr uint32_t MAX_REQUEST_COUNT = std::numeric_limits<uint32_t>::max() - 1;
-constexpr uint32_t REAL_MAX_REQUEST_COUNT = 10000000;
+constexpr uint32_t MAX_REQUEST_COUNT = 10000000;
 constexpr uint32_t INVALID_REQUEST_ID = std::numeric_limits<uint32_t>::max();
 constexpr uint64_t SHIFT_32_OFFSET = 32;
 HpaeNoLockQueue::HpaeNoLockQueue(size_t maxRequestCount)
 {
-    if (maxRequestCount > REAL_MAX_REQUEST_COUNT) {
+    if (maxRequestCount > MAX_REQUEST_COUNT) {
         AUDIO_WARNING_LOG("[HpaeNoLockQueue] maxRequestCount %{public}zu is beyound Max Count", maxRequestCount);
-        maxRequestCount = REAL_MAX_REQUEST_COUNT;
+        maxRequestCount = MAX_REQUEST_COUNT;
     }
     if (maxRequestCount <= 0) {
         AUDIO_WARNING_LOG("[HpaeNoLockQueue] maxRequestCount can not be zero");
