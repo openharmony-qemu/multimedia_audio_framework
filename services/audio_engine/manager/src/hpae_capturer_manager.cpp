@@ -442,7 +442,7 @@ void HpaeCapturerManager::UpdateAppsUidAndSessionId()
         if (sessionNodeMap_.find(sourceOutputNodePair.first) != sessionNodeMap_.end() &&
             sessionNodeMap_[sourceOutputNodePair.first].state == HPAE_SESSION_RUNNING) {
             appsUid_.emplace_back(sourceOutputNodePair.second->GetAppUid());
-            sessionsId_.emplace_back(sourceOutputNodePair.first);
+            sessionsId_.emplace_back(static_cast<int32_t>(sourceOutputNodePair.first));
         }
     }
     if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {

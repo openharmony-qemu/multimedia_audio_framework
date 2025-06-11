@@ -368,6 +368,7 @@ int32_t CapturerInServer::OnReadData(size_t length)
 
 int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 {
+    CHECK_AND_RETURN_RET_LOG(status_ == I_STATUS_STARTED, ERR_READ_FAILED, "CapturerInServer is not started");
     CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
