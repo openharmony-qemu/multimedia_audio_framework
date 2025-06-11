@@ -115,8 +115,29 @@ HWTEST(AudioStreamMonitorTest, AddCheckForMonitor_001, TestSize.Level1)
 HWTEST(AudioStreamMonitorTest, DeleteCheckForMonitor_001, TestSize.Level1)
 {
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(100001);
-    int32_t size = audioStreamCheckers_.size();
+    int32_t size = AudioStreamMonitor::GetInstance().audioStreamCheckers_.size();
     EXPECT_EQ(size, 0);
 }
+
+/**
+ * @tc.name  : Test OnCallbackAppDied API
+ * @tc.type  : FUNC
+ * @tc.number: OnCallbackAppDied_001
+ */
+HWTEST(AudioStreamMonitorTest, OnCallbackAppDied_001, TestSize.Level1)
+{
+    DataTransferMonitorParam para;
+    para.clientUID = 20002000;
+    AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(para, 10000, 10000);
+    AudioProcessConfig cfg;
+    cfg.originalSessionId = 100001;
+    cfg.appInfo.appUid = 20002000;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    AudioStreamMonitor::GetInstance().AddCheckForMonitor(cfg.originalSessionId, checker);
+    AudioStreamMonitor::GetInstance().OnCallbackAppDied(10000);
+    int size = AudioStreamMonitor::GetInstance().registerInfo_.size();
+    EXPECT_EQ(size, 0);
+}
+
 }
 }

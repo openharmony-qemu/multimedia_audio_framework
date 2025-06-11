@@ -245,6 +245,7 @@ void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is null");
     audioServer_->RemoveRendererDataTransferCallback(pid_);
+    AudioStreamMonitor::GetInstance().OnCallbackAppDied(pid_);
 }
 
 PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
