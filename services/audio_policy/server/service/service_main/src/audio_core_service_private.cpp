@@ -1993,12 +1993,11 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
     if (pipeInfo->pipeRole_ != PIPE_ROLE_INPUT || pipeInfo->streamDescriptors_.size() == 0) {
         return;
     }
-    SourceType sourceType = pipeInfo->streamDescriptors_.front()->capturerInfo_.sourceType;
+    auto streamDesc = pipeInfo->streamDescriptors_.front();
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
+    SourceType sourceType = streamDesc->capturerInfo_.sourceType;
     if (specialSourceTypeSet_.count(sourceType) == 0) {
-        AUDIO_INFO_LOG("Source type: %{public}d", sourceType);
-        audioEcManager_.UpdateStreamEcInfo(pipeInfo->moduleInfo_, sourceType);
-        audioEcManager_.UpdateStreamMicRefInfo(pipeInfo->moduleInfo_, sourceType);
-        audioEcManager_.SetOpenedNormalSource(sourceType);
+        audioEcManager_.PrepareNormalSource(pipeInfo->moduleInfo_, streamDesc);
     }
 }
 
