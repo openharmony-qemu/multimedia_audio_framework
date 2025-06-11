@@ -164,6 +164,7 @@ describe("AudioLoopbackJsUnitTest", function() {
             let enable = await audioLoopback.enable(true);
             console.info(`${TAG}: SUB_AUDIO_LOOPBCAK_ENABLE_TEST_001 SUCCESS`);
             expect(enable).assertTrue();
+            await audioLoopback.enable(false);
             done();
         } catch (e) {
             console.info(`${TAG}: SUB_AUDIO_LOOPBCAK_ENABLE_TEST_001 ERROR: ${e.message}`);
