@@ -50,6 +50,7 @@
 #include "audio_policy_dump.h"
 #include "app_state_listener.h"
 #include "audio_core_service.h"
+#include "audio_converter_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {

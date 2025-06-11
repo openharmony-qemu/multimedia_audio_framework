@@ -37,6 +37,7 @@
 #include "audio_zone_service.h"
 #include "i_standard_audio_zone_client.h"
 #include "audio_bundle_manager.h"
+#include "audio_server_proxy.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -93,6 +94,7 @@ const std::string CALLER_NAME = "audio_server";
 const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 const std::string HIVIEWCARE_PERMISSION = "ohos.permission.ACCESS_HIVIEWCARE";
+static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
 
 constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_MCU = 7500;
@@ -424,7 +426,7 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
 void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus)
 {
     if (streamInFocus == AudioStreamType::STREAM_VOICE_ASSISTANT &&
-        audioActiveDevice_.GetActiveOutputDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
     }
 }
@@ -462,7 +464,6 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     });
     std::string RegistrationTime = GetTime();
     std::string keyName = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP ? "Volume Up" : "Volume Down");
-    // 这种使用feature宏包着的，修改了，如何验证？
     audioVolumeManager_.SaveVolumeKeyRegistrationInfo(keyName, RegistrationTime, keySubId,
         keySubId >= 0 ? true : false);
     AUDIO_INFO_LOG("RegisterVolumeKeyInfo keyType: %{public}s, RegistrationTime: %{public}s, keySubId: %{public}d,"
@@ -604,7 +605,6 @@ void AudioPolicyServer::SendMonitrtEvent(const int32_t keyType, int32_t resultOf
 void AudioPolicyServer::SubscribeSafeVolumeEvent()
 {
     AUDIO_INFO_LOG("enter");
-    // 这个后续移到音量里去做，不要放在这里。
     audioPolicyService_.SubscribeSafeVolumeEvent();
 }
 
@@ -679,7 +679,6 @@ void AudioPolicyServer::AddAudioServiceOnStart()
 void AudioPolicyServer::AddRemoteDevstatusCallback()
 {
     AUDIO_INFO_LOG("add remote dev status callback start");
-    // 这个后续考虑放在device里面
     audioPolicyService_.RegisterRemoteDevStatusCallback();
 }
 
@@ -779,7 +778,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
-        AudioServerProxy::GetInstance().SetRotationToEffect(rotate);
+        AudioServerProxy::GetInstance().SetRotationToEffectProxy(rotate);
     } else if (action == "usual.event.bluetooth.remotedevice.NAME_UPDATE") {
         std::string deviceName  = want.GetStringParam("remoteName");
         std::string macAddress = want.GetStringParam("deviceAddr");
@@ -853,7 +852,6 @@ void AudioPolicyServer::ConnectServiceAdapter()
 
 void AudioPolicyServer::LoadEffectLibrary()
 {
-    // 后续移到effect中.
     audioPolicyService_.LoadEffectLibrary();
 }
 
@@ -1412,7 +1410,6 @@ void AudioPolicyServer::ProcUpdateRingerMode()
 
 int32_t AudioPolicyServer::SetAppSingleStreamVolume(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
 {
-    // 这个里面调用了两个函数，暂时不替换，整改后替换，否则无法保证ut用例。
     int32_t ret = audioPolicyService_.SetAppVolumeLevel(appUid, volumeLevel);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume level");
 
@@ -1543,7 +1540,6 @@ int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRen
 
 std::string AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
 {
-    // GetSelectedDeviceInfo下沉到device中去实现。
     return audioPolicyService_.GetSelectedDeviceInfo(uid, pid, streamType);
 }
 
@@ -1583,7 +1579,6 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetExcludedDevices(
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevices(DeviceFlag deviceFlag)
 {
-    // 重构，放在device中实现。
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     switch (deviceFlag) {
         case NONE_DEVICES_FLAG:
@@ -1670,7 +1665,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPrefer
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs =
         audioDeviceLock_.GetPreferredOutputDeviceDescriptors(rendererInfo, LOCAL_NETWORK_ID);
 
-    // 考虑收编到bluetooth领域对象中。
     bool hasBTPermission = false;
     if (!forceNoBTPermission) {
         hasBTPermission = VerifyBluetoothPermission();
@@ -1771,7 +1765,7 @@ bool AudioPolicyServer::IsDeviceActive(InternalDeviceType deviceType)
 
 InternalDeviceType AudioPolicyServer::GetActiveOutputDevice()
 {
-    return audioActiveDevice_.GetActiveOutputDevice();
+    return audioActiveDevice_.GetCurrentOutputDeviceType();
 }
 
 uint16_t AudioPolicyServer::GetDmDeviceType()
@@ -1786,7 +1780,7 @@ uint16_t AudioPolicyServer::GetDmDeviceType()
 
 InternalDeviceType AudioPolicyServer::GetActiveInputDevice()
 {
-    return audioActiveDevice_.GetActiveInputDevice();
+    return audioActiveDevice_.GetCurrentInputDeviceType();
 }
 
 // deprecated since api 9.
@@ -1868,7 +1862,6 @@ int32_t AudioPolicyServer::SetRingerModeInternal(AudioRingerMode inputRingerMode
     return ret;
 }
 
-// 这里如何验证，先要保证是被编译到的。
 #ifdef FEATURE_DTMF_TONE
 std::shared_ptr<ToneInfo> AudioPolicyServer::GetToneConfig(int32_t ltonetype, const std::string &countryCode)
 {
@@ -2285,7 +2278,6 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
     return true;
 }
 
-// 放在a2dp中？
 bool AudioPolicyServer::VerifyBluetoothPermission()
 {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
@@ -2688,7 +2680,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
         interruptService_->DeactivateAudioSession(pid);
     }
 
-    if (audioPolicyServerHandler_ != nullptr) { 
+    if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(pid);
     }
 
@@ -2991,7 +2983,7 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
             break;
         }
     }
-    return audioConfigManager_.GetMaxRendererInstances();
+    return audioPolicyService_.GetMaxRendererInstances();
 }
 
 void AudioPolicyServer::RegisterDataObserver()
@@ -3087,7 +3079,7 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
         VolumeEvent volumeEvent = VolumeEvent(streamType, volume, updateUi);
 
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
-        if (audioActiveDevice_.GetActiveOutputDevice() == DEVICE_TYPE_NEARLINK) {
+        if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK) {
             audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         }
     } else {

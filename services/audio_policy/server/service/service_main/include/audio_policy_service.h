@@ -247,6 +247,8 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
 
+    int32_t GetMaxRendererInstances();
+
     void RegisterDataObserver();
 
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
@@ -511,7 +513,6 @@ private:
 
     std::unique_ptr<std::thread> RecoveryDevicesThread_ = nullptr;
 
-    // 这个在哪里赋值的？
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 
     AudioIOHandleMap& audioIOHandleMap_;

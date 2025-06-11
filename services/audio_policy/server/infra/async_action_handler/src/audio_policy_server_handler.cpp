@@ -1123,7 +1123,7 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
 
 void AudioPolicyServerHandler::HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
-    AudioPolicyService::GetAudioPolicyService().CloseWakeUpAudioCapturer();
+    AudioCapturerSession::GetInstance().CloseWakeUpAudioCapturer();
 }
 
 void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppExecFwk::InnerEvent::Pointer &event)

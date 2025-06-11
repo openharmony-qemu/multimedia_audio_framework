@@ -65,7 +65,6 @@ static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
 static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
 static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
 const int32_t UID_AUDIO = 1041;
-static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
 
 mutex g_dataShareHelperMutex;
 bool AudioPolicyService::isBtListenerRegistered = false;
@@ -223,7 +222,7 @@ void SafeVolumeEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &
     AUDIO_INFO_LOG("receive DATA_SHARE_READY action success.");
     eventReceiver_(eventData);
 }
-// 这个后续移到音量里去做，不要放在这里。
+
 void AudioPolicyService::SubscribeSafeVolumeEvent()
 {
     AUDIO_INFO_LOG("enter.");
@@ -274,7 +273,6 @@ int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute)
     return status;
 }
 
-// 这个下沉到device中去实现。
 std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
 {
     (void)streamType;
@@ -402,7 +400,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPrefe
     return audioDeviceCommon_.GetPreferredInputDeviceDescInner(captureInfo, networkId);
 }
 
-// 实现考虑移到audioAffinityManager_中
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
@@ -416,7 +413,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetOutpu
     return deviceList;
 }
 
-// 实现考虑移到audioAffinityManager_中
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetInputDevice(
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
@@ -550,7 +546,6 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
     return AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(deviceName);
 }
 
-// 后续移动到infra/datashare目录下。跟业务完全无关。
 bool AudioPolicyService::IsDataShareReady()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -591,14 +586,13 @@ void AudioPolicyService::RegisterNameMonitorHelper()
 
     dataShareHelper->Release();
 }
-// 放在AudioSettingProvider中
+
 void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
     RegisterAccessiblilityBalance();
     RegisterAccessiblilityMono();
 }
 
-// 放在AudioSettingProvider中
 void AudioPolicyService::RegisterAccessiblilityBalance()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
@@ -736,7 +730,6 @@ void AudioPolicyService::onDoNotDisturbStatusWhiteListChanged(std::vector<std::m
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "set doNotDisturbStatus WhiteList filed");
 }
 
-// 这个后续放到audioEffectService_中去。
 void AudioPolicyService::LoadEffectLibrary()
 {
     // IPC -> audioservice load library
@@ -844,7 +837,8 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, status,
         "AudioPolicyServer:: Get capturer change info failed");
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices = GetDevicesInner(INPUT_DEVICES_FLAG);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices =
+        audioConnectedDevice_.GetDevicesInner(INPUT_DEVICES_FLAG);
     DeviceType activeDeviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     DeviceRole activeDeviceRole = INPUT_DEVICE;
     for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
@@ -867,7 +861,6 @@ void AudioPolicyService::RegisteredTrackerClientDied(pid_t uid)
     audioDeviceLock_.RegisteredTrackerClientDied(uid);
 }
 
-// 这个要下沉到合适的领域对象中。
 int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount, DeviceType deviceType)
 {
     if (audioActiveDevice_.GetCurrentOutputDeviceType() != DEVICE_TYPE_FILE_SINK) {
@@ -902,7 +895,6 @@ int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount
     return SUCCESS;
 }
 
-// 考虑收编到蓝牙模块
 void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     AUDIO_WARNING_LOG("No bt permission");
@@ -1141,6 +1133,11 @@ int32_t AudioPolicyService::DynamicUnloadModule(const AudioPipeType pipeType)
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::GetMaxRendererInstances()
+{
+    return audioConfigManager_.GetMaxRendererInstances();
+}
+
 void AudioPolicyService::RegisterBluetoothListener()
 {
 #ifdef BLUETOOTH_ENABLE
@@ -1171,7 +1168,7 @@ void AudioPolicyService::UnregisterBluetoothListener()
     isBtListenerRegistered = false;
 #endif
 }
-// 放在AudioSettingProvider中
+
 void AudioPolicyService::SubscribeAccessibilityConfigObserver()
 {
 #ifdef ACCESSIBILITY_ENABLE
