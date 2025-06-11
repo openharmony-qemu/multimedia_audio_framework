@@ -594,6 +594,12 @@ int32_t ProRendererStreamImpl::SetClientVolume(float clientVolume)
     return SUCCESS;
 }
 
+int32_t ProRendererStreamImpl::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_WARNING_LOG("SetLoudnessGain only for hpae renderer stream");
+    return ERROR;
+}
+
 int32_t ProRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
 {
     return SUCCESS;

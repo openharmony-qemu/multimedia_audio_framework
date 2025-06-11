@@ -1670,15 +1670,7 @@ int32_t RendererInServer::SetClientVolume()
 int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
 {
     int32_t ret = stream_->SetLoudnessGain(loudnessGain);
-    uint32_t sessionId = streamIndex_;
-    AUDIO_INFO_LOG("SetLoudnessGain loudnessGain: %{public}f, sessionID: %{public}d", loudnessGain, streamIndex_);
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager().SetLoudnessGain(streamIndex_, loudnessGain);
-    } else {
-        AUDIO_ERR_LOG("loudnessGain not support.");
-        return ERROR;
-    }
+    return ret;
 }
 
 int32_t RendererInServer::SetMute(bool isMute)

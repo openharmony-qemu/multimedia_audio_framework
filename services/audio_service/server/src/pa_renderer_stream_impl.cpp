@@ -1318,6 +1318,12 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
     return SUCCESS;
 }
 
+int32_t PaRendererStreamImpl::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_WARNING_LOG("SetLoudnessGain only for hpae renderer stream");
+    return ERROR;
+}
+
 void PaRendererStreamImpl::UpdatePaTimingInfo()
 {
     pa_operation *operation = pa_stream_update_timing_info(paStream_, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
