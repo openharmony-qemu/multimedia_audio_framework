@@ -142,24 +142,19 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
     for (auto pipe : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "Pipe is nullptr");
-        if (pipe->streamDescriptors_.empty() && IsSpecialPipe(pipe)) {
+        if (pipe->streamDescriptors_.empty() && IsSpecialPipe(pipe->routeFlag_)) {
             newList.push_back(pipe);
         }
     }
     return newList;
 }
 
-bool AudioPipeManager::IsSpecialPipe(std::shared_ptr<AudioPipeInfo> pipeInfo)
+bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
 {
-    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "Pipe info is null");
-    uint32_t routeFlag = pipeInfo->routeFlag_;
-    AUDIO_INFO_LOG("Flag %{public}u, pipe adapter name: %{public}s", routeFlag, pipeInfo->adapterName_.c_str());
+    AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
     if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
-        (pipeInfo->adapterName_ == PRIMARY_CLASS && routeFlag == AUDIO_INPUT_FLAG_NORMAL) ||
-        (pipeInfo->adapterName_ == USB_CLASS && routeFlag == AUDIO_INPUT_FLAG_NORMAL)) {
+        (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD)) {
         return true;
     }
     return false;
