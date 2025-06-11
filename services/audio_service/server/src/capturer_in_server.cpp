@@ -368,7 +368,7 @@ int32_t CapturerInServer::OnReadData(size_t length)
 
 int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 {
-    CHECK_AND_RETURN_RET_LOG(status_ == I_STATUS_STARTED, ERR_READ_FAILED, "CapturerInServer is not started");
+    CHECK_AND_RETURN_RET_LOG(status_.load() == I_STATUS_STARTED, ERR_READ_FAILED, "CapturerInServer is not started");
     CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
@@ -631,15 +631,15 @@ int32_t CapturerInServer::DrainAudioBuffer()
 int32_t CapturerInServer::Stop()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
-    if (capturerClock_ != nullptr) {
-        capturerClock_->Stop();
-    }
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
         AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;
 
+    if (capturerClock_ != nullptr) {
+        capturerClock_->Stop();
+    }
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
