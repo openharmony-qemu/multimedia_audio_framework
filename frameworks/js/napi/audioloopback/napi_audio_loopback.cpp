@@ -32,12 +32,6 @@ mutex NapiAudioLoopback::createMutex_;
 int32_t NapiAudioLoopback::isConstructSuccess_ = SUCCESS;
 AudioLoopbackMode NapiAudioLoopback::sLoopbackMode_ = HARDWARE;
 
-static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode)
-{
-    NapiAudioError::ThrowError(env, errCode);
-    return nullptr;
-}
-
 NapiAudioLoopback::NapiAudioLoopback()
     : loopback_(nullptr), env_(nullptr) {}
 
@@ -120,7 +114,7 @@ napi_value NapiAudioLoopback::Construct(napi_env env, napi_callback_info info)
         napiLoopback->callbackNapi_ = std::make_shared<NapiAudioLoopbackCallback>(env);
         CHECK_AND_RETURN_RET_LOG(napiLoopback->callbackNapi_ != nullptr, nullptr, "No memory");
         int32_t ret = napiLoopback->loopback_->SetAudioLoopbackCallback(napiLoopback->callbackNapi_);
-        CHECK_AND_RETURN_RET_LOG(!ret, napiLoopback, "Construct SetLoopbackCallback failed");
+        CHECK_AND_RETURN_RET_LOG(!ret, result, "Construct SetLoopbackCallback failed");
     }
 
     status = napi_wrap(env, thisVar, static_cast<void*>(napiLoopback.get()),
@@ -208,7 +202,7 @@ napi_value NapiAudioLoopback::GetStatus(napi_env env, napi_callback_info info)
         auto obj = reinterpret_cast<NapiAudioLoopback*>(context->native);
         ObjectRefMap objectGuard(obj);
         auto *napiAudioLoopback = objectGuard.GetPtr();
-        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioLoopback, context),
+        CHECK_AND_RETURN_LOG(CheckAudioLoopbackStatus(napiAudioLoopback, context),
             "context object state is error.");
         context->loopbackStatus = napiAudioLoopback->loopback_->GetStatus();
     };
@@ -249,10 +243,7 @@ napi_value NapiAudioLoopback::SetVolume(napi_env env, napi_callback_info info)
             context->SignError(NAPI_ERR_INVALID_PARAM);
             return;
         }
-        context->intValue = napiAudioLoopback->loopback_->SetVolume(static_cast<float>(context->volLevel));
-        if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM);
-        }
+        napiAudioLoopback->loopback_->SetVolume(static_cast<float>(context->volLevel));
     };
 
     auto complete = [env](napi_value &output) {
@@ -294,7 +285,7 @@ napi_value NapiAudioLoopback::Enable(napi_env env, napi_callback_info info)
         }
     };
 
-    auto complete = [env](napi_value &output) {
+    auto complete = [env, context](napi_value &output) {
         NapiParamUtils::SetValueBoolean(env, context->isTrue, output);
     };
     return NapiAsyncWork::Enqueue(env, context, "Enable", executor, complete);
