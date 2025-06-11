@@ -39,12 +39,12 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
     int32_t ret = CreateCapture();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
-    ret = PrepareMmapBuffer();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
     ret = DoSetInputRoute(static_cast<DeviceType>(attr_.deviceType));
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
+    ret = PrepareMmapBuffer();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
     sourceInited_ = true;
     return SUCCESS;
 }
