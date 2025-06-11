@@ -74,7 +74,7 @@ private:
     AudioRendererOptions GenerateRendererConfig();
     AudioCapturerOptions GenerateCapturerConfig();
 
-    void CreateAudioLoopback();
+    bool CreateAudioLoopback();
     void DestroyAudioLoopback();
     bool IsAudioLoopbackSupported();
     bool CheckDeviceSupport();

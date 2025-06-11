@@ -68,7 +68,9 @@ AudioLoopback::~AudioLoopback() = default;
 AudioLoopbackPrivate::~AudioLoopbackPrivate()
 {
     AUDIO_INFO_LOG("~AudioLoopbackPrivate");
-    DestroyAudioLoopback();
+    if (currentStatus_ == AVAILABLE_RUNNING) {
+        DestroyAudioLoopback();
+    }
 }
 
 bool AudioLoopbackPrivate::Enable(bool enable)
@@ -76,14 +78,16 @@ bool AudioLoopbackPrivate::Enable(bool enable)
     if (enable) {
         CHECK_AND_RETURN_RET_LOG(currentStatus_ != AVAILABLE_RUNNING, false, "AudioLoopback already running");
         InitStatus();
-        bool ret = IsAudioLoopbackSupported() && CheckDeviceSupport();
-        if(ret) {
-            CreateAudioLoopback();
+        bool ret = IsAudioLoopbackSupported() && CheckDeviceSupport() && CreateAudioLoopback();
+        if (!ret) {
+            AUDIO_ERR_LOG("Create AudioLoopback failed");
+            DestroyAudioLoopback();
         }
         UpdateStatus();
-        CHECK_AND_RETURN_RET_LOG(currentStatus_ == AVAILABLE_RUNNING, false, "Create AudioLoopback failed");
+        InitializeCallbacks();
+        CHECK_AND_RETURN_RET_LOG(currentStatus_ == AVAILABLE_RUNNING, false, "AudioLoopback Enable failed");
     } else {
-        currentStatus_ = AVAILABLE_IDLE;
+        CHECK_AND_RETURN_RET_LOG(currentStatus_ == AVAILABLE_RUNNING, true, "AudioLoopback not Running");
         DestroyAudioLoopback();
     }
     return true;
@@ -143,55 +147,58 @@ int32_t AudioLoopbackPrivate::RemoveAudioLoopbackCallback()
     return SUCCESS;
 }
 
-void AudioLoopbackPrivate::CreateAudioLoopback()
+bool AudioLoopbackPrivate::CreateAudioLoopback()
 {
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_, appInfo_);
     if (audioRenderer_ == nullptr || !audioRenderer_->IsFastRenderer()) {
         AUDIO_ERR_LOG("CreateRenderer failed");
-        return;
+        return false;
     }
     audioRenderer_->SetRendererWriteCallback(shared_from_this());
     rendererFastStatus_ = FASTSTATUS_FAST;
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
     if(audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("CreateCapturer failed");
-        return;
+        return false;
     }
     AudioCapturerInfo capturerInfo;
     audioCapturer_->GetCapturerInfo(capturerInfo);
     if (capturerInfo.capturerFlags != STREAM_FLAG_FAST) {
         AUDIO_ERR_LOG("CreateCapturer failed");
-        return;
+        return false;
     }
     audioCapturer_->SetCapturerReadCallback(shared_from_this());
     capturerFastStatus_ = FASTSTATUS_FAST;
     bool ret = audioRenderer_->Start();
     if (!ret) {
         AUDIO_ERR_LOG("audioRenderer Start failed");
-        return;
+        return false;
     }
     rendererState_ = RENDERER_RUNNING;
     ret = audioCapturer_->Start();
     if (!ret) {
         AUDIO_ERR_LOG("audioCapturer Start failed");
-        return;
+        return false;
     }
     capturerState_ = CAPTURER_RUNNING;
-    InitializeCallbacks();
+    return true;
 }
 
 void AudioLoopbackPrivate::DisableLoopback()
  {
-    karaokeParams_["Karaoke_enable"] = "disable";
-    std::string parameters = "Karaoke_enable=" + karaokeParams_["Karaoke_enable"];
-    CHECK_AND_RETURN_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters),
-        "DisableLoopback failed");
+    if (currentStatus_ == AVAILABLE_RUNNING) {
+        karaokeParams_["Karaoke_enable"] = "disable";
+        std::string parameters = "Karaoke_enable=" + karaokeParams_["Karaoke_enable"];
+        CHECK_AND_RETURN_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters),
+            "DisableLoopback failed");
+    }
  }
 
 void AudioLoopbackPrivate::DestroyAudioLoopback()
 {
     bool ret = true;
     DisableLoopback();
+    currentStatus_ = AVAILABLE_IDLE;
     if (audioCapturer_) {
         ret = audioCapturer_->Stop();
         if (!ret) {
@@ -357,6 +364,7 @@ void AudioLoopbackPrivate::InitializeCallbacks()
 
 void AudioLoopbackPrivate::UpdateStatus()
 {
+    AudioLoopbackStatus oldStatus = currentStatus_;
     AudioLoopbackStatus newStatus = currentStatus_;
     const bool isDeviceValid = isRendererUsb_ && isCapturerUsb_;
 
@@ -370,12 +378,12 @@ void AudioLoopbackPrivate::UpdateStatus()
 
     if (newStatus == AVAILABLE_RUNNING) {
         karaokeParams_["Karaoke_enable"] = "enable";
+        currentStatus_= AVAILABLE_RUNNING;
         newStatus = SetKaraokeParameters() ? AVAILABLE_RUNNING : UNAVAILABLE_SCENE;
     }
-    if (newStatus != currentStatus_) {
-        AUDIO_INFO_LOG("UpdateStatus: %{public}d -> %{public}d", currentStatus_, newStatus);
+    if (newStatus != oldStatus) {
+        AUDIO_INFO_LOG("UpdateStatus: %{public}d -> %{public}d", oldStatus, newStatus);
         if (currentStatus_ == AVAILABLE_RUNNING) {
-            currentStatus_ = newStatus;
             DestroyAudioLoopback();
         }
         currentStatus_ = newStatus;
