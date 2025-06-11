@@ -455,10 +455,10 @@ int32_t IpcStreamInServer::SetClientVolume()
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::SetClientLoudnessGain(float clientLoudnessGain)
+int32_t IpcStreamInServer::SetLoudnessGain(float loudnessGain)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->SetClientLoudnessGain(float clientLoudnessGain);
+        return rendererInServer_->SetLoudnessGain(float loudnessGain);
     }
     AUDIO_ERR_LOG("mode is not playback or renderer is null");
     return ERR_OPERATION_FAILED;

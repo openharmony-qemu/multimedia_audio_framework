@@ -556,7 +556,7 @@ public:
      * @param loudness The loudness to be set for the current track.
      * @return Returns {@link SUCCESS} if loudness is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
-     * @since 8
+     * @since 20
      */
     virtual int32_t SetLoudnessGain(float loudnessGain) const = 0;
 
@@ -564,7 +564,7 @@ public:
      * @brief Obtains the current track loudness
      *
      * @return Returns current track loudness
-     * @since 8
+     * @since 20
      */
     virtual float GetLoudnessGain() const = 0;
 

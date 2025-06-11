@@ -472,20 +472,28 @@ float RendererInClientInner::GetVolume()
 
 int32_t RendererInClientInner::SetLoudnessGain(float loudnessGain)
 {
-    AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d loudness gain:%{public}f", (offloadEnable_ ? "offload" : "normal"),
+    AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d loudnessGain:%{public}f", (offloadEnable_ ? "offload" : "normal"),
         sessionId_, loudnessGain);
     if (loudnessGain > 24.0 || loudnessGain < -96.0) {
         AUDIO_ERR_LOG("SetLoudnessGain with invalid volume %{public}f", loudnessGain);
         return ERR_INVALID_PARAM;
     }
-    clientLoudnessGain_ = loudnessGain;    
-    return SetInnerLoudnessGain(loudnessGain);
+    loudnessGain_ = loudnessGain;
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetLoudnessGain();
+    
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Set loudnessGain failed:%{public}u", ret);
+        return ERROR;
+    }
+    AUDIO_PRERELEASE_LOGI("SetLoudnessGain success, loudnessGain: %{public}f", loudnessGain);
+    return SUCCESS;
 }
 
 float RendererInClientInner::GetLoudnessGain()
 {
-    Trace trace("RendererInClientInner::GetLoudnessGain:" + std::to_string(clientLoudnessGain_));
-    return clientLoudnessGain_;
+    return loudnessGain_;
 }
 
 int32_t RendererInClientInner::SetDuckVolume(float volume)

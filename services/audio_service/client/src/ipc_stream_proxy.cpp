@@ -503,7 +503,7 @@ int32_t IpcStreamProxy::SetClientVolume()
     return reply.ReadInt32();
 }
 
-int32_t IpcStreamProxy::SetClientLoudnessGain()
+int32_t IpcStreamProxy::SetLoudnessGain()
 {
     MessageParcel data;
     MessageParcel reply;
@@ -512,7 +512,7 @@ int32_t IpcStreamProxy::SetClientLoudnessGain()
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_CLIENT_LOUDNESSGAIN, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set client loudness gain failed, ipc error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set loudnessGain failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
 

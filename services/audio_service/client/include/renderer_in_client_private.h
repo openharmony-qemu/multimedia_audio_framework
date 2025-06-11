@@ -355,7 +355,7 @@ private:
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
 
-    float clientLoudnessGain_ = 0.0f;
+    float loudnessGain_ = 0.0f;
     
     bool flushAfterStop_ = false;
 

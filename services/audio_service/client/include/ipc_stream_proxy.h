@@ -86,7 +86,7 @@ public:
 
     int32_t SetClientVolume() override;
 
-    int32_t SetClientLoudnessGain() override;
+    int32_t SetLoudnessGain() override;
 
     int32_t SetMute(bool isMute) override;
 

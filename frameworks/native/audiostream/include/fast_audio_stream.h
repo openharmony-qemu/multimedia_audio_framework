@@ -85,6 +85,8 @@ public:
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
+    int32_t SetLoudnessGain(float loudnessGain) override;
+    float GetLoudnessGain() override;
     int32_t SetMute(bool mute) override;
     bool GetMute() override;
     int32_t SetSourceDuration(int64_t duration) override;

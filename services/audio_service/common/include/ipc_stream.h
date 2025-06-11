@@ -92,7 +92,7 @@ public:
 
     virtual int32_t SetClientVolume() = 0;
 
-    virtual int32_t SetClientLoudnessGain() = 0;
+    virtual int32_t SetLoudnessGain() = 0;
 
     virtual int32_t SetMute(bool isMute) = 0;
 
@@ -137,13 +137,13 @@ public:
         ON_GET_STREAM_MANAGER_TYPE,
         ON_SET_SILENT_MODE_AND_MIX_WITH_OTHERS,
         ON_SET_CLIENT_VOLUME,
-        ON_SET_CLIENT_LOUDNESSGAIN,
         ON_SET_MUTE,
         ON_SET_DUCK_FACTOR,
         ON_REGISTER_THREAD_PRIORITY,
         ON_SET_DEFAULT_OUTPUT_DEVICE,
         ON_SET_SOURCE_DURATION,
         ON_SET_OFFLOAD_DATA_CALLBACK_STATE,
+        ON_SET_CLIENT_LOUDNESSGAIN,
         IPC_STREAM_MAX_MSG
     };
 

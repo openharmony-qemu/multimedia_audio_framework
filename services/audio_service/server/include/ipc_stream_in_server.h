@@ -109,7 +109,7 @@ public:
 
     int32_t SetClientVolume() override;
 
-    int32_t SetClientLoudnessGain(float clientLoudnessGain) override;
+    int32_t SetLoudnessGain(float loudnessGain) override;
 
     int32_t SetMute(bool isMute) override;
 

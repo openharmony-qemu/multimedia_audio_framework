@@ -68,14 +68,14 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetSilentModeAndMixWithOthers(data, reply);
         case ON_SET_CLIENT_VOLUME:
             return HandleSetClientVolume(data, reply);
-        case ON_SET_CLIENT_LOUDNESSGAIN:
-            return HandleSetClientLoudnessGain(data, reply);
         case ON_SET_MUTE:
             return HandleSetMute(data, reply);
         case ON_SET_DUCK_FACTOR:
             return HandleSetDuckFactor(data, reply);
         case ON_SET_OFFLOAD_DATA_CALLBACK_STATE:
             return HandleSetOffloadDataCallbackState(data, reply);
+        case ON_SET_CLIENT_LOUDNESSGAIN:
+            return HandleSetLoudnessGain(data, reply);
         default:
             return OnMiddleCodeRemoteRequestExt(code, data, reply, option);
     }
@@ -412,10 +412,10 @@ int32_t IpcStreamStub::HandleSetClientVolume(MessageParcel &data, MessageParcel 
     return AUDIO_OK;
 }
 
-int32_t IpcStreamStub::HandleSetClientLoudnessGain(MessageParcel &data, MessageParcel &reply)
+int32_t IpcStreamStub::HandleSetLoudnessGain(MessageParcel &data, MessageParcel &reply)
 {
-    float clientLoudnessGain = data.ReadFloat();
-    reply.WriteInt32(SetClientLoudnessGain(clientLoudnessGain));
+    float loudnessGain = data.ReadFloat();
+    reply.WriteInt32(SetLoudnessGain(loudnessGain));
     return AUDIO_OK;
 }
 

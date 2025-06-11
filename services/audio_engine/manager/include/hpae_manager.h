@@ -111,7 +111,7 @@ public:
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo) override;
     // play stream interface
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;
-    int32_t SetClientLoudnessGain(uint32_t sessionId, float loudnessGain) override;
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetRate(uint32_t sessionId, int32_t rate) override;
     int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
     int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;

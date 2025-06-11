@@ -316,19 +316,6 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
     return SUCCESS;
 }
 
-int32_t RendererInClientInner::SetInnerLoudnessGain(float loudnessGain)
-{
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetClientLoudnessGain();
-    
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Set Client Loudness Gain failed:%{public}u", ret);
-        return ERROR;
-    }
-    AUDIO_PRERELEASE_LOGI("SetClientLoudnessGain success, loudnessGain: %{public}f", loudnessGain);
-    return SUCCESS;
-}
-
 void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
 {
     if (bufferDurationInUs > MAX_BUF_DURATION_IN_USEC) {
