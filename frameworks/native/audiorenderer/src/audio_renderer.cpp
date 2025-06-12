@@ -1338,7 +1338,7 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->SetLoudnessGain(volume);
+    return currentStream->SetLoudnessGain(loudnessGain);
 }
 
 float AudioRendererPrivate::GetLoudnessGain() const 

@@ -558,7 +558,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    virtual int32_t SetLoudnessGain(float loudnessGain) const = 0;
+    virtual int32_t SetLoudnessGain(float loudnessGain) {return 0;};
 
     /**
      * @brief Obtains the current track loudness
@@ -566,7 +566,7 @@ public:
      * @return Returns current track loudness
      * @since 20
      */
-    virtual float GetLoudnessGain() const = 0;
+    virtual float GetLoudnessGain() {return 0;};
 
     /**
      * @brief Set the render rate

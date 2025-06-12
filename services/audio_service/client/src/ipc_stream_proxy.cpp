@@ -503,7 +503,7 @@ int32_t IpcStreamProxy::SetClientVolume()
     return reply.ReadInt32();
 }
 
-int32_t IpcStreamProxy::SetLoudnessGain(loudnessGain)
+int32_t IpcStreamProxy::SetLoudnessGain(float loudnessGain)
 {
     MessageParcel data;
     MessageParcel reply;

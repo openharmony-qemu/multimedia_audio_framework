@@ -474,19 +474,13 @@ int32_t RendererInClientInner::SetLoudnessGain(float loudnessGain)
 {
     AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d loudnessGain:%{public}f", (offloadEnable_ ? "offload" : "normal"),
         sessionId_, loudnessGain);
-    if (loudnessGain > 24.0 || loudnessGain < -96.0) {
-        AUDIO_ERR_LOG("SetLoudnessGain with invalid volume %{public}f", loudnessGain);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(loudnessGain <= 24.0 && loudnessGain >= -96.0, ERR_INVALID_PARAM, "SetLoudnessGain with invalid volume %{public}f", loudnessGain); 
     loudnessGain_ = loudnessGain;
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetLoudnessGain();
+    int32_t ret = ipcStream_->SetLoudnessGain(loudnessGain);
     
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Set loudnessGain failed:%{public}u", ret);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Set loudnessGain failed:%{public}u", ret);
     AUDIO_PRERELEASE_LOGI("SetLoudnessGain success, loudnessGain: %{public}f", loudnessGain);
     return SUCCESS;
 }
