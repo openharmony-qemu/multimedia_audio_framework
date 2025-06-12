@@ -91,7 +91,6 @@ void HpaeCoBufferNode::DoProcess()
 
 bool HpaeCoBufferNode::Reset()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
@@ -102,7 +101,6 @@ bool HpaeCoBufferNode::Reset()
 
 bool HpaeCoBufferNode::ResetAll()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     const auto preOutputMap = inputStream_.GetPreOutputMap();
     for (const auto &preOutput : preOutputMap) {
         OutputPort<HpaePcmBuffer *> *output = preOutput.first;
@@ -116,19 +114,16 @@ bool HpaeCoBufferNode::ResetAll()
 
 std::shared_ptr<HpaeNode> HpaeCoBufferNode::GetSharedInstance()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     return shared_from_this();
 }
 
 OutputPort<HpaePcmBuffer *> *HpaeCoBufferNode::GetOutputPort()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     return &outputStream_;
 }
 
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
     nodeInfo.nodeName = "HpaeCoBufferNode";
     SetNodeInfo(nodeInfo);
@@ -147,14 +142,12 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
 
 void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
     AUDIO_INFO_LOG("HpaeCoBufferNode disconnect from preNode");
 }
 
 void HpaeCoBufferNode::SetLatency(uint32_t latency)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     latency_ = latency;
     AUDIO_INFO_LOG("latency is %{public}d", latency);
 }

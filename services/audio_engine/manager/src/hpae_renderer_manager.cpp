@@ -112,7 +112,6 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.historyFrameCount = 0;
     nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.statusCallback = weak_from_this();
-    TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         nodeInfo.sceneType = TransStreamUsageToSplitSceneType(nodeInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
     } else {
@@ -121,7 +120,8 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     if (IsMchDevice()) {
         nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     }
-
+    // for collaboration
+    TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
     
@@ -149,7 +149,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
         }
     }
 
-    CHECK_AND_RETURN_LOG(isConnect == false, "[FinishMove] not need connect session:%{public}d", sessionId);
+    CHECK_AND_RETURN_LOG(isConnect == true, "[FinishMove] not need connect session:%{public}d", sessionId);
     if (node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:%{public}s",
             sessionId, sinkInfo_.deviceClass.c_str());
@@ -501,12 +501,6 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
         // todo: do fade out
     }
     DeleteInputSession(sessionId);
-    // for collaboration
-    if (isCollaborationEnabled_) {
-        HpaeNodeInfo nodeInfo = inputNode->GetNodeInfo();
-        RecoverNodeInfoForCollaboration(nodeInfo);
-        inputNode->SetNodeInfo(nodeInfo);
-    }
     std::string name = sinkName;
     TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
 }
@@ -1128,23 +1122,35 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 int32_t HpaeRendererManager::UpdateCollaborativeState(bool isCollaborationEnabled)
 {
     auto request = [this, isCollaborationEnabled]() {
-        AUDIO_INFO_LOG("UpdateCollaborativeState %{public}d", isCollaborationEnabled);
         if (isCollaborationEnabled_ == isCollaborationEnabled) {
             AUDIO_INFO_LOG("collaboration state not changed, isCollaborationEnabled_ %{public}d",
                 isCollaborationEnabled_);
             return;
         }
+        AUDIO_INFO_LOG("collaborativeState change from %{public}d to %{public}d",
+            isCollaborationEnabled_, isCollaborationEnabled);
         isCollaborationEnabled_ = isCollaborationEnabled;
         if (isCollaborationEnabled_) {
+            // for collaboration enabled
             if (hpaeCoBufferNode_ == nullptr) {
                 hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>();
             }
-            for (auto it : sinkInputNodeMap_) {
-                ReConnectNodeForCollaboration(it.first);
+            for (auto& [key, node] : sinkInputNodeMap_) {
+                HpaeNodeInfo nodeInfo = node->GetNodeInfo();
+                if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+                    // For music and movie, we need to change sceneType to collaborative
+                    ReConnectNodeForCollaboration(key);
+                }
             }
-        } else if (hpaeCoBufferNode_ != nullptr) {
-            for (auto it : sinkInputNodeMap_) {
-                ReConnectNodeForCollaboration(it.first);
+            return;
+        } else {
+            // for collaboration disabled
+            for (auto& [key, node] : sinkInputNodeMap_) {
+                HpaeNodeInfo nodeInfo = node->GetNodeInfo();
+                if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
+                    // For collaborative, we need to recover sceneType to original
+                    ReConnectNodeForCollaboration(key);
+                }
             }
             hpaeCoBufferNode_.reset();
         }
@@ -1184,7 +1190,7 @@ int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBuf
         CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr),
             "outputCluster or coBufferNode is nullptr");
         outputCluster_->Connect(coBufferNode);
-        if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING) {
+        if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
             outputCluster_->Start();
         }
     };
