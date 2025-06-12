@@ -35,6 +35,7 @@ private:
     std::string curDeviceAddress_;
     std::mutex collaborativeServiceMutex_;
     std::map<std::string, bool> addressToCollaborativeEnabledMap_;
+    std::map<std::string, bool> addressToCollaborativeMemoryMap_;
     IAudioPolicyInterface& audioPolicyManager_;
 };
 } // OHOS

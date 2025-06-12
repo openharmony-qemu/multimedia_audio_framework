@@ -4210,41 +4210,20 @@ int32_t AudioPolicyServer::SetSleAudioOperationCallback(const sptr<IRemoteObject
 int32_t AudioPolicyServer::SetCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled)
 {
-    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
-        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
-        return ERR_PERMISSION_DENIED;
-    }
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        return ERR_PERMISSION_DENIED;
-    }
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
     return audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(selectedAudioDevice, enabled);
 }
 
 bool AudioPolicyServer::IsCollaborativePlaybackSupported()
 {
-    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
-        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
-        return ERR_PERMISSION_DENIED;
-    }
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        return ERR_PERMISSION_DENIED;
-    }
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
     return audioCollaborativeService_.IsCollaborativePlaybackSupported();
 }
 
 bool AudioPolicyServer::IsCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
-    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
-        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
-        return ERR_PERMISSION_DENIED;
-    }
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        return ERR_PERMISSION_DENIED;
-    }
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
     return audioCollaborativeService_.IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
 }
 } // namespace AudioStandard

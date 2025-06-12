@@ -2438,8 +2438,6 @@ void AudioPolicyManagerStub::SetCollaborativePlayBackEnabledForDeviceInternal(Me
 {
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-    // MAP TYPE BLUETOOTH_AD2P TO BLUETOOTH_A2DP_IN?
-    MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     bool enable = data.ReadBool();
     int32_t result = SetCollaborativePlaybackEnabledForDevice(audioDeviceDescriptor, enable);
     reply.WriteInt32(result);
@@ -2455,7 +2453,6 @@ void AudioPolicyManagerStub::IsCollaborativePlaybackEnabledForDeviceInternal(Mes
 {
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
-    MapExternalToInternalDeviceType(*audioDeviceDescriptor);
     bool result = IsCollaborativePlaybackEnabledForDevice(audioDeviceDescriptor);
     reply.WriteBool(result);
 }
