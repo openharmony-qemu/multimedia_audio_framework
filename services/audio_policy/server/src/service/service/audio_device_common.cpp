@@ -33,6 +33,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
+static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 400000; // 400ms
 static const int64_t NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS = 1000000; // 1s
@@ -1832,6 +1833,10 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer stop/release.");
         isRingDualToneOnPrimarySpeaker_ = false;
+        // Add delay between end of double ringtone and device switch.
+        // After the ringtone ends, there may still be residual audio data in the pipeline.
+        // Switching the device immediately can cause pop noise due the undrained buffers.
+        usleep(RING_DUAL_END_DELAY_US);
         FetchDevice(true);
         for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
             audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
