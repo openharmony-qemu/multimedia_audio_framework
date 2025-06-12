@@ -1369,7 +1369,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.networkId_ = curOutputDeviceDesc.networkId_;
         deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
-        CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupport(config, deviceInfo), ERROR, "device not support playback");
+        CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupported(config, deviceInfo), ERROR, "device not support playback");
     } else {
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             AudioCapturerInfo capturerInfo = config.capturerInfo;
@@ -2218,7 +2218,7 @@ int32_t AudioPolicyService::SetBackgroundMuteCallback(const sptr<IRemoteObject> 
     return audioBackgroundManager_.SetBackgroundMuteCallback(object);
 }
 
-bool AudioPolicyService::IsDevicePlaybackSupport(const AudioProcessConfig &config,
+bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &config,
     const AudioDeviceDescriptor &deviceInfo)
 {
     if (audioPolicyServerHandler_ && config.streamInfo.encoding == ENCODING_EAC3 &&

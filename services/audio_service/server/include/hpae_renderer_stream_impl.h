@@ -91,6 +91,7 @@ private:
     size_t byteSizePerFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
     size_t minBufferSize_ = 0;
+    uint64_t expectedPlaybackDurationMs_ = 0;
 
     int32_t renderRate_ = 0;
     int32_t effectMode_ = -1;
