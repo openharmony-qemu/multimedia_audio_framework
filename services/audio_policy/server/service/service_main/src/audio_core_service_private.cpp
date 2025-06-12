@@ -1555,7 +1555,7 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
     }
     if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
         Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
-    } 
+    }
 #endif
     AUDIO_INFO_LOG("out");
     return SUCCESS;
