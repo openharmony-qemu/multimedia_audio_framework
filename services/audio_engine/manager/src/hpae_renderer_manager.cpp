@@ -1121,12 +1121,12 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 
 int32_t HpaeRendererManager::UpdateCollaborativeState(bool isCollaborationEnabled)
 {
+    if (isCollaborationEnabled_ == isCollaborationEnabled) {
+        AUDIO_INFO_LOG("collaboration state not changed, isCollaborationEnabled_ %{public}d",
+            isCollaborationEnabled_);
+        return SUCCESS;
+    }
     auto request = [this, isCollaborationEnabled]() {
-        if (isCollaborationEnabled_ == isCollaborationEnabled) {
-            AUDIO_INFO_LOG("collaboration state not changed, isCollaborationEnabled_ %{public}d",
-                isCollaborationEnabled_);
-            return;
-        }
         AUDIO_INFO_LOG("collaborativeState change from %{public}d to %{public}d",
             isCollaborationEnabled_, isCollaborationEnabled);
         isCollaborationEnabled_ = isCollaborationEnabled;
