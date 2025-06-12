@@ -159,6 +159,16 @@ public:
         return sharedAudioRenderer_->GetVolume();
     }
 
+    int32_t SetLoudnessGain(float loudnessGain) const override
+    {
+        return sharedAudioRenderer_->SetLoudnessGain(loudnessGain);
+    }
+
+    float GetLoudnessGain() const override
+    {
+        return sharedAudioRenderer_->GetLoudnessGain();
+    }
+
     int32_t SetRenderRate(AudioRendererRate renderRate) const override
     {
         return sharedAudioRenderer_->SetRenderRate(renderRate);
