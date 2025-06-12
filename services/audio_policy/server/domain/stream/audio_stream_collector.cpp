@@ -1067,19 +1067,20 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     return SUCCESS;
 }
 
-void AudioStreamCollector::HandleAppStateChange(int32_t uid, bool mute, bool &notifyMute)
+void AudioStreamCollector::HandleAppStateChange(int32_t uid, int32_t pid, bool mute, bool &notifyMute, bool hasBackTask)
 {
     if (VolumeUtils::IsPCVolumeEnable()) {
         return;
     }
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo != nullptr && changeInfo->clientUID == uid) {
+        if (changeInfo != nullptr && changeInfo->clientUID == uid && changeInfo->clientPid == pid) {
             AUDIO_INFO_LOG(" uid=%{public}d and state=%{public}d", uid, mute);
             if (std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
                 changeInfo->rendererInfo.streamUsage) == 0) {
                 continue;
             }
+            CHECK_AND_CONTINUE(!hasBackTask);
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
                 AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);
