@@ -29,7 +29,6 @@ namespace {
 
 sptr<AudioPolicyServer> GetPolicyServerTest()
 {
-    static int32_t systemAbilityId = systemAbilityId;
     static bool runOnCreate = false;
     static sptr<AudioPolicyServer> server =
         sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);

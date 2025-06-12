@@ -295,7 +295,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
             AUDIO_INFO_LOG("AudioPolicyServiceTest_001 isConnected:%{public}d", static_cast<uint32_t>(isConnected));
             GetServerPtr()->audioPolicyService_.audioDeviceStatus_.hasModulesLoaded = true;
             GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
-            GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected,
+            GetServerPtr()->audioDeviceLock_.SetCallDeviceActive(deviceType, isConnected,
                 audioDeviceDescriptor.macAddress_);
         }
         bool ret = GetServerPtr()->audioPolicyService_.IsA2dpOffloadConnected();
@@ -322,7 +322,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
         GetServerPtr()->audioPolicyService_.NotifyAccountsChanged(TEST_SESSIONID);
         // SafeVolumeTest
         GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
-        GetServerPtr()->audioPolicyService_.DisableSafeMediaVolume();
+        GetServerPtr()->audioVolumeManager_.DisableSafeMediaVolume();
     }
 }
 
@@ -374,12 +374,12 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_003, TestSize.Level1
             static_cast<uint32_t>(deviceType), TEST_SESSIONID);
         for (const auto& audioStreamType : audioStreamTypes) {
             AUDIO_ERR_LOG("AudioPolicyServiceTest_003 streamType:%{public}d", static_cast<uint32_t>(audioStreamType));
-            GetServerPtr()->audioPolicyService_.GetSystemVolumeDb(audioStreamType);
+            GetServerPtr()->audioPolicyManager_.GetSystemVolumeDb(audioStreamType);
         }
         GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetVolumeGroupType(deviceType);
         int32_t streamId = 1;
         float volume = 0.1f;
-        GetServerPtr()->audioPolicyService_.SetLowPowerVolume(streamId, volume);
+        GetServerPtr()->streamCollector_.SetLowPowerVolume(streamId, volume);
         GetServerPtr()->audioPolicyService_.audioOffloadStream_.SetOffloadMode();
         GetServerPtr()->audioPolicyService_.audioOffloadStream_.ResetOffloadMode(TEST_SESSIONID);
         GetServerPtr()->audioPolicyService_.OffloadStreamReleaseCheck(TEST_SESSIONID);
@@ -481,18 +481,18 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetStreamMute_001, TestSize.Level1)
 
     // modify currentActiveDevice_.deviceType_ to DEVICE_TYPE_SPEAKER
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
-    GetServerPtr()->audioPolicyService_.GetStreamMute(STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.SetStreamMute(STREAM_MUSIC, true);
-    GetServerPtr()->audioPolicyService_.GetStreamMute(STREAM_RING);
-    GetServerPtr()->audioPolicyService_.SetStreamMute(STREAM_RING, true);
+    GetServerPtr()->audioVolumeManager_.GetStreamMute(STREAM_MUSIC);
+    GetServerPtr()->audioVolumeManager_.SetStreamMute(STREAM_MUSIC, true);
+    GetServerPtr()->audioVolumeManager_.GetStreamMute(STREAM_RING);
+    GetServerPtr()->audioVolumeManager_.SetStreamMute(STREAM_RING, true);
 
     // modify currentActiveDevice_.deviceType_ to DEVICE_TYPE_BLUETOOTH_A2DP
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DEVICE_TYPE_BLUETOOTH_A2DP;
-    GetServerPtr()->audioPolicyService_.GetStreamMute(STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.SetStreamMute(STREAM_MUSIC, true);
-    GetServerPtr()->audioPolicyService_.GetStreamMute(STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.SetStreamMute(STREAM_MUSIC, true);
+    GetServerPtr()->audioVolumeManager_.GetStreamMute(STREAM_MUSIC);
+    GetServerPtr()->audioVolumeManager_.SetStreamMute(STREAM_MUSIC, true);
+    GetServerPtr()->audioVolumeManager_.GetStreamMute(STREAM_MUSIC);
+    GetServerPtr()->audioVolumeManager_.SetStreamMute(STREAM_MUSIC, true);
 
     // modify activeBTDevice_ and connectedA2dpDeviceMap_
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_ = "activeBTDevice";
@@ -504,17 +504,17 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetStreamMute_001, TestSize.Level1)
     GetServerPtr()->
         audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.insert({"activeBTDevice", configInfo});
     GetServerPtr()->audioPolicyService_.audioA2dpDevice_.connectedA2dpDeviceMap_.insert({"A2dpDeviceCommon", {}});
-    GetServerPtr()->audioPolicyService_.GetStreamMute(STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.SetStreamMute(STREAM_MUSIC, true);
-    GetServerPtr()->audioPolicyService_.SetStreamMute(STREAM_MUSIC, false);
+    GetServerPtr()->audioVolumeManager_.GetStreamMute(STREAM_MUSIC);
+    GetServerPtr()->audioVolumeManager_.SetStreamMute(STREAM_MUSIC, true);
+    GetServerPtr()->audioVolumeManager_.SetStreamMute(STREAM_MUSIC, false);
 
     // modify configInfo.absVolumeSupport to false
     configInfo.absVolumeSupport = false;
-    GetServerPtr()->audioPolicyService_.GetStreamMute(STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.SetStreamMute(STREAM_MUSIC, true);
+    GetServerPtr()->audioVolumeManager_.GetStreamMute(STREAM_MUSIC);
+    GetServerPtr()->audioVolumeManager_.SetStreamMute(STREAM_MUSIC, true);
 
     // use STREAM_WAKEUP to test GetVolumeTypeFromStreamType's else branch
-    GetServerPtr()->audioPolicyService_.SetStreamMute(STREAM_WAKEUP, true);
+    GetServerPtr()->audioVolumeManager_.SetStreamMute(STREAM_WAKEUP, true);
 }
 
 /**
@@ -1241,10 +1241,10 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetPreferredOutputDeviceDescriptors_001, Te
         AudioRendererInfo rendererInfo;
         rendererInfo.streamUsage = STREAM_USAGE_INVALID;
         string networkId = REMOTE_NETWORK_ID;
-        GetServerPtr()->audioPolicyService_.GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+        GetServerPtr()->audioDeviceLock_.GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
 
         rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-        GetServerPtr()->audioPolicyService_.GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+        GetServerPtr()->audioDeviceLock_.GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
     );
 }
 
@@ -1380,20 +1380,20 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetAudioScene_001, TestSize.Level1)
     bool hasSystemPermission = true;
     AudioScene ret = AUDIO_SCENE_INVALID;
     GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = AUDIO_SCENE_RINGING;
-    ret = GetServerPtr()->audioPolicyService_.GetAudioScene(hasSystemPermission);
+    ret = GetServerPtr()->audioSceneManager_.GetAudioScene(hasSystemPermission);
     EXPECT_EQ(AUDIO_SCENE_RINGING, ret);
 
     hasSystemPermission = false;
     GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = AUDIO_SCENE_CALL_START;
-    ret = GetServerPtr()->audioPolicyService_.GetAudioScene(hasSystemPermission);
+    ret = GetServerPtr()->audioSceneManager_.GetAudioScene(hasSystemPermission);
     EXPECT_EQ(AUDIO_SCENE_DEFAULT, ret);
 
     GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = AUDIO_SCENE_CALL_END;
-    ret = GetServerPtr()->audioPolicyService_.GetAudioScene(hasSystemPermission);
+    ret = GetServerPtr()->audioSceneManager_.GetAudioScene(hasSystemPermission);
     EXPECT_EQ(AUDIO_SCENE_DEFAULT, ret);
 
     GetServerPtr()->audioPolicyService_.audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CHAT;
-    ret = GetServerPtr()->audioPolicyService_.GetAudioScene(hasSystemPermission);
+    ret = GetServerPtr()->audioSceneManager_.GetAudioScene(hasSystemPermission);
     EXPECT_EQ(AUDIO_SCENE_PHONE_CHAT, ret);
 }
 
@@ -2508,7 +2508,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
 
     int32_t volumeLevel = 1;
     for (const auto& audioStreamType : audioStreamTypes) {
-        GetServerPtr()->audioPolicyService_.SetSystemVolumeLevel(audioStreamType, volumeLevel);
+        GetServerPtr()->audioVolumeManager_.SetSystemVolumeLevel(audioStreamType, volumeLevel);
         GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 0);
         GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 1);
         GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetVoiceCallVolume(volumeLevel);
@@ -2531,12 +2531,12 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandlePowerStateChanged_001, TestSize.Level
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_REMOTE_CAST;
 
     PowerMgr::PowerState state = PowerMgr::PowerState::STAND_BY;
-    GetServerPtr()->audioPolicyService_.HandlePowerStateChanged(state);
+    GetServerPtr()->audioOffloadStream_.HandlePowerStateChanged(state);
 
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     GetServerPtr()->audioPolicyService_.audioOffloadStream_.offloadSessionID_ = TEST_SESSIONID;
-    GetServerPtr()->audioPolicyService_.HandlePowerStateChanged(state);
+    GetServerPtr()->audioOffloadStream_.HandlePowerStateChanged(state);
 }
 
 /**
@@ -2574,8 +2574,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSystemVolumeInDb_001, TestSize.Level1)
     }
 
     AudioVolumeType volumeType = STREAM_MUSIC;
-    int32_t maxVolumeLevel = GetServerPtr()->audioPolicyService_.GetMaxVolumeLevel(volumeType);
-    int32_t minVolumeLevel = GetServerPtr()->audioPolicyService_.GetMinVolumeLevel(volumeType);
+    int32_t maxVolumeLevel = GetServerPtr()->audioVolumeManager_.GetMaxVolumeLevel(volumeType);
+    int32_t minVolumeLevel = GetServerPtr()->audioVolumeManager_.GetMinVolumeLevel(volumeType);
     EXPECT_GE(minVolumeLevel, VALUE_ZERO);
 }
 

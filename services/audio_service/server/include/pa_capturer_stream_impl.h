@@ -75,7 +75,7 @@ private:
     size_t spanSizeInFrame_ = 0;
     size_t minBufferSize_ = 0;
 
-    size_t totalBytesRead_ = 0;
+    uint64_t totalBytesRead_ = 0;
 
     FILE *capturerServerDumpFile_ = nullptr;
     bool releasedFlag_ = false;

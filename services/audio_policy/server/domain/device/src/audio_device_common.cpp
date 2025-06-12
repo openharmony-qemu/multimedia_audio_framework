@@ -1105,7 +1105,8 @@ bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_
     if (descs.back()->deviceType_ != DEVICE_TYPE_SPEAKER) {
         return false;
     }
-    AUDIO_INFO_LOG("ring dual tone on primary speaker.");
+    AUDIO_INFO_LOG("ring dual tone on primary speaker and mute music.");
+    audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, true, STREAM_USAGE_MUSIC);
     return true;
 }
 
@@ -1747,6 +1748,7 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
             audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
         }
         streamsWhenRingDualOnPrimarySpeaker_.clear();
+        audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
     }
 }
 

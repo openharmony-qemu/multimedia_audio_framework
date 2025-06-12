@@ -138,7 +138,8 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
-        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER) {
+        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER &&
+            pipeInfo->streamDescriptors_.size() > 0) {
             isOffloadOpened_.store(true);
             offloadCloseCondition_.notify_all();
         }
@@ -288,6 +289,7 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
                 audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
             }
             streamsWhenRingDualOnPrimarySpeaker_.clear();
+            audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
         }
     }
 }
@@ -1954,6 +1956,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
             audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
         }
         streamsWhenRingDualOnPrimarySpeaker_.clear();
+        audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
     }
 }
 
@@ -1962,12 +1965,11 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
     if (pipeInfo->pipeRole_ != PIPE_ROLE_INPUT || pipeInfo->streamDescriptors_.size() == 0) {
         return;
     }
-    SourceType sourceType = pipeInfo->streamDescriptors_.front()->capturerInfo_.sourceType;
+    auto streamDesc = pipeInfo->streamDescriptors_.front();
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
+    SourceType sourceType = streamDesc->capturerInfo_.sourceType;
     if (specialSourceTypeSet_.count(sourceType) == 0) {
-        AUDIO_INFO_LOG("Source type: %{public}d", sourceType);
-        audioEcManager_.UpdateStreamEcInfo(pipeInfo->moduleInfo_, sourceType);
-        audioEcManager_.UpdateStreamMicRefInfo(pipeInfo->moduleInfo_, sourceType);
-        audioEcManager_.SetOpenedNormalSource(sourceType);
+        audioEcManager_.PrepareNormalSource(pipeInfo->moduleInfo_, streamDesc);
     }
 }
 
