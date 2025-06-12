@@ -77,14 +77,8 @@ void HpaeCoBufferNodeUnitTest::TearDown(void)
  */
 TEST_F(HpaeCoBufferNodeUnitTest, Construct_001)
 {
-    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
-    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>(nodeInfo);
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
     EXPECT_NE(coBufferNode, nullptr);
-    HpaeNodeInfo &coNodeInfo = coBufferNode->GetNodeInfo();
-    EXPECT_EQ(nodeInfo.samplingRate, coNodeInfo.samplingRate);
-    EXPECT_EQ(nodeInfo.format, coNodeInfo.format);
-    EXPECT_EQ(nodeInfo.channels, coNodeInfo.channels);
-    EXPECT_EQ(nodeInfo.frameLen, coNodeInfo.frameLen);
 }
 
 /**
@@ -98,8 +92,7 @@ TEST_F(HpaeCoBufferNodeUnitTest, Connect_001)
     HpaeNodeInfo sinkInputNodeInfo = GetTestNodeInfo();
     std::shared_ptr<HpaeSinkInputNode> sinkInputNode = std::make_shared<HpaeSinkInputNode>(sinkInputNodeInfo);
     EXPECT_NE(sinkInputNode, nullptr);
-    HpaeNodeInfo nodeInfo;
-    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>(nodeInfo);
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
     EXPECT_NE(coBufferNode, nullptr);
     coBufferNode->Connect(sinkInputNode);
     HpaeNodeInfo &coNodeInfo = coBufferNode->GetNodeInfo();
@@ -107,9 +100,7 @@ TEST_F(HpaeCoBufferNodeUnitTest, Connect_001)
     EXPECT_EQ(sinkInputNodeInfo.format, coNodeInfo.format);
     EXPECT_EQ(sinkInputNodeInfo.channels, coNodeInfo.channels);
     EXPECT_EQ(sinkInputNodeInfo.frameLen, coNodeInfo.frameLen);
-    EXPECT_EQ(coBufferNode->GetPreOutNum(), 1);
     coBufferNode->DisConnect(sinkInputNode);
-    EXPECT_EQ(coBufferNode->GetPreOutNum(), 0);
 }
 
 /**
@@ -121,7 +112,7 @@ TEST_F(HpaeCoBufferNodeUnitTest, Connect_001)
 TEST_F(HpaeCoBufferNodeUnitTest, Process_001)
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
-    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>(nodeInfo);
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
     coBufferNode->SetLatency(TEST_LATENCY_MS);
     std::shared_ptr<HpaeSinkOutputNode> sinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
     sinkOutputNode->Connect(coBufferNode);
