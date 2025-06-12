@@ -126,6 +126,8 @@ private:
     bool CheckIsStreamRunning();
     HpaeProcessorType GetProcessorType(uint32_t sessionId);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
+    void EnableCollaboration();
+    void DisableCollaboration();
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;

@@ -1121,38 +1121,21 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 
 int32_t HpaeRendererManager::UpdateCollaborativeState(bool isCollaborationEnabled)
 {
-    if (isCollaborationEnabled_ == isCollaborationEnabled) {
-        AUDIO_INFO_LOG("collaboration state not changed, isCollaborationEnabled_ %{public}d",
-            isCollaborationEnabled_);
-        return SUCCESS;
-    }
     auto request = [this, isCollaborationEnabled]() {
+        if (isCollaborationEnabled_ == isCollaborationEnabled) {
+            AUDIO_INFO_LOG("collaboration state not changed, isCollaborationEnabled_ %{public}d",
+                isCollaborationEnabled_);
+            return;
+        }
         AUDIO_INFO_LOG("collaborativeState change from %{public}d to %{public}d",
             isCollaborationEnabled_, isCollaborationEnabled);
         isCollaborationEnabled_ = isCollaborationEnabled;
         if (isCollaborationEnabled_) {
             // for collaboration enabled
-            if (hpaeCoBufferNode_ == nullptr) {
-                hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>();
-            }
-            for (auto& [key, node] : sinkInputNodeMap_) {
-                HpaeNodeInfo nodeInfo = node->GetNodeInfo();
-                if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
-                    // For music and movie, we need to change sceneType to collaborative
-                    ReConnectNodeForCollaboration(key);
-                }
-            }
-            return;
+            EnableCollaboration();
         } else {
             // for collaboration disabled
-            for (auto& [key, node] : sinkInputNodeMap_) {
-                HpaeNodeInfo nodeInfo = node->GetNodeInfo();
-                if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
-                    // For collaborative, we need to recover sceneType to original
-                    ReConnectNodeForCollaboration(key);
-                }
-            }
-            hpaeCoBufferNode_.reset();
+            DisableCollaboration();
         }
     };
     SendRequest(request);
@@ -1221,6 +1204,31 @@ void HpaeRendererManager::ReConnectNodeForCollaboration(uint32_t sessionId)
     }
     AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionId);
     AddSingleNodeToSink(sinkInputNodeMap_[sessionId]);
+}
+
+void HpaeRendererManager::EnableCollaboration()
+{
+    if (hpaeCoBufferNode_ == nullptr) {
+        hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>();
+    }
+
+    for (auto& [key, node] : sinkInputNodeMap_) {
+        HpaeNodeInfo nodeInfo = node->GetNodeInfo();
+        if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+            ReConnectNodeForCollaboration(key);
+        }
+    }
+}
+
+void HpaeRendererManager::DisableCollaboration()
+{
+    for (auto& [key, node] : sinkInputNodeMap_) {
+        HpaeNodeInfo nodeInfo = node->GetNodeInfo();
+        if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
+            ReConnectNodeForCollaboration(key);
+        }
+    }
+    hpaeCoBufferNode_.reset();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
