@@ -92,7 +92,7 @@ public:
 
     virtual int32_t SetClientVolume() = 0;
 
-    virtual int32_t SetLoudnessGain() = 0;
+    virtual int32_t SetLoudnessGain(float loudnessGain) = 0;
 
     virtual int32_t SetMute(bool isMute) = 0;
 

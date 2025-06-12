@@ -481,6 +481,11 @@ int32_t HpaeInnerCapturerManager::SetClientVolume(uint32_t sessionId, float volu
     return SUCCESS;
 }
 
+int32_t HpaeInnerCapturerManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+{
+    return SUCCESS;
+}
+
 int32_t HpaeInnerCapturerManager::SetRate(uint32_t sessionId, int32_t rate)
 {
     return SUCCESS;
