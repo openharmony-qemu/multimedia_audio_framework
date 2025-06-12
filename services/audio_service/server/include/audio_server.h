@@ -245,6 +245,7 @@ public:
     void SetDeviceConnectedFlag(bool flag) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
     bool SetKaraokeParameters(const std::string &parameters) override;
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
     int32_t ForceStopAudioStream(StopAudioType audioType) override;

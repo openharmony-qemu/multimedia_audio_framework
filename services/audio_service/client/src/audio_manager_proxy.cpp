@@ -1819,6 +1819,23 @@ bool AudioManagerProxy::SetKaraokeParameters(const std::string &parameters)
     return reply.ReadBool();
 }
 
+bool AudioManagerProxy::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(mode));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::IS_AUDIO_LOOPBACK_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "failed,error:%d", error);
+    return reply.ReadBool();
+}
+
 void AudioManagerProxy::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
 {
     MessageParcel data;

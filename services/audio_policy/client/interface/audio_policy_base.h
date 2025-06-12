@@ -474,6 +474,8 @@ public:
 
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
 
+    virtual bool IsAudioLoopbackSupported(AudioLoopbackMode mode) = 0;
+
     virtual int32_t ForceStopAudioStream(StopAudioType audioType) = 0;
 
     virtual bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) = 0;

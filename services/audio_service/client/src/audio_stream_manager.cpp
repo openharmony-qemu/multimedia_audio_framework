@@ -288,7 +288,7 @@ bool AudioStreamManager::IsCapturerFocusAvailable(const AudioCapturerChangeInfo 
 
 bool AudioStreamManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
 {
-    return true;
+    return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode);
 }
 } // namespace AudioStandard
 } // namespace OHOS

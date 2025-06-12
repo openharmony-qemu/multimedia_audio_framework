@@ -2257,6 +2257,11 @@ bool AudioPolicyService::SetKaraokeParameters(const std::string &parameters)
     return AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
 }
 
+bool AudioPolicyService::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    return AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode);
+}
+
 int32_t AudioPolicyService::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
 {
     if (audioPolicyServerHandler_ != nullptr) {

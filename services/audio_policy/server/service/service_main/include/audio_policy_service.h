@@ -524,6 +524,8 @@ public:
 
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
+
     bool SetKaraokeParameters(const std::string &parameters);
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);

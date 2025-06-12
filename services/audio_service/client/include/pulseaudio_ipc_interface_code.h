@@ -121,7 +121,8 @@ namespace AudioStandard {
         STOP_AUDIOWORKGROUP,
         SET_BT_HDI_INVALID_STATE,
         SET_KARAOKE_PARAMETERS,
-        AUDIO_SERVER_CODE_MAX = SET_KARAOKE_PARAMETERS,
+        IS_AUDIO_LOOPBACK_SUPPORTED,
+        AUDIO_SERVER_CODE_MAX = IS_AUDIO_LOOPBACK_SUPPORTED,
     };
 } // namespace AudioStandard
 } // namespace OHOS

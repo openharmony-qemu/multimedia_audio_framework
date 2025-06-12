@@ -4189,6 +4189,11 @@ bool AudioPolicyServer::SetKaraokeParameters(const std::string &parameters)
     return audioPolicyService_.SetKaraokeParameters(parameters);
 }
 
+bool AudioPolicyServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    return audioPolicyService_.IsAudioLoopbackSupported(mode);
+}
+
 int32_t AudioPolicyServer::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
     const DeviceInfoUpdateCommand command)
 {

@@ -3142,6 +3142,7 @@ ohos_unittest("audio_policy_manager_stub_unit_test") {
     "-Wall",
     "-Werror",
     "-Wno-macro-redefined",
+    "-fno-access-control",
   ]
 
   cflags_cc = cflags
@@ -3150,10 +3151,12 @@ ohos_unittest("audio_policy_manager_stub_unit_test") {
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
+    "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "access_token:libprivacy_sdk",
     "access_token:libtokenid_sdk",
     "access_token:libtokensetproc_shared",
+    "background_task_mgr:bgtaskmgr_innerkits",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -3173,9 +3176,12 @@ ohos_unittest("audio_policy_manager_stub_unit_test") {
     "safwk:system_ability_fwk",
   ]
 
-  sources = [ "./unittest/audio_policy_manager_stub_unit_test/src/audio_policy_manager_stub_unit_test.cpp" ]
+  sources = [ "./unittest/audio_policy_manager_stub_unit_test/src/audio_policy_manager_stub_unit_test.cpp" ]git 
 
-  deps = [ "../../audio_policy:audio_policy_service" ]
+  deps = [
+    "../../audio_policy:audio_policy_service",
+    "../../audio_policy:audio_policy_service_static",
+    ]
 
   if (accessibility_enable == true) {
     external_deps += [

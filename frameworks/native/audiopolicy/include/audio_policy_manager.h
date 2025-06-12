@@ -605,6 +605,7 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
     bool SetKaraokeParameters(const std::string &parameters);
 
     int32_t ForceStopAudioStream(StopAudioType audioType);

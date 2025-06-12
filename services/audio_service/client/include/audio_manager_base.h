@@ -525,6 +525,8 @@ public:
 
     virtual bool SetKaraokeParameters(const std::string &parameters) = 0;
 
+    virtual bool IsAudioLoopbackSupported(AudioLoopbackMode mode) = 0;
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
      * set inner capture limit.
@@ -767,6 +769,7 @@ private:
     int HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply);
     int HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply);
     int HandleSetKaraokeParameters(MessageParcel &data, MessageParcel &reply);
+    int HandleIsAudioLoopbackSupported(MessageParcel &data, MessageParcel &reply);
     int HandleSetSessionMuteState(MessageParcel &data, MessageParcel &reply);
     int HandleOnMuteStateChange(MessageParcel &data, MessageParcel &reply);
     int HandleForceStopAudioStream(MessageParcel &data, MessageParcel &reply);

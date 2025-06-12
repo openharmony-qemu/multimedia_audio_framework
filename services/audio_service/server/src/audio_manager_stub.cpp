@@ -142,6 +142,7 @@ const char *g_audioServerCodeStrs[] = {
     "STOP_AUDIOWORKGROUP",
     "SET_BT_HDI_INVALID_STATE",
     "SET_KARAOKE_PARAMETERS",
+    "IS_AUDIO_LOOPBACK_SUPPORTED",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -866,6 +867,10 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
         case static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_CAPTURE_LIMIT):
             return HandleReleaseCaptureLimit(data, reply);
 #endif
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_KARAOKE_PARAMETERS):
+            return HandleSetKaraokeParameters(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::IS_AUDIO_LOOPBACK_SUPPORTED):
+            return HandleIsAudioLoopbackSupported(data, reply);
         default:
             return HandleSixthPartCode(code, data, reply, option);
     }
@@ -961,8 +966,6 @@ int AudioManagerStub::HandleThirdPartCode(uint32_t code, MessageParcel &data, Me
             return HandleSetAudioEnhanceProperty(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY):
             return HandleSetAudioEffectProperty(data, reply);
-        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_KARAOKE_PARAMETERS):
-            return HandleSetKaraokeParameters(data, reply);
         default:
             return HandleFourthPartCode(code, data, reply, option);
     }
@@ -1440,6 +1443,14 @@ int AudioManagerStub::HandleSetKaraokeParameters(MessageParcel &data, MessagePar
     std::string parameters = data.ReadString();
     bool result = SetKaraokeParameters(parameters);
     reply.WriteBool(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleIsAudioLoopbackSupported(MessageParcel &data, MessageParcel &reply)
+{
+    AudioLoopbackMode mode = static_cast<AudioLoopbackMode>(data.ReadInt32());
+    bool ret = IsAudioLoopbackSupported(mode);
+    reply.WriteBool(ret);
     return AUDIO_OK;
 }
 

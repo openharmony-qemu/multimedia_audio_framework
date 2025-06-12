@@ -464,5 +464,14 @@ bool AudioServer::SetKaraokeParameters(const std::string &parameters)
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", parameters);
     return true;
 }
+
+bool AudioServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
+        "IsAudioLoopbackSupported refused for %{public}d", callingUid);
+    AUDIO_INFO_LOG("IsAudioLoopbackSupported support %{public}d", mode);
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS

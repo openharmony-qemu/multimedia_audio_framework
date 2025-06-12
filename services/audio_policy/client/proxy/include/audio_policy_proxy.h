@@ -457,6 +457,8 @@ public:
 
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
+
     int32_t ForceStopAudioStream(StopAudioType audioType) override;
 
     bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) override;
