@@ -169,11 +169,11 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
         if (audioEcManager_.GetSourceOpened() == SOURCE_TYPE_INVALID) {
             // normal source is not opened before
             audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
-            sessionIdUsedToOpenSource_ = sessionID;
+            audioEcManager_.SetOpenedNormalSourceSessionId(sessionID);
         } else if (IsHigherPrioritySource(targetSource, audioEcManager_.GetSourceOpened())) {
             // reload if higher source come
             audioEcManager_.ReloadNormalSource(sessionInfo, targetInfo, targetSource);
-            sessionIdUsedToOpenSource_ = sessionID;
+            audioEcManager_.SetOpenedNormalSourceSessionId(sessionID);
         }
         sessionWithNormalSourceType_[sessionID] = sessionInfo;
     } else if (sessionInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
@@ -239,7 +239,7 @@ void AudioCapturerSession::HandleRemainingSource()
         AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened:%{public}d, "
             "highestSourceInHdi:%{public}d ", highestSource, audioEcManager_.GetSourceOpened(), highestSourceInHdi);
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
-        sessionIdUsedToOpenSource_ = highestSession;
+        audioEcManager_.SetOpenedNormalSourceSessionId(highestSession);
     }
 }
 
@@ -363,6 +363,8 @@ bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inpu
         return false;
     }
     AudioEcInfo lastEcInfo = audioEcManager_.GetAudioEcInfo();
+    AUDIO_INFO_LOG("curInDevice: %{public}d, curOutDevice: %{public}d", lastEcInfo.inputDevice.deviceType_,
+        lastEcInfo.outputDevice.deviceType_);
     if (!lastEcInfo.inputDevice.IsSameDeviceDesc(realInputDevice) ||
         !lastEcInfo.outputDevice.IsSameDeviceDesc(realOutputDevice)) {
         return true;
@@ -375,7 +377,8 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescript
     const AudioDeviceDescriptor &outputDevice, const std::string &caller)
 {
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
-    AUDIO_INFO_LOG("form caller: %{public}s", caller.c_str());
+    AUDIO_INFO_LOG("form caller: %{public}s, inDevice: %{public}d, outDevice: %{public}d", caller.c_str(),
+        inputDevice.deviceType_, outputDevice.deviceType_);
     if (!audioEcManager_.GetEcFeatureEnable()) {
         AUDIO_INFO_LOG("reload ignore for feature not enable");
         return;
@@ -388,6 +391,7 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescript
 
     if (normalSourceOpened == SOURCE_TYPE_VOICE_COMMUNICATION) {
         if (!IsVoipDeviceChanged(inputDevice, outputDevice)) {
+            AUDIO_INFO_LOG("voip reload ignore for device not change");
             return;
         }
     } else {
@@ -399,12 +403,14 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescript
     }
 
     // reload for device change, used session is not changed
-    if (sessionWithNormalSourceType_.find(sessionIdUsedToOpenSource_) == sessionWithNormalSourceType_.end()) {
-        AUDIO_ERR_LOG("target session not found");
+    uint64_t sessionId = audioEcManager_.GetOpenedNormalSourceSessionId();
+    if (sessionWithNormalSourceType_.find(sessionId) == sessionWithNormalSourceType_.end()) {
+        AUDIO_ERR_LOG("target session: %{public}" PRIu64 " not found", sessionId);
         return;
     }
     SetInputDeviceTypeForReload(inputDevice);
-    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
+    AUDIO_INFO_LOG("start reload session: %{public}" PRIu64 " for device change", sessionId);
+    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionId]);
 }
 
 void AudioCapturerSession::SetInputDeviceTypeForReload(const AudioDeviceDescriptor &inputDevice)
@@ -452,7 +458,9 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
         (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
-        audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
+        uint64_t sessionId = audioEcManager_.GetOpenedNormalSourceSessionId();
+        AUDIO_INFO_LOG("start reload session: %{public}" PRIu64 " for effect change", sessionId);
+        audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionId]);
     }
 }
 
@@ -489,7 +497,9 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
         (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
-        audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionIdUsedToOpenSource_]);
+        uint64_t sessionId = audioEcManager_.GetOpenedNormalSourceSessionId();
+        AUDIO_INFO_LOG("start reload session: %{public}" PRIu64 " for enhance effect change", sessionId);
+        audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[sessionId]);
     }
 }
 
