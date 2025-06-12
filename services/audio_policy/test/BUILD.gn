@@ -3142,7 +3142,6 @@ ohos_unittest("audio_policy_manager_stub_unit_test") {
     "-Wall",
     "-Werror",
     "-Wno-macro-redefined",
-    "-fno-access-control",
   ]
 
   cflags_cc = cflags
