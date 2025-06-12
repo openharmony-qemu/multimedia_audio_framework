@@ -3175,7 +3175,7 @@ ohos_unittest("audio_policy_manager_stub_unit_test") {
     "safwk:system_ability_fwk",
   ]
 
-  sources = [ "./unittest/audio_policy_manager_stub_unit_test/src/audio_policy_manager_stub_unit_test.cpp" ]git 
+  sources = [ "./unittest/audio_policy_manager_stub_unit_test/src/audio_policy_manager_stub_unit_test.cpp" ]
 
   deps = [
     "../../audio_policy:audio_policy_service",

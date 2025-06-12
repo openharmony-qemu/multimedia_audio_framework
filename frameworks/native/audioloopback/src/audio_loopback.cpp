@@ -283,10 +283,10 @@ bool AudioLoopbackPrivate::SetKaraokeParameters()
 {
     std::string parameters = "";
     for (auto &param : karaokeParams_) {
-        parameters += param.first + "=" + param.second + ";";
+        parameters = param.first + "=" + param.second + ";";
+        CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), false,
+            "SetKaraokeParameters failed");
     }
-    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), false,
-        "SetKaraokeParameters failed");
     return true;
 }
 
