@@ -44,15 +44,11 @@ std::shared_mutex g_a2dpInstanceLock;
 std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
 std::atomic<AudioScene> AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
-<<<<<<< HEAD
 std::atomic<bool> AudioHfpManager::isRecognitionScene_ = false;
 std::atomic<bool> AudioHfpManager::isRecordScene_ = false;
 std::map<std::string, bool> AudioHfpManager::virtualCalls_;
 std::map<std::string, std::list<int32_t>> AudioHfpManager::virtualCallStreams_;
 std::mutex AudioHfpManager::virtualCallMutex_;
-=======
-BluetoothRemoteDevice AudioHfpManager::activeRecgDevice_;
->>>>>>> e1141940f374c67ebd9214b84385651a3d30b88a
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_a2dpPlayingStateChangedLock;
@@ -438,8 +434,11 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices = BluetoothHfpInterface::GetInstance().GetDevicesByStates(states);
     for (auto &device : devices) {
-        hfpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
-            static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+        if (hfpListener_ != nullptr) {
+            hfpListener_->OnConnectionStateChanged(device,
+                static_cast<int32_t>(BTConnectState::CONNECTED),
+                static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+        }
 
         int32_t wearState = 0; // 0 unwear state
         if (IsBTWearDetectionEnable(device)) {
@@ -450,11 +449,15 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
             GetEncryptAddr(device.GetDeviceAddr()).c_str(), wearState);
     }
 
-    std::vector<std::string> virtualDevices;
-    BluetoothHfpInterface::GetInstance().GetVirtualDeviceList(virtualDevices);
-    for (auto &macAddress : virtualDevices) {
-        AUDIO_PRERELEASE_LOGI("reconnect virtual hfp device:%{public}s", GetEncryptAddr(macAddress).c_str());
-        hfpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_ADD), macAddress);
+    if (hfpListener_ != nullptr) {
+        std::vector<std::string> virtualDevices;
+        BluetoothHfpInterface::GetInstance().GetVirtualDeviceList(virtualDevices);
+        for (auto &macAddress : virtualDevices) {
+            AUDIO_PRERELEASE_LOGI("reconnect virtual hfp device:%{public}s",
+                GetEncryptAddr(macAddress).c_str());
+            hfpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(
+                Bluetooth::BT_VIRTUAL_DEVICE_ADD), macAddress);
+        }
     }
 }
 
@@ -497,17 +500,20 @@ int32_t AudioHfpManager::DisconnectSco()
 
 void AudioHfpManager::DisconnectBluetoothHfpSink()
 {
-    int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
-    auto hfpList = HfpBluetoothDeviceManager::GetAllHfpBluetoothDevice();
-    for (const auto &device : hfpList) {
-        hfpListener_->OnConnectionStateChanged(device, connectionState,
-            static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
-    }
+    int32_t connectionState = static_cast<int32_t>(BTConnectState::DISCONNECTED);
+    if (hfpListener_ != nullptr) {
+        auto hfpList = HfpBluetoothDeviceManager::GetAllHfpBluetoothDevice();
+        for (const auto &device : hfpList) {
+            hfpListener_->OnConnectionStateChanged(device, connectionState,
+                static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+        }
 
-    auto virtualDevices = HfpBluetoothDeviceManager::GetHfpVirtualDeviceList();
-    for (const auto &virtualDevice : virtualDevices) {
-        hfpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_REMOVE),
-            virtualDevice.GetDeviceAddr());
+        auto virtualDevices = HfpBluetoothDeviceManager::GetHfpVirtualDeviceList();
+        for (const auto &virtualDevice : virtualDevices) {
+            hfpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(
+                Bluetooth::BT_VIRTUAL_DEVICE_REMOVE),
+                virtualDevice.GetDeviceAddr());
+        }
     }
     HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice();
 }
@@ -708,7 +714,7 @@ int32_t AudioHfpManager::TryUpdateScoCategory()
     }
 
     int32_t ret = BluetoothScoManager::GetInstance().HandleScoConnect(category, activeHfpDevice_);
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         WriteScoOprFaultEvent();
     }
     return ret;
@@ -730,7 +736,7 @@ void AudioHfpManager::DisconnectScoForDevice(const BluetoothRemoteDevice &device
 int32_t AudioHfpManager::DisconnectScoWrapper()
 {
     int32_t ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(activeHfpDevice_);
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         WriteScoOprFaultEvent();
     }
     return ret;
