@@ -2461,7 +2461,7 @@ DirectPlaybackMode AudioPolicyManager::GetDirectPlaybackSupport(const AudioStrea
 bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     return gsp->IsAcousticEchoCancelerSupported(sourceType);
 }
 
@@ -2569,7 +2569,7 @@ int32_t AudioPolicyManager::SetCollaborativePlaybackEnabledForDevice(
 int32_t AudioPolicyManager::ForceStopAudioStream(StopAudioType audioType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->ForceStopAudioStream(audioType);
 }
 

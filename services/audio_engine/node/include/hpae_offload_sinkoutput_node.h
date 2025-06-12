@@ -86,7 +86,6 @@ private:
 
     InputPort<HpaePcmBuffer*> inputStream_;
     std::vector<char> renderFrameData_;
-    std::vector<float> interleveData_;
     std::shared_ptr<IAudioRenderSink> audioRendererSink_ = nullptr;
     uint32_t renderId_ = HDI_INVALID_ID;
     IAudioSinkAttr sinkOutAttr_;

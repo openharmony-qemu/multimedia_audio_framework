@@ -20,6 +20,9 @@
 #include "securec.h"
 #include "audio_interrupt_service.h"
 #include "audio_device_descriptor.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -33,6 +36,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+bool g_hasPermission = false;
 bool g_hasServerInit = false;
 sptr<AudioPolicyServer> GetPolicyServerUnitTest()
 {
@@ -55,6 +59,41 @@ sptr<AudioPolicyServer> GetPolicyServerUnitTest()
     return server;
 }
 
+void GetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MICROPHONE",
+            "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+            "ohos.permission.MICROPHONE_CONTROL",
+            "ohos.permission.MODIFY_AUDIO_SETTINGS",
+            "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+            "ohos.permission.USE_BLUETOOTH",
+            "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+            "ohos.permission.RECORD_VOICE_CALL",
+            "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+        };
+
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audiofuzztest",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
+}
+
 void ReleaseServer()
 {
     GetPolicyServerUnitTest()->OnStop();
@@ -63,7 +102,10 @@ void ReleaseServer()
 
 void AudioPolicyUnitTest::SetUpTestCase(void) {}
 void AudioPolicyUnitTest::TearDownTestCase(void) {}
-void AudioPolicyUnitTest::SetUp(void) {}
+void AudioPolicyUnitTest::SetUp(void)
+{
+    GetPermission();
+}
 
 void AudioPolicyUnitTest::TearDown(void)
 {

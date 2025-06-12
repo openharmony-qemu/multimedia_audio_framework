@@ -331,9 +331,8 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_003, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    bool result = audioPipeManager->IsSpecialPipe(pipeInfo);
+    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_FAST;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
     EXPECT_TRUE(result);
 }
 
@@ -346,9 +345,8 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_001, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_002, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
-    bool result = audioPipeManager->IsSpecialPipe(pipeInfo);
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_FAST;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
     EXPECT_TRUE(result);
 }
 
@@ -361,9 +359,8 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_002, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_003, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD;
-    bool result = audioPipeManager->IsSpecialPipe(pipeInfo);
+    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
     EXPECT_TRUE(result);
 }
 
@@ -376,9 +373,8 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_003, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_004, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    bool result = audioPipeManager->IsSpecialPipe(pipeInfo);
+    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
     EXPECT_FALSE(result);
 }
 

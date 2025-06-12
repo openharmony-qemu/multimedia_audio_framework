@@ -123,6 +123,7 @@ TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
     }
     EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStop(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputCluster->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceDeInit(), SUCCESS);
 }
 
 TEST_F(HpaeSourceInputClusterTest, testInterfaces)

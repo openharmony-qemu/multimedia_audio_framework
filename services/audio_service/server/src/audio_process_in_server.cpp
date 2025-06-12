@@ -245,7 +245,6 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
 int32_t AudioProcessInServer::Start()
 {
     int32_t ret = StartInner();
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
         playerDfx_->WriteDfxStartMsg(sessionId_, stage, sourceDuration_, processConfig_);
@@ -293,6 +292,9 @@ int32_t AudioProcessInServer::StartInner()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
         enterStandbyTime_ = 0;
+        audioStreamChecker_->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+    } else {
+        audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     }
 
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
@@ -323,7 +325,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
     }
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, false);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         playerDfx_->WriteDfxActionMsg(sessionId_, RENDERER_STAGE_PAUSE_OK);
     } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
@@ -389,7 +391,7 @@ int32_t AudioProcessInServer::Stop(AudioProcessStage stage)
     if (processBuffer_ != nullptr) {
         lastWriteFrame_ = static_cast<int64_t>(processBuffer_->GetCurReadFrame()) - lastWriteFrame_;
     }
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         RendererStage rendererStage = stage == AUDIO_PROC_STAGE_STOP_BY_RELEASE ?
             RENDERER_STAGE_STOP_BY_RELEASE : RENDERER_STAGE_STOP_OK;

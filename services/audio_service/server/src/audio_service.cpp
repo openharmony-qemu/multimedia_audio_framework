@@ -42,7 +42,7 @@ namespace AudioStandard {
 
 #ifdef SUPPORT_LOW_LATENCY
 static uint64_t g_id = 1;
-static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
+static const int32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
@@ -1593,8 +1593,8 @@ int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
                 "stream could be released, no need to stop");
             AudioMode audioMode = audioEndpoint->GetAudioMode();
             bool isNeedStop = (audioType == StopAudioType::STOP_ALL) ||
-                (audioMode == AudioMode::AUDIO_MODE_RECORD && audioType == StopAudioType::STOP_RENDER) ||
-                (audioMode == AudioMode::AUDIO_MODE_PLAYBACK && audioType == StopAudioType::STOP_RECORD);
+                (audioMode == AudioMode::AUDIO_MODE_PLAYBACK && audioType == StopAudioType::STOP_RENDER) ||
+                (audioMode == AudioMode::AUDIO_MODE_RECORD && audioType == StopAudioType::STOP_RECORD);
             if (isNeedStop) {
                 audioProcessInServer->StopSession();
             }

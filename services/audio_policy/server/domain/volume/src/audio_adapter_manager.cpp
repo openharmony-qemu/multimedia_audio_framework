@@ -1292,7 +1292,7 @@ int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnable
     return audioServiceAdapter_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
-void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
+void AudioAdapterManager::UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.name.empty()) {
         args.append(" sink_name=");
@@ -1335,7 +1335,7 @@ void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(audioModuleInfo.extra);
     }
     if (audioModuleInfo.needEmptyChunk) {
-        args.append(" need_empty_chunk");
+        args.append(" need_empty_chunk=");
         args.append(std::to_string(*audioModuleInfo.needEmptyChunk));
     }
 }
@@ -1854,8 +1854,6 @@ void AudioAdapterManager::UpdateUsbSafeVolume()
 
 void AudioAdapterManager::UpdateSafeVolume()
 {
-    auto currentActiveOutputDeviceDescriptor =
-        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     switch (currentActiveDevice_.deviceType_) {
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
@@ -1871,13 +1869,9 @@ void AudioAdapterManager::UpdateSafeVolume()
                 isBtBoot_ = false;
                 return;
             }
-            if (currentActiveOutputDeviceDescriptor != nullptr) {
-                AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveOutputDeviceDescriptor->deviceCategory_);
-                if (currentActiveOutputDeviceDescriptor->deviceCategory_ == BT_CAR ||
-                    currentActiveOutputDeviceDescriptor->deviceCategory_ == BT_SOUNDBOX) {
-                    AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_.deviceType_);
-                    return;
-                }
+            if (currentActiveDevice_.deviceCategory_ == BT_CAR || currentActiveDevice_.deviceCategory_ == BT_SOUNDBOX) {
+                AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_.deviceCategory_);
+                return;
             }
             if (isBtBoot_ || safeStatusBt_) {
                 AUDIO_INFO_LOG("1st connect bt device:%{public}d after boot, update current volume to safevolume",
@@ -2701,6 +2695,11 @@ void AudioAdapterManager::SetActiveDeviceDescriptor(AudioDeviceDescriptor device
 AudioDeviceDescriptor AudioAdapterManager::GetActiveDeviceDescriptor()
 {
     return currentActiveDevice_;
+}
+
+DeviceCategory AudioAdapterManager::GetCurrentOutputDeviceCategory()
+{
+    return currentActiveDevice_.deviceCategory_;
 }
 
 DeviceType AudioAdapterManager::GetActiveDevice()

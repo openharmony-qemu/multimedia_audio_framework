@@ -167,6 +167,8 @@ public:
 
     DeviceType GetActiveDevice();
 
+    DeviceCategory GetCurrentOutputDeviceCategory();
+
     AudioDeviceDescriptor GetActiveDeviceDescriptor();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
@@ -359,6 +361,7 @@ private:
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
+    static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

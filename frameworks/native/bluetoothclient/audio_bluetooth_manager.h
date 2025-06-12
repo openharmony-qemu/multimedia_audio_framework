@@ -162,6 +162,7 @@ private:
     static ScoCategory scoCategory;
     static RecognitionStatus recognitionStatus;
     static bool isVirtualCall;
+    static BluetoothRemoteDevice activeRecgDevice_;
 };
 }
 }

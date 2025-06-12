@@ -65,7 +65,7 @@ void StreamDfxManager::ReportStreamOccupancyTimeout(uint32_t sessionId, int64_t 
     CHECK_AND_RETURN_LOG(streamInfo != streamRecordMap_.end(), "sessionId not found");
     AudioProcessConfig &processConfig = streamInfo->second.processConfig;
     AUDIO_INFO_LOG("sessionId %{public}u timeout, start time %{public}" PRId64 ", "\
-        "current time %{public}" PRId64 ", streamUsage %{public}d, sourcetype %{public}d, uid %{public}d",
+        "current time %{public}" PRId64 ", streamUsage %{public}d, sourcetype %{public}d, uid %{private}d",
         sessionId, startTime, currentTime, processConfig.rendererInfo.streamUsage,
         processConfig.capturerInfo.sourceType, processConfig.appInfo.appUid);
 

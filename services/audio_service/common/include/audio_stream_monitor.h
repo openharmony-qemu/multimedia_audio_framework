@@ -42,6 +42,7 @@ public:
     void AddCheckForMonitor(uint32_t sessionId, std::shared_ptr<AudioStreamChecker> &checker);
     void DeleteCheckForMonitor(uint32_t sessionId);
     void SetAudioServerPtr(DataTransferStateChangeCallbackForMonitor *ptr);
+    void OnCallbackAppDied(const int32_t pid);
 private:
     AudioStreamMonitor() {}
     ~AudioStreamMonitor() {}
