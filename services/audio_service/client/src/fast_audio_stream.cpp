@@ -1074,9 +1074,9 @@ int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDe
     return SUCCESS;
 }
 
-bool FastAudioStream::GetFastStatus()
+FastStatus FastAudioStream::GetFastStatus()
 {
-    return true;
+    return FASTSTATUS_FAST;
 }
 
 DeviceType FastAudioStream::GetDefaultOutputDevice()

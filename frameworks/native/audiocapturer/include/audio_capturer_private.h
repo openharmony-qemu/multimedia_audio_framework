@@ -97,7 +97,7 @@ public:
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
     int32_t SetInputDevice(DeviceType deviceType) const override;
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
-    bool GetFastStatus() override;
+    FastStatus GetFastStatus() override;
 
     uint32_t GetOverflowCount() const override;
 
@@ -149,7 +149,8 @@ private:
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
     int32_t InitAudioConcurrencyCallback();
-    void FastStatusChangeCallback(bool flag);
+    FastStatus GetFastStatusInner();
+    void FastStatusChangeCallback(FastStatus status);
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
     void ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass);
     void WriteOverflowEvent() const;

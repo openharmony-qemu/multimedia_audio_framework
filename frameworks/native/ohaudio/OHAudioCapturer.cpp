@@ -101,7 +101,12 @@ OH_AudioStream_Result OH_AudioCapturer_GetFastStatus(OH_AudioCapturer *capturer,
     CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "capturer is nullptr");
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(status != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "status is nullptr");
-    *status = (audioCapturer->GetFastStatus()) ? AUDIOSTREAM_FASTSTATUS_FAST : AUDIOSTREAM_FASTSTATUS_NORMAL;
+    OHOS::AudioStandard::FastStatus fastStatus = audioCapturer->GetFastStatus();
+    if (fastStatus == OHOS::AudioStandard::FastStatus::FASTSTATUS_INVALID) {
+        AUDIO_ERR_LOG("This audiocapturer can not get the fast status");
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    }
+    *status = (OH_AudioStream_FastStatus)fastStatus;
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -395,9 +400,9 @@ int32_t OHAudioCapturer::SetInputDevice(DeviceType deviceType)
     return audioCapturer_->SetInputDevice(deviceType);
 }
 
-bool OHAudioCapturer::GetFastStatus()
+FastStatus OHAudioCapturer::GetFastStatus()
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "capturer client is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, FASTSTATUS_INVALID, "capturer client is nullptr");
     return audioCapturer_->GetFastStatus();
 }
 
@@ -545,7 +550,7 @@ void OHAudioCapturerCallback::OnInterrupt(const InterruptEvent &interruptEvent)
     }
 }
 
-void OHAudioCapturerFastStatusChangeCallback::OnFastStatusChange(AudioStreamFastStatus status)
+void OHAudioCapturerFastStatusChangeCallback::OnFastStatusChange(FastStatus status)
 {
     CHECK_AND_RETURN_LOG(ohAudioCapturer_ != nullptr, "capturer client is nullptr");
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the function is nullptr");

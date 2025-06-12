@@ -191,7 +191,7 @@ public:
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
 
-    bool GetFastStatus() override;
+    FastStatus GetFastStatus() override;
 
     DeviceType GetDefaultOutputDevice() override;
 

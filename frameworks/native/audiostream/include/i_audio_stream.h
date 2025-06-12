@@ -285,7 +285,7 @@ public:
 
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
 
-    virtual bool GetFastStatus() { return false; };
+    virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
 
     virtual DeviceType GetDefaultOutputDevice() = 0;
 

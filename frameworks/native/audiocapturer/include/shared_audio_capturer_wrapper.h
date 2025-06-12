@@ -263,9 +263,9 @@ public:
         return sharedAudioCapturer_->SetInterruptStrategy(strategy);
     }
 
-    bool GetFastStatus() override
+    FastStatus GetFastStatus() override
     {
-        return false;
+        return FASTSTATUS_NORMAL;
     }
 
     void SetAudioCapturerErrorCallback(std::shared_ptr<AudioCapturerErrorCallback> errorCallback) override
@@ -276,7 +276,7 @@ public:
     void SetFastStatusChangeCallback(
         const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) override
     {
-        return ;
+        return;
     }
 
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,

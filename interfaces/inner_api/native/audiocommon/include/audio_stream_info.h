@@ -549,11 +549,6 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
 };
 
-enum class AudioStreamFastStatus {
-    FASTSTATUS_NORMAL = 0,
-    FASTSTATUS_FAST = 1
-};
-
 struct BufferDesc {
     uint8_t *buffer;
     size_t bufLength;

@@ -217,7 +217,7 @@ public:
     bool GetHighResolutionEnabled() override;
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     DeviceType GetDefaultOutputDevice() override;
-    bool GetFastStatus() override;
+    FastStatus GetFastStatus() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     void SetSwitchingStatus(bool isSwitching) override;
     void GetRestoreInfo(RestoreInfo &restoreInfo) override;
@@ -2040,9 +2040,9 @@ int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
     return ERROR;
 }
 
-bool CapturerInClientInner::GetFastStatus()
+FastStatus CapturerInClientInner::GetFastStatus()
 {
-    return false;
+    return FASTSTATUS_NORMAL;
 }
 
 DeviceType CapturerInClientInner::GetDefaultOutputDevice()

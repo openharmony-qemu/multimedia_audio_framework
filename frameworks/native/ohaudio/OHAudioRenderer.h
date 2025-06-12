@@ -93,7 +93,7 @@ public:
     {
     }
 
-    void OnFastStatusChange(AudioStreamFastStatus status) override;
+    void OnFastStatusChange(FastStatus status) override;
 private:
     OH_AudioRenderer_OnFastStatusChange callback_;
     OH_AudioRenderer *ohAudioRenderer_;
@@ -242,7 +242,7 @@ class OHAudioRenderer {
         void SetSilentModeAndMixWithOthers(bool on);
         bool GetSilentModeAndMixWithOthers();
         int32_t SetDefaultOutputDevice(DeviceType deviceType);
-        bool GetFastStatus();
+        FastStatus GetFastStatus();
 
         void SetRendererWriteDataCallbackType(WriteDataCallbackType writeDataCallbackType);
         WriteDataCallbackType GetRendererWriteDataCallbackType();

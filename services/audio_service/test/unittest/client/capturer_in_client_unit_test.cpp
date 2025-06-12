@@ -1246,8 +1246,8 @@ HWTEST(CapturerInClientUnitTest, GetFastStatus_001, TestSize.Level1)
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     ASSERT_NE(capturerInClientInner_, nullptr);
 
-    bool ret = capturerInClientInner_->GetFastStatus();
-    EXPECT_EQ(ret, false);
+    auto ret = capturerInClientInner_->GetFastStatus();
+    EXPECT_EQ(ret, FASTSTATUS_NORMAL);
 }
 
 /**

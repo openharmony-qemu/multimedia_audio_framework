@@ -257,8 +257,7 @@ bool AudioPolicyProxy::IsStreamActive(AudioVolumeType volumeType)
     return reply.ReadBool();
 }
 
-bool AudioPolicyProxy::IsFastStreamSupported(AudioStreamInfo &streamInfo,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+bool AudioPolicyProxy::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -269,17 +268,29 @@ bool AudioPolicyProxy::IsFastStreamSupported(AudioStreamInfo &streamInfo,
     bool tmp = streamInfo.Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(tmp, false, "AudioStreamInfo Marshalling() failed");
 
-    uint32_t size = desc.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_DEVICE_INFO_SIZE_LIMIT,
-        false, "IsFastStreamSupported get invalid device size.");
-    data.WriteInt32(size);
-    for (auto &audioDeviceDescriptor : desc) {
-        bool audioDeviceTmp = audioDeviceDescriptor->Marshalling(data);
-        CHECK_AND_RETURN_RET_LOG(audioDeviceTmp, false, "AudioDeviceDescriptor Marshalling() failed");
-    }
+    data.WriteInt32(static_cast<int32_t>(usage));
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_FAST_STREAM_SUPPORTED), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsFastStreamSupported failed, error: %{public}d", error);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_FAST_PLAYBACK_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsFastPlaybackSupported failed, error: %{public}d", error);
+
+    return reply.ReadBool();
+}
+
+bool AudioPolicyProxy::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    bool tmp = streamInfo.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(tmp, false, "AudioStreamInfo Marshalling() failed");
+
+    data.WriteInt32(static_cast<int32_t>(source));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_FAST_RECORDING_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "IsFastRecordingSupported failed, error: %{public}d", error);
 
     return reply.ReadBool();
 }
