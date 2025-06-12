@@ -106,13 +106,18 @@ napi_value NapiAudioCollaborativeManager::CreateCollaborativeManagerWrapper(napi
     napi_value result = nullptr;
     napi_value constructor;
 
+    auto HandleNapiError = [env](const char *logMsg, napi_status status, napi_value &result) {
+        AUDIO_INFO_LOG("%s, status %{public}d", logMsg, status);
+        napi_get_undefined(env, &result);
+        return result;
+    };
     status = napi_get_reference_value(env, g_collaborativeManagerConstructor, &constructor);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napi_get_undefined(env, &result),
-        "Failed in CreateCollaborativeManagerWrapper");
-
+    CHECK_AND_RETURN_RET(status == napi_ok,
+       HandleNapiError("napi_get_reference_value fail!", status, result));
+    
     status = napi_new_instance(env, constructor, 0, nullptr, &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napi_get_undefined(env, &result),
-        "napi_new_instance failed");
+    CHECK_AND_RETURN_RET(status == napi_ok,
+       HandleNapiError("napi_new_instance fail!", status, result));
 
     return result;
 }
@@ -253,7 +258,7 @@ napi_value NapiAudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevi
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    return updateCollaborativeEnabled(env, context);
+    return UpdateCollaborativeEnabled(env, context);
 }
 
 napi_value NapiAudioCollaborativeManager::UpdateCollaborativeEnabled(napi_env env,
