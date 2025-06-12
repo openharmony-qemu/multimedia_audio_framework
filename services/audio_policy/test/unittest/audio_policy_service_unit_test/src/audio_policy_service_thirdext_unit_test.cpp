@@ -1246,7 +1246,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestS
     audioDeviceDescriptors.push_back(audioDevDesc);
 
     server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    int32_t result = server->audioPolicyService_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    int32_t result = server->audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_001() result:%{public}d", result);
 
     EXPECT_EQ(result, SUCCESS);
@@ -1273,7 +1273,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_002, TestS
     audioDeviceDescriptors.push_back(audioDevDesc);
 
     server->audioPolicyService_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    int32_t result = server->audioPolicyService_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    int32_t result = server->audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_002() result:%{public}d", result);
 
     EXPECT_EQ(result, SUCCESS);
@@ -1292,7 +1292,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetExcludedDevicesTest_001, TestSize.
 
     AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
-        server->audioPolicyService_.GetExcludedDevices(audioDevUsage);
+        server->audioDeviceLock_.GetExcludedDevices(audioDevUsage);
     EXPECT_EQ(audioDeviceDescriptors.size(), 0);
 }
 
@@ -1309,7 +1309,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetExcludedDevicesTest_002, TestSize.
 
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
-        server->audioPolicyService_.GetExcludedDevices(audioDevUsage);
+        server->audioDeviceLock_.GetExcludedDevices(audioDevUsage);
     EXPECT_EQ(audioDeviceDescriptors.size(), 0);
 }
 

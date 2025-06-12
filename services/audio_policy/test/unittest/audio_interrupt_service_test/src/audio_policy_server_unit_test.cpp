@@ -2949,7 +2949,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_MUSIC, volumeLevel);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
-    volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
+    volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -2986,7 +2986,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_150, TestSize.Level1)
     auto ret = server->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
     EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 
-    volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_APP);
+    volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_APP);
     ret = server->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -3011,7 +3011,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_151, TestSize.Level1)
     ret = server->SetSystemVolumeLevel(AudioStreamType::STREAM_MUSIC, volumeLevel, volumeFlag);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
-    volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_MUSIC);
+    volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_MUSIC);
     ret = server->SetSystemVolumeLevel(AudioStreamType::STREAM_MUSIC, volumeLevel, volumeFlag);
     EXPECT_EQ(ret, SUCCESS);
 }
