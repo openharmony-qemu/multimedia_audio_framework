@@ -114,6 +114,7 @@ TEST_F(HpaeCoBufferNodeUnitTest, Process_001)
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
     coBufferNode->SetLatency(TEST_LATENCY_MS);
+    coBufferNode->SetNodeInfo(nodeInfo);
     std::shared_ptr<HpaeSinkOutputNode> sinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
     sinkOutputNode->Connect(coBufferNode);
     PcmBufferInfo pcmBufferInfo;

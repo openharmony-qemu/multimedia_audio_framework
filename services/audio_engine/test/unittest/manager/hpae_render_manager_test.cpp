@@ -545,6 +545,7 @@ TEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001)
     nodeInfo.channelLayout = CH_LAYOUT_STEREO;
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
     EXPECT_NE(coBufferNode, nullptr);
+    coBufferNode->SetNodeInfo(nodeInfo);
     int32_t ret = hpaeRendererManager->ConnectCoBufferNode(coBufferNode);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
