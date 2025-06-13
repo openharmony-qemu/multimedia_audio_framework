@@ -461,7 +461,7 @@ public:
 
     int32_t ForceStopAudioStream(StopAudioType audioType) override;
 
-    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) override;
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) override;
 
     bool SetKaraokeParameters(const std::string &parameters) override;
 

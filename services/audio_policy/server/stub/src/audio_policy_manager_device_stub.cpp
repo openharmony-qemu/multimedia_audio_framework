@@ -71,6 +71,7 @@ void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(Message
     int32_t apiVersion = HasUsbDevice(devices) ? GetApiTargetVersion() : 0;
     reply.WriteInt32(size);
     for (int i = 0; i < size; i++) {
+        devices[i]->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
         devices[i]->Marshalling(reply, apiVersion);
     }
 }

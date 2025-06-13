@@ -4222,7 +4222,7 @@ int32_t AudioPolicyServer::ForceStopAudioStream(StopAudioType audioType)
     return AudioServerProxy::GetInstance().ForceStopAudioStreamProxy(audioType);
 }
 
-bool AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+bool AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
 {
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, false, "interruptService_ is nullptr");
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());

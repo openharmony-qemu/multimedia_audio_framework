@@ -2381,7 +2381,7 @@ void AudioPolicyManagerStub::ForceStopAudioStreamInternal(MessageParcel &data, M
 
 void AudioPolicyManagerStub::IsCapturerFocusAvailableInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AudioCapturerChangeInfo capturerInfo = {};
+    AudioCapturerInfo capturerInfo = {};
     capturerInfo.Unmarshalling(data);
     bool result = IsCapturerFocusAvailable(capturerInfo);
     reply.WriteBool(result);

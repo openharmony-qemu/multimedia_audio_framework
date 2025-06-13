@@ -2564,7 +2564,7 @@ int32_t AudioPolicyManager::ForceStopAudioStream(StopAudioType audioType)
     return gsp->ForceStopAudioStream(audioType);
 }
 
-bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");

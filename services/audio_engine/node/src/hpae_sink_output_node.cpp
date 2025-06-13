@@ -171,12 +171,19 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
 
     sinkOutAttr_ = attr;
-    SetSinkState(STREAM_MANAGER_IDLE);
+    if (audioRendererSink_->IsInited()) {
+        AUDIO_WARNING_LOG("audioRenderSink already inited");
+        SetSinkState(STREAM_MANAGER_IDLE);
+        return SUCCESS;
+    }
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
 #endif
     int32_t ret = audioRendererSink_->Init(attr);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "audioRendererSink_ init failed, errCode is %{public}d", ret);
+    SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
@@ -365,6 +372,15 @@ int32_t HpaeSinkOutputNode::RenderSinkSetPriPaPower()
     AUDIO_INFO_LOG("Open pri pa:[%{public}s] -- [%{public}s], ret:%{public}d",
         GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
     return ret;
+}
+
+uint32_t HpaeSinkOutputNode::GetLatency()
+{
+    if (audioRendererSink_ == nullptr) {
+        return ERROR;
+    }
+    audioRendererSink_->GetLatency(latency_);
+    return latency_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

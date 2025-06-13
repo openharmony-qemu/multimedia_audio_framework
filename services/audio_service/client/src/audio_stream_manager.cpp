@@ -281,7 +281,7 @@ int32_t AudioStreamManager::ForceStopAudioStream(StopAudioType audioType)
     return AudioPolicyManager::GetInstance().ForceStopAudioStream(audioType);
 }
 
-bool AudioStreamManager::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+bool AudioStreamManager::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
 {
     return AudioPolicyManager::GetInstance().IsCapturerFocusAvailable(capturerInfo);
 }

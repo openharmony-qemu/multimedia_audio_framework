@@ -34,6 +34,8 @@ enum HpaeMsgCode {
     DUMP_SINK_INFO,
     DUMP_SOURCE_INFO,
     MOVE_SESSION_FAILED,
+    CONNECT_CO_BUFFER_NODE,
+    DISCONNECT_CO_BUFFER_NODE,
 };
 
 enum NodeOperation { UNDERFLOW, FADED, DRAINED };
@@ -89,6 +91,9 @@ enum HpaeProcessorType {
     HPAE_SCENE_PRE_ENHANCE = 22,
     HPAE_SCENE_ASR = 23,
     HPAE_SCENE_VOICE_MESSAGE = 24,
+
+    // scene for collaboration
+    HPAE_SCENE_COLLABORATIVE = 25,
 };
 
 // mark sourceInputNode(cluster)

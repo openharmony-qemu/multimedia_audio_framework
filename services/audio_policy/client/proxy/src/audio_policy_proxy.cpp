@@ -2651,7 +2651,7 @@ int32_t AudioPolicyProxy::ForceStopAudioStream(StopAudioType audioType)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+bool AudioPolicyProxy::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
 {
     MessageParcel data;
     MessageParcel reply;
