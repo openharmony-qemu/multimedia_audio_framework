@@ -228,7 +228,7 @@ void AudioCapturerSession::HandleRemainingSource()
         // Convert sessionWithNormalSourceType to normalSourceInHdi
         audioEcManager_.GetTargetSourceTypeAndMatchingFlag(iter.second.sourceType,
             normalSourceInHdi, useMatchingPropInfo);
-        AUDIO_INFO_LOG("Get session:%{public}% from map，convert original sourceType:%{public}d into "
+        AUDIO_INFO_LOG("Get session:%{public}d from map，convert original sourceType:%{public}d into "
             "HdiSource:%{public}d", iter.first, iter.second.sourceType, normalSourceInHdi);
         if (IsHigherPrioritySource(normalSourceInHdi, highestSource)) {
             highestSession = iter.first;
