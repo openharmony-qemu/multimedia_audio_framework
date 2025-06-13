@@ -460,18 +460,18 @@ enum RecorderType : int32_t {
 
 enum AudioLoopbackMode {
     /** The hardware mode of audio loopback.*/
-    HARDWARE = 0,
+    LOOPBACK_HARDWARE = 0,
 };
 
 enum AudioLoopbackStatus {
     /** Audio loopback unavailable by the output or input device. For example, the device change.*/
-    UNAVAILABLE_DEVICE = -2,
+    LOOPBACK_UNAVAILABLE_DEVICE = -2,
     /** Audio loopback unavailable by the audio scene. For example, the audio interrupt.*/
-    UNAVAILABLE_SCENE = -1,
+    LOOPBACK_UNAVAILABLE_SCENE = -1,
     /** Audio loopback available and idle.*/
-    AVAILABLE_IDLE = 0,
+    LOOPBACK_AVAILABLE_IDLE = 0,
     /** Audio loopback available and running.*/
-    AVAILABLE_RUNNING = 1,
+    LOOPBACK_AVAILABLE_RUNNING = 1,
 };
 
 struct AudioRendererInfo {
@@ -497,7 +497,7 @@ struct AudioRendererInfo {
     uint64_t expectedPlaybackDurationBytes = 0;
     int32_t effectMode = 1;
     bool isLoopback = false;
-    AudioLoopbackMode loopbackMode = HARDWARE;
+    AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -557,7 +557,7 @@ public:
     std::string sceneType = "";
     RecorderType recorderType = RECORDER_TYPE_DEFAULT;
     bool isLoopback = false;
-    AudioLoopbackMode loopbackMode = HARDWARE;
+    AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}

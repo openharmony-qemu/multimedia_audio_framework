@@ -89,8 +89,8 @@ private:
     std::shared_ptr<AudioCapturer> audioCapturer_;
     std::mutex mutex_;
     std::shared_ptr<AudioLoopbackCallback> statusCallback_;
-    AudioLoopbackStatus currentStatus_ = AVAILABLE_IDLE;
-    AudioLoopbackMode mode_ = HARDWARE;
+    AudioLoopbackStatus currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
+    AudioLoopbackMode mode_ = LOOPBACK_HARDWARE;
 
     RendererState rendererState_ = RENDERER_INVALID;
     bool isRendererUsb_ = false;

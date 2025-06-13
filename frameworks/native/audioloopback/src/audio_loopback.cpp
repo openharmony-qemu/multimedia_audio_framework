@@ -68,7 +68,7 @@ AudioLoopback::~AudioLoopback() = default;
 AudioLoopbackPrivate::~AudioLoopbackPrivate()
 {
     AUDIO_INFO_LOG("~AudioLoopbackPrivate");
-    if (currentStatus_ == AVAILABLE_RUNNING) {
+    if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING) {
         DestroyAudioLoopback();
     }
 }
@@ -77,7 +77,7 @@ bool AudioLoopbackPrivate::Enable(bool enable)
 {
     AUDIO_INFO_LOG("Enable %{public}d, currentStatus_ %{public}d", enable, currentStatus_);
     if (enable) {
-        CHECK_AND_RETURN_RET_LOG(currentStatus_ != AVAILABLE_RUNNING, false, "AudioLoopback already running");
+        CHECK_AND_RETURN_RET_LOG(currentStatus_ != LOOPBACK_AVAILABLE_RUNNING, false, "AudioLoopback already running");
         InitStatus();
         bool ret = IsAudioLoopbackSupported() && CheckDeviceSupport() && CreateAudioLoopback();
         if (!ret) {
@@ -86,9 +86,9 @@ bool AudioLoopbackPrivate::Enable(bool enable)
         }
         isStarted_ = true;
         UpdateStatus();
-        CHECK_AND_RETURN_RET_LOG(currentStatus_ == AVAILABLE_RUNNING, false, "AudioLoopback Enable failed");
+        CHECK_AND_RETURN_RET_LOG(currentStatus_ == LOOPBACK_AVAILABLE_RUNNING, false, "AudioLoopback Enable failed");
     } else {
-        CHECK_AND_RETURN_RET_LOG(currentStatus_ == AVAILABLE_RUNNING, true, "AudioLoopback not Running");
+        CHECK_AND_RETURN_RET_LOG(currentStatus_ == LOOPBACK_AVAILABLE_RUNNING, true, "AudioLoopback not Running");
         DestroyAudioLoopback();
     }
     return true;
@@ -97,7 +97,7 @@ bool AudioLoopbackPrivate::Enable(bool enable)
 void AudioLoopbackPrivate::InitStatus()
 {
     isStarted_ = false;
-    currentStatus_ = AVAILABLE_IDLE;
+    currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
 
     rendererState_ = RENDERER_INVALID;
     isRendererUsb_ = false;
@@ -110,18 +110,18 @@ void AudioLoopbackPrivate::InitStatus()
 
 AudioLoopbackStatus AudioLoopbackPrivate::GetStatus()
 {
-    if (currentStatus_ == AVAILABLE_RUNNING) {
+    if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING) {
         return currentStatus_;
     }
     bool ret = CheckDeviceSupport();
     if (!ret) {
-        return UNAVAILABLE_DEVICE;
+        return LOOPBACK_UNAVAILABLE_DEVICE;
     }
-    if (currentStatus_ == UNAVAILABLE_SCENE) {
-        currentStatus_ = AVAILABLE_IDLE;
-        return UNAVAILABLE_SCENE;
+    if (currentStatus_ == LOOPBACK_UNAVAILABLE_SCENE) {
+        currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
+        return LOOPBACK_UNAVAILABLE_SCENE;
     }
-    currentStatus_ = AVAILABLE_IDLE;
+    currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
     return currentStatus_;
 }
 
@@ -132,7 +132,7 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
         return ERR_INVALID_PARAM;
     }
     karaokeParams_["Karaoke_volume"] = std::to_string(static_cast<int>(volume * VALUE_HUNDRED));
-    if (currentStatus_ == AVAILABLE_RUNNING) {
+    if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING) {
         std::string parameters = "Karaoke_volume=" + karaokeParams_["Karaoke_volume"];
         CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), ERROR,
             "SetVolume failed");
@@ -194,7 +194,7 @@ bool AudioLoopbackPrivate::CreateAudioLoopback()
 
 void AudioLoopbackPrivate::DisableLoopback()
  {
-    if (currentStatus_ == AVAILABLE_RUNNING) {
+    if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING) {
         karaokeParams_["Karaoke_enable"] = "disable";
         std::string parameters = "Karaoke_enable=" + karaokeParams_["Karaoke_enable"];
         CHECK_AND_RETURN_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters),
@@ -207,7 +207,7 @@ void AudioLoopbackPrivate::DestroyAudioLoopback()
     isStarted_ = false;
     bool ret = true;
     DisableLoopback();
-    currentStatus_ = AVAILABLE_IDLE;
+    currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
     if (audioCapturer_) {
         ret = audioCapturer_->Stop();
         if (!ret) {
@@ -373,21 +373,21 @@ void AudioLoopbackPrivate::UpdateStatus()
     const bool isDeviceValid = isRendererUsb_ && isCapturerUsb_;
 
     if (!isDeviceValid) {
-        newStatus = UNAVAILABLE_DEVICE;
+        newStatus = LOOPBACK_UNAVAILABLE_DEVICE;
     } else {
         const bool isStateRunning = (rendererState_ == RENDERER_RUNNING) && (capturerState_ == CAPTURER_RUNNING);
         const bool isFastValid = (rendererFastStatus_ == FASTSTATUS_FAST) && (capturerFastStatus_ == FASTSTATUS_FAST);
-        newStatus = (isStateRunning && isFastValid) ? AVAILABLE_RUNNING : UNAVAILABLE_SCENE;
+        newStatus = (isStateRunning && isFastValid) ? LOOPBACK_AVAILABLE_RUNNING : LOOPBACK_UNAVAILABLE_SCENE;
     }
 
-    if (newStatus == AVAILABLE_RUNNING) {
+    if (newStatus == LOOPBACK_AVAILABLE_RUNNING) {
         karaokeParams_["Karaoke_enable"] = "enable";
-        currentStatus_ = AVAILABLE_RUNNING;
-        newStatus = SetKaraokeParameters() ? AVAILABLE_RUNNING : UNAVAILABLE_SCENE;
+        currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
+        newStatus = SetKaraokeParameters() ? LOOPBACK_AVAILABLE_RUNNING : LOOPBACK_UNAVAILABLE_SCENE;
     }
     if (newStatus != oldStatus) {
         AUDIO_INFO_LOG("UpdateStatus: %{public}d -> %{public}d", oldStatus, newStatus);
-        if (currentStatus_ == AVAILABLE_RUNNING && newStatus != AVAILABLE_RUNNING) {
+        if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING && newStatus != LOOPBACK_AVAILABLE_RUNNING) {
             DestroyAudioLoopback();
         }
         currentStatus_ = newStatus;

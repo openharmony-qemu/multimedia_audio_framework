@@ -30,7 +30,7 @@ namespace AudioStandard {
 static __thread napi_ref g_loopbackConstructor = nullptr;
 mutex NapiAudioLoopback::createMutex_;
 int32_t NapiAudioLoopback::isConstructSuccess_ = SUCCESS;
-AudioLoopbackMode NapiAudioLoopback::sLoopbackMode_ = HARDWARE;
+AudioLoopbackMode NapiAudioLoopback::sLoopbackMode_ = LOOPBACK_HARDWARE;
 
 NapiAudioLoopback::NapiAudioLoopback()
     : loopback_(nullptr), env_(nullptr) {}

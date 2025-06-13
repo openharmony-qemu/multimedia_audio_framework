@@ -551,10 +551,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackModeMap = {
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackStatusMap = {
-    {"UNAVAILABLE_DEVICE", UNAVAILABLE_DEVICE},
-    {"UNAVAILABLE_SCENE", UNAVAILABLE_SCENE},
-    {"AVAILABLE_IDLE", AVAILABLE_IDLE},
-    {"AVAILABLE_RUNNING", AVAILABLE_RUNNING},
+    {"UNAVAILABLE_DEVICE", LOOPBACK_UNAVAILABLE_DEVICE},
+    {"UNAVAILABLE_SCENE", LOOPBACK_UNAVAILABLE_SCENE},
+    {"AVAILABLE_IDLE", LOOPBACK_AVAILABLE_IDLE},
+    {"AVAILABLE_RUNNING", LOOPBACK_AVAILABLE_RUNNING},
 };
 
 NapiAudioEnum::NapiAudioEnum()
