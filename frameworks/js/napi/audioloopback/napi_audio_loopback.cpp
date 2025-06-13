@@ -135,19 +135,14 @@ napi_value NapiAudioLoopback::CreateAudioLoopbackWrapper(napi_env env, AudioLoop
     napi_value constructor;
 
     status = napi_get_reference_value(env, g_loopbackConstructor, &constructor);
-    if (status != napi_ok) {
-        goto fail;
+    if (status == napi_ok) {
+        sLoopbackMode_ = loopbackMode;
+        status = napi_new_instance(env, constructor, 0, nullptr, &result);
     }
-    sLoopbackMode_ = loopbackMode;
-    status = napi_new_instance(env, constructor, 0, nullptr, &result);
     if (status != napi_ok) {
-        goto fail;
+        AUDIO_ERR_LOG("Failed in CreateAudioLoopbackWrapper, %{public}d", status);
+        napi_get_undefined(env, &result);
     }
-    return result;
-
-fail:
-    AUDIO_ERR_LOG("Failed in CreateAudioLoopbackWrapper, %{public}d", status);
-    napi_get_undefined(env, &result);
     return result;
 }
 
