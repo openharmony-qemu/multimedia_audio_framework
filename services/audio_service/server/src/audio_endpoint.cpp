@@ -1288,8 +1288,10 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
 
     ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(
         dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
-    ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart + channelVolumes.channel, 0) /
-        channelVolumes.channel);
+    if (!isExistLoopback_) {
+        ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart + channelVolumes.channel, 0) /
+            channelVolumes.channel);
+    }
 }
 
 void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData,
