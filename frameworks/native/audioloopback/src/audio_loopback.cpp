@@ -164,7 +164,7 @@ bool AudioLoopbackPrivate::CreateAudioLoopback()
     audioRenderer_->SetRendererWriteCallback(shared_from_this());
     rendererFastStatus_ = FASTSTATUS_FAST;
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
-    if(audioCapturer_ == nullptr) {
+    if (audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("CreateCapturer failed");
         return false;
     }
@@ -193,14 +193,14 @@ bool AudioLoopbackPrivate::CreateAudioLoopback()
 }
 
 void AudioLoopbackPrivate::DisableLoopback()
- {
+{
     if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING) {
         karaokeParams_["Karaoke_enable"] = "disable";
         std::string parameters = "Karaoke_enable=" + karaokeParams_["Karaoke_enable"];
         CHECK_AND_RETURN_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters),
             "DisableLoopback failed");
     }
- }
+}
 
 void AudioLoopbackPrivate::DestroyAudioLoopback()
 {
@@ -220,7 +220,7 @@ void AudioLoopbackPrivate::DestroyAudioLoopback()
         AUDIO_INFO_LOG("audioCapturer Release success");
         audioCapturer_ = nullptr;
     } else {
-         AUDIO_ERR_LOG("audioCapturer is nullptr");
+        AUDIO_ERR_LOG("audioCapturer is nullptr");
     }
     if (audioRenderer_) {
         ret = audioRenderer_->Stop();
@@ -234,7 +234,7 @@ void AudioLoopbackPrivate::DestroyAudioLoopback()
         AUDIO_INFO_LOG("audioRenderer Release success");
         audioRenderer_ = nullptr;
     } else {
-         AUDIO_ERR_LOG("audioRenderer is nullptr");
+        AUDIO_ERR_LOG("audioRenderer is nullptr");
     }
 }
 

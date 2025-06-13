@@ -28,6 +28,8 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 static __thread napi_ref g_loopbackConstructor = nullptr;
+static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
+static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
 mutex NapiAudioLoopback::createMutex_;
 int32_t NapiAudioLoopback::isConstructSuccess_ = SUCCESS;
 AudioLoopbackMode NapiAudioLoopback::sLoopbackMode_ = LOOPBACK_HARDWARE;
@@ -162,7 +164,7 @@ napi_value NapiAudioLoopback::CreateAudioLoopback(napi_env env, napi_callback_in
         context->status = NapiParamUtils::GetValueInt32(env, context->loopbackMode, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetAudioLoopbackMode failed",
             NAPI_ERR_INVALID_PARAM);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, 
+        NAPI_CHECK_ARGS_RETURN_VOID(context,
             NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(context->loopbackMode), "loopback mode invaild",
             NAPI_ERR_INVALID_PARAM);
     };

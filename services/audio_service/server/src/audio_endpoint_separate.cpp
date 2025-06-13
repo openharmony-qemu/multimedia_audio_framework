@@ -216,13 +216,11 @@ bool AudioEndpointSeparate::Config(const AudioDeviceDescriptor &deviceInfo)
 
     IAudioSinkAttr attr = {};
     InitSinkAttr(attr, deviceInfo);
+    sink->Init(attr);
     if (!sink->IsInited()) {
-        sink->Init(attr);
-        if (!sink->IsInited()) {
-            AUDIO_ERR_LOG("fastSinkInit failed");
-            manager.ReleaseId(fastRenderId_);
-            return false;
-        }
+        AUDIO_ERR_LOG("fastSinkInit failed");
+        manager.ReleaseId(fastRenderId_);
+        return false;
     }
     if (PrepareDeviceBuffer(deviceInfo) != SUCCESS) {
         sink->DeInit();

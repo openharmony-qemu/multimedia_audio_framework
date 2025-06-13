@@ -72,8 +72,6 @@ private:
     static bool CheckContextStatus(std::shared_ptr<AudioLoopbackAsyncContext> context);
     static bool CheckAudioLoopbackStatus(NapiAudioLoopback *napi, std::shared_ptr<AudioLoopbackAsyncContext> context);
 
-    static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
-    static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
     static AudioLoopbackMode sLoopbackMode_;
