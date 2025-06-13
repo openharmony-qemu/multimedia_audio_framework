@@ -2260,10 +2260,14 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 {
     AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
 
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid == UID_AUDIO) {
+        return true;
+    }
+
     if (!isRecording) {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
         // root user case for auto test
-        uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == ROOT_UID) {
             return true;
         }
