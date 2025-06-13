@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef LOG_TAG
 #define LOG_TAG "NapiAudioCollaborativeManager"
 #endif
@@ -173,7 +187,8 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackSupported(napi_
     return result;
 }
 
-napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackEnabledForDevice(napi_env env, napi_callback_info info)
+napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackEnabledForDevice(
+    napi_env env, napi_callback_info info)
 {
     AUDIO_INFO_LOG("in");
     napi_value result = nullptr;
@@ -215,7 +230,8 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackEnabledForDevic
     return result;
 }
 
-napi_value NapiAudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevice(napi_env env, napi_callback_info info)
+napi_value NapiAudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevice(
+    napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
@@ -254,7 +270,8 @@ napi_value NapiAudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevi
 
     if ((context->deviceDescriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (context->deviceDescriptor->connectState_ != CONNECTED)) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM, "invalid arguments, device is not A2DP or device is connected");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+            "invalid arguments, device is not A2DP or device is connected");
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -272,7 +289,8 @@ napi_value NapiAudioCollaborativeManager::UpdateCollaborativeEnabled(napi_env en
         CHECK_AND_RETURN_LOG(CheckAudioCollaborativeManagerStatus(napiAudioCollaborativeManager, context),
             "audio collaborative manager state is error.");
         
-        context->intValue = napiAudioCollaborativeManager->audioCollaborativeMngr_->SetCollaborativePlaybackEnabledForDevice(
+        context->intValue =
+            napiAudioCollaborativeManager->audioCollaborativeMngr_->SetCollaborativePlaybackEnabledForDevice(
             context->deviceDescriptor, context->collaborativeEnable);
 
 

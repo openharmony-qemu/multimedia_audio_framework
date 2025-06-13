@@ -214,7 +214,7 @@ public:
 
     /**
      * @brief Set collaborative service enabled
-     * 
+     *
      * @return int32_t the result, only supports proaudio for now.
      */
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) NOT_SUPPORT_RET

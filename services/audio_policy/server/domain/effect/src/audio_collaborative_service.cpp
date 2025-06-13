@@ -1,7 +1,21 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioCollaborativeService"
 #endif
-#include <string.h>
+#include <cstring>
 #include "audio_collaborative_service.h"
 
 namespace OHOS {
@@ -45,7 +59,6 @@ bool AudioCollaborativeService::IsCollaborativePlaybackSupported()
 
 void AudioCollaborativeService::UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice)
 {
-    // add: check device type: only bluetooth_a2dp
     AUDIO_INFO_LOG("UpdateCurrentDevice Entered!");
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
     
@@ -87,7 +100,8 @@ bool AudioCollaborativeService::IsCollaborativePlaybackEnabledForDevice(
 {
     AUDIO_INFO_LOG("isCollaborativePlaybackEnabledForDevice Entered!");
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
-    if (addressToCollaborativeEnabledMap_.find(selectedAudioDevice->macAddress_) != addressToCollaborativeEnabledMap_.end()) {
+    if (addressToCollaborativeEnabledMap_.find(selectedAudioDevice->macAddress_) !=
+        addressToCollaborativeEnabledMap_.end()) {
         AUDIO_INFO_LOG("selected device address %{public}s is in addressToCollaborativeEnabledMap_, state %{public}d",
             GetEncryptAddr(selectedAudioDevice->macAddress_).c_str(),
             addressToCollaborativeEnabledMap_[selectedAudioDevice->macAddress_]);
@@ -106,8 +120,8 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
     if (addressToCollaborativeEnabledMap_.find(curDeviceAddress_) == addressToCollaborativeEnabledMap_.end()) {
         if (isCollaborativeStateEnabled_) {
             isCollaborativeStateEnabled_ = false;
-            AUDIO_INFO_LOG("current device %{public}s is not in addressToCollaborativeEnabledMap_, close collaborative service",
-                GetEncryptAddr(curDeviceAddress_).c_str());
+            AUDIO_INFO_LOG("current device %{public}s is not in addressToCollaborativeEnabledMap_, "
+                "close collaborative service", GetEncryptAddr(curDeviceAddress_).c_str());
             return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_);
         }
         return SUCCESS;
@@ -126,7 +140,5 @@ AudioCollaborativeService::~AudioCollaborativeService()
 {
     AUDIO_ERR_LOG("~AudioCollaborativeService");
 }
-
-
 } // AudioStandard
 } // OHOS

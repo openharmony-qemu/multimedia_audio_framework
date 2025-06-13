@@ -1506,7 +1506,7 @@ int32_t SingleStagePolyphaseResamplerSetRate(SingleStagePolyphaseResamplerState*
         }
     }
 
-    if (state->isInitialized) {
+    if (state->isIialized) {
         return UpdateResamplerState(state);
     }
     return RESAMPLER_ERR_SUCCESS;

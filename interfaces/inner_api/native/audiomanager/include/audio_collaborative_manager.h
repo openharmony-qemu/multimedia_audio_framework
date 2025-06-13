@@ -20,7 +20,7 @@
 #include "audio_device_descriptor.h"
 
 namespace OHOS {
-namespace AudioStandard{
+namespace AudioStandard {
 
 class AudioCollaborativeManager {
 public:
@@ -33,7 +33,6 @@ public:
      * @since 20
      */
     bool IsCollaborativePlaybackSupported();
-
 
     /**
      * @brief Set the spatialization enabled or disabled by the specified device.
