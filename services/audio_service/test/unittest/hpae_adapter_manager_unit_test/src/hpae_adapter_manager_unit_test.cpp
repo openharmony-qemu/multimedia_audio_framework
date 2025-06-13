@@ -23,7 +23,6 @@
 #include <thread>
 
 #include "audio_errors.h"
-#include "audio_info.h"
 #include "hpae_adapter_manager.h"
 #include "policy_handler.h"
 #include "audio_system_manager.h"
@@ -36,6 +35,7 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t MIDDLE_SESSIONID = 100001;
+constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIDDLE_SESSIONID;
 constexpr uint32_t MORE_SESSIONID = MAX_SESSIONID + 1;
 const int32_t MAP_NUM = 1;
 const int32_t CAPTURER_FLAG = 10;
