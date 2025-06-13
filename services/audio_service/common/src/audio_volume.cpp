@@ -139,11 +139,11 @@ uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t ap
     }
     auto it = streamVolume_.find(sessionId);
     CHECK_AND_RETURN_RET_LOG(it != streamVolume_.end(), DISTURB_STATE_VOLUME_UNMUTE, "sessionId is null");
-    if (it->second.IsSystemApp() || appUid == VOIP_CALL_VOICE_SERVICE) {
+    if (it->second.IsSystemApp() || static_cast<uint32_t>(appUid) == VOIP_CALL_VOICE_SERVICE) {
         return DISTURB_STATE_VOLUME_UNMUTE;
     }
     AudioStreamType volumeMapType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(volumeType));
-    if (doNotDisturbStatusWhiteListVolume_[appUid] == 1) {
+    if (doNotDisturbStatusWhiteListVolume_[static_cast<uint32_t>(appUid)] == 1) {
         // this stream of app is in whiteList, unMute
         return DISTURB_STATE_VOLUME_UNMUTE;
     } else {
