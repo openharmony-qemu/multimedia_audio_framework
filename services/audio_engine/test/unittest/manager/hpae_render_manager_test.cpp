@@ -459,6 +459,7 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
     EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(false), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 /**
@@ -552,5 +553,6 @@ TEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001)
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
     ret = hpaeRendererManager->DisConnectCoBufferNode(coBufferNode);
     EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 }  // namespace
