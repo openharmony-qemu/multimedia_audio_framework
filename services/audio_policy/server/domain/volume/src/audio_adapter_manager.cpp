@@ -1285,7 +1285,7 @@ int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &
     return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
-void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
+void AudioAdapterManager::UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.name.empty()) {
         args.append(" sink_name=");
@@ -1328,7 +1328,7 @@ void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(audioModuleInfo.extra);
     }
     if (audioModuleInfo.needEmptyChunk) {
-        args.append(" need_empty_chunk");
+        args.append(" need_empty_chunk=");
         args.append(std::to_string(*audioModuleInfo.needEmptyChunk));
     }
 }

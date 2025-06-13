@@ -35,7 +35,6 @@ struct HpaeSessionInfo {
 constexpr int32_t SCENE_TYPE_NUM = 9;
 
 struct HpaeRenderSessionInfo {
-    uint32_t sinkInputNodeId;
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
     bool isMoveAble = true;

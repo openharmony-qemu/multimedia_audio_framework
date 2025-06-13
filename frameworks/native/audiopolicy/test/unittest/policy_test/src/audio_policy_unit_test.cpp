@@ -1785,11 +1785,11 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetAudioFormatUnsupportedErrorC
 }
 
 /**
- * @tc.name  : Test Audio_Render_Error_001 via legal state
- * @tc.number: Audio_Render_Error_001
+ * @tc.name  : Test AudioPolicyClientStub_OnFormatUnsupportedError_001 via legal state
+ * @tc.number: AudioPolicyClientStub_OnFormatUnsupportedError_001
  * @tc.desc  : Test AudioRenderErrorListenerStub interface.
  */
-HWTEST(AudioPolicyUnitTest, Audio_Render_Error_001, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, AudioPolicyClientStub_OnFormatUnsupportedError_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPolicyClientStubImpl> renderErrorStub =
         std::make_shared<AudioPolicyClientStubImpl>();

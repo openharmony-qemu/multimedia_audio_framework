@@ -887,22 +887,30 @@ int32_t RendererInServer::Start()
     return ret;
 }
 
+int32_t RendererInServer::StartInnerDuringStandby()
+{
+    int32_t ret = 0;
+    AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
+    standByCounter_ = 0;
+    startedTime_ = ClockTime::GetCurNano();
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+    ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+        IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
+    audioStreamChecker_->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+    return ret;
+}
+
 int32_t RendererInServer::StartInner()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START);
     int32_t ret = 0;
     if (standByEnable_) {
-        AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
-        standByCounter_ = 0;
-        startedTime_ = ClockTime::GetCurNano();
-        audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
-        ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
-        ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
-            IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
-        return ret;
+        return StartInnerDuringStandby();
+    } else {
+        audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     }
     needForceWrite_ = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
@@ -963,12 +971,12 @@ int32_t RendererInServer::Pause()
 {
     AUDIO_INFO_LOG("Pause.");
     std::unique_lock<std::mutex> lock(statusLock_);
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE);
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_PAUSING;
+    bool isStandbyTmp = false;
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
@@ -979,6 +987,7 @@ int32_t RendererInServer::Pause()
         if (playerDfx_) {
             playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
         }
+        isStandbyTmp = true;
     }
     standByCounter_ = 0;
     GetEAC3ControlParam();
@@ -1007,6 +1016,8 @@ int32_t RendererInServer::Pause()
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
+    DataTransferStateChangeType type = isStandbyTmp ? DATA_TRANS_STOP : AUDIO_STREAM_PAUSE;
+    audioStreamChecker_->MonitorOnAllCallback(type, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
@@ -1111,7 +1122,6 @@ int32_t RendererInServer::Stop()
     AUDIO_INFO_LOG("Stop.");
     {
         std::unique_lock<std::mutex> lock(statusLock_);
-        audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
             status_ != I_STATUS_STARTING) {
             AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_.load());
@@ -1165,6 +1175,7 @@ int32_t RendererInServer::StopInner()
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }

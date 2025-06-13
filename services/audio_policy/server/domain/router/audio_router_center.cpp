@@ -19,6 +19,7 @@
 #include "audio_router_center.h"
 #include "audio_policy_service.h"
 #include "audio_zone_service.h"
+#include "audio_scene_manager.h"
 
 using namespace std;
 
@@ -88,7 +89,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevi
     }
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
-        AudioRingerMode curRingerMode = AudioPolicyService::GetAudioPolicyService().GetRingerMode();
+        AudioRingerMode curRingerMode = AudioPolicyManagerFactory::GetAudioPolicyManager().GetRingerMode();
         if (curRingerMode == RINGER_MODE_NORMAL) {
             descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
         } else {
@@ -123,7 +124,7 @@ bool AudioRouterCenter::HasScoDevice()
 bool AudioRouterCenter::NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
-    if (AudioPolicyService::GetAudioPolicyService().GetRingerMode() == RINGER_MODE_NORMAL) {
+    if (AudioPolicyManagerFactory::GetAudioPolicyManager().GetRingerMode() == RINGER_MODE_NORMAL) {
         return false;
     }
     if (!Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
@@ -152,9 +153,17 @@ RouterType AudioRouterCenter::GetBypassWithSco(AudioScene audioScene)
 
 bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
 {
-    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
-        ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice()) ||
-        AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+    if (audioScene == AUDIO_SCENE_PHONE_CALL) {
+        return true;
+    }
+    if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
+        return true;
+    }
+    if ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) &&
+        HasScoDevice()) {
+        return true;
+    }
+    if (AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
         return true;
     }
     return false;
@@ -167,7 +176,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     StreamUsage callStreamUsage = streamUsage;
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
-        AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
         if (IsMediaFollowCallStrategy(audioScene)) {
             callStreamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
@@ -231,7 +241,8 @@ int32_t AudioRouterCenter::NotifyDistributedOutputChange(bool isRemote)
 void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     StreamUsage streamUsage, int32_t clientUID, RouterType &routerType)
 {
-    AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
     StreamUsage callStreamUsage =
                 AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
     bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
@@ -269,7 +280,8 @@ bool AudioRouterCenter::IsConfigRouterStrategy(SourceType sourceType)
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(SourceType sourceType,
     int32_t clientUID, RouterType &routerType, const uint32_t sessionID)
 {
-    AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
     if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
         if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
             return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);

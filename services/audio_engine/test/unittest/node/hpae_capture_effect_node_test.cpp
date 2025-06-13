@@ -166,6 +166,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002)
     hpaeCaptureEffectNode->DisConnectWithInfo(hpaeSourceInputCluster, nodeInfo);
     EXPECT_EQ(hpaeSourceInputCluster->GetSourceInputNodeUseCount(), 1);
     hpaeSourceInputCluster->CapturerSourceStop();
+    hpaeSourceInputCluster->CapturerSourceDeInit();
 }
 
 TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003)

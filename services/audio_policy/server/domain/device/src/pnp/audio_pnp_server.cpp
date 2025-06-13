@@ -89,7 +89,9 @@ int32_t AudioPnpServer::RegisterPnpStatusListener(std::shared_ptr<AudioPnpDevice
         pnpCallback_ = callback;
     }
 
-    DetectAudioDevice();
+    thread th([this] { DetectAudioDevice(); });
+    pthread_setname_np(th.native_handle(), "OS_DET_AUD_DEV");
+    th.detach();
     return SUCCESS;
 }
 

@@ -1537,7 +1537,9 @@ int AudioManagerStub::HandleSetBtHdiInvalidState(MessageParcel &data, MessagePar
 int AudioManagerStub::HandleForceStopAudioStream(MessageParcel &data, MessageParcel &reply)
 {
     StopAudioType audioType = static_cast<StopAudioType>(data.ReadInt32());
-    return ForceStopAudioStream(audioType);
+    int32_t ret = ForceStopAudioStream(audioType);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -60,7 +60,6 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     nodeInfo.statusCallback = weak_from_this();
     sinkInputNodeMap_[sessionId]->SetNodeInfo(nodeInfo);
     SetSessionStateForRenderer(sessionId, node->GetState());
-    rendererSessionNodeMap_[sessionId].sinkInputNodeId = nodeInfo.nodeId;
     rendererSessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
     sceneTypeToProcessClusterCount_++;
 

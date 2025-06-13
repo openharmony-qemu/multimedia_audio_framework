@@ -698,6 +698,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
 
     if (currAudioInterrupt.parallelPlayFlag) {
+        updateScene = true;
         AUDIO_PRERELEASE_LOGI("allow parallel play");
         return SUCCESS;
     }

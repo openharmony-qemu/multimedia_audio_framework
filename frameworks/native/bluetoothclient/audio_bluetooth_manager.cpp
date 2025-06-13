@@ -48,6 +48,7 @@ OHOS::Bluetooth::RecognitionStatus AudioHfpManager::recognitionStatus =
     OHOS::Bluetooth::RecognitionStatus::RECOGNITION_DISCONNECTED;
 bool AudioHfpManager::isVirtualCall = true;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
+BluetoothRemoteDevice AudioHfpManager::activeRecgDevice_;
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
@@ -472,8 +473,9 @@ int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRem
         int8_t scoCategoryInner = GetScoCategoryFromScene(scene_);
         if (scoCategoryInner == ScoCategory::SCO_DEFAULT &&
             AudioHfpManager::scoCategory != ScoCategory::SCO_RECOGNITION) {
-            AUDIO_INFO_LOG("Recongnition sco connect");
+            AUDIO_INFO_LOG("Recongnition sco connect, change active recognition device");
             AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_CONNECTING;
+            activeRecgDevice_ = device;
             ret = BluetoothScoManager::HandleScoConnect(ScoCategory::SCO_RECOGNITION, &device);
             if (ret == SUCCESS) {
                 AudioHfpManager::scoCategory = ScoCategory::SCO_RECOGNITION;
@@ -486,7 +488,7 @@ int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag, BluetoothRem
         if (AudioHfpManager::scoCategory == ScoCategory::SCO_RECOGNITION) {
             AUDIO_INFO_LOG("Recongnition sco close");
             AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_DISCONNECTING;
-            ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_RECOGNITION, &device);
+            ret = BluetoothScoManager::HandleScoDisconnect(ScoCategory::SCO_RECOGNITION, &activeRecgDevice_);
             if (ret == SUCCESS) {
                 AudioHfpManager::scoCategory = ScoCategory::SCO_DEFAULT;
                 AudioHfpManager::recognitionStatus = RecognitionStatus::RECOGNITION_DISCONNECTED;

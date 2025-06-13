@@ -102,7 +102,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;
         }
-        int32_t outputRet = ActivateOutputDevice(streamDesc);
+        int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
         // update current output device
@@ -138,7 +138,8 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
-        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER) {
+        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER &&
+            pipeInfo->streamDescriptors_.size() > 0) {
             isOffloadOpened_.store(true);
             offloadCloseCondition_.notify_all();
         }
@@ -210,7 +211,7 @@ int32_t AudioCoreService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, 
     ConnectState connectState)
 {
     AUDIO_INFO_LOG("handleflag %{public}d, address %{public}s, connectState %{public}d",
-        handleFlag, address.c_str(), connectState);
+        handleFlag, GetEncryptAddr(address).c_str(), connectState);
     if (handleFlag && connectState != DEACTIVE_CONNECTED) {
         return SUCCESS;
     }
@@ -312,6 +313,7 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
                 audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
             }
             streamsWhenRingDualOnPrimarySpeaker_.clear();
+            audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
         }
     }
 }
@@ -1571,20 +1573,19 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
     Trace trace("AudioCoreService::HandleScoOutputDeviceFetched");
 #ifdef BLUETOOTH_ENABLE
     std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
-    if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-        int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
-            desc->exceptionFlag_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(
-                std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-            FetchOutputDeviceAndRoute(reason);
-            return ERROR;
-        }
-        if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) {
-            Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
-            return SUCCESS;
-        }
+    int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
+        desc->exceptionFlag_ = true;
+        audioDeviceManager_.UpdateDevicesListInfo(
+            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
+        FetchOutputDeviceAndRoute(reason);
+        return ERROR;
+    }
+    if ((desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) &&
+        streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+        Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
+        return SUCCESS;
     }
 #endif
     AUDIO_INFO_LOG("out");
@@ -1986,6 +1987,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
             audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
         }
         streamsWhenRingDualOnPrimarySpeaker_.clear();
+        audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
     }
 }
 
@@ -1994,12 +1996,11 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
     if (pipeInfo->pipeRole_ != PIPE_ROLE_INPUT || pipeInfo->streamDescriptors_.size() == 0) {
         return;
     }
-    SourceType sourceType = pipeInfo->streamDescriptors_.front()->capturerInfo_.sourceType;
+    auto streamDesc = pipeInfo->streamDescriptors_.front();
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
+    SourceType sourceType = streamDesc->capturerInfo_.sourceType;
     if (specialSourceTypeSet_.count(sourceType) == 0) {
-        AUDIO_INFO_LOG("Source type: %{public}d", sourceType);
-        audioEcManager_.UpdateStreamEcInfo(pipeInfo->moduleInfo_, sourceType);
-        audioEcManager_.UpdateStreamMicRefInfo(pipeInfo->moduleInfo_, sourceType);
-        audioEcManager_.SetOpenedNormalSource(sourceType);
+        audioEcManager_.PrepareNormalSource(pipeInfo->moduleInfo_, streamDesc);
     }
 }
 
@@ -2214,14 +2215,14 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
     }
 }
 
-int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Stream desc is nullptr");
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
 
     std::string encryptMacAddr = GetEncryptAddr(deviceDesc->macAddress_);
-    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc,
-        AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
+    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc, reason, encryptMacAddr);
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);

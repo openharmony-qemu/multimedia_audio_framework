@@ -1101,6 +1101,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_057, TestSize.Lev
     AudioProcessConfig audioProcConfig = {0};
     audioProcConfig.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     EXPECT_EQ(true, ptrAudioProcessInClientInner->CheckIfSupport(audioProcConfig));
+    audioProcConfig.rendererInfo.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    EXPECT_EQ(true, ptrAudioProcessInClientInner->CheckIfSupport(audioProcConfig));
 }
 
 /**

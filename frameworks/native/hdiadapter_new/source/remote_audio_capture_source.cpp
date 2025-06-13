@@ -203,9 +203,9 @@ int32_t RemoteAudioCaptureSource::SetVolume(float left, float right)
     float leftVolume = left;
     float rightVolume = right;
     float volume;
-    if ((leftVolume == 0) && (rightVolume != 0)) {
+    if ((abs(leftVolume) < FLOAT_EPS) && (abs(rightVolume) > FLOAT_EPS)) {
         volume = rightVolume;
-    } else if ((leftVolume != 0) && (rightVolume == 0)) {
+    } else if ((abs(leftVolume) > FLOAT_EPS) && (abs(rightVolume) < FLOAT_EPS)) {
         volume = leftVolume;
     } else {
         volume = (leftVolume + rightVolume) / HALF_FACTOR;

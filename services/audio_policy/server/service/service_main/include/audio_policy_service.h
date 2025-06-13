@@ -95,52 +95,13 @@ public:
 
     bool Init(void);
     void Deinit(void);
-    void InitKVStore();
-    void NotifySettingsDataReady();
     bool ConnectServiceAdapter();
 
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) const;
-
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
-
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
-
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
-    int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
-
-    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
-
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
-
-    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
-
-    int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
-
-    float GetSystemVolumeDb(AudioStreamType streamType) const;
-
-    int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
-
-    float GetLowPowerVolume(int32_t streamId) const;
-
-    void HandlePowerStateChanged(PowerMgr::PowerState state);
-
-    float GetSingleStreamVolume(int32_t streamId) const;
-
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute,
-        const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
-
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
-
-    bool GetStreamMute(AudioStreamType streamType);
-
-    bool IsStreamActive(AudioStreamType streamType) const;
-
-    bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
 
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
 
@@ -157,15 +118,7 @@ public:
     int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
-    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
-        AudioDeviceUsage audioDevUsage);
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
@@ -174,41 +127,17 @@ public:
 
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
 
-    int32_t CloseWakeUpAudioCapturer();
-
     int32_t NotifyWakeUpCapturerRemoved();
 
     bool IsAbsVolumeSupported();
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
 
-    bool IsDeviceActive(InternalDeviceType deviceType);
-
-    DeviceType GetActiveOutputDevice();
-
-    uint16_t GetDmDeviceType();
-
     shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
-
-    DeviceType GetActiveInputDevice();
 
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
-    AudioRingerMode GetRingerMode() const;
-
-    int32_t SetMicrophoneMute(bool isMute);
-
-    int32_t SetMicrophoneMutePersistent(const bool isMute);
-
-    int32_t InitPersistentMicrophoneMuteState(bool &isMute);
-
-    bool GetPersistentMicMuteState();
-
-    bool IsMicrophoneMute();
-
     int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
-
-    AudioScene GetAudioScene(bool hasSystemPermission = true) const;
 
     int32_t GetAudioLatencyFromXml() const;
 
@@ -218,12 +147,6 @@ public:
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
-    int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
-
-    std::string GetSystemSoundUri(const std::string &key);
-
-    void SetNormalVoipFlag(const bool &normalVoipFlag);
-
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
     int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
@@ -232,20 +155,8 @@ public:
 
     bool IsDataShareReady();
 
-    void SetDataShareReady(std::atomic<bool> isDataShareReady);
-
-    void SetFirstScreenOn();
-
-    int32_t ResumeStreamState();
-
-    int32_t SetVirtualCall(const bool isVirtual);
-
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
-#ifdef FEATURE_DTMF_TONE
-    std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
 
-    std::shared_ptr<ToneInfo> GetToneConfig(int32_t ltonetype, const std::string &countryCode);
-#endif
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false);
@@ -274,12 +185,6 @@ public:
 
     void LoadEffectLibrary();
 
-    int32_t SetAudioStreamRemovedCallback(AudioStreamRemovedCallback *callback);
-
-    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
-
-    void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
-
     int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasBTPermission, bool hasSysPermission);
 
@@ -293,11 +198,7 @@ public:
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
         const sptr<IRemoteObject> &object, bool hasBTPermission);
 
-    int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage);
-
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
-
-    int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object, const int32_t apiVersion);
@@ -313,10 +214,6 @@ public:
     void RegisteredTrackerClientDied(pid_t uid);
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
-
-    void RemoveDeviceForUid(int32_t uid);
 
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 
@@ -341,9 +238,6 @@ public:
 
     void RegisterRemoteDevStatusCallback();
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
 
@@ -353,21 +247,9 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
 
-    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
-
-    float GetMinStreamVolume(void);
-
-    float GetMaxStreamVolume(void);
-
     int32_t GetMaxRendererInstances();
 
     void RegisterDataObserver();
-
-    bool IsVolumeUnadjustable();
-
-    void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
-
-    float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) const;
 
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
@@ -378,15 +260,6 @@ public:
     vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
 
     vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
-
-    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
-
-    bool IsAbsVolumeScene() const;
-
-    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool internalCall = false);
-
-    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
-        const int32_t volume, bool internalCall = false);
 
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
 
@@ -416,48 +289,23 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByUsageInner(AudioDeviceUsage usage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
-    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-        const int32_t uid = INVALID_UID);
-
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
-
-    ConverterConfig GetConverterConfig();
 
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason);
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
-    float GetMaxAmplitude(const int32_t deviceId, const AudioInterrupt audioInterrupt);
-
-    int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-
-    int32_t DisableSafeMediaVolume();
-
     void NotifyAccountsChanged(const int &id);
 
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
 
-    void CheckHibernateState(bool onHibernate);
-
-    void UpdateSafeVolumeByS4();
-
     // for hidump
     int32_t GetCurActivateCount();
-    void CheckStreamMode(const int64_t activateSessionId);
 
-    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     int32_t DynamicUnloadModule(const AudioPipeType pipeType);
 
-    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
-
-    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
-
-    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
-
     int32_t ResetRingerModeMute();
-
-    bool IsRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for effect V3
@@ -475,25 +323,12 @@ public:
     int32_t GetAudioEnhancePropertyByDevice(DeviceType deviceType, AudioEnhancePropertyArray &propertyArray);
 
     AudioScene GetLastAudioScene() const;
-    void SetRotationToEffect(const uint32_t rotate);
     bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
-    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
-
-    bool IsCurrentActiveDeviceA2dp();
-
-    int32_t SetVoiceRingtoneMute(bool isMute);
-    int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
-    int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
-    int32_t ResetAllProxy();
-
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
-
-    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const SourceType sourceType, bool isRunning);
 
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
 
@@ -506,23 +341,7 @@ public:
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
-    int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
-    int32_t SetBackgroundMuteCallback(const sptr<IRemoteObject> &object);
-    void SubscribeBackgroundTask();
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
-    void CheckConnectedDevice();
-    void SetDeviceConnectedFlagFalseAfterDuration();
-    int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
-    int32_t ForceStopAudioStream(StopAudioType audioType);
-
-    void SaveSystemVolumeLevelInfo(AudioStreamType streamType, int32_t volumeLevel, int32_t appUid,
-        std::string invocationTime);
-    void SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName, std::string invocationTime);
-    void SaveVolumeKeyRegistrationInfo(std::string keyType, std::string registrationTime, int32_t subscriptionId,
-        bool registrationResult);
-    int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
-
-    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
 
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
 
@@ -627,7 +446,7 @@ private:
     void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
     void SetDefaultAdapterEnable(bool isEnable);
-    bool IsDevicePlaybackSupport(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
+    bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
 private:
 
     static bool isBtListenerRegistered;

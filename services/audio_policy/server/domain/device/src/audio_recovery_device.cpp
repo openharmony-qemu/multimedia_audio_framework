@@ -216,7 +216,6 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
 
     audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0], strUsage);
     HandleFetchDeviceChange(AudioStreamDeviceChangeReason::OVERRODE, "SelectOutputDevice");
-    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
     WriteSelectOutputSysEvents(selectedDesc, strUsage);
     return SUCCESS;
 }
@@ -409,8 +408,6 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     audioActiveDevice_.NotifyUserSelectionEventForInput(selectedDesc[0], srcType);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
-    audioDeviceCommon_.OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentInputDevice().networkId_);
     WriteSelectInputSysEvents(selectedDesc, srcType, scene);
     audioCapturerSession_.ReloadSourceForDeviceChange(
         audioActiveDevice_.GetCurrentInputDevice(),
@@ -464,7 +461,6 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
     } else {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
     }
-    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(currentOutputDevice);
     return SUCCESS;
 }
 
@@ -491,7 +487,6 @@ int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsa
     } else {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
     }
-    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(currentOutputDevice);
     return SUCCESS;
 }
 
