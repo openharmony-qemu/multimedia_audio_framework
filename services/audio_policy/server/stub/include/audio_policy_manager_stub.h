@@ -234,6 +234,8 @@ private:
     void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void ForceStopAudioStreamInternal(MessageParcel &data, MessageParcel &reply);
     void IsCapturerFocusAvailableInternal(MessageParcel &data, MessageParcel &reply);
+    void SetKaraokeParametersInternal(MessageParcel &data, MessageParcel &reply);
+    void IsAudioLoopbackSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);

@@ -103,6 +103,7 @@ static const size_t PARAMETER_SET_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
 constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 128;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
+const int32_t DEFAULT_MAX_LOOPBACK_INSTANCES = 1;
 const int32_t MCU_UID = 7500;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
@@ -1612,6 +1613,15 @@ int32_t AudioServer::CheckMaxRendererInstances()
     return SUCCESS;
 }
 
+int32_t AudioServer::CheckMaxLoopbackInstances(AudioMode audioMode)
+{
+    if (AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(audioMode) >= DEFAULT_MAX_LOOPBACK_INSTANCES) {
+        AUDIO_ERR_LOG("Current Loopback stream num is greater than the maximum num of configured instances");
+        return ERR_EXCEED_MAX_STREAM_CNT;
+    }
+    return SUCCESS;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
     std::shared_ptr<PipeInfoGuard> &pipeInfoGuard)
 {
@@ -1647,6 +1657,9 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         return nullptr;
     }
     AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+    if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
+        AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(config.audioMode);
+    }
     sptr<IRemoteObject> remoteObject= process->AsObject();
     pipeInfoGuard->SetReleaseFlag(false);
     return remoteObject;
@@ -1706,9 +1719,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(config.originalSessionId);
 
     errorCode = CheckAndWaitAudioPolicyReady();
-    if (errorCode != SUCCESS) {
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
     CHECK_AND_RETURN_RET_LOG(CheckConfigFormat(resetConfig), nullptr, "AudioProcessConfig format is wrong, please check"
@@ -1722,9 +1733,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK &&
         !IsVoiceModemCommunication(resetConfig.rendererInfo.streamUsage, callingUid)) {
         errorCode = CheckMaxRendererInstances();
-        if (errorCode != SUCCESS) {
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
         if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
             maxRendererStreamCntPerUid_)) {
             errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
@@ -1732,7 +1741,10 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
             return nullptr;
         }
     }
-
+    if (resetConfig.rendererInfo.isLoopback || resetConfig.capturerInfo.isLoopback) {
+        errorCode = CheckMaxLoopbackInstances(resetConfig.audioMode);
+        CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
+    }
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA
         && config.rendererInfo.isSatellite) {
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);

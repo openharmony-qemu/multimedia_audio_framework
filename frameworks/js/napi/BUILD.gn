@@ -32,6 +32,8 @@ ohos_shared_library("audio") {
     "audiorenderer/callback",
     "audiocapturer",
     "audiocapturer/callback",
+    "audioloopback",
+    "audioloopback/callback",
     "audiomanager",
     "audiomanager/callback",
     "asrcontroller",
@@ -80,6 +82,9 @@ ohos_shared_library("audio") {
       "audiorenderer/callback/napi_renderer_period_position_callback.cpp",
       "audiorenderer/callback/napi_renderer_position_callback.cpp",
       "audiorenderer/napi_audio_renderer.cpp",
+      "audioloopback/callback/napi_audio_loopback_callback_inner.cpp",
+      "audioloopback/callback/napi_audio_loopback_callback.cpp",
+      "audioloopback/napi_audio_loopback.cpp",
       "common/napi_async_work.cpp",
       "common/napi_audio_entry.cpp",
       "common/napi_audio_enum.cpp",
@@ -94,6 +99,7 @@ ohos_shared_library("audio") {
     "../../../services/audio_service:audio_client",
     "../../native/audiocapturer:audio_capturer",
     "../../native/audiorenderer:audio_renderer",
+    "../../native/audioloopback:audio_loopback",
     "../../native/audioutils:audio_utils",
   ]
 

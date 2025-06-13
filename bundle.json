@@ -215,6 +215,16 @@
             },
             {
               "type": "none",
+              "name": "//foundation/multimedia/audio_framework/frameworks/native/audioloopback:audio_loopback",
+              "header": {
+                "header_files": [
+                  "audio_loopback.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audioloopback/include"
+              }
+            },
+            {
+              "type": "none",
               "name": "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer",
               "header": {
                 "header_files": [

@@ -148,11 +148,8 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
     params.samplingRate = capturerOptions.streamInfo.samplingRate;
-    if (AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels) {
-        params.audioChannel = AudioChannel::STEREO;
-    } else {
-        params.audioChannel = capturerOptions.streamInfo.channels;
-    }
+    params.audioChannel = AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels ? AudioChannel::STEREO :
+        capturerOptions.streamInfo.channels;
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
     auto capturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
@@ -171,6 +168,8 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
     capturer->capturerInfo_.recorderType = capturerOptions.capturerInfo.recorderType;
+    capturer->capturerInfo_.isLoopback = capturerOptions.capturerInfo.isLoopback;
+    capturer->capturerInfo_.loopbackMode = capturerOptions.capturerInfo.loopbackMode;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
     capturer->strategy_ = capturerOptions.strategy;
     if (capturer->SetParams(params) != SUCCESS) {
