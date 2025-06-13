@@ -1356,6 +1356,11 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         Trace trace("AudioEndpoint::ReadProcessData->" + std::to_string(curRead));
         SpanInfo *curReadSpan = processBufferList_[i]->GetSpanInfo(curRead);
         CHECK_AND_CONTINUE_LOG(curReadSpan != nullptr, "GetSpanInfo failed, can not get client curReadSpan");
+        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is null");
+        auto processConfig = processList_[i]->GetAudioProcessConfig();
+        if (processConfig.rendererInfo.isLoopback) {
+            isExistLoopback_ = true;
+        }
         GetAllReadyProcessDataSub(i, curReadSpan, audioDataList, curRead);
     }
 }
@@ -1365,11 +1370,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i, SpanInfo *curReadSp
 {
     AudioStreamData streamData;
     Volume vol = {true, 1.0f, 0};
-    CHECK_AND_RETURN_LOG(processList_[i] != nullptr, "this process is null");
-    auto processConfig = processList_[i]->GetAudioProcessConfig();
-    if (processConfig.rendererInfo.isLoopback) {
-        isExistLoopback_ = true;
-    }
+
     AudioStreamType streamType = processList_[i]->GetAudioStreamType();
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
