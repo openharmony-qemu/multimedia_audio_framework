@@ -476,7 +476,7 @@ public:
 
     virtual int32_t ForceStopAudioStream(StopAudioType audioType) = 0;
 
-    virtual bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) = 0;
+    virtual bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) = 0;
 
     virtual int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) = 0;
 

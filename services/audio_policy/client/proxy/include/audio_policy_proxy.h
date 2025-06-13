@@ -459,7 +459,7 @@ public:
 
     int32_t ForceStopAudioStream(StopAudioType audioType) override;
 
-    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) override;
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) override;
 
     int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
 

@@ -366,12 +366,12 @@ public:
 
     /**
      * Checks whether it is possible to obtain the recording focus.
-     * @param { AudioCapturerChangeInfo } AudioCapturerChangeInfo.
+     * @param { AudioCapturerInfo } AudioCapturerInfo.
      * @returns { bool } Indicating whether obtaining the recording focus is possible.
      *
      * @since 20
      */
-    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo);
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo);
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

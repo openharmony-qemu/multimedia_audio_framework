@@ -80,7 +80,7 @@ private:
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value IsAcousticEchoCancelerSupported(napi_env env, napi_callback_info info);
-    static napi_value IsCapturerFocusAvailable(napi_env env, napi_callback_info info);
+    static napi_value CanCapturerStart(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *args, const std::string &cbName);
     static void RegisterCapturerStateChangeCallback(napi_env env, napi_value *args,
