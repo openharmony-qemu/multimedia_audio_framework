@@ -375,6 +375,22 @@ void AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest(const uint8_t *rawData, si
     audioVolumeManager->GetAllDeviceVolumeInfo();
 }
 
+void AudioVolumeManagerInitFuzzTest(const uint8_t *rawData, size_t size)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler = std::make_shared<AudioPolicyServerHandler>();
+
+    audioVolumeManager.DeInit();
+    audioVolumeManager.Init(audioPolicyServerHandler);
+}
+
+void AudioVolumeManagerInitKVStoreFuzzTest(const uint8_t *rawData, size_t size)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.InitKVStore();
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -399,6 +415,8 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioVolumeManagerGetMaxVolumeLevelFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerGetMinVolumeLevelFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerInitFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerInitKVStoreFuzzTest,
 };
 
 /* Fuzzer entry point */
