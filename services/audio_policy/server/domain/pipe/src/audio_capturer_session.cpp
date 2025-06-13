@@ -220,14 +220,16 @@ void AudioCapturerSession::HandleRemainingSource()
 {
     SourceType highestSource = SOURCE_TYPE_INVALID;
     SourceType normalSourceInHdi = SOURCE_TYPE_INVALID;
+    SourceType openSource = audioEcManager_.GetSourceOpened();
     bool useMatchingPropInfo = false;
     uint32_t highestSession = 0;
     // find highest source in remaining session
     for (const auto &iter : sessionWithNormalSourceType_) {
         // Convert sessionWithNormalSourceType to normalSourceInHdi
-        audioEcManager_.GetTargetSourceTypeAndMatchingFlag(iter.second.sourceType, normalSourceInHdi, useMatchingPropInfo);
-        AUDIO_INFO_LOG("Get original sourceType:%{public}d from map，convert into HdiSource:%{public}d, "
-           , iter.second.sourceType, normalSourceInHdi);
+        audioEcManager_.GetTargetSourceTypeAndMatchingFlag(iter.second.sourceType,
+            normalSourceInHdi, useMatchingPropInfo);
+        AUDIO_INFO_LOG("Get session:%{public}% from map，convert original sourceType:%{public}d into "
+            "HdiSource:%{public}d", iter.first, iter.second.sourceType, normalSourceInHdi);
         if (IsHigherPrioritySource(normalSourceInHdi, highestSource)) {
             highestSession = iter.first;
             highestSource = normalSourceInHdi;
@@ -235,8 +237,8 @@ void AudioCapturerSession::HandleRemainingSource()
     }
 
     // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
-    AUDIO_INFO_LOG("the highestSource:%{public}d, normalSourceOpened_:%{public}d", highestSource, audioEcManager_.GetSourceOpened());
-    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(audioEcManager_.GetSourceOpened(), highestSource)) {
+    AUDIO_INFO_LOG("the highestSource:%{public}d, normalSourceOpened_:%{public}d", highestSource, openSource);
+    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(openSource, highestSource)) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
         audioEcManager_.SetOpenedNormalSourceSessionId(highestSession);
     }
