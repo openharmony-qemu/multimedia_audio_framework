@@ -44,7 +44,7 @@ AudioPipeInfo::AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo)
 
 void AudioPipeInfo::Dump(std::string &dumpString)
 {
-    AppendFormat(dumpString, "Pipe %d, role %s, adapter %s, name %s:\n",
+    AppendFormat(dumpString, "Pipe %u, role %s, adapter %s, name %s:\n",
         id_, IsOutput() ? "Output" : "Input", adapterName_.c_str(), name_.c_str());
 
     DumpCommonAttrs(dumpString);
