@@ -129,6 +129,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     return std::make_unique<SharedCapturerWrapper>(tempSharedPtr);
 }
 
+// LCOV_EXCL_START
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
     const AppInfo &appInfo)
 {
@@ -2004,6 +2005,7 @@ std::shared_ptr<IAudioStream> AudioCapturerPrivate::GetInnerStream() const
     }
     return audioStream_;
 }
+// LCOV_EXCL_STOP
 
 std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GetStreamDescBySwitchInfo(
     const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo)

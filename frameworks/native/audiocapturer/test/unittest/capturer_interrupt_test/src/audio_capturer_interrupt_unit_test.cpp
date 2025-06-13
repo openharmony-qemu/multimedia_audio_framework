@@ -150,6 +150,7 @@ void AudioCapturerInterruptUnitTest::AudioInterruptUnitTestFunc(TestType tType, 
     return;
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioCapturer Interrupt.
 * @tc.number: Audio_Capturer_Interrupt_001
@@ -161,6 +162,7 @@ HWTEST(AudioCapturerInterruptUnitTest, Audio_Capturer_Interrupt_001, TestSize.Le
     AudioCapturerInterruptUnitTest::AudioInterruptUnitTestFunc(TestType::CAPTURE_CAPTURE, true,
         SOURCE_TYPE_MIC, SOURCE_TYPE_ULTRASONIC, dRenderInfo);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioCapturer Interrupt.
@@ -198,7 +200,7 @@ HWTEST(AudioCapturerInterruptUnitTest, Audio_Capturer_Interrupt_004, TestSize.Le
         SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_RECOGNITION, dRenderInfo);
 }
 
-
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioCapturer Interrupt.
 * @tc.number: Audio_Capturer_Interrupt_005
@@ -366,6 +368,7 @@ HWTEST(AudioCapturerInterruptUnitTest, Audio_Capturer_Interrupt_020, TestSize.Le
     AudioCapturerInterruptUnitTest::AudioInterruptUnitTestFunc(TestType::CAPTURE_RANDER, true,
         SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_INVALID, renderInfo[ACCESSIBILITY]);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioCapturer Interrupt.

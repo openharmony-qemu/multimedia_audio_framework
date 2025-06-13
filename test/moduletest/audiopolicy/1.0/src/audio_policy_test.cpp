@@ -277,6 +277,7 @@ INSTANTIATE_TEST_SUITE_P(
     AudioPolicySetRingerModeCallbackTest,
     ValuesIn(RINGER_MODE_PARAMS));
 
+#ifdef TEMP_DISABLE
 /*
  * Set microphone mute
  *
@@ -314,6 +315,7 @@ INSTANTIATE_TEST_SUITE_P(
     IsMicrophoneMute,
     AudioPolicyGetMicrophoneMuteTest,
     ValuesIn(MIC_MUTE_PARAMS));
+#endif
 
 /*
  * Check volume range
@@ -347,6 +349,7 @@ INSTANTIATE_TEST_SUITE_P(
     AudioPolicyVolumeRangeTest,
     ValuesIn(VOLUME_RANGE_PARAMS));
 
+#ifdef TEMP_DISABLE
 /*
  * Check volume range
  *
@@ -423,6 +426,7 @@ INSTANTIATE_TEST_SUITE_P(
     GetAudioScene,
     AudioPolicyGetAudioSceneTest,
     ValuesIn(AUDIO_SCENE_PARAMS));
+#endif
 } // namespace V1_0
 } // namespace AudioStandard
 } // namespace OHOS

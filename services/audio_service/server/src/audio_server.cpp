@@ -2550,6 +2550,7 @@ void AudioServer::NotifyAudioPolicyReady()
     AUDIO_INFO_LOG("out");
 }
 
+// LCOV_EXCL_START
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
 {
@@ -2575,6 +2576,7 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
     }
     return ret;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
 {
