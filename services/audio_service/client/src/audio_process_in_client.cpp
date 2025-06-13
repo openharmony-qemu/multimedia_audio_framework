@@ -345,6 +345,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     AudioProcessConfig resetConfig = config;
     bool isVoipMmap = false;
     if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
+        config.rendererInfo.streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION &&
         config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
         resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
         if (config.audioMode == AUDIO_MODE_RECORD) {
@@ -836,6 +837,7 @@ int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
 {
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
         config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         return true;
     }

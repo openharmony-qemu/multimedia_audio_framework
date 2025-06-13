@@ -52,6 +52,7 @@ bool AudioPolicyConfigParser::LoadConfiguration()
     std::unordered_map<std::string, std::string> interruptGroupMap {};
 
     ConvertAdapterInfoToGroupInfo(volumeGroupMap, interruptGroupMap);
+    ConvertAdapterInfoToAudioModuleInfo();
 
     volumeGroupMap_ = volumeGroupMap;
     interruptGroupMap_ = interruptGroupMap;
@@ -111,8 +112,6 @@ void AudioPolicyConfigParser::ParseAdapters(std::shared_ptr<AudioXmlNode> curNod
         }
         curNode->MoveToNext();
     }
-
-    ConvertAdapterInfoToAudioModuleInfo();
 }
 
 void AudioPolicyConfigParser::ParseAdapter(std::shared_ptr<AudioXmlNode> curNode,
@@ -619,7 +618,7 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
             }
             audioModuleInfo.sinkLatency = globalConfigs_.globalPaConfigs_.sinkLatency_;
 
-            shouldOpenMicSpeaker_ ? audioModuleInfo.OpenMicSpeaker = "1" : audioModuleInfo.OpenMicSpeaker = "0";
+            audioModuleInfo.OpenMicSpeaker = shouldOpenMicSpeaker_ ? "1" : "0";
             if (adapterInfoIt.first == AudioAdapterType::TYPE_PRIMARY &&
                 shouldEnableOffload && pipeInfo->paProp_.role_ == MODULE_TYPE_SINK) {
                 audioModuleInfo.offloadEnable = "1";

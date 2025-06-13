@@ -76,6 +76,7 @@ ohos_unittest("audio_engine_unit_test") {
     "node/hpae_source_input_node_test.cpp",
     "node/hpae_source_output_node_test.cpp",
     "node/hpae_source_process_cluster_test.cpp",
+    "node/hpae_co_buffer_node_test.cpp",
     "utils/hpae_pcm_utils_test.cpp",
     "utils/hpae_no_lock_queue_test.cpp",
     "node/hpae_render_effect_node_test.cpp",

@@ -522,6 +522,8 @@ void ProAudioServiceAdapterImpl::HandleSourceAudioStreamRemoved(uint32_t session
 int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
 {
     AUDIO_INFO_LOG("UpdateCollaborativeState, state %{public}d", isCollaborationEnabled);
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().UpdateCollaborativeState(isCollaborationEnabled);
     return SUCCESS;
 }
 }  // namespace AudioStandard

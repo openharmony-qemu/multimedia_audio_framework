@@ -116,7 +116,6 @@ private:
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
     // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
-    uint64_t sessionIdUsedToOpenSource_ = 0;
 
     std::mutex inputDeviceReloadMutex_;
     AudioDeviceDescriptor inputDeviceForReload_;

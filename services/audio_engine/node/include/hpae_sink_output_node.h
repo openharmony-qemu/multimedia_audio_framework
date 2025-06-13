@@ -55,7 +55,7 @@ public:
     StreamManagerState GetSinkState(void);
     int32_t SetSinkState(StreamManagerState sinkState);
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
-
+    uint32_t GetLatency();
 private:
     void HandleRemoteTiming();
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
@@ -72,6 +72,7 @@ private:
     int64_t silenceDataUs_ = 0;
     bool isOpenPaPower_ = true;
     bool isDisplayPaPowerState_ = false;
+    uint32_t latency_ = 0;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;

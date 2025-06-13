@@ -847,16 +847,10 @@ void NapiAudioVolumeManager::UnregisterActiveVolumeTypeChangeCallback(napi_env e
         napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_);
     if (callback != nullptr && argc == ARGS_TWO) {
         cb->RemoveSelfActiveVolumeTypeChangeCbRef(env, callback);
-        if (cb->GetActiveVolumeTypeChangeListSize() == 0) {
-            napiAudioVolumeManager->audioSystemMngr_->UnsetActiveVolumeTypeCallback(
-                napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_);
-            napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_.reset();
-            napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ = nullptr;
-            cb->RemoveAllActiveVolumeTypeChangeCbRef();
-        }
     }
-    if (argc == ARGS_ONE) {
-        napiAudioVolumeManager->audioSystemMngr_->UnsetActiveVolumeTypeCallback();
+    if (argc == ARGS_ONE || cb->GetActiveVolumeTypeChangeListSize() == 0) {
+        napiAudioVolumeManager->audioSystemMngr_->UnsetActiveVolumeTypeCallback(
+            napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_);
         napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_.reset();
         napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ = nullptr;
         cb->RemoveAllActiveVolumeTypeChangeCbRef();
