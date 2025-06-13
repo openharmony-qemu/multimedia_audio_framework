@@ -65,6 +65,8 @@ ohos_unittest("audio_engine_unit_test") {
     "node/hpae_gain_node_test.cpp",
     "node/hpae_mixer_node_test.cpp",
     "node/hpae_node_common_test.cpp",
+    "node/hpae_remote_output_cluster_test.cpp",
+    "node/hpae_remote_sink_output_node_test.cpp",
     "node/hpae_output_cluster_test.cpp",
     "node/hpae_pcm_buffer_test.cpp",
     "node/hpae_pcm_process_test.cpp",
