@@ -343,10 +343,6 @@ public:
 #endif
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
 
-    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
-
-    bool SetKaraokeParameters(const std::string &parameters);
-
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
 private:
     AudioPolicyService()

@@ -1740,15 +1740,5 @@ bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &con
     }
     return true;
 }
-
-bool AudioPolicyService::SetKaraokeParameters(const std::string &parameters)
-{
-    return AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
-}
-
-bool AudioPolicyService::IsAudioLoopbackSupported(AudioLoopbackMode mode)
-{
-    return AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode);
-}
 } // namespace AudioStandard
 } // namespace OHOS

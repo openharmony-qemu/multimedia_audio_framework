@@ -4246,14 +4246,15 @@ bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
 }
 
-bool AudioPolicyServer::SetKaraokeParameters(const std::string &parameters)
+
+bool AudioPolicyServer:::SetKaraokeParameters(const std::string &parameters)
 {
-    return audioPolicyService_.SetKaraokeParameters(parameters);
+    return AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
 }
 
 bool AudioPolicyServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
 {
-    return audioPolicyService_.IsAudioLoopbackSupported(mode);
+    return AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode);
 }
 
 int32_t AudioPolicyServer::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
