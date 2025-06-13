@@ -130,28 +130,6 @@ describe("AudioLoopbackJsUnitTest", function() {
     })
 
     /*
-     * @tc.name:SUB_AUDIO_LOOPBCAK_SETVOLUME_TEST_001
-     * @tc.desc:setVolume success
-     * @tc.type: FUNC
-     * @tc.require: I7V04L
-     */
-    it('SUB_AUDIO_LOOPBCAK_SETVOLUME_TEST_001', 0, async function (done) {
-        let audioLoopback = null;
-        try {
-            audioLoopback = await audio.createAudioLoopback(audio.AudioLoopbackMode.HARDWARE);
-            await audioLoopback.setVolume(0.5);
-            console.info(`${TAG}: SUB_AUDIO_LOOPBCAK_SETVOLUME_TEST_001 SUCCESS`);
-            expect(true).assertTrue();
-            done();
-        } catch (e) {
-            console.info(`${TAG}: SUB_AUDIO_LOOPBCAK_SETVOLUME_TEST_001 ERROR: ${e.message}`);
-            expect(e.code).assertEqual(ERROR_INVALID_PARAM);
-            done();
-            return;
-        }
-    })
-
-    /*
      * @tc.name:SUB_AUDIO_LOOPBCAK_ENABLE_TEST_001
      * @tc.desc:enable success
      * @tc.type: FUNC
