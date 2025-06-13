@@ -366,6 +366,15 @@ int32_t HpaeSinkOutputNode::RenderSinkSetPriPaPower()
         GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
     return ret;
 }
+
+uint32_t HpaeSinkOutputNode::GetLatency()
+{
+    if (audioRendererSink_ == nullptr) {
+        return ERROR;
+    }
+    audioRendererSink_->GetLatency(latency_);
+    return latency_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
