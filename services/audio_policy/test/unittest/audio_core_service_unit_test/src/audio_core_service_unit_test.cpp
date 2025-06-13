@@ -112,6 +112,31 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: CreateRenderClient_002
+* @tc.desc  : Test CreateRenderClient - Create stream with (S32 96k STEREO) will be successful.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest CreateRenderClient_002 start");
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    streamDesc->callerUid_ = getuid();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    uint32_t originalSessionId = 0;
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: CreateCapturerClient_001
 * @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
 */
@@ -337,6 +362,22 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_004, TestSize.Level1)
     AudioMode mode = AUDIO_MODE_PLAYBACK;
     AudioStreamChangeInfo streamChangeInfo;
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_RELEASED;
+    auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: UpdateTracker_005
+* @tc.desc  : Test UpdateTracker - RENDERER_PAUSED.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_005 start");
+    AudioMode mode = AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_PAUSED;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
 }

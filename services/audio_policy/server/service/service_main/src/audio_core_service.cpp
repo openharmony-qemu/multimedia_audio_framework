@@ -26,7 +26,7 @@
 #include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
-
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -159,6 +159,10 @@ int32_t AudioCoreService::CreateRendererClient(
         audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
+    } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_RINGTONE ||
+        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(streamDesc->appInfo_.appUid);
+        Bluetooth::AudioHfpManager::AddVirtualCallBundleName(bundleName, streamDesc->sessionId_);
     }
 
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
@@ -805,15 +809,23 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
 
 int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
-    HandleAudioCaptureState(mode, streamChangeInfo);
-
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
+    HandleAudioCaptureState(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
         return ret; // only update tracker in new and prepared
     }
 
+    const auto &rendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    if ((mode == AUDIO_MODE_PLAYBACK) && (rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_RINGTONE ||
+        rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION)) {
+        if ((rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
+            rendererState == RENDERER_PAUSED)) {
+            Bluetooth::AudioHfpManager::DeleteVirtualCallStream(rendererChangeInfo.sessionId);
+        }
+    }
+    
     UpdateTracker(mode, streamChangeInfo, rendererState);
 
     if (audioA2dpOffloadManager_) {

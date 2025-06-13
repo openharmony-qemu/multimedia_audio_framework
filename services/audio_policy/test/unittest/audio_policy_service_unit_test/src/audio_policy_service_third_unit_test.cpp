@@ -48,109 +48,6 @@ static AudioPolicyServer* GetServerPtr()
 }
 
 /**
-* @tc.name  : Test DeviceUpdateClearRecongnitionStatus.
-* @tc.number: DeviceUpdateClearRecongnitionStatus_001
-* @tc.desc  : Test DeviceUpdateClearRecongnitionStatus.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    desc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
-    desc->isEnable_ = true;
-
-    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
-}
-
-/**
-* @tc.name  : Test DeviceUpdateClearRecongnitionStatus.
-* @tc.number: DeviceUpdateClearRecongnitionStatus_002
-* @tc.desc  : Test DeviceUpdateClearRecongnitionStatus.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_002, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-
-    desc->connectState_ = DEACTIVE_CONNECTED;
-    desc->deviceCategory_ = BT_HEARAID;
-    desc->isEnable_ = true;
-
-    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
-}
-
-/**
-* @tc.name  : Test DeviceUpdateClearRecongnitionStatus.
-* @tc.number: DeviceUpdateClearRecongnitionStatus_003
-* @tc.desc  : Test DeviceUpdateClearRecongnitionStatus.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_003, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-
-    desc->connectState_ = VIRTUAL_CONNECTED;
-    desc->deviceCategory_ = BT_HEARAID;
-    desc->isEnable_ = false;
-
-    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
-}
-
-/**
-* @tc.name  : Test DeviceUpdateClearRecongnitionStatus.
-* @tc.number: DeviceUpdateClearRecongnitionStatus_004
-* @tc.desc  : Test DeviceUpdateClearRecongnitionStatus.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_004, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-
-    desc->connectState_ = VIRTUAL_CONNECTED;
-    desc->deviceCategory_ = BT_HEARAID;
-    desc->isEnable_ = false;
-
-    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
-}
-
-/**
-* @tc.name  : Test DeviceUpdateClearRecongnitionStatus.
-* @tc.number: DeviceUpdateClearRecongnitionStatus_005
-* @tc.desc  : Test DeviceUpdateClearRecongnitionStatus.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceUpdateClearRecongnitionStatus_005, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, desc) << "audioDeviceDescriptor is nullptr.";
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-
-    desc->connectState_ = VIRTUAL_CONNECTED;
-    desc->deviceCategory_ = BT_HEARAID;
-    desc->isEnable_ = true;
-
-    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.DeviceUpdateClearRecongnitionStatus(*desc);
-}
-
-/**
  * @tc.name  : Test AudioPolicyService.
  * @tc.number: GetOffloadStatusDump_001
  * @tc.desc  : Test GetOffloadStatusDump interfaces.
@@ -1276,8 +1173,9 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetVirtualCall_001, TestSize.Level1)
     ASSERT_NE(nullptr, server);
 
     bool isVirtual = false;
-    int32_t ret = server->audioDeviceCommon_.SetVirtualCall(isVirtual);
-
+    int32_t ret = server->audioDeviceCommon_.SetVirtualCall(0, isVirtual);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = server->audioDeviceCommon_.SetVirtualCall(5523, isVirtual); /* 5523: call manager */
     EXPECT_EQ(ret, SUCCESS);
 }
 

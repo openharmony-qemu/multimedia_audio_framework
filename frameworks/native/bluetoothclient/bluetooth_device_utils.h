@@ -16,6 +16,7 @@
 #ifndef BLUETOOTH_DEVICE_UTILS_H
 #define BLUETOOTH_DEVICE_UTILS_H
 
+#include <string>
 #include "bluetooth_device.h"
 
 namespace OHOS {
@@ -58,27 +59,15 @@ enum ScoCategory : int32_t {
     SCO_RECOGNITION = 2,
 };
 
-enum RecognitionStatus : int32_t {
-    RECOGNITION_CONNECTING = 0,
-    RECOGNITION_CONNECTED = 1,
-    RECOGNITION_DISCONNECTING = 2,
-    RECOGNITION_DISCONNECTED = 3,
-};
 enum AudioScoState : int32_t {
-    DISCONNECTED = 0,
-    CONNECTED = 1,
-    CONNECT_AFTER_DISCONNECTED = 2,
-    DISCONNECT_AFTER_CONNECTED = 3,
-    CONNECTING = 4,
-    DISCONNECTING = 5,
-};
-enum AudioScoMode : int32_t {
-    DEFAULT_MODE = 0,
-    CALL_MODE = 1,
-    VOIP_MODE = 2,
-    REC_MODE = 3,
+    INIT = 0,
+    DISCONNECTED,
+    CONNECTED,
+    CONNECTING,
+    DISCONNECTING,
 };
 
+std::string GetEncryptAddr(const std::string &addr);
 } // namespace Bluetooth
 } // namespace OHOS
 

@@ -17,6 +17,7 @@
 #define BLUETOOTH_DEVICE_MANAGER_H
 
 #include <mutex>
+#include <functional>
 #include "bluetooth_hfp_ag.h"
 #include "bluetooth_device_utils.h"
 #include "audio_errors.h"
@@ -31,7 +32,6 @@ int32_t RegisterDeviceObserver(AudioStandard::IDeviceStatusObserver &observer);
 void UnregisterDeviceObserver();
 void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string &macAddress, int32_t eventType);
 bool IsBTWearDetectionEnable(const BluetoothRemoteDevice &device);
-std::string GetEncryptAddr(const std::string &addr);
 
 class MediaBluetoothDeviceManager {
 public:
@@ -112,6 +112,8 @@ struct BluetoothStopVirtualCallHandle {
 
 class HfpBluetoothDeviceManager {
 public:
+    using DisconnectScoForDevice = std::function<void(const BluetoothRemoteDevice &)>;
+
     HfpBluetoothDeviceManager() = default;
     virtual ~HfpBluetoothDeviceManager() = default;
     static void SetHfpStack(const BluetoothRemoteDevice &device, int action);
@@ -145,10 +147,18 @@ public:
     static std::vector<BluetoothRemoteDevice> GetAllHfpBluetoothDevice();
     static void ClearAllHfpBluetoothDevice();
     static std::vector<BluetoothRemoteDevice> GetHfpVirtualDeviceList();
+    static void RegisterDisconnectScoFunc(DisconnectScoForDevice func);
 
 private:
     static void HandleUpdateDeviceCategory(const BluetoothRemoteDevice &device);
     static AudioStandard::AudioDeviceDescriptor HandleConnectDeviceInner(const BluetoothRemoteDevice &device);
+    static void TryDisconnectScoAsync(const BluetoothRemoteDevice &device);
+    static void TryDisconnectScoSync(const BluetoothRemoteDevice &device, const std::string &reason);
+    static void OnDeviceCategoryUpdated(const BluetoothRemoteDevice &device,
+        AudioStandard::AudioDeviceDescriptor &desc);
+    static void OnDeviceEnableUpdated(const BluetoothRemoteDevice &device,
+        AudioStandard::AudioDeviceDescriptor &desc);
+
     static std::map<std::string, BluetoothRemoteDevice> hfpBluetoothDeviceMap_;
     static std::map<std::string, BluetoothDeviceAction> wearDetectionStateMap_;
     static std::vector<BluetoothRemoteDevice> privacyDevices_;
@@ -158,6 +168,7 @@ private:
     static std::vector<BluetoothRemoteDevice> virtualDevices_;
     static std::mutex stopVirtualCallHandleLock_;
     static BluetoothStopVirtualCallHandle stopVirtualCallHandle_;
+    static DisconnectScoForDevice disconnectScoFun_;
 };
 } // namespace Bluetooth
 } // namespace OHOS
