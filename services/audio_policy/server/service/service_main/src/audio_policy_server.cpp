@@ -4247,7 +4247,7 @@ bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
 }
 
 
-bool AudioPolicyServer:::SetKaraokeParameters(const std::string &parameters)
+bool AudioPolicyServer::SetKaraokeParameters(const std::string &parameters)
 {
     return AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
 }
