@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-const char *g_rootPath = "/data/source_file_io_48000_2_s16le.pcm"
+const char *ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm"
 class HpaeSinkOutputNodeTest : public testing::Test {
 public:
     void SetUp();
@@ -100,7 +100,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
     attr.sampleRate = nodeInfo.samplingRate;
     attr.channel = nodeInfo.channels;
     attr.volume = 0.0f;
-    attr.filePath = g_rootPath;
+    attr.filePath = ROOT_PATH;
     attr.deviceNetworkId = deviceNetId.c_str();
     attr.deviceType = 0;
     attr.channelLayout = 0;
@@ -145,7 +145,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote)
     attr.sampleRate = nodeInfo.samplingRate;
     attr.channel = nodeInfo.channels;
     attr.volume = 0.0f;
-    attr.filePath = g_rootPath;
+    attr.filePath = ROOT_PATH;
     attr.deviceNetworkId = deviceNetId.c_str();
     attr.deviceType = 0;
     attr.channelLayout = 0;
@@ -190,7 +190,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower)
     attr.sampleRate = nodeInfo.samplingRate;
     attr.channel = nodeInfo.channels;
     attr.volume = 0.0f;
-    attr.filePath = g_rootPath;
+    attr.filePath = ROOT_PATH;
     attr.deviceNetworkId = deviceNetId.c_str();
     attr.deviceType = 0;
     attr.channelLayout = 0;
