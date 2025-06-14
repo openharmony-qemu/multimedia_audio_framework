@@ -146,6 +146,8 @@ void HpaeSourceOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBu
 void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode,
     HpaeNodeInfo &nodeInfo)
 {
+    CHECK_AND_RETURN_LOG(!inputStream_.CheckIfDisConnected(preNode->GetOutputPort(nodeInfo)),
+        "HpaeSourceOutputNode[%{public}u] has disconnected with preNode", GetSessionId());
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
