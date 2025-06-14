@@ -366,8 +366,9 @@ int32_t OffloadAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
             AUDIO_INFO_LOG("offload already muted");
             return SUCCESS;
         }
+        int32_t ret = SetVolumeInner(0.0f, 0.0f);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set offload mute fail");
         switchDeviceMute_ = true;
-        SetVolumeInner(0.0f, 0.0f);
     } else {
         muteCount_--;
         if (muteCount_ > 0) {
