@@ -448,23 +448,6 @@ int32_t AudioAdapterManager::SaveSpecifiedDeviceVolume(AudioStreamType streamTyp
     return SUCCESS;
 }
 
-int32_t AudioAdapterManager::SetDoNotDisturbStatusWhiteList(std::vector<std::map<std::string, std::string>>
-    doNotDisturbStatusWhiteList)
-{
-    auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
-    return SUCCESS;
-}
-
-int32_t AudioAdapterManager::SetDoNotDisturbStatus(bool isDoNotDisturb)
-{
-    auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    audioVolume->SetDoNotDisturbStatus(isDoNotDisturb);
-    return SUCCESS;
-}
-
 int32_t AudioAdapterManager::GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType)
 {
     return volumeDataMaintainer_.GetDeviceVolume(deviceType, streamType);
@@ -2876,6 +2859,52 @@ void AudioAdapterManager::UpdateVolumeForLowLatency()
         AudioVolumeManager::GetInstance().SetSharedVolume(*iter, curOutputDeviceType, vol);
     }
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
+}
+
+void AudioAdapterManager::RegisterDoNotDisturbStatus()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturb = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int32_t isDoNotDisturb = 0;
+        int32_t ret = settingProvider.GetIntValue(DO_NOT_DISTURB_STATUS, isDoNotDisturb, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus failed");
+        AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb != 0 ? "true" : "false");
+        auto audioVolume = AudioVolume::GetInstance();
+        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
+        audioVolume->SetDoNotDisturbStatus(isDoNotDisturb != 0);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS, updateFuncDoNotDisturb);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus failed");
+    } else {
+        AUDIO_INFO_LOG("Register doNotDisturbStatus successfully");
+    }
+}
+
+void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturbWhiteList = [&](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        std::vector<std::map<std::string, std::string>> doNotDisturbWhiteList;
+        int32_t ret = settingProvider.GetMapValue(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+            doNotDisturbWhiteList, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus WhiteList failed");
+        AUDIO_INFO_LOG("doNotDisturbStatusWhiteList changed");
+        auto audioVolume = AudioVolume::GetInstance();
+        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
+        audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+        updateFuncDoNotDisturbWhiteList);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed");
+    } else {
+        AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
+    }
 }
 
 // LCOV_EXCL_STOP

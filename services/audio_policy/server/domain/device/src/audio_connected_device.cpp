@@ -33,6 +33,20 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class DataShareObserverCallBack : public AAFwk::DataAbilityObserverStub
+{
+public:
+    explicit DataShareObserverCallBack();
+    ~DataShareObserverCallBack() override {};
+    void OnChange() override
+    {
+        std::string devicesName = "";
+        int32_t ret = AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(devicesName);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
+        AudioConnectedDevice::GetInstance().SetDisplayName(devicesName, true);
+    }
+};
+
 bool AudioConnectedDevice::IsConnectedOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
@@ -452,5 +466,19 @@ void AudioConnectedDevice::UpdateSpatializationSupported(const std::string macAd
         }
     }
 }
+
+void AudioConnectedDevice::RegisterNameMonitorHelper()
+{
+    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper
+        = AudioPolicyUtils::GetInstance().CreateDataShareHelperInstance();
+    CHECK_AND_RETURN_LOG(dataShareHelper != nullptr, "dataShareHelper is NULL");
+
+    auto uri = std::make_shared<Uri>(std::string(SETTINGS_DATA_BASE_URI) + "&key=" + PREDICATES_STRING);
+    sptr<AAFwk::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
+    dataShareHelper->RegisterObserver(*uri, settingDataObserver);
+
+    dataShareHelper->Release();
+}
+
 }
 }

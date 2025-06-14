@@ -24,7 +24,6 @@
 #include "audio_manager_listener_stub.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "data_share_observer_callback.h"
 #include "device_init_callback.h"
 #include "audio_inner_call.h"
 #ifdef FEATURE_DEVICE_MANAGER
@@ -46,6 +45,7 @@
 #include "audio_policy_global_parser.h"
 #include "audio_background_manager.h"
 #include "audio_core_service.h"
+#include "audio_policy_datashare_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -537,151 +537,15 @@ void AudioPolicyService::RegisterRemoteDevStatusCallback()
 #endif
 }
 
-std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareHelperInstance()
-{
-    return AudioPolicyUtils::GetInstance().CreateDataShareHelperInstance();
-}
-
-int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &deviceName)
-{
-    return AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(deviceName);
-}
-
-bool AudioPolicyService::IsDataShareReady()
-{
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, false, "[Policy Service] Get samgr failed.");
-    sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "[Policy Service] audio service remote object is NULL.");
-    WatchTimeout guard("DataShare::DataShareHelper::Create:IsDataShareReady", CALL_IPC_COST_TIME_MS);
-    std::pair<int, std::shared_ptr<DataShare::DataShareHelper>> res = DataShare::DataShareHelper::Create(remoteObject,
-        SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
-    guard.CheckCurrTimeout();
-    if (res.first == DataShare::E_OK) {
-        AUDIO_INFO_LOG("DataShareHelper is ready.");
-        auto helper = res.second;
-        if (helper != nullptr) {
-            helper->Release();
-        }
-        return true;
-    } else {
-        AUDIO_WARNING_LOG("DataShareHelper::Create failed: E_DATA_SHARE_NOT_READY");
-        return false;
-    }
-}
-
 void AudioPolicyService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
 {
     AudioServerProxy::GetInstance().GetAllSinkInputsProxy(sinkInputs);
 }
 
-void AudioPolicyService::RegisterNameMonitorHelper()
-{
-    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper
-        = AudioPolicyUtils::GetInstance().CreateDataShareHelperInstance();
-    CHECK_AND_RETURN_LOG(dataShareHelper != nullptr, "dataShareHelper is NULL");
-
-    auto uri = std::make_shared<Uri>(std::string(SETTINGS_DATA_BASE_URI) + "&key=" + PREDICATES_STRING);
-    sptr<AAFwk::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
-    dataShareHelper->RegisterObserver(*uri, settingDataObserver);
-
-    dataShareHelper->Release();
-}
-
 void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
-    RegisterAccessiblilityBalance();
-    RegisterAccessiblilityMono();
-}
-
-void AudioPolicyService::RegisterAccessiblilityBalance()
-{
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    AudioSettingObserver::UpdateFunc updateFuncBalance = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        float balance = 0;
-        int32_t ret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get balance value failed");
-        if (balance < -1.0f || balance > 1.0f) {
-            AUDIO_WARNING_LOG("audioBalance value is out of range [-1.0, 1.0]");
-        } else {
-            OnAudioBalanceChanged(balance);
-        }
-    };
-    sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_BALANACE_KEY, updateFuncBalance);
-    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("RegisterObserver balance failed");
-    }
-    AUDIO_INFO_LOG("Register accessibility balance successfully");
-    float balance = 0;
-    auto gret = settingProvider.GetFloatValue(CONFIG_AUDIO_BALANACE_KEY, balance, "secure");
-    CHECK_AND_RETURN_LOG(gret == SUCCESS, "get balance value failed");
-    if (balance < -1.0f || balance > 1.0f) {
-        AUDIO_WARNING_LOG("audioBalance value is out of range [-1.0, 1.0]");
-    } else {
-        OnAudioBalanceChanged(balance);
-    }
-}
-
-void AudioPolicyService::RegisterAccessiblilityMono()
-{
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        int32_t value = 0;
-        ErrCode ret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get mono value failed");
-        OnMonoAudioConfigChanged(value != 0);
-    };
-    sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_MONO_KEY, updateFuncMono);
-    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("RegisterObserver mono failed");
-    }
-    AUDIO_INFO_LOG("Register accessibility mono successfully");
-    int32_t value = 0;
-    auto gret = settingProvider.GetIntValue(CONFIG_AUDIO_MONO_KEY, value, "secure");
-    CHECK_AND_RETURN_LOG(gret == SUCCESS, "get mono value failed");
-    OnMonoAudioConfigChanged(value != 0);
-}
-
-void AudioPolicyService::RegisterDoNotDisturbStatus()
-{
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturb = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        int32_t isDoNotDisturb = 0;
-        int32_t ret = settingProvider.GetIntValue(DO_NOT_DISTURB_STATUS, isDoNotDisturb, "secure");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus failed");
-        onDoNotDisturbStatusChanged(isDoNotDisturb != 0);
-    };
-    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS, updateFuncDoNotDisturb);
-    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus failed");
-    }
-    AUDIO_INFO_LOG("Register doNotDisturbStatus successfully");
-}
-
-void AudioPolicyService::RegisterDoNotDisturbStatusWhiteList()
-{
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturbWhiteList = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        std::vector<std::map<std::string, std::string>> doNotDisturbWhiteList;
-        int32_t ret = settingProvider.GetMapValue(DO_NOT_DISTURB_STATUS_WHITE_LIST,
-            doNotDisturbWhiteList, "secure");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus WhiteList failed");
-        onDoNotDisturbStatusWhiteListChanged(doNotDisturbWhiteList);
-    };
-    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS_WHITE_LIST,
-        updateFuncDoNotDisturbWhiteList);
-    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed");
-    }
-    AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
+    AudioPolicyDataShareListener::RegisterAccessiblilityBalance();
+    AudioPolicyDataShareListener::RegisterAccessiblilityMono();
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
@@ -702,33 +566,6 @@ void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
 void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     audioDeviceLock_.OnForcedDeviceSelected(devType, macAddress);
-}
-
-void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
-{
-    AUDIO_INFO_LOG("audioMono = %{public}s", audioMono? "true": "false");
-    AudioServerProxy::GetInstance().SetAudioMonoStateProxy(audioMono);
-}
-
-void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
-{
-    AUDIO_INFO_LOG("audioBalance = %{public}f", audioBalance);
-    AudioServerProxy::GetInstance().SetAudioBalanceValueProxy(audioBalance);
-}
-
-void AudioPolicyService::onDoNotDisturbStatusChanged(bool isDoNotDisturb)
-{
-    AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb ? "true" : "false");
-    ErrCode ret = audioPolicyManager_.SetDoNotDisturbStatus(isDoNotDisturb);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set doNotDisturbStatus filed");
-}
-
-void AudioPolicyService::onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
-    doNotDisturbStatusWhiteList)
-{
-    AUDIO_INFO_LOG("doNotDisturbStatusWhiteList changed");
-    ErrCode ret = audioPolicyManager_.SetDoNotDisturbStatusWhiteList(doNotDisturbStatusWhiteList);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set doNotDisturbStatus WhiteList filed");
 }
 
 void AudioPolicyService::LoadEffectLibrary()
@@ -1186,9 +1023,9 @@ void AudioPolicyService::RegisterDataObserver()
     int32_t ret = AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(devicesName);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterDataObserver get devicesName failed");
     SetDisplayName(devicesName, true);
-    RegisterNameMonitorHelper();
-    RegisterDoNotDisturbStatus();
-    RegisterDoNotDisturbStatusWhiteList();
+    audioConnectedDevice_.RegisterNameMonitorHelper();
+    audioPolicyManager_.RegisterDoNotDisturbStatus();
+    audioPolicyManager_.RegisterDoNotDisturbStatusWhiteList();
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)

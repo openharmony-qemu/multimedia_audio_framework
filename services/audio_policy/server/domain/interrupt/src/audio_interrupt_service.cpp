@@ -2242,15 +2242,28 @@ void AudioInterruptService::WriteStopDfxMsg(const AudioInterrupt &audioInterrupt
     }
 }
 
-void AudioInterruptService::SetDefaultVolumeType(const AudioStreamType volumeType)
+void AudioInterruptService::RegisterDefaultVolumeTypeListener()
 {
-    defaultVolumeType_ = volumeType;
-    AUDIO_INFO_LOG("defaultVolumeType: %{public}d", defaultVolumeType_);
-}
-
-AudioStreamType AudioInterruptService::GetDefaultVolumeType() const
-{
-    return defaultVolumeType_;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncMono = [this](const std::string &key) {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        int32_t currentVauleType = STREAM_MUSIC;
+        ErrCode ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, currentVauleType, "system");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "DEFAULT_VOLUME_KEY get mono value failed");
+        if (currentVauleType == STREAM_RING) {
+            defaultVolumeType_ = STREAM_RING;
+        } else {
+            defaultVolumeType_ = STREAM_MUSIC;
+        }
+        AUDIO_INFO_LOG("Get defaultVolumeType: %{public}d", defaultVolumeType_);
+    };
+    sptr observer = settingProvider.CreateObserver(DEFAULT_VOLUME_KEY, updateFuncMono);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener mono failed");
+    }
+    updateFuncMono(DEFAULT_VOLUME_KEY);
+    AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d", defaultVolumeType_);
 }
 
 // LCOV_EXCL_STOP

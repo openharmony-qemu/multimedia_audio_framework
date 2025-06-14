@@ -23,7 +23,6 @@
 #include "iservice_registry.h"
 #include "hdi_adapter_info.h"
 #include "audio_usb_manager.h"
-#include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
 #include "audio_bundle_manager.h"

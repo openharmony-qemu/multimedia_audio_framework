@@ -343,37 +343,7 @@ void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
         AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener interruptService_ is nullptr!");
         return;
     }
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        int32_t currentVauleType = STREAM_MUSIC;
-        ErrCode ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, currentVauleType, "system");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "DEFAULT_VOLUME_KEY get mono value failed");
-        if (currentVauleType == STREAM_RING) {
-            interruptService_->SetDefaultVolumeType(STREAM_RING);
-        } else {
-            interruptService_->SetDefaultVolumeType(STREAM_MUSIC);
-        }
-    };
-    sptr observer = settingProvider.CreateObserver(DEFAULT_VOLUME_KEY, updateFuncMono);
-    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener mono failed");
-    }
-    int32_t result = STREAM_MUSIC;
-    ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, result, "system");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("DEFAULT_VOLUME_KEY GetIntValue failed");
-        return;
-    } else {
-        if (result == STREAM_RING) {
-            interruptService_->SetDefaultVolumeType(STREAM_RING);
-        } else {
-            interruptService_->SetDefaultVolumeType(STREAM_MUSIC);
-        }
-    }
-    AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d",
-        interruptService_->GetDefaultVolumeType());
+    interruptService_->RegisterDefaultVolumeTypeListener();
 }
 
 void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId)
@@ -391,7 +361,7 @@ void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const
 void AudioPolicyServer::HandleKvDataShareEvent()
 {
     AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
-    if (isInitMuteState_ == false && audioPolicyService_.IsDataShareReady()) {
+    if (isInitMuteState_ == false && AudioPolicyUtils::GetInstance().IsDataShareReady()) {
         AUDIO_INFO_LOG("datashare is ready and need init mic mute state");
         InitMicrophoneMute();
     }

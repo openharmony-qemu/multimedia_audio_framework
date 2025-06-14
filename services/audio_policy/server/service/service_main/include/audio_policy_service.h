@@ -149,11 +149,7 @@ public:
 
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
-    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
-
     void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
-
-    bool IsDataShareReady();
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 
@@ -177,8 +173,6 @@ public:
     void OnMonoAudioConfigChanged(bool audioMono);
 
     void OnAudioBalanceChanged(float audioBalance);
-
-    void onDoNotDisturbStatusChanged(bool isDoNotDisturb);
 
     void onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
         doNotDisturbStatusWhiteList);
@@ -388,19 +382,9 @@ private:
     int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray, const EffectFlag& flag);
     int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
 
-    std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
-
     void RegisterNameMonitorHelper();
 
     void RegisterAccessibilityMonitorHelper();
-
-    void RegisterAccessiblilityBalance();
-
-    void RegisterAccessiblilityMono();
-
-    void RegisterDoNotDisturbStatus();
-
-    void RegisterDoNotDisturbStatusWhiteList();
 
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
 
