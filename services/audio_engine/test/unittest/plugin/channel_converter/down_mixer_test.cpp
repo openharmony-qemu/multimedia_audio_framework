@@ -1,6 +1,17 @@
-
-
-
+/*
+* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 #include <gtest/gtest.h>
 #include <cinttypes>
 #include <map>
@@ -19,12 +30,12 @@ constexpr static AudioChannelLayout FIRST_PART_CH_LAYOUTS = static_cast<AudioCha
     BACK_LEFT | BACK_RIGHT | 
     FRONT_LEFT_OF_CENTER | FRONT_RIGHT_OF_CENTER |
     BACK_CENTER | SIDE_LEFT | SIDE_RIGHT |
-    TOP_CENTER | TOP_FRONT_LEFT | TOP_FRONT_CENTER | TOP_FRONT_RIGHT
+    TOP_CENTER | TOP_FRONT_LEFT | TOP_FRONT_CENTER | TOP_FRONT_RIGHT | TOP_BACK_LEFT
 );
 
 // need full audio channel layouts to cover all cases during setting up downmix table -- second part
 constexpr static AudioChannelLayout SECOND_PART_CH_LAYOUTS = static_cast<AudioChannelLayout> (
-    TOP_BACK_LEFT | TOP_BACK_CENTER | TOP_BACK_RIGHT |
+    TOP_CENTER | TOP_BACK_LEFT | TOP_BACK_CENTER | TOP_BACK_RIGHT |
     STEREO_LEFT | STEREO_RIGHT |
     WIDE_LEFT | WIDE_RIGHT |
     SURROUND_DIRECT_LEFT | SURROUND_DIRECT_RIGHT | LOW_FREQUENCY_2 |
@@ -66,8 +77,6 @@ const static std::set<AudioChannelLayout> GENERAL_OUTPUT_CH_LAYOUT_SET = {
     CH_LAYOUT_7POINT1_WIDE,
     CH_LAYOUT_10POINT2,
     CH_LAYOUT_9POINT1POINT4,
-    CH_LAYOUT_9POINT1POINT6,
-    CH_LAYOUT_HEXADECAGONAL
 };
 
 // define channelLayout set to cover all channels as input
@@ -76,7 +85,7 @@ const static std::set<AudioChannelLayout> FULL_CH_LAYOUT_SET = {
     SECOND_PART_CH_LAYOUTS
 };
 
-const static std::map<AudioChannel> DOWNMIX_CHANNEL_COUNT_MAP = {
+const static std::map<AudioChannel, AudioChannelLayout> DOWNMIX_CHANNEL_COUNT_MAP = {
     {MONO, CH_LAYOUT_MONO},
     {STEREO, CH_LAYOUT_STEREO},
     {CHANNEL_3, CH_LAYOUT_SURROUND},
@@ -92,8 +101,6 @@ const static std::map<AudioChannel> DOWNMIX_CHANNEL_COUNT_MAP = {
     {CHANNEL_14, CH_LAYOUT_9POINT1POINT4},
     {CHANNEL_16, CH_LAYOUT_9POINT1POINT6}
 };
-
-static constexpr uint32_t HALF_FULL_CH_LAYOUT_COUNT = 15;
 
 constexpr uint32_t TEST_FORMAT_SIZE = 4;
 constexpr uint32_t TEST_FRAME_LEN = 100;
@@ -132,9 +139,9 @@ TEST_F(DownMixerTest, SetParamTest)
     AudioChannelInfo inChannelInfo;
     AudioChannelInfo outChannelInfo;
     inChannelInfo.numChannels = MAX_CHANNELS + 1;
-    inChannelInfo.channelLayout = MONO - 1;
+    inChannelInfo.channelLayout = CH_LAYOUT_UNKNOWN;
     outChannelInfo.numChannels = MAX_CHANNELS + 1;
-    outChannelInfo.channelLayout = MONO - 1;
+    outChannelInfo.channelLayout = CH_LAYOUT_UNKNOWN;
     int32_t ret = downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
     EXPECT_EQ(ret, DMIX_ERR_INVALID_ARG);
     
@@ -144,7 +151,7 @@ TEST_F(DownMixerTest, SetParamTest)
         outChannelInfo.channelLayout = outLayout;
         for (AudioChannelLayout inLayout: FULL_CH_LAYOUT_SET) {
             inChannelInfo.channelLayout = inLayout;
-            inChannelInfo.numChannels = HALF_FULL_CH_LAYOUT_COUNT;
+            inChannelInfo.numChannels = MAX_CHANNELS;
             int32_t ret = downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
             AUDIO_INFO_LOG("SetParamRetSuccessAndSetupDownMixTable inLayout %{public}" PRIu64 ""
                 "outLayout: %{public}" PRIu64 "", inLayout, outLayout);
@@ -158,7 +165,7 @@ TEST_F(DownMixerTest, SetParamTest)
         outChannelInfo.channelLayout = outLayout;
         for (AudioChannelLayout inLayout: FULL_CH_LAYOUT_SET) {
             inChannelInfo.channelLayout = inLayout;
-            inChannelInfo.numChannels = HALF_FULL_CH_LAYOUT_COUNT;
+            inChannelInfo.numChannels = MAX_CHANNELS;
             int32_t ret = downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
             AUDIO_INFO_LOG("SetParamRetSuccessAndSetupDownMixTable inLayout %{public}" PRIu64 ""
                 "outLayout: %{public}" PRIu64 "", inLayout, outLayout);
@@ -206,34 +213,36 @@ TEST_F(DownMixerTest, ProcesTest)
 {
     AudioChannelInfo inChannelInfo;
     AudioChannelInfo outChannelInfo;
-    inChannelInfo.channelLayout = CH_LAYOUT_STEREO;
-    inChannelInfo.numChannels = STEREO;
+    inChannelInfo.channelLayout = CH_LAYOUT_5POINT1;
+    inChannelInfo.numChannels = CHANNEL_6;
     outChannelInfo.channelLayout = CH_LAYOUT_STEREO;
     outChannelInfo.numChannels = STEREO;
 
     // test uninitialized
     DownMixer downMixer;
-    std::vector<float> in(TEST_BUFFER_LEN * STEREO, 0.0f);
+    std::vector<float> in(TEST_BUFFER_LEN * CHANNEL_6, 0.0f);
     std::vector<float> out(TEST_BUFFER_LEN * STEREO, 0.0f);
-    uint32_t testBufferSize = in.size() * TEST_FORMAT_SIZE;
-    EXPECT_EQ(downMixer->Process(testBufferSize, in.data(), testBufferSize, out.data(), testBufferSize),
+    uint32_t testInBufferSize = in.size() * TEST_FORMAT_SIZE;
+    uint32_t testOutBufferSize = out.size() * TEST_FORMAT_SIZE;
+    EXPECT_EQ(downMixer.Process(TEST_BUFFER_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize),
         DMIX_ERR_ALLOC_FAILED);
     
     // test input and output buffer length smaller than expected
-    EXPECT_EQ(downMixer->SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE), DMIX_ERR_SUCCESS);
-    EXPECT_EQ(downMixer->Process(TEST_FRAME_LEN, in.data(), testBufferSize, out.data(), testBufferSize),
+    EXPECT_EQ(downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE), DMIX_ERR_SUCCESS);
+    EXPECT_EQ(downMixer.Process(TEST_FRAME_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize),
         DMIX_ERR_ALLOC_FAILED);
 
     // test process usual channel layout
-    EXPECT_EQ(downMixer->Process(TEST_BUFFER_LEN, in.data(), testBufferSize, out.data(), testBufferSize),
+    EXPECT_EQ(downMixer.Process(TEST_BUFFER_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize),
         DMIX_ERR_SUCCESS);
 
     // test process HOA
     inChannelInfo.channelLayout = CH_LAYOUT_HOA_ORDER2_ACN_SN3D;
     inChannelInfo.numChannels = CHANNEL_9;
     in.resize(CHANNEL_9 * TEST_BUFFER_LEN, 0.0f);
-    EXPECT_EQ(downMixer->SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE), DMIX_ERR_SUCCESS);
-    EXPECT_EQ(downMixer->Process(TEST_BUFFER_LEN, in.data(), testBufferSize, out.data(), testBufferSize),
+    testInBufferSize = in.size() * TEST_FORMAT_SIZE;
+    EXPECT_EQ(downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE), DMIX_ERR_SUCCESS);
+    EXPECT_EQ(downMixer.Process(TEST_BUFFER_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize),
         DMIX_ERR_SUCCESS);
 
 }

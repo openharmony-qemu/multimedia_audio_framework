@@ -108,3 +108,30 @@ ohos_unittest("audio_engine_unit_test") {
 
   resource_config_file = "./resource/ohos_test.xml"
 }
+
+ohos_unittest("hpae_plugins_unit_test") {
+  module_out_path = module_output_path
+  sources = [
+    "plugin/channel_converter/down_mixer_test.cpp",
+    "plugin/channel_converter/channel_converter_test.cpp",
+    "plugin/proresampler/audio_proresampler_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_plugins",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
