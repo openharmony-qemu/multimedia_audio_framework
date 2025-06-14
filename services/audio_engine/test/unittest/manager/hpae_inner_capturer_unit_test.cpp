@@ -372,13 +372,13 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, AddNodeToSink_001)
     HpaeNodeInfo playSencondNodeInfo;
     playSencondNodeInfo.sessionId = playSencondStreamInfo.sessionId + 1;
     playSencondNodeInfo.channels = STEREO;
-    playSencondNodeInfo.format = streamInfo.format;
+    playSencondNodeInfo.format = SAMPLE_S16LE;
     playSencondNodeInfo.frameLen = SAMPLE_RATE_44100 * FRAME_LENGTH_IN_SECOND;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    std::shared_ptr<HpaeSinkInputNode>> HpaeSinkInputSencondNode =
+    std::shared_ptr<HpaeSinkInputNode> HpaeSinkInputSencondNode =
         std::make_shared<HpaeSinkInputNode>(playSencondNodeInfo);
     EXPECT_EQ(HpaeSinkInputSencondNode != nullptr, true);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
