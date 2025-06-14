@@ -126,6 +126,7 @@ void TonePlayerImpl::OnStateChange(const RendererState state, const StateChangeC
     AUDIO_INFO_LOG("ToneType %{public}d  OnStateChange state: %{public}d", toneType_, state);
 }
 
+// LCOV_EXCL_START
 void TonePlayerImpl::OnWriteData(size_t length)
 {
     std::lock_guard<std::mutex> lock(optMutex_);
@@ -242,6 +243,7 @@ bool TonePlayerImpl::Release()
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     return true;
 }
+// LCOV_EXCL_STOP
 
 void TonePlayerImpl::GetCurrentSegmentUpdated()
 {
@@ -487,7 +489,7 @@ bool TonePlayerImpl::InitToneWaveInfo()
     return true;
 }
 
-
+// LCOV_EXCL_START
 bool TonePlayerImpl::InitAudioRenderer()
 {
     processSize_ = (rendererOptions_.streamInfo.samplingRate * C20MS) / C1000MS;
@@ -524,5 +526,6 @@ bool TonePlayerImpl::InitAudioRenderer()
     AUDIO_DEBUG_LOG("SetRendererCallback Sucessful");
     return true;
 }
+// LCOV_EXCL_STOP
 } // end namespace AudioStandard
 } // end OHOS

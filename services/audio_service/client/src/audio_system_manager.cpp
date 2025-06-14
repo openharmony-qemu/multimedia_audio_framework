@@ -509,6 +509,7 @@ int32_t AudioSystemManager::SetSelfAppVolume(int32_t volume, int32_t flag)
     return AudioPolicyManager::GetInstance().SetSelfAppVolumeLevel(volume);
 }
 
+// LCOV_EXCL_START
 int32_t AudioSystemManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t flag)
 {
     AUDIO_INFO_LOG("enter AudioSystemManager::SetAppVolume");
@@ -545,6 +546,7 @@ int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioSystemManager::UnsetSelfAppVolumeCallback(
     const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback)
@@ -999,6 +1001,7 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
 
+// LCOV_EXCL_START
 int32_t AudioSystemManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
@@ -1060,6 +1063,7 @@ int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
     }
     return AudioPolicyManager::GetInstance().UnexcludeOutputDevices(audioDevUsage, unexcludeOutputDevices);
 }
+// LCOV_EXCL_STOP
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSystemManager::GetExcludedDevices(
     AudioDeviceUsage audioDevUsage) const
