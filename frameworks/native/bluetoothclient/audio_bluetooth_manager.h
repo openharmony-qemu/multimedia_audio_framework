@@ -16,6 +16,8 @@
 #ifndef AUDIO_BLUETOOTH_MANAGERI_H
 #define AUDIO_BLUETOOTH_MANAGERI_H
 
+#include <list>
+#include <map>
 #include "bluetooth_a2dp_src.h"
 #include "bluetooth_a2dp_codec.h"
 #include "bluetooth_avrcp_tg.h"
@@ -130,39 +132,38 @@ public:
     static void UnregisterBluetoothScoListener();
     static int32_t SetActiveHfpDevice(const std::string &macAddress);
     static std::string GetActiveHfpDevice();
-    static int32_t ConnectScoWithAudioScene(AudioStandard::AudioScene scene);
     static int32_t DisconnectSco();
-    static int8_t GetScoCategoryFromScene(AudioStandard::AudioScene scene);
     static void DisconnectBluetoothHfpSink();
-    static void UpdateCurrentActiveHfpDevice(const BluetoothRemoteDevice &device);
-    static std::string GetCurrentActiveHfpDevice();
-    static void UpdateAudioScene(AudioStandard::AudioScene scene);
+    static void ClearCurrentActiveHfpDevice(const BluetoothRemoteDevice &device);
     static void CheckHfpDeviceReconnect();
-    static AudioStandard::AudioScene GetCurrentAudioScene();
-    static AudioStandard::AudioScene GetPolicyAudioScene();
-    static void SetAudioSceneFromPolicy(AudioStandard::AudioScene scene);
-    static int32_t HandleScoWithRecongnition(bool handleFlag, BluetoothRemoteDevice &device);
-    static void ClearRecongnitionStatus();
-    static ScoCategory GetScoCategory();
-    static RecognitionStatus GetRecognitionStatus();
     static int32_t Connect(const std::string &macAddress);
-    static int32_t SetVirtualCall(const bool isVirtual);
+
+    static int32_t UpdateAudioScene(AudioStandard::AudioScene scene, bool isRecordScene);
+    static int32_t UpdateAudioScene(AudioStandard::AudioScene scene);
+    static int32_t HandleScoWithRecongnition(bool handleFlag);
+    static bool IsRecognitionStatus();
+    static int32_t SetVirtualCall(const std::string &name, const bool isVirtual);
+    static int32_t AddVirtualCallBundleName(const std::string &name, int32_t streamId);
+    static void DeleteVirtualCallStream(int32_t streamId);
     static bool IsVirtualCall();
     static bool IsAudioScoStateConnect();
 
 private:
-    static int32_t ConnectScoUponDefaultScene(int8_t category);
+    static ScoCategory JudgeScoCategory();
+    static int32_t TryUpdateScoCategory();
+    static void DisconnectScoForDevice(const BluetoothRemoteDevice &device);
+    static int32_t DisconnectScoWrapper();
+    static void WriteScoOprFaultEvent();
 
 private:
-    static HandsFreeAudioGateway *hfpInstance_;
     static std::shared_ptr<AudioHfpListener> hfpListener_;
     static std::atomic<AudioStandard::AudioScene> scene_;
-    static AudioStandard::AudioScene sceneFromPolicy_;
     static BluetoothRemoteDevice activeHfpDevice_;
-    static ScoCategory scoCategory;
-    static RecognitionStatus recognitionStatus;
-    static bool isVirtualCall;
-    static BluetoothRemoteDevice activeRecgDevice_;
+    static std::atomic<bool> isRecognitionScene_;
+    static std::atomic<bool> isRecordScene_;
+    static std::map<std::string, bool> virtualCalls_;
+    static std::map<std::string, std::list<int32_t>> virtualCallStreams_;
+    static std::mutex virtualCallMutex_;
 };
 }
 }

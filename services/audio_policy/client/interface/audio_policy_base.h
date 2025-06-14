@@ -471,12 +471,16 @@ public:
 
     virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) = 0;
-    
+
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
+
+    virtual bool IsAudioLoopbackSupported(AudioLoopbackMode mode) = 0;
 
     virtual int32_t ForceStopAudioStream(StopAudioType audioType) = 0;
 
-    virtual bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) = 0;
+    virtual bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) = 0;
+
+    virtual bool SetKaraokeParameters(const std::string &parameters) = 0;
 
     virtual int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) = 0;
 

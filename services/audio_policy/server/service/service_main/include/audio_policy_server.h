@@ -300,6 +300,8 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
+    bool SetKaraokeParameters(const std::string &parameters) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -540,7 +542,7 @@ public:
 
     int32_t ForceStopAudioStream(StopAudioType audioType) override;
 
-    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) override;
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 

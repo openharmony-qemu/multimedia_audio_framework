@@ -28,6 +28,7 @@
 #include "napi_audio_spatialization_manager.h"
 #include "napi_asr_processing_controller.h"
 #include "napi_audio_session_manager.h"
+#include "napi_audio_loopback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,6 +51,7 @@ static napi_value Init(napi_env env, napi_value exports)
     NapiAudioManager::Init(env, exports);
     NapiAsrProcessingController::Init(env, exports);
     NapiAudioSessionMgr::Init(env, exports);
+    NapiAudioLoopback::Init(env, exports);
     return exports;
 }
 

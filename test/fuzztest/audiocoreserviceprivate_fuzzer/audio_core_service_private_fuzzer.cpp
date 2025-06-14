@@ -123,17 +123,6 @@ vector<AudioFlag> AudioFlagVec = {
     AUDIO_FLAG_MAX,
 };
 
-void HandleScoInputDeviceFetchedFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    std::string addr = "12345678901234567";
-    audioCoreService->GetEncryptAddr(addr);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    audioCoreService->HandleScoInputDeviceFetched(streamDesc);
-}
-
 void ScoInputDeviceFetchedForRecongnitionFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -472,7 +461,6 @@ void IsNewDevicePlaybackSupportedFuzzTest()
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {
-    HandleScoInputDeviceFetchedFuzzTest,
     ScoInputDeviceFetchedForRecongnitionFuzzTest,
     BluetoothScoFetchFuzzTest,
     CheckModemSceneFuzzTest,

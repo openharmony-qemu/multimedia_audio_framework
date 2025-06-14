@@ -32,6 +32,20 @@ struct SleVolumeConfigInfo {
     SleVolumeConfigInfo(AudioVolumeType volumeType, int32_t volume) : volumeType(volumeType), volumeLevel(volume) {}
 };
 
+enum SleAudioStreamType : uint32_t {
+    SLE_AUDIO_STREAM_NONE = 0x00000000,
+    SLE_AUDIO_STREAM_MUSIC = 0x00000002,
+    SLE_AUDIO_STREAM_VOICE_CALL = 0x00000004,
+    SLE_AUDIO_STREAM_VOICE_ASSISTANT = 0x00000008,
+    SLE_AUDIO_STREAM_RING = 0x00000010,
+    SLE_AUDIO_STREAM_VOIP = 0x00000020,
+    SLE_AUDIO_STREAM_GAME = 0x00000040,
+    SLE_AUDIO_STREAM_RECORD = 0x00000080,
+    SLE_AUDIO_STREAM_ALERT = 0x00000100,
+    SLE_AUDIO_STREAM_VIDEO = 0x00000200,
+    SLE_AUDIO_STREAM_GUID = 0x00000400,
+};
+
 class SleAudioDeviceManager : public SleAudioOperationCallback {
 public:
     static SleAudioDeviceManager &GetInstance()

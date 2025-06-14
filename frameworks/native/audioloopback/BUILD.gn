@@ -1,0 +1,96 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../../../config.gni")
+
+config("audio_loopback_config") {
+  include_dirs = [
+    "./include",
+    "../audiostream/include",
+    "../../../interfaces/inner_api/native/audiorenderer/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../frameworks/native/audiostream/include",
+    "../../../services/audio_service/client/include",
+  ]
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+  if (sonic_enable == true) {
+    cflags += [ "-DSONIC_ENABLE" ]
+  }
+}
+
+ohos_shared_library("audio_loopback") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = true
+
+  configs = [ ":audio_loopback_config" ]
+
+  sources = [ "src/audio_loopback.cpp" ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  deps = [
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_common",
+    "../audiocapturer:audio_capturer",
+    "../audiorenderer:audio_renderer",
+    "../audiodefinitions:audio_definitions",
+    "../audioutils:audio_utils",
+  ]
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
+  ]
+
+  public_configs = [ ":audio_external_library_config" ]
+
+  version_script = "../../../audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
+config("audio_external_library_config") {
+  include_dirs =
+      [
+        "../../../interfaces/inner_api/native/audiocapturer/include",
+        "../../../interfaces/inner_api/native/audiorenderer/include",
+        "../../../interfaces/inner_api/native/audioloopback/include",
+    ]
+}

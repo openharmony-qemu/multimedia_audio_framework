@@ -2465,6 +2465,20 @@ bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return gsp->IsAcousticEchoCancelerSupported(sourceType);
 }
 
+bool AudioPolicyManager::SetKaraokeParameters(const std::string &parameters)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->SetKaraokeParameters(parameters);
+}
+
+bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsAudioLoopbackSupported(mode);
+}
+
 int32_t AudioPolicyManager::GetMaxVolumeLevelByUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -2550,7 +2564,7 @@ int32_t AudioPolicyManager::ForceStopAudioStream(StopAudioType audioType)
     return gsp->ForceStopAudioStream(audioType);
 }
 
-bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");

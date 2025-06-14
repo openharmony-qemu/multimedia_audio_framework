@@ -175,7 +175,8 @@ private:
     void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData,
         int32_t innerCapId);
     void GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList);
-
+    void GetAllReadyProcessDataSub(size_t i, SpanInfo *curReadSpan,
+        std::vector<AudioStreamData> &audioDataList, uint64_t curRead);
     std::string GetStatusStr(EndpointStatus status);
 
     int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBuffer> &procBuf, const BufferDesc &readBuf,
@@ -337,6 +338,7 @@ private:
     std::atomic_bool recordEndpointWorkLoopFucThreadStatus_ { false };
     std::unordered_map<int32_t, CaptureInfo> fastCaptureInfos_;
     bool coreBinded_ = false;
+    bool isExistLoopback_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
