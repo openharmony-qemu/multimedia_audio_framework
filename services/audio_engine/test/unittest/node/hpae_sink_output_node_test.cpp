@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-const char *ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm"
+const char *ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm";
 class HpaeSinkOutputNodeTest : public testing::Test {
 public:
     void SetUp();
